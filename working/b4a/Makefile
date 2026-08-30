@@ -1,7 +1,7 @@
 GSKIT ?= $(PS2DEV)/gsKit
 
 EE_BIN = PS2VNC.ELF
-EE_OBJS = ps2ip.o pstvnc_video_mode.o pstvnc_video_geometry.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_framebuffer_tail.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_management_tail.o ps2vnc_calibration_tail.o pstvnc_config_text.o pstvnc_diagnostics_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
+EE_OBJS = ps2ip.o pstvnc_video_mode.o pstvnc_video_geometry.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_framebuffer_tail.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_management_tail.o ps2vnc_calibration_tail.o pstvnc_config_text.o pstvnc_diagnostics_identity.o pstvnc_diagnostics_debug.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
 
 EE_INCS = -I$(GSKIT)/include -I../../src
 
@@ -25,6 +25,9 @@ pstvnc_config_text.o: ../../src/config/text.c ../../src/config/text.h
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 pstvnc_diagnostics_identity.o: ../../src/diagnostics/identity.c ../../src/diagnostics/identity.h
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+pstvnc_diagnostics_debug.o: ../../src/diagnostics/debug.c ../../src/diagnostics/debug.h
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 clean:

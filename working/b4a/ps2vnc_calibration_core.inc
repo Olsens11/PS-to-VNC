@@ -1468,7 +1468,7 @@ void debug_emit_geometry_snapshot(void)
     char msg[192];
     int len;
 
-    if (debug_udp_sock < 0)
+    if (!pstvnc_debug_is_ready())
         return;
 
     len = snprintf(
@@ -1495,14 +1495,9 @@ void debug_emit_geometry_snapshot(void)
     if (len >= (int)sizeof(msg))
         len = sizeof(msg) - 1;
 
-    sendto(
-        debug_udp_sock,
+    (void)pstvnc_debug_send(
         msg,
-        len,
-        0,
-        (struct sockaddr *)&debug_udp_addr,
-        sizeof(debug_udp_addr)
-    );
+        (size_t)len);
 }
 
 

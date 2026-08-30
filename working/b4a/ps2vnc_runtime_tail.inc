@@ -2,9 +2,12 @@
 {
     char msg[640];
     int len;
+    pstvnc_debug_stage_t stage;
 
-    if (debug_udp_sock < 0)
+    if (!pstvnc_debug_is_ready())
         return;
+
+    stage = pstvnc_debug_get_stage();
 
     len = snprintf(
         msg, sizeof(msg),
@@ -16,8 +19,8 @@
         "hkl=%d hq=%04x sm=%d dm=%d rar=%d "
         "b4=%u ppr=%d ppa=%d q=%u",
         debug_frame_counter,
-        debug_stage_name(debug_stage_id),
-        debug_stage_id,
+        pstvnc_debug_stage_name(stage),
+        (unsigned int)stage,
         debug_changed_bytes,
         live_message_type,
         live_rect_index,
@@ -73,14 +76,9 @@
     if (len >= (int)sizeof(msg))
         len = sizeof(msg) - 1;
 
-    sendto(
-        debug_udp_sock,
+    (void)pstvnc_debug_send(
         msg,
-        len,
-        0,
-        (struct sockaddr *)&debug_udp_addr,
-        sizeof(debug_udp_addr)
-    );
+        (size_t)len);
 }
 
 
@@ -315,7 +313,7 @@ unsigned int profile_ticks_us(u64 ticks)
     char msg[256];
     int len;
 
-    if (debug_udp_sock >= 0) {
+    if (pstvnc_debug_is_ready()) {
         len = snprintf(
             msg, sizeof(msg),
             "PRF frame=%u rn=%u dn=%u bytes=%u raw=%u hx=%u "
@@ -337,9 +335,7 @@ unsigned int profile_ticks_us(u64 ticks)
         );
 
         if (len > 0)
-            sendto(debug_udp_sock, msg, len, 0,
-                   (struct sockaddr *)&debug_udp_addr,
-                   sizeof(debug_udp_addr));
+            (void)pstvnc_debug_send(msg, (size_t)len);
     }
 
     profile_present_sync_ticks = 0;

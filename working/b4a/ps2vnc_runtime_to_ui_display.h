@@ -2,6 +2,7 @@
 #define PS2VNC_RUNTIME_TO_UI_DISPLAY_H
 
 #include "ps2vnc_video_mode_compat.h"
+#include "diagnostics/debug.h"
 
 typedef enum {
     RUNTIME_ACTION_NONE = 0,
@@ -46,30 +47,6 @@ extern unsigned int size_SMAP_irx;
  * M3I migration interface scaffold.
  * Functions: GCC aux-info authority.
  */
-
-enum {
-    DBG_STAGE_STARTUP = 0,
-    DBG_STAGE_NET_READY,
-    DBG_STAGE_GS_INIT,
-    DBG_STAGE_INITIAL_TEXTURE,
-    DBG_STAGE_CONTROLLER_START,
-    DBG_STAGE_LOOP_BEGIN,
-    DBG_STAGE_PRE_DRAW,
-    DBG_STAGE_POST_DRAW,
-    DBG_STAGE_PRE_FLIP,
-    DBG_STAGE_POST_FLIP,
-    DBG_STAGE_PRE_QUEUE,
-    DBG_STAGE_POST_QUEUE,
-    DBG_STAGE_PRE_REQUEST,
-    DBG_STAGE_POST_REQUEST,
-    DBG_STAGE_WAIT_RFB,
-    DBG_STAGE_POST_RECEIVE,
-    DBG_STAGE_PRE_TEXTURE,
-    DBG_STAGE_POST_TEXTURE,
-    DBG_STAGE_CONTROLLER_ERROR,
-    DBG_STAGE_REQUEST_ERROR,
-    DBG_STAGE_RECEIVE_ERROR
-};
 
 enum {
     DISPLAY_CONFIRM_ACTION_NONE = 0,
@@ -435,7 +412,6 @@ extern const ps2vnc_video_mode_t *const video_modes[VIDEO_MODE_COUNT];
 
 extern void debug_emit_now (void);
 
-extern int debug_udp_init (void);
 
 extern void display_confirm_arm_transaction (const ps2vnc_video_mode_t *previous_mode, unsigned int previous_x, unsigned int previous_y, unsigned int previous_w, unsigned int previous_h, int previous_screen_fit_width, int previous_screen_fit_height, int previous_screen_fit_offset_x, int previous_screen_fit_offset_y, int previous_screen_fit_full_bypass);
 

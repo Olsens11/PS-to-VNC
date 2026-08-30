@@ -18,6 +18,7 @@
 #include <limits.h>
 
 #include "config/text.h"
+#include "diagnostics/debug.h"
 
 #include <kernel.h>
 #include <timer.h>
@@ -133,30 +134,6 @@ typedef struct {
 
 /* M3E BEGIN GENERATED ENUM COMPATIBILITY */
 /* Exact main-TU enum definitions required by detached services. */
-
-enum {
-    DBG_STAGE_STARTUP = 0,
-    DBG_STAGE_NET_READY,
-    DBG_STAGE_GS_INIT,
-    DBG_STAGE_INITIAL_TEXTURE,
-    DBG_STAGE_CONTROLLER_START,
-    DBG_STAGE_LOOP_BEGIN,
-    DBG_STAGE_PRE_DRAW,
-    DBG_STAGE_POST_DRAW,
-    DBG_STAGE_PRE_FLIP,
-    DBG_STAGE_POST_FLIP,
-    DBG_STAGE_PRE_QUEUE,
-    DBG_STAGE_POST_QUEUE,
-    DBG_STAGE_PRE_REQUEST,
-    DBG_STAGE_POST_REQUEST,
-    DBG_STAGE_WAIT_RFB,
-    DBG_STAGE_POST_RECEIVE,
-    DBG_STAGE_PRE_TEXTURE,
-    DBG_STAGE_POST_TEXTURE,
-    DBG_STAGE_CONTROLLER_ERROR,
-    DBG_STAGE_REQUEST_ERROR,
-    DBG_STAGE_RECEIVE_ERROR
-};
 
 typedef enum {
     RUNTIME_ACTION_NONE = 0,

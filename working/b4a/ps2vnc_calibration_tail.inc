@@ -1128,7 +1128,7 @@ static GSGLOBAL *ps2vnc_display_create_hires(void)
 {
     GSGLOBAL *gsGlobal;
 
-    debug_stage_id = DBG_STAGE_GS_INIT;
+    pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_GS_INIT);
 
     gsGlobal = gsKit_hires_init_global();
     if (gsGlobal == NULL)
@@ -1177,7 +1177,7 @@ static GSGLOBAL *ps2vnc_display_create_standard(void)
         active_video_mode->standard_fb_height == 0)
         return NULL;
 
-    debug_stage_id = DBG_STAGE_GS_INIT;
+    pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_GS_INIT);
 
     gsGlobal = gsKit_init_global();
     if (gsGlobal == NULL)
@@ -1513,7 +1513,7 @@ static int ps2vnc_display_prepare_desktop_standard(
             tex->PSM),
         GSKIT_ALLOC_USERBUFFER);
 
-    debug_stage_id = DBG_STAGE_INITIAL_TEXTURE;
+    pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_INITIAL_TEXTURE);
     gsKit_texture_upload(gsGlobal, tex);
 
     live_linear_framebuffer_stale = 0;

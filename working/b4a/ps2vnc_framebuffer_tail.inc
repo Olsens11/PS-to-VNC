@@ -1025,9 +1025,9 @@ static int ps2vnc_display_publish_full_desktop_standard(
      */
     tex->Mem = (u32 *)gs_framebuffer;
 
-    debug_stage_id = DBG_STAGE_PRE_TEXTURE;
+    pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_PRE_TEXTURE);
     gsKit_texture_upload(gsGlobal, tex);
-    debug_stage_id = DBG_STAGE_POST_TEXTURE;
+    pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_POST_TEXTURE);
 
     live_linear_framebuffer_stale = 0;
     return 0;

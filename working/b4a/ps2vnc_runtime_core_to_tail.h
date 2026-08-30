@@ -201,7 +201,6 @@ extern volatile int
     remote_display_suppress_next_active_menu_return ;
 extern volatile unsigned int rfb_out_count ;
 
-extern const char *debug_stage_name (unsigned int stage);
 extern void display_menu_open_for_active (int);
 extern unsigned int read_be16 (const unsigned char *p);
 extern unsigned int read_be32 (const unsigned char *p);

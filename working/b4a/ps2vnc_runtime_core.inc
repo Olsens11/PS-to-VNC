@@ -660,11 +660,7 @@ int force_screen_fit_calibration = 0;
  * This lets us test whether merely having another EE thread inside PS2IP
  * was contributing to the receive corruption seen in test26.
  */
-#define DEBUG_UDP_PORT 5999
-int debug_udp_sock = -1;
-struct sockaddr_in debug_udp_addr;
  volatile unsigned int debug_frame_counter = 0;
-volatile unsigned int debug_stage_id = 0;
  volatile int debug_changed_bytes = 0;
 
 /* D17AL-F8J2-B4A hard-transition envelope phase, 0 = idle. */
@@ -705,30 +701,6 @@ unsigned int debug_idle_poll_counter = 0;
  volatile unsigned int debug_hotkey_hold_polls = 0;
  volatile int debug_hotkey_latched = 0;
  volatile unsigned int debug_hotkey_quarantine = 0;
-
-enum {
-    DBG_STAGE_STARTUP = 0,
-    DBG_STAGE_NET_READY,
-    DBG_STAGE_GS_INIT,
-    DBG_STAGE_INITIAL_TEXTURE,
-    DBG_STAGE_CONTROLLER_START,
-    DBG_STAGE_LOOP_BEGIN,
-    DBG_STAGE_PRE_DRAW,
-    DBG_STAGE_POST_DRAW,
-    DBG_STAGE_PRE_FLIP,
-    DBG_STAGE_POST_FLIP,
-    DBG_STAGE_PRE_QUEUE,
-    DBG_STAGE_POST_QUEUE,
-    DBG_STAGE_PRE_REQUEST,
-    DBG_STAGE_POST_REQUEST,
-    DBG_STAGE_WAIT_RFB,
-    DBG_STAGE_POST_RECEIVE,
-    DBG_STAGE_PRE_TEXTURE,
-    DBG_STAGE_POST_TEXTURE,
-    DBG_STAGE_CONTROLLER_ERROR,
-    DBG_STAGE_REQUEST_ERROR,
-    DBG_STAGE_RECEIVE_ERROR
-};
 
 /* On-screen keyboard state shared between controller and renderer. */
  volatile int osk_visible = 0;
@@ -1619,49 +1591,4 @@ void reset_rfb_transport_state(void)
     }
 
     return done;
-}
-
-
- const char *debug_stage_name(unsigned int stage)
-{
-    switch (stage) {
-        case DBG_STAGE_STARTUP:          return "STARTUP";
-        case DBG_STAGE_NET_READY:        return "NET_READY";
-        case DBG_STAGE_GS_INIT:          return "GS_INIT";
-        case DBG_STAGE_INITIAL_TEXTURE:  return "INITIAL_TEXTURE";
-        case DBG_STAGE_CONTROLLER_START: return "CONTROLLER_START";
-        case DBG_STAGE_LOOP_BEGIN:       return "LOOP_BEGIN";
-        case DBG_STAGE_PRE_DRAW:         return "PRE_DRAW";
-        case DBG_STAGE_POST_DRAW:        return "POST_DRAW";
-        case DBG_STAGE_PRE_FLIP:         return "PRE_FLIP";
-        case DBG_STAGE_POST_FLIP:        return "POST_FLIP";
-        case DBG_STAGE_PRE_QUEUE:        return "PRE_QUEUE";
-        case DBG_STAGE_POST_QUEUE:       return "POST_QUEUE";
-        case DBG_STAGE_PRE_REQUEST:      return "PRE_REQUEST";
-        case DBG_STAGE_POST_REQUEST:     return "POST_REQUEST";
-        case DBG_STAGE_WAIT_RFB:         return "WAIT_RFB";
-        case DBG_STAGE_POST_RECEIVE:     return "POST_RECEIVE";
-        case DBG_STAGE_PRE_TEXTURE:      return "PRE_TEXTURE";
-        case DBG_STAGE_POST_TEXTURE:     return "POST_TEXTURE";
-        case DBG_STAGE_CONTROLLER_ERROR: return "CONTROLLER_ERROR";
-        case DBG_STAGE_REQUEST_ERROR:    return "REQUEST_ERROR";
-        case DBG_STAGE_RECEIVE_ERROR:    return "RECEIVE_ERROR";
-        default:                         return "UNKNOWN";
-    }
-}
-
- int debug_udp_init(void)
-{
-    debug_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (debug_udp_sock < 0)
-        return -1;
-
-    memset(&debug_udp_addr, 0, sizeof(debug_udp_addr));
-    debug_udp_addr.sin_len = sizeof(debug_udp_addr);
-    debug_udp_addr.sin_family = AF_INET;
-    debug_udp_addr.sin_port = htons(DEBUG_UDP_PORT);
-    debug_udp_addr.sin_addr.s_addr =
-        inet_addr(PS2VNC_BOOTSTRAP_PI_IP);
-
-    return 0;
 }

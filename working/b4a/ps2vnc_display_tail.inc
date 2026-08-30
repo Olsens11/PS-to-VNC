@@ -177,7 +177,7 @@ static int display_live_desktop(int sock,
      * The video path below remains the known-good Milestone 6 blocking
      * incremental loop.  Controller input runs independently.
      */
-    debug_stage_id = DBG_STAGE_CONTROLLER_START;
+    pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_CONTROLLER_START);
 
     rfb_connected = 1;
 
@@ -191,7 +191,7 @@ static int display_live_desktop(int sock,
             return 1;
 
         debug_frame_counter++;
-        debug_stage_id = DBG_STAGE_LOOP_BEGIN;
+        pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_LOOP_BEGIN);
         debug_changed_bytes = 0;
 
         /*
@@ -928,7 +928,7 @@ static int display_live_desktop(int sock,
             profile_emit_now();
         }
 
-        debug_stage_id = DBG_STAGE_PRE_DRAW;
+        pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_PRE_DRAW);
 
         /*
          * HIRES already has its desktop background configured. Standard
@@ -1097,7 +1097,7 @@ static int display_live_desktop(int sock,
             rendered_osk_generation = osk_generation;
         }
 
-        debug_stage_id = DBG_STAGE_POST_DRAW;
+        pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_POST_DRAW);
 
         /*
          * TEST13E HIRES presentation.
@@ -1107,7 +1107,7 @@ static int display_live_desktop(int sock,
          *
          * Legacy debug stage IDs are retained intentionally.
          */
-        debug_stage_id = DBG_STAGE_PRE_QUEUE;
+        pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_PRE_QUEUE);
         {
             u64 t0 = GetTimerSystemTime();
 
@@ -1116,9 +1116,9 @@ static int display_live_desktop(int sock,
 
             profile_present_sync_ticks += GetTimerSystemTime() - t0;
         }
-        debug_stage_id = DBG_STAGE_POST_QUEUE;
+        pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_POST_QUEUE);
 
-        debug_stage_id = DBG_STAGE_PRE_FLIP;
+        pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_PRE_FLIP);
         {
             u64 t0 = GetTimerSystemTime();
 
@@ -1127,14 +1127,14 @@ static int display_live_desktop(int sock,
 
             profile_flip_ticks += GetTimerSystemTime() - t0;
         }
-        debug_stage_id = DBG_STAGE_POST_FLIP;
+        pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_POST_FLIP);
 
         /*
          * After the initial complete frame, request only pixels that changed.
          * Queued controller traffic is flushed before this main-thread request.
          */
         if (controller_thread_error) {
-            debug_stage_id = DBG_STAGE_CONTROLLER_ERROR;
+            pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_CONTROLLER_ERROR);
             live_error_code = 201;
             debug_emit_now();
             screenf("LIVE ERR 201 controller");
@@ -1150,7 +1150,7 @@ static int display_live_desktop(int sock,
             profile_dirty_wait_ticks += GetTimerSystemTime() - t0;
         }
 
-        debug_stage_id = DBG_STAGE_PRE_REQUEST;
+        pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_PRE_REQUEST);
         profile_rfb_start_tick = GetTimerSystemTime();
         /*
          * TEST15D3-A3: both presentation buffers are kept coherent after
@@ -1194,7 +1194,7 @@ static int display_live_desktop(int sock,
                 continue;
             }
 
-            debug_stage_id = DBG_STAGE_REQUEST_ERROR;
+            pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_REQUEST_ERROR);
             live_error_code = 202;
             debug_emit_now();
             screenf("LIVE ERR 202 request");
@@ -1235,13 +1235,13 @@ static int display_live_desktop(int sock,
         if (ps2vnc_display_begin_update() < 0)
             return -1;
 
-        debug_stage_id = DBG_STAGE_POST_REQUEST;
+        pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_POST_REQUEST);
 
         {
             int changed_bytes;
             int direct_present_complete;
 
-            debug_stage_id = DBG_STAGE_WAIT_RFB;
+            pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_WAIT_RFB);
 
             /*
              * Snapshot the already-rendered confirmation generation.
@@ -1294,7 +1294,7 @@ static int display_live_desktop(int sock,
             }
 
             debug_changed_bytes = changed_bytes;
-            debug_stage_id = DBG_STAGE_POST_RECEIVE;
+            pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_POST_RECEIVE);
 
             if (changed_bytes < 0) {
                 /*
@@ -1363,7 +1363,7 @@ static int display_live_desktop(int sock,
                 if (exit_requested)
                     return 1;
 
-                debug_stage_id = DBG_STAGE_RECEIVE_ERROR;
+                pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_RECEIVE_ERROR);
                 debug_emit_now();
                 screenf("LIVE ERR %d type=%u",
                         live_error_code,
@@ -1433,7 +1433,7 @@ static int display_live_desktop(int sock,
              * becomes visible.
              */
             if (changed_bytes > 0 && !TEST29_DISCARD_LIVE_PIXELS) {
-                debug_stage_id = DBG_STAGE_PRE_TEXTURE;
+                pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_PRE_TEXTURE);
 
                 if (ps2vnc_display_commit_update(
                         gsGlobal,
@@ -1441,7 +1441,7 @@ static int display_live_desktop(int sock,
                         direct_present_complete) < 0)
                     return -1;
 
-                debug_stage_id = DBG_STAGE_POST_TEXTURE;
+                pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_POST_TEXTURE);
             }
 
         }
@@ -1618,8 +1618,8 @@ int main(int argc, char *argv[])
         goto exit_to_osdsys;
     }
 
-    debug_stage_id = DBG_STAGE_NET_READY;
-    if (debug_udp_init() < 0)
+    pstvnc_debug_set_stage(PSTVNC_DEBUG_STAGE_NET_READY);
+    if (pstvnc_debug_init() < 0)
         screenf("WARN: debug UDP did not initialize");
     else
         debug_emit_now();
