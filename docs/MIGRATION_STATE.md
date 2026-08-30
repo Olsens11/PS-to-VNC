@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M3
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=68ae3fe07ed6b4e3d080da8c5b6fa98bdf603c4e
+    CURRENT_SOURCE_HEAD=c224b75e24d79fa7cbebd84236123e97c31ac9f1
     LAST_HARDWARE_RESULT=M3V_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M3Y_validate_eleven_object_calibration_on_hardware
+    NEXT_ACTION=M4A_validate_twelve_object_management_split_on_hardware
 
 The canonical machine-readable source remains:
 
@@ -745,3 +745,50 @@ Startup/final baseline: 480p PASS.
 Evidence: `evidence/m3/m3h-hardware-20260830-055234`.
 
 Next action: `M3I_continue_recursive_runtime_translation_unit_decomposition`.
+
+## M3Z management recursive split
+
+M3Z completes the final blocking coarse structural split identified by the
+M3W semantic-leaf census.
+
+Qualified source authority:
+
+    CURRENT_SOURCE_HEAD=c224b75e24d79fa7cbebd84236123e97c31ac9f1
+    CURRENT_DOC_HEAD=bcc310b87d5c13e8b0630e2b8901599ff5965e1e
+    LAST_BUILD_RESULT=M3Z_TWELVE_OBJECT_PASS_NEW_REPRODUCIBLE_DUT
+    LAST_HARDWARE_RESULT=M3Y_PASS_WITH_CLASSIFIED_INTERMITTENT_1080I_TO_480P_RESTORE_FAILURE
+    NEXT_ACTION=M4A_validate_twelve_object_management_split_on_hardware
+
+Management/config partition:
+
+    original logical lines: 3120
+    GCC-authorized cut line: 1535
+    management core: 1534 logical lines
+    management tail: 1586 logical lines
+    real translation units: 12
+
+The boundary is bidirectional but deliberately narrow:
+
+    core -> management tail functions: 4
+    core -> management tail exact macros: 2
+    management tail -> services/calibration-core functions: 4
+    linkage-only static promotions: 8
+    strong global duplicate symbols: 0
+
+Machine qualification:
+
+    ELF reproducibility: BYTE_EXACT_PASS
+    ELF SHA256: d9ddbcb14cf1007236bdf77d9a8bb48ce99390e2144cfab81c75cee6513f18f1
+    load SHA256: 62d62c543186802e657d4ba4044e879568a6dd51b707b056846df4c563de4f8b
+    machine-evidence manifest SHA256: e1f80673363b774023ebf27f15e8d8b960f06af0d5f7bf4cab162edf42a23a79
+
+The M3Z load image is nonidentical to the M3X hardware-qualified load image,
+so M4A hardware validation is required before M3Z becomes the hardware
+authority. Until M4A completes, the last hardware result remains the M3Y
+qualification with its classified intermittent 1080i-to-480p restore
+failure. That prior failure did not establish a deterministic M3X
+regression.
+
+After M4A passes, rerun the semantic-leaf census. Under the established M3W
+policy, optional 1500-2000-line leaves do not block completion of the coarse
+migration; the expected blocking-coarse-split count is zero.
