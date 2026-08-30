@@ -1,0 +1,78 @@
+# PS-to-VNC File and Service Map
+
+This file is the canonical living location map for the successor project.
+
+Update it whenever canonical code ownership or file location changes.
+
+## Repositories
+
+| Role | Location | Mutable by PS-to-VNC work? |
+|---|---|---|
+| Historical PS2VNC authority | `/home/ps2/ps2vnc` | No |
+| Current PS-to-VNC development | `/home/ps2/PS-to-VNC` | Yes |
+
+## Historical backup
+
+Legacy Git bundle:
+
+`/home/ps2/ps2vnc-legacy-backups/ps2vnc-legacy-allrefs-20260830-002434.bundle`
+
+SHA256:
+
+`7f018a3623c5cdd7e7ed30bfbc3f00040b632735fc83f92d49c5a0c672bea85a`
+
+## Baseline
+
+| Responsibility | Current location | Owner |
+|---|---|---|
+| Frozen B4A implementation | `baseline/frozen-b4a/` | immutable historical reference |
+| Frozen B4A source | `baseline/frozen-b4a/ps2ip.c` | immutable historical reference |
+| Dependency analysis | `baseline/analysis/B4A-dependency-map/` | immutable analysis reference |
+| Baseline identity | `baseline/IDENTITY.env` | project provenance |
+
+## Working source
+
+Current working source:
+
+**NONE — M0 has not started.**
+
+No file under `baseline/frozen-b4a/` is a writable modular-development
+location.
+
+## Documentation
+
+| Responsibility | Location |
+|---|---|
+| Documentation entry point | `docs/INDEX.md` |
+| Current project state | `docs/PROJECT_STATE.md` |
+| Modularization ledger | `docs/MODULARIZATION.md` |
+| Architecture | `docs/architecture/ARCHITECTURE.md` |
+| Current file/service map | `docs/reference/FILE_AND_SERVICE_MAP.md` |
+| Roadmap | `docs/ROADMAP.md` |
+| Legacy relationship | `docs/LEGACY_HANDOFF.md` |
+| Project identity | `docs/PROJECT_IDENTITY.md` |
+
+## Runtime services
+
+Historical currently deployed PS2VNC runtime remains external to this
+successor repository during bootstrap.
+
+PS-to-VNC does not yet own or deploy a runtime service.
+
+That authority changes only through a later documented stage.
+
+## Migration recovery authority
+
+| Responsibility | Canonical location |
+|---|---|
+| Recovery entry point | `START_HERE.md` |
+| Machine-readable migration state | `runtime/MIGRATION_STATE.env` |
+| Human-readable migration state | `docs/MIGRATION_STATE.md` |
+| Recovery summary command | `scripts/resume-state.sh` |
+| Migration coherence gate | `scripts/migration-check.sh` |
+| Documentation coherence gate | `scripts/docs-check.sh` |
+
+These locations move in lockstep with implementation authority.
+
+No modularization stage is complete until this map and the migration state
+agree with the actual source tree.

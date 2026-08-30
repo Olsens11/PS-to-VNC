@@ -1,0 +1,163 @@
+SOURCE_LINES=18938
+SOURCE_FUNCTIONS=239
+COMPILED_TEXT_SYMBOLS=105
+COMPILED_DATA_SYMBOLS=257
+FUNCTION_CALL_EDGES=790
+FUNCTION_GLOBAL_REF_EDGES=871
+CROSS_MODULE_CALL_EDGE_TYPES=65
+MULTI_MODULE_GLOBALS=156
+NONTRIVIAL_CALL_SCCS=0
+
+===== PROPOSED MODULE FUNCTION COUNTS =====
+config                   functions= 13 source_lines=  1268
+core                     functions=  1 source_lines=   240
+diag                     functions=  7 source_lines=   228
+display_backend          functions= 35 source_lines=  1692
+display_calibration      functions= 15 source_lines=  1006
+display_control          functions= 11 source_lines=   999
+display_geometry         functions=  3 source_lines=    52
+input                    functions=  9 source_lines=   226
+management               functions= 17 source_lines=  1137
+orchestration            functions=  2 source_lines=  2995
+other                    functions= 73 source_lines=  2872
+rfb_decode               functions= 11 source_lines=   877
+rfb_transport            functions= 10 source_lines=   992
+ui                       functions= 32 source_lines=  1418
+
+===== TOP SHARED GLOBALS =====
+active_video_mode                          functions= 33 modules= 9 [config,display_backend,display_calibration,display_control,display_geometry,orchestration,other,rfb_transport,ui]
+desktop_width                              functions= 29 modules= 8 [diag,display_backend,display_calibration,display_control,orchestration,other,rfb_decode,rfb_transport]
+desktop_height                             functions= 26 modules= 8 [diag,display_backend,display_calibration,display_control,orchestration,other,rfb_decode,rfb_transport]
+live_error_code                            functions=  8 modules= 6 [core,display_backend,display_control,orchestration,other,rfb_decode]
+active_display_backend                     functions= 21 modules= 5 [display_backend,display_calibration,display_control,display_geometry,other]
+desktop_output_x                           functions= 14 modules= 5 [diag,display_backend,display_control,orchestration,other]
+desktop_output_y                           functions= 14 modules= 5 [diag,display_backend,display_control,orchestration,other]
+osk_generation                             functions= 14 modules= 5 [display_control,orchestration,other,rfb_transport,ui]
+desktop_geometry_locked                    functions=  8 modules= 5 [display_backend,display_control,orchestration,other,rfb_transport]
+controller_thread_error                    functions=  7 modules= 5 [diag,input,orchestration,other,rfb_transport]
+debug_stage_id                             functions=  7 modules= 5 [core,diag,display_backend,orchestration,other]
+screen_fit_height                          functions=  7 modules= 5 [diag,display_calibration,display_control,orchestration,other]
+screen_fit_offset_x                        functions=  7 modules= 5 [diag,display_calibration,display_control,orchestration,other]
+screen_fit_offset_y                        functions=  7 modules= 5 [diag,display_calibration,display_control,orchestration,other]
+screen_fit_width                           functions=  7 modules= 5 [diag,display_calibration,display_control,orchestration,other]
+controller_pad_pause_requested             functions=  6 modules= 5 [diag,display_control,input,orchestration,other]
+screen_fit_full_bypass                     functions=  5 modules= 5 [diag,display_calibration,display_control,orchestration,other]
+display_confirm_pending                    functions= 10 modules= 4 [display_control,orchestration,other,rfb_transport]
+desktop_output_height                      functions=  9 modules= 4 [display_backend,display_control,orchestration,other]
+desktop_output_width                       functions=  9 modules= 4 [display_backend,display_control,orchestration,other]
+rfb_queue_sema                             functions=  9 modules= 4 [display_calibration,display_control,other,rfb_transport]
+display_confirm_action                     functions=  8 modules= 4 [display_control,orchestration,other,rfb_transport]
+exit_requested                             functions=  8 modules= 4 [input,orchestration,other,rfb_transport]
+rfb_connected                              functions=  6 modules= 4 [display_control,orchestration,rfb_decode,rfb_transport]
+runtime_action_request                     functions=  6 modules= 4 [diag,orchestration,other,rfb_transport]
+display_menu_visible                       functions=  5 modules= 4 [diag,orchestration,other,ui]
+live_encoding                              functions=  4 modules= 4 [core,diag,orchestration,rfb_decode]
+live_hdr_raw                               functions=  4 modules= 4 [core,diag,orchestration,rfb_decode]
+live_message_type                          functions=  4 modules= 4 [core,diag,orchestration,rfb_decode]
+live_rect_count                            functions=  4 modules= 4 [core,diag,orchestration,rfb_decode]
+live_rect_h                                functions=  4 modules= 4 [core,diag,orchestration,rfb_decode]
+live_rect_index                            functions=  4 modules= 4 [core,diag,orchestration,rfb_decode]
+live_rect_w                                functions=  4 modules= 4 [core,diag,orchestration,rfb_decode]
+live_rect_x                                functions=  4 modules= 4 [core,diag,orchestration,rfb_decode]
+live_rect_y                                functions=  4 modules= 4 [core,diag,orchestration,rfb_decode]
+ps2vnc_display_config_loaded               functions=  4 modules= 4 [config,diag,display_calibration,orchestration]
+rfb_last_recv_call                         functions=  4 modules= 4 [core,other,rfb_decode,rfb_transport]
+rfb_last_recv_n                            functions=  4 modules= 4 [core,other,rfb_decode,rfb_transport]
+rfb_rx_end                                 functions=  4 modules= 4 [core,other,rfb_decode,rfb_transport]
+rfb_rx_pos                                 functions=  4 modules= 4 [core,other,rfb_decode,rfb_transport]
+
+===== HIGHEST CROSS-MODULE FUNCTIONS =====
+display_live_desktop                           module=orchestration        cross= 63 in=  1 out= 62 globals= 78 lines=1449
+controller_thread                              module=orchestration        cross= 23 in=  0 out= 23 globals= 53 lines=1546
+receive_framebuffer_update                     module=rfb_decode           cross= 18 in=  9 out=  9 globals= 51 lines= 563
+ps2vnc_switch_display_mode_core                module=display_control      cross= 15 in=  0 out= 15 globals= 12 lines= 154
+recover_rfb_connection                         module=rfb_transport        cross= 12 in=  2 out= 10 globals=  6 lines= 204
+ps2vnc_run_runtime_calibration                 module=display_calibration  cross= 12 in=  1 out= 11 globals=  6 lines= 114
+main                                           module=core                 cross= 12 in=  0 out= 12 globals= 20 lines= 240
+screenf                                        module=other                cross= 11 in= 11 out=  0 globals=  1 lines=  14
+recv_exact                                     module=rfb_transport        cross= 11 in=  6 out=  5 globals= 18 lines= 187
+region_fits_u32                                module=other                cross= 10 in= 10 out=  0 globals=  0 lines=  23
+send_exact                                     module=other                cross= 10 in= 10 out=  0 globals=  0 lines=  16
+ps2vnc_remote_control_poll_idle                module=display_control      cross= 10 in=  2 out=  8 globals= 14 lines= 170
+ps2vnc_reconfigure_current_desktop_hires       module=display_backend      cross=  9 in=  1 out=  8 globals=  8 lines=  82
+ps2vnc_switch_display_mode                     module=display_control      cross=  9 in=  1 out=  8 globals=  4 lines= 207
+set_raw_encoding                               module=rfb_decode           cross=  8 in=  7 out=  1 globals=  0 lines=  10
+ps2vnc_global_rollback_display_transaction     module=display_control      cross=  8 in=  1 out=  7 globals=  5 lines= 130
+initial_rfb_connect_with_retry                 module=rfb_transport        cross=  8 in=  1 out=  7 globals=  0 lines=  90
+ps2vnc_management_get                          module=management           cross=  7 in=  3 out=  4 globals=  0 lines= 210
+ps2vnc_startup_apply_authoritative_profile     module=other                cross=  7 in=  1 out=  6 globals=  7 lines= 173
+recover_rfb_transport_for_display_rollback     module=rfb_transport        cross=  7 in=  1 out=  6 globals=  5 lines= 122
+ps2vnc_display_direct_write_cancel             module=display_backend      cross=  6 in=  6 out=  0 globals=  1 lines=   4
+request_framebuffer                            module=rfb_transport        cross=  6 in=  5 out=  1 globals=  3 lines=  26
+ps2vnc_management_post_text                    module=management           cross=  6 in=  3 out=  3 globals=  0 lines= 136
+draw_recovery_status                           module=other                cross=  6 in=  2 out=  4 globals=  0 lines= 106
+ps2vnc_startup_connect_reconciled              module=other                cross=  6 in=  1 out=  5 globals=  8 lines= 271
+rfb_connect_and_handshake_limited              module=rfb_transport        cross=  6 in=  1 out=  5 globals=  3 lines= 267
+ps2vnc_video_mode_by_name                      module=display_geometry     cross=  5 in=  5 out=  0 globals=  1 lines=  15
+ps2vnc_http_status_is_200                      module=other                cross=  5 in=  5 out=  0 globals=  0 lines=  32
+ps2vnc_http_find_header_end                    module=other                cross=  5 in=  5 out=  0 globals=  0 lines=  22
+request_and_confirm_desktop_size               module=other                cross=  5 in=  4 out=  1 globals= 10 lines= 134
+send_rfb_message                               module=rfb_transport        cross=  5 in=  4 out=  1 globals=  5 lines=  47
+set_live_encoding                              module=rfb_decode           cross=  5 in=  4 out=  1 globals=  0 lines=  15
+probe_extended_desktop_size                    module=other                cross=  5 in=  3 out=  2 globals= 14 lines=  71
+calculate_presented_desktop_geometry           module=display_backend      cross=  5 in=  3 out=  2 globals=  0 lines=  29
+debug_emit_now                                 module=diag                 cross=  4 in=  4 out=  0 globals= 40 lines=  84
+debug_emit_geometry_snapshot                   module=diag                 cross=  4 in=  4 out=  0 globals= 13 lines=  41
+reset_rfb_transport_state                      module=other                cross=  4 in=  4 out=  0 globals=  8 lines=  17
+ps2vnc_display_finish_draw                     module=display_backend      cross=  4 in=  4 out=  0 globals=  1 lines=  17
+profile_ticks_us                               module=diag                 cross=  4 in=  4 out=  0 globals=  0 lines=   8
+ethGetNetIFLinkStatus                          module=other                cross=  4 in=  4 out=  0 globals=  0 lines=   6
+
+===== LOW-COUPLING LEAF CANDIDATES =====
+ps2vnc_hires_requires_raster_mapping           module=display_backend      cross_out= 0 globals=  0 incoming= 10 lines=   6
+hires_bg_storage_row                           module=display_backend      cross_out= 0 globals=  0 incoming=  7 lines=   8
+osk_color                                      module=ui                   cross_out= 0 globals=  0 incoming=  7 lines=  12
+osk_draw_text_centered                         module=ui                   cross_out= 0 globals=  0 incoming=  7 lines=  21
+profile_ticks_us                               module=diag                 cross_out= 0 globals=  0 incoming=  6 lines=   8
+display_menu_mode_belongs_to_tab               module=ui                   cross_out= 0 globals=  0 incoming=  6 lines=  14
+ps2vnc_hires_storage_width                     module=display_backend      cross_out= 0 globals=  0 incoming=  5 lines=   4
+screen_fit_prim_sprite                         module=display_calibration  cross_out= 0 globals=  0 incoming=  5 lines=   7
+ps2vnc_display_tx_profiles_equal               module=management           cross_out= 0 globals=  0 incoming=  5 lines=  15
+ps2vnc_config_trim_left                        module=config               cross_out= 0 globals=  0 incoming=  4 lines=   7
+display_menu_tab_visible                       module=ui                   cross_out= 0 globals=  0 incoming=  4 lines=  11
+ps2vnc_config_trim_right                       module=config               cross_out= 0 globals=  0 incoming=  4 lines=  12
+ps2vnc_video_mode_default_backend              module=display_geometry     cross_out= 0 globals=  0 incoming=  4 lines=  12
+display_menu_first_visible_selection           module=ui                   cross_out= 0 globals=  0 incoming=  4 lines=  16
+display_menu_tab_for_mode                      module=ui                   cross_out= 0 globals=  0 incoming=  4 lines=  20
+screen_fit_geometry_valid_for_mode             module=display_calibration  cross_out= 0 globals=  0 incoming=  4 lines=  54
+rfb_gs555_to_gs16                              module=rfb_transport        cross_out= 0 globals=  0 incoming=  3 lines=   4
+rfb_connect_and_handshake                      module=rfb_transport        cross_out= 0 globals=  0 incoming=  3 lines=   6
+ps2vnc_hires_storage_bytes                     module=display_backend      cross_out= 0 globals=  0 incoming=  3 lines=   7
+ps2vnc_display_transaction_ack_to_pi           module=management           cross_out= 0 globals=  0 incoming=  3 lines=   7
+ps2vnc_display_transaction_commit_to_pi        module=management           cross_out= 0 globals=  0 incoming=  3 lines=   7
+ps2vnc_display_transaction_restore_to_pi       module=management           cross_out= 0 globals=  0 incoming=  3 lines=   7
+ps2vnc_display_transaction_restored_to_pi      module=management           cross_out= 0 globals=  0 incoming=  3 lines=   7
+ps2vnc_hires_mapped_storage_row                module=display_backend      cross_out= 0 globals=  0 incoming=  3 lines=   8
+display_menu_next_visible_tab                  module=ui                   cross_out= 0 globals=  0 incoming=  3 lines=  27
+ps2vnc_display_tx_take_line                    module=management           cross_out= 0 globals=  0 incoming=  3 lines=  46
+ps2vnc_config_parse_display_for_mode           module=config               cross_out= 0 globals=  0 incoming=  3 lines=  53
+ps2vnc_remote_control_get_value                module=display_control      cross_out= 0 globals=  0 incoming=  3 lines=  53
+ps2vnc_config_parse_int                        module=config               cross_out= 0 globals=  0 incoming=  3 lines= 121
+ps2vnc_controller_pad_wait_release             module=input                cross_out= 0 globals=  0 incoming=  2 lines=  19
+display_menu_tab_label                         module=ui                   cross_out= 0 globals=  0 incoming=  2 lines=  19
+ps2vnc_display_tx_state_name                   module=management           cross_out= 0 globals=  0 incoming=  2 lines=  23
+ps2vnc_config_parse_bool                       module=config               cross_out= 0 globals=  0 incoming=  2 lines=  24
+screen_fit_draw_text_centered                  module=display_calibration  cross_out= 0 globals=  0 incoming=  2 lines=  24
+ps2vnc_display_tx_take_profile_value           module=management           cross_out= 0 globals=  0 incoming=  2 lines=  26
+debug_stage_name                               module=diag                 cross_out= 0 globals=  0 incoming=  2 lines=  27
+osk_draw_char                                  module=ui                   cross_out= 0 globals=  0 incoming=  2 lines=  28
+ps2vnc_remote_control_get_u32                  module=display_control      cross_out= 0 globals=  0 incoming=  2 lines=  29
+osk_shifted_ascii                              module=ui                   cross_out= 0 globals=  0 incoming=  2 lines=  33
+screen_fit_prim_sprite_clipped                 module=display_calibration  cross_out= 0 globals=  0 incoming=  2 lines=  34
+ps2vnc_display_transaction_fetch_from_pi       module=management           cross_out= 0 globals=  0 incoming=  2 lines=  41
+startup_force_calibration_requested            module=display_calibration  cross_out= 0 globals=  0 incoming=  2 lines=  42
+screen_fit_clamp_interactive                   module=display_calibration  cross_out= 0 globals=  0 incoming=  2 lines=  46
+ps2vnc_display_tx_parse                        module=management           cross_out= 0 globals=  0 incoming=  2 lines=  80
+screen_fit_draw_corner_marker                  module=display_calibration  cross_out= 0 globals=  0 incoming=  2 lines= 100
+osk_fill_rect                                  module=ui                   cross_out= 0 globals=  1 incoming=  8 lines=  37
+ps2vnc_display_direct_write_cancel             module=display_backend      cross_out= 0 globals=  1 incoming=  7 lines=   4
+display_menu_mode_at_selection                 module=ui                   cross_out= 0 globals=  1 incoming=  7 lines=   9
+ps2vnc_video_mode_by_name                      module=display_geometry     cross_out= 0 globals=  1 incoming=  6 lines=  15
+ps2vnc_hires_storage_height                    module=display_backend      cross_out= 0 globals=  1 incoming=  5 lines=  10
+
+===== NONTRIVIAL CALL SCCS =====

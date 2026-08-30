@@ -1,0 +1,12 @@
+e83342c88aef5a11f2a3a6b5e079d4661e266a922c75487fad0d54457b8f9a87  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/analysis-nm-size.txt
+4d5eea288598c2a305a1e67f66b00143b27cc65b2f309635f6380b1217e44ba2  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/analysis-nm.txt
+7084df549f45de14f545884e76c0674caf2aec6a4916b6553bed15abb856945b  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/analyze_dependencies.py
+6391a7f237b266e82f4bb8208adfd8d4928f4275e9fe4dd0b1c96c6ad24a2f9f  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/call-edges.tsv
+fe280e05e395b36c40feb4e486e1d2f776f83de3a120b26a0705524d5d24fbec  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/compiler-console.txt
+5a4c5ac4387dd8926a19d4b5add3a1de4195ec2fec56cc9d12d3cbd8ff30afd8  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/dependency-summary.txt
+ff52d3f2ffa2aa2603826a934f1c696514e4d6928dc569fb9f9de0ee1f191c0c  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/displayctl-before.txt
+a9f90bf9153807fe20dde770063a18398de08f4c989bf128c3bb72d9d7a588f4  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/functions.tsv
+07f5b3eddbe123402c6540331e7fc6693ba05aaafef5b94a17f9cb2d05db597d  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/global-refs.tsv
+7b7184e2c32879be05dff293eef8a097e1d1b12959427e52551e7086cd4250b9  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/globals.tsv
+a168a0f065e67b04c79325c3863376c360137230fbdb37781e811cd9a3dc9de4  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/module-call-edges.tsv
+00d259320158a349bd508707c8c0b09fa47c0a06581bf202e3e112da4336701c  /home/ps2/ps2vnc/logs/modularization/B4A-dependency-map-20260830-000618/strongly-connected-components.tsv

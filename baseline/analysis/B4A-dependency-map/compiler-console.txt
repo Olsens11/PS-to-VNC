@@ -1,0 +1,10 @@
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2ip.c -o ps2ip.o
+ps2ip.c:13446:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+13446 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2ip.c:9286:12: warning: 'update_hires_background_region' defined but not used [-Wunused-function]
+ 9286 | static int update_hires_background_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2ip.c:8126:12: warning: 'sync_copy_hires_region' defined but not used [-Wunused-function]
+ 8126 | static int sync_copy_hires_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~
