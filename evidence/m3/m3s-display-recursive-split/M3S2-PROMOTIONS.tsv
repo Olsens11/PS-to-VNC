@@ -1,0 +1,6 @@
+name	definition_line
+ps2vnc_global_rollback_display_transaction	1103
+ps2vnc_remote_display_fail	877
+ps2vnc_remote_result_post	814
+ps2vnc_startup_finalize_display_transaction	598
+ps2vnc_switch_display_mode	179

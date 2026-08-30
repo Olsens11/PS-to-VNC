@@ -1,0 +1,7 @@
+ps2vnc_display_tail.inc:171:9: error: implicit declaration of function 'ps2vnc_startup_finalize_display_transaction'; did you mean 'ps2vnc_startup_prepare_display_transaction'? [-Wimplicit-function-declaration]
+ps2vnc_display_tail.inc:201:15: error: implicit declaration of function 'ps2vnc_remote_display_lease_expired' [-Wimplicit-function-declaration]
+ps2vnc_display_tail.inc:202:15: error: implicit declaration of function 'ps2vnc_remote_control_poll_idle' [-Wimplicit-function-declaration]
+ps2vnc_display_tail.inc:468:17: error: implicit declaration of function 'ps2vnc_global_rollback_display_transaction'; did you mean 'ps2vnc_startup_prepare_display_transaction'? [-Wimplicit-function-declaration]
+ps2vnc_display_tail.inc:545:21: error: implicit declaration of function 'ps2vnc_remote_display_fail'; did you mean 'ps2vnc_display_flip'? [-Wimplicit-function-declaration]
+ps2vnc_display_tail.inc:658:23: error: implicit declaration of function 'ps2vnc_remote_result_post' [-Wimplicit-function-declaration]
+ps2vnc_display_tail.inc:706:17: error: implicit declaration of function 'ps2vnc_switch_display_mode' [-Wimplicit-function-declaration]

@@ -1,7 +1,7 @@
 GSKIT ?= $(PS2DEV)/gsKit
 
 EE_BIN = PS2VNC.ELF
-EE_OBJS = ps2ip.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
+EE_OBJS = ps2ip.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_services.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
 
 EE_INCS = -I$(GSKIT)/include
 

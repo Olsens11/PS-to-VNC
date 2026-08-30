@@ -24,4 +24,4 @@
 /* M3M: UI controller compiled in ps2vnc_ui_display.c */
 #include "ps2vnc_ui_to_display.h"
 
-#include "ps2vnc_display_core.inc"
+#include "ps2vnc_display_orchestration.inc"

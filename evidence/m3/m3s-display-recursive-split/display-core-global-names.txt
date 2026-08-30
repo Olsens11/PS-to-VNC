@@ -1,0 +1,7 @@
+ps2vnc_global_rollback_display_transaction
+ps2vnc_remote_control_poll_idle
+ps2vnc_remote_display_fail
+ps2vnc_remote_display_lease_expired
+ps2vnc_remote_result_post
+ps2vnc_startup_finalize_display_transaction
+ps2vnc_switch_display_mode
