@@ -1,0 +1,13 @@
+name	definition_line
+display_menu_move_horizontal_selection	374
+display_menu_move_vertical_selection	329
+dpad_hold_velocity_q8	1505
+osk_activate_selected	1052
+osk_move_horizontal	915
+osk_move_vertical	929
+osk_send_key_with_modifiers	991
+scroll_button_for_stick	1367
+scroll_repeat_delay	1409
+send_scroll_pulse	1454
+stick_velocity_q8	1307
+wake_renderer_with_pointer_jiggle	1174

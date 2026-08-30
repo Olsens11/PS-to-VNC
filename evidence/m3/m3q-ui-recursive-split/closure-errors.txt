@@ -1,0 +1,20 @@
+ps2vnc_ui_tail.inc:139:19: error: implicit declaration of function 'wake_renderer_with_pointer_jiggle' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:361:33: error: implicit declaration of function 'display_menu_open_for_active' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:790:25: error: implicit declaration of function 'display_menu_move_vertical_selection'; did you mean 'display_menu_mode_at_selection'? [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:818:25: error: implicit declaration of function 'display_menu_move_horizontal_selection'; did you mean 'display_menu_mode_at_selection'? [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:1104:39: error: 'RFB_SCROLL_UP' undeclared (first use in this function)
+ps2vnc_ui_tail.inc:1104:39: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_ui_tail.inc:1107:39: error: 'RFB_SCROLL_DOWN' undeclared (first use in this function)
+ps2vnc_ui_tail.inc:1110:39: error: 'RFB_SCROLL_LEFT' undeclared (first use in this function)
+ps2vnc_ui_tail.inc:1113:39: error: 'RFB_SCROLL_RIGHT' undeclared (first use in this function)
+ps2vnc_ui_tail.inc:1117:40: error: 'DPAD_SCROLL_REPEAT_POLLS' undeclared (first use in this function)
+ps2vnc_ui_tail.inc:1221:33: error: 'DPAD_ACCEL_START_TICKS' undeclared (first use in this function)
+ps2vnc_ui_tail.inc:1236:37: error: implicit declaration of function 'dpad_hold_velocity_q8' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:1311:43: error: implicit declaration of function 'scroll_button_for_stick' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:1319:37: error: implicit declaration of function 'scroll_repeat_delay' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:1324:29: error: implicit declaration of function 'stick_velocity_q8' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:1409:29: error: implicit declaration of function 'send_scroll_pulse' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:1445:21: error: implicit declaration of function 'osk_move_horizontal' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:1457:21: error: implicit declaration of function 'osk_move_vertical' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:1476:25: error: implicit declaration of function 'osk_activate_selected' [-Wimplicit-function-declaration]
+ps2vnc_ui_tail.inc:1485:25: error: implicit declaration of function 'osk_send_key_with_modifiers' [-Wimplicit-function-declaration]

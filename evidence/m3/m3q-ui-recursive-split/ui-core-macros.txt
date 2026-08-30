@@ -1,0 +1,2797 @@
+#define GS_BLEND_FRONT2BACK 0x12
+#define TCP_KEEPCNT 0x05
+#define XK_DELETE 0xFFFF
+#define GS_SETREG_XYOFFSET_2 GS_SETREG_XYOFFSET
+#define GS_CLUT_STOREMODE_COMPARE_CBP1 0x05
+#define __GNUCLIKE_BUILTIN_NEXT_ARG 1
+#define SI_TIMER 3
+#define GS_SETREG_TEX0_2 GS_SETREG_TEX0
+#define ip6_addr_multicast_prefix_flag(ip6addr) ((ip6addr)->addr[0] & PP_HTONL(0x00200000UL))
+#define __builtin_align_up(x,align) ((__typeof__(x))(((__uintptr_t)(x)+((align)-1))&(~((align)-1))))
+#define _Nullable 
+#define __strftimelike(fmtarg,firstvararg) __attribute__((__format__ (__strftime__, fmtarg, firstvararg)))
+#define __DBL_MIN_EXP__ (-1021)
+#define _SC_SEM_NSEMS_MAX 16
+#define _NOINLINE_STATIC _NOINLINE static
+#define __HQ_FBIT__ 15
+#define GS_PSM_CT24 0x01
+#define RESET_ARG_MAX 79
+#define EMULTIHOP 74
+#define __LDBL_MANT_DIG__ 53
+#define D_CTRL_MFD_OFF 0x0
+#define DMA_REG_RBSR (volatile u32 *)0x1000E040
+#define M_NLBLKS 2
+#define __IMPORT 
+#define EOWNERDEAD 142
+#define _QUAD_LOWWORD 0
+#define F_RSETLKW 13
+#define _SC_CLK_TCK 2
+#define GS_PSM_CT32 0x00
+#define __returns_twice __attribute__((__returns_twice__))
+#define __unused __attribute__((__unused__))
+#define FMARK _FMARK
+#define __UINT_LEAST16_MAX__ 0xffff
+#define _FAPPEND 0x0008
+#define GS_TEX0_1 0x06
+#define __generic(expr,t,yes,no) _Generic(expr, t: yes, default: no)
+#define __ATOMIC_ACQUIRE 2
+#define __WCHAR_MAX__ 0x7fffffff
+#define __SIFCMD_COMMON_H__ 
+#define ip6_addr_isallrouters_linklocal(ip6addr) (((ip6addr)->addr[0] == PP_HTONL(0xff020000UL)) && ((ip6addr)->addr[1] == 0UL) && ((ip6addr)->addr[2] == 0UL) && ((ip6addr)->addr[3] == PP_HTONL(0x00000002UL)))
+#define RE_DUP_MAX 255
+#define _SC_NGROUPS_MAX 3
+#define SCE_EBINDMISS 0x10000
+#define __SFRACT_IBIT__ 0
+#define _REENT _impure_ptr
+#define __FLT_MIN__ 1.1754943508222876e-38F
+#define SYSTEM_CHORD_HOLD_POLLS 120u
+#define __GCC_IEC_559_COMPLEX 0
+#define IP_ANY_TYPE IP_ADDR_ANY
+#define FD_COPY(f,t) (void)(*(t) = *(f))
+#define _SC_SPIN_LOCKS 76
+#define _DEV_T_DECLARED 
+#define LLONG_WIDTH __LONG_LONG_WIDTH__
+#define _PC_MAX_INPUT 2
+#define __UFRACT_MAX__ 0XFFFFP-16UR
+#define __UINT_LEAST8_TYPE__ unsigned char
+#define _T_WCHAR_ 
+#define DST_CAN 6
+#define _SC_IPV6 67
+#define EUNATCH 42
+#define GS_FRAME 0x01
+#define T1_COMP ((volatile unsigned int *)0x10000820)
+#define GS_PSM_CT16 0x02
+#define INT_LEAST16_MIN (-__INT_LEAST16_MAX__ - 1)
+#define _SC_XOPEN_REALTIME 99
+#define M_KEEP 4
+#define GS_XYZF2 0x04
+#define GS_XYZF3 0x0c
+#define __attribute_malloc__ 
+#define __flexarr [0]
+#define POSIX_CLOSE_RESTART 1
+#define GS_ATEST_OFF 0x03
+#define IP_CLASSA_MAX 128
+#define ACCESSPERMS (S_IRWXU | S_IRWXG | S_IRWXO)
+#define SIF_CMD_M_INTR 0x01
+#define IP_TOS 1
+#define _REENT_CHECK_MISC(ptr) 
+#define __DQ_FBIT__ 63
+#define __DEFINED_ptrdiff_t 
+#define SIGBUS 10
+#define __INTMAX_C(c) c ## LL
+#define _SC_LEVEL4_CACHE_SIZE 137
+#define _ID_T_DECLARED 
+#define quad quad_t
+#define _SC_LEVEL4_CACHE_LINESIZE 139
+#define _REENT_RAND_NEXT(ptr) ((ptr)->_new._reent._rand_next)
+#define MEMP_NUM_NETCONN (MEMP_NUM_TCP_PCB + MEMP_NUM_UDP_PCB)
+#define GS_SET_SMODE2(INT,FFMD,DPMS) *GS_SMODE2 = ((u64)(INT) << 0) | ((u64)(FFMD) << 1) | ((u64)(DPMS) << 2)
+#define __ULFRACT_FBIT__ 32
+#define Tn_MODE(CLKS,GATE,GATS,GATM,ZRET,CUE,CMPE,OVFE,EQUF,OVFF) (u32)((u32)(CLKS) | ((u32)(GATE) << 2) | ((u32)(GATS) << 3) | ((u32)(GATM) << 4) | ((u32)(ZRET) << 6) | ((u32)(CUE) << 7) | ((u32)(CMPE) << 8) | ((u32)(OVFE) << 9) | ((u32)(EQUF) << 10) | ((u32)(OVFF) << 11))
+#define THS_WAIT 0x04
+#define __CHAR_BIT__ 8
+#define __malloc_like __attribute__((__malloc__))
+#define DMA_CNT 0x1
+#define __predict_false(exp) __builtin_expect((exp), 0)
+#define _SC_THREAD_SAFE_FUNCTIONS 49
+#define lwip_close(...) close(__VA_ARGS__)
+#define D_CTRL_RCYC_128 0x4
+#define SHRT_MAX __SHRT_MAX__
+#define EREMCHG 82
+#define __USQ_IBIT__ 0
+#define SCHAR_MIN (-SCHAR_MAX - 1)
+#define SIGTTIN 21
+#define GS_PRIM_PRIM_TRISTRIP 0x04
+#define _FOPEN (-1)
+#define ip4_addr_set(dest,src) ((dest)->addr = ((src) == NULL ? 0 : (src)->addr))
+#define PAD_LEFT 0x0080
+#define EACCES 13
+#define __UINT8_MAX__ 0xff
+#define EL3RST 40
+#define _SC_SEMAPHORES 30
+#define S_IFSOCK _IFSOCK
+#define _SC_TYPED_MEMORY_OBJECTS 91
+#define VNC_HEIGHT RFB_CAPACITY_HEIGHT
+#define SOCK_RAW 3
+#define GS_SETREG_PRIM(prim,iip,tme,fge,abe,aa1,fst,ctxt,fix) ((u64)(prim) | ((u64)(iip) << 3) | ((u64)(tme) << 4) | ((u64)(fge) << 5) | ((u64)(abe) << 6) | ((u64)(aa1) << 7) | ((u64)(fst) << 8) | ((u64)(ctxt) << 9) | ((u64)(fix) << 10))
+#define CLOCK_ENABLED 1
+#define __ACCUM_FBIT__ 15
+#define INT16_C(x) __INT16_C(x)
+#define __WINT_MAX__ 0xffffffffU
+#define _SC_2_C_DEV 109
+#define IPTOS_LOWCOST 0x02
+#define _SC_BARRIERS 56
+#define TIME_UTC 1
+#define __printf0like(fmtarg,firstvararg) 
+#define IP_TTL 2
+#define IP6_MULTICAST_SCOPE_RESERVED 0x0
+#define IP4ADDR_STRLEN_MAX 16
+#define SO_NO_CHECK 0x100a
+#define GIF_TAG_SPRITE_REGS ((u64)(GS_PRIM) << 0) | ((u64)(GS_RGBAQ) << 4) | ((u64)(GS_XYZ2) << 8) | ((u64)(GS_XYZ2) << 12);
+#define INT8_MAX (__INT8_MAX__)
+#define UINT_LEAST64_MAX (__UINT_LEAST64_MAX__)
+#define __int32_t_defined 1
+#define IP_ADDR_PCB_VERSION_MATCH_EXACT(pcb,ipaddr) 1
+#define stderr _REENT_STDERR(_REENT)
+#define ip4_addr_set_hton(dest,src) ((dest)->addr = ((src) == NULL ? 0 : lwip_htonl((src)->addr)))
+#define ip6_addr_isuniquelocal(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xfe000000UL)) == PP_HTONL(0xfc000000UL))
+#define ALPHA_FIX 2
+#define __DMASPR_H__ 
+#define _FEXECSRCH 0x400000
+#define EILSEQ 138
+#define va_start(...) __builtin_c23_va_start(__VA_ARGS__)
+#define _MACHMALLOC_H_ 
+#define __bswap16(_x) __builtin_bswap16(_x)
+#define ITIMER_VIRTUAL 1
+#define _SC_V7_ILP32_OFF32 92
+#define INT64_C(x) __INT64_C(x)
+#define _SC_SIGQUEUE_MAX 18
+#define __USFRACT_FBIT__ 8
+#define PAD_RIGHT 0x0020
+#define _SYS_REENT_H_ 
+#define IP4_ADDR_ANY4 (ip_2_ip4(&ip_addr_any))
+#define EMLINK 31
+#define __ORDER_LITTLE_ENDIAN__ 1234
+#define __SIZE_MAX__ 0xffffffffU
+#define ip4_addr_isloopback(ipaddr) (((ipaddr)->addr & PP_HTONL(IP_CLASSA_NET)) == PP_HTONL(((u32)IP_LOOPBACKNET) << 24))
+#define DISABLE_PATCHED_TLBFunctions() void InitTLBFunctions(void) {} void InitTLB(void) {}
+#define GS_SETREG_SCISSOR(scax0,scax1,scay0,scay1) ((u64)(scax0) | ((u64)(scax1) << 16) | ((u64)(scay0) << 32) | ((u64)(scay1) << 48))
+#define _SC_TIMER_MAX 19
+#define IP_CLASSC_NSHIFT 8
+#define ip6_addr_debug_print_parts(debug,a,b,c,d,e,f,g,h) LWIP_DEBUGF(debug, ("%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F ":%" X16_F, a, b, c, d, e, f, g, h))
+#define DISABLE_PATCHED_ExecPS2() void InitExecPS2(void) {} s32 ExecPS2(void *entry, void *gp, int num_args, char *args[]) { return _ExecPS2(entry, gp, num_args, args); }
+#define _SC_TTY_NAME_MAX 41
+#define _SC_AIO_PRIO_DELTA_MAX 36
+#define PAD_STATE_EXECCMD 0x05
+#define GS_SETREG_SCISSOR_1 GS_SETREG_SCISSOR
+#define _SC_LEVEL3_CACHE_LINESIZE 136
+#define ENOSR 63
+#define INT16_MAX (__INT16_MAX__)
+#define GS_SETREG_SCISSOR_2 GS_SETREG_SCISSOR
+#define GS_SCANMSK 0x22
+#define __LACCUM_IBIT__ 32
+#define ip6_addr_set_allnodes_linklocal(ip6addr) do { (ip6addr)->addr[0] = PP_HTONL(0xff020000UL); (ip6addr)->addr[1] = 0; (ip6addr)->addr[2] = 0; (ip6addr)->addr[3] = PP_HTONL(0x00000001UL); } while (0)
+#define _FCREAT 0x0200
+#define __int_least32_t_defined 1
+#define __sgetc_raw_r(__ptr,__f) (--(__f)->_r < 0 ? __srget_r(__ptr, __f) : (int)(*(__f)->_p++))
+#define __DBL_DENORM_MIN__ ((double)4.9406564584124654e-324L)
+#define GS_ASPECT_4_3 0x0
+#define __GCC_ATOMIC_CHAR_LOCK_FREE 1
+#define S_ISCHR(m) (((m)&_IFMT) == _IFCHR)
+#define htons(x) lwip_htons(x)
+#define __GCC_IEC_559 0
+#define SetModuleGP() ChangeGP(&_gp)
+#define kHBLNK_NTSC (15734)
+#define __FLT32X_DECIMAL_DIG__ 17
+#define _LITTLE_ENDIAN 1234
+#define _IOFBF 0
+#define GS_CLUT_STOREMODE_LOAD_CBP0 0x02
+#define _OFF_T_DECLARED 
+#define GSKIT_GIF_PRIM_TRIANGLE_TEXTURED 0x1B00
+#define _GCC_NULLPTR_T 
+#define __FLT_EVAL_METHOD__ 0
+#define GS_CLUT_STOREMODE_LOAD_CBP1 0x03
+#define __requires_shared(...) __lock_annotate(shared_locks_required(__VA_ARGS__))
+#define _SC_NPROCESSORS_CONF 9
+#define __DOTS , ...
+#define SHRT_MIN (-SHRT_MAX - 1)
+#define NETMAN_MAX_NETIF_COUNT 2
+#define PAD_STATE_FINDCTP1 0x02
+#define GS_SET_EXTDATA(SX,SY,SMPH,SMPV,WW,WH) *GS_EXTDATA = ((u64)(SX) << 0) | ((u64)(SY) << 12) | ((u64)(SMPH) << 23) | ((u64)(SMPV) << 27) | ((u64)(WW) << 32) | ((u64)(WH) << 44)
+#define __sfeof(p) ((int)(((p)->_flags & __SEOF) != 0))
+#define __TQ_IBIT__ 0
+#define MB_CUR_MAX __locale_mb_cur_max()
+#define GS_MODE_VGA_800_56 0x2A
+#define _GLOBAL_REENT (&_impure_data)
+#define __LLACCUM_MAX__ 0X7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFP-63LLK
+#define ARG_MAX 65536
+#define _SC_THREAD_PRIO_INHERIT 46
+#define _SC_NPROCESSORS_ONLN 10
+#define ip6_get_subnet_id(ip6addr) (lwip_htonl((ip6addr)->addr[2]) & 0x0000ffffUL)
+#define __bswap64(_x) __builtin_bswap64(_x)
+#define NETIF_FLAG_ETHERNET 0x10U
+#define __FLT64_DECIMAL_DIG__ 17
+#define _WINT_T 
+#define gsKit_prim_quad_gouraud(gsGlobal,x1,y1,x2,y2,x3,y3,x4,y4,z,color1,color2,color3,color4) gsKit_prim_quad_gouraud_3d(gsGlobal, x1, y1, z, x2, y2, z, x3, y3, z, x4, y4, z, color1, color2, color3, color4);
+#define GS_MODE_VGA_800_60 0x2B
+#define DMA_SET_SIZE(A) (u32)((A) & 0x0000FFFF) << 0
+#define SIF_STAT_BOOTEND 0x40000
+#define __GCC_ATOMIC_CHAR32_T_LOCK_FREE 1
+#define __SNBF 0x0002
+#define SIG_ERR ((_sig_func_ptr)-1)
+#define __u_long_defined 
+#define __VALIST __gnuc_va_list
+#define ip6_addr_ismulticast_sitelocal(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xff8f0000UL)) == PP_HTONL(0xff050000UL))
+#define GSKIT_FONTM_MAXLINES 255
+#define NSIG 32
+#define LINK_MAX 32767
+#define GS_MODE_VGA_800_72 0x2C
+#define _FREAD 0x0001
+#define FNONBLOCK _FNONBLOCK
+#define fast_putc(x,p) (--(p)->_w < 0 ? __swbuf_r(_REENT, (int)(x), p) == EOF : (*(p)->_p = (x), (p)->_p++, 0))
+#define INT8_MIN (-__INT8_MAX__ - 1)
+#define VNC_WIDTH RFB_CAPACITY_WIDTH
+#define _SC_LEVEL1_DCACHE_LINESIZE 130
+#define __DEFINED_wchar_t 
+#define GS_SETREG_TEST_2 GS_SETREG_TEST
+#define ip_addr_set_ipaddr(dest,src) ip4_addr_set(dest, src)
+#define _REENT_STDERR(_ptr) ((_ptr)->_stderr)
+#define _SC_2_CHAR_TERM 107
+#define GS_MODE_VGA_800_85 0x2E
+#define ip_2_ip4(ipaddr) (ipaddr)
+#define _MIPS_ISA _MIPS_ISA_MIPS3
+#define IP4_ADDR(ipaddr,a,b,c,d) (ipaddr)->addr = ((u32)((d)&0xff) << 24) | ((u32)((c)&0xff) << 16) | ((u32)((b)&0xff) << 8) | (u32)((a)&0xff)
+#define SIF_CMD_INIT_CMD (SIF_CMD_ID_SYSTEM | 2)
+#define _TIME_T_ __int_least64_t
+#define DST_NONE 0
+#define __DEFINED_size_t 
+#define _SYS__STDINT_H 
+#define _HAVE_CC_INHIBIT_LOOP_TO_LIBCALL 1
+#define ENOSYS 88
+#define kBUSCLK (147456000)
+#define _SC_CPUTIME 63
+#define __UINT_FAST64_MAX__ 0xffffffffffffffffULL
+#define __SIG_ATOMIC_TYPE__ int
+#define __locks_shared(...) __lock_annotate(shared_lock_function(__VA_ARGS__))
+#define GS_TEST_1 0x47
+#define GS_TEST_2 0x48
+#define __LANGUAGE_C 1
+#define __CC_SUPPORTS_VARADIC_XXX 1
+#define __DBL_MIN_10_EXP__ (-307)
+#define __mips_single_float 1
+#define ip6_addr_netcmp(addr1,addr2) (((addr1)->addr[0] == (addr2)->addr[0]) && ((addr1)->addr[1] == (addr2)->addr[1]))
+#define NETIF_FLAG_ETHARP 0x08U
+#define ENOTTY 25
+#define __FINITE_MATH_ONLY__ 0
+#define AT_EACCESS 0x0001
+#define timespecclear(tvp) ((tvp)->tv_sec = (tvp)->tv_nsec = 0)
+#define _MIPS_TUNE "r5900"
+#define __bswap32(_x) __builtin_bswap32(_x)
+#define _SC_PAGE_SIZE _SC_PAGESIZE
+#define lwip_ntohs(x) PP_NTOHS(x)
+#define _SC_MEMLOCK_RANGE 25
+#define _FASYNC 0x0040
+#define __FLT32X_MAX_EXP__ 1024
+#define EBADE 50
+#define EBADF 9
+#define _SC_XBS5_ILP32_OFFBIG _SC_V7_ILP32_OFFBIG
+#define EBADR 51
+#define NETMAN_NETIF_DIALUP 2
+#define IP6_ADDR(ip6addr,idx0,idx1,idx2,idx3) do { (ip6addr)->addr[0] = idx0; (ip6addr)->addr[1] = idx1; (ip6addr)->addr[2] = idx2; (ip6addr)->addr[3] = idx3; } while (0)
+#define __u_char_defined 
+#define SifRemoveRpcQueue(...) sceSifRemoveRpcQueue(__VA_ARGS__)
+#define _SC_SHARED_MEMORY_OBJECTS 31
+#define __LFRACT_IBIT__ 0
+#define PS2VNC_DISPLAY_CONTROL_PENDING_PATH "/display-control/pending"
+#define __NULLABILITY_PRAGMA_POP 
+#define GS_TEX2_2 0x17
+#define __LEAST16 "h"
+#define EADV 68
+#define ERANGE 34
+#define __GNUC_PATCHLEVEL__ 0
+#define CLK_TCK CLOCKS_PER_SEC
+#define ECANCELED 140
+#define MAX_PRIORITY 128
+#define _IFMT 0170000
+#define CHILD_MAX 40
+#define S_IFBLK _IFBLK
+#define SIGFPE 8
+#define __FAST8 
+#define __LFRACT_MAX__ 0X7FFFFFFFP-31LR
+#define GS_SETREG_FRAME(fbp,fbw,psm,fbmask) ((u64)(fbp) | ((u64)(fbw) << 16) | ((u64)(psm) << 24) | ((u64)(fbmask) << 32))
+#define DMA_SET_SADR(A) (u32)((A) & 0x00003FFF) << 0
+#define GS_PSMZ_32 0x00
+#define __USA_FBIT__ 16
+#define __UINT_FAST8_MAX__ 0xffffffffU
+#define _MB_LEN_MAX 1
+#define PATH_MAX 1024
+#define h_addr h_addr_list[0]
+#define SifExecRequest(...) sceSifExecRequest(__VA_ARGS__)
+#define _LIMITS_H___ 
+#define MSG_WAITALL 0x02
+#define DST_AUST 2
+#define __align_down(x,y) __builtin_align_down(x, y)
+#define PAD_TYPE_JOGCON 0xE
+#define __LEAST32 "l"
+#define _POSIX_SPIN_LOCKS 200112L
+#define FD_CLOEXEC 1
+#define __SWR 0x0008
+#define GS_SET_BGCOLOR(R,G,B) *GS_BGCOLOR = ((u64)(R) << 0) | ((u64)(G) << 8) | ((u64)(B) << 16)
+#define _LONG_DOUBLE long double
+#define _WCHAR_T_DEFINED 
+#define ip_addr_set(dest,src) ip4_addr_set(dest, src)
+#define _MODE_T_DECLARED 
+#define ETXTBSY 26
+#define T2_COUNT ((volatile unsigned int *)0x10001000)
+#define ENOMEM 12
+#define __INT8_C(c) c
+#define WCHAR_MAX (__WCHAR_MAX__)
+#define _INTPTR_T_DECLARED 
+#define __INT_LEAST8_WIDTH__ 8
+#define kINTC_TIMER0 INTC_TIM0
+#define __UINT_LEAST64_MAX__ 0xffffffffffffffffULL
+#define IPADDR2_COPY(dest,src) memcpy(dest, src, sizeof(ip4_addr_t))
+#define _PC_TIMESTAMP_RESOLUTION 20
+#define GS_MODE_DTV_1080I 0x51
+#define lwip_connect(...) connect(__VA_ARGS__)
+#define __SNLK 0x0001
+#define MSG_PEEK 0x01
+#define __SA_FBIT__ 15
+#define __int_fast8_t_defined 1
+#define _REENT_STRTOK_LAST(ptr) ((ptr)->_new._reent._strtok_last)
+#define GS_PRIM_PRIM_TRIANGLE 0x03
+#define WRITEBACK_DCACHE 0
+#define __restrict restrict
+#define GS_SETREG_PRMODE(iip,tme,fge,abe,aa1,fst,ctxt,fix) (((u64)(iip) << 3) | ((u64)(tme) << 4) | ((u64)(fge) << 5) | ((u64)(abe) << 6) | ((u64)(aa1) << 7) | ((u64)(fst) << 8) | ((u64)(ctxt) << 9) | ((u64)(fix) << 10))
+#define _SC_BC_SCALE_MAX 59
+#define __always_inline __inline__ __attribute__((__always_inline__))
+#define GS_MIPTBP2_1 0x36
+#define GS_MIPTBP2_2 0x37
+#define NFDBITS _NFDBITS
+#define __noinline __attribute__ ((__noinline__))
+#define __LEAST64 "ll"
+#define __SHRT_MAX__ 0x7fff
+#define D_CTRL_STD_GIF 0x2
+#define __LDBL_MAX__ 1.7976931348623157e+308L
+#define __int_least8_t_defined 1
+#define __FRACT_MAX__ 0X7FFFP-15R
+#define GS_CLUT_TEXTURE 0x02
+#define __SCCSID(s) struct __hack
+#define _SC_XOPEN_ENH_I18N 97
+#define __PS2SDK_ARPA_INET_H__ 
+#define PS2VNC_REMOTE_CONTROL_GET_BUDGET_US 100000u
+#define _REENT_ERRNO(_ptr) ((_ptr)->_errno)
+#define S_IXOTH 0000001
+#define _SYS_SIGNAL_H 
+#define SIGTTOU 22
+#define PAD_TRIANGLE 0x1000
+#define GS_VRAM_TBWALIGN 64
+#define _HAVE_INITFINI_ARRAY 1
+#define GIF_TAG(NLOOP,EOP,PRE,PRIM,FLG,NREG) ((u64)(NLOOP) << 0) | ((u64)(EOP) << 15) | ((u64)(PRE) << 46) | ((u64)(PRIM) << 47) | ((u64)(FLG) << 58) | ((u64)(NREG) << 60);
+#define __LDBL_IS_IEC_60559__ 1
+#define GS_PRMODE 0x1b
+#define __UFRACT_FBIT__ 16
+#define GS_SETREG_TEX0_1 GS_SETREG_TEX0
+#define ip6_addr_multicast_transient_flag(ip6addr) ((ip6addr)->addr[0] & PP_HTONL(0x00100000UL))
+#define T0_COUNT ((volatile unsigned int *)0x10000000)
+#define ALLPERMS (S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)
+#define iSifSetDChain(...) isceSifSetDChain(__VA_ARGS__)
+#define __SNPT 0x0800
+#define EROFS 30
+#define SCE_ECALLMISS 0x10001
+#define __asserts_exclusive(...) __lock_annotate(assert_exclusive_lock(__VA_ARGS__))
+#define _SSIZE_T_DECLARED 
+#define NAME_MAX 255
+#define __UFRACT_MIN__ 0.0UR
+#define __UINT_LEAST8_MAX__ 0xff
+#define GS_SETREG_MIPTBP1_1 GS_SETREG_MIPTBP1
+#define GS_SETREG_MIPTBP1_2 GS_SETREG_MIPTBP1
+#define __GCC_ATOMIC_BOOL_LOCK_FREE 1
+#define __alloc_size(x) __attribute__((__alloc_size__(x)))
+#define _ANSIDECL_H_ 
+#define __mips_abicalls 1
+#define _REENT_INC(_ptr) ((_ptr)->_inc)
+#define _SC_V6_LP64_OFF64 _SC_V7_LP64_OFF64
+#define readsocket(...) read(__VA_ARGS__)
+#define __LANGUAGE_C__ 1
+#define _SC_SYMLOOP_MAX 79
+#define __UINTMAX_TYPE__ long long unsigned int
+#define EINPROGRESS 119
+#define INT_LEAST8_MAX (__INT_LEAST8_MAX__)
+#define GS_TEX1_1 0x14
+#define inet_ntoa_r(addr,buf,buflen) libcglue_inet_ntoa_r((const ip4_addr_t*)&(addr), buf, buflen)
+#define _SC_SEM_VALUE_MAX 17
+#define _GID_T_DECLARED 
+#define __LLFRACT_EPSILON__ 0x1P-63LLR
+#define _PC_ASYNC_IO 9
+#define __result_use_check __attribute__((__warn_unused_result__))
+#define INT_FAST8_MIN (-__INT_FAST8_MAX__ - 1)
+#define ENOANO 53
+#define ALPHA_BLEND_NORMAL (ALPHA(ALPHA_SRC,ALPHA_DST,ALPHA_SRC,ALPHA_DST,0x00))
+#define GSKIT_GIF_PRIM_SPRITE 0x1600
+#define __DEBUG_H__ 
+#define SIOCSHIWAT _IOW('s', 0, unsigned long)
+#define GS_VRAM_TBWALIGN_CLUT 128
+#define WCHAR_MIN (__WCHAR_MIN__)
+#define ___int64_t_defined 1
+#define _CLOCKID_T_DECLARED 
+#define __ntohl(_x) __bswap32(_x)
+#define __FLT_EVAL_METHOD_TS_18661_3__ 0
+#define __OPTIMIZE__ 1
+#define ULONG_LONG_MAX (LONG_LONG_MAX * 2ULL + 1ULL)
+#define GS_PRIM_PRIM_LINESTRIP 0x02
+#define ip_addr_copy(dest,src) ip4_addr_copy(dest, src)
+#define GS_DISPLAY2 ((volatile u64 *)(0x120000a0))
+#define DISABLE_PATCHED_THREADS() int InitThread(void) { return 0; } s32 iRotateThreadReadyQueue(s32 priority) { return _iRotateThreadReadyQueue(priority); } s32 iWakeupThread(s32 thread_id) { return _iWakeupThread(thread_id); } s32 iSuspendThread(s32 thread_id) { return _iSuspendThread(thread_id); }
+#define PBUF_IP_HLEN 20
+#define __LIBPAD_H__ 
+#define __UINT32_MAX__ 0xffffffffUL
+#define __bool_true_false_are_defined 1
+#define PAD_SELECT 0x0001
+#define _POSIX_READER_WRITER_LOCKS 200112L
+#define __ULFRACT_MAX__ 0XFFFFFFFFP-32ULR
+#define __TA_IBIT__ 64
+#define _FNBIO 0x1000
+#define __SIZE_T 
+#define ip_addr_ismulticast(ipaddr) ip4_addr_ismulticast(ipaddr)
+#define SIF_CMD_RESET_CMD (SIF_CMD_ID_SYSTEM | 3)
+#define FD_SETSIZE 64
+#define SIGUSR1 30
+#define __LDBL_MAX_EXP__ 1024
+#define __printflike(fmtarg,firstvararg) __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+#define __have_longlong64 1
+#define _ATFILE_SOURCE 1
+#define UINT_FAST16_MAX (__UINT_FAST16_MAX__)
+#define PAD_L1 0x0400
+#define PAD_L2 0x0100
+#define ENOTBLK 15
+#define IPTOS_PREC_ROUTINE 0x00
+#define tzname _tzname
+#define __WINT_MIN__ 0U
+#define EPROTOTYPE 107
+#define _SC_SHELL 74
+#define GSKIT_GIF_PRIM_QUAD 0x1700
+#define __pure2 __attribute__((__const__))
+#define __MIPSEL__ 1
+#define UINT16_C(x) __UINT16_C(x)
+#define SPR_START 0x70000000
+#define FEXLOCK _FEXLOCK
+#define ALIGNED(x) __attribute__((aligned((x))))
+#define kHBLNK_DTV480p (31469)
+#define M_MMAP_THRESHOLD -3
+#define GS_PRIM_PRIM_POINT 0x00
+#define __NEWLIB_PATCHLEVEL__ 0
+#define ip6_addr_isdeprecated(addr_state) (addr_state == IP6_ADDR_DEPRECATED)
+#define __FLT32X_IS_IEC_60559__ 1
+#define IPTOS_MINCOST IPTOS_LOWCOST
+#define _SC_XOPEN_UNIX 105
+#define ENOMSG 35
+#define _PC_PRIO_IO 10
+#define EXIT_FAILURE 1
+#define htonl(x) lwip_htonl(x)
+#define __INT_LEAST16_WIDTH__ 16
+#define _SIZE_T_DEFINED_ 
+#define EAI_NONAME 200
+#define GS_SETREG_RGBAQ(r,g,b,a,q) ((u64)(r) | ((u64)(g) << 8) | ((u64)(b) << 16) | ((u64)(a) << 24) | ((u64)(q) << 32))
+#define timersub(tvp,uvp,vvp) do { (vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec; (vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec; if ((vvp)->tv_usec < 0) { (vvp)->tv_sec--; (vvp)->tv_usec += 1000000; } } while (0)
+#define __ULLFRACT_MIN__ 0.0ULLR
+#define __SCHAR_MAX__ 0x7f
+#define TSW_SLEEP 1
+#define EALREADY 120
+#define IOC_INOUT (IOC_IN | IOC_OUT)
+#define ip_addr_debug_print(debug,ipaddr) ip4_addr_debug_print(debug, ipaddr)
+#define SO_REUSEADDR 0x0004
+#define __WCHAR_MIN__ (-__WCHAR_MAX__ - 1)
+#define IP6_MULTICAST_SCOPE_RESERVED3 0x3
+#define EDESTADDRREQ 121
+#define gsKit_init_global() gsKit_init_global_custom(GS_RENDER_QUEUE_OS_POOLSIZE, GS_RENDER_QUEUE_PER_POOLSIZE);
+#define __INT64_C(c) c ## LL
+#define GSKIT_GIF_PRIM_TRIFAN 0x1500
+#define DMA_CHANNEL_TOSPR 0x9
+#define _SC_TIMERS 33
+#define __GCC_ATOMIC_POINTER_LOCK_FREE 1
+#define __INT_WCHAR_T_H 
+#define SO_LINGER 0x0080
+#define disconnect(...) close(__VA_ARGS__)
+#define _POSIX_THREAD_THREADS_MAX 64
+#define __ATOMIC_SEQ_CST 5
+#define GS_SETREG_TEST_1 GS_SETREG_TEST
+#define _flockfile(fp) (((fp)->_flags & __SSTR) ? 0 : __lock_acquire_recursive((fp)->_lock))
+#define PAD_R1 0x0800
+#define _INTPTR_EQ_INT 
+#define _SC_POSIX_26_VERSION 140
+#define IP_LOOPBACKNET 127
+#define GS_ASPECT_16_9 0x1
+#define __nosanitizeaddress 
+#define _SC_2_C_BIND 108
+#define SO_ACCEPTCONN 0x0002
+#define SifRpcLoop(...) sceSifRpcLoop(__VA_ARGS__)
+#define PTHREAD_SPINLOCK_INITIALIZER ((pthread_spinlock_t) -1)
+#define COLL_WEIGHTS_MAX 0
+#define _SC_THREAD_THREADS_MAX 40
+#define __rangeof(type,start,end) (__offsetof(type, end) - __offsetof(type, start))
+#define IP_CLASSD_NSHIFT 28
+#define GIF_TAG_LINE_REGS ((u64)(GS_PRIM) << 0) | ((u64)(GS_RGBAQ) << 4) | ((u64)(GS_XYZ2) << 8) | ((u64)(GS_XYZ2) << 12);
+#define _WIDE_ORIENT 1
+#define _SC_2_UPE 120
+#define _POSIX_SOURCE 1
+#define __SIZEOF_INT__ 4
+#define __ATTRIBUTE_IMPURE_PTR__ __attribute__((__section__(".sdata")))
+#define _DEFAULT_SOURCE 1
+#define GS_CSR_FINISH ((*GS_CSR) >> 1)&1
+#define GS_RESET() *GS_CSR = ((u64)(1) << 9)
+#define T1_COUNT ((volatile unsigned int *)0x10000800)
+#define clearerr(p) __sclearerr(p)
+#define __nosanitizememory 
+#define PAD_MODECURID 1
+#define _REENT_CLEANUP(_ptr) ((_ptr)->__cleanup)
+#define T2_COMP ((volatile unsigned int *)0x10001020)
+#define getchar_unlocked() _getchar_unlocked()
+#define S_IFMT _IFMT
+#define CLOCK_REALTIME (1)
+#define __FLT32X_MANT_DIG__ 53
+#define __mips_no_madd4 1
+#define USHRT_MAX (SHRT_MAX * 2 + 1)
+#define __USACCUM_IBIT__ 8
+#define ETIMEDOUT 116
+#define _SC_VERSION 7
+#define S_ISSOCK(m) (((m)&_IFMT) == _IFSOCK)
+#define __GNUCLIKE___SECTION 1
+#define GS_MODE_VGA_1024_60 0x3B
+#define lwip_getsockname(...) getsockname(__VA_ARGS__)
+#define GS_FONTM_PAGE_COUNT 8
+#define ENODATA 61
+#define netif_get_client_data(netif,id) (netif)->client_data[(id)]
+#define NETMAN_NETIF_FRAME_SIZE 1514
+#define _MACHSTDLIB_H_ 
+#define _NEWLIB_VERSION_H__ 1
+#define DPAD_ACCEL_RAMP_TICKS 90
+#define AT_SYMLINK_NOFOLLOW 0x0002
+#define IP_CLASSB_MAX 65536
+#define GS_CLAMP_2 0x09
+#define GS_MODE_VGA_1024_70 0x3C
+#define IP6_ADDR_VALID 0x10
+#define _NEWLIB_VERSION "4.6.0"
+#define GS_MODE_VGA_1024_75 0x3D
+#define SO_RCVTIMEO 0x1006
+#define __CONCAT(x,y) __CONCAT1(x,y)
+#define _SC_RTSIG_MAX 15
+#define __DMAINIT_H__ 
+#define UINT8_MAX (__UINT8_MAX__)
+#define __ISO_C_VISIBLE 2020
+#define __STDC_HOSTED__ 1
+#define _SC_GETPW_R_SIZE_MAX 51
+#define LWIP_NETIF_HOSTNAME 0
+#define XK_UP 0xFF52
+#define GS_MODE_VGA_1024_85 0x3E
+#define inet_ntoa(addr) libcglue_inet_ntoa((const ip4_addr_t*)&(addr))
+#define _SC_2_PBS_CHECKPOINT 115
+#define GS_EXTWRITE ((volatile u64 *)(0x120000D0))
+#define IP6_ADDR_INVALID 0x00
+#define ___int_least64_t_defined 1
+#define _STDIO_H_ 
+#define _INT8_T_DECLARED 
+#define _REENT_CHECK_TM(ptr) 
+#define GS_INTERLACED 0x01
+#define _SC_2_PBS_MESSAGE 117
+#define T3_COMP ((volatile unsigned int *)0x10001820)
+#define _SYS_SELECT_H 
+#define _RAND48_SEED_0 (0x330e)
+#define _RAND48_SEED_2 (0x1234)
+#define S_IRUSR 0000400
+#define _SYS_FCNTL_H_ 
+#define NETIF_FLAG_BROADCAST 0x02U
+#define IP_CLASSD(a) (((u32)(a)&0xf0000000UL) == 0xe0000000UL)
+#define _REENT_WCTOMB_STATE(ptr) ((ptr)->_new._reent._wctomb_state)
+#define S_ISREG(m) (((m)&_IFMT) == _IFREG)
+#define IP6_MULTICAST_SCOPE_ORGANIZATION_LOCAL 0x8
+#define _MACHINE__TYPES_H 
+#define _ATTRIBUTE(attrs) __attribute__ (attrs)
+#define netif_ip_addr4(netif) ((const ip_addr_t *)&((netif)->ip_addr))
+#define _PC_PIPE_BUF 5
+#define gsKit_prim_quad(gsGlobal,x1,y1,x2,y2,x3,y3,x4,y4,z,color) gsKit_prim_quad_3d(gsGlobal, x1, y1, z, x2, y2, z, x3, y3, z, x4, y4, z, color);
+#define SO_DONTLINGER ((int)(~SO_LINGER))
+#define __LFRACT_MIN__ (-0.5LR-0.5LR)
+#define __LOADFILE_H__ 
+#define __mips_fpr 32
+#define _SC_TZNAME_MAX 20
+#define ip_addr_set_hton(dest,src) ip4_addr_set_hton(dest, src)
+#define __HA_IBIT__ 8
+#define GS_MODE_NTSC 0x02
+#define ENMFILE 89
+#define _BSD_SIZE_T_DEFINED_ 
+#define _REENT_SIGNAL_SIZE 24
+#define __DBL_DIG__ 15
+#define LWIP_SOCKET_OFFSET 0
+#define GS_FILTER_NEAREST 0x00
+#define GIF_TAG_LINE_GORAUD_REGS ((u64)(GS_PRIM) << 0) | ((u64)(GS_RGBAQ) << 4) | ((u64)(GS_XYZ2) << 8) | ((u64)(GS_RGBAQ) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GIF_NOP) << 20);
+#define EINTR 4
+#define __STDC_EMBED_EMPTY__ 2
+#define _SC_TRACE_EVENT_FILTER 84
+#define __mips_strict_alignment 1
+#define __R4000 1
+#define __FLT_EPSILON__ 1.1920928955078125e-7F
+#define INT32_MIN (-__INT32_MAX__ - 1)
+#define S_IRWXU (S_IRUSR | S_IWUSR | S_IXUSR)
+#define SS_DISABLE 0x2
+#define ENOLINK 67
+#define GS_SRFSH ((volatile u64 *)(0x12000030))
+#define D_CTRL_RCYC_256 0x5
+#define iSifDmaStat(...) isceSifDmaStat(__VA_ARGS__)
+#define _SC_SPORADIC_SERVER 77
+#define ECHILD 10
+#define CPU_DATA_CACHE 1
+#define __SHRT_WIDTH__ 16
+#define SOCK_DGRAM 2
+#define writesocket(...) write(__VA_ARGS__)
+#define _Nonnull 
+#define D_CTRL_STD_VIF 0x1
+#define __lock_release(lock) __retarget_lock_release(lock)
+#define GS_ALPHA_1 0x42
+#define GS_ALPHA_2 0x43
+#define SO_BROADCAST 0x0020
+#define TMP_MAX 26
+#define DMA_CHANNEL_GIF 0x2
+#define __scanflike(fmtarg,firstvararg) __attribute__((__format__ (__scanf__, fmtarg, firstvararg)))
+#define GS_MODE_DTV_480P 0x50
+#define DMA_SET_ASR1(A,B) (u32)((A) & 0x7FFFFFFF) << 0 | (u32)((B) & 0x00000001) << 31
+#define _TIMER_T_DECLARED 
+#define SifRpcGetOtherData(...) sceSifGetOtherData(__VA_ARGS__)
+#define __USFRACT_IBIT__ 0
+#define ENOTCONN 128
+#define _REENT_SIGNGAM(ptr) ((ptr)->_new._reent._gamma_signgam)
+#define GS_XYZ3 0x0d
+#define GS_MIPTBP1_2 0x35
+#define __LDBL_MIN__ 2.2250738585072014e-308L
+#define __STDC_UTF_16__ 1
+#define __DBL_IS_IEC_60559__ 1
+#define _FDIRECTORY 0x200000
+#define SIGQUIT 3
+#define _SC_THREAD_PRIO_CEILING _SC_THREAD_PRIO_PROTECT
+#define SCHAR_WIDTH __SCHAR_WIDTH__
+#define PAD_STATE_ERROR 0x07
+#define GS_FRAME_1 0x4c
+#define PF_UNSPEC AF_UNSPEC
+#define ip4_addr_set_any(ipaddr) ((ipaddr)->addr = IPADDR_ANY)
+#define __guarded_by(x) __lock_annotate(guarded_by(x))
+#define __CHAR8_TYPE__ unsigned char
+#define SHUT_RD 0
+#define EDQUOT 132
+#define __DA_IBIT__ 32
+#define __CC_SUPPORTS_WARNING 1
+#define IP_CLASSA_NET 0xff000000
+#define AT_SYMLINK_FOLLOW 0x0004
+#define __lock_acquire(lock) __retarget_lock_acquire(lock)
+#define IP_CLASSA_HOST (0xffffffff & ~IP_CLASSA_NET)
+#define _SC_THREAD_PROCESS_SHARED 48
+#define _REENT_MP_RESULT_K(ptr) ((ptr)->_result_k)
+#define _FSEEK_OPTIMIZATION 1
+#define _WCHAR_T_ 
+#define fwopen(__cookie,__fn) funopen(__cookie, NULL, __fn, NULL, NULL)
+#define IP_ADDR_ANY IP4_ADDR_ANY
+#define _IO(x,y) (IOC_VOID | ((x) << 8) | (y))
+#define SIOCGLOWAT _IOR('s', 3, unsigned long)
+#define _RAND48_MULT_0 (0xe66d)
+#define _STDDEF_H 
+#define GIF_TAG_QUAD_REGS ((u64)(GS_PRIM) << 0) | ((u64)(GS_RGBAQ) << 4) | ((u64)(GS_XYZ2) << 8) | ((u64)(GS_XYZ2) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GS_XYZ2) << 20);
+#define EAI_FAMILY 204
+#define _SC_MEMLOCK 24
+#define SifStopDma(...) sceSifStopDma(__VA_ARGS__)
+#define _FTRUNC 0x0400
+#define _VA_LIST_DEFINED 
+#define __FLT32X_HAS_INFINITY__ 1
+#define MIPSEL 1
+#define __XSI_VISIBLE 0
+#define __INT32_MAX__ 0x7fffffffL
+#define SIG_DFL ((_sig_func_ptr)0)
+#define __pt_guarded_by(x) __lock_annotate(pt_guarded_by(x))
+#define LWIP_DHCP 1
+#define DISABLE_TimerAlarm() void ForTimer_InitAlarm(void) {}
+#define GS_CLUT_PALLETE 0x01
+#define __UQQ_FBIT__ 8
+#define __INT_WIDTH__ 32
+#define __SIZEOF_LONG__ 4
+#define __UACCUM_MAX__ 0XFFFFFFFFP-16UK
+#define ip4_addr_isbroadcast(addr1,netif) ip4_addr_isbroadcast_u32((addr1)->addr, netif)
+#define FILENAME_MAX 1024
+#define GS_SETREG_MIPTBP2(tbp4,tbw4,tbp5,tbw5,tbp6,tbw6) ((u64)(tbp4) | ((u64)(tbw4) << 14) | ((u64)(tbp5) << 20) | ((u64)(tbw5) << 34) | ((u64)(tbp6) << 40) | ((u64)(tbw6) << 54))
+#define DMA_CHANNEL_FROMIPU 0x3
+#define SIGEV_NONE 1
+#define SO_TYPE 0x1008
+#define _IN_PORT_T_DECLARED 
+#define GS_SETREG_TRXREG(rrw,rrh) ((u64)(rrw) | ((u64)(rrh) << 32))
+#define _SYS__TYPES_H 
+#define GSKIT_GIF_PRIM_LINE 0x1100
+#define _REENT_RAND48_MULT(ptr) ((ptr)->_new._reent._r48._mult)
+#define _SYS_STAT_H 
+#define SIGCLD 20
+#define SO_USELOOPBACK 0x0040
+#define __DECIMAL_DIG__ 17
+#define __LFRACT_EPSILON__ 0x1P-31LR
+#define RUNTIME_HOTKEY_BUTTON_MASK (PAD_L1 | PAD_L2 | PAD_R1 | PAD_R2 | PAD_START)
+#define GSKIT_PREFETCH(address) asm __volatile__("pref 0, 0(%0)" : : "r" (address));
+#define LOCK_EX 0x02
+#define ip6_addr_multicast_scope(ip6addr) ((lwip_htonl((ip6addr)->addr[0]) >> 16) & 0xf)
+#define lwip_write(...) write(__VA_ARGS__)
+#define F_DUPFD 0
+#define __FLT64_EPSILON__ 2.2204460492503131e-16F64
+#define __ULFRACT_MIN__ 0.0ULR
+#define BC_STRING_MAX 1000
+#define __lockable __lock_annotate(lockable)
+#define MAX_INPUT 255
+#define _SC_GETGR_R_SIZE_MAX 50
+#define PAD_TYPE_NAMCOGUN 0x6
+#define ip4_addr2_16(ipaddr) ((u16)ip4_addr2(ipaddr))
+#define ENETDOWN 115
+#define ESTALE 133
+#define _REENT_MP_RESULT(ptr) ((ptr)->_result)
+#define _SC_2_SW_DEV 119
+#define _PC_FILESIZEBITS 12
+#define GS_SETREG_ZBUF(zbp,psm,zmsk) ((u64)(zbp) | ((u64)(psm) << 24) | ((u64)(zmsk) << 32))
+#define ENOTSOCK 108
+#define SHUT_RDWR 2
+#define iSifSendCmd(...) isceSifSendCmd(__VA_ARGS__)
+#define GS_SETREG_TEX1_1 GS_SETREG_TEX1
+#define GS_SETREG_TEX1_2 GS_SETREG_TEX1
+#define _SC_XOPEN_STREAMS 104
+#define GS_SETREG_XYOFFSET_1 GS_SETREG_XYOFFSET
+#define O_EXEC _FEXECSRCH
+#define __IOPCONTROL_H__ 
+#define INVALIDATE_ICACHE 2
+#define F_OK 0
+#define GIF_TAG_QUAD_TEXTURED_REGS(ctx) ((u64)(GS_TEX0_1 + ctx) << 0) | ((u64)(GS_PRIM) << 4) | ((u64)(GS_RGBAQ) << 8) | ((u64)(GS_UV) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GS_UV) << 20) | ((u64)(GS_XYZ2) << 24) | ((u64)(GS_UV) << 28) | ((u64)(GS_XYZ2) << 32) | ((u64)(GS_UV) << 36) | ((u64)(GS_XYZ2) << 40) | ((u64)(GIF_NOP) << 44);
+#define __LDBL_HAS_QUIET_NAN__ 1
+#define gsKit_reset_screen(gsGlobal) gsKit_init_screen(gsGlobal);
+#define MAX_HANDLERS 128
+#define __GNUC_PREREQ__(ma,mi) __GNUC_PREREQ(ma, mi)
+#define __ULACCUM_IBIT__ 32
+#define SIGIO 23
+#define __GNUCLIKE_BUILTIN_VARARGS 1
+#define __FLT64_MANT_DIG__ 53
+#define _IFSOCK 0140000
+#define __int16_t_defined 1
+#define GS_HWREG 0x54
+#define PTHREAD_THREADS_MAX _POSIX_THREAD_THREADS_MAX
+#define AT_REMOVEDIR 0x0008
+#define __NEWLIB_MINOR__ 6
+#define GS_TEX1_2 0x15
+#define __SIFRPC_COMMON_H__ 
+#define SifSetCmdBuffer(...) sceSifSetCmdBuffer(__VA_ARGS__)
+#define LWIP_NETIF_STATUS_CALLBACK 0
+#define __THROW 
+#define _SC_XOPEN_VERSION 106
+#define DPAD_ACCEL_START_TICKS 60
+#define PAD_ACTSUB 2
+#define PAD_MODECUROFFS 3
+#define LWIP_IGMP 0
+#define LWIP_UDP 1
+#define __UACCUM_EPSILON__ 0x1P-16UK
+#define _REENT_CVTBUF(_ptr) ((_ptr)->_cvtbuf)
+#define O_APPEND _FAPPEND
+#define _REENT_ASCTIME_SIZE 26
+#define L_tmpnam FILENAME_MAX
+#define _REENT_LOCALE(_ptr) ((_ptr)->_locale)
+#define SifRemoveCmdHandler(...) sceSifRemoveCmdHandler(__VA_ARGS__)
+#define ___int_wchar_t_h 
+#define GS_XYZ2 0x05
+#define DISABLE_PATCHED_ALARMS() void InitAlarm(void) {}
+#define _T_PTRDIFF 
+#define __GNUC__ 15
+#define PAD_CROSS 0x4000
+#define __ULLACCUM_MAX__ 0XFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFP-64ULLK
+#define __INT32 "l"
+#define UINT_LEAST8_MAX (__UINT_LEAST8_MAX__)
+#define offsetof(TYPE,MEMBER) __builtin_offsetof (TYPE, MEMBER)
+#define IPPROTO_TCP 6
+#define VIDEO_MODE_COUNT 22u
+#define IP6_ADDR_PREFERRED 0x30
+#define MAX_ALARMS 64
+#define IP_CLASSD_NET 0xf0000000
+#define RFB_CAPACITY_HEIGHT 1080
+#define __HQ_IBIT__ 0
+#define ioctlsocket(...) ioctl(__VA_ARGS__)
+#define _UINTMAX_T_DECLARED 
+#define F_RDLCK 1
+#define L_ctermid 16
+#define MEMP_NUM_TCP_PCB 5
+#define LWIP_SNMP 0
+#define IPPROTO_RAW 255
+#define __int_least16_t_defined 1
+#define FD_SET(n,p) ((p)->__fds_bits[(n)/_NFDBITS] |= __fdset_mask(n))
+#define __FLT_HAS_DENORM__ 1
+#define __SIZEOF_LONG_DOUBLE__ 8
+#define NETMAN_NETIF_IN_USE 0x80
+#define GS_SET_PMODE(EN1,EN2,MMOD,AMOD,SLBG,ALP) *GS_PMODE = ((u64)(EN1) << 0) | ((u64)(EN2) << 1) | ((u64)(001) << 2) | ((u64)(MMOD) << 5) | ((u64)(AMOD) << 6) | ((u64)(SLBG) << 7) | ((u64)(ALP) << 8)
+#define GS_DISPFB2 ((volatile u64 *)(0x12000090))
+#define _CLOCKS_PER_SEC_ 1000000
+#define __LDBL_DIG__ 15
+#define GS_PMODE ((volatile u64 *)(0x12000000))
+#define __SA_IBIT__ 16
+#define _SC_ARG_MAX 0
+#define __GNUCLIKE_ASM 3
+#define INT_FAST16_MIN (-__INT_FAST16_MAX__ - 1)
+#define GS_ST 0x02
+#define DMA_SET_CHCR(DIR,MODE,ASP,TTE,TIE,STR,TAG) (u32)((DIR) & 0x00000001) << 0 | (u32)((MODE) & 0x00000003) << 2 | (u32)((ASP) & 0x00000003) << 4 | (u32)((TTE ) & 0x00000001) << 6 | (u32)((TIE) & 0x00000001) << 7 | (u32)((STR ) & 0x00000001) << 8 | (u32)((TAG) & 0x0000FFFF) << 16
+#define EAI_MEMORY 203
+#define PAD_STATE_FINDPAD 0x01
+#define __DMAKIT_H__ 
+#define SEEK_CUR 1
+#define ELNRNG 41
+#define EAI_FAIL 202
+#define __BIGGEST_ALIGNMENT__ 8
+#define F_RGETLK 10
+#define _SC_BC_STRING_MAX 60
+#define lwip_getsockopt(...) getsockopt(__VA_ARGS__)
+#define PTRDIFF_MIN (-PTRDIFF_MAX - 1)
+#define AF_UNSPEC 0
+#define LONG_MAX __LONG_MAX__
+#define LWIP_IPV6 0
+#define __int64_t_defined 1
+#define STDERR_FILENO 2
+#define __TAMTYPES_H__ 
+#define _SC_XBS5_ILP32_OFF32 _SC_V7_ILP32_OFF32
+#define PAD_R2 0x0200
+#define _INO_T_DECLARED 
+#define GIF_STAT_P1Q *GIF_STAT >> 8
+#define _POSIX_THREAD_DESTRUCTOR_ITERATIONS 4
+#define sigaddset(what,sig) (*(what) |= (1<<(sig)), 0)
+#define GS_UV 0x03
+#define __FLT64_MAX_10_EXP__ 308
+#define PP_HTONL(x) ((((x)&0xff) << 24) | (((x)&0xff00) << 8) | (((x)&0xff0000UL) >> 8) | (((x)&0xff000000UL) >> 24))
+#define NGROUPS_MAX 16
+#define PP_HTONS(x) ((((x)&0xff) << 8) | (((x)&0xff00) >> 8))
+#define SifSendCmd(...) sceSifSendCmd(__VA_ARGS__)
+#define FSHLOCK _FSHLOCK
+#define GIF_STAT_M3R *GIF_STAT >> 0
+#define __ASMNAME(cname) __XSTRING (__USER_LABEL_PREFIX__) cname
+#define GS_MODE_DVD_PAL 0x73
+#define _POSIX_SEM_NSEMS_MAX 256
+#define gsKit_prim_triangle_texture(gsGlobal,Texture,x1,y1,u1,v1,x2,y2,u2,v2,x3,y3,u3,v3,z,color) gsKit_prim_triangle_texture_3d(gsGlobal, Texture, x1, y1, z, u1, v1, x2, y2, z, u2, v2, x3, y3, z, u3, v3, color);
+#define __COPYRIGHT(s) struct __hack
+#define ip6_addr_multicast_rendezvous_flag(ip6addr) ((ip6addr)->addr[0] & PP_HTONL(0x00400000UL))
+#define __pure __attribute__((__pure__))
+#define IP_IS_V6_VAL(ipaddr) 0
+#define __GNUC_STDC_INLINE__ 1
+#define _FNOFOLLOW 0x100000
+#define SEM_NSEMS_MAX _POSIX_SEM_NSEMS_MAX
+#define GS_PER_OS 0x00
+#define __DQ_IBIT__ 0
+#define __STDC_VERSION_STDARG_H__ 202311L
+#define __GNU_VISIBLE 0
+#define EXIT_SUCCESS 0
+#define ULLONG_WIDTH __LONG_LONG_WIDTH__
+#define IP_CLASSC(a) ((((u32)(a)) & 0xe0000000UL) == 0xc0000000UL)
+#define SifGetNextRequest(...) sceSifGetNextRequest(__VA_ARGS__)
+#define __DBL_MAX__ ((double)1.7976931348623157e+308L)
+#define _WANT_IO_C99_FORMATS 1
+#define _SC_LEVEL1_ICACHE_SIZE 125
+#define kINTC_VU0 INTC_VU0
+#define kINTC_VU1 INTC_VU1
+#define SI_QUEUE 2
+#define __ULFRACT_IBIT__ 0
+#define GIF_STAT_OPH *GIF_STAT >> 9
+#define GS_TEXA 0x3b
+#define __lock_init(lock) __retarget_lock_init(&lock)
+#define LOCK_SH 0x01
+#define GS_CMODE_CLAMP 0x01
+#define __INT_FAST32_MAX__ 0x7fffffff
+#define GS_SCISSOR_1 0x40
+#define GS_SCISSOR_2 0x41
+#define IPADDR_BROADCAST ((u32)0xffffffffUL)
+#define __DBL_HAS_INFINITY__ 1
+#define _PID_T_DECLARED 
+#define GIF_STAT_IMT *GIF_STAT >> 2
+#define __FRACT_MIN__ (-0.5R-0.5R)
+#define ip4_addr_get_network(target,host,netmask) do { ((target)->addr = ((host)->addr) & ((netmask)->addr)); } while (0)
+#define _PC_SYMLINK_MAX 14
+#define PAD_RSTAT_COMPLETE 0x00
+#define ip6_addr_set_solicitednode(ip6addr,if_id) do { (ip6addr)->addr[0] = PP_HTONL(0xff020000UL); (ip6addr)->addr[1] = 0; (ip6addr)->addr[2] = PP_HTONL(0x00000001UL); (ip6addr)->addr[3] = (PP_HTONL(0xff000000UL) | (if_id)); } while (0)
+#define _KEY_T_DECLARED 
+#define _PC_CHOWN_RESTRICTED 6
+#define PUSHDATA(t,x,v,l) *(t *)(x) = (v); (l) = sizeof(t)
+#define stdin _REENT_STDIN(_REENT)
+#define physadr physadr_t
+#define ipaddr_ntoa(ipaddr) ip4addr_ntoa(ipaddr)
+#define _PC_2_SYMLINKS 13
+#define LWIP_IPV6_MLD 0
+#define LOCK_UN 0x08
+#define __HAVE_SPECULATION_SAFE_VALUE 1
+#define __ACCUM_IBIT__ 16
+#define _IFDIR 0040000
+#define _SC_2_VERSION 121
+#define GIF_STAT_IP3 *GIF_STAT >> 5
+#define _REENT_ASCTIME_BUF(ptr) ((ptr)->_new._reent._asctime_buf)
+#define GS_CMODE_REGION_REPEAT 0x03
+#define SifInitCmd(...) sceSifInitCmd(__VA_ARGS__)
+#define PAD_CIRCLE 0x2000
+#define ALPHA_ZERO 2
+#define _REENT_CHECK_EMERGENCY(ptr) 
+#define putchar_unlocked(_c) _putchar_unlocked(_c)
+#define __INTPTR_WIDTH__ 32
+#define USHRT_WIDTH __SHRT_WIDTH__
+#define EPIPE 32
+#define bintime_clear(a) ((a)->sec = (a)->frac = 0)
+#define __UINT_LEAST32_MAX__ 0xffffffffUL
+#define ip6_addr_set_any(ip6addr) ip6_addr_set_zero(ip6addr)
+#define _SC_TIMEOUTS 82
+#define LONG_MIN (-LONG_MAX - 1L)
+#define kINTC_VIF0 INTC_VIF0
+#define kINTC_VIF1 INTC_VIF1
+#define __LACCUM_MAX__ 0X7FFFFFFFFFFFFFFFP-31LK
+#define IPTOS_PREC_IMMEDIATE 0x40
+#define GS_MODE_DTV_576P 0x53
+#define __attribute_format_strfmon__(a,b) 
+#define _FMARK 0x0010
+#define ip_addr_copy_from_ip4(dest,src) ip4_addr_copy(dest, src)
+#define _PC_REC_MAX_XFER_SIZE 17
+#define __FLT32X_HAS_DENORM__ 1
+#define GS_SETREG_ALPHA(A,B,C,D,FIX) ((u64)(A) << 0) | ((u64)(B) << 2) | ((u64)(C) << 4) | ((u64)(D) << 6) | ((u64)(FIX) << 32)
+#define __INT_FAST16_TYPE__ int
+#define _SIZE_T_DEFINED 
+#define _POSIX_PRIORITY_SCHEDULING 1
+#define _IFBLK 0060000
+#define DMA_REG_RBOR (volatile u32 *)0x1000E050
+#define _RAND48_MULT_1 (0xdeec)
+#define _RAND48_MULT_2 (0x0005)
+#define _CLOCK_T_ unsigned long
+#define MIB2_STATS 0
+#define SI_USER 1
+#define _WCHAR_T_DEFINED_ 
+#define _BLKCNT_T_DECLARED 
+#define EBADMSG 77
+#define _SC_V6_ILP32_OFF32 _SC_V7_ILP32_OFF32
+#define netif_ip_gw4(netif) ((const ip_addr_t *)&((netif)->gw))
+#define __LDBL_HAS_DENORM__ 1
+#define _NEWLIB_STDIO_H 
+#define PAD_MMODE_UNLOCK 2
+#define _SC_ASYNCHRONOUS_IO 21
+#define ip6_addr_ismulticast_global(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xff8f0000UL)) == PP_HTONL(0xff0e0000UL))
+#define kINTC_VBLANK_END INTC_VBLANK_E
+#define NETIF_MAX_HWADDR_LEN 6U
+#define GS_PRIM_PRIM_LINE 0x01
+#define GS_PSM_T8 0x13
+#define IP6_ADDR_TENTATIVE 0x08
+#define __INT_LEAST32_MAX__ 0x7fffffffL
+#define SIGABRT 6
+#define GIF_STAT_M3P *GIF_STAT >> 1
+#define ip6_addr_isvalid(addr_state) (addr_state & IP6_ADDR_VALID)
+#define __unbounded 
+#define LWIP_TCP 1
+#define SIGSTKSZ 8192
+#define ip_addr_netmask_valid(netmask) ip4_addr_netmask_valid((netmask)->addr)
+#define S_ENFMT 0002000
+#define _PC_REC_XFER_ALIGN 19
+#define MALLOC_ALIGNMENT 16
+#define GIF_TAG_QUAD_GOURAUD_REGS ((u64)(GS_PRIM) << 0) | ((u64)(GS_RGBAQ) << 4) | ((u64)(GS_XYZ2) << 8) | ((u64)(GS_RGBAQ) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GS_RGBAQ) << 20) | ((u64)(GS_XYZ2) << 24) | ((u64)(GS_RGBAQ) << 28) | ((u64)(GS_XYZ2) << 32) | ((u64)(GS_RGBAQ) << 36);
+#define __ACCUM_MAX__ 0X7FFFFFFFP-15K
+#define _SC_XOPEN_CRYPT 96
+#define _SC_RAW_SOCKETS 70
+#define netif_ip4_gw(netif) ((const ip4_addr_t *)ip_2_ip4(&((netif)->gw)))
+#define _FSTDIO 
+#define _SC_PHYS_PAGES 11
+#define DISABLE_EXTRA_TIMERS_FUNCTIONS() DISABLE_TimerSystemTime() DISABLE_TimerAlarm()
+#define __GSINIT_H__ 
+#define D_CTRL_RELE_ON 0x1
+#define _SC_MONOTONIC_CLOCK 69
+#define __DBL_MAX_EXP__ 1024
+#define SOL_SOCKET 0xfff
+#define _SC_THREAD_SPORADIC_SERVER 81
+#define __USACCUM_EPSILON__ 0x1P-8UHK
+#define __WCHAR_WIDTH__ 32
+#define GS_PRIM_PRIM_TRIFAN 0x05
+#define __BIT_TYPES_DEFINED__ 1
+#define IP_ADDR_PCB_VERSION_MATCH(addr,pcb) 1
+#define PS2VNC_REMOTE_CONTROL_POLL_US 500000u
+#define GS_VRAM_BLOCKSIZE_8K 8192
+#define GS_SETREG_STQ(s,t) ((u64)(s) | ((u64)(t) << 32))
+#define GIF_TAG_TRIANGLE_REGS ((u64)(GS_PRIM) << 0) | ((u64)(GS_RGBAQ) << 4) | ((u64)(GS_XYZ2) << 8) | ((u64)(GS_XYZ2) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GIF_NOP) << 20);
+#define __GCC_ATOMIC_LONG_LOCK_FREE 1
+#define __BSD_VISIBLE 1
+#define _POSIX_TIMERS 1
+#define SIF_CMD_SET_SREG (SIF_CMD_ID_SYSTEM | 1)
+#define __SFRACT_MAX__ 0X7FP-7HR
+#define __FRACT_IBIT__ 0
+#define LONG_WIDTH __LONG_WIDTH__
+#define ANALOG_DEADZONE 10
+#define PTHREAD_RECURSIVE_MUTEX_INITIALIZER ((pthread_mutex_t) -2)
+#define PDP_ENDIAN _PDP_ENDIAN
+#define EREMOTE 66
+#define _SC_OPEN_MAX 4
+#define _VA_LIST_ 
+#define S_BLKSIZE 1024
+#define F_ULOCK 0
+#define __PTRDIFF_MAX__ 0x7fffffff
+#define __CC_SUPPORTS_INLINE 1
+#define __UACCUM_MIN__ 0.0UK
+#define ETOOMANYREFS 129
+#define DISABLE_PATCHED_LoadExecPS2() void LoadExecPS2(const char *filename, s32 num_args, char *args[]) { _LoadExecPS2(filename, num_args, args); }
+#define EPFNOSUPPORT 96
+#define GIF_TAG_TRIANGLE_TEXTURED(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,10)
+#define IP6_ADDR_TENTATIVE_6 0x0e
+#define DEBUG_BGCOLOR(col) *((u64 *) 0x120000e0) = (u64) (col)
+#define SifCheckStatRpc(...) sceSifCheckStatRpc(__VA_ARGS__)
+#define CLOCKS_PER_SEC _CLOCKS_PER_SEC_
+#define __strfmonlike(fmtarg,firstvararg) __attribute__((__format__ (__strfmon__, fmtarg, firstvararg)))
+#define _STDBOOL_H 
+#define INT_WIDTH __INT_WIDTH__
+#define ip6_addr_issitelocal(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xffc00000UL)) == PP_HTONL(0xfec00000UL))
+#define PS2VNC_DISPLAY_CONTROL_MAX_BYTES 768
+#define __UACCUM_IBIT__ 16
+#define __bounded 
+#define timerisset(tvp) ((tvp)->tv_sec || (tvp)->tv_usec)
+#define _SC_LEVEL2_CACHE_SIZE 131
+#define __LLACCUM_MIN__ (-0X1P63LLK-0X1P63LLK)
+#define GS_TEXCLUT 0x1c
+#define _PTRDIFF_T_DECLARED 
+#define GS_SIGNALID ((volatile u64 *)(0x12001080))
+#define __compiler_membar() __asm __volatile(" " : : : "memory")
+#define GS_PSMZ_16S 0x0A
+#define PAD_STATE_DISCONN 0x00
+#define lwip_fcntl(...) fcntl(__VA_ARGS__)
+#define PAD_TYPE_DUALSHOCK 0x7
+#define GS_SETREG_TEX2(psm,cbp,cpsm,csm,csa,cld) (((u64)(psm) << 20) | ((u64)(cbp) << 37) | ((u64)(cpsm) << 51) | ((u64)(csm) << 55) | ((u64)(csa) << 56) | ((u64)(cld) << 61))
+#define __CC_SUPPORTS_DYNAMIC_ARRAY_INIT 1
+#define __requires_unlocked(...) __lock_annotate(locks_excluded(__VA_ARGS__))
+#define GIF_STAT_P2Q *GIF_STAT >> 7
+#define GS_ZTEST_OFF 0x01
+#define _REENT_RAND48_ADD(ptr) ((ptr)->_new._reent._r48._add)
+#define DEFFILEMODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
+#define __PS2IP_H__ 
+#define ESRMNT 69
+#define SBT_MAX 0x7fffffffffffffffLL
+#define ENONET 64
+#define _REENT_GETDATE_ERR_P(ptr) (&((ptr)->_new._reent._getdate_err))
+#define INVALIDATE_CACHE 3
+#define _STDARG_H 
+#define TCP_KEEPIDLE 0x03
+#define _T_WCHAR 
+#define _PC_VDISABLE 8
+#define __LONG_LONG_MAX__ 0x7fffffffffffffffLL
+#define __POSIX_VISIBLE 202405
+#define EBADSLT 55
+#define _PDP_ENDIAN 3412
+#define __SIZEOF_SIZE_T__ 4
+#define ip6_addr_isany(ip6addr) (((ip6addr) == NULL) || ip6_addr_isany_val(*(ip6addr)))
+#define PAD_MODETABLE 4
+#define __ULACCUM_MAX__ 0XFFFFFFFFFFFFFFFFP-32ULK
+#define __unreachable() __builtin_unreachable()
+#define _REENT_INIT_RESERVED_6_7 
+#define _SC_XOPEN_LEGACY 98
+#define __offsetof(type,field) offsetof(type, field)
+#define ip4_addr_copy(dest,src) ((dest).addr = (src).addr)
+#define _WCHAR_T 
+#define O_NONBLOCK _FNONBLOCK
+#define ip6_addr_debug_print(debug,ipaddr) ip6_addr_debug_print_parts(debug, (u16)((ipaddr) != NULL ? IP6_ADDR_BLOCK1(ipaddr) : 0), (u16)((ipaddr) != NULL ? IP6_ADDR_BLOCK2(ipaddr) : 0), (u16)((ipaddr) != NULL ? IP6_ADDR_BLOCK3(ipaddr) : 0), (u16)((ipaddr) != NULL ? IP6_ADDR_BLOCK4(ipaddr) : 0), (u16)((ipaddr) != NULL ? IP6_ADDR_BLOCK5(ipaddr) : 0), (u16)((ipaddr) != NULL ? IP6_ADDR_BLOCK6(ipaddr) : 0), (u16)((ipaddr) != NULL ? IP6_ADDR_BLOCK7(ipaddr) : 0), (u16)((ipaddr) != NULL ? IP6_ADDR_BLOCK8(ipaddr) : 0))
+#define IP_ADDR4(ipaddr,a,b,c,d) IP4_ADDR(ipaddr, a, b, c, d)
+#define GS_SETREG_MIPTBP2_1 GS_SETREG_MIPTBP2
+#define FEXCL _FEXCL
+#define IP6_ADDR_TENTATIVE_2 0x0a
+#define lwip_setsockopt(...) setsockopt(__VA_ARGS__)
+#define __GSMISC_H__ 
+#define NO_RECOVERY 212
+#define GS_PRIM 0x00
+#define PTHREAD_CREATE_DETACHED 0
+#define SIG_BLOCK 1
+#define DMA_END 0x7
+#define __lock_annotate(x) 
+#define kINTC_VBLANK_START INTC_VBLANK_S
+#define D_CTRL_RCYC_16 0x1
+#define IP6_ADDR_TENTATIVE_5 0x0d
+#define SIZE_MAX (__SIZE_MAX__)
+#define __SIZEOF_WINT_T__ 4
+#define S_IEXEC 0000100
+#define _SC_LEVEL3_CACHE_ASSOC 135
+#define D_CTRL_STS_UNSPEC 0x0
+#define timespeccmp(tvp,uvp,cmp) (((tvp)->tv_sec == (uvp)->tv_sec) ? ((tvp)->tv_nsec cmp (uvp)->tv_nsec) : ((tvp)->tv_sec cmp (uvp)->tv_sec))
+#define GS_PSM_T4HH 0x2C
+#define GS_PSM_T4HL 0x24
+#define O_DIRECT _FDIRECT
+#define SIOCGHIWAT _IOR('s', 1, unsigned long)
+#define IOC_VOID 0x20000000UL
+#define S_IXGRP 0000010
+#define UINT64_C(x) __UINT64_C(x)
+#define GIF_TAG_TRIANGLE_GORAUD_TEXTURED_REGS(ctx) ((u64)(GS_TEX0_1 + ctx) << 0) | ((u64)(GS_PRIM) << 4) | ((u64)(GS_RGBAQ) << 8) | ((u64)(GS_UV) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GS_RGBAQ) << 20) | ((u64)(GS_UV) << 24) | ((u64)(GS_XYZ2) << 28) | ((u64)(GS_RGBAQ) << 32) | ((u64)(GS_UV) << 36) | ((u64)(GS_XYZ2) << 40) | ((u64)(GIF_NOP) << 44);
+#define SIGALRM 14
+#define __LONG_LONG_WIDTH__ 64
+#define D_CTRL_RCYC_8 0x0
+#define GS_MODE_VGA_800_75 0x2D
+#define _LOCK_RECURSIVE_T _LOCK_T
+#define gsKit_prim_triangle(gsGlobal,x1,y1,x2,y2,x3,y3,z,color) gsKit_prim_triangle_3d(gsGlobal, x1, y1, z, x2, y2, z, x3, y3, z, color);
+#define AI_CANONNAME 0x02
+#define __strong_reference(sym,aliassym) extern __typeof (sym) aliassym __attribute__ ((__alias__ (#sym)))
+#define R4000 1
+#define _GCC_WCHAR_T 
+#define WINT_MAX (__WINT_MAX__)
+#define SIOCATMARK _IOR('s', 7, unsigned long)
+#define NETMAN_NETIF_EVF_DOWN 0x02
+#define GS_TEX0_2 0x07
+#define GS_SETREG_XYZF3 GS_SETREG_XYZF
+#define __SOPT 0x0400
+#define S_IWUSR 0000200
+#define UINTPTR_MAX (__UINTPTR_MAX__)
+#define D_CTRL_STD_SIF 0x3
+#define ip6_addr_cmp(addr1,addr2) (((addr1)->addr[0] == (addr2)->addr[0]) && ((addr1)->addr[1] == (addr2)->addr[1]) && ((addr1)->addr[2] == (addr2)->addr[2]) && ((addr1)->addr[3] == (addr2)->addr[3]))
+#define __ULLACCUM_MIN__ 0.0ULLK
+#define __no_lock_analysis __lock_annotate(no_thread_safety_analysis)
+#define _SYS_FEATURES_H 
+#define GS_SETREG_MIPTBP2_2 GS_SETREG_MIPTBP2
+#define _PTRDIFF_T 
+#define GSKIT_GIF_PRIM_TRIFAN_TEXTURED 0x1D00
+#define DMA_TAG(QWC,PCE,ID,IRQ,ADDR,SPR) ( ((u64)(QWC) << 0) | ((u64)(PCE) << 26) | ((u64)(ID) << 28) | ((u64)(IRQ) << 31) | ((u64)(ADDR) << 32) | ((u64)(SPR) << 63))
+#define DMA_MAX_SIZE 0xFFFF
+#define IPTOS_PREC_NETCONTROL 0xe0
+#define __ptrvalue 
+#define MAX_THREADS 256
+#define _NFDBITS ((int)sizeof(__fd_mask) * 8)
+#define SIOCSLOWAT _IOW('s', 2, unsigned long)
+#define __GXX_ABI_VERSION 1020
+#define __OBSOLETE_MATH __OBSOLETE_MATH_DEFAULT
+#define ip6_addr_ismulticast_orglocal(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xff8f0000UL)) == PP_HTONL(0xff080000UL))
+#define GS_NONINTERLACED 0x00
+#define _SC_PAGESIZE 8
+#define __SORD 0x2000
+#define kINTC_SBUS INTC_SBUS
+#define GS_DISPFB1 ((volatile u64 *)(0x12000070))
+#define __UTA_FBIT__ 64
+#define __FLT_MIN_EXP__ (-125)
+#define INIT_DMAC 0x01
+#define EE_SYNC() __asm__ __volatile__("sync")
+#define _UINT8_T_DECLARED 
+#define __DEVOLATILE(type,var) ((type)(__uintptr_t)(volatile void *)(var))
+#define _SC_READER_WRITER_LOCKS 71
+#define __UFRACT_IBIT__ 0
+#define GIF_TAG_TRIANGLE_GOURAUD_REGS ((u64)(GS_PRIM) << 0) | ((u64)(GS_RGBAQ) << 4) | ((u64)(GS_XYZ2) << 8) | ((u64)(GS_RGBAQ) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GS_RGBAQ) << 20) | ((u64)(GS_XYZ2) << 24) | ((u64)(GIF_NOP) << 28);
+#define _PC_LINK_MAX 0
+#define F_CNVT 12
+#define ITIMER_REAL 0
+#define IP_CLASSC_NET 0xffffff00
+#define ip_addr_set_loopback(is_ipv6,ipaddr) ip4_addr_set_loopback(ipaddr)
+#define alloca(size) __builtin_alloca(size)
+#define __INT16_MAX__ 0x7fff
+#define GIF_STAT_P3Q *GIF_STAT >> 6
+#define inet_aton(cp,addr) libcglue_inet_aton(cp, (ip4_addr_t*)addr)
+#define FTRUNC _FTRUNC
+#define HOST_NOT_FOUND 210
+#define _SC_LINE_MAX 68
+#define ENOTSUP 134
+#define SIGCHLD 20
+#define RFB_SCROLL_UP 0x08
+#define _howmany(x,y) (((x) + ((y) - 1)) / (y))
+#define __SVID_VISIBLE 1
+#define SIF_RPC_M_NOWBDC 0x02
+#define __PTRDIFF_T 
+#define gsKit_fontm_print(gsGlobal,gsFontM,X,Y,Z,color,String) gsKit_fontm_print_scaled(gsGlobal, gsFontM, X, Y, Z, 1.0f, color, String);
+#define ENOCSI 43
+#define SifWriteBackDCache(...) sceSifWriteBackDCache(__VA_ARGS__)
+#define LWIP_DNS_API_DECLARE_H_ERRNO 1
+#define _BSD_SIZE_T_ 
+#define _funlockfile(fp) (((fp)->_flags & __SSTR) ? 0 : __lock_release_recursive((fp)->_lock))
+#define FASYNC _FASYNC
+#define _SC_LEVEL2_CACHE_LINESIZE 133
+#define F_GETFL 3
+#define NETDB_ELEM_SIZE (sizeof(struct addrinfo) + sizeof(struct sockaddr_storage) + DNS_MAX_NAME_LENGTH + 1)
+#define _IFIFO 0010000
+#define __datatype_type_tag(kind,type) 
+#define __INT_FAST64_TYPE__ long long int
+#define __GSKIT_H__ 
+#define _REENT_IS_NULL(_ptr) ((_ptr) == NULL)
+#define _FSYNC 0x2000
+#define ip4_addr_isany_val(addr1) ((addr1).addr == IPADDR_ANY)
+#define GS_CLUT_STORAGE_CSM1 0x00
+#define ip4_addr_debug_print(debug,ipaddr) ip4_addr_debug_print_parts(debug, (u16)((ipaddr) != NULL ? ip4_addr1_16(ipaddr) : 0), (u16)((ipaddr) != NULL ? ip4_addr2_16(ipaddr) : 0), (u16)((ipaddr) != NULL ? ip4_addr3_16(ipaddr) : 0), (u16)((ipaddr) != NULL ? ip4_addr4_16(ipaddr) : 0))
+#define PTHREAD_INHERIT_SCHED 1
+#define _USECONDS_T_DECLARED 
+#define netif_ip_netmask4(netif) ((const ip_addr_t *)&((netif)->netmask))
+#define _SC_MQ_OPEN_MAX 13
+#define S_IRWXG (S_IRGRP | S_IWGRP | S_IXGRP)
+#define lwip_ioctl(...) ioctl(__VA_ARGS__)
+#define F_GETFD 1
+#define ferror(p) __sferror(p)
+#define _ANSI_STDDEF_H 
+#define GSKIT_GIF_PRIM_TRIANGLE_GOURAUD 0x1800
+#define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER ((pthread_mutex_t) -3)
+#define O_RSYNC _FSYNC
+#define _MIPSEL 1
+#define __FLT64_DENORM_MIN__ 4.9406564584124654e-324F64
+#define SifInitRpc(...) sceSifInitRpc(__VA_ARGS__)
+#define ip6_addr_issolicitednode(ip6addr) (((ip6addr)->addr[0] == PP_HTONL(0xff020000UL)) && ((ip6addr)->addr[2] == PP_HTONL(0x00000001UL)) && (((ip6addr)->addr[3] & PP_HTONL(0xff000000UL)) == PP_HTONL(0xff000000UL)))
+#define __DBL_MIN__ ((double)2.2250738585072014e-308L)
+#define DMA_CHANNEL_TOIPU 0x4
+#define _VA_LIST 
+#define GS_RGBAQ 0x01
+#define _FDEFER 0x0020
+#define _MIPS_ARCH "r5900"
+#define DMA_REG_SQWC (volatile u32 *)0x1000E030
+#define __MACHINE_ENDIAN_H__ 
+#define M_TRIM_THRESHOLD -1
+#define LOCK_NB 0x04
+#define PS2VNC_SERVICES_EXPORTS_H 
+#define S_IRWXO (S_IROTH | S_IWOTH | S_IXOTH)
+#define SO_RCVLOWAT 0x1004
+#define _MIPS_ARCH_R5900 1
+#define ip4_addr_debug_print_val(debug,ipaddr) ip4_addr_debug_print_parts(debug, ip4_addr1_16(&(ipaddr)), ip4_addr2_16(&(ipaddr)), ip4_addr3_16(&(ipaddr)), ip4_addr4_16(&(ipaddr)))
+#define __SIZEOF_POINTER__ 4
+#define __SIZE_TYPE__ unsigned int
+#define T1_MODE ((volatile unsigned int *)0x10000810)
+#define SIG2STR_MAX 17
+#define SifSetDma(...) sceSifSetDma(__VA_ARGS__)
+#define _RAND48_ADD (0x000b)
+#define GIF_TAG_TRIANGLE_GOURAUD(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,8)
+#define netif_is_up(netif) (((netif)->flags & NETIF_FLAG_UP) ? (u8)1 : (u8)0)
+#define _GCC_WRAP_STDINT_H 
+#define XK_ESCAPE 0xFF1B
+#define GS_D_ATEST_OFF 0x05
+#define TSW_NONE 0
+#define __mips_no_lxc1_sxc1 1
+#define GS_RENDER_QUEUE_PER_POOLSIZE 1024 * 256
+#define IPTOS_PREC_MASK 0xe0
+#define _REENT_RAND48_SEED(ptr) ((ptr)->_new._reent._r48._seed)
+#define __DBL_HAS_QUIET_NAN__ 1
+#define __ATTRIBUTE_IMPURE_DATA__ 
+#define ENETRESET 126
+#define __restrict_arr restrict
+#define __FLT32X_EPSILON__ 2.2204460492503131e-16F32x
+#define ip_addr_set_zero_ip4(ipaddr) ip4_addr_set_zero(ipaddr)
+#define SO_SNDTIMEO 0x1005
+#define _SC_PRIORITY_SCHEDULING 101
+#define sigismember(what,sig) (((*(what)) & (1<<(sig))) != 0)
+#define GS_PRMODECONT 0x1a
+#define __predict_true(exp) __builtin_expect((exp), 1)
+#define EDOM 33
+#define _MIPS_SPFPSET 32
+#define NETIF_SET_CHECKSUM_CTRL(netif,chksumflags) 
+#define SIGTRAP 5
+#define EISDIR 21
+#define __nonnull(x) __attribute__((__nonnull__ x))
+#define S_IFREG _IFREG
+#define IP6_MULTICAST_SCOPE_ADMIN_LOCAL 0x4
+#define _POSIX_THREAD_ATTR_STACKSIZE 200112L
+#define __locks_exclusive(...) __lock_annotate(exclusive_lock_function(__VA_ARGS__))
+#define T0_MODE ((volatile unsigned int *)0x10000010)
+#define SCHAR_MAX __SCHAR_MAX__
+#define _RETARGETABLE_LOCKING 1
+#define __FLT64_MIN_EXP__ (-1021)
+#define __LACCUM_MIN__ (-0X1P31LK-0X1P31LK)
+#define __FRACT_FBIT__ 15
+#define IPTOS_PREC_PRIORITY 0x20
+#define _SC_SS_REPL_MAX 78
+#define __ULLACCUM_FBIT__ 64
+#define DMA_SET_TADR(A,B) (u32)((A) & 0x7FFFFFFF) << 0 | (u32)((B) & 0x00000001) << 31
+#define F_UNLKSYS 4
+#define _SC_V7_LP64_OFF64 94
+#define CHAR_MAX SCHAR_MAX
+#define IP_IS_V4_VAL(ipaddr) 1
+#define DPAD_BASE_VELOCITY_Q8 128
+#define GS_PSM_CT16S 0x0A
+#define NL_ARGMAX 32
+#define ip4_addr1_16(ipaddr) ((u16)ip4_addr1(ipaddr))
+#define _SC_TRACE_EVENT_NAME_MAX 85
+#define SEEK_DATA 3
+#define __R4000__ 1
+#define LWIP_DNS_ADDRTYPE_IPV6_IPV4 3
+#define DMA_REFE 0x0
+#define GS_BLEND_BACK2FRONT 0x01
+#define __FLT64_MIN_10_EXP__ (-307)
+#define timerclear(tvp) ((tvp)->tv_sec = (tvp)->tv_usec = 0)
+#define PAD_MMODE_LOCK 3
+#define _FNDELAY _FNONBLOCK
+#define __ULLFRACT_EPSILON__ 0x1P-64ULLR
+#define GSKIT_GIF_PRIM_LINESTRIP 0x1200
+#define GS_MODE_DVD_480P 0x74
+#define _REENT_MBLEN_STATE(ptr) ((ptr)->_new._reent._mblen_state)
+#define ULONG_MAX (LONG_MAX * 2UL + 1UL)
+#define __NETMAN_H__ 
+#define _ATEXIT_DYNAMIC_ALLOC 1
+#define SIF_CMD_RPC_END (SIF_CMD_ID_SYSTEM | 8)
+#define PAD_TYPE_DIGITAL 0x4
+#define FD_ISSET(n,p) (((p)->__fds_bits[(n)/_NFDBITS] & __fdset_mask(n)) != 0)
+#define kHBLNK_DTV1080i (33750)
+#define __REGISTER_PREFIX__ $
+#define __UINT16_MAX__ 0xffff
+#define __DBL_HAS_DENORM__ 1
+#define INT_LEAST32_MAX (__INT_LEAST32_MAX__)
+#define ip_addr_netcmp(addr1,addr2,mask) ip4_addr_netcmp(addr1, addr2, mask)
+#define F_WRLCK 2
+#define EIDRM 36
+#define INIT_VU0 0x10
+#define ECOMM 70
+#define __SL64 0x8000
+#define IP_CLASSD_HOST 0x0fffffff
+#define ip4_addr_set_u32(dest_ipaddr,src_u32) ((dest_ipaddr)->addr = (src_u32))
+#define GS_TRXREG 0x52
+#define XK_SHIFT_L 0xFFE1
+#define _PC_NAME_MAX 3
+#define M_MXFAST 1
+#define ANALOG_HALF_RAW 64
+#define _BYTE_ORDER _LITTLE_ENDIAN
+#define CHAR_BIT __CHAR_BIT__
+#define _PC_MAX_CANON 1
+#define IPTOS_RELIABILITY 0x04
+#define __SQ_IBIT__ 0
+#define ip_addr_debug_print_val(debug,ipaddr) ip4_addr_debug_print_val(debug, ipaddr)
+#define PF_INET6 AF_INET6
+#define __UINT8_TYPE__ unsigned char
+#define _SC_BC_BASE_MAX 57
+#define __UHA_FBIT__ 8
+#define _SC_LEVEL2_CACHE_ASSOC 132
+#define _IFREG 0100000
+#define __GNUCLIKE_BUILTIN_STDARG 1
+#define lwip_read(...) read(__VA_ARGS__)
+#define LF_ARG_MAX 252
+#define RFB_CAPACITY_WIDTH 1920
+#define GS_SMODE1 ((volatile u64 *)(0x12000010))
+#define GS_SMODE2 ((volatile u64 *)(0x12000020))
+#define __SFRACT_MIN__ (-0.5HR-0.5HR)
+#define GSKIT_GIF_PRIM_TRIANGLE 0x1300
+#define O_EXCL _FEXCL
+#define __UTQ_FBIT__ 128
+#define TSW_SEMA 2
+#define _IOR(x,y,t) (IOC_OUT | (((long)sizeof(t) & IOCPARM_MASK) << 16) | ((x) << 8) | (y))
+#define _SC_LEVEL1_ICACHE_ASSOC 126
+#define LONG_LONG_MAX __LONG_LONG_MAX__
+#define __DEC_EVAL_METHOD__ 2
+#define timercmp(tvp,uvp,cmp) (((tvp)->tv_sec == (uvp)->tv_sec) ? ((tvp)->tv_usec cmp (uvp)->tv_usec) : ((tvp)->tv_sec cmp (uvp)->tv_sec))
+#define DNS_TMR_INTERVAL 1000
+#define _SC_REALTIME_SIGNALS 29
+#define ECONNABORTED 113
+#define _SC_TRACE 83
+#define S_ISLNK(m) (((m)&_IFMT) == _IFLNK)
+#define SIGEV_THREAD 3
+#define FNONBIO _FNONBLOCK
+#define CHAR_MIN SCHAR_MIN
+#define MAX_CANON 255
+#define GS_CLUT_STOREMODE_NOLOAD 0x00
+#define _SUSECONDS_T_DECLARED 
+#define __FLT_MANT_DIG__ 24
+#define __LDBL_DECIMAL_DIG__ 17
+#define _SC_V6_LPBIG_OFFBIG _SC_V7_LPBIG_OFFBIG
+#define __min_size(x) static (x)
+#define lwip_recv(...) recv(__VA_ARGS__)
+#define INT_LEAST8_MIN (-__INT_LEAST8_MAX__ - 1)
+#define SifBindRpc(...) sceSifBindRpc(__VA_ARGS__)
+#define __VERSION__ "15.2.0"
+#define _PC_NO_TRUNC 7
+#define _SC_TRACE_NAME_MAX 88
+#define S_ISFIFO(m) (((m)&_IFMT) == _IFIFO)
+#define FD_ZERO(p) do { fd_set *_p; __size_t _n; _p = (p); _n = _howmany(FD_SETSIZE, _NFDBITS); while (_n > 0) _p->__fds_bits[--_n] = 0; } while (0)
+#define _SC_XOPEN_SHM 103
+#define __UINT64_C(c) c ## ULL
+#define GS_FRAME_2 0x4d
+#define GS_SETREG_XYZF(x,y,z,f) ((u64)(x) | ((u64)(y) << 16) | ((u64)(z) << 32) | ((u64)(f) << 56))
+#define _SYS_TYPES_H 
+#define _PTRDIFF_T_ 
+#define __used __attribute__((__used__))
+#define gsKit_prim_quad_goraud_texture(gsGlobal,Texture,x1,y1,u1,v1,x2,y2,u2,v2,x3,y3,u3,v3,x4,y4,u4,v4,z,color1,color2,color3,color4) gsKit_prim_quad_goraud_texture_3d(gsGlobal, Texture, x1, y1, z, u1, v1, x2, y2, z, u2, v2, x3, y3, z, u3, v3, x4, y4, z, u4, v4, color1, color2, color3, color4);
+#define __ULLFRACT_FBIT__ 64
+#define _INT64_T_DECLARED 
+#define GIF_TAG_SPRITE(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,4)
+#define __format_arg(fmtarg) __attribute__((__format_arg__ (fmtarg)))
+#define PTHREAD_PROCESS_SHARED 1
+#define __arg_type_tag(arg_kind,arg_idx,type_tag_idx) 
+#define GS_PSM_T4 0x14
+#define BC_DIM_MAX 2048
+#define _SYS_TYPES_FD_SET 
+#define FDEFER _FDEFER
+#define EBFONT 57
+#define __FRACT_EPSILON__ 0x1P-15R
+#define SifSetReg(...) sceSifSetReg(__VA_ARGS__)
+#define GIF_STAT (volatile u32*)0x10003020
+#define __ULACCUM_MIN__ 0.0ULK
+#define __IEEE_LITTLE_ENDIAN 
+#define INT_LEAST32_MIN (-__INT_LEAST32_MAX__ - 1)
+#define __SLBF 0x0001
+#define __UDA_FBIT__ 32
+#define GS_SET_PMODE_EXT(EN1,EN2,CRTMD,MMOD,AMOD,SLBG,ALP,NFLD,EXVWINS,EXVWINE,EVSYNCMD) *GS_PMODE = ((u64)(EN1) << 0) | ((u64)(EN2) << 1) | ((u64)(CRTMD) << 2) | ((u64)(MMOD) << 5) | ((u64)(AMOD) << 6) | ((u64)(SLBG) << 7) | ((u64)(ALP) << 8) | ((u64)(NFLD) << 16) | ((u64)(EXVWINS) << 32) | ((u64)(EXVWINE) << 42) | ((u64)(EVSYNCMD) << 52)
+#define DST_EET 5
+#define F_UNLCK 3
+#define __LARGEFILE_VISIBLE 0
+#define closesocket(...) close(__VA_ARGS__)
+#define _UNISTD_H_ 
+#define __GSTEXTURE_H__ 
+#define __builtin_is_aligned(x,align) (((__uintptr_t)(x) & ((align) - 1)) == 0)
+#define PTHREAD_PRIO_INHERIT 1
+#define _SC_EXPR_NEST_MAX 64
+#define _PC_REC_INCR_XFER_SIZE 16
+#define __GNUC_VA_LIST_COMPATIBILITY 1
+#define LWIP_NETIF_REMOVE_CALLBACK 0
+#define __LLACCUM_EPSILON__ 0x1P-63LLK
+#define sigfillset(what) (*(what) = ~(0), 0)
+#define EFORMAT 47
+#define O_RDWR 2
+#define __containerof(x,s,m) ({ const volatile __typeof(((s *)0)->m) *__x = (x); __DEQUALIFY(s *, (const volatile char *)__x - __offsetof(s, m));})
+#define __unlocks(...) __lock_annotate(unlock_function(__VA_ARGS__))
+#define kHBLNK_PAL (15625)
+#define LINE_MAX 2048
+#define __STRING(x) #x
+#define SO_OOBINLINE 0x0100
+#define __GCC_ATOMIC_INT_LOCK_FREE 1
+#define EHOSTUNREACH 118
+#define _T_PTRDIFF_ 
+#define _REENT_SIGNAL_BUF(ptr) ((ptr)->_new._reent._signal_buf)
+#define SIGVTALRM 26
+#define EPERM 1
+#define F_OFD_GETLK 15
+#define INADDR_ANY IPADDR_ANY
+#define IP_IS_ANY_TYPE_VAL(ipaddr) 0
+#define __SSTR 0x0200
+#define ip6_addr_ismulticast_linklocal(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xff8f0000UL)) == PP_HTONL(0xff020000UL))
+#define lwip_htonl(x) PP_HTONL(x)
+#define GSKIT_GIF_FLG_REGLIST 1
+#define EPROCLIM 130
+#define LONG_LONG_MIN (-LONG_LONG_MAX - 1LL)
+#define SIGPOLL SIGIO
+#define XK_RIGHT 0xFF53
+#define timespecisset(tvp) ((tvp)->tv_sec || (tvp)->tv_nsec)
+#define __LOCK_INIT_RECURSIVE(class,lock) __LOCK_INIT(class,lock)
+#define GIF_TAG_AD(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_PACKED,1)
+#define NETMAN_NETIF_ETH_LINK_DISABLE_PAUSE 0x40
+#define GS_BGCOLOR ((volatile u64 *)(0x120000e0))
+#define DST_WET 3
+#define _SC_2_PBS_TRACK 118
+#define EBADFD 81
+#define __GNUC_PREREQ(maj,min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+#define GS_MODE_VGA_1280_60 0x4A
+#define ip6_addr_isallnodes_linklocal(ip6addr) (((ip6addr)->addr[0] == PP_HTONL(0xff020000UL)) && ((ip6addr)->addr[1] == 0UL) && ((ip6addr)->addr[2] == 0UL) && ((ip6addr)->addr[3] == PP_HTONL(0x00000001UL)))
+#define PS2VNC_DISPLAY_CONTROL_RESULT_PATH "/display-control/result"
+#define _SC_FSYNC 22
+#define GS_PRIM_PRIM_SPRITE 0x06
+#define _SYS_SIZE_T_H 
+#define FWRITE _FWRITE
+#define THS_SUSPEND 0x08
+#define clearerr_unlocked(p) __sclearerr(p)
+#define _REENT_WCRTOMB_STATE(ptr) ((ptr)->_new._reent._wcrtomb_state)
+#define __trylocks_exclusive(...) __lock_annotate(exclusive_trylock_function(__VA_ARGS__))
+#define GS_MODE_VGA_1280_75 0x4B
+#define FIONBIO _IOW('f', 126, unsigned long)
+#define __FLOAT_WORD_ORDER__ __ORDER_LITTLE_ENDIAN__
+#define SIGPROF 27
+#define DMA_CALL 0x5
+#define GS_MODE_VGA_640_60 0x1A
+#define _POSIX_THREAD_PROCESS_SHARED -1
+#define EXFULL 52
+#define POPDATA(t,x,v,l) (v) = *(t *)(x); (l) = sizeof(t)
+#define GS_LABEL 0x62
+#define __SIZE_T__ 
+#define __USFRACT_MIN__ 0.0UHR
+#define F_DUPFD_CLOEXEC 14
+#define _SC_2_LOCALEDEF 112
+#define _STRINGS_H_ 
+#define SIG_ATOMIC_MAX (__STDINT_EXP(INT_MAX))
+#define ALPHA_BLEND_ADD (ALPHA(ALPHA_SRC,ALPHA_ZERO,ALPHA_SRC,ALPHA_DST,0x00))
+#define PTHREAD_SCOPE_PROCESS 0
+#define O_DIRECTORY _FDIRECTORY
+#define __SRD 0x0004
+#define _ATEXIT_SIZE 32
+#define LWIP_DNS_API_DECLARE_STRUCTS 1
+#define __SRW 0x0010
+#define __FBSDID(s) struct __hack
+#define THS_DORMANT 0x10
+#define __STDINT_EXP(x) __ ##x ##__
+#define GSKIT_GIF_PRIM_QUAD_TEXTURED 0x1E00
+#define AT_FDCWD -2
+#define D_CTRL_STD_OFF 0x0
+#define dns_getserver(...) libcglue_dns_getserver(__VA_ARGS__)
+#define SO_KEEPALIVE 0x0008
+#define AI_ALL 0x20
+#define _SC_MQ_PRIO_MAX 14
+#define __align_up(x,y) __builtin_align_up(x, y)
+#define INT32_MAX (__INT32_MAX__)
+#define SIF_CMD_CHANGE_SADDR (SIF_CMD_ID_SYSTEM | 0)
+#define __compar_fn_t_defined 
+#define _IOW(x,y,t) (IOC_IN | (((long)sizeof(t) & IOCPARM_MASK) << 16) | ((x) << 8) | (y))
+#define GS_ATEST_ON 0x04
+#define ALPHA_BLEND_ADD_NOALPHA (ALPHA(ALPHA_SRC,ALPHA_ZERO,ALPHA_FIX,ALPHA_DST,0x80))
+#define __UQQ_IBIT__ 0
+#define _SC_THREAD_ATTR_STACKSIZE 44
+#define DISPLAY_MODE_REQUEST_NONE 0
+#define bintime_isset(a) ((a)->sec || (a)->frac)
+#define IP_BADCLASS(a) (((u32)(a)&0xf0000000UL) == 0xf0000000UL)
+#define SIGHUP 1
+#define GS_CLUT_STORAGE_CSM2 0x01
+#define _SC_THREAD_ROBUST_PRIO_INHERIT 122
+#define GS_SETREG_TEX2_2 GS_SETREG_TEX2
+#define UCAB_SEG(x) ((void *)(((u32)(x)) | 0x30000000))
+#define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP PTHREAD_RECURSIVE_MUTEX_INITIALIZER
+#define __int_fast32_t_defined 1
+#define INT64_MIN (-__INT64_MAX__ - 1)
+#define ANALOG_CURVE_ONE 4096
+#define GS_FIELD_EVEN 0x03
+#define F_SETFL 4
+#define _RAND48_SEED_1 (0xabcd)
+#define SIG_UNBLOCK 2
+#define _SYS_SCHED_H 
+#define GS_SETREG_RGBA(r,g,b,a) ((u64)(r) | ((u64)(g) << 8) | ((u64)(b) << 16) | ((u64)(a) << 24))
+#define IP_CLASSB_NSHIFT 16
+#define __GSFONTM_H__ 
+#define GS_SETREG_CSR_FINISH(A) *GS_CSR = ((u64)(A) << 1)
+#define __USFRACT_MAX__ 0XFFP-8UHR
+#define __SCHAR_WIDTH__ 8
+#define lwip_htons(x) PP_HTONS(x)
+#define __INT32_C(c) c ## L
+#define __ORDER_PDP_ENDIAN__ 3412
+#define GS_CLUT_STOREMODE_COMPARE_CBP0 0x04
+#define __UHQ_FBIT__ 16
+#define GS_SETREG_CLAMP_1 GS_SET_CLAMP
+#define __LLACCUM_FBIT__ 63
+#define ip_addr_cmp(addr1,addr2) ip4_addr_cmp(addr1, addr2)
+#define EL2HLT 44
+#define ECASECLASH 137
+#define LWIP_DNS_API_DEFINE_ERRORS 1
+#define __lock_init_recursive(lock) __retarget_lock_init_recursive((_LOCK_T*)&lock)
+#define __va_copy(d,s) __builtin_va_copy(d,s)
+#define SIGSEGV 11
+#define RFB_SCROLL_RIGHT 0x40
+#define _REENT_MP_FREELIST(ptr) ((ptr)->_freelist)
+#define _Null_unspecified 
+#define _MIPS_TUNE_R5900 1
+#define lwip_listen(...) listen(__VA_ARGS__)
+#define BYTE_ORDER _BYTE_ORDER
+#define s6_addr un.u8_addr
+#define _SC_MESSAGE_PASSING 27
+#define _SYS_TIME_H_ 
+#define PAD_UP 0x0010
+#define GS_SYNCH1 ((volatile u64 *)(0x12000040))
+#define __INT_FAST32_TYPE__ int
+#define ANALOG_CURVE_KNEE 1229
+#define __SSP_FORTIFY_LEVEL 0
+#define SIF_DMA_ERT 0x40
+#define SifAddCmdHandler(...) sceSifAddCmdHandler(__VA_ARGS__)
+#define UINT64_MAX (__UINT64_MAX__)
+#define O_NOCTTY _FNOCTTY
+#define GS_SETREG_CLAMP_2 GS_SET_CLAMP
+#define S_IWGRP 0000020
+#define SIF_CMD_RPC_BIND (SIF_CMD_ID_SYSTEM | 9)
+#define PS2VNC_CROSS_TYPES_H 
+#define O_RDONLY 0
+#define GS_MODE_DVD_NTSC 0x72
+#define EINVAL 22
+#define _ANSI_STDARG_H_ 
+#define __SWID 0x2000
+#define SIG_ATOMIC_MIN (-__STDINT_EXP(INT_MAX) - 1)
+#define __UINT_LEAST16_TYPE__ short unsigned int
+#define _POSIX_THREAD_ATTR_STACKADDR -1
+#define O_ACCMODE (O_RDONLY|O_WRONLY|O_RDWR)
+#define _PC_PATH_MAX 4
+#define _FNONBLOCK 0x4000
+#define __SAPP 0x0100
+#define _INTMAX_T_DECLARED 
+#define IPPROTO_UDP 17
+#define _GCC_PTRDIFF_T 
+#define _REENT_MBRLEN_STATE(ptr) ((ptr)->_new._reent._mbrlen_state)
+#define RAND_MAX __RAND_MAX
+#define gsKit_prim_sprite_striped_texture(gsGlobal,Texture,x1,y1,u1,v1,x2,y2,u2,v2,z,color) gsKit_prim_sprite_striped_texture_3d(gsGlobal, Texture, x1, y1, z, u1, v1, x2, y2, z, u2, v2, color);
+#define _REENT_EMERGENCY(_ptr) ((_ptr)->_emergency)
+#define ip4_addr1(ipaddr) (((const u8 *)(&(ipaddr)->addr))[0])
+#define ip4_addr2(ipaddr) (((const u8 *)(&(ipaddr)->addr))[1])
+#define ip4_addr3(ipaddr) (((const u8 *)(&(ipaddr)->addr))[2])
+#define ip4_addr4(ipaddr) (((const u8 *)(&(ipaddr)->addr))[3])
+#define SS_ONSTACK 0x1
+#define ALPHA(A,B,C,D,FIX) ( (((u64)(A))&3) | ((((u64)(B))&3)<<2) | ((((u64)(C))&3)<<4) | ((((u64)(D))&3)<<6) | ((((u64)(FIX)))<<32UL) )
+#define M_GRAIN 3
+#define INCLUDE_NP 1
+#define O_WRONLY 1
+#define ESHUTDOWN 110
+#define F_GETOWN 5
+#define DMA_REG_CTRL (volatile u32 *)0x1000E000
+#define __INT8 "hh"
+#define IP_IS_V4(ipaddr) 1
+#define IP_IS_V6(ipaddr) 0
+#define F_SETLK 8
+#define PAD_ACTCURR 4
+#define _SC_2_FORT_RUN 111
+#define IP6ADDR_STRLEN_MAX 46
+#define SCE_ELOADMISS 0x10003
+#define __DMACORE_H__ 
+#define GS_SETREG_XYZF2 GS_SETREG_XYZF
+#define _SC_XOPEN_REALTIME_THREADS 102
+#define ip_addr_get_ip4_u32(ipaddr) ip4_addr_get_u32(ip_2_ip4(ipaddr))
+#define __UINT64_MAX__ 0xffffffffffffffffULL
+#define ETIME 62
+#define _REENT_INIT_PTR_ZEROED(var) { (var)->_stdin = &__sf[0]; (var)->_stdout = &__sf[1]; (var)->_stderr = &__sf[2]; (var)->_new._reent._rand_next = 1; (var)->_new._reent._r48._seed[0] = _RAND48_SEED_0; (var)->_new._reent._r48._seed[1] = _RAND48_SEED_1; (var)->_new._reent._r48._seed[2] = _RAND48_SEED_2; (var)->_new._reent._r48._mult[0] = _RAND48_MULT_0; (var)->_new._reent._r48._mult[1] = _RAND48_MULT_1; (var)->_new._reent._r48._mult[2] = _RAND48_MULT_2; (var)->_new._reent._r48._add = _RAND48_ADD; }
+#define _SIZE_T_DECLARED 
+#define UINT_LEAST16_MAX (__UINT_LEAST16_MAX__)
+#define __FLT_IS_IEC_60559__ 0
+#define _POSIX_THREADS 200112L
+#define _SYS__LOCALE_H 
+#define __UDQ_FBIT__ 64
+#define ip6_addr_isipv6mappedipv4(ip6addr) (((ip6addr)->addr[0] == 0) && ((ip6addr)->addr[1] == 0) && (((ip6addr)->addr[2]) == PP_HTONL(0x0000FFFFUL)))
+#define IPTOS_PREC(tos) ((tos)&IPTOS_PREC_MASK)
+#define F_SETOWN 6
+#define SifGetReg(...) sceSifGetReg(__VA_ARGS__)
+#define LWIP_UDPLITE 0
+#define __GNUC_WIDE_EXECUTION_CHARSET_NAME "UTF-32LE"
+#define GS_TEX2_1 0x16
+#define AF_INET 2
+#define PTHREAD_PRIO_PROTECT 2
+#define _Kmax (sizeof (size_t) << 3)
+#define __GSTEXMANAGER_H__ 
+#define TCP_KEEPINTVL 0x04
+#define __GNUCLIKE_BUILTIN_CONSTANT_P 1
+#define PAD_MMODE_DUALSHOCK 1
+#define GS_MIPTBP1_1 0x34
+#define FIONREAD _IOR('f', 127, unsigned long)
+#define __INT8_TYPE__ signed char
+#define _SC_PRIORITIZED_IO 28
+#define XK_RETURN 0xFF0D
+#define IPTOS_LOWDELAY 0x10
+#define OPEN_MAX 64
+#define SIF_RPC_M_NOWAIT 0x01
+#define __ELF__ 1
+#define OUTPUT_WIDTH (active_video_mode->raster_width)
+#define GS_MODE_VGA_640_72 0x1B
+#define LWIP_IPV4 1
+#define IPTOS_PREC_CRITIC_ECP 0xa0
+#define _INT32_T_DECLARED 
+#define ip_addr_islinklocal(ipaddr) ip4_addr_islinklocal(ipaddr)
+#define _SC_V6_ILP32_OFFBIG _SC_V7_ILP32_OFFBIG
+#define GS_FINISH 0x61
+#define GS_SETTING_OFF 0x00
+#define _REENT_CHECK_MP(ptr) 
+#define GS_SETREG_TEX0(tbp,tbw,psm,tw,th,tcc,tfx,cbp,cpsm,csm,csa,cld) ((u64)(tbp) | ((u64)(tbw) << 14) | ((u64)(psm) << 20) | ((u64)(tw) << 26) | ((u64)(th) << 30) | ((u64)(tcc) << 34) | ((u64)(tfx) << 35) | ((u64)(cbp) << 37) | ((u64)(cpsm) << 51) | ((u64)(csm) << 55) | ((u64)(csa) << 56) | ((u64)(cld) << 61))
+#define _SYS_SOCKET_H_ 
+#define GS_MODE_VGA_640_85 0x1D
+#define __fdset_mask(n) ((__fd_mask)1 << ((n) % _NFDBITS))
+#define __SACCUM_EPSILON__ 0x1P-7HK
+#define _POSIX_THREAD_KEYS_MAX 128
+#define RFB_SCROLL_DOWN 0x10
+#define ELIBSCN 85
+#define F_TLOCK 2
+#define LWIP_IPV6_SEND_ROUTER_SOLICIT 1
+#define __SOFF 0x1000
+#define EE_SYNCL() __asm__ __volatile__("sync.l")
+#define EE_SYNCP() __asm__ __volatile__("sync.p")
+#define __ULFRACT_EPSILON__ 0x1P-32ULR
+#define AF_INET6 AF_UNSPEC
+#define __LLFRACT_FBIT__ 63
+#define ip4_addr_get_u32(src_ipaddr) ((src_ipaddr)->addr)
+#define IOV_MAX 1024
+#define T3_COUNT ((volatile unsigned int *)0x10001800)
+#define AI_V4MAPPED 0x10
+#define __FLT_RADIX__ 2
+#define SO_REUSEPORT 0x0200
+#define __INT_LEAST16_TYPE__ short int
+#define __sfileno(p) ((p)->_file)
+#define __STDC_VERSION_STDDEF_H__ 202311L
+#define __LDBL_EPSILON__ 2.2204460492503131e-16L
+#define INTPTR_MAX (__INTPTR_MAX__)
+#define __UINTMAX_C(c) c ## ULL
+#define IPTOS_PREC_INTERNETCONTROL 0xc0
+#define FNBIO _FNBIO
+#define IOC_IN 0x80000000UL
+#define GS_SETREG_FRAME_1 GS_SETREG_FRAME
+#define GS_SETREG_FRAME_2 GS_SETREG_FRAME
+#define _SC_RE_DUP_MAX 73
+#define error_to_string(errnum) ("")
+#define SO_ERROR 0x1007
+#define _POSIX_C_SOURCE 202405L
+#define SIGWINCH 28
+#define gsKit_prim_line(gsGlobal,x1,y1,x2,y2,z,color) gsKit_prim_line_3d(gsGlobal, x1, y1, z, x2, y2, z, color);
+#define DMA_NEXT 0x2
+#define PTHREAD_STACK_MIN 32*1024
+#define _ELIDABLE_INLINE static __inline__
+#define __long_double_t long double
+#define __SACCUM_MAX__ 0X7FFFP-7HK
+#define __htons(_x) __bswap16(_x)
+#define __section(x) __attribute__((__section__(x)))
+#define _SC_THREADS 42
+#define D_CTRL_STS_SIF 0x1
+#define DISABLE_TimerSystemTime() void _ps2sdk_init_timer() {} void _ps2sdk_deinit_timer() {}
+#define ip6_addr_islinklocal(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xffc00000UL)) == PP_HTONL(0xfe800000UL))
+#define __FLT32X_MIN__ 2.2250738585072014e-308F32x
+#define fcntlsocket(...) fcntl(__VA_ARGS__)
+#define _INT16_T_DECLARED 
+#define GS_SETREG_TEXA(ta0,aem,ta1) ((u64)(ta0) | ((u64)(aem) << 15) | ((u64)(ta1) << 32))
+#define __ERRNO_H__ 
+#define K_T2_COMP ((volatile unsigned int *)0xB0001020)
+#define _REENT_TM(ptr) (&(ptr)->_new._reent._localtime_buf)
+#define __mips_compact_branches_never 1
+#define __SIG_ATOMIC_MAX__ 0x7fffffff
+#define GIF_TAG_QUAD_GORAUD_TEXTURED_REGS(ctx) ((u64)(GS_TEX0_1 + ctx) << 0) | ((u64)(GS_PRIM) << 4) | ((u64)(GS_RGBAQ) << 8) | ((u64)(GS_UV) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GS_RGBAQ) << 20) | ((u64)(GS_UV) << 24) | ((u64)(GS_XYZ2) << 28) | ((u64)(GS_RGBAQ) << 32) | ((u64)(GS_UV) << 36) | ((u64)(GS_XYZ2) << 40) | ((u64)(GS_RGBAQ) << 44) | ((u64)(GS_UV) << 48) | ((u64)(GS_XYZ2) << 52);
+#define MSG_TRUNC 0x0000
+#define F_TEST 3
+#define GIF_TAG_TRIANGLE_GORAUD_TEXTURED(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,12)
+#define SIGCONT 19
+#define _PTHREAD_COND_INITIALIZER ((pthread_cond_t) -1)
+#define _SC_THREAD_PRIO_PROTECT 47
+#define ip_addr_set_any(is_ipv6,ipaddr) ip4_addr_set_any(ipaddr)
+#define GS_CLUT_NONE 0x00
+#define fds_bits __fds_bits
+#define __mips64 1
+#define INT_LEAST64_MAX (__INT_LEAST64_MAX__)
+#define IOCPARM_MASK 0x7fU
+#define O_SYNC _FSYNC
+#define IOC_OUT 0x40000000UL
+#define _POSIX_TIMEOUTS 1
+#define DMA_SET_CIM(A) *DMA_REG_STAT = (u32)((A) << 16)
+#define __UACCUM_FBIT__ 16
+#define __GCC_ATOMIC_WCHAR_T_LOCK_FREE 1
+#define __USER_LABEL_PREFIX__ 
+#define EOVERFLOW 139
+#define F_LOCK 1
+#define SIGPIPE 13
+#define IPPROTO_IP 0
+#define lwip_socket(...) socket(__VA_ARGS__)
+#define ip6_addr_ismulticast_adminlocal(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xff8f0000UL)) == PP_HTONL(0xff040000UL))
+#define _SC_THREAD_ROBUST_PRIO_PROTECT 123
+#define UINT32_MAX (__UINT32_MAX__)
+#define _CLOCK_T_DECLARED 
+#define GIF_SETREG_CTRL(RST,PSE) *GIF_CTRL = ((u32)(RST) << 0) | ((u32)(PSE) << 3);
+#define UCHAR_MAX (SCHAR_MAX * 2 + 1)
+#define O_CLOEXEC _FNOINHERIT
+#define __SIZEOF_PTRDIFF_T__ 4
+#define _SYS_SYSLIMITS_H_ 
+#define SEEK_SET 0
+#define _WANT_USE_GDTOA 1
+#define _INCLUDE_MALLOC_H_ 
+#define gsKit_prim_triangle_goraud_texture(gsGlobal,Texture,x1,y1,u1,v1,x2,y2,u2,v2,x3,y3,u3,v3,z,color1,color2,color3) gsKit_prim_triangle_goraud_texture_3d(gsGlobal, Texture, x1, y1, z, u1, v1, x2, y2, z, u2, v2, x3, y3, z, u3, v3, color1, color2, color3);
+#define CLOCK_DISABLED 0
+#define LWIP_DNS_ADDRTYPE_IPV4 0
+#define LWIP_DNS_ADDRTYPE_IPV6 1
+#define __nosanitizethread 
+#define ip4_addr3_16(ipaddr) ((u16)ip4_addr3(ipaddr))
+#define __LEAST8 "hh"
+#define GS_SETREG_PRMODECONT(ac) ((u64)(ac))
+#define _SYS_UNISTD_H 
+#define __sferror(p) ((int)(((p)->_flags & __SERR) != 0))
+#define _TIME_H_ 
+#define kINTC_TIMER1 INTC_TIM1
+#define gsKit_prim_triangle_gouraud(gsGlobal,x1,y1,x2,y2,x3,y3,z,color1,color2,color3) gsKit_prim_triangle_gouraud_3d(gsGlobal, x1, y1, z, x2, y2, z, x3, y3, z, color1, color2, color3);
+#define PAD_ACTFUNC 1
+#define PAD_TYPE_ANALOG 0x5
+#define lwip_shutdown(...) shutdown(__VA_ARGS__)
+#define S_IFCHR _IFCHR
+#define lwip_getpeername(...) getpeername(__VA_ARGS__)
+#define LWIP_DNS_ADDRTYPE_DEFAULT LWIP_DNS_ADDRTYPE_IPV4
+#define GS_IMR ((volatile u64 *)(0x12001010))
+#define INTPTR_MIN (-__INTPTR_MAX__ - 1)
+#define _TIMEVAL_DEFINED 
+#define IP_MULTICAST(a) IP_CLASSD(a)
+#define __int_least64_t_defined 1
+#define INT8_C(x) __INT8_C(x)
+#define EAFNOSUPPORT 106
+#define _REENT_CHECK_VERIFY 1
+#define FOPEN _FOPEN
+#define ENOMEDIUM 135
+#define _SC_DELAYTIMER_MAX 37
+#define __ntohs(_x) __bswap16(_x)
+#define S_IFDIR _IFDIR
+#define _IONBF 2
+#define __LACCUM_EPSILON__ 0x1P-31LK
+#define EBUSY 16
+#define _REENT_CHECK_ASCTIME_BUF(ptr) 
+#define DMA_SET_CIS(A) *DMA_REG_STAT = (u32)(A)
+#define _REENT_INIT_PTR(var) { memset((var), 0, sizeof(*(var))); _REENT_INIT_PTR_ZEROED(var); }
+#define F_OFD_SETLK 16
+#define _GCC_LIMITS_H_ 
+#define _SC_XBS5_LPBIG_OFFBIG _SC_V7_LPBIG_OFFBIG
+#define _SC_V7_ILP32_OFFBIG 93
+#define O_NDELAY 1
+#define DNS_MAX_SERVERS 2
+#define netif_ip4_netmask(netif) ((const ip4_addr_t *)ip_2_ip4(&((netif)->netmask)))
+#define W_OK 2
+#define PAD_TYPE_EX_TSURICON 0x100
+#define __FLT64_IS_IEC_60559__ 1
+#define _SIZE_T_ 
+#define SIF_CMD_M_WBDC 0x04
+#define __FLT32X_MIN_EXP__ (-1021)
+#define ps2ip_setconfig(...) libcglue_ps2ip_setconfig(__VA_ARGS__)
+#define PS2VNC_RUNTIME_COMPAT_H 
+#define ip4_addr_set_loopback(ipaddr) ((ipaddr)->addr = PP_HTONL(IPADDR_LOOPBACK))
+#define UINT_FAST32_MAX (__UINT_FAST32_MAX__)
+#define O_CREAT _FCREAT
+#define _WCHAR_T_H 
+#define _SC_SAVED_IDS 6
+#define ip_addr_isany(ipaddr) ip4_addr_isany(ipaddr)
+#define EPROTO 71
+#define ENODEV 19
+#define INT16_MIN (-__INT16_MAX__ - 1)
+#define ALPHA_SRC 0
+#define __LOADFILE_COMMON_H__ 
+#define __STDC_EMBED_FOUND__ 1
+#define S_IFLNK _IFLNK
+#define __INT_FAST16_MAX__ 0x7fffffff
+#define __timer_t_defined 
+#define IP6_ADDR_BLOCK1(ip6addr) ((u16)((lwip_htonl((ip6addr)->addr[0]) >> 16) & 0xffff))
+#define IP6_ADDR_BLOCK2(ip6addr) ((u16)((lwip_htonl((ip6addr)->addr[0])) & 0xffff))
+#define IP6_ADDR_BLOCK4(ip6addr) ((u16)((lwip_htonl((ip6addr)->addr[1])) & 0xffff))
+#define IP6_ADDR_BLOCK7(ip6addr) ((u16)((lwip_htonl((ip6addr)->addr[3]) >> 16) & 0xffff))
+#define IP6_ADDR_BLOCK8(ip6addr) ((u16)((lwip_htonl((ip6addr)->addr[3])) & 0xffff))
+#define __ps2sdk__ 1
+#define INT_MAX __INT_MAX__
+#define __SYS_CONFIG_H__ 
+#define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
+#define ___int_least16_t_defined 1
+#define _POSIX_MONOTONIC_CLOCK 200112L
+#define GS_MODE_VGA_640_75 0x1C
+#define _REENT_INIT_RESERVED_0 
+#define _REENT_INIT_RESERVED_1 
+#define _REENT_INIT_RESERVED_2 
+#define DMA_SET_CTRL(A,B,C,D,E,F) (u32)(A & 0x00000001) << 0 | (u32)(B & 0x00000001) << 1 | (u32)(C & 0x00000003) << 2 | (u32)(D & 0x00000003) << 4 | (u32)(E & 0x00000003) << 6 | (u32)(F & 0x00000007) << 8
+#define IPTOS_PREC_FLASH 0x60
+#define _MIPS_SZPTR 32
+#define PS2VNC_SERVICES_IMPORTS_H 
+#define OUTPUT_HEIGHT (active_video_mode->raster_height)
+#define _SC_2_PBS_ACCOUNTING 114
+#define PAD_ACTSIZE 3
+#define __FLT64_DIG__ 15
+#define S_ISVTX 0001000
+#define _SC_XBS5_LP64_OFF64 _SC_V7_LP64_OFF64
+#define PTHREAD_DESTRUCTOR_ITERATIONS _POSIX_THREAD_DESTRUCTOR_ITERATIONS
+#define _SYS_CDEFS_H_ 
+#define __UINT_FAST32_MAX__ 0xffffffffU
+#define __UINT_LEAST64_TYPE__ long long unsigned int
+#define _REENT_EMERGENCY_SIZE 25
+#define MINSIGSTKSZ 2048
+#define NULL ((void *)0)
+#define __SFRACT_EPSILON__ 0x1P-7HR
+#define GIF_TAG_QUAD_TEXTURED(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,12)
+#define GS_SETREG_BITBLTBUF(sbp,sbw,spsm,dbp,dbw,dpsm) ((u64)(sbp) | ((u64)(sbw) << 16) | ((u64)(spsm) << 24) | ((u64)(dbp) << 32) | ((u64)(dbw) << 48) | ((u64)(dpsm) << 56))
+#define __FLT_HAS_QUIET_NAN__ 0
+#define __MIPSCOPACCESS_H__ 
+#define UINTMAX_MAX (__UINTMAX_MAX__)
+#define ip6_addr_cmp_solicitednode(ip6addr,sn_addr) (((ip6addr)->addr[0] == PP_HTONL(0xff020000UL)) && ((ip6addr)->addr[1] == 0) && ((ip6addr)->addr[2] == PP_HTONL(0x00000001UL)) && ((ip6addr)->addr[3] == (PP_HTONL(0xff000000UL) | (sn_addr)->addr[3])))
+#define _SC_THREAD_ATTR_STACKADDR 43
+#define INT32_C(x) __INT32_C(x)
+#define GS_DIMX 0x44
+#define __FLT_MAX_10_EXP__ 38
+#define __DECONST(type,var) ((type)(__uintptr_t)(const void *)(var))
+#define AI_ADDRCONFIG 0x40
+#define _R4000 1
+#define __SEOF 0x0020
+#define DMA_SET_ASR0(A,B) (u32)((A) & 0x7FFFFFFF) << 0 | (u32)((B) & 0x00000001) << 31
+#define _SC_HOST_NAME_MAX 65
+#define CPU_INSTRUCTION_CACHE 2
+#define GS_SET_EXTWRITE(WRITE) *GS_EXTWRITE = ((u64)(WRITE) << 0)
+#define __LONG_MAX__ 0x7fffffffL
+#define _SC_ATEXIT_MAX 55
+#define __WCHAR_T__ 
+#define _PC_SYNC_IO 11
+#define ELIBACC 83
+#define __dead2 __attribute__((__noreturn__))
+#define va_copy(d,s) __builtin_va_copy(d,s)
+#define GS_OS_PER 0x01
+#define _CLOCKID_T_ unsigned long
+#define TH_SELF 0
+#define strtodf strtof
+#define __FLT_HAS_INFINITY__ 0
+#define __GNUC_EXECUTION_CHARSET_NAME "UTF-8"
+#define OSK_ROWS 5
+#define _REENT_CHECK_RAND48(ptr) 
+#define GS_D_ATEST_ON 0x06
+#define PAD_TYPE_KONAMIGUN 0x3
+#define _BSD_PTRDIFF_T_ 
+#define __RAND_MAX 0x7fffffff
+#define _TIME_T_DECLARED 
+#define SIGXFSZ 25
+#define ip6_addr_isallnodes_iflocal(ip6addr) (((ip6addr)->addr[0] == PP_HTONL(0xff010000UL)) && ((ip6addr)->addr[1] == 0UL) && ((ip6addr)->addr[2] == 0UL) && ((ip6addr)->addr[3] == PP_HTONL(0x00000001UL)))
+#define __UINT_FAST16_TYPE__ unsigned int
+#define __STDC_EMBED_NOT_FOUND__ 0
+#define __INT_FAST32_WIDTH__ 32
+#define TCP_KEEPALIVE 0x02
+#define GS_DISPLAY1 ((volatile u64 *)(0x12000080))
+#define __SERR 0x0040
+#define __CHAR16_TYPE__ short unsigned int
+#define __asserts_shared(...) __lock_annotate(assert_shared_lock(__VA_ARGS__))
+#define __PRAGMA_REDEFINE_EXTNAME 1
+#define E2BIG 7
+#define BIG_ENDIAN _BIG_ENDIAN
+#define kBUSCLKBY256 (kBUSCLK / 256)
+#define EXPR_NEST_MAX 32
+#define SI_MESGQ 5
+#define _SC_XOPEN_UUCP 124
+#define __SIZE_WIDTH__ 32
+#define GIF_TAG_QUAD_GOURAUD(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,10)
+#define IPADDR_LOOPBACK ((u32)0x7f000001UL)
+#define THS_WAITSUSPEND 0x0c
+#define __INT_LEAST16_MAX__ 0x7fff
+#define INT_MIN (-INT_MAX - 1)
+#define NO_DATA 211
+#define UCHAR_WIDTH __SCHAR_WIDTH__
+#define GS_SCISSOR_RESET 0x00
+#define __INT64_MAX__ 0x7fffffffffffffffLL
+#define EDEADLK 45
+#define _UINT64_T_DECLARED 
+#define GSKIT_FALIGN_CENTER 0x01
+#define __SACCUM_FBIT__ 7
+#define EADDRINUSE 112
+#define ip4_addr_cmp(addr1,addr2) ((addr1)->addr == (addr2)->addr)
+#define ip_addr_set_ip4_u32(ipaddr,val) ip4_addr_set_u32(ip_2_ip4(ipaddr), val)
+#define XK_BACKSPACE 0xFF08
+#define __SIFDMA_H__ 
+#define lwip_sendto(...) sendto(__VA_ARGS__)
+#define __SIG_ATOMIC_WIDTH__ 32
+#define ip6_addr_isany_val(ip6addr) (((ip6addr).addr[0] == 0) && ((ip6addr).addr[1] == 0) && ((ip6addr).addr[2] == 0) && ((ip6addr).addr[3] == 0))
+#define ip6_addr_istentative(addr_state) (addr_state & IP6_ADDR_TENTATIVE)
+#define _SC_MEMORY_PROTECTION 26
+#define _SC_THREAD_KEYS_MAX 38
+#define __SIFRPC_H__ 
+#define _SC_TRACE_LOG 87
+#define __INT_LEAST64_TYPE__ long long int
+#define INT64_MAX (__INT64_MAX__)
+#define ip4_addr_netcmp(addr1,addr2,mask) (((addr1)->addr & (mask)->addr) == ((addr2)->addr & (mask)->addr))
+#define __STDC_VERSION_LIMITS_H__ 202311L
+#define __LOCK_INIT(class,lock) extern struct __lock __lock_ ## lock; class _LOCK_T lock = &__lock_ ## lock
+#define __INT16_TYPE__ short int
+#define __INT_LEAST8_TYPE__ signed char
+#define IP6_MULTICAST_SCOPE_GLOBAL 0xe
+#define _WANT_IO_LONG_LONG 1
+#define SIGSTOP 17
+#define GS_SIGNAL 0x60
+#define __XSTRING(x) __STRING(x)
+#define _mips 1
+#define IP6_ADDR_BLOCK5(ip6addr) ((u16)((lwip_htonl((ip6addr)->addr[2]) >> 16) & 0xffff))
+#define SIF_STAT_CMDINIT 0x20000
+#define __STDC_VERSION__ 202311L
+#define GS_SETREG_BUSDIR(A) *GS_BUSDIR = ((u64)(A))
+#define IP6_ADDR_BLOCK6(ip6addr) ((u16)((lwip_htonl((ip6addr)->addr[2])) & 0xffff))
+#define __SQ_FBIT__ 31
+#define PAD_SQUARE 0x8000
+#define __OBSOLETE_MATH_DEFAULT 1
+#define ENOTDIR 20
+#define _BIG_ENDIAN 4321
+#define SO_DEBUG 0x0001
+#define SEEK_HOLE 4
+#define GSKIT_ALLOC_USERBUFFER 0x01
+#define TIMER_ABSTIME 4
+#define PAD_R3 0x0004
+#define NETMAN_NETIF_EVF_UP 0x01
+#define __INT_FAST8_MAX__ 0x7fffffff
+#define UINTMAX_C(x) __UINTMAX_C(x)
+#define __PMT(args) args
+#define __INTPTR_MAX__ 0x7fffffff
+#define THS_READY 0x02
+#define IP_SET_TYPE(ipaddr,iptype) 
+#define __lock_release_recursive(lock) __retarget_lock_release_recursive(lock)
+#define GSKIT_FALIGN_RIGHT 0x02
+#define ECONNRESET 104
+#define __trylocks_shared(...) __lock_annotate(shared_trylock_function(__VA_ARGS__))
+#define DST_MET 4
+#define T0_HOLD ((volatile unsigned int *)0x10000030)
+#define _NOTHROW 
+#define GSKIT_GIF_PRIM_QUAD_GOURAUD 0x1900
+#define __QQ_FBIT__ 7
+#define SIGSYS 12
+#define GS_FBA_1 0x4a
+#define GS_BUSDIR ((volatile u64 *)(0x12001040))
+#define _SC_COLL_WEIGHTS_MAX 62
+#define IPPROTO_ICMP 1
+#define GIF_TAG_SPRITE_TEXTURED_REGS(ctx) ((u64)(GS_TEX0_1 + ctx) << 0) | ((u64)(GS_PRIM) << 4) | ((u64)(GS_RGBAQ) << 8) | ((u64)(GS_UV) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GS_UV) << 20) | ((u64)(GS_XYZ2) << 24) | ((u64)(GIF_NOP) << 28);
+#define kINTC_GS INTC_GS
+#define SIF_DMA_INT_I 0x2
+#define _SC_LEVEL3_CACHE_SIZE 134
+#define SIF_DMA_INT_O 0x4
+#define ENXIO 6
+#define ntohl(x) lwip_ntohl(x)
+#define _SC_THREAD_CPUTIME 80
+#define ntohs(x) lwip_ntohs(x)
+#define CLOCK_MONOTONIC (4)
+#define GIF_AD 0x0E
+#define GS_SETREG_DIMX(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P) ((u64)(A) << 0) | ((u64)(B) << 4) | ((u64)(C) << 8) | ((u64)(D) << 12) | ((u64)(E) << 16) | ((u64)(F) << 20) | ((u64)(G) << 24) | ((u64)(H) << 28) | ((u64)(I) << 32) | ((u64)(J) << 36) | ((u64)(K) << 40) | ((u64)(L) << 44) | ((u64)(M) << 48) | ((u64)(N) << 52) | ((u64)(0) << 56) | ((u64)(P) << 60)
+#define __UTA_IBIT__ 64
+#define DMA_REFS 0x4
+#define __int8_t_defined 1
+#define _FEXCL 0x0800
+#define __FLT64_HAS_QUIET_NAN__ 1
+#define GS_CLAMP_1 0x08
+#define __htonl(_x) __bswap32(_x)
+#define SifRegisterRpc(...) sceSifRegisterRpc(__VA_ARGS__)
+#define EBADRQC 54
+#define gsKit_prim_quad_texture(gsGlobal,Texture,x1,y1,u1,v1,x2,y2,u2,v2,x3,y3,u3,v3,x4,y4,u4,v4,z,color) gsKit_prim_quad_texture_3d(gsGlobal, Texture, x1, y1, z, u1, v1, x2, y2, z, u2, v2, x3, y3, z, u3, v3, x4, y4, z, u4, v4, color);
+#define _MIPS_SZINT 32
+#define FSYNC _FSYNC
+#define SA_NOCLDSTOP 1
+#define GS_MODE_PAL 0x03
+#define ip6_addr_debug_print_val(debug,ipaddr) ip6_addr_debug_print_parts(debug, IP6_ADDR_BLOCK1(&(ipaddr)), IP6_ADDR_BLOCK2(&(ipaddr)), IP6_ADDR_BLOCK3(&(ipaddr)), IP6_ADDR_BLOCK4(&(ipaddr)), IP6_ADDR_BLOCK5(&(ipaddr)), IP6_ADDR_BLOCK6(&(ipaddr)), IP6_ADDR_BLOCK7(&(ipaddr)), IP6_ADDR_BLOCK8(&(ipaddr)))
+#define IP4_ADDR_BROADCAST (ip_2_ip4(&ip_addr_broadcast))
+#define ps2ip_getconfig(...) libcglue_ps2ip_getconfig(__VA_ARGS__)
+#define _SC_ADVISORY_INFO 54
+#define IP6_MULTICAST_SCOPE_RESERVED0 0x0
+#define _SC_LEVEL1_DCACHE_SIZE 128
+#define IP6_MULTICAST_SCOPE_RESERVEDF 0xf
+#define GS_EXTDATA ((volatile u64 *)(0x120000C0))
+#define FAPPEND _FAPPEND
+#define IP_CLASSB(a) ((((u32)(a)) & 0xc0000000UL) == 0x80000000UL)
+#define __FLT32X_DIG__ 15
+#define INIT_VU1 0x02
+#define __UINT16_C(c) c
+#define _SIGNAL_H_ 
+#define __PTRDIFF_WIDTH__ 32
+#define __builtin_align_down(x,align) ((__typeof__(x))((x)&(~((align)-1))))
+#define ip4_addr_set_zero(ipaddr) ((ipaddr)->addr = 0)
+#define LWIP_AUTOIP 0
+#define __BEGIN_DECLS 
+#define __sym_default(sym,impl,verid) __asm__(".symver " #impl ", " #sym "@@" #verid)
+#define GS_SYNCV ((volatile u64 *)(0x12000060))
+#define _PC_REC_MIN_XFER_SIZE 18
+#define __SFRACT_FBIT__ 7
+#define ENAMETOOLONG 91
+#define __END_DECLS 
+#define SHRT_WIDTH __SHRT_WIDTH__
+#define __SACCUM_MIN__ (-0X1P7HK-0X1P7HK)
+#define BOOL_WIDTH 1
+#define GS_SETREG_XYZ2 GS_SETREG_XYZ
+#define __FLT64_HAS_INFINITY__ 1
+#define NETIF_FLAG_MLD6 0x40U
+#define _SC_LEVEL1_ICACHE_LINESIZE 127
+#define __MIPSEL 1
+#define AI_NUMERICSERV 0x08
+#define GS_PERSISTENT 0x00
+#define __GNUC_VA_LIST 
+#define _GCC_MAX_ALIGN_T 
+#define ___int32_t_defined 1
+#define UINT_WIDTH __INT_WIDTH__
+#define __SIG_ATOMIC_MIN__ (-__SIG_ATOMIC_MAX__ - 1)
+#define _SC_AIO_LISTIO_MAX 34
+#define SIF_SREG_RPCINIT 0
+#define IP6_ADDR_BLOCK3(ip6addr) ((u16)((lwip_htonl((ip6addr)->addr[1]) >> 16) & 0xffff))
+#define NETMAN_NETIF_NAME_MAX_LEN 4
+#define IP_CLASSC_HOST (0xffffffff & ~IP_CLASSC_NET)
+#define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP PTHREAD_ERRORCHECK_MUTEX_INITIALIZER
+#define SIN_ZERO_LEN 8
+#define __lock_acquire_recursive(lock) __retarget_lock_acquire_recursive(lock)
+#define _SYS__PTHREADTYPES_H_ 
+#define __GCC_HAVE_BUILTIN_MIPS_CACHE 1
+#define SO_SNDBUF 0x1001
+#define dns_setserver(...) libcglue_dns_setserver(__VA_ARGS__)
+#define IPTOS_THROUGHPUT 0x08
+#define F_RSETLK 11
+#define IP_CLASSA_NSHIFT 24
+#define ESOCKTNOSUPPORT 124
+#define M_MMAP_MAX -4
+#define GS_PSM_T8H 0x1B
+#define __INTPTR_TYPE__ int
+#define __UINT16_TYPE__ short unsigned int
+#define __WCHAR_TYPE__ int
+#define CLOCK_ALLOWED 1
+#define gsKit_detect_signal() gsKit_check_rom()
+#define __SIZEOF_FLOAT__ 4
+#define GIF_CTRL (volatile u32*)0x10003000
+#define GS_SETREG_TEST(ate,atst,aref,afail,date,datm,zte,ztst) ((u64)(ate) | ((u64)(atst) << 1) | ((u64)(aref) << 4) | ((u64)(afail) << 12) | ((u64)(date) << 14) | ((u64)(datm) << 15) | ((u64)(zte) << 16) | ((u64)(ztst) << 17))
+#define __TQ_FBIT__ 127
+#define kINTC_IPU INTC_IPU
+#define ip4_addr_isany(addr1) ((addr1) == NULL || ip4_addr_isany_val(*(addr1)))
+#define _NLINK_T_DECLARED 
+#define LWIP_IPV6_AUTOCONFIG 0
+#define T2_MODE ((volatile unsigned int *)0x10001010)
+#define SBT_1MS (SBT_1S / 1000)
+#define S_ISBLK(m) (((m)&_IFMT) == _IFBLK)
+#define ELIBEXEC 87
+#define __USQ_FBIT__ 32
+#define DMA_REG_PCR (volatile u32 *)0x1000E020
+#define D_CTRL_RELE_OFF 0x0
+#define _PTHREAD_ONCE_INIT { 0, 0, 0, 0}
+#define __UINTPTR_MAX__ 0xffffffffU
+#define _FSBLKCNT_T_DECLARED 
+#define __ACCUM_MIN__ (-0X1P15K-0X1P15K)
+#define __INT_FAST64_WIDTH__ 64
+#define __volatile volatile
+#define GIF_TAG_TRIANGLE(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,6)
+#define _SC_STREAM_MAX 100
+#define T3_MODE ((volatile unsigned int *)0x10001810)
+#define INT_FAST16_MAX (__INT_FAST16_MAX__)
+#define __NULLABILITY_PRAGMA_PUSH 
+#define M_TOP_PAD -2
+#define _SC_CLOCK_SELECTION 61
+#define INT_LEAST64_MIN (-__INT_LEAST64_MAX__ - 1)
+#define SI_ASYNCIO 4
+#define EDOTDOT 76
+#define __NEWLIB_H__ 1
+#define SifSetDChain(...) sceSifSetDChain(__VA_ARGS__)
+#define __ULLACCUM_IBIT__ 64
+#define IP_EXPERIMENTAL(a) (((u32)(a)&0xf0000000UL) == 0xf0000000UL)
+#define EADDRNOTAVAIL 125
+#define __GNUCLIKE_MATH_BUILTIN_CONSTANTS 
+#define __INT_FAST64_MAX__ 0x7fffffffffffffffLL
+#define GS_SETREG_COLCLAMP(clamp) ((u64)(clamp))
+#define __GCC_ATOMIC_TEST_AND_SET_TRUEVAL 1
+#define GS_SETREG_TRXPOS(ssax,ssay,dsax,dsay,dir) ((u64)(ssax) | ((u64)(ssay) << 16) | ((u64)(dsax) << 32) | ((u64)(dsay) << 48) | ((u64)(dir) << 59))
+#define ip_addr_isany_val(ipaddr) ip4_addr_isany_val(ipaddr)
+#define BUFSIZ 1024
+#define __FLT_DIG__ 6
+#define __FLT_NORM_MAX__ 6.8056469327705772e+38F
+#define GIF_NOP 0x0F
+#define INT_FAST32_MAX (__INT_FAST32_MAX__)
+#define __GNUCLIKE_BUILTIN_MEMCPY 1
+#define _UINT32_T_DECLARED 
+#define GS_RENDER_QUEUE_OS_POOLSIZE 1024 * 1024
+#define __PS2SDK_NETINET_IN_H__ 
+#define ExitHandler() __asm__ __volatile__("sync\nei\n")
+#define GS_SETREG_ZBUF_1 GS_SETREG_ZBUF
+#define GS_SETREG_ZBUF_2 GS_SETREG_ZBUF
+#define IP_SET_TYPE_VAL(ipaddr,iptype) 
+#define GIF_TAG_QUAD(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,6)
+#define _WCHAR_T_DECLARED 
+#define GS_CLUT_STOREMODE_LOAD 0x01
+#define __UINT_FAST64_TYPE__ long long unsigned int
+#define __sclearerr(p) ((void)((p)->_flags &= ~(__SERR|__SEOF)))
+#define ip6_addr_set(dest,src) do { (dest)->addr[0] = (src) == NULL ? 0 : (src)->addr[0]; (dest)->addr[1] = (src) == NULL ? 0 : (src)->addr[1]; (dest)->addr[2] = (src) == NULL ? 0 : (src)->addr[2]; (dest)->addr[3] = (src) == NULL ? 0 : (src)->addr[3]; } while (0)
+#define _POSIX_OPT_H 1
+#define _stdin_r(x) _REENT_STDIN(x)
+#define INIT_GIF 0x08
+#define _MACHINE__DEFAULT_TYPES_H 
+#define _USE_GDTOA 
+#define GS_TRXPOS 0x51
+#define INADDR_NONE IPADDR_NONE
+#define _SC_2_PBS 113
+#define STDIN_FILENO 0
+#define SIGURG 16
+#define __INT_MAX__ 0x7fffffff
+#define S_IXUSR 0000100
+#define PS2VNC_CONFIG_TEXT_H 
+#define _READ_WRITE_RETURN_TYPE int
+#define GS_DTHE 0x45
+#define mips 1
+#define SBT_1NS (SBT_1S / 1000000000)
+#define S_IWOTH 0000002
+#define F_OFD_SETLKW 17
+#define GS_ZBUF_2 0x4f
+#define __weak_reference(sym,alias) __asm__(".weak " #alias); __asm__(".equ " #alias ", " #sym)
+#define AI_PASSIVE 0x01
+#define ALPHA_DST 1
+#define INIT_VIF0 0x20
+#define INIT_VIF1 0x04
+#define _FWRITE 0x0002
+#define __LACCUM_FBIT__ 31
+#define GS_SET_DISPFB1(FBP,FBW,PSM,DBX,DBY) *GS_DISPFB1 = ((u64)(FBP) << 0) | ((u64)(FBW) << 9) | ((u64)(PSM) << 15) | ((u64)(DBX) << 32) | ((u64)(DBY) << 43)
+#define GS_SET_DISPFB2(FBP,FBW,PSM,DBX,DBY) *GS_DISPFB2 = ((u64)(FBP) << 0) | ((u64)(FBW) << 9) | ((u64)(PSM) << 15) | ((u64)(DBX) << 32) | ((u64)(DBY) << 43)
+#define F_SETFD 2
+#define SifGetSreg(...) sceSifGetSreg(__VA_ARGS__)
+#define EPROTONOSUPPORT 123
+#define _stdout_r(x) _REENT_STDOUT(x)
+#define UINT_MAX (INT_MAX * 2U + 1U)
+#define GS_SETREG_XYZ(x,y,z) ((u64)(x) | ((u64)(y) << 16) | ((u64)(z) << 32))
+#define _REENT_INIT_RESERVED_8 
+#define _UNIX98_THREAD_MUTEX_ATTRIBUTES 1
+#define _T_SIZE_ 
+#define LLONG_MAX __LONG_LONG_MAX__
+#define GSKIT_ALLOC_SYSBUFFER 0x00
+#define __GCC_ATOMIC_CHAR8_T_LOCK_FREE 1
+#define ENOTRECOVERABLE 141
+#define __USACCUM_MIN__ 0.0UHK
+#define feof(p) __sfeof(p)
+#define SIGILL 4
+#define MSG_OOB 0x04
+#define __INT64 "ll"
+#define GS_FOG 0x0a
+#define __UHA_IBIT__ 8
+#define __u_short_defined 
+#define __lock_try_acquire_recursive(lock) __retarget_lock_try_acquire_recursive(lock)
+#define IP_CLASSB_HOST (0xffffffff & ~IP_CLASSB_NET)
+#define __ATFILE_VISIBLE 1
+#define __INT64_TYPE__ long long int
+#define SifExitCmd(...) sceSifExitCmd(__VA_ARGS__)
+#define IPADDR_NONE ((u32)0xffffffffUL)
+#define EIO 5
+#define __FLT_MAX_EXP__ 129
+#define GS_XYOFFSET_1 0x18
+#define _REENT_SIG_FUNC(_ptr) ((_ptr)->_sig_func)
+#define DMA_REG_STAT (volatile u32 *)0x1000E010
+#define _INT32_EQ_LONG 
+#define IP6_MULTICAST_SCOPE_SITE_LOCAL 0x5
+#define __UTQ_IBIT__ 0
+#define SOCKLEN_T_DEFINED 1
+#define ENETUNREACH 114
+#define EXDEV 18
+#define LWIP_NETIF_HWADDRHINT 0
+#define GS_XYOFFSET_2 0x19
+#define __alloc_size2(n,x) __attribute__((__alloc_size__(n, x)))
+#define S_IRGRP 0000040
+#define UINT32_C(x) __UINT32_C(x)
+#define _MIPS_SIM _ABIN32
+#define ip_addr_get_network(target,host,mask) ip4_addr_get_network(target, host, mask)
+#define _BSDTYPES_DEFINED 
+#define __ORDER_BIG_ENDIAN__ 4321
+#define UINT_FAST8_MAX (__UINT_FAST8_MAX__)
+#define _SC_THREAD_PRIORITY_SCHEDULING 45
+#define _POSIX2_RE_DUP_MAX 255
+#define _FVWRITE_IN_STREAMIO 1
+#define SO_DONTROUTE 0x0010
+#define __ptr_t void *
+#define FNOCTTY _FNOCTTY
+#define __DBL_MANT_DIG__ 53
+#define ___int_size_t_h 
+#define IP6_MULTICAST_SCOPE_LINK_LOCAL 0x2
+#define _SYS_TIMESPEC_H_ 
+#define XK_TAB 0xFF09
+#define IPTOS_TOS_MASK 0x1E
+#define TRY_AGAIN 213
+#define GSKIT_GIF_FLG_IMAGE 2
+#define _FEXLOCK 0x0100
+#define _SYS__TIMESPEC_H_ 
+#define __GSHIRES_H__ 
+#define __INT_LEAST64_MAX__ 0x7fffffffffffffffLL
+#define __GCC_ATOMIC_CHAR16_T_LOCK_FREE 1
+#define _HAVE_LONG_DOUBLE 1
+#define UINT_FAST64_MAX (__UINT_FAST64_MAX__)
+#define __clock_t_defined 
+#define _POSIX_SEM_VALUE_MAX 32767
+#define __int_fast16_t_defined 1
+#define INT_FAST32_MIN (-__INT_FAST32_MAX__ - 1)
+#define __mips__ 1
+#define __WINT_TYPE__ unsigned int
+#define __UINT_LEAST32_TYPE__ long unsigned int
+#define _FNOINHERIT 0x40000
+#define __SIZEOF_SHORT__ 2
+#define __ULLFRACT_IBIT__ 0
+#define STDOUT_FILENO 1
+#define SEM_VALUE_MAX _POSIX_SEM_VALUE_MAX
+#define ___int8_t_defined 1
+#define FNDELAY _FNDELAY
+#define _SC_AVPHYS_PAGES 12
+#define IP6_MULTICAST_SCOPE_INTERFACE_LOCAL 0x1
+#define __LDBL_MIN_EXP__ (-1021)
+#define PF_INET AF_INET
+#define _MIPS_FPSET 32
+#define GS_SETREG_CSR(A,B,C,D,E,F,G,H,I,J,K,L) (u64)(A & 0x00000001) << 0 | (u64)(B & 0x00000001) << 1 | (u64)(C & 0x00000001) << 2 | (u64)(D & 0x00000001) << 3 | (u64)(E & 0x00000001) << 4 | (u64)(F & 0x00000001) << 8 | (u64)(G & 0x00000001) << 9 | (u64)(H & 0x00000001) << 12 | (u64)(I & 0x00000001) << 13 | (u64)(J & 0x00000003) << 14 | (u64)(K & 0x000000FF) << 16 | (u64)(L & 0x000000FF) << 24
+#define GS_FIELD_ODD 0x02
+#define INVALIDATE_DCACHE 1
+#define PAD_MMODE_DIGITAL 0
+#define SBT_1US (SBT_1S / 1000000)
+#define GS_SETTING_ON 0x01
+#define IP_CLASSB_NET 0xffff0000
+#define __lock_try_acquire(lock) __retarget_lock_try_acquire(lock)
+#define __FLT64_MAX__ 1.7976931348623157e+308F64
+#define ___int_least32_t_defined 1
+#define _END_STD_C 
+#define GSKIT_GIF_PRIM_TRISTRIP 0x1400
+#define __UDA_IBIT__ 32
+#define bintime_cmp(a,b,cmp) (((a)->sec == (b)->sec) ? ((a)->frac cmp (b)->frac) : ((a)->sec cmp (b)->sec))
+#define ENOSPC 28
+#define stdout _REENT_STDOUT(_REENT)
+#define IP6_ADDR_TENTATIVE_COUNT_MASK 0x07
+#define GIF_STAT_PSE *GIF_STAT >> 3
+#define ENOEXEC 8
+#define __WINT_WIDTH__ 32
+#define __sym_compat(sym,impl,verid) __asm__(".symver " #impl ", " #sym "@" #verid)
+#define __SMBF 0x0080
+#define T1_HOLD ((volatile unsigned int *)0x10000830)
+#define _POSIX_THREAD_PRIO_INHERIT -1
+#define GS_SET_DISPLAY1(DX,DY,MAGH,MAGV,DW,DH) *GS_DISPLAY1 = ((u64)(DX) << 0) | ((u64)(DY) << 12) | ((u64)(MAGH) << 23) | ((u64)(MAGV) << 27) | ((u64)(DW) << 32) | ((u64)(DH) << 44)
+#define EOF (-1)
+#define __INT_LEAST8_MAX__ 0x7f
+#define PS2IP_DHCP 1
+#define GS_SET_DISPLAY2(DX,DY,MAGH,MAGV,DW,DH) *GS_DISPLAY2 = ((u64)(DX) << 0) | ((u64)(DY) << 12) | ((u64)(MAGH) << 23) | ((u64)(MAGV) << 27) | ((u64)(DW) << 32) | ((u64)(DH) << 44)
+#define SO_RCVBUF 0x1002
+#define __INT_LEAST64_WIDTH__ 64
+#define OSK_HEIGHT 178
+#define SIGUSR2 31
+#define __FLT32X_MAX_10_EXP__ 308
+#define LLONG_MIN (-LLONG_MAX - 1LL)
+#define ip4_addr_debug_print_parts(debug,a,b,c,d) LWIP_DEBUGF(debug, ("%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F, a, b, c, d))
+#define __IOPHEAP_H__ 
+#define SIGTSTP 18
+#define SIF_CMD_RPC_RDATA (SIF_CMD_ID_SYSTEM | 12)
+#define __SIZEOF_INT128__ 16
+#define __LFRACT_FBIT__ 31
+#define GS_SETREG_TEX1(lcm,mxl,mmag,mmin,mtba,l,k) ((u64)(lcm) | ((u64)(mxl) << 2) | ((u64)(mmag) << 5) | ((u64)(mmin) << 6) | ((u64)(mtba) << 9) | ((u64)(l) << 19) | ((u64)(k) << 32))
+#define RFB_RECEIVE_LOCAL_REDRAW (-2)
+#define _IFLNK 0120000
+#define __LDBL_MAX_10_EXP__ 308
+#define __ATOMIC_RELAXED 0
+#define __signed signed
+#define netif_ip4_addr(netif) ((const ip4_addr_t *)ip_2_ip4(&((netif)->ip_addr)))
+#define DMA_CHANNEL_SIF0 0x5
+#define DMA_CHANNEL_SIF1 0x6
+#define DMA_CHANNEL_SIF2 0x7
+#define DI DIntr
+#define _UID_T_DECLARED 
+#define __DBL_EPSILON__ ((double)2.2204460492503131e-16L)
+#define EMSGSIZE 122
+#define timespecadd(tsp,usp,vsp) do { (vsp)->tv_sec = (tsp)->tv_sec + (usp)->tv_sec; (vsp)->tv_nsec = (tsp)->tv_nsec + (usp)->tv_nsec; if ((vsp)->tv_nsec >= 1000000000L) { (vsp)->tv_sec++; (vsp)->tv_nsec -= 1000000000L; } } while (0)
+#define PTHREAD_PROCESS_PRIVATE 0
+#define ip6_addr_isglobal(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xe0000000UL)) == PP_HTONL(0x20000000UL))
+#define __EXPORT 
+#define timespecsub(tsp,usp,vsp) do { (vsp)->tv_sec = (tsp)->tv_sec - (usp)->tv_sec; (vsp)->tv_nsec = (tsp)->tv_nsec - (usp)->tv_nsec; if ((vsp)->tv_nsec < 0) { (vsp)->tv_sec--; (vsp)->tv_nsec += 1000000000L; } } while (0)
+#define EFTYPE 79
+#define ip6_addr_set_loopback(ip6addr) do { (ip6addr)->addr[0] = 0; (ip6addr)->addr[1] = 0; (ip6addr)->addr[2] = 0; (ip6addr)->addr[3] = PP_HTONL(0x00000001UL); } while (0)
+#define BC_SCALE_MAX 99
+#define _SIZET_ 
+#define _PC_ALLOC_SIZE_MIN 15
+#define ENOSTR 60
+#define EI EIntr
+#define IPADDR4_INIT(u32val) { u32val }
+#define _LDBL_EQ_DBL 1
+#define _LIBC_LIMITS_H_ 1
+#define SIGEMT 7
+#define ipaddr_aton(cp,addr) ip4addr_aton(cp, addr)
+#define PIPE_BUF 512
+#define __UINT8_C(c) c
+#define IF__NETIF_CHECKSUM_ENABLED(netif,chksumflag) 
+#define EFBIG 27
+#define __FLT64_MAX_EXP__ 1024
+#define IPTOS_TOS(tos) ((tos)&IPTOS_TOS_MASK)
+#define GS_FBA_2 0x4b
+#define SIGKILL 9
+#define FREAD _FREAD
+#define _UINT16_T_DECLARED 
+#define DISABLE_PATCHED_FUNCTIONS() DISABLE_PATCHED_ALARMS() DISABLE_PATCHED_THREADS() DISABLE_PATCHED_ExecPS2() DISABLE_PATCHED_TLBFunctions() DISABLE_PATCHED_Exit() DISABLE_PATCHED_LoadExecPS2()
+#define ESRCH 3
+#define __INT_LEAST32_TYPE__ long int
+#define TIMEVAL_TO_TIMESPEC(tv,ts) do { (ts)->tv_sec = (tv)->tv_sec; (ts)->tv_nsec = (tv)->tv_usec * 1000; } while (0)
+#define _SC_REGEXP 72
+#define EHOSTDOWN 117
+#define fropen(__cookie,__fn) funopen(__cookie, __fn, NULL, NULL, NULL)
+#define LWIP_CHECKSUM_CTRL_PER_NETIF 0
+#define RUNTIME_HOTKEY_SETTLE_POLLS 8u
+#define LF_PATH_MAX 252
+#define __wchar_t__ 
+#define D_CTRL_STS_IPU 0x3
+#define SEEK_END 2
+#define __SIZEOF_WCHAR_T__ 4
+#define __UINT64_TYPE__ long long unsigned int
+#define D_CTRL_MFD_GIF 0x3
+#define RFB_SCROLL_LEFT 0x20
+#define netif_set_client_data(netif,id,data) netif_get_client_data(netif, id) = (data)
+#define PTHREAD_SCOPE_SYSTEM 1
+#define GS_SETREG_TEXCLUT(cbw,cou,cov) ((u64)(cbw) | ((u64)(cou) << 6) | ((u64)(cov) << 12))
+#define ip6_addr_set_hton(dest,src) do { (dest)->addr[0] = (src) == NULL ? 0 : lwip_htonl((src)->addr[0]); (dest)->addr[1] = (src) == NULL ? 0 : lwip_htonl((src)->addr[1]); (dest)->addr[2] = (src) == NULL ? 0 : lwip_htonl((src)->addr[2]); (dest)->addr[3] = (src) == NULL ? 0 : lwip_htonl((src)->addr[3]); } while (0)
+#define GS_CMODE_REPEAT 0x00
+#define ECHRNG 37
+#define _READ_WRITE_BUFSIZE_TYPE int
+#define GS_SETREG_CLAMP(wms,wmt,minu,maxu,minv,maxv) ((u64)(wms) | ((u64)(wmt) << 2) | ((u64)(minu) << 4) | ((u64)(maxu) << 14) | ((u64)(minv) << 24) | ((u64)(maxv) << 34))
+#define ENOLCK 46
+#define GIF_TAG_LINE(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,4)
+#define ENFILE 23
+#define ip6_addr_isloopback(ip6addr) (((ip6addr)->addr[0] == 0UL) && ((ip6addr)->addr[1] == 0UL) && ((ip6addr)->addr[2] == 0UL) && ((ip6addr)->addr[3] == PP_HTONL(0x00000001UL)))
+#define MSG_DONTWAIT 0x08
+#define _SC_THREAD_STACK_MIN 39
+#define __LLFRACT_MAX__ 0X7FFFFFFFFFFFFFFFP-63LLR
+#define _SC_IOV_MAX 66
+#define ip6_addr_isinvalid(addr_state) (addr_state == IP6_ADDR_INVALID)
+#define _REENT_STDOUT(_ptr) ((_ptr)->_stdout)
+#define GS_SETREG_MIPTBP1(tbp1,tbw1,tbp2,tbw2,tbp3,tbw3) ((u64)(tbp1) | ((u64)(tbw1) << 14) | ((u64)(tbp2) << 20) | ((u64)(tbw2) << 34) | ((u64)(tbp3) << 40) | ((u64)(tbw3) << 54))
+#define ip_addr_set_zero(ipaddr) ip4_addr_set_zero(ipaddr)
+#define _STDDEF_H_ 
+#define GS_ZBUF_1 0x4e
+#define _FNOCTTY 0x8000
+#define __INT16 "h"
+#define gsKit_prim_line_goraud(gsGlobal,x1,y1,x2,y2,z,color1,color2) gsKit_prim_line_goraud_3d(gsGlobal, x1, y1, z, x2, y2, z, color1, color2);
+#define __FLT64_NORM_MAX__ 1.7976931348623157e+308F64
+#define SIGXCPU 24
+#define _UNBUF_STREAM_OPT 1
+#define O_TRUNC _FTRUNC
+#define GS_TEXFLUSH 0x3f
+#define __INTMAX_MAX__ 0x7fffffffffffffffLL
+#define ___int_least8_t_defined 1
+#define __machine_off_t_defined 
+#define _SC_LOGIN_NAME_MAX 52
+#define __CC_SUPPORTS___INLINE__ 1
+#define MSG_MORE 0x10
+#define GIF_TAG_QUAD_GORAUD_TEXTURED(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,14)
+#define ferror_unlocked(p) __sferror(p)
+#define PAD_RSTAT_BUSY 0x02
+#define NETMAN_NETIF_LINK_UP 4
+#define _SC_MAPPED_FILES 23
+#define __INT_FAST8_TYPE__ int
+#define _IOLBF 1
+#define feof_unlocked(p) __sfeof(p)
+#define _ABIN32 2
+#define PAD_TYPE_NEJICON 0x2
+#define EOPNOTSUPP 95
+#define __fastcall __attribute__((__fastcall__))
+#define __ULLACCUM_EPSILON__ 0x1P-64ULLK
+#define _STDINT_H 
+#define GIF_STAT_APATH *GIF_STAT >> 10
+#define __USACCUM_MAX__ 0XFFFFP-8UHK
+#define _SC_AIO_MAX 35
+#define __DEQUALIFY(type,var) ((type)(__uintptr_t)(const volatile void *)(var))
+#define _SC_JOB_CONTROL 5
+#define va_arg(v,l) __builtin_va_arg(v,l)
+#define DMA_RET 0x6
+#define __LDBL_HAS_INFINITY__ 1
+#define _REENT_MBRTOWC_STATE(ptr) ((ptr)->_new._reent._mbrtowc_state)
+#define S_ISGID 0002000
+#define SIF_CMD_ID_SYSTEM 0x80000000
+#define PP_NTOHL(x) PP_HTONL(x)
+#define _SC_CHILD_MAX 1
+#define PP_NTOHS(x) PP_HTONS(x)
+#define TIMESPEC_TO_TIMEVAL(tv,ts) do { (tv)->tv_sec = (ts)->tv_sec; (tv)->tv_usec = (ts)->tv_nsec / 1000; } while (0)
+#define __UHQ_IBIT__ 0
+#define D_CTRL_MFD_RES 0x1
+#define PTHREAD_CREATE_JOINABLE 1
+#define __LLACCUM_IBIT__ 64
+#define SIGLOST 29
+#define P_tmpdir "/tmp"
+#define ip_addr_isbroadcast(addr,netif) ip4_addr_isbroadcast(addr, netif)
+#define __attribute_pure__ 
+#define __FLT64_HAS_DENORM__ 1
+#define S_ISDIR(m) (((m)&_IFMT) == _IFDIR)
+#define PAD_RSTAT_FAILED 0x01
+#define INTMAX_MAX (__INTMAX_MAX__)
+#define INADDR_LOOPBACK IPADDR_LOOPBACK
+#define INT_FAST8_MAX (__INT_FAST8_MAX__)
+#define PTHREAD_PRIO_NONE 0
+#define R_OK 4
+#define __packed __attribute__((__packed__))
+#define _FSHLOCK 0x0080
+#define __DBL_DECIMAL_DIG__ 17
+#define __STDC_UTF_32__ 1
+#define __INT_FAST8_WIDTH__ 32
+#define GS_EXTBUF ((volatile u64 *)(0x120000B0))
+#define SifRemoveRpc(...) sceSifRemoveRpc(__VA_ARGS__)
+#define ip6_addr_set_zero(ip6addr) do { (ip6addr)->addr[0] = 0; (ip6addr)->addr[1] = 0; (ip6addr)->addr[2] = 0; (ip6addr)->addr[3] = 0; } while (0)
+#define EDEADLOCK 56
+#define _REENT_L64A_BUF(ptr) ((ptr)->_new._reent._l64a_buf)
+#define GSKIT_GIF_PRIM_SPRITE_TEXTURED 0x1A00
+#define __CC_SUPPORTS___INLINE 1
+#define _SIZE_T 
+#define _MACHTIME_H_ 
+#define unreachable() (__builtin_unreachable ())
+#define __FLT32X_MAX__ 1.7976931348623157e+308F32x
+#define SIGEV_SIGNAL 2
+#define PBUF_TRANSPORT_HLEN 20
+#define __TA_FBIT__ 63
+#define __DBL_NORM_MAX__ ((double)1.7976931348623157e+308L)
+#define SifCallRpc(...) sceSifCallRpc(__VA_ARGS__)
+#define SOCK_STREAM 1
+#define NO_PATCHED_ExecOSD() void ExecOSD(int num_args, char *args[]) { _ExecOSD(num_args, args); }
+#define FOPEN_MAX 20
+#define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
+#define LIBCGLUE_SYS_SOCKET_ALIASES 1
+#define GIF_TAG_SPRITE_TEXTURED(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,8)
+#define ip6_addr_ismulticast_iflocal(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xff8f0000UL)) == PP_HTONL(0xff010000UL))
+#define BOOL_MAX 1
+#define UNCACHED_SEG(x) ((void *)(((u32)(x)) | 0x20000000))
+#define GIF_TAG_TRIANGLE_TEXTURED_REGS(ctx) ((u64)(GS_TEX0_1 + ctx) << 0) | ((u64)(GS_PRIM) << 4) | ((u64)(GS_RGBAQ) << 8) | ((u64)(GS_UV) << 12) | ((u64)(GS_XYZ2) << 16) | ((u64)(GS_UV) << 20) | ((u64)(GS_XYZ2) << 24) | ((u64)(GS_UV) << 28) | ((u64)(GS_XYZ2) << 32) | ((u64)(GIF_NOP) << 36);
+#define PAD_L3 0x0002
+#define GS_CMODE_REGION_CLAMP 0x02
+#define GIF_TAG_POINT(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,4)
+#define _SC_LEVEL1_DCACHE_ASSOC 129
+#define GS_ONESHOT 0x01
+#define S_IWRITE 0000200
+#define kBUSCLKBY16 (kBUSCLK / 16)
+#define lwip_accept(...) accept(__VA_ARGS__)
+#define _SC_TRACE_USER_EVENT_MAX 90
+#define __UDQ_IBIT__ 0
+#define __INTMAX_WIDTH__ 64
+#define __null_sentinel __attribute__((__sentinel__))
+#define GS_TRXDIR 0x53
+#define _STRING_H_ 
+#define _GCC_SIZE_T 
+#define NETMAN_NETIF_ETHERNET 1
+#define _NEWLIB_ALLOCA_H 
+#define _ATEXIT_INIT {_NULL, 0, {_NULL}, {{_NULL}, {_NULL}, 0, 0}}
+#define _POSIX_THREAD_PRIO_PROTECT -1
+#define FCREAT _FCREAT
+#define NETMAN_FRAME_GROUP_SIZE 8
+#define NETIF_SET_HWADDRHINT(netif,hint) 
+#define CHAR_WIDTH __SCHAR_WIDTH__
+#define __alloc_align(x) __attribute__((__alloc_align__(x)))
+#define PAD_MODECUREXID 2
+#define DPAD_MAX_VELOCITY_Q8 1536
+#define ANALOG_KNEE_RAW 108
+#define __ACCUM_EPSILON__ 0x1P-15K
+#define IP6_ADDR_PART(ip6addr,index,a,b,c,d) (ip6addr)->addr[index] = ((u32)((d)&0xff) << 24) | ((u32)((c)&0xff) << 16) | ((u32)((b)&0xff) << 8) | (u32)((a)&0xff)
+#define DMA_REF 0x3
+#define __UINT32_C(c) c ## UL
+#define ULONG_WIDTH __LONG_WIDTH__
+#define EISCONN 127
+#define GS_FILTER_LINEAR 0x01
+#define netif_is_link_up(netif) (((netif)->flags & NETIF_FLAG_LINK_UP) ? (u8)1 : (u8)0)
+#define ITIMER_PROF 2
+#define __GNUCLIKE_BUILTIN_VAALIST 1
+#define __size_t__ 
+#define __TIMER_H__ 
+#define MEMP_NUM_UDP_PCB 4
+#define __FLT_DENORM_MIN__ 1.4012984643248171e-45F
+#define DMA_CHANNEL_VIF0 0x0
+#define OSK_WIDTH 600
+#define _stderr_r(x) _REENT_STDERR(x)
+#define GS_CMODE_RESET 0xFF
+#define ENOSHARE 136
+#define _EE 1
+#define PAD_STATE_STABLE 0x06
+#define SO_CONTIMEO 0x1009
+#define _SC_SYNCHRONIZED_IO 32
+#define INTMAX_MIN (-INTMAX_MAX - 1)
+#define _BLKSIZE_T_DECLARED 
+#define INADDR_BROADCAST IPADDR_BROADCAST
+#define GIF_RESERVED 0x0B
+#define _SC_TRACE_INHERIT 86
+#define _STDLIB_H_ 
+#define EUSERS 131
+#define RUNTIME_HOTKEY_EXTENDABLE_SETTLE_POLLS 18u
+#define __LLFRACT_IBIT__ 0
+#define _VA_LIST_T_H 
+#define __INT8_MAX__ 0x7f
+#define _SC_LEVEL4_CACHE_ASSOC 138
+#define __LONG_WIDTH__ 32
+#define O_SEARCH _FEXECSRCH
+#define _UINTPTR_T_DECLARED 
+#define GIF_TAG_LINE_GORAUD(NLOOP) GIF_TAG(NLOOP,1,0,0,GSKIT_GIF_FLG_REGLIST,6)
+#define ip6_addr_set_allrouters_linklocal(ip6addr) do { (ip6addr)->addr[0] = PP_HTONL(0xff020000UL); (ip6addr)->addr[1] = 0; (ip6addr)->addr[2] = 0; (ip6addr)->addr[3] = PP_HTONL(0x00000002UL); } while (0)
+#define TCP_NODELAY 0x01
+#define AI_NUMERICHOST 0x04
+#define __UINT_FAST32_TYPE__ unsigned int
+#define O_NOFOLLOW _FNOFOLLOW
+#define lwip_ntohl(x) PP_NTOHL(x)
+#define _PTHREAD_MUTEX_INITIALIZER ((pthread_mutex_t) -1)
+#define IP_GET_TYPE(ipaddr) IPADDR_TYPE_V4
+#define PTHREAD_EXPLICIT_SCHED 2
+#define __GNUCLIKE___TYPEOF 1
+#define __RCSID(s) struct __hack
+#define _SYS__DEFAULT_FCNTL_H_ 
+#define __FLT32X_NORM_MAX__ 1.7976931348623157e+308F32x
+#define __CHAR32_TYPE__ long unsigned int
+#define ENOPROTOOPT 109
+#define lwip_send(...) send(__VA_ARGS__)
+#define XK_DOWN 0xFF54
+#define inet_addr(cp) libcglue_inet_addr(cp)
+#define INIT_IPU 0x40
+#define LWIP_DNS_ADDRTYPE_IPV4_IPV6 2
+#define __is_aligned(x,y) __builtin_is_aligned(x, y)
+#define GIF_STAT_DIR *GIF_STAT >> 12
+#define GS_FIELD 0x00
+#define LWIP_NUM_NETIF_CLIENT_DATA 0
+#define __FLT_MAX__ 6.8056469327705772e+38F
+#define __FAST16 
+#define __exported __attribute__((__visibility__("default")))
+#define WINT_MIN (__WINT_MIN__)
+#define ip4_addr_ismulticast(addr1) (((addr1)->addr & PP_HTONL(0xf0000000UL)) == PP_HTONL(0xe0000000UL))
+#define __NEWLIB__ 4
+#define __u_int_defined 
+#define PS2VNC_RUNTIME_TO_UI_DISPLAY_H 
+#define INT_FAST64_MAX (__INT_FAST64_MAX__)
+#define UINT_LEAST32_MAX (__UINT_LEAST32_MAX__)
+#define LANGUAGE_C 1
+#define EMFILE 24
+#define __va_list__ 
+#define _SC_2_PBS_LOCATE 116
+#define ENABLE_LOOPBACK 0
+#define gsKit_prim_sprite_texture(gsGlobal,Texture,x1,y1,u1,v1,x2,y2,u2,v2,z,color) gsKit_prim_sprite_texture_3d(gsGlobal, Texture, x1, y1, z, u1, v1, x2, y2, z, u2, v2, color);
+#define PS2IP_DNS 
+#define SO_SNDLOWAT 0x1003
+#define _SIGSET_T_DECLARED 
+#define IPADDR_ANY ((u32)0x00000000UL)
+#define NETIF_FLAG_UP 0x01U
+#define ELOOP 92
+#define GS_PABE 0x49
+#define ANALOG_MAX_RAW 127
+#define __FAST32 
+#define __USACCUM_FBIT__ 8
+#define _SC_2_FORT_DEV 110
+#define __caddr_t_defined 
+#define DNS_LOCAL_HOSTLIST 0
+#define GS_FIELD_NORMAL 0x00
+#define IP6_ADDR_TENTATIVE_1 0x09
+#define IP6_ADDR_TENTATIVE_3 0x0b
+#define IP6_ADDR_TENTATIVE_4 0x0c
+#define IP6_ADDR_TENTATIVE_7 0x0f
+#define __INT32_TYPE__ long int
+#define __GSPRIMITIVE_H__ 
+#define ENOBUFS 105
+#define __SIZEOF_DOUBLE__ 8
+#define NETIF_FLAG_LINK_UP 0x04U
+#define __FLT_MIN_10_EXP__ (-37)
+#define __time_t_defined 
+#define __UFRACT_EPSILON__ 0x1P-16UR
+#define _IN_ADDR_T_DECLARED 
+#define __FLT64_MIN__ 2.2250738585072014e-308F64
+#define __INT_LEAST32_WIDTH__ 32
+#define IP_CLASSA(a) ((((u32)(a)) & 0x80000000UL) == 0)
+#define __INTMAX_TYPE__ long long int
+#define lwip_select(...) select(__VA_ARGS__)
+#define _REENT_MBTOWC_STATE(ptr) ((ptr)->_new._reent._mbtowc_state)
+#define EL3HLT 39
+#define SIGINT 2
+#define EFAULT 14
+#define __FAST64 "ll"
+#define __GSCORE_H__ 
+#define _LANGUAGE_C 1
+#define GSKIT_GIF_PRIM_TRISTRIP_TEXTURED 0x1C00
+#define sigemptyset(what) (*(what) = 0, 0)
+#define K_T2_MODE ((volatile unsigned int *)0xB0001010)
+#define _QUAD_HIGHWORD 1
+#define IPADDR_STRLEN_MAX IP4ADDR_STRLEN_MAX
+#define lwip_bind(...) bind(__VA_ARGS__)
+#define _T_SIZE 
+#define SIGIOT 6
+#define UINT8_C(x) __UINT8_C(x)
+#define __warn_references(sym,msg) __asm__(".section .gnu.warning." #sym); __asm__(".asciz \"" msg "\""); __asm__(".previous")
+#define GIF_MODE (volatile u32*)0x10003010
+#define EWOULDBLOCK EAGAIN
+#define GS_SETREG_XYZ3 GS_SETREG_XYZ
+#define LWIP_DNS_API_DEFINE_FLAGS 1
+#define GS_BITBLTBUF 0x50
+#define T0_COMP ((volatile unsigned int *)0x10000020)
+#define __FLT32X_HAS_QUIET_NAN__ 1
+#define va_end(v) __builtin_va_end(v)
+#define __ATOMIC_CONSUME 1
+#define GS_MODE_DTV_720P 0x52
+#define _REENT_WCSRTOMBS_STATE(ptr) ((ptr)->_new._reent._wcsrtombs_state)
+#define _TIMER_T_ unsigned long
+#define __GNUC_MINOR__ 2
+#define __INT_FAST16_WIDTH__ 32
+#define __UINTMAX_MAX__ 0xffffffffffffffffULL
+#define _SC_TRACE_SYS_MAX 89
+#define LITTLE_ENDIAN _LITTLE_ENDIAN
+#define __FLT32X_DENORM_MIN__ 4.9406564584124654e-324F32x
+#define __lock_close_recursive(lock) __retarget_lock_close_recursive(lock)
+#define ELIBBAD 84
+#define __SYS_LOCK_H__ 
+#define __HA_FBIT__ 7
+#define INTMAX_C(x) __INTMAX_C(x)
+#define ESTRPIPE 143
+#define __CONCAT1(x,y) x ## y
+#define D_CTRL_RCYC_32 0x2
+#define ESPIPE 29
+#define ECONNREFUSED 111
+#define INT_FAST64_MIN (-__INT_FAST64_MAX__ - 1)
+#define EAGAIN 11
+#define _FDIRECT 0x80000
+#define __DBL_MAX_10_EXP__ 308
+#define __FILE_defined 
+#define D_CTRL_MFD_VIF 0x2
+#define __hidden __attribute__((__visibility__("hidden")))
+#define __const const
+#define UINT16_MAX (__UINT16_MAX__)
+#define __LDBL_DENORM_MIN__ 4.9406564584124654e-324L
+#define __aligned(x) __attribute__((__aligned__(x)))
+#define GS_PSMZ_16 0x02
+#define S_ISUID 0004000
+#define GS_COLCLAMP 0x46
+#define D_CTRL_STS_SPR 0x2
+#define GS_SETREG_UV(u,v) ((u64)(u) | ((u64)(v) << 16))
+#define __INT16_C(c) c
+#define _REENT_INIT(var) { 0, &__sf[0], &__sf[1], &__sf[2], 0, "", _REENT_INIT_RESERVED_1 _NULL, _REENT_INIT_RESERVED_0 _NULL, _NULL, 0, _NULL, _NULL, 0, _NULL, { { _REENT_INIT_RESERVED_2 _NULL, "", {0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1, { {_RAND48_SEED_0, _RAND48_SEED_1, _RAND48_SEED_2}, {_RAND48_MULT_0, _RAND48_MULT_1, _RAND48_MULT_2}, _RAND48_ADD }, {0, {0}}, {0, {0}}, {0, {0}}, "", "", 0, {0, {0}}, {0, {0}}, {0, {0}}, {0, {0}}, {0, {0}}, 0 } }, _REENT_INIT_RESERVED_6_7 _NULL }
+#define GSKIT_GIF_FLG_PACKED 0
+#define _SC_THREAD_DESTRUCTOR_ITERATIONS 53
+#define __ATOMIC_RELEASE 3
+#define __KERNEL_H__ 
+#define CLOCK_DISALLOWED 0
+#define FD_CLR(n,p) ((p)->__fds_bits[(n)/_NFDBITS] &= ~__fdset_mask(n))
+#define SIG_IGN ((_sig_func_ptr)1)
+#define __STDC__ 1
+#define GS_VRAM_BLOCKSIZE_256 256
+#define XK_LEFT 0xFF51
+#define __mips_hard_float 1
+#define _POSIX_THREAD_SAFE_FUNCTIONS 200112L
+#define _REENT_MP_P5S(ptr) ((ptr)->_p5s)
+#define D_CTRL_RCYC_64 0x3
+#define ELIBMAX 86
+#define EEXIST 17
+#define __PTRDIFF_TYPE__ int
+#define __have_long32 1
+#define GSKIT_FALIGN_LEFT 0x00
+#define __sgetc_r(__ptr,__p) __sgetc_raw_r(__ptr, __p)
+#define GS_GIF_BLOCKSIZE 0x7fff
+#define GIF_SETREG_MODE(M3R,IMT) *GIF_MODE = ((u32)(M3R) << 0) | ((u32)(IMT) << 2);
+#define F_SETLKW 9
+#define __GNUCLIKE_MATH_BUILTIN_RELOPS 
+#define SOMAXCONN 128
+#define __LLFRACT_MIN__ (-0.5LLR-0.5LLR)
+#define __mips 3
+#define EL2NSYNC 38
+#define DST_USA 1
+#define GSKIT_ALLOC_ERROR 0x00
+#define LWIP_LOOPBACK_MAX_PBUFS 0
+#define DISABLE_PATCHED_Exit() void Exit(s32 exit_code) { KExit(exit_code); }
+#define __clockid_t_defined 
+#define EUNSUP 48
+#define SIF_REG_ID_SYSTEM 0x80000000
+#define GS_PSMZ_24 0x01
+#define SIF_CMD_RPC_CALL (SIF_CMD_ID_SYSTEM | 10)
+#define __DA_FBIT__ 31
+#define IP4_ADDR_ANY (&ip_addr_any)
+#define __weak_symbol __attribute__((__weak__))
+#define _SYS__INTSUP_H 
+#define _REENT_MBSRTOWCS_STATE(ptr) ((ptr)->_new._reent._mbsrtowcs_state)
+#define MAX_SEMAPHORES 256
+#define IS_UNCACHED_SEG(x) (((u32)(x)) & 0x20000000)
+#define ENOTEMPTY 90
+#define ENOENT 2
+#define EAI_SERVICE 201
+#define ENOPKG 65
+#define _REENT_STDIN(_ptr) ((_ptr)->_stdin)
+#define SifSetRpcQueue(...) sceSifSetRpcQueue(__VA_ARGS__)
+#define IP_ADDR_BROADCAST (&ip_addr_broadcast)
+#define ip6_addr_ispreferred(addr_state) (addr_state == IP6_ADDR_PREFERRED)
+#define __UINT32_TYPE__ long unsigned int
+#define _MIPS_SZLONG 32
+#define __FLT32X_MIN_10_EXP__ (-307)
+#define DMA_CHANNEL_VIF1 0x1
+#define lwip_recvfrom(...) recvfrom(__VA_ARGS__)
+#define IP6_ADDR_DEPRECATED 0x10
+#define sigdelset(what,sig) (*(what) &= ~(1<<(sig)), 0)
+#define DMA_SET_CPCOND(A) *DMA_REG_PCR = (u32)(A)
+#define __UINTPTR_TYPE__ unsigned int
+#define _PTHREAD_RWLOCK_INITIALIZER ((pthread_rwlock_t) -1)
+#define DMA_SET_MADR(A,B) (u32)((A) & 0x7FFFFFFF) << 0 | (u32)((B) & 0x00000001) << 31
+#define __USA_IBIT__ 16
+#define _REENT_CVTLEN(_ptr) ((_ptr)->_cvtlen)
+#define ipaddr_ntoa_r(ipaddr,buf,buflen) ip4addr_ntoa_r(ipaddr, buf, buflen)
+#define ELBIN 75
+#define ip6_addr_copy(dest,src) do { (dest).addr[0] = (src).addr[0]; (dest).addr[1] = (src).addr[1]; (dest).addr[2] = (src).addr[2]; (dest).addr[3] = (src).addr[3]; } while (0)
+#define SIGTERM 15
+#define PTHREAD_KEYS_MAX _POSIX_THREAD_KEYS_MAX
+#define GIF_STAT_FQC *GIF_STAT >> 24
+#define ip_addr_isloopback(ipaddr) ip4_addr_isloopback(ipaddr)
+#define __LDBL_MIN_10_EXP__ (-307)
+#define __int_fast64_t_defined 1
+#define S_IREAD 0000400
+#define __requires_exclusive(...) __lock_annotate(exclusive_locks_required(__VA_ARGS__))
+#define __nonnull_all __attribute__((__nonnull__))
+#define _SC_V7_LPBIG_OFFBIG 95
+#define ip6_addr_ismulticast(ip6addr) (((ip6addr)->addr[0] & PP_HTONL(0xff000000UL)) == PP_HTONL(0xff000000UL))
+#define __CC_SUPPORTS___FUNC__ 1
+#define _SC_SPAWN 75
+#define __lock_close(lock) __retarget_lock_close(lock)
+#define NETIF_FLAG_IGMP 0x20U
+#define ___int16_t_defined 1
+#define GSKIT_GIF_PRIM_POINT 0x1000
+#define __GNUCLIKE_CTOR_SECTION_HANDLING 1
+#define IPTOS_PREC_FLASHOVERRIDE 0x80
+#define GS_CSR (volatile u64 *)0x12001000
+#define _BEGIN_STD_C 
+#define SIG_SETMASK 0
+#define __SIZEOF_LONG_LONG__ 8
+#define GS_SETREG_TRXDIR(xdr) ((u64)(xdr))
+#define __ULACCUM_EPSILON__ 0x1P-32ULK
+#define GS_ZTEST_ON 0x02
+#define SifExitRpc(...) sceSifExitRpc(__VA_ARGS__)
+#define F_GETLK 7
+#define GIF_TAG_POINT_REGS ((u64)(GS_PRIM) << 0) | ((u64)(GS_RGBAQ) << 4) | ((u64)(GS_XYZ2) << 8) | ((u64)(GIF_NOP) << 12);
+#define __SACCUM_IBIT__ 8
+#define TEST29_DISCARD_LIVE_PIXELS 0
+#define __RCSID_SOURCE(s) struct __hack
+#define __GCC_ATOMIC_LLONG_LOCK_FREE 1
+#define K_T2_COUNT ((volatile unsigned int *)0xB0001000)
+#define __MISC_VISIBLE 1
+#define PAD_TYPE_EX_JOGCON 0x300
+#define ENOTUNIQ 80
+#define timeradd(tvp,uvp,vvp) do { (vvp)->tv_sec = (tvp)->tv_sec + (uvp)->tv_sec; (vvp)->tv_usec = (tvp)->tv_usec + (uvp)->tv_usec; if ((vvp)->tv_usec >= 1000000) { (vvp)->tv_sec++; (vvp)->tv_usec -= 1000000; } } while (0)
+#define IPPROTO_UDPLITE 136
+#define PTRDIFF_MAX (__PTRDIFF_MAX__)
+#define _POINTER_INT long
+#define THS_RUN 0x01
+#define _REENT_SMALL_CHECK_INIT(ptr) 
+#define SBT_1M (SBT_1S * 60)
+#define __FLT_DECIMAL_DIG__ 9
+#define GS_SET_EXTBUF(EXBP,EXBW,FBIN,WFFMD,EMODA,EMODC,WDX,WDY) *GS_EXTBUF = ((u64)(EXBP) << 0) | ((u64)(EXBW) << 14) | ((u64)(FBIN) << 20) | ((u64)(WFFMD) << 22) | ((u64)(EMODA) << 23) | ((u64)(EMODC) << 25) | ((u64)(WDX) << 32) | ((u64)(WDY) << 43)
+#define __UINT_FAST16_MAX__ 0xffffffffU
+#define SBT_1S ((sbintime_t)1 << 32)
+#define S_IROTH 0000004
+#define GS_SETREG_TEX2_1 GS_SETREG_TEX2
+#define LWIP_MULTICAST_TX_OPTIONS 0
+#define __TCPIP_H__ 
+#define ___int_ptrdiff_t_h 
+#define SifDmaStat(...) sceSifDmaStat(__VA_ARGS__)
+#define __LDBL_NORM_MAX__ 1.7976931348623157e+308L
+#define _SC_BC_DIM_MAX 58
+#define __SBV_PATCHES_H__ 
+#define X_OK 1
+#define _REENT_CHECK_SIGNAL_BUF(ptr) 
+#define ip4_addr4_16(ipaddr) ((u16)ip4_addr4(ipaddr))
+#define __GCC_ATOMIC_SHORT_LOCK_FREE 1
+#define _SYS__TIMEVAL_H_ 
+#define SHUT_WR 1
+#define iSifSetDma(...) isceSifSetDma(__VA_ARGS__)
+#define BC_BASE_MAX 99
+#define MB_LEN_MAX _MB_LEN_MAX
+#define GS_SETREG_XYOFFSET(ofx,ofy) ((u64)(ofx) | ((u64)(ofy) << 32))
+#define INT_LEAST16_MAX (__INT_LEAST16_MAX__)
+#define PAD_DOWN 0x0040
+#define DPAD_SCROLL_REPEAT_POLLS 5
+#define __ULLFRACT_MAX__ 0XFFFFFFFFFFFFFFFFP-64ULLR
+#define __UINT_FAST8_TYPE__ unsigned int
+#define GS_SYNCH2 ((volatile u64 *)(0x12000050))
+#define _IFCHR 0020000
+#define _SYS__SIGSET_H_ 
+#define __USFRACT_EPSILON__ 0x1P-8UHR
+#define __ULACCUM_FBIT__ 32
+#define __P(protos) protos
+#define _NULL 0
+#define __QQ_IBIT__ 0
+#define _POSIX_BARRIERS 200112L
+#define GS_FOGCOL 0x3d
+#define LWIP_NETIF_LINK_CALLBACK 0
+#define _NOINLINE __attribute__ ((__noinline__))
+#define __ATOMIC_ACQ_REL 4
+#define PAD_START 0x0008
+#define S_IFIFO _IFIFO
+#define __WCHAR_T 
+#define SIF_STAT_SIFINIT 0x10000
+#define O_DSYNC _FSYNC
+#define __Long long
+#define DMA_CHANNEL_FROMSPR 0x8
+#define ip4_addr_islinklocal(addr1) (((addr1)->addr & PP_HTONL(0xffff0000UL)) == PP_HTONL(0xa9fe0000UL))

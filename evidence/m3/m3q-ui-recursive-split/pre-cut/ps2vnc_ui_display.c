@@ -21,5 +21,5 @@
 #include "ps2vnc_services_exports.h"
 #include "ps2vnc_runtime_to_ui_display.h"
 
-#include "ps2vnc_ui_core.inc"
+#include "ps2vnc_ui_controller.inc"
 /* M3M: display orchestration compiled in ps2vnc_display.c */

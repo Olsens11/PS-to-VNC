@@ -1,0 +1,14 @@
+name	provider	line	kind	source_declaration	header_declaration
+display_menu_move_horizontal_selection	core	374	NF	static int display_menu_move_horizontal_selection (int selection, int direction);	extern int display_menu_move_horizontal_selection (int selection, int direction);
+display_menu_move_vertical_selection	core	329	NF	static int display_menu_move_vertical_selection (int selection, int direction);	extern int display_menu_move_vertical_selection (int selection, int direction);
+display_menu_open_for_active	core	290	NF	extern void display_menu_open_for_active (int parent_system);	extern void display_menu_open_for_active (int parent_system);
+dpad_hold_velocity_q8	core	1505	NF	static int dpad_hold_velocity_q8 (unsigned int hold_ticks);	extern int dpad_hold_velocity_q8 (unsigned int hold_ticks);
+osk_activate_selected	core	1052	NF	static int osk_activate_selected (int sock);	extern int osk_activate_selected (int sock);
+osk_move_horizontal	core	915	NF	static void osk_move_horizontal (int direction);	extern void osk_move_horizontal (int direction);
+osk_move_vertical	core	929	NF	static void osk_move_vertical (int direction);	extern void osk_move_vertical (int direction);
+osk_send_key_with_modifiers	core	991	NF	static int osk_send_key_with_modifiers (int sock, unsigned int keysym);	extern int osk_send_key_with_modifiers (int sock, unsigned int keysym);
+scroll_button_for_stick	core	1367	NF	static unsigned char scroll_button_for_stick (unsigned char h, unsigned char v, int *magnitude);	extern unsigned char scroll_button_for_stick (unsigned char h, unsigned char v, int *magnitude);
+scroll_repeat_delay	core	1409	NF	static unsigned int scroll_repeat_delay (int magnitude);	extern unsigned int scroll_repeat_delay (int magnitude);
+send_scroll_pulse	core	1454	NF	static int send_scroll_pulse (int sock, unsigned char base_buttons, unsigned char scroll_button, int x, int y);	extern int send_scroll_pulse (int sock, unsigned char base_buttons, unsigned char scroll_button, int x, int y);
+stick_velocity_q8	core	1307	NF	static int stick_velocity_q8 (unsigned char value);	extern int stick_velocity_q8 (unsigned char value);
+wake_renderer_with_pointer_jiggle	core	1174	NF	static int wake_renderer_with_pointer_jiggle (int sock, int x, int y);	extern int wake_renderer_with_pointer_jiggle (int sock, int x, int y);
