@@ -243,3 +243,18 @@ Startup gate: PASS.
 
 The migration can proceed to M1E closure and selection of the next mechanical
 extraction boundary.
+
+## M2 — configuration scalar parsing
+
+M1 is complete.
+
+M2A extends the existing configuration-text module with two mechanically
+selected scalar parsers:
+
+- ps2vnc_config_parse_int
+- ps2vnc_config_parse_bool
+
+Both selected functions are free of global references and cross-module
+outgoing project calls.
+
+M2B will move the exact bodies without caller or behavior changes.

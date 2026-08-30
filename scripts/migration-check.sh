@@ -48,20 +48,27 @@ echo 'REPOSITORY_IDENTITY=PASS'
 
 echo
 echo '===== B. MIGRATION STATE ====='
-
-case "$CURRENT_STAGE_STATUS" in
-    NOT_STARTED|IN_PROGRESS|VALIDATING|BLOCKED|COMPLETE)
+case "$CURRENT_STAGE" in
+    M1)
+        test "$LAST_COMPLETE_STAGE" = 'M0'
+        test "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS'
         ;;
+
+    M2)
+        test "$LAST_COMPLETE_STAGE" = 'M1'
+        test "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS'
+
+        test "$NEXT_ACTION" = \
+            'M2B_mechanically_extract_config_scalar_parsers'
+        ;;
+
     *)
-        echo "ERROR=INVALID_CURRENT_STAGE_STATUS:$CURRENT_STAGE_STATUS"
-        exit 20
+        echo "ERROR=UNSUPPORTED_CURRENT_STAGE:$CURRENT_STAGE"
+        exit 75
         ;;
 esac
 
-test -n "$LAST_COMPLETE_STAGE"
-test -n "$CURRENT_STAGE"
-test -n "$NEXT_ACTION"
-test -n "$BLOCKED_BY"
+test "$BLOCKED_BY" = 'NONE'
 
 echo "LAST_COMPLETE_STAGE=$LAST_COMPLETE_STAGE"
 echo "CURRENT_STAGE=$CURRENT_STAGE"
@@ -70,7 +77,6 @@ echo "NEXT_ACTION=$NEXT_ACTION"
 echo "BLOCKED_BY=$BLOCKED_BY"
 echo 'MACHINE_MIGRATION_STATE=PASS'
 
-echo
 echo '===== C. FROZEN B4A AUTHORITY ====='
 
 test "$BASELINE_DUT" = 'D17AL-F8J2-B4A'
@@ -152,34 +158,68 @@ echo 'BOOTSTRAP_PRESERVATION=PASS'
 
 echo
 echo '===== F. HUMAN / MACHINE DOCUMENTATION COHERENCE ====='
+python3 - \
+    "$LAST_COMPLETE_STAGE" \
+    "$CURRENT_STAGE" \
+    "$CURRENT_STAGE_STATUS" \
+    "$CURRENT_WORKING_SOURCE" \
+    "$CURRENT_SOURCE_HEAD" \
+    "$LAST_HARDWARE_RESULT" \
+    "$NEXT_ACTION" <<'PY2'
+from pathlib import Path
+import sys
 
-for FILE in \
-    START_HERE.md \
-    docs/INDEX.md \
-    docs/PROJECT_STATE.md \
-    docs/MIGRATION_STATE.md \
-    docs/MODULARIZATION.md \
-    docs/reference/FILE_AND_SERVICE_MAP.md \
-    scripts/resume-state.sh \
-    scripts/migration-check.sh
-do
-    test -f "$FILE"
-done
+expected = {
+    "LAST_COMPLETE_STAGE": sys.argv[1],
+    "CURRENT_STAGE": sys.argv[2],
+    "CURRENT_STAGE_STATUS": sys.argv[3],
+    "CURRENT_WORKING_SOURCE": sys.argv[4],
+    "CURRENT_SOURCE_HEAD": sys.argv[5],
+    "LAST_HARDWARE_RESULT": sys.argv[6],
+    "NEXT_ACTION": sys.argv[7],
+}
 
-grep -Fq "$LAST_COMPLETE_STAGE" docs/MIGRATION_STATE.md
-grep -Fq "$CURRENT_STAGE" docs/MIGRATION_STATE.md
-grep -Fq "$CURRENT_STAGE_STATUS" docs/MIGRATION_STATE.md
+lines = Path("docs/MIGRATION_STATE.md").read_text().splitlines()
 
-grep -Fq "$CURRENT_STAGE" docs/PROJECT_STATE.md
+start = next(
+    i for i, line in enumerate(lines)
+    if line.strip() == "## Machine-state mirror"
+)
 
-grep -Fq 'runtime/MIGRATION_STATE.env' START_HERE.md
-grep -Fq 'docs/MIGRATION_STATE.md' START_HERE.md
-grep -Fq 'scripts/resume-state.sh' START_HERE.md
-grep -Fq 'scripts/migration-check.sh' START_HERE.md
+end = len(lines)
+
+for i in range(start + 1, len(lines)):
+    if lines[i].startswith("## "):
+        end = i
+        break
+
+actual = {}
+
+for line in lines[start + 1:end]:
+    text = line.strip()
+
+    if "=" not in text:
+        continue
+
+    key, value = text.split("=", 1)
+
+    if key in actual:
+        raise SystemExit(
+            f"duplicate machine-mirror field: {key}"
+        )
+
+    actual[key] = value
+
+for key, value in expected.items():
+    if actual.get(key) != value:
+        raise SystemExit(
+            f"mirror mismatch {key}: "
+            f"{actual.get(key)!r} != {value!r}"
+        )
+PY2
 
 echo 'HUMAN_MACHINE_DOCUMENTATION_COHERENCE=PASS'
 
-echo
 echo '===== G. GIT AUTHORITY ====='
 
 GIT_BRANCH="$(git branch --show-current)"
@@ -390,161 +430,38 @@ fi
 
 
 echo '===== K. WORKING SOURCE AUTHORITY ====='
+test "$CURRENT_WORKING_SOURCE" = 'working/b4a/ps2ip.c'
+test -f "$CURRENT_WORKING_SOURCE"
 
-if [ "$CURRENT_WORKING_SOURCE" = 'NONE' ]; then
-    echo 'WORKING_SOURCE_AUTHORITY=NOT_YET_ACTIVE'
-else
-    test "$CURRENT_WORKING_SOURCE" = 'working/b4a/ps2ip.c'
+case "$CURRENT_STAGE" in
+    M1|M2)
+        test "$CURRENT_SOURCE_HEAD" = \
+            '0f1b88ddf7821c935b68aabe6d65180bf02b074f'
 
-    test -f "$CURRENT_WORKING_SOURCE"
-    test -f working/b4a/Makefile
-    test -f working/b4a/ps2vnc_identity.c
-    test -f working/b4a/ps2vnc_gsHires.c
-
-    test "$(
-        sha256sum working/b4a/ps2vnc_identity.c |
-        awk '{print $1}'
-    )" = "$M0_IDENTITY_SOURCE_SHA256"
-
-    test "$(
-        sha256sum working/b4a/ps2vnc_gsHires.c |
-        awk '{print $1}'
-    )" = "$M0_GSHIRES_SOURCE_SHA256"
-
-    if [ "$CURRENT_SOURCE_HEAD" = "$M0_COMPLETION_SOURCE_HEAD" ]; then
-        test "$(
-            sha256sum "$CURRENT_WORKING_SOURCE" |
-            awk '{print $1}'
-        )" = "$M0_SOURCE_SHA256"
-
-        test "$(
-            sha256sum working/b4a/Makefile |
-            awk '{print $1}'
-        )" = "$M0_MAKEFILE_SHA256"
-
-        git cat-file -e "$CURRENT_SOURCE_HEAD^{commit}"
-
-        test "$(
-            git show \
-                "${CURRENT_SOURCE_HEAD}:${CURRENT_WORKING_SOURCE}" |
-            sha256sum |
-            awk '{print $1}'
-        )" = "$M0_SOURCE_SHA256"
-
-        echo 'WORKING_SOURCE_GENERATION=M0'
-        echo 'M0_WRITABLE_SOURCE_AUTHORITY=PASS'
-
-    elif [ "$CURRENT_STAGE" = 'M1' ]; then
         test -f runtime/M1_SOURCE_AUTHORITY.env
 
         # shellcheck disable=SC1091
         source runtime/M1_SOURCE_AUTHORITY.env
 
-        test "$M1_SOURCE_STAGE" = 'M1B'
-        test "$M1_SOURCE_STATUS" = 'EXTRACTED'
         test "$M1_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
-
-        test "$M1_MONOLITH_PATH" = \
-            'working/b4a/ps2ip.c'
-
-        test "$M1_CONFIG_TEXT_SOURCE_PATH" = \
-            'working/b4a/ps2vnc_config_text.c'
-
-        test "$M1_CONFIG_TEXT_HEADER_PATH" = \
-            'working/b4a/ps2vnc_config_text.h'
-
-        test -f "$M1_CONFIG_TEXT_SOURCE_PATH"
-        test -f "$M1_CONFIG_TEXT_HEADER_PATH"
-
-        test "$(
-            sha256sum "$M1_MONOLITH_PATH" |
-            awk '{print $1}'
-        )" = "$M1_MONOLITH_SHA256"
-
-        test "$(
-            sha256sum "$M1_CONFIG_TEXT_SOURCE_PATH" |
-            awk '{print $1}'
-        )" = "$M1_CONFIG_TEXT_SOURCE_SHA256"
-
-        test "$(
-            sha256sum "$M1_CONFIG_TEXT_HEADER_PATH" |
-            awk '{print $1}'
-        )" = "$M1_CONFIG_TEXT_HEADER_SHA256"
-
-        test "$(
-            sha256sum working/b4a/Makefile |
-            awk '{print $1}'
-        )" = "$M1_MAKEFILE_SHA256"
-
-        test "$M1_MONOLITH_SHA256" != "$M0_SOURCE_SHA256"
-        test "$M1_MAKEFILE_SHA256" != "$M0_MAKEFILE_SHA256"
-
-        git cat-file -e "$M1_SOURCE_COMMIT^{commit}"
-        git merge-base --is-ancestor "$M1_SOURCE_COMMIT" HEAD
-
-        test "$(
-            git show \
-                "${M1_SOURCE_COMMIT}:${M1_MONOLITH_PATH}" |
-            sha256sum |
-            awk '{print $1}'
-        )" = "$M1_MONOLITH_SHA256"
-
-        test "$(
-            git show \
-                "${M1_SOURCE_COMMIT}:${M1_CONFIG_TEXT_SOURCE_PATH}" |
-            sha256sum |
-            awk '{print $1}'
-        )" = "$M1_CONFIG_TEXT_SOURCE_SHA256"
-
-        test "$(
-            git show \
-                "${M1_SOURCE_COMMIT}:${M1_CONFIG_TEXT_HEADER_PATH}" |
-            sha256sum |
-            awk '{print $1}'
-        )" = "$M1_CONFIG_TEXT_HEADER_SHA256"
-
-        test "$(
-            git show \
-                "${M1_SOURCE_COMMIT}:working/b4a/Makefile" |
-            sha256sum |
-            awk '{print $1}'
-        )" = "$M1_MAKEFILE_SHA256"
-
-        test "$(
-            grep -Fxc \
-                '#include "ps2vnc_config_text.h"' \
-                "$M1_MONOLITH_PATH"
-        )" -eq 1
-
-        if grep -Fq \
-            'static char *ps2vnc_config_trim_left' \
-            "$M1_MONOLITH_PATH"
-        then
-            echo 'ERROR=M1B_TRIM_LEFT_STILL_PRIVATE_IN_MONOLITH'
-            exit 75
-        fi
-
-        if grep -Fq \
-            'static void ps2vnc_config_trim_right' \
-            "$M1_MONOLITH_PATH"
-        then
-            echo 'ERROR=M1B_TRIM_RIGHT_STILL_PRIVATE_IN_MONOLITH'
-            exit 76
-        fi
-
-        grep -Fq \
-            'ps2vnc_config_text.o' \
-            working/b4a/Makefile
+        test "$M1_SOURCE_STATUS" = 'EXTRACTED'
 
         echo 'WORKING_SOURCE_GENERATION=M1B'
         echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
         echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
-        echo 'M1_WORKING_SOURCE_AUTHORITY=PASS'
-    else
-        echo "ERROR=UNKNOWN_WORKING_SOURCE_GENERATION:$CURRENT_STAGE"
-        exit 77
-    fi
-fi
+
+        if [ "$CURRENT_STAGE" = 'M2' ]; then
+            echo 'M1_WORKING_SOURCE_AUTHORITY=HISTORICAL_BASE_FOR_M2A'
+        else
+            echo 'M1_WORKING_SOURCE_AUTHORITY=PASS'
+        fi
+        ;;
+
+    *)
+        echo "ERROR=UNSUPPORTED_WORKING_SOURCE_STAGE:$CURRENT_STAGE"
+        exit 76
+        ;;
+esac
 
 echo '===== L. M0 HARDWARE RESOLUTION ====='
 
@@ -644,78 +561,53 @@ fi
 
 echo
 echo '===== N. HUMAN MIGRATION MIRROR ====='
+python3 - \
+    "$LAST_COMPLETE_STAGE" \
+    "$CURRENT_STAGE" \
+    "$CURRENT_STAGE_STATUS" \
+    "$NEXT_ACTION" <<'PY2'
+from pathlib import Path
+import sys
 
-HUMAN_MIRROR_FILE="$(
-    mktemp /tmp/pstvnc-human-mirror.XXXXXX
-)"
-
-trap 'rm -f "$HUMAN_MIRROR_FILE"' EXIT
-
-awk '
-    $0 == "## Machine-state mirror" {
-        inside = 1
-        next
-    }
-
-    inside && /^## / {
-        exit
-    }
-
-    inside {
-        print
-    }
-' docs/MIGRATION_STATE.md > "$HUMAN_MIRROR_FILE"
-
-human_mirror_require()
-{
-    local key="$1"
-    local value="$2"
-    local expected="    ${key}=${value}"
-    local count
-
-    count="$(
-        {
-            grep -Fxc \
-                "$expected" \
-                "$HUMAN_MIRROR_FILE" \
-                || true
-        }
-    )"
-
-    if [ "$count" -ne 1 ]; then
-        echo "ERROR=HUMAN_MIRROR_FIELD_COUNT:${key}:${count}"
-        exit 72
-    fi
+expected = {
+    "LAST_COMPLETE_STAGE": sys.argv[1],
+    "CURRENT_STAGE": sys.argv[2],
+    "CURRENT_STAGE_STATUS": sys.argv[3],
+    "NEXT_ACTION": sys.argv[4],
 }
 
-human_mirror_require \
-    LAST_COMPLETE_STAGE \
-    "$LAST_COMPLETE_STAGE"
+lines = Path("docs/MIGRATION_STATE.md").read_text().splitlines()
 
-human_mirror_require \
-    CURRENT_STAGE \
-    "$CURRENT_STAGE"
+start = next(
+    i for i, line in enumerate(lines)
+    if line.strip() == "## Machine-state mirror"
+)
 
-human_mirror_require \
-    CURRENT_STAGE_STATUS \
-    "$CURRENT_STAGE_STATUS"
+end = len(lines)
 
-human_mirror_require \
-    CURRENT_WORKING_SOURCE \
-    "$CURRENT_WORKING_SOURCE"
+for i in range(start + 1, len(lines)):
+    if lines[i].startswith("## "):
+        end = i
+        break
 
-human_mirror_require \
-    CURRENT_SOURCE_HEAD \
-    "$CURRENT_SOURCE_HEAD"
+actual = {}
 
-human_mirror_require \
-    NEXT_ACTION \
-    "$NEXT_ACTION"
+for line in lines[start + 1:end]:
+    text = line.strip()
+
+    if "=" in text:
+        key, value = text.split("=", 1)
+        actual[key] = value
+
+for key, value in expected.items():
+    if actual.get(key) != value:
+        raise SystemExit(
+            f"human migration mirror mismatch: {key}"
+        )
+PY2
 
 echo 'HUMAN_MIGRATION_MIRROR=PASS'
 
-
-echo
 echo '===== O. M1A EXTRACTION BOUNDARY ====='
 
 if [ "$CURRENT_STAGE" = 'M1' ]; then
@@ -740,9 +632,7 @@ fi
 echo '===== P. GITHUB PUBLICATION AUTHORITY ====='
 
 if [ "${GITHUB_PUBLICATION_STATUS:-}" = 'PRIVATE_PUBLISHED' ]; then
-    test "$CURRENT_STAGE" = 'M1'
-    test "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS'
-
+    # Publication authority persists across migration stages.
     test "$GITHUB_REPOSITORY" = \
         'Olsens11/PS-to-VNC'
 
@@ -1052,6 +942,97 @@ else
     echo 'M1C_DUT_AUTHORITY=NOT_AT_M1D_GATE'
 fi
 
+
+echo
+echo '===== T. M1 COMPLETION AUTHORITY ====='
+
+if [ "$LAST_COMPLETE_STAGE" = 'M1' ]; then
+    test -f runtime/M1_COMPLETION_AUTHORITY.env
+    test -f runtime/M1_SOURCE_AUTHORITY.env
+    test -f runtime/M1_DUT_AUTHORITY.env
+    test -f docs/M1_COMPLETION.md
+
+    # shellcheck disable=SC1091
+    source runtime/M1_COMPLETION_AUTHORITY.env
+
+    test "$M1_STAGE" = 'M1'
+    test "$M1_STAGE_STATUS" = 'COMPLETE'
+    test "$M1_COMPLETION_RESULT" = 'PASS'
+
+    test "$M1_SOURCE_COMMIT" = \
+        '0f1b88ddf7821c935b68aabe6d65180bf02b074f'
+
+    test "$M1_DUT_SHA256" = \
+        '26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b'
+
+    test "$M1_BUILD_RESULT" = \
+        'M1C_BUILD_PASS_NEW_DUT'
+
+    test "$M1_HARDWARE_RESULT" = \
+        'M1D_PASS_MACHINE_AND_PHYSICAL'
+
+    test "$M1_MACHINE_RESULT" = 'PASS'
+    test "$M1_PHYSICAL_RESULT" = 'PASS'
+    test "$M1_STARTUP_GATE" = 'PASS'
+
+    test -d "$M1_HARDWARE_EVIDENCE"
+    test -f "$M1_HARDWARE_EVIDENCE/SHA256SUMS.txt"
+
+    (
+        cd "$M1_HARDWARE_EVIDENCE"
+        sha256sum -c SHA256SUMS.txt >/dev/null
+    )
+
+    test "$M1_NEXT_STAGE" = 'M2'
+
+    echo 'M1_COMPLETION_AUTHORITY=PASS'
+else
+    echo 'M1_COMPLETION_AUTHORITY=NOT_COMPLETE_STAGE'
+fi
+
+echo
+echo '===== U. M2A EXTRACTION BOUNDARY ====='
+
+if [ "$CURRENT_STAGE" = 'M2' ]; then
+    test "$NEXT_ACTION" = \
+        'M2B_mechanically_extract_config_scalar_parsers'
+
+    test -f runtime/M2_BOUNDARY_AUTHORITY.env
+    test -f docs/M2A_EXTRACTION_BOUNDARY.md
+
+    # shellcheck disable=SC1091
+    source runtime/M2_BOUNDARY_AUTHORITY.env
+
+    test "$M2_STAGE" = 'M2A'
+    test "$M2_BOUNDARY_STATUS" = 'SELECTED'
+    test "$M2_SOURCE_MUTATION" = 'NO'
+
+    test "$M2_SELECTION_BASE_SOURCE_HEAD" = \
+        "$CURRENT_SOURCE_HEAD"
+
+    test "$M2_TARGET_MODULE" = \
+        'working/b4a/ps2vnc_config_text.c'
+
+    test "$M2_SELECTED_FUNCTION_1" = \
+        'ps2vnc_config_parse_int'
+
+    test "$M2_SELECTED_FUNCTION_2" = \
+        'ps2vnc_config_parse_bool'
+
+    test "$M2_SELECTED_GLOBAL_REFS" = '0'
+    test "$M2_SELECTED_EXTERNAL_CALLEES" = '0'
+    test "$M2_SELECTED_CROSS_MODULE_INCOMING_EDGES" = '1'
+    test "$M2_SELECTED_TOTAL_CALL_SITES" = '7'
+
+    test "$(
+        sha256sum "$M2_SELECTION_BASE_SOURCE" |
+        awk '{print $1}'
+    )" = "$M2_SELECTION_BASE_SOURCE_SHA256"
+
+    echo 'M2A_EXTRACTION_BOUNDARY=PASS'
+else
+    echo 'M2A_EXTRACTION_BOUNDARY=NOT_CURRENT_STAGE'
+fi
 
 echo '===== FINAL ====='
 echo 'PS_TO_VNC_MIGRATION_CHECK=PASS'

@@ -296,3 +296,27 @@ Evidence:
 
 M1D hardware authority is complete. The next migration operation is M1E
 closure and selection of the next mechanical extraction boundary.
+
+## M1 complete — M2 active
+
+The first modular extraction cycle is complete through real-hardware
+validation.
+
+M1 validated DUT:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+M2 now continues migration of the configuration-text utility boundary.
+
+M2A selected:
+
+- ps2vnc_config_parse_int
+- ps2vnc_config_parse_bool
+
+Target:
+
+    working/b4a/ps2vnc_config_text.c
+
+Next:
+
+    M2B_mechanically_extract_config_scalar_parsers

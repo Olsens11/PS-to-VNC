@@ -177,13 +177,13 @@ resumes.
 The following exact indented tokens mirror the stable migration fields in the
 canonical machine-readable state.
 
-    LAST_COMPLETE_STAGE=M0
-    CURRENT_STAGE=M1
+    LAST_COMPLETE_STAGE=M1
+    CURRENT_STAGE=M2
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=0f1b88ddf7821c935b68aabe6d65180bf02b074f
     LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M1D_run_required_hardware_regression
+    NEXT_ACTION=M2B_mechanically_extract_config_scalar_parsers
 
 The canonical machine-readable source remains:
 
@@ -523,3 +523,30 @@ Evidence:
     evidence/m1/m1d2-hardware-20260830-022035/
 
 The next lifecycle operation is M1E closure.
+
+## M1E closure and M2A activation
+
+M1 is complete.
+
+Validated M1 DUT:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+M1 hardware result:
+
+    M1D_PASS_MACHINE_AND_PHYSICAL
+
+M2 is now the active migration stage.
+
+M2A selected:
+
+- ps2vnc_config_parse_int
+- ps2vnc_config_parse_bool
+
+Target module:
+
+    working/b4a/ps2vnc_config_text.c
+
+Next:
+
+    M2B_mechanically_extract_config_scalar_parsers

@@ -79,3 +79,8 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 ## M1D hardware regression
 
 - `docs/M1D_HARDWARE_REGRESSION.md` — deployment and physical/machine validation authority for the first modular DUT.
+
+## Incremental migration records
+
+- `docs/M1_COMPLETION.md` — authoritative closure record for M1.
+- `docs/M2A_EXTRACTION_BOUNDARY.md` — exact committed M2A scalar-parser extraction boundary.

@@ -191,26 +191,30 @@ M1C:
 
     COMPLETE
 
-M1 DUT SHA256:
+M1D:
+
+    COMPLETE — machine PASS + physical PASS
+
+M1E:
+
+    COMPLETE
+
+M1 stage:
+
+    COMPLETE
+
+Validated M1 DUT:
 
     26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
 
-M1 DUT identity:
+Next migration stage:
 
-    NEW NON-IDENTICAL DUT
+    M2
 
-Second-build reproduction:
+M2A:
 
-    BYTE EXACT
-
-Host extracted-function parity:
-
-    PASS
-
-Hardware validation:
-
-    NOT RUN
+    COMPLETE — ps2vnc_config_parse_int + ps2vnc_config_parse_bool selected
 
 Next:
 
-    M1D_run_required_hardware_regression
+    M2B_mechanically_extract_config_scalar_parsers
