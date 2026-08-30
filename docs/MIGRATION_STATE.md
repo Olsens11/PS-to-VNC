@@ -183,7 +183,7 @@ canonical machine-readable state.
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=661f14576892e533475818704d6a1391ad950414
     LAST_HARDWARE_RESULT=M4H_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M4H-B_video_geometry_residual_boundary_census
+    NEXT_ACTION=M4I_diagnostics_boundary_census
     BLOCKED_BY=NONE
 
 The canonical machine-readable source remains:
@@ -1212,3 +1212,47 @@ NEXT_ACTION=M4H-B_video_geometry_residual_boundary_census
 BLOCKED_BY=NONE
 
 DEVELOPMENT_CONTINUITY_BASELINE_COMMIT=e88c7bfd84ee3cf056b11ff9107aca8873cb1ce5
+
+
+## M4H-B residual video-geometry boundary closure — COMPLETE
+
+The M4H-B residual-boundary census and manual classification are complete.
+
+Evidence attempts were preserved rather than rewritten:
+
+    attempt 1 = APPARATUS_FAILURE
+    attempt 2 = APPARATUS_FAILURE / INVALID STRUCTURAL PARSER
+    attempt 3 = VALID SELF-TESTED CENSUS
+
+Valid census manifest:
+
+    e1e2ca90b42fc7f01b9c6a1617d4ff6d1d9503f7869699923fe2a96aa0ca9931
+
+Closure evidence:
+
+    evidence/m4/m4h-b-video-geometry-boundary-closure
+
+Closure manifest:
+
+    d3f4db22a1abc862b65da7629e4d17318cb024c86644e28f37eec818a18e37c9
+
+Architectural result:
+
+    PURE_VIDEO_GEOMETRY_MODEL=COMPLETE
+    ADDITIONAL_PURE_GEOMETRY_EXTRACTION=NO
+
+The remaining geometry-like code belongs to later owners: calibration
+policy/state, framebuffer/raster mapping, GS storage/presentation,
+UI/diagnostics, and application/display orchestration.
+
+M4H-B changed no product source and produced no new executable or PT_LOAD
+image. The existing hardware-qualified M4H executable remains authoritative.
+
+    BUILD_REQUIRED=NO
+    DEPLOYMENT_REQUIRED=NO
+    HARDWARE_QUALIFICATION_REQUIRED=NO
+
+Normalization Tranche 2 — video mode and pure geometry — is complete.
+
+NEXT_ACTION=M4I_diagnostics_boundary_census
+BLOCKED_BY=NONE

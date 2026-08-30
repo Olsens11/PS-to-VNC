@@ -1,0 +1,51 @@
+src/video/geometry.c:6:static int pstvnc_video_geometry_rect_fits(
+src/video/geometry.c:7:    const pstvnc_video_rect_t *rect,
+src/video/geometry.c:29:int pstvnc_video_geometry_safe_area_valid(
+src/video/geometry.c:92:int pstvnc_video_geometry_safe_area_rect(
+src/video/geometry.c:98:    pstvnc_video_rect_t *out_rect
+src/video/geometry.c:103:    pstvnc_video_rect_t rect;
+src/video/geometry.c:108:    if (!pstvnc_video_geometry_safe_area_valid(
+src/video/geometry.c:132:    if (!pstvnc_video_geometry_rect_fits(
+src/video/geometry.c:142:int pstvnc_video_geometry_presented_rect(
+src/video/geometry.c:144:    const pstvnc_video_rect_t *safe_area,
+src/video/geometry.c:147:    pstvnc_video_rect_t *out_rect
+src/video/geometry.c:150:    pstvnc_video_rect_t result;
+src/video/geometry.c:161:    if (!pstvnc_video_geometry_rect_fits(
+src/video/geometry.c:185:    if (!pstvnc_video_geometry_rect_fits(
+src/video/geometry.h:1:#ifndef PSTVNC_VIDEO_GEOMETRY_H
+src/video/geometry.h:2:#define PSTVNC_VIDEO_GEOMETRY_H
+src/video/geometry.h:18:} pstvnc_video_rect_t;
+src/video/geometry.h:26:int pstvnc_video_geometry_safe_area_valid(
+src/video/geometry.h:38:int pstvnc_video_geometry_safe_area_rect(
+src/video/geometry.h:44:    pstvnc_video_rect_t *out_rect
+src/video/geometry.h:56:int pstvnc_video_geometry_presented_rect(
+src/video/geometry.h:58:    const pstvnc_video_rect_t *safe_area,
+src/video/geometry.h:61:    pstvnc_video_rect_t *out_rect
+working/b4a/ps2vnc_calibration_core.inc:1032:int ps2vnc_config_presented_geometry_for_mode(
+working/b4a/ps2vnc_calibration_core.inc:1040:    pstvnc_video_rect_t safe_area;
+working/b4a/ps2vnc_calibration_core.inc:1041:    pstvnc_video_rect_t presented;
+working/b4a/ps2vnc_calibration_core.inc:1048:    if (pstvnc_video_geometry_safe_area_rect(
+working/b4a/ps2vnc_calibration_core.inc:1057:    if (pstvnc_video_geometry_presented_rect(
+working/b4a/ps2vnc_calibration_core.inc:1075: int calculate_presented_desktop_geometry(
+working/b4a/ps2vnc_calibration_core.inc:1190:        if (ps2vnc_config_presented_geometry_for_mode(
+working/b4a/ps2vnc_calibration_core.inc:1245:    if (calculate_presented_desktop_geometry(
+working/b4a/ps2vnc_calibration_core.inc:1423:    if (ps2vnc_config_presented_geometry_for_mode(
+working/b4a/ps2vnc_calibration_tail.inc:707:int calculate_safe_desktop_geometry(
+working/b4a/ps2vnc_calibration_tail.inc:713:    pstvnc_video_rect_t safe_area;
+working/b4a/ps2vnc_calibration_tail.inc:723:    if (pstvnc_video_geometry_safe_area_rect(
+working/b4a/ps2vnc_calibration_tail.inc:749:int calculate_presented_desktop_geometry(
+working/b4a/ps2vnc_calibration_tail.inc:755:    pstvnc_video_rect_t safe_area;
+working/b4a/ps2vnc_calibration_tail.inc:756:    pstvnc_video_rect_t presented;
+working/b4a/ps2vnc_calibration_tail.inc:758:    if (calculate_safe_desktop_geometry(
+working/b4a/ps2vnc_calibration_tail.inc:765:    if (pstvnc_video_geometry_presented_rect(
+working/b4a/ps2vnc_calibration_tail.inc:1049:    if (calculate_presented_desktop_geometry(
+working/b4a/ps2vnc_display_tail.inc:80:        if (calculate_presented_desktop_geometry(
+working/b4a/ps2vnc_display_tail.inc:589:                ps2vnc_config_presented_geometry_for_mode(
+working/b4a/ps2vnc_display_tail.inc:806:                    calculate_presented_desktop_geometry(
+working/b4a/ps2vnc_management_core.inc:668:int screen_fit_geometry_valid_for_mode(
+working/b4a/ps2vnc_management_core.inc:675:    return pstvnc_video_geometry_safe_area_valid(
+working/b4a/ps2vnc_management_core.inc:689: * screen_fit_geometry_valid_for_mode() without changing GS state.
+working/b4a/ps2vnc_management_core.inc:697:    return screen_fit_geometry_valid_for_mode(
+working/b4a/ps2vnc_management_core.inc:1273:    if (!screen_fit_geometry_valid_for_mode(
+working/b4a/ps2vnc_services_exports.h:13:int calculate_presented_desktop_geometry( unsigned int *out_x, unsigned int *out_y, unsigned int *out_w, unsigned int *out_h);
+working/b4a/ps2vnc_services_exports.h:20:int ps2vnc_config_presented_geometry_for_mode( const ps2vnc_video_mode_t *mode, const ps2vnc_display_config_t *config, unsigned int *out_x, unsigned int *out_y, unsigned int *out_w, unsigned int *out_h);

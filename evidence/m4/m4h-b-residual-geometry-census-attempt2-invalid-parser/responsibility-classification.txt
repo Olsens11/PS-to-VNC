@@ -1,0 +1,12 @@
+===== PURE_OR_POLICY_GEOMETRY (0) =====
+
+===== FRAMEBUFFER_OR_RFB_MAPPING (0) =====
+
+===== CALIBRATION_GEOMETRY (0) =====
+
+===== GS_PRESENTATION_TRANSPORT (0) =====
+
+===== UI_GEOMETRY (0) =====
+
+===== MODE_COUPLED_GEOMETRY (0) =====
+

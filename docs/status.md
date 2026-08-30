@@ -10,7 +10,20 @@ Chronological migration history remains in `docs/MIGRATION_STATE.md` and Git.
 
 ## Last completed normalization boundary
 
+Normalization Tranche 2 — video mode and pure geometry — is complete.
+
 M4H-A safe-area / presentation geometry is hardware qualified.
+
+M4H-B residual-boundary review is complete. The valid self-tested third
+census, followed by manual boundary confirmation, found no additional coherent
+pure-geometry responsibility to extract.
+
+    PURE_VIDEO_GEOMETRY_MODEL=COMPLETE
+    ADDITIONAL_PURE_GEOMETRY_EXTRACTION=NO
+
+Residual calibration state/policy, framebuffer/raster mapping, GS
+presentation, UI/diagnostics, and display orchestration remain assigned to
+their later canonical owners.
 
 Permanent module:
 
@@ -37,10 +50,10 @@ Qualification included:
 
 ## Current development focus
 
-    NEXT_ACTION=M4H-B_video_geometry_residual_boundary_census
+    NEXT_ACTION=M4I_diagnostics_boundary_census
     BLOCKED_BY=NONE
 
-Next product work is the residual video-geometry boundary census/audit.
+Next product work is the Tranche 3 diagnostics boundary census.
 
 ## Development continuity
 
@@ -55,7 +68,7 @@ Routine procedures must reuse canonical saved tooling when available.
 ## Planning estimate
 
     OVERALL_ARCHITECTURAL_NORMALIZATION=approximately_24_percent
-    VIDEO_GEOMETRY=approximately_80_percent
+    VIDEO_GEOMETRY=complete
 
 These percentages are planning estimates, not machine authority.
 
@@ -64,7 +77,7 @@ These percentages are planning estimates, not machine authority.
     LAST_HARDWARE_RESULT=M4H_PASS_MACHINE_AND_PHYSICAL
     LAST_VALIDATED_WORKING_ELF_SHA256=42163c30b68ebf84b51b1c8c81d541017e64ffaa52e27bb0408f91edb25e2992
     LAST_VALIDATED_PT_LOAD_SHA256=a33efdb0bee3f383d4828db8fb6a06f62ddb90fdc42a97308dc12777ed8197b9
-    NEXT_ACTION=M4H-B_video_geometry_residual_boundary_census
+    NEXT_ACTION=M4I_diagnostics_boundary_census
     BLOCKED_BY=NONE
 
 Machine-readable authority remains under `runtime/`.

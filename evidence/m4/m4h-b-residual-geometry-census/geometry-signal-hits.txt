@@ -1,0 +1,553 @@
+src/video/geometry.c:7:    const pstvnc_video_rect_t *rect,
+src/video/geometry.c:12:    if (rect == NULL)
+src/video/geometry.c:15:    if (rect->width == 0u || rect->height == 0u)
+src/video/geometry.c:18:    if (rect->x > bounds_width ||
+src/video/geometry.c:19:        rect->y > bounds_height)
+src/video/geometry.c:22:    if (rect->width > bounds_width - rect->x ||
+src/video/geometry.c:23:        rect->height > bounds_height - rect->y)
+src/video/geometry.c:31:    int width,
+src/video/geometry.c:32:    int height,
+src/video/geometry.c:33:    int offset_x,
+src/video/geometry.c:34:    int offset_y
+src/video/geometry.c:61:    if (width <= 0 || height <= 0)
+src/video/geometry.c:64:    if (width > output_width ||
+src/video/geometry.c:65:        height > output_height)
+src/video/geometry.c:68:    remaining_x = output_width - width;
+src/video/geometry.c:69:    remaining_y = output_height - height;
+src/video/geometry.c:81:    if (offset_x < -centered_x ||
+src/video/geometry.c:82:        offset_x > max_positive_x)
+src/video/geometry.c:85:    if (offset_y < -centered_y ||
+src/video/geometry.c:86:        offset_y > max_positive_y)
+src/video/geometry.c:94:    int width,
+src/video/geometry.c:95:    int height,
+src/video/geometry.c:96:    int offset_x,
+src/video/geometry.c:97:    int offset_y,
+src/video/geometry.c:103:    pstvnc_video_rect_t rect;
+src/video/geometry.c:110:            width,
+src/video/geometry.c:111:            height,
+src/video/geometry.c:112:            offset_x,
+src/video/geometry.c:113:            offset_y))
+src/video/geometry.c:117:        ((int)mode->raster_width - width) / 2 +
+src/video/geometry.c:118:        offset_x;
+src/video/geometry.c:121:        ((int)mode->raster_height - height) / 2 +
+src/video/geometry.c:122:        offset_y;
+src/video/geometry.c:127:    rect.x = (unsigned int)x;
+src/video/geometry.c:128:    rect.y = (unsigned int)y;
+src/video/geometry.c:129:    rect.width = (unsigned int)width;
+src/video/geometry.c:130:    rect.height = (unsigned int)height;
+src/video/geometry.c:133:            &rect,
+src/video/geometry.c:138:    *out_rect = rect;
+src/video/geometry.c:144:    const pstvnc_video_rect_t *safe_area,
+src/video/geometry.c:153:        safe_area == NULL ||
+src/video/geometry.c:162:            safe_area,
+src/video/geometry.c:167:    result.width =
+src/video/geometry.c:168:        (safe_area->width < desktop_capacity_width) ?
+src/video/geometry.c:169:        safe_area->width :
+src/video/geometry.c:172:    result.height =
+src/video/geometry.c:173:        (safe_area->height < desktop_capacity_height) ?
+src/video/geometry.c:174:        safe_area->height :
+src/video/geometry.c:178:        safe_area->x +
+src/video/geometry.c:179:        ((safe_area->width - result.width) / 2u);
+src/video/geometry.c:182:        safe_area->y +
+src/video/geometry.c:183:        ((safe_area->height - result.height) / 2u);
+src/video/geometry.h:16:    unsigned int width;
+src/video/geometry.h:17:    unsigned int height;
+src/video/geometry.h:28:    int width,
+src/video/geometry.h:29:    int height,
+src/video/geometry.h:30:    int offset_x,
+src/video/geometry.h:31:    int offset_y
+src/video/geometry.h:40:    int width,
+src/video/geometry.h:41:    int height,
+src/video/geometry.h:42:    int offset_x,
+src/video/geometry.h:43:    int offset_y,
+src/video/geometry.h:58:    const pstvnc_video_rect_t *safe_area,
+working/b4a/ps2vnc_calibration_core.inc:517:            desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:518:            desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:527:            desktop_width,
+working/b4a/ps2vnc_calibration_core.inc:528:            desktop_height);
+working/b4a/ps2vnc_calibration_core.inc:570:            (desktop_width != target_width ||
+working/b4a/ps2vnc_calibration_core.inc:571:             desktop_height != target_height)) {
+working/b4a/ps2vnc_calibration_core.inc:575:                desktop_width,
+working/b4a/ps2vnc_calibration_core.inc:576:                desktop_height,
+working/b4a/ps2vnc_calibration_core.inc:599:                desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:600:                desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:626:            desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:627:            desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:633:            if (desktop_width != target_width ||
+working/b4a/ps2vnc_calibration_core.inc:634:                desktop_height != target_height ||
+working/b4a/ps2vnc_calibration_core.inc:645:                desktop_width,
+working/b4a/ps2vnc_calibration_core.inc:646:                desktop_height);
+working/b4a/ps2vnc_calibration_core.inc:661:        desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:662:        desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:670:    desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:671:    desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:799:    int width,
+working/b4a/ps2vnc_calibration_core.inc:800:    int height,
+working/b4a/ps2vnc_calibration_core.inc:801:    int offset_x,
+working/b4a/ps2vnc_calibration_core.inc:802:    int offset_y)
+working/b4a/ps2vnc_calibration_core.inc:826:            width,
+working/b4a/ps2vnc_calibration_core.inc:827:            height,
+working/b4a/ps2vnc_calibration_core.inc:828:            offset_x,
+working/b4a/ps2vnc_calibration_core.inc:829:            offset_y)) {
+working/b4a/ps2vnc_calibration_core.inc:838:    safe_width = width;
+working/b4a/ps2vnc_calibration_core.inc:839:    safe_height = height;
+working/b4a/ps2vnc_calibration_core.inc:856:        offset_x,
+working/b4a/ps2vnc_calibration_core.inc:857:        offset_y
+working/b4a/ps2vnc_calibration_core.inc:1040:    pstvnc_video_rect_t safe_area;
+working/b4a/ps2vnc_calibration_core.inc:1041:    pstvnc_video_rect_t presented;
+working/b4a/ps2vnc_calibration_core.inc:1054:            &safe_area) < 0)
+working/b4a/ps2vnc_calibration_core.inc:1059:            &safe_area,
+working/b4a/ps2vnc_calibration_core.inc:1062:            &presented) < 0)
+working/b4a/ps2vnc_calibration_core.inc:1065:    *out_x = presented.x;
+working/b4a/ps2vnc_calibration_core.inc:1066:    *out_y = presented.y;
+working/b4a/ps2vnc_calibration_core.inc:1067:    *out_w = presented.width;
+working/b4a/ps2vnc_calibration_core.inc:1068:    *out_h = presented.height;
+working/b4a/ps2vnc_calibration_core.inc:1484:        desktop_width,
+working/b4a/ps2vnc_calibration_core.inc:1485:        desktop_height,
+working/b4a/ps2vnc_calibration_core.inc:1516:    int *width,
+working/b4a/ps2vnc_calibration_core.inc:1517:    int *height,
+working/b4a/ps2vnc_calibration_core.inc:1518:    int *offset_x,
+working/b4a/ps2vnc_calibration_core.inc:1519:    int *offset_y)
+working/b4a/ps2vnc_calibration_core.inc:1528:    if (*width < SCREEN_FIT_MIN_WIDTH)
+working/b4a/ps2vnc_calibration_core.inc:1529:        *width = SCREEN_FIT_MIN_WIDTH;
+working/b4a/ps2vnc_calibration_core.inc:1531:    if (*width > OUTPUT_WIDTH)
+working/b4a/ps2vnc_calibration_core.inc:1532:        *width = OUTPUT_WIDTH;
+working/b4a/ps2vnc_calibration_core.inc:1534:    if (*height < SCREEN_FIT_MIN_HEIGHT)
+working/b4a/ps2vnc_calibration_core.inc:1535:        *height = SCREEN_FIT_MIN_HEIGHT;
+working/b4a/ps2vnc_calibration_core.inc:1537:    if (*height > OUTPUT_HEIGHT)
+working/b4a/ps2vnc_calibration_core.inc:1538:        *height = OUTPUT_HEIGHT;
+working/b4a/ps2vnc_calibration_core.inc:1540:    remaining_x = OUTPUT_WIDTH - *width;
+working/b4a/ps2vnc_calibration_core.inc:1541:    remaining_y = OUTPUT_HEIGHT - *height;
+working/b4a/ps2vnc_calibration_core.inc:1549:    if (*offset_x < -centered_x)
+working/b4a/ps2vnc_calibration_core.inc:1550:        *offset_x = -centered_x;
+working/b4a/ps2vnc_calibration_core.inc:1552:    if (*offset_x > max_positive_x)
+working/b4a/ps2vnc_calibration_core.inc:1553:        *offset_x = max_positive_x;
+working/b4a/ps2vnc_calibration_core.inc:1555:    if (*offset_y < -centered_y)
+working/b4a/ps2vnc_calibration_core.inc:1556:        *offset_y = -centered_y;
+working/b4a/ps2vnc_calibration_core.inc:1558:    if (*offset_y > max_positive_y)
+working/b4a/ps2vnc_calibration_core.inc:1559:        *offset_y = max_positive_y;
+working/b4a/ps2vnc_calibration_core_to_tail.h:22:extern int ps2vnc_display_save_to_pi (int width, int height, int offset_x, int offset_y);
+working/b4a/ps2vnc_calibration_core_to_tail.h:23:extern void screen_fit_clamp_interactive (int *width, int *height, int *offset_x, int *offset_y);
+working/b4a/ps2vnc_calibration_core_to_tail.h:24:extern int screen_fit_geometry_valid (int width, int height, int offset_x, int offset_y);
+working/b4a/ps2vnc_calibration_tail.inc:43:    int scale,
+working/b4a/ps2vnc_calibration_tail.inc:58:                    (float)(x + gx * scale),
+working/b4a/ps2vnc_calibration_tail.inc:59:                    (float)(y + gy * scale),
+working/b4a/ps2vnc_calibration_tail.inc:60:                    (float)(x + (gx + 1) * scale),
+working/b4a/ps2vnc_calibration_tail.inc:61:                    (float)(y + (gy + 1) * scale),
+working/b4a/ps2vnc_calibration_tail.inc:75:    int scale,
+working/b4a/ps2vnc_calibration_tail.inc:79:    int char_w = 6 * scale;
+working/b4a/ps2vnc_calibration_tail.inc:80:    int text_w = len * char_w - scale;
+working/b4a/ps2vnc_calibration_tail.inc:90:            scale,
+working/b4a/ps2vnc_calibration_tail.inc:213:    int width,
+working/b4a/ps2vnc_calibration_tail.inc:214:    int height,
+working/b4a/ps2vnc_calibration_tail.inc:215:    int offset_x,
+working/b4a/ps2vnc_calibration_tail.inc:216:    int offset_y,
+working/b4a/ps2vnc_calibration_tail.inc:229:        (OUTPUT_WIDTH - width) / 2 + offset_x;
+working/b4a/ps2vnc_calibration_tail.inc:232:        (OUTPUT_HEIGHT - height) / 2 + offset_y;
+working/b4a/ps2vnc_calibration_tail.inc:234:    int x1 = x0 + width;
+working/b4a/ps2vnc_calibration_tail.inc:235:    int y1 = y0 + height;
+working/b4a/ps2vnc_calibration_tail.inc:435:    int width;
+working/b4a/ps2vnc_calibration_tail.inc:436:    int height;
+working/b4a/ps2vnc_calibration_tail.inc:437:    int offset_x;
+working/b4a/ps2vnc_calibration_tail.inc:438:    int offset_y;
+working/b4a/ps2vnc_calibration_tail.inc:446:        width = screen_fit_width;
+working/b4a/ps2vnc_calibration_tail.inc:447:        height = screen_fit_height;
+working/b4a/ps2vnc_calibration_tail.inc:448:        offset_x = screen_fit_offset_x;
+working/b4a/ps2vnc_calibration_tail.inc:449:        offset_y = screen_fit_offset_y;
+working/b4a/ps2vnc_calibration_tail.inc:452:        offset_x = 0;
+working/b4a/ps2vnc_calibration_tail.inc:453:        offset_y = 0;
+working/b4a/ps2vnc_calibration_tail.inc:460:        if (desktop_width >
+working/b4a/ps2vnc_calibration_tail.inc:463:            width = OUTPUT_WIDTH;
+working/b4a/ps2vnc_calibration_tail.inc:466:            width =
+working/b4a/ps2vnc_calibration_tail.inc:467:                (int)desktop_width;
+working/b4a/ps2vnc_calibration_tail.inc:470:        if (desktop_height >
+working/b4a/ps2vnc_calibration_tail.inc:473:            height = OUTPUT_HEIGHT;
+working/b4a/ps2vnc_calibration_tail.inc:476:            height =
+working/b4a/ps2vnc_calibration_tail.inc:477:                (int)desktop_height;
+working/b4a/ps2vnc_calibration_tail.inc:482:        &width,
+working/b4a/ps2vnc_calibration_tail.inc:483:        &height,
+working/b4a/ps2vnc_calibration_tail.inc:484:        &offset_x,
+working/b4a/ps2vnc_calibration_tail.inc:485:        &offset_y
+working/b4a/ps2vnc_calibration_tail.inc:491:                width,
+working/b4a/ps2vnc_calibration_tail.inc:492:                height,
+working/b4a/ps2vnc_calibration_tail.inc:493:                offset_x,
+working/b4a/ps2vnc_calibration_tail.inc:494:                offset_y,
+working/b4a/ps2vnc_calibration_tail.inc:530:                    width,
+working/b4a/ps2vnc_calibration_tail.inc:531:                    height,
+working/b4a/ps2vnc_calibration_tail.inc:532:                    offset_x,
+working/b4a/ps2vnc_calibration_tail.inc:533:                    offset_y,
+working/b4a/ps2vnc_calibration_tail.inc:546:                            width,
+working/b4a/ps2vnc_calibration_tail.inc:547:                            height,
+working/b4a/ps2vnc_calibration_tail.inc:548:                            offset_x,
+working/b4a/ps2vnc_calibration_tail.inc:549:                            offset_y) < 0) {
+working/b4a/ps2vnc_calibration_tail.inc:588:            width = SCREEN_FIT_START_WIDTH;
+working/b4a/ps2vnc_calibration_tail.inc:589:            height = SCREEN_FIT_START_HEIGHT;
+working/b4a/ps2vnc_calibration_tail.inc:590:            offset_x = 0;
+working/b4a/ps2vnc_calibration_tail.inc:591:            offset_y = 0;
+working/b4a/ps2vnc_calibration_tail.inc:648:                        offset_x -= step;
+working/b4a/ps2vnc_calibration_tail.inc:651:                        offset_x += step;
+working/b4a/ps2vnc_calibration_tail.inc:654:                        offset_y -= step;
+working/b4a/ps2vnc_calibration_tail.inc:657:                        offset_y += step;
+working/b4a/ps2vnc_calibration_tail.inc:665:                        width -= step;
+working/b4a/ps2vnc_calibration_tail.inc:668:                        width += step;
+working/b4a/ps2vnc_calibration_tail.inc:671:                        height += step;
+working/b4a/ps2vnc_calibration_tail.inc:674:                        height -= step;
+working/b4a/ps2vnc_calibration_tail.inc:681:                    &width,
+working/b4a/ps2vnc_calibration_tail.inc:682:                    &height,
+working/b4a/ps2vnc_calibration_tail.inc:683:                    &offset_x,
+working/b4a/ps2vnc_calibration_tail.inc:684:                    &offset_y
+working/b4a/ps2vnc_calibration_tail.inc:713:    pstvnc_video_rect_t safe_area;
+working/b4a/ps2vnc_calibration_tail.inc:729:            &safe_area) < 0)
+working/b4a/ps2vnc_calibration_tail.inc:732:    *out_x = safe_area.x;
+working/b4a/ps2vnc_calibration_tail.inc:733:    *out_y = safe_area.y;
+working/b4a/ps2vnc_calibration_tail.inc:734:    *out_w = safe_area.width;
+working/b4a/ps2vnc_calibration_tail.inc:735:    *out_h = safe_area.height;
+working/b4a/ps2vnc_calibration_tail.inc:755:    pstvnc_video_rect_t safe_area;
+working/b4a/ps2vnc_calibration_tail.inc:756:    pstvnc_video_rect_t presented;
+working/b4a/ps2vnc_calibration_tail.inc:759:            &safe_area.x,
+working/b4a/ps2vnc_calibration_tail.inc:760:            &safe_area.y,
+working/b4a/ps2vnc_calibration_tail.inc:761:            &safe_area.width,
+working/b4a/ps2vnc_calibration_tail.inc:762:            &safe_area.height) < 0)
+working/b4a/ps2vnc_calibration_tail.inc:767:            &safe_area,
+working/b4a/ps2vnc_calibration_tail.inc:770:            &presented) < 0)
+working/b4a/ps2vnc_calibration_tail.inc:773:    *out_x = presented.x;
+working/b4a/ps2vnc_calibration_tail.inc:774:    *out_y = presented.y;
+working/b4a/ps2vnc_calibration_tail.inc:775:    *out_w = presented.width;
+working/b4a/ps2vnc_calibration_tail.inc:776:    *out_h = presented.height;
+working/b4a/ps2vnc_calibration_tail.inc:871:    unsigned int width,
+working/b4a/ps2vnc_calibration_tail.inc:872:    unsigned int height)
+working/b4a/ps2vnc_calibration_tail.inc:878:            out_x, out_y, width, height,
+working/b4a/ps2vnc_calibration_tail.inc:889:    if (desktop_width != width ||
+working/b4a/ps2vnc_calibration_tail.inc:890:        desktop_height != height) {
+working/b4a/ps2vnc_calibration_tail.inc:896:                width,
+working/b4a/ps2vnc_calibration_tail.inc:897:                height) < 0)
+working/b4a/ps2vnc_calibration_tail.inc:905:    desktop_width = width;
+working/b4a/ps2vnc_calibration_tail.inc:906:    desktop_height = height;
+working/b4a/ps2vnc_calibration_tail.inc:909:    desktop_output_width = width;
+working/b4a/ps2vnc_calibration_tail.inc:910:    desktop_output_height = height;
+working/b4a/ps2vnc_calibration_tail.inc:956:    unsigned int width,
+working/b4a/ps2vnc_calibration_tail.inc:957:    unsigned int height)
+working/b4a/ps2vnc_calibration_tail.inc:971:    if (desktop_width != active_video_mode->standard_logical_width ||
+working/b4a/ps2vnc_calibration_tail.inc:972:        desktop_height != active_video_mode->standard_logical_height ||
+working/b4a/ps2vnc_calibration_tail.inc:973:        tex->Width != desktop_width ||
+working/b4a/ps2vnc_calibration_tail.inc:974:        tex->Height != desktop_height)
+working/b4a/ps2vnc_calibration_tail.inc:978:            out_x, out_y, width, height,
+working/b4a/ps2vnc_calibration_tail.inc:984:    desktop_output_width = width;
+working/b4a/ps2vnc_calibration_tail.inc:985:    desktop_output_height = height;
+working/b4a/ps2vnc_calibration_tail.inc:1140:    gsGlobal->Width = ps2vnc_hires_effective_width();
+working/b4a/ps2vnc_calibration_tail.inc:1141:    gsGlobal->Height = active_video_mode->hires_height;
+working/b4a/ps2vnc_calibration_tail.inc:1195:    gsGlobal->Width = active_video_mode->standard_fb_width;
+working/b4a/ps2vnc_calibration_tail.inc:1196:    gsGlobal->Height = active_video_mode->standard_fb_height;
+working/b4a/ps2vnc_calibration_tail.inc:1431:    tex->Width = ps2vnc_hires_storage_width();
+working/b4a/ps2vnc_calibration_tail.inc:1432:    tex->Height = ps2vnc_hires_storage_height();
+working/b4a/ps2vnc_calibration_tail.inc:1495:        desktop_width == 0 ||
+working/b4a/ps2vnc_calibration_tail.inc:1496:        desktop_height == 0)
+working/b4a/ps2vnc_calibration_tail.inc:1501:    tex->Width = desktop_width;
+working/b4a/ps2vnc_calibration_tail.inc:1502:    tex->Height = desktop_height;
+working/b4a/ps2vnc_calibration_tail.inc:1511:            tex->Width,
+working/b4a/ps2vnc_calibration_tail.inc:1512:            tex->Height,
+working/b4a/ps2vnc_calibration_tail.inc:1569:    if (tex->Width != desktop_width ||
+working/b4a/ps2vnc_calibration_tail.inc:1570:        tex->Height != desktop_height ||
+working/b4a/ps2vnc_calibration_tail.inc:1590:        (float)tex->Width,
+working/b4a/ps2vnc_calibration_tail.inc:1591:        (float)tex->Height,
+working/b4a/ps2vnc_calibration_tail.inc:1603:    osk_tex->Width = OSK_WIDTH;
+working/b4a/ps2vnc_calibration_tail.inc:1604:    osk_tex->Height = OSK_HEIGHT;
+working/b4a/ps2vnc_display_core.inc:11:    unsigned int width,
+working/b4a/ps2vnc_display_core.inc:12:    unsigned int height)
+working/b4a/ps2vnc_display_core.inc:27:            out_x, out_y, width, height,
+working/b4a/ps2vnc_display_core.inc:73:            width, height,
+working/b4a/ps2vnc_display_core.inc:80:    if (desktop_width != logical_width ||
+working/b4a/ps2vnc_display_core.inc:81:        desktop_height != logical_height) {
+working/b4a/ps2vnc_display_core.inc:94:    desktop_width = logical_width;
+working/b4a/ps2vnc_display_core.inc:95:    desktop_height = logical_height;
+working/b4a/ps2vnc_display_core.inc:98:    desktop_output_width = width;
+working/b4a/ps2vnc_display_core.inc:99:    desktop_output_height = height;
+working/b4a/ps2vnc_display_core.inc:189:    unsigned int width,
+working/b4a/ps2vnc_display_core.inc:190:    unsigned int height)
+working/b4a/ps2vnc_display_core.inc:225:            width,
+working/b4a/ps2vnc_display_core.inc:226:            height);
+working/b4a/ps2vnc_display_core.inc:299:        width,
+working/b4a/ps2vnc_display_core.inc:300:        height);
+working/b4a/ps2vnc_display_core.inc:520:        desktop_width != previous_desktop_w ||
+working/b4a/ps2vnc_display_core.inc:521:        desktop_height != previous_desktop_h ||
+working/b4a/ps2vnc_display_core_to_tail.h:17:extern int ps2vnc_switch_display_mode (int sock, short unsigned int *rfb_framebuffer, short unsigned int *gs_framebuffer, GSGLOBAL **display, GSTEXTURE *tex, GSTEXTURE *osk_tex, const ps2vnc_video_mode_t *mode, unsigned int out_x, unsigned int out_y, unsigned int width, unsigned int height);
+working/b4a/ps2vnc_display_tail.inc:99:        if (desktop_width != logical_w ||
+working/b4a/ps2vnc_display_tail.inc:100:            desktop_height != logical_h) {
+working/b4a/ps2vnc_display_tail.inc:118:        desktop_width = logical_w;
+working/b4a/ps2vnc_display_tail.inc:119:        desktop_height = logical_h;
+working/b4a/ps2vnc_display_tail.inc:999:                    float scale;
+working/b4a/ps2vnc_display_tail.inc:1000:                    float dst_w;
+working/b4a/ps2vnc_display_tail.inc:1001:                    float dst_h;
+working/b4a/ps2vnc_display_tail.inc:1033:                    scale =
+working/b4a/ps2vnc_display_tail.inc:1045:                        scale > 1.0f) {
+working/b4a/ps2vnc_display_tail.inc:1047:                        scale = 1.0f;
+working/b4a/ps2vnc_display_tail.inc:1050:                    if (scale < 0.25f)
+working/b4a/ps2vnc_display_tail.inc:1051:                        scale = 0.25f;
+working/b4a/ps2vnc_display_tail.inc:1053:                    dst_w = (float)OSK_WIDTH * scale;
+working/b4a/ps2vnc_display_tail.inc:1054:                    dst_h = (float)OSK_HEIGHT * scale;
+working/b4a/ps2vnc_display_tail.inc:1058:                        (safe_w - dst_w) / 2.0f;
+working/b4a/ps2vnc_display_tail.inc:1067:                            (safe_h - dst_h) / 2.0f;
+working/b4a/ps2vnc_display_tail.inc:1074:                            dst_h -
+working/b4a/ps2vnc_display_tail.inc:1078:                    dst_x1 = dst_x0 + dst_w;
+working/b4a/ps2vnc_display_tail.inc:1079:                    dst_y1 = dst_y0 + dst_h;
+working/b4a/ps2vnc_framebuffer_core.inc:49:        (desktop_width >> 8) & 0xFF,
+working/b4a/ps2vnc_framebuffer_core.inc:50:        desktop_width & 0xFF,
+working/b4a/ps2vnc_framebuffer_core.inc:51:        (desktop_height >> 8) & 0xFF,
+working/b4a/ps2vnc_framebuffer_core.inc:52:        desktop_height & 0xFF
+working/b4a/ps2vnc_framebuffer_core.inc:120:        unsigned int base = (y + row) * desktop_width + x;
+working/b4a/ps2vnc_framebuffer_core.inc:161:            ? &rfb_framebuffer[(ty + row) * desktop_width + tx]
+working/b4a/ps2vnc_framebuffer_core.inc:172:                (ty + row) * desktop_width + tx;
+working/b4a/ps2vnc_framebuffer_core.inc:774:                        if (w != desktop_width ||
+working/b4a/ps2vnc_framebuffer_core.inc:775:                            h != desktop_height) {
+working/b4a/ps2vnc_framebuffer_core.inc:811:                    desktop_width,
+working/b4a/ps2vnc_framebuffer_core.inc:812:                    desktop_height)) {
+working/b4a/ps2vnc_framebuffer_core.inc:897:                                (y + row) * desktop_width + x
+working/b4a/ps2vnc_framebuffer_core.inc:901:                                (y + row) * desktop_width + x
+working/b4a/ps2vnc_framebuffer_core.inc:928:                total_bytes != (desktop_width * desktop_height * 2)) {
+working/b4a/ps2vnc_framebuffer_core.inc:933:                            desktop_width * desktop_height * 2
+working/b4a/ps2vnc_framebuffer_core.inc:1020:    if (rfb_extended_desktop_width != desktop_width ||
+working/b4a/ps2vnc_framebuffer_core.inc:1021:        rfb_extended_desktop_height != desktop_height) {
+working/b4a/ps2vnc_framebuffer_core.inc:1120:    if (x >= desktop_width || y >= desktop_height)
+working/b4a/ps2vnc_framebuffer_core.inc:1170:        !region_fits_u32(x, y, w, h, desktop_width, desktop_height))
+working/b4a/ps2vnc_framebuffer_core.inc:1203:        desktop_height > VNC_HEIGHT ||
+working/b4a/ps2vnc_framebuffer_core.inc:1204:        rfb_dirty_y1 > desktop_height)
+working/b4a/ps2vnc_framebuffer_core.inc:1219:        if (x1 <= x0 || x1 > desktop_width)
+working/b4a/ps2vnc_framebuffer_tail.inc:147:    unsigned int dst_w;
+working/b4a/ps2vnc_framebuffer_tail.inc:148:    unsigned int dst_h;
+working/b4a/ps2vnc_framebuffer_tail.inc:160:        desktop_width == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:161:        desktop_height == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:166:        desktop_width > VNC_WIDTH ||
+working/b4a/ps2vnc_framebuffer_tail.inc:167:        desktop_height > VNC_HEIGHT ||
+working/b4a/ps2vnc_framebuffer_tail.inc:168:        rfb_dirty_y1 > desktop_height ||
+working/b4a/ps2vnc_framebuffer_tail.inc:201:        cached_desktop_width != desktop_width ||
+working/b4a/ps2vnc_framebuffer_tail.inc:202:        cached_desktop_height != desktop_height ||
+working/b4a/ps2vnc_framebuffer_tail.inc:253:        dst_w = dst_x1 - dst_x0;
+working/b4a/ps2vnc_framebuffer_tail.inc:254:        dst_h = dst_y1 - dst_y0;
+working/b4a/ps2vnc_framebuffer_tail.inc:256:        if (dst_w > VNC_WIDTH ||
+working/b4a/ps2vnc_framebuffer_tail.inc:257:            dst_h > VNC_HEIGHT) {
+working/b4a/ps2vnc_framebuffer_tail.inc:265:        for (i = 0; i < dst_w; i++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:268:                    ((u64)i * desktop_width) /
+working/b4a/ps2vnc_framebuffer_tail.inc:269:                    dst_w);
+working/b4a/ps2vnc_framebuffer_tail.inc:272:        for (i = 0; i < dst_h; i++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:275:                    ((u64)i * desktop_height) /
+working/b4a/ps2vnc_framebuffer_tail.inc:276:                    dst_h);
+working/b4a/ps2vnc_framebuffer_tail.inc:284:        for (i = 0; i <= desktop_width; i++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:287:                    (((u64)i * dst_w) +
+working/b4a/ps2vnc_framebuffer_tail.inc:288:                     desktop_width - 1) /
+working/b4a/ps2vnc_framebuffer_tail.inc:289:                    desktop_width);
+working/b4a/ps2vnc_framebuffer_tail.inc:292:        for (i = 0; i <= desktop_height; i++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:295:                    (((u64)i * dst_h) +
+working/b4a/ps2vnc_framebuffer_tail.inc:296:                     desktop_height - 1) /
+working/b4a/ps2vnc_framebuffer_tail.inc:297:                    desktop_height);
+working/b4a/ps2vnc_framebuffer_tail.inc:306:        cached_desktop_width = desktop_width;
+working/b4a/ps2vnc_framebuffer_tail.inc:307:        cached_desktop_height = desktop_height;
+working/b4a/ps2vnc_framebuffer_tail.inc:318:        cached_dst_w = dst_w;
+working/b4a/ps2vnc_framebuffer_tail.inc:319:        cached_dst_h = dst_h;
+working/b4a/ps2vnc_framebuffer_tail.inc:328:        dst_w = cached_dst_w;
+working/b4a/ps2vnc_framebuffer_tail.inc:329:        dst_h = cached_dst_h;
+working/b4a/ps2vnc_framebuffer_tail.inc:338:    if (dirty_dy0 > dst_h)
+working/b4a/ps2vnc_framebuffer_tail.inc:339:        dirty_dy0 = dst_h;
+working/b4a/ps2vnc_framebuffer_tail.inc:341:    if (dirty_dy1 > dst_h)
+working/b4a/ps2vnc_framebuffer_tail.inc:342:        dirty_dy1 = dst_h;
+working/b4a/ps2vnc_framebuffer_tail.inc:348:        unsigned int src_y;
+working/b4a/ps2vnc_framebuffer_tail.inc:360:        src_y = y_sample[dy];
+working/b4a/ps2vnc_framebuffer_tail.inc:362:        if (src_y >= desktop_height)
+working/b4a/ps2vnc_framebuffer_tail.inc:365:        if (!rfb_dirty_row_valid[src_y])
+working/b4a/ps2vnc_framebuffer_tail.inc:368:        src_x0 = rfb_dirty_row_x0[src_y];
+working/b4a/ps2vnc_framebuffer_tail.inc:369:        src_x1 = rfb_dirty_row_x1[src_y];
+working/b4a/ps2vnc_framebuffer_tail.inc:372:            src_x1 > desktop_width) {
+working/b4a/ps2vnc_framebuffer_tail.inc:380:        if (dirty_dx0 > dst_w)
+working/b4a/ps2vnc_framebuffer_tail.inc:381:            dirty_dx0 = dst_w;
+working/b4a/ps2vnc_framebuffer_tail.inc:383:        if (dirty_dx1 > dst_w)
+working/b4a/ps2vnc_framebuffer_tail.inc:384:            dirty_dx1 = dst_w;
+working/b4a/ps2vnc_framebuffer_tail.inc:402:                src_y * desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:409:            unsigned int src_x =
+working/b4a/ps2vnc_framebuffer_tail.inc:412:            if (src_x < src_x0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:413:                src_x >= src_x1 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:414:                src_x >= desktop_width) {
+working/b4a/ps2vnc_framebuffer_tail.inc:419:            dst_row[dx] = src_row[src_x];
+working/b4a/ps2vnc_framebuffer_tail.inc:654:    if (tex->Width != desktop_width ||
+working/b4a/ps2vnc_framebuffer_tail.inc:655:        tex->Height != desktop_height ||
+working/b4a/ps2vnc_framebuffer_tail.inc:728:    if (desktop_width == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:729:        desktop_height == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:733:            desktop_width,
+working/b4a/ps2vnc_framebuffer_tail.inc:734:            desktop_height,
+working/b4a/ps2vnc_framebuffer_tail.inc:766:        unsigned int dst_w;
+working/b4a/ps2vnc_framebuffer_tail.inc:767:        unsigned int dst_h;
+working/b4a/ps2vnc_framebuffer_tail.inc:814:        dst_w = dst_x1 - dst_x0;
+working/b4a/ps2vnc_framebuffer_tail.inc:815:        dst_h = dst_y1 - dst_y0;
+working/b4a/ps2vnc_framebuffer_tail.inc:824:        for (row = 0; row < dst_h; row++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:825:            unsigned int src_y =
+working/b4a/ps2vnc_framebuffer_tail.inc:827:                    ((u64)row * desktop_height) /
+working/b4a/ps2vnc_framebuffer_tail.inc:828:                    dst_h);
+working/b4a/ps2vnc_framebuffer_tail.inc:840:                    src_y * desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:843:            for (col = 0; col < dst_w; col++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:844:                unsigned int src_x =
+working/b4a/ps2vnc_framebuffer_tail.inc:846:                        ((u64)col * desktop_width) /
+working/b4a/ps2vnc_framebuffer_tail.inc:847:                        dst_w);
+working/b4a/ps2vnc_framebuffer_tail.inc:849:                dst[col] = src[src_x];
+working/b4a/ps2vnc_framebuffer_tail.inc:858:        for (row = 0; row < desktop_height; row++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:868:                    row * desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:874:                desktop_width * sizeof(unsigned short)
+working/b4a/ps2vnc_framebuffer_tail.inc:1018:        tex->Width != desktop_width ||
+working/b4a/ps2vnc_framebuffer_tail.inc:1019:        tex->Height != desktop_height)
+working/b4a/ps2vnc_framebuffer_tail.inc:1073:            desktop_width,
+working/b4a/ps2vnc_framebuffer_tail.inc:1074:            desktop_height))
+working/b4a/ps2vnc_framebuffer_tail.inc:1080:            desktop_width,
+working/b4a/ps2vnc_framebuffer_tail.inc:1081:            desktop_height,
+working/b4a/ps2vnc_framebuffer_tail.inc:1113:    if (w >= (desktop_width / 4)) {
+working/b4a/ps2vnc_framebuffer_tail.inc:1118:            desktop_width * sizeof(unsigned short);
+working/b4a/ps2vnc_framebuffer_tail.inc:1133:                    &gs_framebuffer[(y + row) * desktop_width];
+working/b4a/ps2vnc_framebuffer_tail.inc:1141:                last[field] = dst + desktop_width;
+working/b4a/ps2vnc_framebuffer_tail.inc:1171:                    (y + row) * desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:1184:                desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:1213:                (y + row) * desktop_width +
+working/b4a/ps2vnc_gsHires.c:172:	return ((u32)gsGlobal->Width + 63u) & ~63u;
+working/b4a/ps2vnc_gsHires.c:192:	*p_data++ = GS_SETREG_SCISSOR_1(0, gsGlobal->Width - 1, 0, __pass->DrawBuffer->bufferline_end - __pass->DrawBuffer->bufferline_begin);
+working/b4a/ps2vnc_gsHires.c:202:	*p_data++ = GS_SETREG_SCISSOR_1(0, gsGlobal->Width - 1, 0, __pass->DrawBuffer->bufferline_end - __pass->DrawBuffer->bufferline_begin);
+working/b4a/ps2vnc_gsHires.c:214:	u16 width = gsGlobal->Width;
+working/b4a/ps2vnc_gsHires.c:215:	u16 height = __pass->DrawBuffer->bufferline_end - __pass->DrawBuffer->bufferline_begin + 1;
+working/b4a/ps2vnc_gsHires.c:216:	void * mem = &((u16*)tex->Mem)[(__pass->DrawBuffer->bufferline_begin + source_yoff)*width];
+working/b4a/ps2vnc_gsHires.c:222:		width,
+working/b4a/ps2vnc_gsHires.c:223:		height,
+working/b4a/ps2vnc_gsHires.c:266:			gsKit_create_pass(gsGlobal, &__pass[iPass], &__pass[iPass].QueueIF, 8, gsGlobal->Height);
+working/b4a/ps2vnc_gsHires.c:364:	size = tex->Width * tex->Height * bpp;
+working/b4a/ps2vnc_gsHires.c:368:	for(y=0; y < tex->Height; y+=2) {
+working/b4a/ps2vnc_gsHires.c:370:		memcpy(&tex_new[(y/2)*tex->Width], &tex_old[y*tex->Width], tex->Width * bpp);
+working/b4a/ps2vnc_gsHires.c:372:		memcpy(&tex_new[((y+tex->Height)/2)*tex->Width], &tex_old[(y+1)*tex->Width], tex->Width * bpp);
+working/b4a/ps2vnc_gsHires.c:399:	if (tex->Width != gsGlobal->Width)
+working/b4a/ps2vnc_gsHires.c:404:		if (tex->Height != gsGlobal->Height*2)
+working/b4a/ps2vnc_gsHires.c:408:		if (tex->Height != gsGlobal->Height)
+working/b4a/ps2vnc_gsHires.c:596:	if (gsGlobal->Width < 1024)
+working/b4a/ps2vnc_gsHires.c:597:		gsGlobal->Width -=  64;
+working/b4a/ps2vnc_gsHires.c:599:		gsGlobal->Width -= 128;
+working/b4a/ps2vnc_gsHires.c:619:	iPassHeight = (gsGlobal->Height + (__iPassCount-1)) / __iPassCount;
+working/b4a/ps2vnc_gsHires.c:661:				gsGlobal->Width,
+working/b4a/ps2vnc_gsHires.c:662:				gsGlobal->Height,
+working/b4a/ps2vnc_gsHires.c:707:		if (iBufferline > gsGlobal->Height)
+working/b4a/ps2vnc_gsHires.c:708:			iBufferline = gsGlobal->Height;
+working/b4a/ps2vnc_gsHires.c:731:		gsGlobal->ZBuffer = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(gsGlobal->Width, gsGlobal->Height/2, gsGlobal->PSMZ), GSKIT_ALLOC_SYSBUFFER);
+working/b4a/ps2vnc_management_core.inc:238:    const unsigned int recovery_target_width = desktop_width;
+working/b4a/ps2vnc_management_core.inc:239:    const unsigned int recovery_target_height = desktop_height;
+working/b4a/ps2vnc_management_core.inc:301:            desktop_width = recovery_target_width;
+working/b4a/ps2vnc_management_core.inc:302:            desktop_height = recovery_target_height;
+working/b4a/ps2vnc_management_core.inc:343:                (desktop_width != recovery_target_width ||
+working/b4a/ps2vnc_management_core.inc:344:                 desktop_height != recovery_target_height)) {
+working/b4a/ps2vnc_management_core.inc:356:                    desktop_width = recovery_target_width;
+working/b4a/ps2vnc_management_core.inc:357:                    desktop_height = recovery_target_height;
+working/b4a/ps2vnc_management_core.inc:397:            desktop_width = recovery_target_width;
+working/b4a/ps2vnc_management_core.inc:398:            desktop_height = recovery_target_height;
+working/b4a/ps2vnc_management_core.inc:670:    int width,
+working/b4a/ps2vnc_management_core.inc:671:    int height,
+working/b4a/ps2vnc_management_core.inc:672:    int offset_x,
+working/b4a/ps2vnc_management_core.inc:673:    int offset_y)
+working/b4a/ps2vnc_management_core.inc:677:        width,
+working/b4a/ps2vnc_management_core.inc:678:        height,
+working/b4a/ps2vnc_management_core.inc:679:        offset_x,
+working/b4a/ps2vnc_management_core.inc:680:        offset_y
+working/b4a/ps2vnc_management_core.inc:692:    int width,
+working/b4a/ps2vnc_management_core.inc:693:    int height,
+working/b4a/ps2vnc_management_core.inc:694:    int offset_x,
+working/b4a/ps2vnc_management_core.inc:695:    int offset_y)
+working/b4a/ps2vnc_management_core.inc:699:        width,
+working/b4a/ps2vnc_management_core.inc:700:        height,
+working/b4a/ps2vnc_management_core.inc:701:        offset_x,
+working/b4a/ps2vnc_management_core.inc:702:        offset_y
+working/b4a/ps2vnc_management_core.inc:714:    int width,
+working/b4a/ps2vnc_management_core.inc:715:    int height,
+working/b4a/ps2vnc_management_core.inc:716:    int offset_x,
+working/b4a/ps2vnc_management_core.inc:717:    int offset_y,
+working/b4a/ps2vnc_management_core.inc:725:        if (width == OUTPUT_WIDTH &&
+working/b4a/ps2vnc_management_core.inc:726:            height == OUTPUT_HEIGHT &&
+working/b4a/ps2vnc_management_core.inc:727:            offset_x == 0 &&
+working/b4a/ps2vnc_management_core.inc:728:            offset_y == 0) {
+working/b4a/ps2vnc_management_core.inc:740:                   width,
+working/b4a/ps2vnc_management_core.inc:741:                   height,
+working/b4a/ps2vnc_management_core.inc:742:                   offset_x,
+working/b4a/ps2vnc_management_core.inc:743:                   offset_y)) {
+working/b4a/ps2vnc_management_core.inc:745:        screen_fit_width = width;
+working/b4a/ps2vnc_management_core.inc:746:        screen_fit_height = height;
+working/b4a/ps2vnc_management_core.inc:747:        screen_fit_offset_x = offset_x;
+working/b4a/ps2vnc_management_core.inc:748:        screen_fit_offset_y = offset_y;
+working/b4a/ps2vnc_management_tail.inc:74:    profile->logical_width = desktop_width;
+working/b4a/ps2vnc_management_tail.inc:75:    profile->logical_height = desktop_height;
+working/b4a/ps2vnc_runtime_core.inc:24:    unsigned int width;
+working/b4a/ps2vnc_runtime_core.inc:29:    width = active_video_mode->hires_width;
+working/b4a/ps2vnc_runtime_core.inc:31:    if (width == 0)
+working/b4a/ps2vnc_runtime_core.inc:38:    if (width < 64u)
+working/b4a/ps2vnc_runtime_core.inc:39:        return width;
+working/b4a/ps2vnc_runtime_core.inc:41:    return (width / 64u) * 64u;
+working/b4a/ps2vnc_runtime_core.inc:47:    u64 height;
+working/b4a/ps2vnc_runtime_core.inc:55:    height =
+working/b4a/ps2vnc_runtime_core.inc:61:        height *= 2u;
+working/b4a/ps2vnc_runtime_core.inc:64:    return height;
+working/b4a/ps2vnc_runtime_core.inc:169:    unsigned int *width,
+working/b4a/ps2vnc_runtime_core.inc:170:    unsigned int *height)
+working/b4a/ps2vnc_runtime_core.inc:172:    if (active_video_mode == NULL || width == NULL || height == NULL)
+working/b4a/ps2vnc_runtime_core.inc:176:        *width = output_width;
+working/b4a/ps2vnc_runtime_core.inc:177:        *height = output_height;
+working/b4a/ps2vnc_runtime_core.inc:179:        *width = active_video_mode->standard_logical_width;
+working/b4a/ps2vnc_runtime_core.inc:180:        *height = active_video_mode->standard_logical_height;
+working/b4a/ps2vnc_runtime_core.inc:185:    if (*width == 0 || *height == 0 ||
+working/b4a/ps2vnc_runtime_core.inc:186:        *width > VNC_WIDTH || *height > VNC_HEIGHT)
+working/b4a/ps2vnc_runtime_core.inc:232:unsigned int desktop_width = VNC_WIDTH;
+working/b4a/ps2vnc_runtime_core.inc:233:unsigned int desktop_height = VNC_HEIGHT;
+working/b4a/ps2vnc_runtime_tail.inc:215:    display_confirm_previous_desktop_w = desktop_width;
+working/b4a/ps2vnc_runtime_tail.inc:216:    display_confirm_previous_desktop_h = desktop_height;
+working/b4a/ps2vnc_runtime_tail.inc:502:    unsigned int width;
+working/b4a/ps2vnc_runtime_tail.inc:503:    unsigned int height;
+working/b4a/ps2vnc_runtime_tail.inc:646:    width = read_be16(&server_init[0]);
+working/b4a/ps2vnc_runtime_tail.inc:647:    height = read_be16(&server_init[2]);
+working/b4a/ps2vnc_runtime_tail.inc:650:    screenf("Handshake OK - desktop %ux%u", width, height);
+working/b4a/ps2vnc_runtime_tail.inc:676:    if (width == 0 || height == 0 ||
+working/b4a/ps2vnc_runtime_tail.inc:677:        width > max_width ||
+working/b4a/ps2vnc_runtime_tail.inc:678:        height > max_height) {
+working/b4a/ps2vnc_runtime_tail.inc:682:            width,
+working/b4a/ps2vnc_runtime_tail.inc:683:            height
+working/b4a/ps2vnc_runtime_tail.inc:689:        if (width != desktop_width ||
+working/b4a/ps2vnc_runtime_tail.inc:690:            height != desktop_height) {
+working/b4a/ps2vnc_runtime_tail.inc:694:                desktop_width,
+working/b4a/ps2vnc_runtime_tail.inc:695:                desktop_height
+working/b4a/ps2vnc_runtime_tail.inc:705:        desktop_width = width;
+working/b4a/ps2vnc_runtime_tail.inc:706:        desktop_height = height;
+working/b4a/ps2vnc_runtime_tail.inc:905:    unsigned int width,
+working/b4a/ps2vnc_runtime_tail.inc:906:    unsigned int height)
+working/b4a/ps2vnc_runtime_tail.inc:918:    msg[2] = (unsigned char)((width >> 8) & 0xFF);
+working/b4a/ps2vnc_runtime_tail.inc:919:    msg[3] = (unsigned char)(width & 0xFF);
+working/b4a/ps2vnc_runtime_tail.inc:921:    msg[4] = (unsigned char)((height >> 8) & 0xFF);
+working/b4a/ps2vnc_runtime_tail.inc:922:    msg[5] = (unsigned char)(height & 0xFF);
+working/b4a/ps2vnc_runtime_tail.inc:937:    msg[16] = (unsigned char)((width >> 8) & 0xFF);
+working/b4a/ps2vnc_runtime_tail.inc:938:    msg[17] = (unsigned char)(width & 0xFF);
+working/b4a/ps2vnc_runtime_tail.inc:940:    msg[18] = (unsigned char)((height >> 8) & 0xFF);
+working/b4a/ps2vnc_runtime_tail.inc:941:    msg[19] = (unsigned char)(height & 0xFF);
+working/b4a/ps2vnc_runtime_tail.inc:993:    unsigned int width,
+working/b4a/ps2vnc_runtime_tail.inc:994:    unsigned int height)
+working/b4a/ps2vnc_runtime_tail.inc:1026:    rfb_resize_expected_width = width;
+working/b4a/ps2vnc_runtime_tail.inc:1027:    rfb_resize_expected_height = height;
+working/b4a/ps2vnc_runtime_tail.inc:1031:            width,
+working/b4a/ps2vnc_runtime_tail.inc:1032:            height) < 0) {
+working/b4a/ps2vnc_runtime_tail.inc:1098:        if (rfb_extended_desktop_width != width ||
+working/b4a/ps2vnc_runtime_tail.inc:1099:            rfb_extended_desktop_height != height) {
+working/b4a/ps2vnc_runtime_tail.inc:1525:    int scale,
+working/b4a/ps2vnc_runtime_tail.inc:1539:                    x + gx * scale,
+working/b4a/ps2vnc_runtime_tail.inc:1540:                    y + gy * scale,
+working/b4a/ps2vnc_runtime_tail.inc:1541:                    scale,
+working/b4a/ps2vnc_runtime_tail.inc:1542:                    scale,
+working/b4a/ps2vnc_runtime_tail.inc:1556:    int scale,
+working/b4a/ps2vnc_runtime_tail.inc:1560:    int char_w = 6 * scale;
+working/b4a/ps2vnc_runtime_tail.inc:1561:    int text_w = len * char_w - scale;
+working/b4a/ps2vnc_runtime_tail.inc:1562:    int text_h = 7 * scale;
+working/b4a/ps2vnc_runtime_tail.inc:1568:        osk_draw_char(tx + i * char_w, ty, s[i], scale, color);
+working/b4a/ps2vnc_runtime_to_ui_display.h:472:extern int ps2vnc_display_logical_desktop_size (unsigned int output_width, unsigned int output_height, unsigned int *width, unsigned int *height);
+working/b4a/ps2vnc_services_exports.h:53:int screen_fit_apply_preset( int width, int height, int offset_x, int offset_y, int full_bypass);
+working/b4a/ps2vnc_services_imports.h:15:extern unsigned int desktop_height;
+working/b4a/ps2vnc_services_imports.h:20:extern unsigned int desktop_width;
+working/b4a/ps2vnc_services_imports.h:61:void osk_draw_text_centered( int x, int y, int w, int h, const char *s, int scale, unsigned short color);
+working/b4a/ps2vnc_services_imports.h:80:int request_and_confirm_desktop_size( int sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, unsigned int width, unsigned int height);
+working/b4a/ps2vnc_ui_core.inc:1181:    if (x < desktop_width - 1)
+working/b4a/ps2vnc_ui_tail.inc:4:    int cursor_x = desktop_width / 2;
+working/b4a/ps2vnc_ui_tail.inc:5:    int cursor_y = desktop_height / 2;
+working/b4a/ps2vnc_ui_tail.inc:1370:                if (cursor_x >= (int)desktop_width)
+working/b4a/ps2vnc_ui_tail.inc:1371:                    cursor_x = (int)desktop_width - 1;
+working/b4a/ps2vnc_ui_tail.inc:1375:                if (cursor_y >= (int)desktop_height)
+working/b4a/ps2vnc_ui_tail.inc:1376:                    cursor_y = (int)desktop_height - 1;

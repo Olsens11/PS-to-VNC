@@ -1,0 +1,4062 @@
+==============================================================================
+src/video/geometry.c:29-90 pstvnc_video_geometry_safe_area_valid
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING
+LOCAL_CALLS=
+==============================================================================
+int pstvnc_video_geometry_safe_area_valid(
+    const pstvnc_video_mode_t *mode,
+    int width,
+    int height,
+    int offset_x,
+    int offset_y
+)
+{
+    int output_width;
+    int output_height;
+    int remaining_x;
+    int remaining_y;
+    int centered_x;
+    int centered_y;
+    int max_positive_x;
+    int max_positive_y;
+
+    if (mode == NULL)
+        return 0;
+
+    /*
+     * Current PS-to-VNC modes are far below INT_MAX.  Keep the permanent
+     * arithmetic explicit rather than relying on an implementation-defined
+     * unsigned-to-signed conversion for a future malformed descriptor.
+     */
+    if (mode->raster_width > (unsigned int)INT_MAX ||
+        mode->raster_height > (unsigned int)INT_MAX)
+        return 0;
+
+    output_width = (int)mode->raster_width;
+    output_height = (int)mode->raster_height;
+
+    if (width <= 0 || height <= 0)
+        return 0;
+
+    if (width > output_width ||
+        height > output_height)
+        return 0;
+
+    remaining_x = output_width - width;
+    remaining_y = output_height - height;
+
+    centered_x = remaining_x / 2;
+    centered_y = remaining_y / 2;
+
+    /*
+     * With an odd remainder, integer centering leaves the extra pixel on
+     * the positive side.  This is the historical PS2VNC acceptance rule.
+     */
+    max_positive_x = remaining_x - centered_x;
+    max_positive_y = remaining_y - centered_y;
+
+    if (offset_x < -centered_x ||
+        offset_x > max_positive_x)
+        return 0;
+
+    if (offset_y < -centered_y ||
+        offset_y > max_positive_y)
+        return 0;
+
+    return 1;
+}
+
+==============================================================================
+src/video/geometry.c:92-140 pstvnc_video_geometry_safe_area_rect
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING
+LOCAL_CALLS=pstvnc_video_geometry_rect_fits,pstvnc_video_geometry_safe_area_valid
+==============================================================================
+int pstvnc_video_geometry_safe_area_rect(
+    const pstvnc_video_mode_t *mode,
+    int width,
+    int height,
+    int offset_x,
+    int offset_y,
+    pstvnc_video_rect_t *out_rect
+)
+{
+    int x;
+    int y;
+    pstvnc_video_rect_t rect;
+
+    if (mode == NULL || out_rect == NULL)
+        return -1;
+
+    if (!pstvnc_video_geometry_safe_area_valid(
+            mode,
+            width,
+            height,
+            offset_x,
+            offset_y))
+        return -1;
+
+    x =
+        ((int)mode->raster_width - width) / 2 +
+        offset_x;
+
+    y =
+        ((int)mode->raster_height - height) / 2 +
+        offset_y;
+
+    if (x < 0 || y < 0)
+        return -1;
+
+    rect.x = (unsigned int)x;
+    rect.y = (unsigned int)y;
+    rect.width = (unsigned int)width;
+    rect.height = (unsigned int)height;
+
+    if (!pstvnc_video_geometry_rect_fits(
+            &rect,
+            mode->raster_width,
+            mode->raster_height))
+        return -1;
+
+    *out_rect = rect;
+    return 0;
+}
+
+==============================================================================
+src/video/geometry.c:142-193 pstvnc_video_geometry_presented_rect
+SIGNALS=SAFE_PRESENTATION,DIMENSIONS
+LOCAL_CALLS=pstvnc_video_geometry_rect_fits
+==============================================================================
+int pstvnc_video_geometry_presented_rect(
+    const pstvnc_video_mode_t *mode,
+    const pstvnc_video_rect_t *safe_area,
+    unsigned int desktop_capacity_width,
+    unsigned int desktop_capacity_height,
+    pstvnc_video_rect_t *out_rect
+)
+{
+    pstvnc_video_rect_t result;
+
+    if (mode == NULL ||
+        safe_area == NULL ||
+        out_rect == NULL)
+        return -1;
+
+    if (desktop_capacity_width == 0u ||
+        desktop_capacity_height == 0u)
+        return -1;
+
+    if (!pstvnc_video_geometry_rect_fits(
+            safe_area,
+            mode->raster_width,
+            mode->raster_height))
+        return -1;
+
+    result.width =
+        (safe_area->width < desktop_capacity_width) ?
+        safe_area->width :
+        desktop_capacity_width;
+
+    result.height =
+        (safe_area->height < desktop_capacity_height) ?
+        safe_area->height :
+        desktop_capacity_height;
+
+    result.x =
+        safe_area->x +
+        ((safe_area->width - result.width) / 2u);
+
+    result.y =
+        safe_area->y +
+        ((safe_area->height - result.height) / 2u);
+
+    if (!pstvnc_video_geometry_rect_fits(
+            &result,
+            mode->raster_width,
+            mode->raster_height))
+        return -1;
+
+    *out_rect = result;
+    return 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_core.inc:798-987 ps2vnc_display_save_to_pi
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING,DISPLAY_MODE,CALIBRATION
+LOCAL_CALLS=ps2vnc_http_find_header_end,ps2vnc_http_status_is_200,screen_fit_geometry_valid,send_exact
+==============================================================================
+int ps2vnc_display_save_to_pi(
+    int width,
+    int height,
+    int offset_x,
+    int offset_y)
+{
+    struct sockaddr_in server;
+
+    char body[160];
+    char request[384];
+
+    unsigned char response[
+        PS2VNC_HTTP_MAX_HEADER
+    ];
+
+    int safe_width;
+    int safe_height;
+
+    int body_len;
+    int request_len;
+
+    unsigned int response_len = 0;
+
+    int header_end = -1;
+    int sock = -1;
+    int result = -1;
+
+    if (!screen_fit_geometry_valid(
+            width,
+            height,
+            offset_x,
+            offset_y)) {
+
+        return -1;
+    }
+
+    /*
+     * D17AL-F1:
+     * Persist exactly what the calibration rectangle selected.
+     */
+    safe_width = width;
+    safe_height = height;
+
+    if (active_video_mode == NULL ||
+        active_video_mode->name == NULL)
+        return -1;
+
+    body_len = snprintf(
+        body,
+        sizeof(body),
+        "mode = %s\n"
+        "safe_width = %d\n"
+        "safe_height = %d\n"
+        "safe_x = %d\n"
+        "safe_y = %d\n",
+        active_video_mode->name,
+        safe_width,
+        safe_height,
+        offset_x,
+        offset_y
+    );
+
+    if (body_len <= 0 ||
+        body_len >= (int)sizeof(body)) {
+
+        return -1;
+    }
+
+    request_len = snprintf(
+        request,
+        sizeof(request),
+        "POST " PS2VNC_DISPLAY_PATH " HTTP/1.0\r\n"
+        "Host: " PS2VNC_BOOTSTRAP_PI_IP "\r\n"
+        "Content-Type: text/plain\r\n"
+        "Content-Length: %d\r\n"
+        "Connection: close\r\n"
+        "\r\n",
+        body_len
+    );
+
+    if (request_len <= 0 ||
+        request_len >= (int)sizeof(request)) {
+
+        return -1;
+    }
+
+    sock = socket(
+        AF_INET,
+        SOCK_STREAM,
+        0
+    );
+
+    if (sock < 0)
+        goto done;
+
+    memset(
+        &server,
+        0,
+        sizeof(server)
+    );
+
+    server.sin_len = sizeof(server);
+    server.sin_family = AF_INET;
+    server.sin_port = htons(
+        PS2VNC_CONFIG_PORT
+    );
+
+    server.sin_addr.s_addr =
+        inet_addr(PS2VNC_BOOTSTRAP_PI_IP);
+
+    if (connect(
+            sock,
+            (struct sockaddr *)&server,
+            sizeof(server)) < 0) {
+
+        goto done;
+    }
+
+    if (send_exact(
+            sock,
+            request,
+            request_len) != request_len) {
+
+        goto done;
+    }
+
+    if (send_exact(
+            sock,
+            body,
+            body_len) != body_len) {
+
+        goto done;
+    }
+
+    /*
+     * We need only the response header.  Stop as soon as it is complete
+     * rather than depending on the response body or connection shutdown.
+     */
+    while (response_len <
+           sizeof(response)) {
+
+        int n = recv(
+            sock,
+            response + response_len,
+            (int)(
+                sizeof(response) -
+                response_len),
+            0
+        );
+
+        if (n <= 0)
+            break;
+
+        response_len +=
+            (unsigned int)n;
+
+        header_end =
+            ps2vnc_http_find_header_end(
+                response,
+                response_len
+            );
+
+        if (header_end >= 0)
+            break;
+    }
+
+    if (header_end < 0)
+        goto done;
+
+    if ((unsigned int)header_end >
+        PS2VNC_HTTP_MAX_HEADER) {
+
+        goto done;
+    }
+
+    if (!ps2vnc_http_status_is_200(
+            response,
+            (unsigned int)header_end)) {
+
+        goto done;
+    }
+
+    result = 0;
+
+done:
+    if (sock >= 0)
+        close(sock);
+
+    return result;
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_core.inc:1032-1071 ps2vnc_config_presented_geometry_for_mode
+SIGNALS=SAFE_PRESENTATION,DIMENSIONS,MANAGEMENT_CONFIG
+LOCAL_CALLS=pstvnc_video_geometry_presented_rect,pstvnc_video_geometry_safe_area_rect
+==============================================================================
+int ps2vnc_config_presented_geometry_for_mode(
+    const ps2vnc_video_mode_t *mode,
+    const ps2vnc_display_config_t *config,
+    unsigned int *out_x,
+    unsigned int *out_y,
+    unsigned int *out_w,
+    unsigned int *out_h)
+{
+    pstvnc_video_rect_t safe_area;
+    pstvnc_video_rect_t presented;
+
+    if (mode == NULL || config == NULL ||
+        out_x == NULL || out_y == NULL ||
+        out_w == NULL || out_h == NULL)
+        return -1;
+
+    if (pstvnc_video_geometry_safe_area_rect(
+            mode,
+            config->safe_width,
+            config->safe_height,
+            config->safe_x,
+            config->safe_y,
+            &safe_area) < 0)
+        return -1;
+
+    if (pstvnc_video_geometry_presented_rect(
+            mode,
+            &safe_area,
+            VNC_WIDTH,
+            VNC_HEIGHT,
+            &presented) < 0)
+        return -1;
+
+    *out_x = presented.x;
+    *out_y = presented.y;
+    *out_w = presented.width;
+    *out_h = presented.height;
+
+    return 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_core.inc:1515-1560 screen_fit_clamp_interactive
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING,CALIBRATION
+LOCAL_CALLS=
+==============================================================================
+void screen_fit_clamp_interactive(
+    int *width,
+    int *height,
+    int *offset_x,
+    int *offset_y)
+{
+    int remaining_x;
+    int remaining_y;
+    int centered_x;
+    int centered_y;
+    int max_positive_x;
+    int max_positive_y;
+
+    if (*width < SCREEN_FIT_MIN_WIDTH)
+        *width = SCREEN_FIT_MIN_WIDTH;
+
+    if (*width > OUTPUT_WIDTH)
+        *width = OUTPUT_WIDTH;
+
+    if (*height < SCREEN_FIT_MIN_HEIGHT)
+        *height = SCREEN_FIT_MIN_HEIGHT;
+
+    if (*height > OUTPUT_HEIGHT)
+        *height = OUTPUT_HEIGHT;
+
+    remaining_x = OUTPUT_WIDTH - *width;
+    remaining_y = OUTPUT_HEIGHT - *height;
+
+    centered_x = remaining_x / 2;
+    centered_y = remaining_y / 2;
+
+    max_positive_x = remaining_x - centered_x;
+    max_positive_y = remaining_y - centered_y;
+
+    if (*offset_x < -centered_x)
+        *offset_x = -centered_x;
+
+    if (*offset_x > max_positive_x)
+        *offset_x = max_positive_x;
+
+    if (*offset_y < -centered_y)
+        *offset_y = -centered_y;
+
+    if (*offset_y > max_positive_y)
+        *offset_y = max_positive_y;
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_tail.inc:211-408 draw_screen_fit_calibration
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING,CALIBRATION,GS_TRANSPORT,UI
+LOCAL_CALLS=ps2vnc_display_finish_draw,ps2vnc_display_flip,screen_fit_draw_corner_marker,screen_fit_draw_text_centered,screen_fit_prim_sprite,screen_fit_prim_sprite_clipped
+==============================================================================
+static int draw_screen_fit_calibration(
+    GSGLOBAL *gsGlobal,
+    int width,
+    int height,
+    int offset_x,
+    int offset_y,
+    u64 black)
+{
+    const u64 white =
+        GS_SETREG_RGBAQ(0x80, 0x80, 0x80, 0x80, 0x00);
+
+    const u64 marker_amber =
+        GS_SETREG_RGBAQ(0x80, 0x63, 0x0C, 0x80, 0x00);
+
+    const u64 marker_cyan =
+        GS_SETREG_RGBAQ(0x10, 0x70, 0x80, 0x80, 0x00);
+
+    int x0 =
+        (OUTPUT_WIDTH - width) / 2 + offset_x;
+
+    int y0 =
+        (OUTPUT_HEIGHT - height) / 2 + offset_y;
+
+    int x1 = x0 + width;
+    int y1 = y0 + height;
+
+    /*
+     * Black background.
+     */
+    screen_fit_prim_sprite(
+        gsGlobal,
+        0.0f,
+        0.0f,
+        (float)OUTPUT_WIDTH,
+        (float)OUTPUT_HEIGHT,
+        1,
+        black
+    );
+
+    /*
+     * D17AL-F5:
+     *
+     * x0/y0/x1/y1 are the exact SAFE DESKTOP edges.
+     *
+     * SCREEN_FIT_BORDER is visualization only, so draw it immediately
+     * OUTSIDE those edges rather than consuming safe pixels inside them.
+     *
+     * When an edge of the safe desktop reaches the physical raster edge,
+     * the corresponding border clips completely away. This is precisely
+     * the calibration indication we want.
+     */
+    screen_fit_prim_sprite_clipped(
+        gsGlobal,
+        x0 - SCREEN_FIT_BORDER,
+        y0 - SCREEN_FIT_BORDER,
+        x1 + SCREEN_FIT_BORDER,
+        y0,
+        2,
+        white
+    );
+
+    screen_fit_prim_sprite_clipped(
+        gsGlobal,
+        x0 - SCREEN_FIT_BORDER,
+        y1,
+        x1 + SCREEN_FIT_BORDER,
+        y1 + SCREEN_FIT_BORDER,
+        2,
+        white
+    );
+
+    screen_fit_prim_sprite_clipped(
+        gsGlobal,
+        x0 - SCREEN_FIT_BORDER,
+        y0,
+        x0,
+        y1,
+        2,
+        white
+    );
+
+    screen_fit_prim_sprite_clipped(
+        gsGlobal,
+        x1,
+        y0,
+        x1 + SCREEN_FIT_BORDER,
+        y1,
+        2,
+        white
+    );
+
+    /*
+     * TEST13J-D3-A3:
+     * Corner clipping references.
+     *
+     * Each 28x28 square straddles one theoretical border corner and is
+     * divided into two mirrored right triangles. When the border itself
+     * is just outside the visible area, compare how much of these four
+     * markers remains visible.
+     */
+    /*
+     * Four high-contrast clipping gauges.
+     *
+     * Anchor them at the INNER edges of the white calibration border.
+     * Nothing in these markers overlaps the border itself.
+     */
+
+    /* Top-left */
+    screen_fit_draw_corner_marker(
+        gsGlobal,
+        x0,
+        y0,
+        1, 1,
+        marker_amber,
+        marker_cyan
+    );
+
+    /* Top-right */
+    screen_fit_draw_corner_marker(
+        gsGlobal,
+        x1,
+        y0,
+        -1, 1,
+        marker_amber,
+        marker_cyan
+    );
+
+    /* Bottom-left */
+    screen_fit_draw_corner_marker(
+        gsGlobal,
+        x0,
+        y1,
+        1, -1,
+        marker_amber,
+        marker_cyan
+    );
+
+    /* Bottom-right */
+    screen_fit_draw_corner_marker(
+        gsGlobal,
+        x1,
+        y1,
+        -1, -1,
+        marker_amber,
+        marker_cyan
+    );
+
+    /*
+     * Keep all instructions near the middle so overscan cannot hide them.
+     */
+    screen_fit_draw_text_centered(
+        gsGlobal,
+        OUTPUT_HEIGHT / 2 - 90,
+        "SCREEN FIT",
+        3,
+        white
+    );
+
+    screen_fit_draw_text_centered(
+        gsGlobal,
+        OUTPUT_HEIGHT / 2 - 40,
+        "DPAD: SIZE     R1+DPAD: MOVE",
+        2,
+        white
+    );
+
+    screen_fit_draw_text_centered(
+        gsGlobal,
+        OUTPUT_HEIGHT / 2 - 10,
+        "TAP: 1 PIXEL     HOLD: FAST",
+        2,
+        white
+    );
+
+    screen_fit_draw_text_centered(
+        gsGlobal,
+        OUTPUT_HEIGHT / 2 + 20,
+        "HIDE BORDER - MATCH CORNER TRIANGLES",
+        2,
+        white
+    );
+
+    screen_fit_draw_text_centered(
+        gsGlobal,
+        OUTPUT_HEIGHT / 2 + 50,
+        "X: SAVE   TRIANGLE: RESET   CIRCLE: FULL",
+        2,
+        white
+    );
+
+    if (ps2vnc_display_finish_draw(gsGlobal) < 0)
+        return -1;
+
+    if (ps2vnc_display_flip(gsGlobal) < 0)
+        return -1;
+
+    return 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_tail.inc:411-691 run_screen_fit_calibration
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING,FRAMEBUFFER_RFB,CALIBRATION,GS_TRANSPORT,UI
+LOCAL_CALLS=draw_screen_fit_calibration,ps2vnc_display_save_to_pi,screen_fit_apply_preset,screen_fit_clamp_interactive,screenf
+==============================================================================
+int run_screen_fit_calibration(
+    GSGLOBAL *gsGlobal,
+    u64 black,
+    int save_on_accept,
+    int *accepted_out)
+{
+    struct padButtonStatus buttons;
+
+    unsigned int pressed = 0;
+    unsigned int last_pressed = 0;
+    unsigned int changed = 0;
+
+    unsigned int hold_action = 0;
+    unsigned int hold_ticks = 0;
+
+    /*
+     * Start forced recalibration from the exact persistent geometry when
+     * one was loaded.  screen_fit_* already describes the validated OUTER
+     * disappearing-border rectangle and its center-relative position.
+     *
+     * With no stored display preset, preserve the original first-run
+     * behavior by reconstructing the OUTER rectangle from the current
+     * TigerVNC safe-interior dimensions and starting centered.
+     */
+    int width;
+    int height;
+    int offset_x;
+    int offset_y;
+
+    int input_armed = 0;
+
+    if (accepted_out != NULL)
+        *accepted_out = 0;
+
+    if (ps2vnc_display_config_loaded) {
+        width = screen_fit_width;
+        height = screen_fit_height;
+        offset_x = screen_fit_offset_x;
+        offset_y = screen_fit_offset_y;
+
+    } else {
+        offset_x = 0;
+        offset_y = 0;
+
+        /*
+         * Reconstruct the OUTER calibration rectangle without trusting
+         * runtime dimensions enough to perform an unchecked
+         * addition/conversion.
+         */
+        if (desktop_width >
+                (unsigned int)OUTPUT_WIDTH) {
+
+            width = OUTPUT_WIDTH;
+
+        } else {
+            width =
+                (int)desktop_width;
+        }
+
+        if (desktop_height >
+                (unsigned int)OUTPUT_HEIGHT) {
+
+            height = OUTPUT_HEIGHT;
+
+        } else {
+            height =
+                (int)desktop_height;
+        }
+    }
+
+    screen_fit_clamp_interactive(
+        &width,
+        &height,
+        &offset_x,
+        &offset_y
+    );
+
+    for (;;) {
+        if (draw_screen_fit_calibration(
+                gsGlobal,
+                width,
+                height,
+                offset_x,
+                offset_y,
+                black) < 0)
+            return -1;
+
+        if (padGetState(0, 0) != PAD_STATE_STABLE)
+            continue;
+
+        if (padRead(0, 0, &buttons) == 0)
+            continue;
+
+        pressed = 0xFFFFu ^ (unsigned int)buttons.btns;
+
+        /*
+         * Require a clean controller release after ELF launch.
+         */
+        if (!input_armed) {
+            if (pressed == 0) {
+                input_armed = 1;
+                last_pressed = 0;
+            }
+            continue;
+        }
+
+        changed = pressed ^ last_pressed;
+
+        /*
+         * X saves this calibration.
+         */
+        if ((changed & PAD_CROSS) &&
+            (pressed & PAD_CROSS)) {
+
+            /*
+             * Interactive values are already clamped, but saving still
+             * passes through the authoritative validation boundary.
+             */
+            if (screen_fit_apply_preset(
+                    width,
+                    height,
+                    offset_x,
+                    offset_y,
+                    0)) {
+
+                if (accepted_out != NULL)
+                    *accepted_out = 1;
+
+                /*
+                 * Startup calibration retains its proven immediate-save
+                 * behavior. Runtime calibration passes save_on_accept=0 and
+                 * persists only after its live geometry transaction succeeds.
+                 */
+                if (save_on_accept) {
+                    if (ps2vnc_display_save_to_pi(
+                            width,
+                            height,
+                            offset_x,
+                            offset_y) < 0) {
+
+                        screenf(
+                            "CONFIG: display save failed"
+                        );
+
+                    } else {
+                        screenf(
+                            "CONFIG: display saved"
+                        );
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        /*
+         * Circle bypasses calibration.
+         */
+        if ((changed & PAD_CIRCLE) &&
+            (pressed & PAD_CIRCLE)) {
+
+            screen_fit_apply_preset(
+                OUTPUT_WIDTH,
+                OUTPUT_HEIGHT,
+                0,
+                0,
+                1
+            );
+            return 0;
+        }
+
+        /*
+         * Triangle resets size and position.
+         */
+        if ((changed & PAD_TRIANGLE) &&
+            (pressed & PAD_TRIANGLE)) {
+
+            width = SCREEN_FIT_START_WIDTH;
+            height = SCREEN_FIT_START_HEIGHT;
+            offset_x = 0;
+            offset_y = 0;
+
+            hold_action = 0;
+            hold_ticks = 0;
+
+        } else {
+            unsigned int dpad =
+                pressed &
+                (PAD_LEFT | PAD_RIGHT |
+                 PAD_UP | PAD_DOWN);
+
+            unsigned int action = dpad;
+            int do_step = 0;
+            int step = SCREEN_FIT_FINE_STEP;
+            int move_mode =
+                ((pressed & PAD_R1) != 0);
+
+            /*
+             * Include the modifier in the held action so pressing or
+             * releasing R1 while holding the D-pad immediately changes
+             * between SIZE and MOVE behavior.
+             */
+            if (dpad != 0 && move_mode)
+                action |= SCREEN_FIT_ACTION_MOVE;
+
+            if (action != 0 &&
+                action != hold_action) {
+
+                hold_action = action;
+                hold_ticks = 0;
+                do_step = 1;
+
+            } else if (action == 0) {
+
+                hold_action = 0;
+                hold_ticks = 0;
+
+            } else {
+                hold_ticks++;
+
+                if (hold_ticks >=
+                        SCREEN_FIT_REPEAT_DELAY_POLLS &&
+                    ((hold_ticks -
+                      SCREEN_FIT_REPEAT_DELAY_POLLS) %
+                     SCREEN_FIT_REPEAT_POLLS) == 0) {
+
+                    do_step = 1;
+                    step = SCREEN_FIT_FAST_STEP;
+                }
+            }
+
+            if (do_step) {
+                if (move_mode) {
+                    /*
+                     * R1 + D-pad moves the complete rectangle.
+                     */
+                    if (dpad & PAD_LEFT)
+                        offset_x -= step;
+
+                    if (dpad & PAD_RIGHT)
+                        offset_x += step;
+
+                    if (dpad & PAD_UP)
+                        offset_y -= step;
+
+                    if (dpad & PAD_DOWN)
+                        offset_y += step;
+
+                } else {
+                    /*
+                     * Plain D-pad changes size symmetrically around
+                     * the currently selected center.
+                     */
+                    if (dpad & PAD_LEFT)
+                        width -= step;
+
+                    if (dpad & PAD_RIGHT)
+                        width += step;
+
+                    if (dpad & PAD_UP)
+                        height += step;
+
+                    if (dpad & PAD_DOWN)
+                        height -= step;
+                }
+
+                /*
+                 * Width, height and signed position are one geometry.
+                 */
+                screen_fit_clamp_interactive(
+                    &width,
+                    &height,
+                    &offset_x,
+                    &offset_y
+                );
+            }
+        }
+
+        last_pressed = pressed;
+    }
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_tail.inc:707-738 calculate_safe_desktop_geometry
+SIGNALS=SAFE_PRESENTATION,DIMENSIONS,DISPLAY_MODE,CALIBRATION
+LOCAL_CALLS=pstvnc_video_geometry_safe_area_rect
+==============================================================================
+int calculate_safe_desktop_geometry(
+    unsigned int *out_x,
+    unsigned int *out_y,
+    unsigned int *out_w,
+    unsigned int *out_h)
+{
+    pstvnc_video_rect_t safe_area;
+
+    if (screen_fit_full_bypass) {
+        *out_x = 0;
+        *out_y = 0;
+        *out_w = OUTPUT_WIDTH;
+        *out_h = OUTPUT_HEIGHT;
+        return 0;
+    }
+
+    if (pstvnc_video_geometry_safe_area_rect(
+            active_video_mode,
+            screen_fit_width,
+            screen_fit_height,
+            screen_fit_offset_x,
+            screen_fit_offset_y,
+            &safe_area) < 0)
+        return -1;
+
+    *out_x = safe_area.x;
+    *out_y = safe_area.y;
+    *out_w = safe_area.width;
+    *out_h = safe_area.height;
+
+    return 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_tail.inc:749-779 calculate_presented_desktop_geometry
+SIGNALS=SAFE_PRESENTATION,DIMENSIONS,DISPLAY_MODE
+LOCAL_CALLS=calculate_safe_desktop_geometry,pstvnc_video_geometry_presented_rect
+==============================================================================
+int calculate_presented_desktop_geometry(
+    unsigned int *out_x,
+    unsigned int *out_y,
+    unsigned int *out_w,
+    unsigned int *out_h)
+{
+    pstvnc_video_rect_t safe_area;
+    pstvnc_video_rect_t presented;
+
+    if (calculate_safe_desktop_geometry(
+            &safe_area.x,
+            &safe_area.y,
+            &safe_area.width,
+            &safe_area.height) < 0)
+        return -1;
+
+    if (pstvnc_video_geometry_presented_rect(
+            active_video_mode,
+            &safe_area,
+            VNC_WIDTH,
+            VNC_HEIGHT,
+            &presented) < 0)
+        return -1;
+
+    *out_x = presented.x;
+    *out_y = presented.y;
+    *out_w = presented.width;
+    *out_h = presented.height;
+
+    return 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_display_tail.inc:1-1449 display_live_desktop
+SIGNALS=SCALING_ASPECT,MAPPING,DISPLAY_MODE,FRAMEBUFFER_RFB,CALIBRATION,GS_TRANSPORT
+LOCAL_CALLS=calculate_presented_desktop_geometry,debug_emit_geometry_snapshot,debug_emit_now,display_confirm_arm_transaction,display_confirm_disarm_transaction,display_confirm_remaining_seconds,display_confirm_render_bitmap,display_confirm_return_to_active_menu,display_menu_normalize_selection,display_menu_render_bitmap,display_menu_selection_for_mode,display_menu_tab_for_mode,display_mode_request_target,display_restore_ack_render_bitmap,osk_render_bitmap,perform_manual_rfb_recovery,profile_emit_now,ps2vnc_config_apply_display,ps2vnc_config_get_display_for_mode,ps2vnc_config_presented_geometry_for_mode,ps2vnc_display_begin_update,ps2vnc_display_commit_update,ps2vnc_display_create,ps2vnc_display_direct_write_cancel,ps2vnc_display_draw_desktop,ps2vnc_display_finish_draw,ps2vnc_display_finish_update_decode,ps2vnc_display_flip,ps2vnc_display_logical_desktop_size,ps2vnc_display_output_x,ps2vnc_display_output_y,ps2vnc_display_policy_hide_to_pi,ps2vnc_display_policy_lock_to_pi,ps2vnc_display_policy_refresh_from_pi,ps2vnc_display_prepare_desktop,ps2vnc_display_prepare_osk,ps2vnc_display_profile_capture_active,ps2vnc_display_profile_resolve_candidate,ps2vnc_display_transaction_ack_to_pi,ps2vnc_display_transaction_begin_to_pi,ps2vnc_display_transaction_commit_to_pi,ps2vnc_display_wait_presentation_memory_idle,ps2vnc_display_wait_texture_idle,ps2vnc_global_rollback_display_transaction,ps2vnc_remote_control_poll_idle,ps2vnc_remote_display_fail,ps2vnc_remote_display_lease_expired,ps2vnc_remote_result_post,ps2vnc_run_runtime_calibration,ps2vnc_startup_finalize_display_transaction,ps2vnc_switch_display_mode,receive_framebuffer_update,recover_rfb_connection,region_fits_u32,request_and_confirm_desktop_size,request_framebuffer,run_screen_fit_calibration,screenf,set_live_encoding,set_raw_encoding,start_controller_thread,system_menu_render_bitmap
+==============================================================================
+static int display_live_desktop(int sock,
+                                unsigned short *rfb_framebuffer,
+                                unsigned short *gs_framebuffer)
+{
+    GSGLOBAL *gsGlobal;
+    GSTEXTURE tex;
+    GSTEXTURE osk_tex;
+    unsigned int rendered_osk_generation = 0;
+
+    /*
+     * D17AL-F4:
+     * A local confirmation redraw does not consume or cancel the current
+     * incremental FramebufferUpdateRequest.
+     */
+    int rfb_update_request_outstanding = 0;
+
+    const u64 black =
+        GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x80, 0x00);
+
+    const u64 tex_color =
+        GS_SETREG_RGBAQ(0x80, 0x80, 0x80, 0x80, 0x00);
+
+    /*
+     * DMAKit remains alive across future display-mode reconstruction.
+     * Preserve the proven one-time initialization ordering for E1-B.
+     */
+    dmaKit_init(
+        D_CTRL_RELE_OFF,
+        D_CTRL_MFD_OFF,
+        D_CTRL_STS_UNSPEC,
+        D_CTRL_STD_OFF,
+        D_CTRL_RCYC_8,
+        1 << DMA_CHANNEL_GIF
+    );
+
+    dmaKit_chan_init(DMA_CHANNEL_GIF);
+
+    gsGlobal = ps2vnc_display_create();
+    if (gsGlobal == NULL) {
+        screenf("ERROR: display initialization failed");
+        return -1;
+    }
+
+    /*
+     * TEST13J-A:
+     * Determine the centered area the television actually exposes before
+     * publishing the VNC desktop. No VNC geometry changes are made yet.
+     */
+    if (!ps2vnc_display_config_loaded ||
+        force_screen_fit_calibration) {
+
+        if (run_screen_fit_calibration(
+                gsGlobal,
+                black,
+                1,
+                NULL) < 0)
+            return -1;
+
+        /*
+         * Startup override is one-shot.  A later reconnect in this same
+         * session must not unexpectedly reopen calibration.
+         */
+        force_screen_fit_calibration = 0;
+    }
+
+    /*
+     * TEST13J-D3-A2:
+     *
+     * Keep the physical GS output at 1280x720, but make TigerVNC itself
+     * render only the guaranteed-visible calibrated desktop.
+     */
+    {
+        unsigned int target_x;
+        unsigned int target_y;
+        unsigned int target_w;
+        unsigned int target_h;
+        unsigned int logical_w;
+        unsigned int logical_h;
+
+        if (calculate_presented_desktop_geometry(
+                &target_x,
+                &target_y,
+                &target_w,
+                &target_h) < 0) {
+
+            screenf("ERROR: invalid calibrated desktop geometry");
+            return -1;
+        }
+
+        /*
+         * D2 already proved this SetDesktopSize + 1x1 acknowledgement
+         * path. Resize only when the server is not already at the target.
+         */
+        if (ps2vnc_display_logical_desktop_size(
+                target_w, target_h,
+                &logical_w, &logical_h) < 0)
+            return -1;
+
+        if (desktop_width != logical_w ||
+            desktop_height != logical_h) {
+
+            if (request_and_confirm_desktop_size(
+                    sock,
+                    rfb_framebuffer,
+                    gs_framebuffer,
+                    logical_w,
+                    logical_h) < 0) {
+
+                return -1;
+            }
+        }
+
+        /*
+         * From this point onward the RFB framebuffer is tightly packed at
+         * the backend-selected logical desktop width. HIRES uses the
+         * calibrated width; Standard uses its fixed framebuffer width.
+         */
+        desktop_width = logical_w;
+        desktop_height = logical_h;
+
+        desktop_output_x = target_x;
+        desktop_output_y = target_y;
+        desktop_output_width = target_w;
+        desktop_output_height = target_h;
+
+        debug_emit_geometry_snapshot();
+
+        desktop_geometry_locked = 1;
+
+        /*
+         * Stop requesting EDS during normal rendering and obtain a clean
+         * complete Raw framebuffer at the NEW desktop geometry.
+         *
+         * Unlike D2/A1, there is deliberately NO restore to 1280x720.
+         */
+        if (set_raw_encoding(sock) < 0)
+            return -1;
+
+        if (request_framebuffer(sock, 0) < 0)
+            return -1;
+
+        if (receive_framebuffer_update(
+                sock,
+                rfb_framebuffer,
+                gs_framebuffer,
+                0,
+                1) < 0) {
+
+            return -1;
+        }
+    }
+
+    if (ps2vnc_display_prepare_desktop(
+            gsGlobal, &tex, gs_framebuffer) < 0) {
+        screenf("ERROR: HIRES presentation setup failed");
+        return -1;
+    }
+
+    if (set_live_encoding(sock) < 0) {
+        screenf("ERROR: live SetEncodings failed");
+        return -1;
+    }
+
+    ps2vnc_display_prepare_osk(gsGlobal, &osk_tex);
+
+    /*
+     * H4C3C3C:
+     * The complete runtime display now exists.  Only at this boundary may
+     * startup recovery promote B or mark restored A durable.
+     */
+    if (ps2vnc_startup_finalize_display_transaction() < 0) {
+        screenf("DISPLAY TX: startup finalization failed");
+        return -1;
+    }
+
+    /*
+     * The video path below remains the known-good Milestone 6 blocking
+     * incremental loop.  Controller input runs independently.
+     */
+    debug_stage_id = DBG_STAGE_CONTROLLER_START;
+
+    rfb_connected = 1;
+
+    if (start_controller_thread(sock) < 0) {
+        rfb_connected = 0;
+        return -1;
+    }
+
+    for (;;) {
+        if (exit_requested)
+            return 1;
+
+        debug_frame_counter++;
+        debug_stage_id = DBG_STAGE_LOOP_BEGIN;
+        debug_changed_bytes = 0;
+
+        /*
+         * Remote control is serviced at complete main-loop boundaries and
+         * also from the idle EAGAIN path. Lease expiration is PS2-owned.
+         */
+        (void)ps2vnc_remote_display_lease_expired();
+        (void)ps2vnc_remote_control_poll_idle();
+
+        /*
+         * TEST15E3-E:
+         * Manual Refresh can arrive between RFB transactions.  If it arrives
+         * inside recv_exact(), that function interrupts the suspect stream and
+         * the receive-error branch below performs this same transaction.
+         */
+        if (runtime_action_request ==
+            RUNTIME_ACTION_REFRESH_RFB) {
+
+            int recovered_sock;
+
+            debug_emit_now();
+
+            recovered_sock =
+                perform_manual_rfb_recovery(
+                    sock,
+                    rfb_framebuffer,
+                    gs_framebuffer,
+                    gsGlobal,
+                    &tex,
+                    &osk_tex
+                );
+
+            if (recovered_sock < 0) {
+                if (exit_requested)
+                    return 1;
+
+                return -1;
+            }
+
+            sock = recovered_sock;
+
+            rendered_osk_generation =
+                osk_generation - 1;
+
+            continue;
+        }
+
+        /*
+         * H4B2C:
+         * Controller X publishes only an acknowledgement request.  The main
+         * RFB/render thread owns the management socket and releases this UI
+         * only after the Pi confirms ACK with HTTP 200.
+         */
+        if (display_restore_ack_visible &&
+            display_restore_ack_request) {
+
+            display_restore_ack_request = 0;
+
+            if (ps2vnc_display_transaction_ack_to_pi() < 0) {
+                screenf("DISPLAY TX: ACK failed; retry with X");
+
+                osk_generation++;
+                rendered_osk_generation =
+                    osk_generation - 1;
+                continue;
+            }
+
+            screenf(
+                "DISPLAY TX: ACK complete %s",
+                display_restore_ack_mode ?
+                    display_restore_ack_mode->name : "?");
+
+            /*
+             * Withdraw visible ownership before reopening Display Modes.
+             */
+            display_restore_ack_visible = 0;
+            display_restore_ack_mode = NULL;
+
+            display_confirm_return_to_active_menu();
+
+            rendered_osk_generation =
+                osk_generation - 1;
+            continue;
+        }
+
+        /*
+         * TEST15E3K A14-G2-D2B:
+         * Same-mode calibration is a main-thread transaction.  Consume it at
+         * the same proven between-RFB boundary used by runtime mode switching,
+         * before the next incremental framebuffer request can be issued.
+         */
+
+        /*
+         * D17AL-F2:
+         *
+         * Display admission/UI policy uses the same main-thread management
+         * ownership boundary as calibration and mode transactions.
+         */
+        if (display_policy_request !=
+                DISPLAY_POLICY_REQUEST_NONE) {
+
+            int request =
+                display_policy_request;
+
+            int selection =
+                display_policy_request_selection;
+
+            int value =
+                display_policy_request_value;
+
+            int policy_result = -1;
+
+            if (request ==
+                    DISPLAY_POLICY_REQUEST_REFRESH) {
+
+                policy_result =
+                    ps2vnc_display_policy_refresh_from_pi();
+
+            } else if (
+                request ==
+                    DISPLAY_POLICY_REQUEST_LOCK) {
+
+                if (display_policy_loaded &&
+                    selection >= 0 &&
+                    (unsigned int)selection <
+                        VIDEO_MODE_COUNT &&
+                    video_modes[selection] !=
+                        active_video_mode) {
+
+                    policy_result =
+                        ps2vnc_display_policy_lock_to_pi(
+                            selection,
+                            value);
+
+                    if (policy_result == 0)
+                        display_mode_locked[selection] =
+                            value ? 1 : 0;
+                }
+
+            } else if (
+                request ==
+                    DISPLAY_POLICY_REQUEST_HIDE_LOCKED) {
+
+                if (display_policy_loaded) {
+                    policy_result =
+                        ps2vnc_display_policy_hide_to_pi(
+                            value);
+
+                    if (policy_result == 0)
+                        display_hide_locked_modes =
+                            value ? 1 : 0;
+                }
+            }
+
+            if (policy_result < 0) {
+                display_policy_error = 1;
+
+            } else {
+                display_policy_error = 0;
+            }
+
+            display_policy_request_selection = -1;
+            display_policy_request_value = 0;
+            display_policy_request =
+                DISPLAY_POLICY_REQUEST_NONE;
+
+            display_menu_normalize_selection();
+
+            osk_generation++;
+            rendered_osk_generation =
+                osk_generation - 1;
+
+            continue;
+        }
+
+
+        if (display_calibration_request != DISPLAY_MODE_REQUEST_NONE) {
+            int request = display_calibration_request;
+            const ps2vnc_video_mode_t *target_mode;
+
+            display_calibration_request = DISPLAY_MODE_REQUEST_NONE;
+            target_mode = display_mode_request_target(request);
+
+            /*
+             * The request is valid only while it still names the active mode.
+             * Never reinterpret a stale calibration request as a mode switch.
+             */
+            if (target_mode == NULL ||
+                target_mode != active_video_mode) {
+
+                display_menu_selection =
+                    display_menu_selection_for_mode(active_video_mode);
+                display_menu_error = 1;
+                display_menu_visible = 1;
+                display_menu_parent_system = 0;
+                osk_generation++;
+                rendered_osk_generation = osk_generation - 1;
+                continue;
+            }
+
+            if (ps2vnc_run_runtime_calibration(
+                    sock,
+                    rfb_framebuffer,
+                    gs_framebuffer,
+                    gsGlobal,
+                    &tex,
+                    black) < 0) {
+
+                return -1;
+            }
+
+            /*
+             * Return directly to the active row so X once again means
+             * "Calibrate <mode> Safe Area".
+             */
+            display_menu_selection =
+                display_menu_selection_for_mode(active_video_mode);
+            display_menu_error = 0;
+            display_menu_visible = 1;
+            display_menu_parent_system = 0;
+            osk_generation++;
+            rendered_osk_generation = osk_generation - 1;
+            continue;
+        }
+
+        /*
+         * H3C2B1: a provisional display owns this main-loop transaction until
+         * the user explicitly keeps it or rollback reconstructs known-good.
+         */
+        if (display_confirm_pending &&
+            display_confirm_action == DISPLAY_CONFIRM_ACTION_KEEP) {
+
+            /*
+             * H4B2A:
+             * B is already the complete active runtime profile. KEEP does
+             * not reconstruct anything. It only asks the Pi to promote the
+             * already-running provisional transaction to confirmed state.
+             */
+            if (ps2vnc_display_transaction_commit_to_pi() < 0) {
+
+                /*
+                 * Do not silently accept a mode whose global persistence
+                 * commit was not acknowledged. Return ownership to the
+                 * confirmation UI so the user may explicitly retry.
+                 */
+                screenf("DISPLAY TX: commit failed");
+
+                display_confirm_action =
+                    DISPLAY_CONFIRM_ACTION_NONE;
+                display_confirm_selection =
+                    DISPLAY_CONFIRM_KEEP;
+                display_confirm_visible = 1;
+
+                osk_generation++;
+                rendered_osk_generation =
+                    osk_generation - 1;
+                continue;
+            }
+
+            screenf(
+                "DISPLAY TX: committed %s",
+                active_video_mode->name);
+
+            display_confirm_disarm_transaction();
+            display_confirm_return_to_active_menu();
+            rendered_osk_generation = osk_generation - 1;
+            continue;
+        }
+
+        if (display_confirm_pending &&
+            display_confirm_action == DISPLAY_CONFIRM_ACTION_ROLLBACK) {
+
+            int rollback_sock =
+                ps2vnc_global_rollback_display_transaction(
+                    sock,
+                    0,
+                    rfb_framebuffer,
+                    gs_framebuffer,
+                    &gsGlobal,
+                    &tex,
+                    &osk_tex);
+
+            if (rollback_sock < 0)
+                return -1;
+
+            sock = rollback_sock;
+
+            /*
+             * F8J2-B3B:
+             *
+             * A successful rollback reconstruction is an RFB request-epoch
+             * boundary exactly like a successful forward mode switch.
+             *
+             * Explicit remote restore can arrive through the benign
+             * RFB_RECEIVE_LOCAL_REDRAW path.  That path correctly preserves
+             * the PRE-ROLLBACK incremental request while yielding to the
+             * transaction owner, but the request cannot remain authoritative
+             * after ps2vnc_global_rollback_display_transaction() has consumed
+             * its own EDS/full-frame reconstruction of the previous mode.
+             *
+             * Force the first restored live iteration to issue a fresh
+             * incremental FramebufferUpdateRequest for the restored geometry.
+             */
+            rfb_update_request_outstanding = 0;
+
+            display_confirm_return_to_active_menu();
+            rendered_osk_generation = osk_generation - 1;
+            continue;
+        }
+
+        /*
+         * TEST15E2-D2B:
+         * Consume local controller requests on the main RFB/render thread.
+         *
+         * Target configuration and geometry are resolved before entering
+         * ps2vnc_switch_display_mode(), so an unavailable/invalid preset
+         * leaves the current GS display completely untouched.
+         */
+        if (display_mode_request != DISPLAY_MODE_REQUEST_NONE) {
+            int request = display_mode_request;
+            int request_is_remote =
+                display_mode_request_remote;
+            int display_switch_result;
+            const ps2vnc_video_mode_t *target_mode = NULL;
+            ps2vnc_display_config_t target_config;
+            unsigned int target_x;
+            unsigned int target_y;
+            unsigned int target_w;
+            unsigned int target_h;
+
+            ps2vnc_display_profile_t previous_profile;
+            ps2vnc_display_profile_t candidate_profile;
+
+            /*
+             * Claim the request before doing any blocking work.  The
+             * controller may publish a later request only after the user
+             * opens the selector again.
+             */
+            display_mode_request = DISPLAY_MODE_REQUEST_NONE;
+            display_mode_request_remote = 0;
+
+            target_mode =
+                display_mode_request_target(request);
+
+            /*
+             * Same-mode requests are defined as harmless no-ops.
+             * The controller normally filters these already.
+             */
+            if (target_mode == active_video_mode) {
+                if (request_is_remote)
+                    ps2vnc_remote_display_fail(4);
+
+                continue;
+            }
+
+
+            /*
+             * Lock policy is checked again at the sole GS-switch owner.
+             * A stale or malformed controller request therefore still cannot
+             * construct a locked candidate.
+             */
+            if (target_mode == NULL ||
+                (!request_is_remote &&
+                 (!display_policy_loaded ||
+                  display_mode_locked[
+                    display_menu_selection_for_mode(
+                        target_mode)]))) {
+
+                display_menu_selection =
+                    display_menu_selection_for_mode(
+                        target_mode != NULL
+                            ? target_mode
+                            : active_video_mode);
+
+                display_menu_tab =
+                    display_menu_tab_for_mode(
+                        target_mode != NULL
+                            ? target_mode
+                            : active_video_mode);
+
+                display_menu_error = 1;
+                display_menu_visible = 1;
+                display_menu_parent_system = 0;
+
+                osk_generation++;
+                rendered_osk_generation =
+                    osk_generation - 1;
+
+                continue;
+            }
+
+            if (target_mode == NULL ||
+                !ps2vnc_config_get_display_for_mode(
+                    target_mode, &target_config) ||
+                ps2vnc_config_presented_geometry_for_mode(
+                    target_mode,
+                    &target_config,
+                    &target_x,
+                    &target_y,
+                    &target_w,
+                    &target_h) < 0) {
+
+                if (request_is_remote) {
+                    ps2vnc_remote_display_fail(5);
+                    continue;
+                }
+
+                display_menu_selection =
+                    display_menu_selection_for_mode(target_mode);
+                display_menu_error = 1;
+                display_menu_visible = 1;
+                osk_generation++;
+                rendered_osk_generation = osk_generation - 1;
+                continue;
+            }
+
+            /*
+             * Build both complete cross-machine profiles while A is still
+             * unquestionably active. No runtime or persistence state has
+             * changed yet.
+             */
+            if (ps2vnc_display_profile_capture_active(
+                    &previous_profile) < 0 ||
+                ps2vnc_display_profile_resolve_candidate(
+                    target_mode,
+                    target_x,
+                    target_y,
+                    target_w,
+                    target_h,
+                    &candidate_profile) < 0) {
+
+                if (request_is_remote) {
+                    ps2vnc_remote_display_fail(6);
+                    continue;
+                }
+
+                screenf("DISPLAY TX: profile resolution failed");
+
+                display_menu_selection =
+                    display_menu_selection_for_mode(
+                        active_video_mode);
+                display_menu_error = 1;
+                display_menu_visible = 1;
+
+                osk_generation++;
+                rendered_osk_generation =
+                    osk_generation - 1;
+                continue;
+            }
+
+            /*
+             * Global transaction record FIRST.
+             *
+             * If BEGIN is refused or the management service is unavailable,
+             * A remains fully active on both machines and no risky display
+             * reconstruction begins.
+             */
+            if (request_is_remote) {
+                remote_display_state =
+                    REMOTE_DISPLAY_SWITCHING;
+
+                remote_display_error_code = 0;
+
+                (void)ps2vnc_remote_result_post(
+                    "SWITCHING",
+                    0);
+            }
+
+            if (ps2vnc_display_transaction_begin_to_pi(
+                    &previous_profile,
+                    &candidate_profile) < 0) {
+
+                screenf("DISPLAY TX: begin failed");
+
+                if (request_is_remote) {
+                    ps2vnc_remote_display_fail(7);
+                    continue;
+                }
+
+                display_menu_selection =
+                    display_menu_selection_for_mode(
+                        active_video_mode);
+                display_menu_error = 1;
+                display_menu_visible = 1;
+
+                osk_generation++;
+                rendered_osk_generation =
+                    osk_generation - 1;
+                continue;
+            }
+
+            /*
+             * The Pi now durably knows A is confirmed and B is provisional.
+             * Arm the local timeout/rollback obligation before touching GS
+             * or RFB runtime state.
+             */
+            display_confirm_arm_transaction(
+                active_video_mode,
+                desktop_output_x,
+                desktop_output_y,
+                desktop_output_width,
+                desktop_output_height,
+                screen_fit_width,
+                screen_fit_height,
+                screen_fit_offset_x,
+                screen_fit_offset_y,
+                screen_fit_full_bypass);
+
+            display_transition_switch_in_progress = 1;
+
+            display_switch_result =
+                ps2vnc_switch_display_mode(
+                    sock,
+                    rfb_framebuffer,
+                    gs_framebuffer,
+                    &gsGlobal,
+                    &tex,
+                    &osk_tex,
+                    target_mode,
+                    target_x,
+                    target_y,
+                    target_w,
+                    target_h);
+
+            /*
+             * F8J2-B3A:
+             *
+             * The synchronous display reconstruction owns its own EDS/full
+             * framebuffer requests and consumes the authoritative candidate
+             * frame before returning.
+             *
+             * A remote display request may have arrived by yielding from an
+             * older incremental FramebufferUpdateRequest at a clean message
+             * boundary.  That caller-local request bookkeeping belongs to the
+             * PRE-SWITCH geometry and must not survive reconstruction.
+             *
+             * Re-arm live incremental traffic unconditionally after the
+             * synchronous switch attempt.  Success must send a fresh request
+             * for the new geometry; failure/rollback must likewise never
+             * inherit the abandoned pre-switch request.
+             */
+            rfb_update_request_outstanding = 0;
+
+
+            /*
+             * Clear this before inspecting the result.  Once the synchronous
+             * call has returned, all failures and elapsed deadlines belong to
+             * the existing graceful main-thread rollback machinery.
+             */
+            display_transition_switch_in_progress = 0;
+
+            if (display_switch_result < 0) {
+
+                int rollback_sock;
+
+                if (request_is_remote) {
+                    unsigned int diagnostic_live =
+                        live_error_code > 999
+                            ? 999u
+                            : (unsigned int)live_error_code;
+
+                    remote_display_error_code =
+                        800000u +
+                        display_switch_failure_stage * 1000u +
+                        diagnostic_live;
+                }
+
+                /*
+                 * Candidate failed or was interrupted by blind-X/timeout.
+                 * Never leave the partially applied configuration active.
+                 */
+                display_confirm_action =
+                    DISPLAY_CONFIRM_ACTION_ROLLBACK;
+
+                rollback_sock =
+                    ps2vnc_global_rollback_display_transaction(
+                        sock,
+                        1,
+                    rfb_framebuffer,
+                        gs_framebuffer,
+                        &gsGlobal,
+                        &tex,
+                        &osk_tex);
+
+                if (rollback_sock < 0)
+                    return -1;
+
+                sock = rollback_sock;
+
+                display_confirm_return_to_active_menu();
+                rendered_osk_generation = osk_generation - 1;
+                continue;
+            }
+
+            /*
+             * D17AL-F3:
+             * The GS/RFB candidate is now complete. Publish the already-
+             * validated mode-specific calibration into local screen-fit
+             * authority before exposing B to confirmation.
+             *
+             * target_config was fetched and validated while A was still
+             * active. Any unexpected publication mismatch is treated exactly
+             * like a candidate failure and rolls back the complete profile.
+             */
+            {
+                unsigned int verify_x;
+                unsigned int verify_y;
+                unsigned int verify_w;
+                unsigned int verify_h;
+
+                if (!ps2vnc_config_apply_display(&target_config) ||
+                    calculate_presented_desktop_geometry(
+                        &verify_x,
+                        &verify_y,
+                        &verify_w,
+                        &verify_h) < 0 ||
+                    verify_x != target_x ||
+                    verify_y != target_y ||
+                    verify_w != target_w ||
+                    verify_h != target_h) {
+
+                    int rollback_sock;
+
+                    if (request_is_remote)
+                        remote_display_error_code = 9;
+
+                    screenf(
+                        "DISPLAY TX: candidate calibration apply failed");
+
+                    display_confirm_action =
+                        DISPLAY_CONFIRM_ACTION_ROLLBACK;
+
+                    rollback_sock =
+                        ps2vnc_global_rollback_display_transaction(
+                            sock,
+                            0,
+                            rfb_framebuffer,
+                            gs_framebuffer,
+                            &gsGlobal,
+                            &tex,
+                            &osk_tex);
+
+                    if (rollback_sock < 0)
+                        return -1;
+
+                    sock = rollback_sock;
+
+                    display_confirm_return_to_active_menu();
+                    rendered_osk_generation =
+                        osk_generation - 1;
+                    continue;
+                }
+            }
+
+            if (request_is_remote) {
+                remote_display_state =
+                    REMOTE_DISPLAY_ACTIVE_TEMP;
+
+                remote_display_lease_started_tick =
+                    GetTimerSystemTime();
+
+                /*
+                 * Keep the durable transaction provisional. Do not expose
+                 * KEEP/COMMIT confirmation UI and do not mutate startup_mode.
+                 */
+                display_confirm_visible = 0;
+                display_confirm_seconds = 0;
+
+                (void)ps2vnc_remote_result_post(
+                    "ACTIVE_TEMP",
+                    0);
+
+                screenf(
+                    "REMOTE DISPLAY: ACTIVE_TEMP %s tx=%u lease=%us",
+                    active_video_mode->name,
+                    remote_display_txid,
+                    remote_display_lease_seconds);
+
+                continue;
+            }
+
+            /*
+             * The candidate is fully reconstructed but remains provisional.
+             * The original 30-second deadline has continued running during
+             * the switch itself.
+             */
+            display_confirm_seconds =
+                display_confirm_remaining_seconds();
+
+            if (display_confirm_seconds == 0 ||
+                display_confirm_action ==
+                    DISPLAY_CONFIRM_ACTION_ROLLBACK) {
+
+                int rollback_sock;
+
+                display_confirm_action =
+                    DISPLAY_CONFIRM_ACTION_ROLLBACK;
+
+                rollback_sock =
+                    ps2vnc_global_rollback_display_transaction(
+                        sock,
+                        0,
+                    rfb_framebuffer,
+                        gs_framebuffer,
+                        &gsGlobal,
+                        &tex,
+                        &osk_tex);
+
+                if (rollback_sock < 0)
+                    return -1;
+
+                sock = rollback_sock;
+
+                display_confirm_return_to_active_menu();
+                rendered_osk_generation = osk_generation - 1;
+                continue;
+            }
+
+            display_confirm_selection =
+                DISPLAY_CONFIRM_GO_BACK;
+            display_confirm_visible = 1;
+
+            system_menu_visible = 0;
+            display_menu_visible = 0;
+            osk_visible = 0;
+
+            osk_generation++;
+            rendered_osk_generation = osk_generation - 1;
+            continue;
+        }
+
+        if ((debug_frame_counter % 60) == 0) {
+            debug_emit_now();
+            profile_emit_now();
+        }
+
+        debug_stage_id = DBG_STAGE_PRE_DRAW;
+
+        /*
+         * HIRES already has its desktop background configured. Standard
+         * instead clears and draws its conventional desktop texture here.
+         */
+        if (ps2vnc_display_draw_desktop(
+                gsGlobal,
+                &tex,
+                black,
+                tex_color) < 0) {
+            live_error_code = 208;
+            return -1;
+        }
+
+        /*
+         * Render/upload the OSK texture only when its local state changed.
+         * Drawing it is just one additional textured sprite.
+         */
+        if (osk_visible ||
+            display_menu_visible ||
+            system_menu_visible ||
+            display_confirm_visible ||
+            display_restore_ack_visible) {
+
+            if (rendered_osk_generation != osk_generation) {
+                /*
+                 * Display confirmation is safety-critical and owns the
+                 * overlay whenever visible. It must not be hidden beneath
+                 * the ordinary system/display menus or OSK.
+                 */
+                if (display_restore_ack_visible)
+                    display_restore_ack_render_bitmap();
+                else if (display_confirm_visible)
+                    display_confirm_render_bitmap();
+                else if (system_menu_visible)
+                    system_menu_render_bitmap();
+                else if (display_menu_visible)
+                    display_menu_render_bitmap();
+                else
+                    osk_render_bitmap();
+
+                /*
+                 * Prevent an immediate OSK texture upload from racing
+                 * the previous HIRES frame.
+                 */
+                if (ps2vnc_display_wait_texture_idle(gsGlobal) < 0)
+                    return -1;
+
+                gsKit_texture_upload(gsGlobal, &osk_tex);
+
+                rendered_osk_generation = osk_generation;
+            }
+
+            {
+                float dst_x0;
+                float dst_y0;
+                float dst_x1;
+                float dst_y1;
+
+                {
+                    float safe_x0 = 0.0f;
+                    float safe_y0 = 0.0f;
+                    float safe_w = (float)OUTPUT_WIDTH;
+                    float safe_h = (float)OUTPUT_HEIGHT;
+
+                    float scale_x;
+                    float scale_y;
+                    float scale;
+                    float dst_w;
+                    float dst_h;
+
+                    /*
+                     * D17AL-F1:
+                     *
+                     * Ordinary local PS2VNC UI is contained by the calibrated
+                     * safe desktop. Calibration itself is intentionally drawn
+                     * directly against the physical raster elsewhere.
+                     */
+                    if (desktop_geometry_locked &&
+                        region_fits_u32(
+                            desktop_output_x,
+                            desktop_output_y,
+                            desktop_output_width,
+                            desktop_output_height,
+                            OUTPUT_WIDTH,
+                            OUTPUT_HEIGHT)) {
+
+                        safe_x0 = (float)desktop_output_x;
+                        safe_y0 = (float)desktop_output_y;
+                        safe_w = (float)desktop_output_width;
+                        safe_h = (float)desktop_output_height;
+                    }
+
+                    scale_x =
+                        (safe_w - 12.0f) /
+                        (float)OSK_WIDTH;
+
+                    scale_y =
+                        (safe_h - 12.0f) /
+                        (float)OSK_HEIGHT;
+
+                    scale =
+                        (scale_x < scale_y) ?
+                        scale_x : scale_y;
+
+                    /*
+                     * Menus can grow to use the safe desktop.
+                     * The normal keyboard remains 1:1 unless it must shrink.
+                     */
+                    if (!(display_menu_visible ||
+                          system_menu_visible ||
+                          display_confirm_visible ||
+                          display_restore_ack_visible) &&
+                        scale > 1.0f) {
+
+                        scale = 1.0f;
+                    }
+
+                    if (scale < 0.25f)
+                        scale = 0.25f;
+
+                    dst_w = (float)OSK_WIDTH * scale;
+                    dst_h = (float)OSK_HEIGHT * scale;
+
+                    dst_x0 =
+                        safe_x0 +
+                        (safe_w - dst_w) / 2.0f;
+
+                    if (display_menu_visible ||
+                        system_menu_visible ||
+                        display_confirm_visible ||
+                        display_restore_ack_visible) {
+
+                        dst_y0 =
+                            safe_y0 +
+                            (safe_h - dst_h) / 2.0f;
+
+                    } else {
+
+                        dst_y0 =
+                            safe_y0 +
+                            safe_h -
+                            dst_h -
+                            6.0f;
+                    }
+
+                    dst_x1 = dst_x0 + dst_w;
+                    dst_y1 = dst_y0 + dst_h;
+                }
+
+                gsKit_prim_sprite_texture(
+                    gsGlobal,
+                    &osk_tex,
+                    ps2vnc_display_output_x(dst_x0),
+                    ps2vnc_display_output_y(dst_y0),
+                    0.0f, 0.0f,
+                    ps2vnc_display_output_x(dst_x1),
+                    ps2vnc_display_output_y(dst_y1),
+                    (float)OSK_WIDTH,
+                    (float)OSK_HEIGHT,
+                    2,
+                    tex_color
+                );
+            }
+        } else {
+            rendered_osk_generation = osk_generation;
+        }
+
+        debug_stage_id = DBG_STAGE_POST_DRAW;
+
+        /*
+         * TEST13E HIRES presentation.
+         *
+         * Preserve the logical DRAW -> FLIP ordering, but HIRES performs
+         * the actual rendering in scanline-driven passes.
+         *
+         * Legacy debug stage IDs are retained intentionally.
+         */
+        debug_stage_id = DBG_STAGE_PRE_QUEUE;
+        {
+            u64 t0 = GetTimerSystemTime();
+
+            if (ps2vnc_display_finish_draw(gsGlobal) < 0)
+                return -1;
+
+            profile_present_sync_ticks += GetTimerSystemTime() - t0;
+        }
+        debug_stage_id = DBG_STAGE_POST_QUEUE;
+
+        debug_stage_id = DBG_STAGE_PRE_FLIP;
+        {
+            u64 t0 = GetTimerSystemTime();
+
+            if (ps2vnc_display_flip(gsGlobal) < 0)
+                return -1;
+
+            profile_flip_ticks += GetTimerSystemTime() - t0;
+        }
+        debug_stage_id = DBG_STAGE_POST_FLIP;
+
+        /*
+         * After the initial complete frame, request only pixels that changed.
+         * Queued controller traffic is flushed before this main-thread request.
+         */
+        if (controller_thread_error) {
+            debug_stage_id = DBG_STAGE_CONTROLLER_ERROR;
+            live_error_code = 201;
+            debug_emit_now();
+            screenf("LIVE ERR 201 controller");
+            return -1;
+        }
+
+        {
+            u64 t0 = GetTimerSystemTime();
+            if (ps2vnc_display_wait_presentation_memory_idle(
+                    gsGlobal) < 0)
+                return -1;
+
+            profile_dirty_wait_ticks += GetTimerSystemTime() - t0;
+        }
+
+        debug_stage_id = DBG_STAGE_PRE_REQUEST;
+        profile_rfb_start_tick = GetTimerSystemTime();
+        /*
+         * TEST15D3-A3: both presentation buffers are kept coherent after
+         * every completed update, so normal live traffic can be incremental.
+         */
+        if (!rfb_update_request_outstanding) {
+        if (request_framebuffer(sock, 1) < 0) {
+            int recovered_sock;
+
+            /*
+             * An unconfirmed display owns transport failure as part of its
+             * transaction. Abandon the candidate instead of generically
+             * recovering into an unapproved display configuration.
+             *
+             * KEEP is excluded: once explicitly chosen, an unrelated RFB
+             * failure no longer rejects the selected display mode.
+             */
+            if (display_confirm_pending &&
+                display_confirm_action != DISPLAY_CONFIRM_ACTION_KEEP) {
+
+                display_confirm_action =
+                    DISPLAY_CONFIRM_ACTION_ROLLBACK;
+
+                recovered_sock =
+                    ps2vnc_global_rollback_display_transaction(
+                        sock,
+                        1,
+                    rfb_framebuffer,
+                        gs_framebuffer,
+                        &gsGlobal,
+                        &tex,
+                        &osk_tex);
+
+                if (recovered_sock < 0)
+                    return -1;
+
+                sock = recovered_sock;
+
+                display_confirm_return_to_active_menu();
+                rendered_osk_generation = osk_generation - 1;
+                continue;
+            }
+
+            debug_stage_id = DBG_STAGE_REQUEST_ERROR;
+            live_error_code = 202;
+            debug_emit_now();
+            screenf("LIVE ERR 202 request");
+
+            recovered_sock =
+                recover_rfb_connection(
+                    sock,
+                    rfb_framebuffer,
+                    gs_framebuffer,
+                    gsGlobal,
+                    &tex,
+                    &osk_tex
+                );
+
+            if (recovered_sock < 0) {
+                if (exit_requested)
+                    return 1;
+
+                return -1;
+            }
+
+            sock = recovered_sock;
+
+            /*
+             * Recovery status temporarily reused the OSK bitmap.
+             * Force a fresh keyboard render if the OSK was open.
+             */
+            osk_generation++;
+            rendered_osk_generation =
+                osk_generation - 1;
+
+            continue;
+        }
+
+            rfb_update_request_outstanding = 1;
+        }
+
+        if (ps2vnc_display_begin_update() < 0)
+            return -1;
+
+        debug_stage_id = DBG_STAGE_POST_REQUEST;
+
+        {
+            int changed_bytes;
+            int direct_present_complete;
+
+            debug_stage_id = DBG_STAGE_WAIT_RFB;
+
+            /*
+             * Snapshot the already-rendered confirmation generation.
+             * Any later controller-side countdown/selection generation
+             * change may yield at the NEXT server-message boundary.
+             */
+            rfb_confirm_wait_generation =
+                rendered_osk_generation;
+
+            rfb_confirm_live_yield_enabled =
+                (display_confirm_pending &&
+                 display_confirm_visible) ? 1 : 0;
+
+            changed_bytes = receive_framebuffer_update(
+                sock,
+                rfb_framebuffer,
+                gs_framebuffer,
+                0,
+                0
+            );
+
+            rfb_confirm_live_yield_enabled = 0;
+
+            if (changed_bytes == RFB_RECEIVE_LOCAL_REDRAW) {
+                /*
+                 * No server-message byte was consumed, so there is no
+                 * partial decoder state to finish. The original incremental
+                 * request remains outstanding while the outer loop gets a
+                 * chance to draw/flip the new confirmation bitmap.
+                 */
+                ps2vnc_display_direct_write_cancel();
+                continue;
+            }
+
+            /*
+             * Any real FramebufferUpdate completion or transport failure
+             * consumes/invalidates the outstanding request contract.
+             */
+            rfb_update_request_outstanding = 0;
+
+            direct_present_complete =
+                ps2vnc_display_finish_update_decode();
+
+            if (changed_bytes >= 0) {
+                profile_rfb_ticks +=
+                    GetTimerSystemTime() - profile_rfb_start_tick;
+                profile_rfb_updates++;
+                if (changed_bytes > 0)
+                    profile_changed_bytes += (unsigned int)changed_bytes;
+            }
+
+            debug_changed_bytes = changed_bytes;
+            debug_stage_id = DBG_STAGE_POST_RECEIVE;
+
+            if (changed_bytes < 0) {
+                /*
+                 * recv_exact() deliberately aborts when blind-X/timeout
+                 * publishes ROLLBACK. A genuine receive failure while the
+                 * candidate is still awaiting confirmation has the same
+                 * transaction semantics: restore known-good, not candidate.
+                 */
+                if (display_confirm_pending &&
+                    display_confirm_action !=
+                        DISPLAY_CONFIRM_ACTION_KEEP) {
+
+                    int rollback_sock;
+
+                    display_confirm_action =
+                        DISPLAY_CONFIRM_ACTION_ROLLBACK;
+
+                    rollback_sock =
+                        ps2vnc_global_rollback_display_transaction(
+                            sock,
+                            1,
+                    rfb_framebuffer,
+                            gs_framebuffer,
+                            &gsGlobal,
+                            &tex,
+                            &osk_tex);
+
+                    if (rollback_sock < 0)
+                        return -1;
+
+                    sock = rollback_sock;
+
+                    display_confirm_return_to_active_menu();
+                    rendered_osk_generation = osk_generation - 1;
+                    continue;
+                }
+
+                if (runtime_action_request ==
+                    RUNTIME_ACTION_REFRESH_RFB) {
+
+                    int recovered_sock =
+                        perform_manual_rfb_recovery(
+                            sock,
+                            rfb_framebuffer,
+                            gs_framebuffer,
+                            gsGlobal,
+                            &tex,
+                            &osk_tex
+                        );
+
+                    if (recovered_sock < 0) {
+                        if (exit_requested)
+                            return 1;
+
+                        return -1;
+                    }
+
+                    sock = recovered_sock;
+
+                    rendered_osk_generation =
+                        osk_generation - 1;
+
+                    continue;
+                }
+
+                if (exit_requested)
+                    return 1;
+
+                debug_stage_id = DBG_STAGE_RECEIVE_ERROR;
+                debug_emit_now();
+                screenf("LIVE ERR %d type=%u",
+                        live_error_code,
+                        live_message_type);
+                screenf("rect %u/%u enc=%08x",
+                        live_rect_index,
+                        live_rect_count,
+                        live_encoding);
+                screenf("xywh %u,%u %ux%u",
+                        live_rect_x,
+                        live_rect_y,
+                        live_rect_w,
+                        live_rect_h);
+                screenf("hdr %02x%02x%02x%02x %02x%02x%02x%02x",
+                        live_hdr_raw[0],
+                        live_hdr_raw[1],
+                        live_hdr_raw[2],
+                        live_hdr_raw[3],
+                        live_hdr_raw[4],
+                        live_hdr_raw[5],
+                        live_hdr_raw[6],
+                        live_hdr_raw[7]);
+                screenf("    %02x%02x%02x%02x hav=%u rn=%d",
+                        live_hdr_raw[8],
+                        live_hdr_raw[9],
+                        live_hdr_raw[10],
+                        live_hdr_raw[11],
+                        live_hdr_start_avail,
+                        live_hdr_recv_n);
+                screenf("upd %02x%02x%02x%02x",
+                        live_update_raw[0],
+                        live_update_raw[1],
+                        live_update_raw[2],
+                        live_update_raw[3]);
+
+                {
+                    int recovered_sock =
+                        recover_rfb_connection(
+                            sock,
+                            rfb_framebuffer,
+                            gs_framebuffer,
+                            gsGlobal,
+                            &tex,
+                            &osk_tex
+                        );
+
+                    if (recovered_sock < 0) {
+                        if (exit_requested)
+                            return 1;
+
+                        return -1;
+                    }
+
+                    sock = recovered_sock;
+
+                    osk_generation++;
+                    rendered_osk_generation =
+                        osk_generation - 1;
+
+                    continue;
+                }
+            }
+
+            /*
+             * The RFB stream is already incremental. The active presentation
+             * backend owns how this successfully completed changed update
+             * becomes visible.
+             */
+            if (changed_bytes > 0 && !TEST29_DISCARD_LIVE_PIXELS) {
+                debug_stage_id = DBG_STAGE_PRE_TEXTURE;
+
+                if (ps2vnc_display_commit_update(
+                        gsGlobal,
+                        &tex,
+                        direct_present_complete) < 0)
+                    return -1;
+
+                debug_stage_id = DBG_STAGE_POST_TEXTURE;
+            }
+
+        }
+    }
+}
+
+==============================================================================
+working/b4a/ps2vnc_gsHires.c:180-210 gsKit_setpass
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING,GS_TRANSPORT
+LOCAL_CALLS=ps2vnc_hires_pitch_pixels
+==============================================================================
+static void gsKit_setpass(GSGLOBAL *gsGlobal, const SPass * __pass, int yoff)
+{
+	u64 *p_data;
+	u64 *p_store;
+	int qsize = 8;
+
+	p_data = p_store = (u64*)gsKit_heap_alloc(gsGlobal, qsize, (qsize * 16), GIF_AD);
+
+	*p_data++ = GIF_TAG_AD(qsize);
+	*p_data++ = GIF_AD;
+
+	// Context 1
+	*p_data++ = GS_SETREG_SCISSOR_1(0, gsGlobal->Width - 1, 0, __pass->DrawBuffer->bufferline_end - __pass->DrawBuffer->bufferline_begin);
+	*p_data++ = GS_SCISSOR_1;
+	*p_data++ = GS_SETREG_FRAME_1(__pass->DrawBuffer->addr / 8192, ps2vnc_hires_pitch_pixels(gsGlobal) / 64, gsGlobal->PSM, 0);
+	*p_data++ = GS_FRAME_1;
+	*p_data++ = GS_SETREG_ZBUF_1(__pass->DepthBuffer->addr / 8192, gsGlobal->PSMZ, (gsGlobal->ZBuffering == GS_SETTING_ON) ? 0 : 1);
+	*p_data++ = GS_ZBUF_1;
+	*p_data++ = GS_SETREG_XYOFFSET_1(gsGlobal->OffsetX, yoff + gsGlobal->OffsetY + __pass->DrawBuffer->bufferline_begin*16);
+	*p_data++ = GS_XYOFFSET_1;
+
+	// Context 2
+	*p_data++ = GS_SETREG_SCISSOR_1(0, gsGlobal->Width - 1, 0, __pass->DrawBuffer->bufferline_end - __pass->DrawBuffer->bufferline_begin);
+	*p_data++ = GS_SCISSOR_2;
+	*p_data++ = GS_SETREG_FRAME_1(__pass->DrawBuffer->addr / 8192, ps2vnc_hires_pitch_pixels(gsGlobal) / 64, gsGlobal->PSM, 0);
+	*p_data++ = GS_FRAME_2;
+	*p_data++ = GS_SETREG_ZBUF_1(__pass->DepthBuffer->addr / 8192, gsGlobal->PSMZ, (gsGlobal->ZBuffering == GS_SETTING_ON) ? 0 : 1);
+	*p_data++ = GS_ZBUF_2;
+	*p_data++ = GS_SETREG_XYOFFSET_1(gsGlobal->OffsetX, yoff + gsGlobal->OffsetY + __pass->DrawBuffer->bufferline_begin*16);
+	*p_data++ = GS_XYOFFSET_2;
+}
+
+==============================================================================
+working/b4a/ps2vnc_management_core.inc:668-682 screen_fit_geometry_valid_for_mode
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING,CALIBRATION
+LOCAL_CALLS=pstvnc_video_geometry_safe_area_valid
+==============================================================================
+int screen_fit_geometry_valid_for_mode(
+    const ps2vnc_video_mode_t *mode,
+    int width,
+    int height,
+    int offset_x,
+    int offset_y)
+{
+    return pstvnc_video_geometry_safe_area_valid(
+        mode,
+        width,
+        height,
+        offset_x,
+        offset_y
+    );
+}
+
+==============================================================================
+working/b4a/ps2vnc_management_core.inc:691-704 screen_fit_geometry_valid
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING,DISPLAY_MODE,CALIBRATION
+LOCAL_CALLS=screen_fit_geometry_valid_for_mode
+==============================================================================
+int screen_fit_geometry_valid(
+    int width,
+    int height,
+    int offset_x,
+    int offset_y)
+{
+    return screen_fit_geometry_valid_for_mode(
+        active_video_mode,
+        width,
+        height,
+        offset_x,
+        offset_y
+    );
+}
+
+==============================================================================
+working/b4a/ps2vnc_management_core.inc:713-765 screen_fit_apply_preset
+SIGNALS=DIMENSIONS,OFFSETS_CENTERING,CALIBRATION
+LOCAL_CALLS=screen_fit_geometry_valid
+==============================================================================
+int screen_fit_apply_preset(
+    int width,
+    int height,
+    int offset_x,
+    int offset_y,
+    int full_bypass)
+{
+    if (full_bypass) {
+
+        /*
+         * FULL is one exact intentional preset.
+         */
+        if (width == OUTPUT_WIDTH &&
+            height == OUTPUT_HEIGHT &&
+            offset_x == 0 &&
+            offset_y == 0) {
+
+            screen_fit_width = OUTPUT_WIDTH;
+            screen_fit_height = OUTPUT_HEIGHT;
+            screen_fit_offset_x = 0;
+            screen_fit_offset_y = 0;
+            screen_fit_full_bypass = 1;
+
+            return 1;
+        }
+
+    } else if (screen_fit_geometry_valid(
+                   width,
+                   height,
+                   offset_x,
+                   offset_y)) {
+
+        screen_fit_width = width;
+        screen_fit_height = height;
+        screen_fit_offset_x = offset_x;
+        screen_fit_offset_y = offset_y;
+        screen_fit_full_bypass = 0;
+
+        return 1;
+    }
+
+    /*
+     * Reject the complete supplied preset.
+     * Do not preserve any component from bad input.
+     */
+    screen_fit_width = SCREEN_FIT_START_WIDTH;
+    screen_fit_height = SCREEN_FIT_START_HEIGHT;
+    screen_fit_offset_x = 0;
+    screen_fit_offset_y = 0;
+    screen_fit_full_bypass = 0;
+
+    return 0;
+}
+
+==============================================================================
+src/video/geometry.c:6-27 pstvnc_video_geometry_rect_fits
+SIGNALS=DIMENSIONS
+LOCAL_CALLS=
+==============================================================================
+static int pstvnc_video_geometry_rect_fits(
+    const pstvnc_video_rect_t *rect,
+    unsigned int bounds_width,
+    unsigned int bounds_height
+)
+{
+    if (rect == NULL)
+        return 0;
+
+    if (rect->width == 0u || rect->height == 0u)
+        return 0;
+
+    if (rect->x > bounds_width ||
+        rect->y > bounds_height)
+        return 0;
+
+    if (rect->width > bounds_width - rect->x ||
+        rect->height > bounds_height - rect->y)
+        return 0;
+
+    return 1;
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_tail.inc:38-68 screen_fit_draw_char
+SIGNALS=SCALING_ASPECT,CALIBRATION,GS_TRANSPORT
+LOCAL_CALLS=osk_find_glyph,screen_fit_prim_sprite
+==============================================================================
+static void screen_fit_draw_char(
+    GSGLOBAL *gsGlobal,
+    int x,
+    int y,
+    char c,
+    int scale,
+    u64 color)
+{
+    const unsigned char *glyph = osk_find_glyph(c);
+    int gy;
+    int gx;
+
+    if (glyph == NULL)
+        return;
+
+    for (gy = 0; gy < 7; gy++) {
+        for (gx = 0; gx < 5; gx++) {
+            if (glyph[gy] & (1 << (4 - gx))) {
+                screen_fit_prim_sprite(
+                    gsGlobal,
+                    (float)(x + gx * scale),
+                    (float)(y + gy * scale),
+                    (float)(x + (gx + 1) * scale),
+                    (float)(y + (gy + 1) * scale),
+                    3,
+                    color
+                );
+            }
+        }
+    }
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_tail.inc:71-94 screen_fit_draw_text_centered
+SIGNALS=SCALING_ASPECT,CALIBRATION,GS_TRANSPORT
+LOCAL_CALLS=screen_fit_draw_char
+==============================================================================
+static void screen_fit_draw_text_centered(
+    GSGLOBAL *gsGlobal,
+    int y,
+    const char *text,
+    int scale,
+    u64 color)
+{
+    int len = (int)strlen(text);
+    int char_w = 6 * scale;
+    int text_w = len * char_w - scale;
+    int x = (OUTPUT_WIDTH - text_w) / 2;
+    int i;
+
+    for (i = 0; i < len; i++) {
+        screen_fit_draw_char(
+            gsGlobal,
+            x + i * char_w,
+            y,
+            text[i],
+            scale,
+            color
+        );
+    }
+}
+
+==============================================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:91-429 ps2vnc_update_mapped_hires_dirty_buffer
+SIGNALS=MAPPING,FRAMEBUFFER_RFB,GS_TRANSPORT
+LOCAL_CALLS=ps2vnc_hires_mapped_storage_row,ps2vnc_hires_requires_raster_mapping,ps2vnc_hires_storage_height,ps2vnc_hires_storage_width,region_fits_u32
+==============================================================================
+static int ps2vnc_update_mapped_hires_dirty_buffer(
+    unsigned short *dst,
+    const unsigned short *gs_framebuffer)
+{
+    /*
+     * D17AL-F7C4:
+     *
+     * The active raster/presentation relationship changes only when display,
+     * desktop geometry, or calibration changes. Cache both forward nearest-
+     * neighbor sampling and inverse dirty-boundary mappings instead of doing
+     * 64-bit multiply/divide for every presentation pixel on every update.
+     *
+     * Normal incremental updates therefore perform table lookups only:
+     *
+     *     destination x/y -> source x/y
+     *     source dirty edge -> destination dirty edge
+     *
+     * Division remains exclusively in the rare geometry-cache rebuild path.
+     */
+
+    static int map_valid = 0;
+
+    static unsigned int cached_storage_width;
+    static unsigned int cached_storage_height;
+
+    static unsigned int cached_output_width;
+    static unsigned int cached_output_height;
+
+    static unsigned int cached_desktop_width;
+    static unsigned int cached_desktop_height;
+
+    static unsigned int cached_output_x;
+    static unsigned int cached_output_y;
+    static unsigned int cached_output_w;
+    static unsigned int cached_output_h;
+
+    static unsigned int cached_dst_x0;
+    static unsigned int cached_dst_y0;
+    static unsigned int cached_dst_x1;
+    static unsigned int cached_dst_y1;
+    static unsigned int cached_dst_w;
+    static unsigned int cached_dst_h;
+
+    static unsigned int x_sample[VNC_WIDTH];
+    static unsigned int y_sample[VNC_HEIGHT];
+
+    static unsigned int x_edge[VNC_WIDTH + 1];
+    static unsigned int y_edge[VNC_HEIGHT + 1];
+
+    unsigned int storage_width;
+    unsigned int storage_height;
+
+    unsigned int dst_x0;
+    unsigned int dst_y0;
+    unsigned int dst_x1;
+    unsigned int dst_y1;
+    unsigned int dst_w;
+    unsigned int dst_h;
+
+    unsigned int dirty_dy0;
+    unsigned int dirty_dy1;
+    unsigned int dy;
+
+    int rebuild_map;
+
+    if (!ps2vnc_hires_requires_raster_mapping() ||
+        dst == NULL ||
+        gs_framebuffer == NULL ||
+        !rfb_dirty_valid ||
+        desktop_width == 0 ||
+        desktop_height == 0 ||
+        desktop_output_width == 0 ||
+        desktop_output_height == 0 ||
+        OUTPUT_WIDTH == 0 ||
+        OUTPUT_HEIGHT == 0 ||
+        desktop_width > VNC_WIDTH ||
+        desktop_height > VNC_HEIGHT ||
+        rfb_dirty_y1 > desktop_height ||
+        rfb_dirty_y0 >= rfb_dirty_y1 ||
+        !region_fits_u32(
+            desktop_output_x,
+            desktop_output_y,
+            desktop_output_width,
+            desktop_output_height,
+            OUTPUT_WIDTH,
+            OUTPUT_HEIGHT)) {
+
+        return -1;
+    }
+
+    storage_width =
+        ps2vnc_hires_storage_width();
+
+    storage_height =
+        ps2vnc_hires_storage_height();
+
+    if (storage_width == 0 ||
+        storage_height == 0 ||
+        storage_width > VNC_WIDTH ||
+        storage_height > VNC_HEIGHT) {
+
+        return -1;
+    }
+
+    rebuild_map =
+        !map_valid ||
+        cached_storage_width != storage_width ||
+        cached_storage_height != storage_height ||
+        cached_output_width != OUTPUT_WIDTH ||
+        cached_output_height != OUTPUT_HEIGHT ||
+        cached_desktop_width != desktop_width ||
+        cached_desktop_height != desktop_height ||
+        cached_output_x != desktop_output_x ||
+        cached_output_y != desktop_output_y ||
+        cached_output_w != desktop_output_width ||
+        cached_output_h != desktop_output_height;
+
+    if (rebuild_map) {
+        unsigned int i;
+
+        /*
+         * Preserve F7B's hardware-proven physical->native rectangle arithmetic
+         * exactly: floor the leading edge, ceil the trailing edge.
+         */
+        dst_x0 =
+            (unsigned int)(
+                ((u64)desktop_output_x * storage_width) /
+                OUTPUT_WIDTH);
+
+        dst_y0 =
+            (unsigned int)(
+                ((u64)desktop_output_y * storage_height) /
+                OUTPUT_HEIGHT);
+
+        dst_x1 =
+            (unsigned int)(
+                (((u64)(
+                    desktop_output_x + desktop_output_width) *
+                    storage_width) +
+                  OUTPUT_WIDTH - 1) /
+                 OUTPUT_WIDTH);
+
+        dst_y1 =
+            (unsigned int)(
+                (((u64)(
+                    desktop_output_y + desktop_output_height) *
+                    storage_height) +
+                  OUTPUT_HEIGHT - 1) /
+                 OUTPUT_HEIGHT);
+
+        if (dst_x1 > storage_width)
+            dst_x1 = storage_width;
+
+        if (dst_y1 > storage_height)
+            dst_y1 = storage_height;
+
+        if (dst_x0 >= dst_x1 ||
+            dst_y0 >= dst_y1) {
+
+            return -1;
+        }
+
+        dst_w = dst_x1 - dst_x0;
+        dst_h = dst_y1 - dst_y0;
+
+        if (dst_w > VNC_WIDTH ||
+            dst_h > VNC_HEIGHT) {
+
+            return -1;
+        }
+
+        /*
+         * Exact F7B nearest-neighbor forward samples.
+         */
+        for (i = 0; i < dst_w; i++) {
+            x_sample[i] =
+                (unsigned int)(
+                    ((u64)i * desktop_width) /
+                    dst_w);
+        }
+
+        for (i = 0; i < dst_h; i++) {
+            y_sample[i] =
+                (unsigned int)(
+                    ((u64)i * desktop_height) /
+                    dst_h);
+        }
+
+        /*
+         * Exact inverse boundaries used by F7C2:
+         *
+         *     ceil(source_edge * destination_size / source_size)
+         */
+        for (i = 0; i <= desktop_width; i++) {
+            x_edge[i] =
+                (unsigned int)(
+                    (((u64)i * dst_w) +
+                     desktop_width - 1) /
+                    desktop_width);
+        }
+
+        for (i = 0; i <= desktop_height; i++) {
+            y_edge[i] =
+                (unsigned int)(
+                    (((u64)i * dst_h) +
+                     desktop_height - 1) /
+                    desktop_height);
+        }
+
+        cached_storage_width = storage_width;
+        cached_storage_height = storage_height;
+
+        cached_output_width = OUTPUT_WIDTH;
+        cached_output_height = OUTPUT_HEIGHT;
+
+        cached_desktop_width = desktop_width;
+        cached_desktop_height = desktop_height;
+
+        cached_output_x = desktop_output_x;
+        cached_output_y = desktop_output_y;
+        cached_output_w = desktop_output_width;
+        cached_output_h = desktop_output_height;
+
+        cached_dst_x0 = dst_x0;
+        cached_dst_y0 = dst_y0;
+        cached_dst_x1 = dst_x1;
+        cached_dst_y1 = dst_y1;
+        cached_dst_w = dst_w;
+        cached_dst_h = dst_h;
+
+        map_valid = 1;
+
+    } else {
+        dst_x0 = cached_dst_x0;
+        dst_y0 = cached_dst_y0;
+        dst_x1 = cached_dst_x1;
+        dst_y1 = cached_dst_y1;
+        dst_w = cached_dst_w;
+        dst_h = cached_dst_h;
+    }
+
+    /*
+     * Ordinary live path begins here. No multiply/divide is needed below.
+     */
+    dirty_dy0 = y_edge[rfb_dirty_y0];
+    dirty_dy1 = y_edge[rfb_dirty_y1];
+
+    if (dirty_dy0 > dst_h)
+        dirty_dy0 = dst_h;
+
+    if (dirty_dy1 > dst_h)
+        dirty_dy1 = dst_h;
+
+    for (dy = dirty_dy0;
+         dy < dirty_dy1;
+         dy++) {
+
+        unsigned int src_y;
+        unsigned int src_x0;
+        unsigned int src_x1;
+
+        unsigned int dirty_dx0;
+        unsigned int dirty_dx1;
+
+        unsigned int dx;
+
+        unsigned short *dst_row;
+        const unsigned short *src_row;
+
+        src_y = y_sample[dy];
+
+        if (src_y >= desktop_height)
+            return -1;
+
+        if (!rfb_dirty_row_valid[src_y])
+            continue;
+
+        src_x0 = rfb_dirty_row_x0[src_y];
+        src_x1 = rfb_dirty_row_x1[src_y];
+
+        if (src_x1 <= src_x0 ||
+            src_x1 > desktop_width) {
+
+            return -1;
+        }
+
+        dirty_dx0 = x_edge[src_x0];
+        dirty_dx1 = x_edge[src_x1];
+
+        if (dirty_dx0 > dst_w)
+            dirty_dx0 = dst_w;
+
+        if (dirty_dx1 > dst_w)
+            dirty_dx1 = dst_w;
+
+        /*
+         * A source span can legitimately disappear under downscaling.
+         */
+        if (dirty_dx0 >= dirty_dx1)
+            continue;
+
+        dst_row =
+            &dst[
+                ps2vnc_hires_mapped_storage_row(
+                    dst_y0 + dy) *
+                storage_width +
+                dst_x0
+            ];
+
+        src_row =
+            &gs_framebuffer[
+                src_y * desktop_width
+            ];
+
+        for (dx = dirty_dx0;
+             dx < dirty_dx1;
+             dx++) {
+
+            unsigned int src_x =
+                x_sample[dx];
+
+            if (src_x < src_x0 ||
+                src_x >= src_x1 ||
+                src_x >= desktop_width) {
+
+                return -1;
+            }
+
+            dst_row[dx] = src_row[src_x];
+        }
+
+        SyncDCache(
+            &dst_row[dirty_dx0],
+            (unsigned char *)&dst_row[dirty_dx1]
+        );
+    }
+
+    return 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:705-897 publish_hires_background
+SIGNALS=MAPPING,FRAMEBUFFER_RFB,GS_TRANSPORT
+LOCAL_CALLS=gsKit_hires_set_bg,hires_bg_storage_row,ps2vnc_display_wait_presentation_memory_idle,ps2vnc_hires_mapped_storage_row,ps2vnc_hires_requires_raster_mapping,ps2vnc_hires_storage_height,ps2vnc_hires_storage_width,region_fits_u32
+==============================================================================
+int publish_hires_background(
+    GSGLOBAL *gsGlobal,
+    GSTEXTURE *bg_tex,
+    const unsigned short *gs_framebuffer)
+{
+    const unsigned int storage_width =
+        ps2vnc_hires_storage_width();
+
+    const unsigned int storage_height =
+        ps2vnc_hires_storage_height();
+
+    const unsigned int output_pixels =
+        storage_width * storage_height;
+
+    const unsigned int output_bytes =
+        output_pixels * sizeof(unsigned short);
+
+    unsigned int row;
+    unsigned int i;
+
+    if (hires_bg_buffer == NULL)
+        return -1;
+
+    if (desktop_width == 0 ||
+        desktop_height == 0 ||
+        !region_fits_u32(
+            desktop_output_x,
+            desktop_output_y,
+            desktop_width,
+            desktop_height,
+            OUTPUT_WIDTH,
+            OUTPUT_HEIGHT)) {
+
+        return -1;
+    }
+
+    /*
+     * The HIRES queues DMA directly from this EE-memory backing buffer.
+     * Never modify it while the previous frame may still consume it.
+     */
+    if (hires_bg_configured &&
+        ps2vnc_display_wait_presentation_memory_idle(gsGlobal) < 0)
+        return -1;
+
+    /*
+     * Clear the complete active presentation storage before reconstruction.
+     * 0x8000 is opaque black in the GS16 framebuffer format.
+     */
+    for (i = 0; i < output_pixels; i++)
+        hires_bg_buffer[i] = 0x8000;
+
+    /*
+     * The RFB framebuffer remains tightly packed at desktop_width. Presentation
+     * placement is expressed in physical-raster coordinates and is either
+     * mapped into the active HIRES surface or copied through the 1:1 path.
+     */
+    if (ps2vnc_hires_requires_raster_mapping()) {
+        unsigned int dst_x0;
+        unsigned int dst_y0;
+        unsigned int dst_x1;
+        unsigned int dst_y1;
+        unsigned int dst_w;
+        unsigned int dst_h;
+        unsigned int col;
+
+        /*
+         * F7B proved that calibration/RFB geometry remains authoritative in
+         * physical-raster space while only the presentation rectangle is
+         * converted into gsHires drawing/storage space. F8E applies that rule
+         * from the active raster and presentation dimensions.
+         *
+         * Floor the leading edge and ceil the trailing edge so no physical
+         * safe-area pixel is silently lost to integer truncation.
+         */
+        dst_x0 =
+            (unsigned int)(
+                ((u64)desktop_output_x * storage_width) /
+                OUTPUT_WIDTH);
+
+        dst_y0 =
+            (unsigned int)(
+                ((u64)desktop_output_y * storage_height) /
+                OUTPUT_HEIGHT);
+
+        dst_x1 =
+            (unsigned int)(
+                (((u64)(
+                    desktop_output_x + desktop_output_width) *
+                    storage_width) +
+                  OUTPUT_WIDTH - 1) /
+                 OUTPUT_WIDTH);
+
+        dst_y1 =
+            (unsigned int)(
+                (((u64)(
+                    desktop_output_y + desktop_output_height) *
+                    storage_height) +
+                  OUTPUT_HEIGHT - 1) /
+                 OUTPUT_HEIGHT);
+
+        if (dst_x1 > storage_width)
+            dst_x1 = storage_width;
+
+        if (dst_y1 > storage_height)
+            dst_y1 = storage_height;
+
+        if (dst_x0 >= dst_x1 || dst_y0 >= dst_y1)
+            return -1;
+
+        dst_w = dst_x1 - dst_x0;
+        dst_h = dst_y1 - dst_y0;
+
+        /*
+         * Correctness-first nearest-neighbor conversion.
+         *
+         * F7B established the complete mapped-frame rebuild. Later F7C work
+         * optimized incremental dirty publication without changing this
+         * authoritative raster-to-presentation geometry.
+         */
+        for (row = 0; row < dst_h; row++) {
+            unsigned int src_y =
+                (unsigned int)(
+                    ((u64)row * desktop_height) /
+                    dst_h);
+
+            unsigned short *dst =
+                &hires_bg_buffer[
+                    ps2vnc_hires_mapped_storage_row(
+                        dst_y0 + row) *
+                    storage_width +
+                    dst_x0
+                ];
+
+            const unsigned short *src =
+                &gs_framebuffer[
+                    src_y * desktop_width
+                ];
+
+            for (col = 0; col < dst_w; col++) {
+                unsigned int src_x =
+                    (unsigned int)(
+                        ((u64)col * desktop_width) /
+                        dst_w);
+
+                dst[col] = src[src_x];
+            }
+        }
+
+    } else {
+        /*
+         * Exact 1:1 HIRES behavior: raster-sized presentation requires no
+         * raster-to-presentation conversion.
+         */
+        for (row = 0; row < desktop_height; row++) {
+            unsigned short *dst =
+                &hires_bg_buffer[
+                    hires_bg_storage_row(desktop_output_y + row) *
+                    OUTPUT_WIDTH +
+                    desktop_output_x
+                ];
+
+            const unsigned short *src =
+                &gs_framebuffer[
+                    row * desktop_width
+                ];
+
+            memcpy(
+                dst,
+                src,
+                desktop_width * sizeof(unsigned short)
+            );
+        }
+    }
+
+    SyncDCache(
+        hires_bg_buffer,
+        (unsigned char *)hires_bg_buffer + output_bytes
+    );
+
+    if (!hires_bg_configured) {
+        bg_tex->Mem = (u32 *)hires_bg_buffer;
+
+        /*
+         * Configure the active HIRES background exactly once.
+         */
+        if (gsKit_hires_set_bg(gsGlobal, bg_tex) < 0)
+            return -1;
+
+        hires_bg_configured = 1;
+    }
+
+    return 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_runtime_tail.inc:1521-1548 osk_draw_char
+SIGNALS=SCALING_ASPECT
+LOCAL_CALLS=osk_fill_rect,osk_find_glyph
+==============================================================================
+static void osk_draw_char(
+    int x,
+    int y,
+    char c,
+    int scale,
+    unsigned short color)
+{
+    const unsigned char *glyph = osk_find_glyph(c);
+    int gy;
+    int gx;
+
+    if (glyph == NULL)
+        return;
+
+    for (gy = 0; gy < 7; gy++) {
+        for (gx = 0; gx < 5; gx++) {
+            if (glyph[gy] & (1 << (4 - gx))) {
+                osk_fill_rect(
+                    x + gx * scale,
+                    y + gy * scale,
+                    scale,
+                    scale,
+                    color
+                );
+            }
+        }
+    }
+}
+
+==============================================================================
+working/b4a/ps2vnc_runtime_tail.inc:1550-1570 osk_draw_text_centered
+SIGNALS=SCALING_ASPECT
+LOCAL_CALLS=osk_draw_char
+==============================================================================
+void osk_draw_text_centered(
+    int x,
+    int y,
+    int w,
+    int h,
+    const char *s,
+    int scale,
+    unsigned short color)
+{
+    int len = (int)strlen(s);
+    int char_w = 6 * scale;
+    int text_w = len * char_w - scale;
+    int text_h = 7 * scale;
+    int tx = x + (w - text_w) / 2;
+    int ty = y + (h - text_h) / 2;
+    int i;
+
+    for (i = 0; i < len; i++) {
+        osk_draw_char(tx + i * char_w, ty, s[i], scale, color);
+    }
+}
+
+==============================================================================
+working/b4a/ps2vnc_ui_core.inc:1220-1298 analog_speed_curve_q12
+SIGNALS=SCALING_ASPECT
+LOCAL_CALLS=
+==============================================================================
+static unsigned int analog_speed_curve_q12(int raw_magnitude)
+{
+    int usable;
+    int knee_usable;
+    int max_usable;
+    unsigned int curve;
+
+    if (raw_magnitude <= ANALOG_DEADZONE)
+        return 0;
+
+    if (raw_magnitude > ANALOG_MAX_RAW)
+        raw_magnitude = ANALOG_MAX_RAW;
+
+    usable =
+        raw_magnitude - ANALOG_DEADZONE;
+
+    knee_usable =
+        ANALOG_KNEE_RAW - ANALOG_DEADZONE;
+
+    max_usable =
+        ANALOG_MAX_RAW - ANALOG_DEADZONE;
+
+    if (usable <= knee_usable) {
+        unsigned int scale_q12;
+
+        /*
+         * Base 11K-C shallow quadratic:
+         *
+         *     85% physical tilt = ~30% maximum speed.
+         */
+        curve =
+            (ANALOG_CURVE_KNEE *
+             (unsigned int)usable *
+             (unsigned int)usable) /
+            ((unsigned int)knee_usable *
+             (unsigned int)knee_usable);
+
+        /*
+         * Test11K-D low-end refinement.
+         *
+         * Through the first 50% of physical stick travel, run at
+         * exactly HALF of the previous 11K-C response.
+         *
+         * From 50% through the 85% knee, smoothly remove that
+         * reduction so we arrive at the original 30% knee speed
+         * without a discontinuity.
+         */
+        if (raw_magnitude <= ANALOG_HALF_RAW) {
+            scale_q12 = 2048;  /* 50% */
+        } else {
+            scale_q12 =
+                2048 +
+                (2048 *
+                 (unsigned int)
+                 (raw_magnitude - ANALOG_HALF_RAW)) /
+                (unsigned int)
+                (ANALOG_KNEE_RAW - ANALOG_HALF_RAW);
+        }
+
+        curve =
+            (curve * scale_q12) /
+            ANALOG_CURVE_ONE;
+
+        if (curve == 0)
+            curve = 1;
+
+        return curve;
+    }
+
+    /*
+     * Final ~15% remains exactly as before:
+     * 30% at the knee -> 100% at full tilt.
+     */
+    return
+        ANALOG_CURVE_KNEE +
+        ((ANALOG_CURVE_ONE - ANALOG_CURVE_KNEE) *
+         (unsigned int)(usable - knee_usable)) /
+        (unsigned int)(max_usable - knee_usable);
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_core.inc:1466-1506 debug_emit_geometry_snapshot
+SIGNALS=FRAMEBUFFER_RFB,CALIBRATION
+LOCAL_CALLS=
+==============================================================================
+void debug_emit_geometry_snapshot(void)
+{
+    char msg[192];
+    int len;
+
+    if (debug_udp_sock < 0)
+        return;
+
+    len = snprintf(
+        msg,
+        sizeof(msg),
+        "GEOM fit=%dx%d@%d,%d full=%d "
+        "desk=%ux%u out=%u,%u cfg=%d force=%d",
+        screen_fit_width,
+        screen_fit_height,
+        screen_fit_offset_x,
+        screen_fit_offset_y,
+        screen_fit_full_bypass,
+        desktop_width,
+        desktop_height,
+        desktop_output_x,
+        desktop_output_y,
+        ps2vnc_display_config_loaded,
+        force_screen_fit_calibration
+    );
+
+    if (len <= 0)
+        return;
+
+    if (len >= (int)sizeof(msg))
+        len = sizeof(msg) - 1;
+
+    sendto(
+        debug_udp_sock,
+        msg,
+        len,
+        0,
+        (struct sockaddr *)&debug_udp_addr,
+        sizeof(debug_udp_addr)
+    );
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_core.inc:1568-1571 screen_fit_draw_x
+SIGNALS=CALIBRATION
+LOCAL_CALLS=ps2vnc_display_output_x
+==============================================================================
+static float screen_fit_draw_x(int x)
+{
+    return ps2vnc_display_output_x((float)x);
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_core.inc:1573-1576 screen_fit_draw_y
+SIGNALS=CALIBRATION
+LOCAL_CALLS=ps2vnc_display_output_y
+==============================================================================
+static float screen_fit_draw_y(int y)
+{
+    return ps2vnc_display_output_y((float)y);
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_core.inc:1578-1584 screen_fit_prim_sprite
+SIGNALS=CALIBRATION,GS_TRANSPORT
+LOCAL_CALLS=screen_fit_draw_x,screen_fit_draw_y
+==============================================================================
+void screen_fit_prim_sprite(
+    GSGLOBAL *g, int x0, int y0, int x1, int y1, int z, u64 color)
+{
+    gsKit_prim_sprite(g,
+        screen_fit_draw_x(x0), screen_fit_draw_y(y0),
+        screen_fit_draw_x(x1), screen_fit_draw_y(y1), z, color);
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_tail.inc:3-36 screen_fit_prim_sprite_clipped
+SIGNALS=CALIBRATION,GS_TRANSPORT
+LOCAL_CALLS=screen_fit_prim_sprite
+==============================================================================
+static void screen_fit_prim_sprite_clipped(
+    GSGLOBAL *g,
+    int x0,
+    int y0,
+    int x1,
+    int y1,
+    int z,
+    u64 color)
+{
+    if (x0 < 0)
+        x0 = 0;
+
+    if (y0 < 0)
+        y0 = 0;
+
+    if (x1 > (int)OUTPUT_WIDTH)
+        x1 = (int)OUTPUT_WIDTH;
+
+    if (y1 > (int)OUTPUT_HEIGHT)
+        y1 = (int)OUTPUT_HEIGHT;
+
+    if (x0 >= x1 || y0 >= y1)
+        return;
+
+    screen_fit_prim_sprite(
+        g,
+        x0,
+        y0,
+        x1,
+        y1,
+        z,
+        color
+    );
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_tail.inc:110-209 screen_fit_draw_corner_marker
+SIGNALS=CALIBRATION,GS_TRANSPORT
+LOCAL_CALLS=screen_fit_prim_sprite
+==============================================================================
+static void screen_fit_draw_corner_marker(
+    GSGLOBAL *gsGlobal,
+    int corner_x,
+    int corner_y,
+    int sx,
+    int sy,
+    u64 corner_color,
+    u64 inner_color)
+{
+    const int size = SCREEN_FIT_CORNER_SIZE;
+    int x_far;
+    int y_far;
+    int x_min;
+    int x_max;
+    int y_min;
+    int y_max;
+    int v;
+
+    /*
+     * TEST13J-D3-A3:
+     *
+     * corner_x/corner_y is the INSIDE corner of the white border.
+     * The complete marker therefore lies inside the usable rectangle
+     * and merely touches the border; it never overlaps it.
+     *
+     * sx/sy point inward:
+     *
+     *   TL  +1,+1
+     *   TR  -1,+1
+     *   BL  +1,-1
+     *   BR  -1,-1
+     */
+
+    x_far = corner_x + sx * size;
+    y_far = corner_y + sy * size;
+
+    x_min = (corner_x < x_far) ? corner_x : x_far;
+    x_max = (corner_x > x_far) ? corner_x : x_far;
+
+    y_min = (corner_y < y_far) ? corner_y : y_far;
+    y_max = (corner_y > y_far) ? corner_y : y_far;
+
+    /*
+     * First draw the complete inward square in cyan.
+     */
+    screen_fit_prim_sprite(
+        gsGlobal,
+        (float)x_min,
+        (float)y_min,
+        (float)x_max,
+        (float)y_max,
+        3,
+        inner_color
+    );
+
+    /*
+     * Then construct the amber corner triangle from one-pixel strips.
+     *
+     * This avoids gsKit triangle winding/culling entirely.
+     *
+     * At the actual border corner the amber wedge is full width.
+     * It decreases by one pixel per row until the diagonal reaches
+     * the opposite side of the square.
+     */
+    for (v = 0; v < size; v++) {
+        int run = size - v;
+
+        int ya;
+        int yb;
+
+        int xa;
+        int xb;
+
+        if (sy > 0) {
+            ya = corner_y + v;
+            yb = ya + 1;
+        } else {
+            yb = corner_y - v;
+            ya = yb - 1;
+        }
+
+        if (sx > 0) {
+            xa = corner_x;
+            xb = corner_x + run;
+        } else {
+            xb = corner_x;
+            xa = corner_x - run;
+        }
+
+        screen_fit_prim_sprite(
+            gsGlobal,
+            (float)xa,
+            (float)ya,
+            (float)xb,
+            (float)yb,
+            4,
+            corner_color
+        );
+    }
+}
+
+==============================================================================
+working/b4a/ps2vnc_calibration_tail.inc:1299-1320 ps2vnc_display_wait_presentation_memory_idle
+SIGNALS=DISPLAY_MODE,GS_TRANSPORT
+LOCAL_CALLS=gsKit_hires_sync
+==============================================================================
+int ps2vnc_display_wait_presentation_memory_idle(
+    GSGLOBAL *gsGlobal)
+{
+    if (gsGlobal == NULL)
+        return -1;
+
+    if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+        gsKit_hires_sync(gsGlobal);
+        dmaKit_wait_fast();
+        return 0;
+    }
+
+    if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+        /*
+         * Standard decoding never writes renderer-owned EE presentation
+         * memory, so there is no ownership barrier to wait for here.
+         */
+        return 0;
+    }
+
+    return -1;
+}
+
+==============================================================================
+working/b4a/ps2vnc_framebuffer_core.inc:108-133 hextile_fill_rect
+SIGNALS=FRAMEBUFFER_RFB,GS_TRANSPORT
+LOCAL_CALLS=hextile_store_pixel,ps2vnc_display_direct_write_row
+==============================================================================
+static void hextile_fill_rect(
+    unsigned short *rfb_framebuffer,
+    unsigned short *gs_framebuffer,
+    unsigned int x,
+    unsigned int y,
+    unsigned int w,
+    unsigned int h,
+    unsigned short wire_pixel)
+{
+    unsigned int row, col;
+
+    for (row = 0; row < h; row++) {
+        unsigned int base = (y + row) * desktop_width + x;
+        unsigned short *direct_row = NULL;
+
+        direct_row = ps2vnc_display_direct_write_row(
+            x,
+            y + row);
+
+        for (col = 0; col < w; col++)
+            hextile_store_pixel(
+                rfb_framebuffer, gs_framebuffer, base + col,
+                direct_row ? &direct_row[col] : NULL,
+                wire_pixel);
+    }
+}
+
+==============================================================================
+working/b4a/ps2vnc_framebuffer_core.inc:191-234 hextile_recv_subrects
+SIGNALS=FRAMEBUFFER_RFB,GS_TRANSPORT
+LOCAL_CALLS=hextile_fill_rect,hextile_recv_pixel,recv_exact
+==============================================================================
+static int hextile_recv_subrects(
+    int sock,
+    unsigned short *rfb_framebuffer,
+    unsigned short *gs_framebuffer,
+    unsigned int tx, unsigned int ty,
+    unsigned int tw, unsigned int th,
+    unsigned short foreground,
+    int colored,
+    unsigned int count,
+    unsigned int *wire_bytes,
+    int write_pixels)
+{
+    unsigned int i;
+
+    for (i = 0; i < count; i++) {
+        unsigned short pixel = foreground;
+        unsigned char geom[2];
+        unsigned int sx, sy, sw, sh;
+
+        if (colored &&
+            hextile_recv_pixel(sock, &pixel, wire_bytes) < 0)
+            return -1;
+
+        if (recv_exact(sock, geom, 2) != 2)
+            return -1;
+
+        *wire_bytes += 2;
+
+        sx = geom[0] >> 4;
+        sy = geom[0] & 0x0f;
+        sw = (geom[1] >> 4) + 1;
+        sh = (geom[1] & 0x0f) + 1;
+
+        if (sx + sw > tw || sy + sh > th)
+            return -1;
+
+        if (write_pixels)
+            hextile_fill_rect(
+                rfb_framebuffer, gs_framebuffer,
+                tx + sx, ty + sy, sw, sh, pixel);
+    }
+
+    return 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_framebuffer_core.inc:237-334 hextile_recv_rect
+SIGNALS=FRAMEBUFFER_RFB,GS_TRANSPORT
+LOCAL_CALLS=hextile_fill_rect,hextile_recv_pixel,hextile_recv_raw_tile,hextile_recv_subrects,recv_exact
+==============================================================================
+static int hextile_recv_rect(
+    int sock,
+    unsigned short *rfb_framebuffer,
+    unsigned short *gs_framebuffer,
+    unsigned int x, unsigned int y,
+    unsigned int w, unsigned int h,
+    unsigned int *wire_bytes,
+    int write_pixels)
+{
+    unsigned short bg = 0, fg = 0;
+    int bg_valid = 0, fg_valid = 0;
+    unsigned int ty, tx;
+
+    for (ty = y; ty < y + h; ty += 16) {
+        unsigned int th = ((y + h) - ty > 16) ? 16 : (y + h) - ty;
+
+        for (tx = x; tx < x + w; tx += 16) {
+            unsigned int tw = ((x + w) - tx > 16) ? 16 : (x + w) - tx;
+            unsigned char sub;
+
+            if (recv_exact(sock, &sub, 1) != 1)
+                return -1;
+            (*wire_bytes)++;
+
+            if (sub & ~0x1fu)
+                return -1;
+
+            if (sub & HEXTILE_RAW) {
+                if (hextile_recv_raw_tile(
+                        sock, rfb_framebuffer, gs_framebuffer,
+                        tx, ty, tw, th, wire_bytes,
+                        write_pixels) < 0)
+                    return -1;
+
+                bg_valid = 0;
+                fg_valid = 0;
+                continue;
+            }
+
+            if (sub & HEXTILE_BACKGROUND_SPECIFIED) {
+                if (hextile_recv_pixel(sock, &bg, wire_bytes) < 0)
+                    return -1;
+                bg_valid = 1;
+            }
+
+            if (!bg_valid)
+                return -1;
+
+            if (write_pixels)
+                hextile_fill_rect(
+                    rfb_framebuffer, gs_framebuffer,
+                    tx, ty, tw, th, bg);
+
+            /*
+             * RFC 6143: ForegroundSpecified and SubrectsColored
+             * may not both be set for the same tile.
+             */
+            if ((sub & HEXTILE_FOREGROUND_SPECIFIED) &&
+                (sub & HEXTILE_SUBRECTS_COLORED))
+                return -1;
+
+            if (sub & HEXTILE_FOREGROUND_SPECIFIED) {
+                if (hextile_recv_pixel(sock, &fg, wire_bytes) < 0)
+                    return -1;
+                fg_valid = 1;
+            }
+
+            if (sub & HEXTILE_ANY_SUBRECTS) {
+                unsigned char count;
+                int colored =
+                    (sub & HEXTILE_SUBRECTS_COLORED) != 0;
+
+                if (recv_exact(sock, &count, 1) != 1)
+                    return -1;
+                (*wire_bytes)++;
+
+                if (!colored && !fg_valid)
+                    return -1;
+
+                if (hextile_recv_subrects(
+                        sock, rfb_framebuffer, gs_framebuffer,
+                        tx, ty, tw, th, fg, colored,
+                        count, wire_bytes, write_pixels) < 0)
+                    return -1;
+
+            }
+
+            /*
+             * A tile carrying SubrectsColored invalidates foreground
+             * carry for the following tile, even if it had no subrects.
+             */
+            if (sub & HEXTILE_SUBRECTS_COLORED)
+                fg_valid = 0;
+        }
+    }
+
+    return 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_framebuffer_core.inc:1098-1111 ps2vnc_display_direct_write_active
+SIGNALS=DISPLAY_MODE
+LOCAL_CALLS=ps2vnc_hires_requires_raster_mapping
+==============================================================================
+static int ps2vnc_display_direct_write_active(void)
+{
+    /*
+     * D17AL-F8E:
+     *
+     * A raster-mapped HIRES presentation cannot expose its transformed
+     * presentation storage as a 1:1 decoder-direct target. Decode into the
+     * authoritative source framebuffer and publish through the mapper instead.
+     */
+    return active_display_backend == PS2VNC_BACKEND_HIRES &&
+           !ps2vnc_hires_requires_raster_mapping() &&
+           live_direct_present_safe &&
+           live_direct_present_buffer != NULL;
+}
+
+==============================================================================
+working/b4a/ps2vnc_framebuffer_core.inc:1113-1126 ps2vnc_display_direct_write_row
+SIGNALS=FRAMEBUFFER_RFB
+LOCAL_CALLS=hires_bg_storage_row,ps2vnc_display_direct_write_active
+==============================================================================
+static unsigned short *ps2vnc_display_direct_write_row(
+    unsigned int x,
+    unsigned int y)
+{
+    if (!ps2vnc_display_direct_write_active())
+        return NULL;
+
+    if (x >= desktop_width || y >= desktop_height)
+        return NULL;
+
+    return &live_direct_present_buffer[
+        hires_bg_storage_row(desktop_output_y + y) *
+        OUTPUT_WIDTH + desktop_output_x + x];
+}
+
+==============================================================================
+working/b4a/ps2vnc_framebuffer_core.inc:1128-1131 ps2vnc_display_direct_write_cancel
+SIGNALS=
+LOCAL_CALLS=
+==============================================================================
+void ps2vnc_display_direct_write_cancel(void)
+{
+    live_direct_present_safe = 0;
+}
+
+==============================================================================
+working/b4a/ps2vnc_runtime_core.inc:68-87 ps2vnc_hires_requires_horizontal_mapping
+SIGNALS=DISPLAY_MODE
+LOCAL_CALLS=ps2vnc_hires_effective_width
+==============================================================================
+static int ps2vnc_hires_requires_horizontal_mapping(void)
+{
+    unsigned int effective_width;
+
+    if (active_video_mode == NULL ||
+        active_video_mode->raster_width == 0) {
+
+        return 0;
+    }
+
+    effective_width =
+        ps2vnc_hires_effective_width();
+
+    if (effective_width == 0)
+        return 0;
+
+    return
+        effective_width !=
+            active_video_mode->raster_width;
+}
+
+==============================================================================
+working/b4a/ps2vnc_runtime_core.inc:90-109 ps2vnc_hires_requires_vertical_mapping
+SIGNALS=DISPLAY_MODE
+LOCAL_CALLS=ps2vnc_hires_full_frame_height
+==============================================================================
+ int ps2vnc_hires_requires_vertical_mapping(void)
+{
+    u64 full_frame_height;
+
+    if (active_video_mode == NULL ||
+        active_video_mode->raster_height == 0) {
+
+        return 0;
+    }
+
+    full_frame_height =
+        ps2vnc_hires_full_frame_height();
+
+    if (full_frame_height == 0)
+        return 0;
+
+    return
+        full_frame_height !=
+            (u64)active_video_mode->raster_height;
+}
+
+==============================================================================
+working/b4a/ps2vnc_runtime_core.inc:112-117 ps2vnc_hires_requires_raster_mapping
+SIGNALS=
+LOCAL_CALLS=ps2vnc_hires_requires_horizontal_mapping,ps2vnc_hires_requires_vertical_mapping
+==============================================================================
+int ps2vnc_hires_requires_raster_mapping(void)
+{
+    return
+        ps2vnc_hires_requires_horizontal_mapping() ||
+        ps2vnc_hires_requires_vertical_mapping();
+}
+
+==============================================================================
+working/b4a/ps2vnc_runtime_core.inc:559-599 rfb_dirty_mark_rect
+SIGNALS=FRAMEBUFFER_RFB
+LOCAL_CALLS=
+==============================================================================
+ void rfb_dirty_mark_rect(
+    unsigned int x,
+    unsigned int y,
+    unsigned int w,
+    unsigned int h)
+{
+    unsigned int row;
+
+    if (w == 0 || h == 0)
+        return;
+
+    if (!rfb_dirty_valid) {
+        rfb_dirty_x0 = x;
+        rfb_dirty_y0 = y;
+        rfb_dirty_x1 = x + w;
+        rfb_dirty_y1 = y + h;
+        rfb_dirty_valid = 1;
+    } else {
+        if (x < rfb_dirty_x0)
+            rfb_dirty_x0 = x;
+        if (y < rfb_dirty_y0)
+            rfb_dirty_y0 = y;
+        if (x + w > rfb_dirty_x1)
+            rfb_dirty_x1 = x + w;
+        if (y + h > rfb_dirty_y1)
+            rfb_dirty_y1 = y + h;
+    }
+
+    for (row = y; row < y + h; row++) {
+        if (!rfb_dirty_row_valid[row]) {
+            rfb_dirty_row_x0[row] = x;
+            rfb_dirty_row_x1[row] = x + w;
+            rfb_dirty_row_valid[row] = 1;
+        } else {
+            if (x < rfb_dirty_row_x0[row])
+                rfb_dirty_row_x0[row] = x;
+            if (x + w > rfb_dirty_row_x1[row])
+                rfb_dirty_row_x1[row] = x + w;
+        }
+    }
+}
+
+==============================================================================
+working/b4a/ps2vnc_runtime_tail.inc:1471-1507 osk_fill_rect
+SIGNALS=
+LOCAL_CALLS=
+==============================================================================
+void osk_fill_rect(
+    int x,
+    int y,
+    int w,
+    int h,
+    unsigned short color)
+{
+    int yy;
+    int xx;
+
+    if (x < 0) {
+        w += x;
+        x = 0;
+    }
+
+    if (y < 0) {
+        h += y;
+        y = 0;
+    }
+
+    if (x + w > OSK_WIDTH)
+        w = OSK_WIDTH - x;
+
+    if (y + h > OSK_HEIGHT)
+        h = OSK_HEIGHT - y;
+
+    if (w <= 0 || h <= 0)
+        return;
+
+    for (yy = y; yy < y + h; yy++) {
+        unsigned short *row =
+            &osk_pixels[yy * OSK_WIDTH + x];
+
+        for (xx = 0; xx < w; xx++)
+            row[xx] = color;
+    }
+}
+

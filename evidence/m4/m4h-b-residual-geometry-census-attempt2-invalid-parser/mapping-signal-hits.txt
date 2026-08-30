@@ -1,0 +1,726 @@
+src/video/geometry.c:145:    unsigned int desktop_capacity_width,
+src/video/geometry.c:146:    unsigned int desktop_capacity_height,
+src/video/geometry.c:157:    if (desktop_capacity_width == 0u ||
+src/video/geometry.c:158:        desktop_capacity_height == 0u)
+src/video/geometry.c:168:        (safe_area->width < desktop_capacity_width) ?
+src/video/geometry.c:170:        desktop_capacity_width;
+src/video/geometry.c:173:        (safe_area->height < desktop_capacity_height) ?
+src/video/geometry.c:175:        desktop_capacity_height;
+src/video/geometry.h:59:    unsigned int desktop_capacity_width,
+src/video/geometry.h:60:    unsigned int desktop_capacity_height,
+src/video/mode.h:37:     * Ordinary gsKit drawing/framebuffer geometry.
+working/b4a/ps2vnc_calibration_core.inc:328:            startup_authoritative_display_profile.logical_width,
+working/b4a/ps2vnc_calibration_core.inc:329:            startup_authoritative_display_profile.logical_height);
+working/b4a/ps2vnc_calibration_core.inc:406:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_calibration_core.inc:407:    unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_calibration_core.inc:436:            rfb_framebuffer,
+working/b4a/ps2vnc_calibration_core.inc:437:            gs_framebuffer);
+working/b4a/ps2vnc_calibration_core.inc:517:            desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:518:            desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:527:            desktop_width,
+working/b4a/ps2vnc_calibration_core.inc:528:            desktop_height);
+working/b4a/ps2vnc_calibration_core.inc:532:         * RGB565 -> Raw -> one complete framebuffer -> EDS capability probe.
+working/b4a/ps2vnc_calibration_core.inc:535:         * bounded by the actual allocated framebuffer capacity.
+working/b4a/ps2vnc_calibration_core.inc:545:            request_framebuffer(sock, 0) < 0)
+working/b4a/ps2vnc_calibration_core.inc:549:            receive_framebuffer_update(
+working/b4a/ps2vnc_calibration_core.inc:551:                rfb_framebuffer,
+working/b4a/ps2vnc_calibration_core.inc:552:                gs_framebuffer,
+working/b4a/ps2vnc_calibration_core.inc:560:                rfb_framebuffer,
+working/b4a/ps2vnc_calibration_core.inc:561:                gs_framebuffer) < 0)
+working/b4a/ps2vnc_calibration_core.inc:570:            (desktop_width != target_width ||
+working/b4a/ps2vnc_calibration_core.inc:571:             desktop_height != target_height)) {
+working/b4a/ps2vnc_calibration_core.inc:575:                desktop_width,
+working/b4a/ps2vnc_calibration_core.inc:576:                desktop_height,
+working/b4a/ps2vnc_calibration_core.inc:582:                    rfb_framebuffer,
+working/b4a/ps2vnc_calibration_core.inc:583:                    gs_framebuffer,
+working/b4a/ps2vnc_calibration_core.inc:599:                desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:600:                desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:604:                 * Obtain a clean authoritative framebuffer using the NEW
+working/b4a/ps2vnc_calibration_core.inc:608:                    request_framebuffer(sock, 0) < 0 ||
+working/b4a/ps2vnc_calibration_core.inc:609:                    receive_framebuffer_update(
+working/b4a/ps2vnc_calibration_core.inc:611:                        rfb_framebuffer,
+working/b4a/ps2vnc_calibration_core.inc:612:                        gs_framebuffer,
+working/b4a/ps2vnc_calibration_core.inc:626:            desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:627:            desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:633:            if (desktop_width != target_width ||
+working/b4a/ps2vnc_calibration_core.inc:634:                desktop_height != target_height ||
+working/b4a/ps2vnc_calibration_core.inc:645:                desktop_width,
+working/b4a/ps2vnc_calibration_core.inc:646:                desktop_height);
+working/b4a/ps2vnc_calibration_core.inc:661:        desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:662:        desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:670:    desktop_width = target_width;
+working/b4a/ps2vnc_calibration_core.inc:671:    desktop_height = target_height;
+working/b4a/ps2vnc_calibration_core.inc:1448:        display.safe_width,
+working/b4a/ps2vnc_calibration_core.inc:1449:        display.safe_height,
+working/b4a/ps2vnc_calibration_core.inc:1484:        desktop_width,
+working/b4a/ps2vnc_calibration_core.inc:1485:        desktop_height,
+working/b4a/ps2vnc_calibration_core_to_tail.h:22:extern int ps2vnc_display_save_to_pi (int width, int height, int offset_x, int offset_y);
+working/b4a/ps2vnc_calibration_tail.inc:43:    int scale,
+working/b4a/ps2vnc_calibration_tail.inc:58:                    (float)(x + gx * scale),
+working/b4a/ps2vnc_calibration_tail.inc:59:                    (float)(y + gy * scale),
+working/b4a/ps2vnc_calibration_tail.inc:60:                    (float)(x + (gx + 1) * scale),
+working/b4a/ps2vnc_calibration_tail.inc:61:                    (float)(y + (gy + 1) * scale),
+working/b4a/ps2vnc_calibration_tail.inc:75:    int scale,
+working/b4a/ps2vnc_calibration_tail.inc:79:    int char_w = 6 * scale;
+working/b4a/ps2vnc_calibration_tail.inc:80:    int text_w = len * char_w - scale;
+working/b4a/ps2vnc_calibration_tail.inc:90:            scale,
+working/b4a/ps2vnc_calibration_tail.inc:460:        if (desktop_width >
+working/b4a/ps2vnc_calibration_tail.inc:467:                (int)desktop_width;
+working/b4a/ps2vnc_calibration_tail.inc:470:        if (desktop_height >
+working/b4a/ps2vnc_calibration_tail.inc:477:                (int)desktop_height;
+working/b4a/ps2vnc_calibration_tail.inc:859: * sizes its VRAM desktop texture from desktop_width/desktop_height, so
+working/b4a/ps2vnc_calibration_tail.inc:865:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:866:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:889:    if (desktop_width != width ||
+working/b4a/ps2vnc_calibration_tail.inc:890:        desktop_height != height) {
+working/b4a/ps2vnc_calibration_tail.inc:894:                rfb_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:895:                gs_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:902:     * From here forward gs_framebuffer is interpreted at the new tightly
+working/b4a/ps2vnc_calibration_tail.inc:905:    desktop_width = width;
+working/b4a/ps2vnc_calibration_tail.inc:906:    desktop_height = height;
+working/b4a/ps2vnc_calibration_tail.inc:909:    desktop_output_width = width;
+working/b4a/ps2vnc_calibration_tail.inc:910:    desktop_output_height = height;
+working/b4a/ps2vnc_calibration_tail.inc:923:    if (request_framebuffer(sock, 0) < 0)
+working/b4a/ps2vnc_calibration_tail.inc:926:    if (receive_framebuffer_update(
+working/b4a/ps2vnc_calibration_tail.inc:928:            rfb_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:929:            gs_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:937:            gs_framebuffer) < 0)
+working/b4a/ps2vnc_calibration_tail.inc:968:     * GS framebuffer geometry.  In particular, 480i is 704x464 logical
+working/b4a/ps2vnc_calibration_tail.inc:971:    if (desktop_width != active_video_mode->standard_logical_width ||
+working/b4a/ps2vnc_calibration_tail.inc:972:        desktop_height != active_video_mode->standard_logical_height ||
+working/b4a/ps2vnc_calibration_tail.inc:973:        tex->Width != desktop_width ||
+working/b4a/ps2vnc_calibration_tail.inc:974:        tex->Height != desktop_height)
+working/b4a/ps2vnc_calibration_tail.inc:984:    desktop_output_width = width;
+working/b4a/ps2vnc_calibration_tail.inc:985:    desktop_output_height = height;
+working/b4a/ps2vnc_calibration_tail.inc:1005:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:1006:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:1059:                rfb_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:1060:                gs_framebuffer,
+working/b4a/ps2vnc_calibration_tail.inc:1191:     * These are GS framebuffer/drawing dimensions, not physical-raster or
+working/b4a/ps2vnc_calibration_tail.inc:1193:     * store their already-halved GS framebuffer height in the mode record.
+working/b4a/ps2vnc_calibration_tail.inc:1260:    hires_mapped_source_framebuffer = NULL;
+working/b4a/ps2vnc_calibration_tail.inc:1261:    live_linear_framebuffer_stale = 0;
+working/b4a/ps2vnc_calibration_tail.inc:1421:    unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_calibration_tail.inc:1452:    hires_mapped_source_framebuffer =
+working/b4a/ps2vnc_calibration_tail.inc:1453:        ps2vnc_hires_requires_raster_mapping()
+working/b4a/ps2vnc_calibration_tail.inc:1454:            ? gs_framebuffer
+working/b4a/ps2vnc_calibration_tail.inc:1457:    if (publish_hires_background(gsGlobal, tex, gs_framebuffer) < 0) {
+working/b4a/ps2vnc_calibration_tail.inc:1462:    if (ps2vnc_hires_requires_raster_mapping()) {
+working/b4a/ps2vnc_calibration_tail.inc:1483: * Ordinary gsKit presents the authoritative linear GS16 framebuffer as a
+working/b4a/ps2vnc_calibration_tail.inc:1490:    unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_calibration_tail.inc:1494:        gs_framebuffer == NULL ||
+working/b4a/ps2vnc_calibration_tail.inc:1495:        desktop_width == 0 ||
+working/b4a/ps2vnc_calibration_tail.inc:1496:        desktop_height == 0)
+working/b4a/ps2vnc_calibration_tail.inc:1501:    tex->Width = desktop_width;
+working/b4a/ps2vnc_calibration_tail.inc:1502:    tex->Height = desktop_height;
+working/b4a/ps2vnc_calibration_tail.inc:1504:    tex->Mem = (u32 *)gs_framebuffer;
+working/b4a/ps2vnc_calibration_tail.inc:1519:    live_linear_framebuffer_stale = 0;
+working/b4a/ps2vnc_calibration_tail.inc:1529:    unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_calibration_tail.inc:1533:            gsGlobal, tex, gs_framebuffer);
+working/b4a/ps2vnc_calibration_tail.inc:1537:            gsGlobal, tex, gs_framebuffer);
+working/b4a/ps2vnc_calibration_tail.inc:1569:    if (tex->Width != desktop_width ||
+working/b4a/ps2vnc_calibration_tail.inc:1570:        tex->Height != desktop_height ||
+working/b4a/ps2vnc_calibration_tail.inc:1578:        (float)(desktop_output_x + desktop_output_width));
+working/b4a/ps2vnc_calibration_tail.inc:1580:        (float)(desktop_output_y + desktop_output_height));
+working/b4a/ps2vnc_calibration_tail.inc:1611:        gsKit_texture_size(OSK_WIDTH, OSK_HEIGHT, GS_PSM_CT16),
+working/b4a/ps2vnc_display.c:12: *   - framebuffer_engine
+working/b4a/ps2vnc_display_core.inc:3:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:4:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:80:    if (desktop_width != logical_width ||
+working/b4a/ps2vnc_display_core.inc:81:        desktop_height != logical_height) {
+working/b4a/ps2vnc_display_core.inc:84:                rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:85:                gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:94:    desktop_width = logical_width;
+working/b4a/ps2vnc_display_core.inc:95:    desktop_height = logical_height;
+working/b4a/ps2vnc_display_core.inc:98:    desktop_output_width = width;
+working/b4a/ps2vnc_display_core.inc:99:    desktop_output_height = height;
+working/b4a/ps2vnc_display_core.inc:105:     * Build an authoritative framebuffer at the backend-selected logical
+working/b4a/ps2vnc_display_core.inc:114:    if (request_framebuffer(sock, 0) < 0)
+working/b4a/ps2vnc_display_core.inc:120:    if (receive_framebuffer_update(
+working/b4a/ps2vnc_display_core.inc:122:            rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:123:            gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:134:            gs_framebuffer) < 0)
+working/b4a/ps2vnc_display_core.inc:181:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:182:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:217:            rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:218:            gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:291:        rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:292:        gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:397:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:398:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:424:        display_confirm_previous_screen_fit_width;
+working/b4a/ps2vnc_display_core.inc:426:        display_confirm_previous_screen_fit_height;
+working/b4a/ps2vnc_display_core.inc:466:                rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:467:                gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:481:            rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:482:            gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:520:        desktop_width != previous_desktop_w ||
+working/b4a/ps2vnc_display_core.inc:521:        desktop_height != previous_desktop_h ||
+working/b4a/ps2vnc_display_core.inc:524:        desktop_output_width != previous_w ||
+working/b4a/ps2vnc_display_core.inc:525:        desktop_output_height != previous_h ||
+working/b4a/ps2vnc_display_core.inc:592: *   - complete Raw framebuffer obtained
+working/b4a/ps2vnc_display_core.inc:1106:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:1107:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_display_core.inc:1138:        rfb_framebuffer,
+working/b4a/ps2vnc_display_core.inc:1139:        gs_framebuffer,
+working/b4a/ps2vnc_display_core_to_tail.h:11:extern int ps2vnc_global_rollback_display_transaction (int old_sock, int transport_dirty, short unsigned int *rfb_framebuffer, short unsigned int *gs_framebuffer, GSGLOBAL **display, GSTEXTURE *tex, GSTEXTURE *osk_tex);
+working/b4a/ps2vnc_display_core_to_tail.h:17:extern int ps2vnc_switch_display_mode (int sock, short unsigned int *rfb_framebuffer, short unsigned int *gs_framebuffer, GSGLOBAL **display, GSTEXTURE *tex, GSTEXTURE *osk_tex, const ps2vnc_video_mode_t *mode, unsigned int out_x, unsigned int out_y, unsigned int width, unsigned int height);
+working/b4a/ps2vnc_display_tail.c:12: *   - framebuffer_engine
+working/b4a/ps2vnc_display_tail.inc:2:                                unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:3:                                unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_display_tail.inc:13:     * incremental FramebufferUpdateRequest.
+working/b4a/ps2vnc_display_tail.inc:99:        if (desktop_width != logical_w ||
+working/b4a/ps2vnc_display_tail.inc:100:            desktop_height != logical_h) {
+working/b4a/ps2vnc_display_tail.inc:104:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:105:                    gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:114:         * From this point onward the RFB framebuffer is tightly packed at
+working/b4a/ps2vnc_display_tail.inc:115:         * the backend-selected logical desktop width. HIRES uses the
+working/b4a/ps2vnc_display_tail.inc:116:         * calibrated width; Standard uses its fixed framebuffer width.
+working/b4a/ps2vnc_display_tail.inc:118:        desktop_width = logical_w;
+working/b4a/ps2vnc_display_tail.inc:119:        desktop_height = logical_h;
+working/b4a/ps2vnc_display_tail.inc:123:        desktop_output_width = target_w;
+working/b4a/ps2vnc_display_tail.inc:124:        desktop_output_height = target_h;
+working/b4a/ps2vnc_display_tail.inc:132:         * complete Raw framebuffer at the NEW desktop geometry.
+working/b4a/ps2vnc_display_tail.inc:139:        if (request_framebuffer(sock, 0) < 0)
+working/b4a/ps2vnc_display_tail.inc:142:        if (receive_framebuffer_update(
+working/b4a/ps2vnc_display_tail.inc:144:                rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:145:                gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:154:            gsGlobal, &tex, gs_framebuffer) < 0) {
+working/b4a/ps2vnc_display_tail.inc:220:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:221:                    gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:284:         * before the next incremental framebuffer request can be issued.
+working/b4a/ps2vnc_display_tail.inc:397:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:398:                    gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:471:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:472:                    gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:489:             * RFB_RECEIVE_LOCAL_REDRAW path.  That path correctly preserves
+working/b4a/ps2vnc_display_tail.inc:496:             * incremental FramebufferUpdateRequest for the restored geometry.
+working/b4a/ps2vnc_display_tail.inc:695:                desktop_output_width,
+working/b4a/ps2vnc_display_tail.inc:696:                desktop_output_height,
+working/b4a/ps2vnc_display_tail.inc:708:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:709:                    gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:723:             * framebuffer requests and consumes the authoritative candidate
+working/b4a/ps2vnc_display_tail.inc:727:             * older incremental FramebufferUpdateRequest at a clean message
+working/b4a/ps2vnc_display_tail.inc:773:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:774:                        gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:831:                            rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:832:                            gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:897:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:898:                        gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:997:                    float scale_x;
+working/b4a/ps2vnc_display_tail.inc:998:                    float scale_y;
+working/b4a/ps2vnc_display_tail.inc:999:                    float scale;
+working/b4a/ps2vnc_display_tail.inc:1014:                            desktop_output_width,
+working/b4a/ps2vnc_display_tail.inc:1015:                            desktop_output_height,
+working/b4a/ps2vnc_display_tail.inc:1021:                        safe_w = (float)desktop_output_width;
+working/b4a/ps2vnc_display_tail.inc:1022:                        safe_h = (float)desktop_output_height;
+working/b4a/ps2vnc_display_tail.inc:1025:                    scale_x =
+working/b4a/ps2vnc_display_tail.inc:1029:                    scale_y =
+working/b4a/ps2vnc_display_tail.inc:1033:                    scale =
+working/b4a/ps2vnc_display_tail.inc:1034:                        (scale_x < scale_y) ?
+working/b4a/ps2vnc_display_tail.inc:1035:                        scale_x : scale_y;
+working/b4a/ps2vnc_display_tail.inc:1045:                        scale > 1.0f) {
+working/b4a/ps2vnc_display_tail.inc:1047:                        scale = 1.0f;
+working/b4a/ps2vnc_display_tail.inc:1050:                    if (scale < 0.25f)
+working/b4a/ps2vnc_display_tail.inc:1051:                        scale = 0.25f;
+working/b4a/ps2vnc_display_tail.inc:1053:                    dst_w = (float)OSK_WIDTH * scale;
+working/b4a/ps2vnc_display_tail.inc:1054:                    dst_h = (float)OSK_HEIGHT * scale;
+working/b4a/ps2vnc_display_tail.inc:1160:        if (request_framebuffer(sock, 1) < 0) {
+working/b4a/ps2vnc_display_tail.inc:1181:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1182:                        gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1205:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1206:                    gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1258:            changed_bytes = receive_framebuffer_update(
+working/b4a/ps2vnc_display_tail.inc:1260:                rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1261:                gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1280:             * Any real FramebufferUpdate completion or transport failure
+working/b4a/ps2vnc_display_tail.inc:1319:                    rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1320:                            gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1341:                            rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1342:                            gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1406:                            rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1407:                            gs_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1455:    unsigned short *rfb_framebuffer;
+working/b4a/ps2vnc_display_tail.inc:1456:    unsigned short *gs_framebuffer;
+working/b4a/ps2vnc_display_tail.inc:1461:     * Use one authoritative EE framebuffer for both receive and GS-ready
+working/b4a/ps2vnc_display_tail.inc:1464:     * Keep the rfb_framebuffer alias temporarily so the proven connection,
+working/b4a/ps2vnc_display_tail.inc:1467:    gs_framebuffer = (unsigned short *)memalign(
+working/b4a/ps2vnc_display_tail.inc:1472:    if (gs_framebuffer == NULL)
+working/b4a/ps2vnc_display_tail.inc:1475:    rfb_framebuffer = gs_framebuffer;
+working/b4a/ps2vnc_display_tail.inc:1477:    memset(gs_framebuffer, 0,
+working/b4a/ps2vnc_display_tail.inc:1638:        rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1639:        gs_framebuffer
+working/b4a/ps2vnc_display_tail.inc:1648:    screenf("FULL FRAMEBUFFER RECEIVED");
+working/b4a/ps2vnc_display_tail.inc:1664:            rfb_framebuffer,
+working/b4a/ps2vnc_display_tail.inc:1665:            gs_framebuffer);
+working/b4a/ps2vnc_framebuffer.c:4: * This TU gives the existing framebuffer-engine semantic leaf a real
+working/b4a/ps2vnc_framebuffer.c:17:#include "ps2vnc_runtime_to_framebuffer.h"
+working/b4a/ps2vnc_framebuffer.c:19:#include "ps2vnc_framebuffer_core.inc"
+working/b4a/ps2vnc_framebuffer_core.inc:43:int request_framebuffer(int sock, int incremental)
+working/b4a/ps2vnc_framebuffer_core.inc:49:        (desktop_width >> 8) & 0xFF,
+working/b4a/ps2vnc_framebuffer_core.inc:50:        desktop_width & 0xFF,
+working/b4a/ps2vnc_framebuffer_core.inc:51:        (desktop_height >> 8) & 0xFF,
+working/b4a/ps2vnc_framebuffer_core.inc:52:        desktop_height & 0xFF
+working/b4a/ps2vnc_framebuffer_core.inc:56:     * FramebufferUpdateRequest byte 1:
+working/b4a/ps2vnc_framebuffer_core.inc:71: * RFB is requested directly as GS-compatible B5:G5:R5.
+working/b4a/ps2vnc_framebuffer_core.inc:80:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:81:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:93:    if (rfb_framebuffer != gs_framebuffer)
+working/b4a/ps2vnc_framebuffer_core.inc:94:        rfb_framebuffer[index] = wire_pixel;
+working/b4a/ps2vnc_framebuffer_core.inc:96:    gs_framebuffer[index] = gs_pixel;
+working/b4a/ps2vnc_framebuffer_core.inc:109:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:110:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:120:        unsigned int base = (y + row) * desktop_width + x;
+working/b4a/ps2vnc_framebuffer_core.inc:129:                rfb_framebuffer, gs_framebuffer, base + col,
+working/b4a/ps2vnc_framebuffer_core.inc:148:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:149:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:161:            ? &rfb_framebuffer[(ty + row) * desktop_width + tx]
+working/b4a/ps2vnc_framebuffer_core.inc:172:                (ty + row) * desktop_width + tx;
+working/b4a/ps2vnc_framebuffer_core.inc:181:                    rfb_framebuffer, gs_framebuffer, base + col,
+working/b4a/ps2vnc_framebuffer_core.inc:193:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:194:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:229:                rfb_framebuffer, gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:239:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:240:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:266:                        sock, rfb_framebuffer, gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:287:                    rfb_framebuffer, gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:317:                        sock, rfb_framebuffer, gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:337: * Receive one Raw FramebufferUpdate.
+working/b4a/ps2vnc_framebuffer_core.inc:340: * RFB pixels arrive in GS-compatible B5:G5:R5 ordering. rfb_framebuffer
+working/b4a/ps2vnc_framebuffer_core.inc:341: * may alias gs_framebuffer, allowing each Raw row to be received directly
+working/b4a/ps2vnc_framebuffer_core.inc:342: * into the authoritative framebuffer and finalized in place by setting A1.
+working/b4a/ps2vnc_framebuffer_core.inc:370: * Receive the next FramebufferUpdate, while safely consuming other legal
+working/b4a/ps2vnc_framebuffer_core.inc:378: * (FramebufferUpdate), so selecting text looked like a VNC/video freeze.
+working/b4a/ps2vnc_framebuffer_core.inc:381: *   0 = FramebufferUpdate
+working/b4a/ps2vnc_framebuffer_core.inc:387: *   >0  number of raw framebuffer pixel bytes received
+working/b4a/ps2vnc_framebuffer_core.inc:388: *    0  valid FramebufferUpdate containing zero rectangles
+working/b4a/ps2vnc_framebuffer_core.inc:392:int receive_framebuffer_update(
+working/b4a/ps2vnc_framebuffer_core.inc:394:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:395:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:523:             * completed FramebufferUpdate.
+working/b4a/ps2vnc_framebuffer_core.inc:528:             * FramebufferUpdate after the already-consumed type byte:
+working/b4a/ps2vnc_framebuffer_core.inc:558:                screenf("FramebufferUpdate: %u rectangle(s)", rect_count);
+working/b4a/ps2vnc_framebuffer_core.inc:626:                 * ExtendedDesktopSize pseudo-rectangle (-308).
+working/b4a/ps2vnc_framebuffer_core.inc:630:                 * w/h = framebuffer dimensions
+working/b4a/ps2vnc_framebuffer_core.inc:665:                    rfb_extended_desktop_width = w;
+working/b4a/ps2vnc_framebuffer_core.inc:666:                    rfb_extended_desktop_height = h;
+working/b4a/ps2vnc_framebuffer_core.inc:677:                    rfb_first_screen_width = 0;
+working/b4a/ps2vnc_framebuffer_core.inc:678:                    rfb_first_screen_height = 0;
+working/b4a/ps2vnc_framebuffer_core.inc:713:                            rfb_first_screen_width =
+working/b4a/ps2vnc_framebuffer_core.inc:716:                            rfb_first_screen_height =
+working/b4a/ps2vnc_framebuffer_core.inc:744:                                rfb_first_screen_width,
+working/b4a/ps2vnc_framebuffer_core.inc:745:                                rfb_first_screen_height
+working/b4a/ps2vnc_framebuffer_core.inc:761:                        if (w != rfb_resize_expected_width ||
+working/b4a/ps2vnc_framebuffer_core.inc:762:                            h != rfb_resize_expected_height) {
+working/b4a/ps2vnc_framebuffer_core.inc:774:                        if (w != desktop_width ||
+working/b4a/ps2vnc_framebuffer_core.inc:775:                            h != desktop_height) {
+working/b4a/ps2vnc_framebuffer_core.inc:811:                    desktop_width,
+working/b4a/ps2vnc_framebuffer_core.inc:812:                    desktop_height)) {
+working/b4a/ps2vnc_framebuffer_core.inc:815:                        screenf("ERROR: rectangle outside framebuffer");
+working/b4a/ps2vnc_framebuffer_core.inc:822:                 * may send several rectangles in one FramebufferUpdate.
+working/b4a/ps2vnc_framebuffer_core.inc:825:                    rfb_dirty_mark_rect(x, y, w, h);
+working/b4a/ps2vnc_framebuffer_core.inc:841:                        live_linear_framebuffer_stale = 1;
+working/b4a/ps2vnc_framebuffer_core.inc:846:                        sock, rfb_framebuffer, gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:864:                    live_linear_framebuffer_stale) {
+working/b4a/ps2vnc_framebuffer_core.inc:878:                         * but do not touch either framebuffer.
+working/b4a/ps2vnc_framebuffer_core.inc:896:                            &rfb_framebuffer[
+working/b4a/ps2vnc_framebuffer_core.inc:897:                                (y + row) * desktop_width + x
+working/b4a/ps2vnc_framebuffer_core.inc:900:                            &gs_framebuffer[
+working/b4a/ps2vnc_framebuffer_core.inc:901:                                (y + row) * desktop_width + x
+working/b4a/ps2vnc_framebuffer_core.inc:925:                screenf("Raw framebuffer bytes: %u", total_bytes);
+working/b4a/ps2vnc_framebuffer_core.inc:928:                total_bytes != (desktop_width * desktop_height * 2)) {
+working/b4a/ps2vnc_framebuffer_core.inc:933:                            desktop_width * desktop_height * 2
+working/b4a/ps2vnc_framebuffer_core.inc:961: * framebuffer has already been received.
+working/b4a/ps2vnc_framebuffer_core.inc:964: * non-incremental FramebufferUpdateRequest with an
+working/b4a/ps2vnc_framebuffer_core.inc:965: * ExtendedDesktopSize rectangle once -308 has been advertised.
+working/b4a/ps2vnc_framebuffer_core.inc:972:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:973:    unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_framebuffer_core.inc:978:    rfb_extended_desktop_width = 0;
+working/b4a/ps2vnc_framebuffer_core.inc:979:    rfb_extended_desktop_height = 0;
+working/b4a/ps2vnc_framebuffer_core.inc:985:    rfb_first_screen_width = 0;
+working/b4a/ps2vnc_framebuffer_core.inc:986:    rfb_first_screen_height = 0;
+working/b4a/ps2vnc_framebuffer_core.inc:994:    if (request_framebuffer(sock, 0) < 0) {
+working/b4a/ps2vnc_framebuffer_core.inc:999:    if (receive_framebuffer_update(
+working/b4a/ps2vnc_framebuffer_core.inc:1001:            rfb_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:1002:            gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_core.inc:1020:    if (rfb_extended_desktop_width != desktop_width ||
+working/b4a/ps2vnc_framebuffer_core.inc:1021:        rfb_extended_desktop_height != desktop_height) {
+working/b4a/ps2vnc_framebuffer_core.inc:1025:            rfb_extended_desktop_width,
+working/b4a/ps2vnc_framebuffer_core.inc:1026:            rfb_extended_desktop_height
+working/b4a/ps2vnc_framebuffer_core.inc:1034:        rfb_extended_desktop_width,
+working/b4a/ps2vnc_framebuffer_core.inc:1035:        rfb_extended_desktop_height,
+working/b4a/ps2vnc_framebuffer_core.inc:1077: * When only horizontal mapping is active, however, Y remains physical
+working/b4a/ps2vnc_framebuffer_core.inc:1084:    if (ps2vnc_hires_requires_vertical_mapping())
+working/b4a/ps2vnc_framebuffer_core.inc:1105:     * authoritative source framebuffer and publish through the mapper instead.
+working/b4a/ps2vnc_framebuffer_core.inc:1108:           !ps2vnc_hires_requires_raster_mapping() &&
+working/b4a/ps2vnc_framebuffer_core.inc:1120:    if (x >= desktop_width || y >= desktop_height)
+working/b4a/ps2vnc_framebuffer_core.inc:1138:        !ps2vnc_hires_requires_raster_mapping())
+working/b4a/ps2vnc_framebuffer_core.inc:1170:        !region_fits_u32(x, y, w, h, desktop_width, desktop_height))
+working/b4a/ps2vnc_framebuffer_core.inc:1192: * FramebufferUpdate.
+working/b4a/ps2vnc_framebuffer_core.inc:1203:        desktop_height > VNC_HEIGHT ||
+working/b4a/ps2vnc_framebuffer_core.inc:1204:        rfb_dirty_y1 > desktop_height)
+working/b4a/ps2vnc_framebuffer_core.inc:1219:        if (x1 <= x0 || x1 > desktop_width)
+working/b4a/ps2vnc_framebuffer_core.inc:1247:    const unsigned short *gs_framebuffer);
+working/b4a/ps2vnc_framebuffer_core.inc:1256: * 720x480 physical/RFB -> 704x462 gsHires mapping. Rebuilding the displayed
+working/b4a/ps2vnc_framebuffer_core.inc:1264: * Mapping arithmetic remains inside publish_hires_background(); this helper
+working/b4a/ps2vnc_framebuffer_core_to_tail.h:1:#ifndef PS2VNC_FRAMEBUFFER_CORE_TO_TAIL_H
+working/b4a/ps2vnc_framebuffer_core_to_tail.h:2:#define PS2VNC_FRAMEBUFFER_CORE_TO_TAIL_H
+working/b4a/ps2vnc_framebuffer_core_to_tail.h:5: * M3U recursive framebuffer split interface.
+working/b4a/ps2vnc_framebuffer_engine.inc:1:#include "ps2vnc_framebuffer_core.inc"
+working/b4a/ps2vnc_framebuffer_engine.inc:2:#include "ps2vnc_framebuffer_tail.inc"
+working/b4a/ps2vnc_framebuffer_tail.c:4: * This TU gives the existing framebuffer-engine semantic leaf a real
+working/b4a/ps2vnc_framebuffer_tail.c:17:#include "ps2vnc_runtime_to_framebuffer.h"
+working/b4a/ps2vnc_framebuffer_tail.c:19:#include "ps2vnc_framebuffer_core_to_tail.h"
+working/b4a/ps2vnc_framebuffer_tail.c:20:#include "ps2vnc_framebuffer_tail.inc"
+working/b4a/ps2vnc_framebuffer_tail.inc:4:    const unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_framebuffer_tail.inc:9:    if (!ps2vnc_hires_requires_raster_mapping() ||
+working/b4a/ps2vnc_framebuffer_tail.inc:12:        gs_framebuffer == NULL ||
+working/b4a/ps2vnc_framebuffer_tail.inc:37:            gs_framebuffer) < 0) {
+working/b4a/ps2vnc_framebuffer_tail.inc:74: * FramebufferUpdate.
+working/b4a/ps2vnc_framebuffer_tail.inc:81: * Production mapping now applies the same relationship generically using the
+working/b4a/ps2vnc_framebuffer_tail.inc:93:    const unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_framebuffer_tail.inc:100:     * neighbor sampling and inverse dirty-boundary mappings instead of doing
+working/b4a/ps2vnc_framebuffer_tail.inc:119:    static unsigned int cached_desktop_width;
+working/b4a/ps2vnc_framebuffer_tail.inc:120:    static unsigned int cached_desktop_height;
+working/b4a/ps2vnc_framebuffer_tail.inc:156:    if (!ps2vnc_hires_requires_raster_mapping() ||
+working/b4a/ps2vnc_framebuffer_tail.inc:158:        gs_framebuffer == NULL ||
+working/b4a/ps2vnc_framebuffer_tail.inc:160:        desktop_width == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:161:        desktop_height == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:162:        desktop_output_width == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:163:        desktop_output_height == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:166:        desktop_width > VNC_WIDTH ||
+working/b4a/ps2vnc_framebuffer_tail.inc:167:        desktop_height > VNC_HEIGHT ||
+working/b4a/ps2vnc_framebuffer_tail.inc:168:        rfb_dirty_y1 > desktop_height ||
+working/b4a/ps2vnc_framebuffer_tail.inc:173:            desktop_output_width,
+working/b4a/ps2vnc_framebuffer_tail.inc:174:            desktop_output_height,
+working/b4a/ps2vnc_framebuffer_tail.inc:201:        cached_desktop_width != desktop_width ||
+working/b4a/ps2vnc_framebuffer_tail.inc:202:        cached_desktop_height != desktop_height ||
+working/b4a/ps2vnc_framebuffer_tail.inc:205:        cached_output_w != desktop_output_width ||
+working/b4a/ps2vnc_framebuffer_tail.inc:206:        cached_output_h != desktop_output_height;
+working/b4a/ps2vnc_framebuffer_tail.inc:217:                ((u64)desktop_output_x * storage_width) /
+working/b4a/ps2vnc_framebuffer_tail.inc:222:                ((u64)desktop_output_y * storage_height) /
+working/b4a/ps2vnc_framebuffer_tail.inc:228:                    desktop_output_x + desktop_output_width) *
+working/b4a/ps2vnc_framebuffer_tail.inc:236:                    desktop_output_y + desktop_output_height) *
+working/b4a/ps2vnc_framebuffer_tail.inc:268:                    ((u64)i * desktop_width) /
+working/b4a/ps2vnc_framebuffer_tail.inc:275:                    ((u64)i * desktop_height) /
+working/b4a/ps2vnc_framebuffer_tail.inc:284:        for (i = 0; i <= desktop_width; i++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:288:                     desktop_width - 1) /
+working/b4a/ps2vnc_framebuffer_tail.inc:289:                    desktop_width);
+working/b4a/ps2vnc_framebuffer_tail.inc:292:        for (i = 0; i <= desktop_height; i++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:296:                     desktop_height - 1) /
+working/b4a/ps2vnc_framebuffer_tail.inc:297:                    desktop_height);
+working/b4a/ps2vnc_framebuffer_tail.inc:306:        cached_desktop_width = desktop_width;
+working/b4a/ps2vnc_framebuffer_tail.inc:307:        cached_desktop_height = desktop_height;
+working/b4a/ps2vnc_framebuffer_tail.inc:311:        cached_output_w = desktop_output_width;
+working/b4a/ps2vnc_framebuffer_tail.inc:312:        cached_output_h = desktop_output_height;
+working/b4a/ps2vnc_framebuffer_tail.inc:362:        if (src_y >= desktop_height)
+working/b4a/ps2vnc_framebuffer_tail.inc:372:            src_x1 > desktop_width) {
+working/b4a/ps2vnc_framebuffer_tail.inc:401:            &gs_framebuffer[
+working/b4a/ps2vnc_framebuffer_tail.inc:402:                src_y * desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:414:                src_x >= desktop_width) {
+working/b4a/ps2vnc_framebuffer_tail.inc:436: * ownership model, but with scaled dirty spans:
+working/b4a/ps2vnc_framebuffer_tail.inc:454:    const unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_framebuffer_tail.inc:459:    if (!ps2vnc_hires_requires_raster_mapping() ||
+working/b4a/ps2vnc_framebuffer_tail.inc:462:        gs_framebuffer == NULL ||
+working/b4a/ps2vnc_framebuffer_tail.inc:478:     * from the dirty scaler itself.
+working/b4a/ps2vnc_framebuffer_tail.inc:492:            gs_framebuffer) < 0) {
+working/b4a/ps2vnc_framebuffer_tail.inc:501:     * F7C2 atomicity while the lookup-table experiment isolates scaler cost.
+working/b4a/ps2vnc_framebuffer_tail.inc:517:            gs_framebuffer) < 0) {
+working/b4a/ps2vnc_framebuffer_tail.inc:524:    live_linear_framebuffer_stale = 0;
+working/b4a/ps2vnc_framebuffer_tail.inc:541:     * Keep the authoritative CPU framebuffer and validated presentation
+working/b4a/ps2vnc_framebuffer_tail.inc:545:    if (ps2vnc_hires_requires_raster_mapping()) {
+working/b4a/ps2vnc_framebuffer_tail.inc:546:        if (hires_mapped_source_framebuffer == NULL) {
+working/b4a/ps2vnc_framebuffer_tail.inc:559:                hires_mapped_source_framebuffer) < 0) {
+working/b4a/ps2vnc_framebuffer_tail.inc:569:        live_linear_framebuffer_stale = 0;
+working/b4a/ps2vnc_framebuffer_tail.inc:630: * keeps the linear GS16 framebuffer authoritative, and the proven Standard
+working/b4a/ps2vnc_framebuffer_tail.inc:647:     * would mean the supposedly authoritative linear framebuffer is unsafe.
+working/b4a/ps2vnc_framebuffer_tail.inc:649:    if (live_linear_framebuffer_stale) {
+working/b4a/ps2vnc_framebuffer_tail.inc:654:    if (tex->Width != desktop_width ||
+working/b4a/ps2vnc_framebuffer_tail.inc:655:        tex->Height != desktop_height ||
+working/b4a/ps2vnc_framebuffer_tail.inc:708:    const unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_framebuffer_tail.inc:728:    if (desktop_width == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:729:        desktop_height == 0 ||
+working/b4a/ps2vnc_framebuffer_tail.inc:733:            desktop_width,
+working/b4a/ps2vnc_framebuffer_tail.inc:734:            desktop_height,
+working/b4a/ps2vnc_framebuffer_tail.inc:751:     * 0x8000 is opaque black in the GS16 framebuffer format.
+working/b4a/ps2vnc_framebuffer_tail.inc:757:     * The RFB framebuffer remains tightly packed at desktop_width. Presentation
+working/b4a/ps2vnc_framebuffer_tail.inc:761:    if (ps2vnc_hires_requires_raster_mapping()) {
+working/b4a/ps2vnc_framebuffer_tail.inc:781:                ((u64)desktop_output_x * storage_width) /
+working/b4a/ps2vnc_framebuffer_tail.inc:786:                ((u64)desktop_output_y * storage_height) /
+working/b4a/ps2vnc_framebuffer_tail.inc:792:                    desktop_output_x + desktop_output_width) *
+working/b4a/ps2vnc_framebuffer_tail.inc:800:                    desktop_output_y + desktop_output_height) *
+working/b4a/ps2vnc_framebuffer_tail.inc:827:                    ((u64)row * desktop_height) /
+working/b4a/ps2vnc_framebuffer_tail.inc:839:                &gs_framebuffer[
+working/b4a/ps2vnc_framebuffer_tail.inc:840:                    src_y * desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:846:                        ((u64)col * desktop_width) /
+working/b4a/ps2vnc_framebuffer_tail.inc:858:        for (row = 0; row < desktop_height; row++) {
+working/b4a/ps2vnc_framebuffer_tail.inc:867:                &gs_framebuffer[
+working/b4a/ps2vnc_framebuffer_tail.inc:868:                    row * desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:874:                desktop_width * sizeof(unsigned short)
+working/b4a/ps2vnc_framebuffer_tail.inc:905: * buffer coherent with that full frame. Standard's linear gs_framebuffer is
+working/b4a/ps2vnc_framebuffer_tail.inc:911:    unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_framebuffer_tail.inc:919:    if (ps2vnc_hires_requires_raster_mapping()) {
+working/b4a/ps2vnc_framebuffer_tail.inc:925:                gs_framebuffer) < 0) {
+working/b4a/ps2vnc_framebuffer_tail.inc:971:        live_linear_framebuffer_stale = 0;
+working/b4a/ps2vnc_framebuffer_tail.inc:980:            gs_framebuffer) < 0)
+working/b4a/ps2vnc_framebuffer_tail.inc:1000:        if (ps2vnc_hires_requires_raster_mapping())
+working/b4a/ps2vnc_framebuffer_tail.inc:1006:    live_linear_framebuffer_stale = 0;
+working/b4a/ps2vnc_framebuffer_tail.inc:1013:    unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_framebuffer_tail.inc:1017:        gs_framebuffer == NULL ||
+working/b4a/ps2vnc_framebuffer_tail.inc:1018:        tex->Width != desktop_width ||
+working/b4a/ps2vnc_framebuffer_tail.inc:1019:        tex->Height != desktop_height)
+working/b4a/ps2vnc_framebuffer_tail.inc:1023:     * Standard decoding keeps this linear GS16 framebuffer authoritative.
+working/b4a/ps2vnc_framebuffer_tail.inc:1026:    tex->Mem = (u32 *)gs_framebuffer;
+working/b4a/ps2vnc_framebuffer_tail.inc:1032:    live_linear_framebuffer_stale = 0;
+working/b4a/ps2vnc_framebuffer_tail.inc:1039:    unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_framebuffer_tail.inc:1043:            gsGlobal, tex, gs_framebuffer);
+working/b4a/ps2vnc_framebuffer_tail.inc:1047:            gsGlobal, tex, gs_framebuffer);
+working/b4a/ps2vnc_framebuffer_tail.inc:1054:    const unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_framebuffer_tail.inc:1073:            desktop_width,
+working/b4a/ps2vnc_framebuffer_tail.inc:1074:            desktop_height))
+working/b4a/ps2vnc_framebuffer_tail.inc:1080:            desktop_width,
+working/b4a/ps2vnc_framebuffer_tail.inc:1081:            desktop_height,
+working/b4a/ps2vnc_framebuffer_tail.inc:1106:     * Copy the complete affected DESKTOP rows because gs_framebuffer
+working/b4a/ps2vnc_framebuffer_tail.inc:1113:    if (w >= (desktop_width / 4)) {
+working/b4a/ps2vnc_framebuffer_tail.inc:1118:            desktop_width * sizeof(unsigned short);
+working/b4a/ps2vnc_framebuffer_tail.inc:1133:                    &gs_framebuffer[(y + row) * desktop_width];
+working/b4a/ps2vnc_framebuffer_tail.inc:1141:                last[field] = dst + desktop_width;
+working/b4a/ps2vnc_framebuffer_tail.inc:1157:                (desktop_output_y + y) * OUTPUT_WIDTH +
+working/b4a/ps2vnc_framebuffer_tail.inc:1170:                &gs_framebuffer[
+working/b4a/ps2vnc_framebuffer_tail.inc:1171:                    (y + row) * desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:1184:                desktop_width
+working/b4a/ps2vnc_framebuffer_tail.inc:1212:            &gs_framebuffer[
+working/b4a/ps2vnc_framebuffer_tail.inc:1213:                (y + row) * desktop_width +
+working/b4a/ps2vnc_gsHires.c:167: * The EE/RFB image remains tightly packed at the visible width.  Only GS
+working/b4a/ps2vnc_gsHires.c:613:	 * GS framebuffer storage uses the rounded hardware pitch.  Source
+working/b4a/ps2vnc_gsHires.c:614:	 * textures/RFB rows continue to use gsGlobal->Width.
+working/b4a/ps2vnc_gsHires.c:731:		gsGlobal->ZBuffer = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(gsGlobal->Width, gsGlobal->Height/2, gsGlobal->PSMZ), GSKIT_ALLOC_SYSBUFFER);
+working/b4a/ps2vnc_macro_region2.inc:1:/* M3E main-TU hierarchy: framebuffer engine. */
+working/b4a/ps2vnc_macro_region2.inc:2:#include "ps2vnc_framebuffer_engine.inc"
+working/b4a/ps2vnc_management_core.inc:87:        ps2vnc_display_output_x(((float)OUTPUT_WIDTH - OSK_WIDTH) / 2.0f),
+working/b4a/ps2vnc_management_core.inc:88:        ps2vnc_display_output_y(((float)OUTPUT_HEIGHT - OSK_HEIGHT) / 2.0f),
+working/b4a/ps2vnc_management_core.inc:90:        ps2vnc_display_output_x(((float)OUTPUT_WIDTH + OSK_WIDTH) / 2.0f),
+working/b4a/ps2vnc_management_core.inc:91:        ps2vnc_display_output_y(((float)OUTPUT_HEIGHT + OSK_HEIGHT) / 2.0f),
+working/b4a/ps2vnc_management_core.inc:117:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:118:    unsigned short *gs_framebuffer)
+working/b4a/ps2vnc_management_core.inc:167:            if (ok && request_framebuffer(sock, 0) < 0)
+working/b4a/ps2vnc_management_core.inc:171:                receive_framebuffer_update(
+working/b4a/ps2vnc_management_core.inc:173:                    rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:174:                    gs_framebuffer,
+working/b4a/ps2vnc_management_core.inc:181:             * The ordinary complete Raw framebuffer is now safely in
+working/b4a/ps2vnc_management_core.inc:187:                    rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:188:                    gs_framebuffer) < 0)
+working/b4a/ps2vnc_management_core.inc:217: *   - received a new complete framebuffer
+working/b4a/ps2vnc_management_core.inc:221:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:222:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_management_core.inc:238:    const unsigned int recovery_target_width = desktop_width;
+working/b4a/ps2vnc_management_core.inc:239:    const unsigned int recovery_target_height = desktop_height;
+working/b4a/ps2vnc_management_core.inc:301:            desktop_width = recovery_target_width;
+working/b4a/ps2vnc_management_core.inc:302:            desktop_height = recovery_target_height;
+working/b4a/ps2vnc_management_core.inc:318:                request_framebuffer(
+working/b4a/ps2vnc_management_core.inc:323:                receive_framebuffer_update(
+working/b4a/ps2vnc_management_core.inc:325:                    rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:326:                    gs_framebuffer,
+working/b4a/ps2vnc_management_core.inc:338:                    rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:339:                    gs_framebuffer) < 0)
+working/b4a/ps2vnc_management_core.inc:343:                (desktop_width != recovery_target_width ||
+working/b4a/ps2vnc_management_core.inc:344:                 desktop_height != recovery_target_height)) {
+working/b4a/ps2vnc_management_core.inc:348:                        rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:349:                        gs_framebuffer,
+working/b4a/ps2vnc_management_core.inc:356:                    desktop_width = recovery_target_width;
+working/b4a/ps2vnc_management_core.inc:357:                    desktop_height = recovery_target_height;
+working/b4a/ps2vnc_management_core.inc:360:                        request_framebuffer(new_sock, 0) < 0 ||
+working/b4a/ps2vnc_management_core.inc:361:                        receive_framebuffer_update(
+working/b4a/ps2vnc_management_core.inc:363:                            rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:364:                            gs_framebuffer,
+working/b4a/ps2vnc_management_core.inc:380:                        gs_framebuffer) < 0) {
+working/b4a/ps2vnc_management_core.inc:397:            desktop_width = recovery_target_width;
+working/b4a/ps2vnc_management_core.inc:398:            desktop_height = recovery_target_height;
+working/b4a/ps2vnc_management_core.inc:443:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:444:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_management_core.inc:530:            request_framebuffer(new_sock, 0) < 0)
+working/b4a/ps2vnc_management_core.inc:534:            receive_framebuffer_update(
+working/b4a/ps2vnc_management_core.inc:536:                rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:537:                gs_framebuffer,
+working/b4a/ps2vnc_management_core.inc:545:                rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:546:                gs_framebuffer) < 0)
+working/b4a/ps2vnc_management_core.inc:567:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:568:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_management_core.inc:599:        rfb_framebuffer,
+working/b4a/ps2vnc_management_core.inc:600:        gs_framebuffer,
+working/b4a/ps2vnc_management_core.inc:662: * Validate the complete selected safe desktop rectangle.
+working/b4a/ps2vnc_management_core.inc:665: * placement, not absolute framebuffer coordinates.
+working/b4a/ps2vnc_management_tail.inc:74:    profile->logical_width = desktop_width;
+working/b4a/ps2vnc_management_tail.inc:75:    profile->logical_height = desktop_height;
+working/b4a/ps2vnc_management_tail.inc:79:    profile->output_width = desktop_output_width;
+working/b4a/ps2vnc_management_tail.inc:80:    profile->output_height = desktop_output_height;
+working/b4a/ps2vnc_management_tail.inc:90: * Standard logical geometry is the mode's fixed gsKit framebuffer.
+working/b4a/ps2vnc_runtime.c:5: * runtime_support + ui_controller + framebuffer_engine +
+working/b4a/ps2vnc_runtime.c:20: * this TU retains runtime_support + framebuffer_engine.
+working/b4a/ps2vnc_runtime.c:25:/* M3K: framebuffer engine compiled in ps2vnc_framebuffer.c */
+working/b4a/ps2vnc_runtime_compat.h:17: *   - Receive the complete 640x480 framebuffer
+working/b4a/ps2vnc_runtime_compat.h:61: * Physical video output and remote framebuffer capacity are independent.
+working/b4a/ps2vnc_runtime_compat.h:70:#define RFB_CAPACITY_WIDTH   1920
+working/b4a/ps2vnc_runtime_compat.h:71:#define RFB_CAPACITY_HEIGHT  1080
+working/b4a/ps2vnc_runtime_core.inc:68:static int ps2vnc_hires_requires_horizontal_mapping(void)
+working/b4a/ps2vnc_runtime_core.inc:90: int ps2vnc_hires_requires_vertical_mapping(void)
+working/b4a/ps2vnc_runtime_core.inc:112:int ps2vnc_hires_requires_raster_mapping(void)
+working/b4a/ps2vnc_runtime_core.inc:115:        ps2vnc_hires_requires_horizontal_mapping() ||
+working/b4a/ps2vnc_runtime_core.inc:116:        ps2vnc_hires_requires_vertical_mapping();
+working/b4a/ps2vnc_runtime_core.inc:139:    if (ps2vnc_hires_requires_vertical_mapping())
+working/b4a/ps2vnc_runtime_core.inc:156:#define VNC_WIDTH      RFB_CAPACITY_WIDTH
+working/b4a/ps2vnc_runtime_core.inc:157:#define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+working/b4a/ps2vnc_runtime_core.inc:163: * Physical raster, renderer framebuffer, and RFB desktop geometry are
+working/b4a/ps2vnc_runtime_core.inc:228: * Runtime RFB framebuffer geometry.
+working/b4a/ps2vnc_runtime_core.inc:232:unsigned int desktop_width = VNC_WIDTH;
+working/b4a/ps2vnc_runtime_core.inc:233:unsigned int desktop_height = VNC_HEIGHT;
+working/b4a/ps2vnc_runtime_core.inc:241:unsigned int desktop_output_width = VNC_WIDTH;
+working/b4a/ps2vnc_runtime_core.inc:242:unsigned int desktop_output_height = VNC_HEIGHT;
+working/b4a/ps2vnc_runtime_core.inc:252: * the ordinary authoritative CPU framebuffer. The presentation backend then
+working/b4a/ps2vnc_runtime_core.inc:255:unsigned short *hires_mapped_source_framebuffer = NULL;
+working/b4a/ps2vnc_runtime_core.inc:258:int live_linear_framebuffer_stale = 0;
+working/b4a/ps2vnc_runtime_core.inc:470: * rectangles, effectively once per framebuffer row.  During rapid window
+working/b4a/ps2vnc_runtime_core.inc:504:/* Raw FramebufferUpdate header tracing: type + pad + rectangle count. */
+working/b4a/ps2vnc_runtime_core.inc:518: * discarded into this row scratch buffer.  No live RFB/GS framebuffer writes
+working/b4a/ps2vnc_runtime_core.inc:522: * the fault is upstream of framebuffer writes / RGB565 conversion / texture
+working/b4a/ps2vnc_runtime_core.inc:531: * RFB FramebufferUpdate. x1/y1 are exclusive.
+working/b4a/ps2vnc_runtime_core.inc:542: * historical whole-update bounding box.  Multiple RFB rectangles touching
+working/b4a/ps2vnc_runtime_core.inc:545: unsigned int rfb_dirty_row_x0[VNC_HEIGHT];
+working/b4a/ps2vnc_runtime_core.inc:546: unsigned int rfb_dirty_row_x1[VNC_HEIGHT];
+working/b4a/ps2vnc_runtime_core.inc:547: unsigned char rfb_dirty_row_valid[VNC_HEIGHT];
+working/b4a/ps2vnc_runtime_core.inc:559: void rfb_dirty_mark_rect(
+working/b4a/ps2vnc_runtime_core.inc:960: int display_confirm_previous_screen_fit_width = 0;
+working/b4a/ps2vnc_runtime_core.inc:961: int display_confirm_previous_screen_fit_height = 0;
+working/b4a/ps2vnc_runtime_core.inc:1423: * FramebufferUpdateRequest is legitimately waiting for remote damage.
+working/b4a/ps2vnc_runtime_core_to_tail.h:27:#define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+working/b4a/ps2vnc_runtime_core_to_tail.h:31:#define VNC_WIDTH      RFB_CAPACITY_WIDTH
+working/b4a/ps2vnc_runtime_core_to_tail.h:148:extern int display_confirm_previous_screen_fit_height ;
+working/b4a/ps2vnc_runtime_core_to_tail.h:151:extern int display_confirm_previous_screen_fit_width ;
+working/b4a/ps2vnc_runtime_tail.c:5: * runtime_support + ui_controller + framebuffer_engine +
+working/b4a/ps2vnc_runtime_tail.c:24: * this TU retains runtime_support + framebuffer_engine.
+working/b4a/ps2vnc_runtime_tail.c:29:/* M3K: framebuffer engine compiled in ps2vnc_framebuffer.c */
+working/b4a/ps2vnc_runtime_tail.inc:215:    display_confirm_previous_desktop_w = desktop_width;
+working/b4a/ps2vnc_runtime_tail.inc:216:    display_confirm_previous_desktop_h = desktop_height;
+working/b4a/ps2vnc_runtime_tail.inc:218:    display_confirm_previous_screen_fit_width =
+working/b4a/ps2vnc_runtime_tail.inc:220:    display_confirm_previous_screen_fit_height =
+working/b4a/ps2vnc_runtime_tail.inc:256:    display_confirm_previous_screen_fit_width = 0;
+working/b4a/ps2vnc_runtime_tail.inc:257:    display_confirm_previous_screen_fit_height = 0;
+working/b4a/ps2vnc_runtime_tail.inc:650:    screenf("Handshake OK - desktop %ux%u", width, height);
+working/b4a/ps2vnc_runtime_tail.inc:658:     * the larger allocated RFB framebuffer capacity long enough to repair
+working/b4a/ps2vnc_runtime_tail.inc:661:     * Never permit an envelope larger than PS2VNC's backing framebuffer.
+working/b4a/ps2vnc_runtime_tail.inc:689:        if (width != desktop_width ||
+working/b4a/ps2vnc_runtime_tail.inc:690:            height != desktop_height) {
+working/b4a/ps2vnc_runtime_tail.inc:694:                desktop_width,
+working/b4a/ps2vnc_runtime_tail.inc:695:                desktop_height
+working/b4a/ps2vnc_runtime_tail.inc:705:        desktop_width = width;
+working/b4a/ps2vnc_runtime_tail.inc:706:        desktop_height = height;
+working/b4a/ps2vnc_runtime_tail.inc:793: * State reported by the server's ExtendedDesktopSize pseudo-rectangle.
+working/b4a/ps2vnc_runtime_tail.inc:801: unsigned int rfb_extended_desktop_width = 0;
+working/b4a/ps2vnc_runtime_tail.inc:802: unsigned int rfb_extended_desktop_height = 0;
+working/b4a/ps2vnc_runtime_tail.inc:808: unsigned int rfb_first_screen_width = 0;
+working/b4a/ps2vnc_runtime_tail.inc:809: unsigned int rfb_first_screen_height = 0;
+working/b4a/ps2vnc_runtime_tail.inc:816: * framebuffer path is still fixed at 1280x720.
+working/b4a/ps2vnc_runtime_tail.inc:819: unsigned int rfb_resize_expected_width = 0;
+working/b4a/ps2vnc_runtime_tail.inc:820: unsigned int rfb_resize_expected_height = 0;
+working/b4a/ps2vnc_runtime_tail.inc:885: * an ExtendedDesktopSize FramebufferUpdate before the receiver's full
+working/b4a/ps2vnc_runtime_tail.inc:888: int receive_framebuffer_update(
+working/b4a/ps2vnc_runtime_tail.inc:890:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_runtime_tail.inc:891:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_runtime_tail.inc:956:     * an empty incremental FramebufferUpdateRequest.
+working/b4a/ps2vnc_runtime_tail.inc:961:     *   FramebufferUpdateRequest
+working/b4a/ps2vnc_runtime_tail.inc:965:    msg[24] = 3; /* FramebufferUpdateRequest */
+working/b4a/ps2vnc_runtime_tail.inc:991:    unsigned short *rfb_framebuffer,
+working/b4a/ps2vnc_runtime_tail.inc:992:    unsigned short *gs_framebuffer,
+working/b4a/ps2vnc_runtime_tail.inc:1014:     * Keep consuming complete FramebufferUpdate messages until the
+working/b4a/ps2vnc_runtime_tail.inc:1016:     * remains owned by receive_framebuffer_update() while
+working/b4a/ps2vnc_runtime_tail.inc:1026:    rfb_resize_expected_width = width;
+working/b4a/ps2vnc_runtime_tail.inc:1027:    rfb_resize_expected_height = height;
+working/b4a/ps2vnc_runtime_tail.inc:1047:         * Each receive consumes one complete FramebufferUpdate.
+working/b4a/ps2vnc_runtime_tail.inc:1054:        rfb_extended_desktop_width = 0;
+working/b4a/ps2vnc_runtime_tail.inc:1055:        rfb_extended_desktop_height = 0;
+working/b4a/ps2vnc_runtime_tail.inc:1058:        if (receive_framebuffer_update(
+working/b4a/ps2vnc_runtime_tail.inc:1060:                rfb_framebuffer,
+working/b4a/ps2vnc_runtime_tail.inc:1061:                gs_framebuffer,
+working/b4a/ps2vnc_runtime_tail.inc:1070:         * Ordinary framebuffer traffic may be interleaved while the
+working/b4a/ps2vnc_runtime_tail.inc:1078:         * receive_framebuffer_update() already rejects an EDS rectangle
+working/b4a/ps2vnc_runtime_tail.inc:1079:         * whose dimensions differ from rfb_resize_expected_width/height.
+working/b4a/ps2vnc_runtime_tail.inc:1098:        if (rfb_extended_desktop_width != width ||
+working/b4a/ps2vnc_runtime_tail.inc:1099:            rfb_extended_desktop_height != height) {
+working/b4a/ps2vnc_runtime_tail.inc:1151: * FramebufferUpdateRequest, so keyboard traffic cannot interleave with
+working/b4a/ps2vnc_runtime_tail.inc:1204: * write.  This keeps the entire shortcut atomic relative to framebuffer
+working/b4a/ps2vnc_runtime_tail.inc:1525:    int scale,
+working/b4a/ps2vnc_runtime_tail.inc:1539:                    x + gx * scale,
+working/b4a/ps2vnc_runtime_tail.inc:1540:                    y + gy * scale,
+working/b4a/ps2vnc_runtime_tail.inc:1541:                    scale,
+working/b4a/ps2vnc_runtime_tail.inc:1542:                    scale,
+working/b4a/ps2vnc_runtime_tail.inc:1556:    int scale,
+working/b4a/ps2vnc_runtime_tail.inc:1560:    int char_w = 6 * scale;
+working/b4a/ps2vnc_runtime_tail.inc:1561:    int text_w = len * char_w - scale;
+working/b4a/ps2vnc_runtime_tail.inc:1562:    int text_h = 7 * scale;
+working/b4a/ps2vnc_runtime_tail.inc:1568:        osk_draw_char(tx + i * char_w, ty, s[i], scale, color);
+working/b4a/ps2vnc_runtime_tail.inc:1644:            int text_scale;
+working/b4a/ps2vnc_runtime_tail.inc:1693:            text_scale =
+working/b4a/ps2vnc_runtime_tail.inc:1712:                text_scale,
+working/b4a/ps2vnc_runtime_to_framebuffer.h:1:#ifndef PS2VNC_RUNTIME_TO_FRAMEBUFFER_H
+working/b4a/ps2vnc_runtime_to_framebuffer.h:2:#define PS2VNC_RUNTIME_TO_FRAMEBUFFER_H
+working/b4a/ps2vnc_runtime_to_framebuffer.h:6: * runtime-support exports consumed by framebuffer engine.
+working/b4a/ps2vnc_runtime_to_framebuffer.h:70:extern unsigned int rfb_dirty_row_x0[VNC_HEIGHT];
+working/b4a/ps2vnc_runtime_to_framebuffer.h:72:extern unsigned int rfb_dirty_row_x1[VNC_HEIGHT];
+working/b4a/ps2vnc_runtime_to_framebuffer.h:74:extern unsigned char rfb_dirty_row_valid[VNC_HEIGHT];
+working/b4a/ps2vnc_runtime_to_framebuffer.h:100:extern unsigned int rfb_extended_desktop_width ;
+working/b4a/ps2vnc_runtime_to_framebuffer.h:102:extern unsigned int rfb_extended_desktop_height ;
+working/b4a/ps2vnc_runtime_to_framebuffer.h:112:extern unsigned int rfb_first_screen_width ;
+working/b4a/ps2vnc_runtime_to_framebuffer.h:114:extern unsigned int rfb_first_screen_height ;
+working/b4a/ps2vnc_runtime_to_framebuffer.h:120:extern unsigned int rfb_resize_expected_width ;
+working/b4a/ps2vnc_runtime_to_framebuffer.h:122:extern unsigned int rfb_resize_expected_height ;
+working/b4a/ps2vnc_runtime_to_framebuffer.h:124:extern int ps2vnc_hires_requires_vertical_mapping (void);
+working/b4a/ps2vnc_runtime_to_framebuffer.h:132:extern void rfb_dirty_mark_rect (unsigned int x, unsigned int y, unsigned int w, unsigned int h);
+working/b4a/ps2vnc_runtime_to_framebuffer.h:136:#endif /* PS2VNC_RUNTIME_TO_FRAMEBUFFER_H */
+working/b4a/ps2vnc_runtime_to_ui_display.h:182:#define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+working/b4a/ps2vnc_runtime_to_ui_display.h:184:#define VNC_WIDTH      RFB_CAPACITY_WIDTH
+working/b4a/ps2vnc_runtime_to_ui_display.h:284:extern int display_confirm_previous_screen_fit_height ;
+working/b4a/ps2vnc_runtime_to_ui_display.h:290:extern int display_confirm_previous_screen_fit_width ;
+working/b4a/ps2vnc_runtime_to_ui_display.h:440:extern void display_confirm_arm_transaction (const ps2vnc_video_mode_t *previous_mode, unsigned int previous_x, unsigned int previous_y, unsigned int previous_w, unsigned int previous_h, int previous_screen_fit_width, int previous_screen_fit_height, int previous_screen_fit_offset_x, int previous_screen_fit_offset_y, int previous_screen_fit_full_bypass);
+working/b4a/ps2vnc_runtime_to_ui_display.h:472:extern int ps2vnc_display_logical_desktop_size (unsigned int output_width, unsigned int output_height, unsigned int *width, unsigned int *height);
+working/b4a/ps2vnc_services_compat.h:45: * Physical video output and remote framebuffer capacity are independent.
+working/b4a/ps2vnc_services_compat.h:54:#define RFB_CAPACITY_WIDTH   1920
+working/b4a/ps2vnc_services_compat.h:55:#define RFB_CAPACITY_HEIGHT  1080
+working/b4a/ps2vnc_services_compat.h:106:#define VNC_WIDTH      RFB_CAPACITY_WIDTH
+working/b4a/ps2vnc_services_compat.h:107:#define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+working/b4a/ps2vnc_services_exports.h:16:int perform_manual_rfb_recovery( int old_sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, GSGLOBAL *gsGlobal, GSTEXTURE *tex, GSTEXTURE *osk_tex);
+working/b4a/ps2vnc_services_exports.h:31:int ps2vnc_display_prepare_desktop( GSGLOBAL *gsGlobal, GSTEXTURE *tex, unsigned short *gs_framebuffer);
+working/b4a/ps2vnc_services_exports.h:46:int ps2vnc_run_runtime_calibration( int sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, GSGLOBAL *gsGlobal, GSTEXTURE *tex, u64 black);
+working/b4a/ps2vnc_services_exports.h:48:int ps2vnc_startup_connect_reconciled( unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer);
+working/b4a/ps2vnc_services_exports.h:50:int recover_rfb_connection( int old_sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, GSGLOBAL *gsGlobal, GSTEXTURE *tex, GSTEXTURE *osk_tex);
+working/b4a/ps2vnc_services_exports.h:51:int recover_rfb_transport_for_display_rollback( int old_sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, const ps2vnc_video_mode_t *handshake_mode);
+working/b4a/ps2vnc_services_imports.h:15:extern unsigned int desktop_height;
+working/b4a/ps2vnc_services_imports.h:16:extern unsigned int desktop_output_height;
+working/b4a/ps2vnc_services_imports.h:17:extern unsigned int desktop_output_width;
+working/b4a/ps2vnc_services_imports.h:20:extern unsigned int desktop_width;
+working/b4a/ps2vnc_services_imports.h:29:extern unsigned short *hires_mapped_source_framebuffer;
+working/b4a/ps2vnc_services_imports.h:32:extern int live_linear_framebuffer_stale;
+working/b4a/ps2vnc_services_imports.h:61:void osk_draw_text_centered( int x, int y, int w, int h, const char *s, int scale, unsigned short color);
+working/b4a/ps2vnc_services_imports.h:64:int probe_extended_desktop_size( int sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer);
+working/b4a/ps2vnc_services_imports.h:69:int ps2vnc_display_publish_full_desktop( GSGLOBAL *gsGlobal, GSTEXTURE *tex, unsigned short *gs_framebuffer);
+working/b4a/ps2vnc_services_imports.h:71:int ps2vnc_hires_requires_raster_mapping(void);
+working/b4a/ps2vnc_services_imports.h:77:int publish_hires_background( GSGLOBAL *gsGlobal, GSTEXTURE *bg_tex, const unsigned short *gs_framebuffer);
+working/b4a/ps2vnc_services_imports.h:78:int receive_framebuffer_update( int sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, int verbose, int require_full);
+working/b4a/ps2vnc_services_imports.h:80:int request_and_confirm_desktop_size( int sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, unsigned int width, unsigned int height);
+working/b4a/ps2vnc_services_imports.h:81:int request_framebuffer(int sock, int incremental);
+working/b4a/ps2vnc_services_imports.h:84:int rfb_connect_and_handshake_limited( unsigned int max_width, unsigned int max_height);
+working/b4a/ps2vnc_ui_core.inc:1169: * framebuffer.  OSK navigation itself changes only local PS2 state, so
+working/b4a/ps2vnc_ui_core.inc:1171: * incremental framebuffer request.  The pointer ends exactly where it
+working/b4a/ps2vnc_ui_core.inc:1181:    if (x < desktop_width - 1)
+working/b4a/ps2vnc_ui_core.inc:1243:        unsigned int scale_q12;
+working/b4a/ps2vnc_ui_core.inc:1268:            scale_q12 = 2048;  /* 50% */
+working/b4a/ps2vnc_ui_core.inc:1270:            scale_q12 =
+working/b4a/ps2vnc_ui_core.inc:1280:            (curve * scale_q12) /
+working/b4a/ps2vnc_ui_core.inc:1349: * RFB PointerEvent button bits follow the conventional X11 mouse mapping:
+working/b4a/ps2vnc_ui_display.c:12: *   - framebuffer_engine
+working/b4a/ps2vnc_ui_tail.c:12: *   - framebuffer_engine
+working/b4a/ps2vnc_ui_tail.inc:4:    int cursor_x = desktop_width / 2;
+working/b4a/ps2vnc_ui_tail.inc:5:    int cursor_y = desktop_height / 2;
+working/b4a/ps2vnc_ui_tail.inc:1370:                if (cursor_x >= (int)desktop_width)
+working/b4a/ps2vnc_ui_tail.inc:1371:                    cursor_x = (int)desktop_width - 1;
+working/b4a/ps2vnc_ui_tail.inc:1375:                if (cursor_y >= (int)desktop_height)
+working/b4a/ps2vnc_ui_tail.inc:1376:                    cursor_y = (int)desktop_height - 1;

@@ -43,12 +43,16 @@ Add host unit coverage for:
 
 ## Tranche 2: video mode and pure geometry
 
+Status: **COMPLETE — M4G + M4H**
+
 Move mode lookup/backend properties and pure geometry calculations out of
 the runtime state warehouse.
 
 These are relatively pure and strongly host-testable.
 
 ## Tranche 3: diagnostics
+
+Status: **NEXT — M4I**
 
 Assign debug/profiling state to diagnostics modules.
 
