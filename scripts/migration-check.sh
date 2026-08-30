@@ -250,6 +250,52 @@ echo "CURRENT_DOC_HEAD=$CURRENT_DOC_HEAD"
 echo 'CURRENT_WORKING_AUTHORITY=PASS'
 
 echo
+echo '===== J. M0 BUILD AUTHORITY ====='
+
+if [ "$CURRENT_STAGE" = 'M0' ] &&
+   [ "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS' ] &&
+   [ "$NEXT_ACTION" != 'M0C_reconstruct_and_fingerprint_historical_build_environment' ]
+then
+    test -f runtime/M0_BUILD_AUTHORITY.env
+fi
+
+if [ -f runtime/M0_BUILD_AUTHORITY.env ]; then
+    # shellcheck disable=SC1091
+    source runtime/M0_BUILD_AUTHORITY.env
+
+    test "$M0_REFERENCE_DUT" = 'D17AL-F8J2-B4A'
+
+    test "$M0_SOURCE_SHA256" = "$BASELINE_SOURCE_SHA256"
+    test "$M0_REFERENCE_ELF_SHA256" = "$BASELINE_ELF_SHA256"
+
+    test "$M0_B4A_LIBPS2IP_SHA256" = \
+        'b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74'
+
+    ACTUAL_M0_LIB_SHA="$(
+        sha256sum baseline/frozen-b4a/libps2ip_mtu1458_wscale128.a |
+        awk '{print $1}'
+    )"
+
+    test "$ACTUAL_M0_LIB_SHA" = "$M0_B4A_LIBPS2IP_SHA256"
+
+    test "$M0_B4A_LIBPS2IP_AUTHORITY" = \
+        'FROZEN_MATCHES_HISTORICAL_B4A_WORKTREE'
+
+    test "$M0_STALE_LEGACY_ARCHIVE_STATUS" = \
+        'NOT_B4A_LINK_INPUT'
+
+    test "$M0_REPRODUCTION_TARGET" = 'BYTE_EXACT'
+
+    echo "M0_REFERENCE_DUT=$M0_REFERENCE_DUT"
+    echo "M0_B4A_LIBPS2IP_SHA256=$M0_B4A_LIBPS2IP_SHA256"
+    echo "M0_REFERENCE_ELF_SHA256=$M0_REFERENCE_ELF_SHA256"
+    echo "M0_REPRODUCTION_CLASSIFICATION=$M0_REPRODUCTION_CLASSIFICATION"
+    echo 'M0_BUILD_AUTHORITY=PASS'
+else
+    echo 'M0_BUILD_AUTHORITY=PRE_M0C'
+fi
+
+echo
 echo '===== FINAL ====='
 echo 'PS_TO_VNC_MIGRATION_CHECK=PASS'
 echo "LAST_COMPLETE_STAGE=$LAST_COMPLETE_STAGE"

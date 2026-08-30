@@ -131,7 +131,7 @@ human prose.
     CURRENT_STAGE=M0
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=NONE
-    NEXT_ACTION=M0C_reconstruct_and_fingerprint_historical_build_environment
+    NEXT_ACTION=M0D_create_writable_B4A_authority_and_controlled_rebuild
 
 The canonical machine-readable source remains:
 
@@ -150,3 +150,31 @@ No writable source has been created yet.
 Next operation:
 
     M0C_reconstruct_and_fingerprint_historical_build_environment
+
+## M0C checkpoint
+
+M0C historical build-environment reconstruction is COMPLETE.
+
+Canonical human build provenance:
+
+    docs/M0_BUILD_PROVENANCE.md
+
+Canonical machine-readable build authority:
+
+    runtime/M0_BUILD_AUTHORITY.env
+
+The B4A libps2ip authority is the frozen archive with SHA256:
+
+    b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74
+
+The different legacy-root archive with SHA256:
+
+    f16bd80321657a854f09d96622a11308232c9053486d6158b78825e452b35860
+
+is older historical residue and is not the B4A link input.
+
+No writable working source exists yet.
+
+Next operation:
+
+    M0D_create_writable_B4A_authority_and_controlled_rebuild

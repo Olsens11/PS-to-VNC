@@ -43,3 +43,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 ## Baseline reproduction
 
 - `docs/M0_BASELINE_CONTRACT.md` — M0 build-reproduction and acceptance contract.
+
+## Historical build provenance
+
+- `docs/M0_BUILD_PROVENANCE.md` — resolved M0 historical build environment, dependency authority, and reference object hashes.

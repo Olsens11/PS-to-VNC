@@ -238,6 +238,15 @@ Status after this document is committed:
 
 M0C — reconstruct and fingerprint historical build environment.
 
+Status:
+
+    COMPLETE
+
+Authority:
+
+    docs/M0_BUILD_PROVENANCE.md
+    runtime/M0_BUILD_AUTHORITY.env
+
 M0D — create writable `working/b4a/` authority and perform controlled rebuild.
 
 M0E — classify build result as Outcome A, B, or C.

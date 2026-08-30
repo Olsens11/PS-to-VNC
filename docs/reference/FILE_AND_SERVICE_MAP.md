@@ -76,3 +76,15 @@ These locations move in lockstep with implementation authority.
 
 No modularization stage is complete until this map and the migration state
 agree with the actual source tree.
+
+## M0 build provenance authority
+
+| Responsibility | Canonical location |
+|---|---|
+| M0 reproduction contract | `docs/M0_BASELINE_CONTRACT.md` |
+| Historical build provenance | `docs/M0_BUILD_PROVENANCE.md` |
+| Machine-readable M0 build authority | `runtime/M0_BUILD_AUTHORITY.env` |
+| Frozen B4A implementation | `baseline/frozen-b4a/` |
+
+The old `/home/ps2/ps2vnc/build/` directory is historical evidence only and is
+not PS-to-VNC build authority.
