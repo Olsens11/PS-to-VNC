@@ -22,6 +22,8 @@ test -f "$WORK/Makefile"
 test -f "$FROZEN_DEP"
 test -f "$ROOT/src/config/text.c"
 test -f "$ROOT/src/config/text.h"
+test -f "$ROOT/src/diagnostics/identity.c"
+test -f "$ROOT/src/diagnostics/identity.h"
 
 ACTUAL_DEP_SHA="$(
     sha256sum "$FROZEN_DEP" |
