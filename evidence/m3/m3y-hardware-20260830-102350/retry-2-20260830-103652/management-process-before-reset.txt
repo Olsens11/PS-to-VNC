@@ -1,0 +1,2 @@
+  PID  PPID USER                      STARTED COMMAND
+ 5789     1 ps2      Sun Aug 30 04:55:12 2026 /usr/bin/python3 /usr/local/lib/ps2vnc/management-server.py

@@ -1,0 +1,9 @@
+version=1
+txid=1
+state=RESTORING
+action=restore
+mode=1080i
+lease_seconds=120
+active_mode=1080i
+baseline_mode=480p
+error_code=0

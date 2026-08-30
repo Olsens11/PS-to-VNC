@@ -1,0 +1,1997 @@
+#!/usr/bin/env python3
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+import os
+import re
+import tempfile
+
+BIND_ADDRESS = "192.168.50.1"
+PORT = int(os.environ.get("PS2VNC_MANAGEMENT_PORT", "5959"))
+
+DISPLAY_MODES = {
+    "480i": (720, 480),
+    "480p": (720, 480),
+    "480p-hires": (720, 480),
+    "576i": (720, 576),
+    "576p": (720, 576),
+    "720p": (1280, 720),
+    "1080i": (1920, 1080),
+
+    "640x480-60": (640, 480),
+    "800x600-60": (800, 600),
+    "1024x768-60": (1024, 768),
+    "1280x1024-60": (1280, 1024),
+
+    "640x480-72": (640, 480),
+    "640x480-75": (640, 480),
+    "640x480-85": (640, 480),
+
+    "800x600-56": (800, 600),
+    "800x600-72": (800, 600),
+    "800x600-75": (800, 600),
+    "800x600-85": (800, 600),
+
+    "1024x768-70": (1024, 768),
+    "1024x768-75": (1024, 768),
+    "1024x768-85": (1024, 768),
+
+    "1280x1024-75": (1280, 1024),
+}
+
+LEGACY_DISPLAY_MODE = "1080i"
+
+DISPLAY_KEYS = (
+    "safe_width",
+    "safe_height",
+    "safe_x",
+    "safe_y",
+)
+
+STARTUP_MODE_KEY = "startup_mode"
+DISPLAY_LOCK_KEY = "locked"
+HIDE_LOCKED_MODES_KEY = "hide_locked_modes"
+
+
+def parse_display_update(text):
+    values = {}
+    mode_name = None
+    explicit_mode = False
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+
+        if not line:
+            continue
+
+        if "=" not in line:
+            raise ValueError("invalid line")
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if key == "mode":
+            if explicit_mode:
+                raise ValueError("duplicate mode")
+            if value not in DISPLAY_MODES:
+                raise ValueError("unsupported display mode")
+            mode_name = value
+            explicit_mode = True
+            continue
+
+        if key not in DISPLAY_KEYS:
+            raise ValueError("unknown key")
+
+        if key in values:
+            raise ValueError("duplicate key")
+
+        if key in ("safe_width", "safe_height"):
+            if not re.fullmatch(r"[0-9]+", value):
+                raise ValueError("invalid size")
+        else:
+            if not re.fullmatch(r"-?[0-9]+", value):
+                raise ValueError("invalid offset")
+
+        values[key] = int(value)
+
+    if set(values) != set(DISPLAY_KEYS):
+        raise ValueError("incomplete display update")
+
+    if mode_name is None:
+        mode_name = LEGACY_DISPLAY_MODE
+
+    return mode_name, explicit_mode, values
+
+
+
+def parse_startup_mode_update(text):
+    mode_name = None
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+
+        if not line:
+            continue
+
+        if "=" not in line:
+            raise ValueError("invalid line")
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if key != STARTUP_MODE_KEY:
+            raise ValueError("unknown key")
+
+        if mode_name is not None:
+            raise ValueError("duplicate startup_mode")
+
+        if value not in DISPLAY_MODES:
+            raise ValueError("unsupported display mode")
+
+        mode_name = value
+
+    if mode_name is None:
+        raise ValueError("missing startup_mode")
+
+    return mode_name
+
+
+
+def parse_boolean(value):
+    normalized = value.strip().lower()
+
+    if normalized in ("true", "1", "yes", "on"):
+        return True
+
+    if normalized in ("false", "0", "no", "off"):
+        return False
+
+    raise ValueError("invalid boolean")
+
+
+def parse_mode_lock_update(text):
+    values = {}
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+
+        if not line:
+            continue
+
+        if "=" not in line:
+            raise ValueError("invalid line")
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if key in values:
+            raise ValueError(f"duplicate {key}")
+
+        if key not in ("mode", DISPLAY_LOCK_KEY):
+            raise ValueError("unknown key")
+
+        values[key] = value
+
+    if set(values) != {"mode", DISPLAY_LOCK_KEY}:
+        raise ValueError("incomplete display lock update")
+
+    mode_name = values["mode"]
+
+    if mode_name not in DISPLAY_MODES:
+        raise ValueError("unsupported display mode")
+
+    locked = parse_boolean(
+        values[DISPLAY_LOCK_KEY]
+    )
+
+    return mode_name, locked
+
+
+def parse_display_ui_update(text):
+    values = {}
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+
+        if not line:
+            continue
+
+        if "=" not in line:
+            raise ValueError("invalid line")
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if key in values:
+            raise ValueError(f"duplicate {key}")
+
+        if key != HIDE_LOCKED_MODES_KEY:
+            raise ValueError("unknown key")
+
+        values[key] = value
+
+    if set(values) != {HIDE_LOCKED_MODES_KEY}:
+        raise ValueError("incomplete display UI update")
+
+    return parse_boolean(
+        values[HIDE_LOCKED_MODES_KEY]
+    )
+
+
+def validate_display(values, mode_name):
+    if mode_name not in DISPLAY_MODES:
+        raise ValueError("unsupported display mode")
+
+    output_width, output_height = DISPLAY_MODES[mode_name]
+
+    safe_width = values["safe_width"]
+    safe_height = values["safe_height"]
+    safe_x = values["safe_x"]
+    safe_y = values["safe_y"]
+
+    if safe_width <= 0 or safe_height <= 0:
+        raise ValueError("non-positive size")
+
+    if safe_width > output_width or safe_height > output_height:
+        raise ValueError("display too large")
+
+    left = ((output_width - safe_width) // 2) + safe_x
+    top = ((output_height - safe_height) // 2) + safe_y
+
+    if left < 0 or top < 0:
+        raise ValueError("display outside output")
+
+    if left + safe_width > output_width:
+        raise ValueError("display outside output")
+
+    if top + safe_height > output_height:
+        raise ValueError("display outside output")
+
+CONFIG_FILE = Path(
+    os.environ.get(
+        "PS2VNC_CONFIG_FILE",
+        str(Path.home() / "ps2vnc/runtime/ps2vnc.conf"),
+    )
+)
+
+
+DISPLAY_TRANSACTION_FILE = Path(
+    os.environ.get(
+        "PS2VNC_DISPLAY_TRANSACTION_FILE",
+        str(CONFIG_FILE.parent / "display-transaction.state"),
+    )
+)
+
+DISPLAY_CONTROL_FILE = Path(
+    os.environ.get(
+        "PS2VNC_DISPLAY_CONTROL_FILE",
+        str(CONFIG_FILE.parent / "display-control.state"),
+    )
+)
+
+DISPLAY_CONTROL_VERSION = 1
+DISPLAY_CONTROL_STATES = (
+    "PENDING",
+    "SWITCHING",
+    "ACTIVE_TEMP",
+    "RESTORE_PENDING",
+    "RESTORING",
+    "RESTORED",
+    "FAILED",
+)
+
+DISPLAY_CONTROL_BUSY_STATES = {
+    "PENDING",
+    "SWITCHING",
+    "ACTIVE_TEMP",
+    "RESTORE_PENDING",
+    "RESTORING",
+}
+
+DISPLAY_TRANSACTION_VERSION = 1
+DISPLAY_TRANSACTION_STATES = (
+    "provisional",
+    "committing",
+    "restoring",
+    "restored",
+)
+
+DISPLAY_TRANSACTION_BACKENDS = (
+    "standard",
+    "hires",
+)
+
+# H4A4:
+# Mirror the PS2 mode/backend geometry contract closely enough that the Pi
+# cannot accept a transaction containing internally mixed display geometry.
+#
+# For HIRES the logical RFB desktop is the physical presentation rectangle.
+# For Standard the logical RFB desktop is the mode's fixed gsKit framebuffer,
+# while output_* remains an independently calibrated physical rectangle.
+DISPLAY_TRANSACTION_MODE_CONTRACTS = {
+    "480i": {
+        "backends": ("standard",),
+        "standard_logical": (704, 464),
+    },
+    "480p": {
+        "backends": ("standard",),
+        "standard_logical": (704, 462),
+    },
+    "480p-hires": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "576i": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "576p": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "720p": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "1080i": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+
+    "640x480-60": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "800x600-60": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "1024x768-60": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "1280x1024-60": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+
+    "640x480-72": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "640x480-75": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "640x480-85": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+
+    "800x600-56": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "800x600-72": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "800x600-75": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "800x600-85": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+
+    "1024x768-70": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "1024x768-75": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+    "1024x768-85": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+
+    "1280x1024-75": {
+        "backends": ("hires",),
+        "standard_logical": None,
+    },
+}
+
+DISPLAY_TRANSACTION_PROFILE_KEYS = (
+    "mode",
+    "backend",
+    "logical_width",
+    "logical_height",
+    "output_x",
+    "output_y",
+    "output_width",
+    "output_height",
+)
+
+
+def line_ending(line):
+    if line.endswith("\r\n"):
+        return "\r\n"
+    if line.endswith("\n"):
+        return "\n"
+    return ""
+
+
+def format_display_line(old_line, key, value):
+    ending = line_ending(old_line)
+    body = old_line.rstrip("\r\n")
+
+    match = re.match(
+        r"^(\s*)(?:#\s*)?"
+        r"(safe_width|safe_height|safe_x|safe_y)"
+        r"(\s*=\s*)([^#]*?)(\s*(?:#.*)?)$",
+        body,
+    )
+
+    if match is None:
+        return f"{key} = {value}{ending or chr(10)}"
+
+    indent, _, equals, _, suffix = match.groups()
+
+    return (
+        f"{indent}{key}{equals}{value}"
+        f"{suffix}{ending or chr(10)}"
+    )
+
+
+
+def format_startup_mode_line(old_line, mode_name):
+    ending = line_ending(old_line)
+    body = old_line.rstrip("\r\n")
+
+    match = re.match(
+        r"^(\s*)(?:#\s*)?(startup_mode)"
+        r"(\s*=\s*)([^#]*?)(\s*(?:#.*)?)$",
+        body,
+    )
+
+    if match is None:
+        return f"startup_mode = {mode_name}{ending or chr(10)}"
+
+    indent, _, equals, _, suffix = match.groups()
+
+    return (
+        f"{indent}startup_mode{equals}{mode_name}"
+        f"{suffix}{ending or chr(10)}"
+    )
+
+
+def update_startup_mode(mode_name):
+    if mode_name not in DISPLAY_MODES:
+        raise ValueError("unsupported display mode")
+
+    text = CONFIG_FILE.read_text()
+    lines = text.splitlines(keepends=True)
+
+    section_re = re.compile(
+        r"^\s*\[display\]\s*(?:#.*)?$"
+    )
+
+    starts = [
+        i for i, line in enumerate(lines)
+        if section_re.match(line.rstrip("\r\n"))
+    ]
+
+    if len(starts) > 1:
+        raise ValueError("duplicate display section")
+
+    if starts:
+        section_start = starts[0]
+        section_end = len(lines)
+
+        for i in range(section_start + 1, len(lines)):
+            if re.match(
+                r"^\s*\[[^\]]+\]",
+                lines[i].rstrip("\r\n"),
+            ):
+                section_end = i
+                break
+    else:
+        if lines and not lines[-1].endswith(("\n", "\r\n")):
+            lines[-1] += "\n"
+
+        lines.extend(["\n", "[display]\n"])
+        section_start = len(lines) - 1
+        section_end = len(lines)
+
+    key_re = re.compile(
+        r"^\s*(?:#\s*)?startup_mode\s*=.*$"
+    )
+
+    found = [
+        i for i in range(section_start + 1, section_end)
+        if key_re.match(lines[i].rstrip("\r\n"))
+    ]
+
+    if len(found) > 1:
+        raise ValueError("duplicate startup_mode in stored config")
+
+    if found:
+        i = found[0]
+        lines[i] = format_startup_mode_line(
+            lines[i], mode_name
+        )
+    else:
+        lines.insert(
+            section_start + 1,
+            f"startup_mode = {mode_name}\n",
+        )
+
+    new_text = "".join(lines)
+    mode = CONFIG_FILE.stat().st_mode & 0o777
+
+    fd, temp_name = tempfile.mkstemp(
+        prefix=".ps2vnc.conf.",
+        dir=CONFIG_FILE.parent,
+        text=True,
+    )
+
+    try:
+        with os.fdopen(fd, "w") as temp:
+            temp.write(new_text)
+            temp.flush()
+            os.fsync(temp.fileno())
+
+        os.chmod(temp_name, mode)
+        os.replace(temp_name, CONFIG_FILE)
+
+    finally:
+        if os.path.exists(temp_name):
+            os.unlink(temp_name)
+
+def update_display_config(mode_name, explicit_mode, values):
+    text = CONFIG_FILE.read_text()
+    lines = text.splitlines(keepends=True)
+
+    section_name = (
+        f"display.{mode_name}" if explicit_mode else "display"
+    )
+    section_re = re.compile(
+        rf"^\s*\[{re.escape(section_name)}\]\s*(?:#.*)?$"
+    )
+
+    section_start = None
+    section_end = len(lines)
+
+    for i, line in enumerate(lines):
+        if section_re.match(line.rstrip("\r\n")):
+            section_start = i
+            break
+
+    if section_start is None:
+        if lines and not lines[-1].endswith(("\n", "\r\n")):
+            lines[-1] += "\n"
+
+        lines.extend(["\n", f"[{section_name}]\n"])
+        section_start = len(lines) - 1
+        section_end = len(lines)
+
+    else:
+        for i in range(section_start + 1, len(lines)):
+            if re.match(
+                r"^\s*\[[^\]]+\]",
+                lines[i].rstrip("\r\n"),
+            ):
+                section_end = i
+                break
+
+    validate_display(values, mode_name)
+
+    key_re = re.compile(
+        r"^\s*(?:#\s*)?"
+        r"(safe_width|safe_height|safe_x|safe_y)"
+        r"\s*=.*$"
+    )
+
+    found = {}
+
+    for i in range(section_start + 1, section_end):
+        match = key_re.match(
+            lines[i].rstrip("\r\n")
+        )
+
+        if match is None:
+            continue
+
+        key = match.group(1)
+
+        if key in found:
+            raise ValueError(
+                f"duplicate {key} in stored config"
+            )
+
+        found[key] = i
+
+    for key in DISPLAY_KEYS:
+        if key in found:
+            i = found[key]
+            lines[i] = format_display_line(
+                lines[i],
+                key,
+                values[key],
+            )
+
+    missing = [
+        key for key in DISPLAY_KEYS
+        if key not in found
+    ]
+
+    if missing:
+        new_lines = [
+            f"{key} = {values[key]}\n"
+            for key in missing
+        ]
+
+        lines[section_start + 1:section_start + 1] = \
+            new_lines
+
+    new_text = "".join(lines)
+
+    mode = CONFIG_FILE.stat().st_mode & 0o777
+
+    fd, temp_name = tempfile.mkstemp(
+        prefix=".ps2vnc.conf.",
+        dir=CONFIG_FILE.parent,
+        text=True,
+    )
+
+    try:
+        with os.fdopen(fd, "w") as temp:
+            temp.write(new_text)
+            temp.flush()
+            os.fsync(temp.fileno())
+
+        os.chmod(temp_name, mode)
+        os.replace(temp_name, CONFIG_FILE)
+
+    finally:
+        if os.path.exists(temp_name):
+            os.unlink(temp_name)
+
+
+
+def format_boolean_setting_line(
+    old_line,
+    key,
+    value,
+):
+    ending = line_ending(old_line)
+    body = old_line.rstrip("\r\n")
+
+    match = re.match(
+        rf"^(\s*)(?:#\s*)?({re.escape(key)})"
+        rf"(\s*=\s*)([^#]*?)(\s*(?:#.*)?)$",
+        body,
+    )
+
+    rendered = "true" if value else "false"
+
+    if match is None:
+        return (
+            f"{key} = {rendered}"
+            f"{ending or chr(10)}"
+        )
+
+    indent, _, equals, _, suffix = \
+        match.groups()
+
+    return (
+        f"{indent}{key}{equals}{rendered}"
+        f"{suffix}{ending or chr(10)}"
+    )
+
+
+def update_boolean_setting(
+    section_name,
+    key,
+    value,
+):
+    text = CONFIG_FILE.read_text()
+    lines = text.splitlines(keepends=True)
+
+    section_re = re.compile(
+        rf"^\s*\[{re.escape(section_name)}\]"
+        rf"\s*(?:#.*)?$"
+    )
+
+    starts = [
+        i for i, line in enumerate(lines)
+        if section_re.match(
+            line.rstrip("\r\n")
+        )
+    ]
+
+    if len(starts) > 1:
+        raise ValueError(
+            f"duplicate {section_name} section"
+        )
+
+    if starts:
+        section_start = starts[0]
+        section_end = len(lines)
+
+        for i in range(
+            section_start + 1,
+            len(lines),
+        ):
+            if re.match(
+                r"^\s*\[[^\]]+\]",
+                lines[i].rstrip("\r\n"),
+            ):
+                section_end = i
+                break
+
+    else:
+        if (
+            lines and
+            not lines[-1].endswith(
+                ("\n", "\r\n")
+            )
+        ):
+            lines[-1] += "\n"
+
+        lines.extend(
+            ["\n", f"[{section_name}]\n"]
+        )
+
+        section_start = len(lines) - 1
+        section_end = len(lines)
+
+    key_re = re.compile(
+        rf"^\s*(?:#\s*)?"
+        rf"{re.escape(key)}\s*=.*$"
+    )
+
+    found = [
+        i for i in range(
+            section_start + 1,
+            section_end,
+        )
+        if key_re.match(
+            lines[i].rstrip("\r\n")
+        )
+    ]
+
+    if len(found) > 1:
+        raise ValueError(
+            f"duplicate {key} in stored config"
+        )
+
+    if found:
+        i = found[0]
+
+        lines[i] = format_boolean_setting_line(
+            lines[i],
+            key,
+            value,
+        )
+
+    else:
+        rendered = "true" if value else "false"
+
+        lines.insert(
+            section_start + 1,
+            f"{key} = {rendered}\n",
+        )
+
+    new_text = "".join(lines)
+
+    mode = CONFIG_FILE.stat().st_mode & 0o777
+
+    fd, temp_name = tempfile.mkstemp(
+        prefix=".ps2vnc.conf.",
+        dir=CONFIG_FILE.parent,
+        text=True,
+    )
+
+    try:
+        with os.fdopen(fd, "w") as temp:
+            temp.write(new_text)
+            temp.flush()
+            os.fsync(temp.fileno())
+
+        os.chmod(temp_name, mode)
+        os.replace(temp_name, CONFIG_FILE)
+
+    finally:
+        if os.path.exists(temp_name):
+            os.unlink(temp_name)
+
+
+def update_mode_lock(mode_name, locked):
+    if mode_name not in DISPLAY_MODES:
+        raise ValueError("unsupported display mode")
+
+    update_boolean_setting(
+        f"display.{mode_name}",
+        DISPLAY_LOCK_KEY,
+        locked,
+    )
+
+
+def update_hide_locked_modes(hide_locked):
+    update_boolean_setting(
+        "display",
+        HIDE_LOCKED_MODES_KEY,
+        hide_locked,
+    )
+
+
+def configured_startup_mode():
+    text = CONFIG_FILE.read_text()
+    lines = text.splitlines()
+
+    in_display = False
+    found = []
+
+    for raw_line in lines:
+        line = raw_line.strip()
+
+        if re.fullmatch(r"\[display\](?:\s*#.*)?", line):
+            in_display = True
+            continue
+
+        if re.match(r"^\s*\[[^\]]+\]", raw_line):
+            in_display = False
+
+        if not in_display:
+            continue
+
+        match = re.match(
+            r"^\s*startup_mode\s*=\s*([^#\s]+)",
+            raw_line,
+        )
+
+        if match is not None:
+            found.append(match.group(1))
+
+    if len(found) != 1:
+        raise ValueError("invalid stored startup_mode")
+
+    if found[0] not in DISPLAY_MODES:
+        raise ValueError("unsupported stored startup_mode")
+
+    return found[0]
+
+
+def _fsync_parent(path):
+    flags = os.O_RDONLY
+
+    if hasattr(os, "O_DIRECTORY"):
+        flags |= os.O_DIRECTORY
+
+    fd = os.open(path.parent, flags)
+
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _atomic_write_text(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if path.exists():
+        mode = path.stat().st_mode & 0o777
+    else:
+        mode = 0o644
+
+    fd, temp_name = tempfile.mkstemp(
+        prefix=f".{path.name}.",
+        dir=path.parent,
+        text=True,
+    )
+
+    try:
+        with os.fdopen(fd, "w") as temp:
+            temp.write(text)
+            temp.flush()
+            os.fsync(temp.fileno())
+
+        os.chmod(temp_name, mode)
+        os.replace(temp_name, path)
+        _fsync_parent(path)
+
+    finally:
+        if os.path.exists(temp_name):
+            os.unlink(temp_name)
+
+
+def _clear_display_transaction():
+    try:
+        DISPLAY_TRANSACTION_FILE.unlink()
+    except FileNotFoundError:
+        return
+
+    _fsync_parent(DISPLAY_TRANSACTION_FILE)
+
+
+def _validate_transaction_profile(prefix, values):
+    mode = values[f"{prefix}_mode"]
+    backend = values[f"{prefix}_backend"]
+
+    contract = DISPLAY_TRANSACTION_MODE_CONTRACTS.get(mode)
+
+    if contract is None or mode not in DISPLAY_MODES:
+        raise ValueError(f"unsupported {prefix} mode")
+
+    if backend not in DISPLAY_TRANSACTION_BACKENDS:
+        raise ValueError(f"unsupported {prefix} backend")
+
+    if backend not in contract["backends"]:
+        raise ValueError(
+            f"{prefix} backend is invalid for mode"
+        )
+
+    logical_width = values[f"{prefix}_logical_width"]
+    logical_height = values[f"{prefix}_logical_height"]
+    output_x = values[f"{prefix}_output_x"]
+    output_y = values[f"{prefix}_output_y"]
+    output_width = values[f"{prefix}_output_width"]
+    output_height = values[f"{prefix}_output_height"]
+
+    if (
+        logical_width <= 0 or logical_height <= 0 or
+        logical_width > 1920 or logical_height > 1080
+    ):
+        raise ValueError(f"invalid {prefix} logical geometry")
+
+    if (
+        output_x < 0 or output_y < 0 or
+        output_width <= 0 or output_height <= 0
+    ):
+        raise ValueError(f"invalid {prefix} output geometry")
+
+    raster_width, raster_height = DISPLAY_MODES[mode]
+
+    if (
+        output_x + output_width > raster_width or
+        output_y + output_height > raster_height
+    ):
+        raise ValueError(f"{prefix} output outside raster")
+
+    if backend == "hires":
+        expected_logical_width = output_width
+        expected_logical_height = output_height
+
+    elif backend == "standard":
+        standard_logical = contract["standard_logical"]
+
+        if standard_logical is None:
+            raise ValueError(
+                f"{prefix} mode has no Standard logical geometry"
+            )
+
+        (
+            expected_logical_width,
+            expected_logical_height,
+        ) = standard_logical
+
+    else:
+        raise ValueError(f"unsupported {prefix} backend")
+
+    if (
+        logical_width != expected_logical_width or
+        logical_height != expected_logical_height
+    ):
+        raise ValueError(
+            f"{prefix} logical/output geometry mismatch"
+        )
+
+
+
+def validate_display_transaction(values):
+    expected = {
+        f"{prefix}_{key}"
+        for prefix in ("previous", "candidate")
+        for key in DISPLAY_TRANSACTION_PROFILE_KEYS
+    }
+
+    if set(values) != expected:
+        raise ValueError("incomplete display transaction")
+
+    for prefix in ("previous", "candidate"):
+        _validate_transaction_profile(prefix, values)
+
+    previous = tuple(
+        values[f"previous_{key}"]
+        for key in DISPLAY_TRANSACTION_PROFILE_KEYS
+    )
+    candidate = tuple(
+        values[f"candidate_{key}"]
+        for key in DISPLAY_TRANSACTION_PROFILE_KEYS
+    )
+
+    if previous == candidate:
+        raise ValueError("candidate equals confirmed profile")
+
+
+def _serialize_display_transaction(transaction):
+    lines = [
+        f"version={DISPLAY_TRANSACTION_VERSION}",
+        f"state={transaction['state']}",
+    ]
+
+    for prefix in ("previous", "candidate"):
+        for key in DISPLAY_TRANSACTION_PROFILE_KEYS:
+            lines.append(
+                f"{prefix}_{key}={transaction[f'{prefix}_{key}']}"
+            )
+
+    return "\n".join(lines) + "\n"
+
+
+def read_display_transaction():
+    if not DISPLAY_TRANSACTION_FILE.exists():
+        return None
+
+    values = {}
+
+    for raw_line in DISPLAY_TRANSACTION_FILE.read_text().splitlines():
+        line = raw_line.strip()
+
+        if not line or "=" not in line:
+            raise ValueError("invalid display transaction record")
+
+        key, value = line.split("=", 1)
+
+        if key in values:
+            raise ValueError("duplicate display transaction key")
+
+        values[key] = value
+
+    if values.pop("version", None) != str(DISPLAY_TRANSACTION_VERSION):
+        raise ValueError("unsupported display transaction version")
+
+    state = values.pop("state", None)
+
+    if state not in DISPLAY_TRANSACTION_STATES:
+        raise ValueError("invalid display transaction state")
+
+    parsed = {}
+
+    for prefix in ("previous", "candidate"):
+        for key in DISPLAY_TRANSACTION_PROFILE_KEYS:
+            full_key = f"{prefix}_{key}"
+
+            if full_key not in values:
+                raise ValueError("incomplete display transaction record")
+
+            value = values.pop(full_key)
+
+            if key in (
+                "logical_width",
+                "logical_height",
+                "output_x",
+                "output_y",
+                "output_width",
+                "output_height",
+            ):
+                if not re.fullmatch(r"-?[0-9]+", value):
+                    raise ValueError("invalid transaction integer")
+                value = int(value)
+
+            parsed[full_key] = value
+
+    if values:
+        raise ValueError("unknown display transaction key")
+
+    validate_display_transaction(parsed)
+    parsed["state"] = state
+    return parsed
+
+
+def _write_display_transaction(transaction):
+    state = transaction.get("state")
+
+    if state not in DISPLAY_TRANSACTION_STATES:
+        raise ValueError("invalid display transaction state")
+
+    profile = {
+        key: value
+        for key, value in transaction.items()
+        if key != "state"
+    }
+
+    validate_display_transaction(profile)
+    _atomic_write_text(
+        DISPLAY_TRANSACTION_FILE,
+        _serialize_display_transaction(transaction),
+    )
+
+
+def begin_display_transaction(profile):
+    validate_display_transaction(profile)
+
+    if configured_startup_mode() != profile["previous_mode"]:
+        raise ValueError(
+            "previous profile is not the confirmed startup mode"
+        )
+
+    transaction = dict(profile)
+    transaction["state"] = "provisional"
+
+    existing = read_display_transaction()
+
+    if existing is not None:
+        if existing == transaction:
+            return existing
+        raise ValueError("display transaction already pending")
+
+    _write_display_transaction(transaction)
+    return transaction
+
+
+def _transition_display_transaction(expected_state, new_state):
+    transaction = read_display_transaction()
+
+    if transaction is None:
+        raise ValueError("no display transaction")
+
+    if transaction["state"] != expected_state:
+        raise ValueError(
+            f"display transaction state is {transaction['state']}"
+        )
+
+    transaction["state"] = new_state
+    _write_display_transaction(transaction)
+    return transaction
+
+
+def commit_display_transaction():
+    """
+    Complete an already-authorized KEEP transaction.
+
+    Normal KEEP enters here from provisional.  If the process previously
+    reached durable committing but died before update_startup_mode() and
+    _clear_display_transaction() both completed, retrying this same operation
+    must finish candidate B rather than reject the recovery attempt.
+
+    No other state is accepted.
+    """
+    transaction = read_display_transaction()
+
+    if transaction is None:
+        raise ValueError("no display transaction")
+
+    if transaction["state"] == "provisional":
+        transaction["state"] = "committing"
+        _write_display_transaction(transaction)
+
+    elif transaction["state"] != "committing":
+        raise ValueError(
+            f"display transaction state is {transaction['state']}"
+        )
+
+    update_startup_mode(transaction["candidate_mode"])
+    _clear_display_transaction()
+    return transaction
+
+
+def begin_display_transaction_restore():
+    return _transition_display_transaction(
+        "provisional",
+        "restoring",
+    )
+
+
+def mark_display_transaction_restored():
+    return _transition_display_transaction(
+        "restoring",
+        "restored",
+    )
+
+
+def acknowledge_display_transaction_restore():
+    transaction = read_display_transaction()
+
+    if transaction is None:
+        raise ValueError("no display transaction")
+
+    if transaction["state"] != "restored":
+        raise ValueError(
+            f"display transaction state is {transaction['state']}"
+        )
+
+    _clear_display_transaction()
+    return transaction
+
+
+def reconcile_display_transaction():
+    transaction = read_display_transaction()
+
+    if transaction is None:
+        return None
+
+    if transaction["state"] == "committing":
+        if configured_startup_mode() != transaction["candidate_mode"]:
+            update_startup_mode(transaction["candidate_mode"])
+
+        _clear_display_transaction()
+        return None
+
+    return transaction
+
+
+
+DISPLAY_CONTROL_PATH = "/display-control"
+DISPLAY_CONTROL_PENDING_PATH = "/display-control/pending"
+DISPLAY_CONTROL_MODES_PATH = "/display-control/modes"
+DISPLAY_CONTROL_REQUEST_PATH = "/display-control/request"
+DISPLAY_CONTROL_RESULT_PATH = "/display-control/result"
+DISPLAY_CONTROL_ACK_PATH = "/display-control/ack"
+
+
+def _display_control_empty():
+    return {
+        "version": DISPLAY_CONTROL_VERSION,
+        "txid": 0,
+        "state": "IDLE",
+        "action": "",
+        "mode": "",
+        "lease_seconds": 0,
+        "active_mode": "",
+        "baseline_mode": "",
+        "error_code": 0,
+    }
+
+
+def _serialize_display_control(record):
+    keys = (
+        "version",
+        "txid",
+        "state",
+        "action",
+        "mode",
+        "lease_seconds",
+        "active_mode",
+        "baseline_mode",
+        "error_code",
+    )
+
+    return "".join(
+        f"{key}={record[key]}\n"
+        for key in keys
+    )
+
+
+def read_display_control():
+    if not DISPLAY_CONTROL_FILE.exists():
+        return None
+
+    values = {}
+
+    for raw_line in DISPLAY_CONTROL_FILE.read_text().splitlines():
+        line = raw_line.strip()
+
+        if not line or "=" not in line:
+            raise ValueError("invalid display-control record")
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if key in values:
+            raise ValueError("duplicate display-control key")
+
+        values[key] = value
+
+    expected = {
+        "version",
+        "txid",
+        "state",
+        "action",
+        "mode",
+        "lease_seconds",
+        "active_mode",
+        "baseline_mode",
+        "error_code",
+    }
+
+    if set(values) != expected:
+        raise ValueError("incomplete display-control record")
+
+    try:
+        version = int(values["version"])
+        txid = int(values["txid"])
+        lease_seconds = int(values["lease_seconds"])
+        error_code = int(values["error_code"])
+    except ValueError:
+        raise ValueError("invalid display-control integer")
+
+    if version != DISPLAY_CONTROL_VERSION:
+        raise ValueError("unsupported display-control version")
+
+    if txid <= 0 or txid > 0xFFFFFFFF:
+        raise ValueError("invalid display-control txid")
+
+    if lease_seconds < 0 or lease_seconds > 0xFFFFFFFF:
+        raise ValueError("invalid display-control lease")
+
+    if error_code < 0 or error_code > 0xFFFFFFFF:
+        raise ValueError("invalid display-control error")
+
+    state = values["state"]
+
+    if state not in DISPLAY_CONTROL_STATES:
+        raise ValueError("invalid display-control state")
+
+    for key in ("mode", "active_mode", "baseline_mode"):
+        value = values[key]
+
+        if value and value not in DISPLAY_MODES:
+            raise ValueError(
+                f"unsupported display-control {key}"
+            )
+
+    return {
+        "version": version,
+        "txid": txid,
+        "state": state,
+        "action": values["action"],
+        "mode": values["mode"],
+        "lease_seconds": lease_seconds,
+        "active_mode": values["active_mode"],
+        "baseline_mode": values["baseline_mode"],
+        "error_code": error_code,
+    }
+
+
+def _write_display_control(record):
+    _atomic_write_text(
+        DISPLAY_CONTROL_FILE,
+        _serialize_display_control(record),
+    )
+
+
+def _clear_display_control():
+    try:
+        DISPLAY_CONTROL_FILE.unlink()
+    except FileNotFoundError:
+        return
+
+    _fsync_parent(DISPLAY_CONTROL_FILE)
+
+
+def display_control_status_text():
+    record = read_display_control()
+
+    if record is None:
+        record = _display_control_empty()
+
+    return (
+        _serialize_display_control(record)
+        + f"startup_mode={configured_startup_mode()}\n"
+    )
+
+
+def display_control_pending_text():
+    record = read_display_control()
+
+    if record is None:
+        return "state=none\n"
+
+    if record["state"] not in (
+        "PENDING",
+        "RESTORE_PENDING",
+    ):
+        return "state=none\n"
+
+    return _serialize_display_control(record)
+
+
+def display_control_modes_text():
+    return "".join(
+        f"mode={name}\n"
+        for name in DISPLAY_MODES
+    )
+
+
+def _parse_control_fields(text):
+    values = {}
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+
+        if not line:
+            continue
+
+        if "=" not in line:
+            raise ValueError("invalid display-control line")
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if key in values:
+            raise ValueError(
+                "duplicate display-control request key"
+            )
+
+        values[key] = value
+
+    return values
+
+
+def request_display_control(text):
+    values = _parse_control_fields(text)
+    action = values.get("action")
+    current = read_display_control()
+
+    if action == "set-temp":
+        if set(values) != {
+            "action",
+            "mode",
+            "lease_seconds",
+        }:
+            raise ValueError("invalid set-temp request")
+
+        if (
+            current is not None
+            and current["state"] in DISPLAY_CONTROL_BUSY_STATES
+        ):
+            raise ValueError("display control busy")
+
+        if read_display_transaction() is not None:
+            raise ValueError("display transaction pending")
+
+        mode = values["mode"]
+
+        if mode not in DISPLAY_MODES:
+            raise ValueError("unsupported display mode")
+
+        if not re.fullmatch(r"[0-9]+", values["lease_seconds"]):
+            raise ValueError("invalid lease_seconds")
+
+        lease_seconds = int(values["lease_seconds"])
+
+        if lease_seconds <= 0 or lease_seconds > 0xFFFFFFFF:
+            raise ValueError("invalid lease_seconds")
+
+        previous_txid = (
+            current["txid"]
+            if current is not None
+            else 0
+        )
+
+        txid = previous_txid + 1
+
+        if txid > 0xFFFFFFFF:
+            txid = 1
+
+        record = {
+            "version": DISPLAY_CONTROL_VERSION,
+            "txid": txid,
+            "state": "PENDING",
+            "action": "set-temp",
+            "mode": mode,
+            "lease_seconds": lease_seconds,
+            "active_mode": "",
+            "baseline_mode": "",
+            "error_code": 0,
+        }
+
+        _write_display_control(record)
+        return record
+
+    if action == "restore":
+        allowed = {"action", "txid"}
+
+        if not set(values).issubset(allowed):
+            raise ValueError("invalid restore request")
+
+        if current is None or current["state"] != "ACTIVE_TEMP":
+            raise ValueError("no active temporary display")
+
+        if "txid" in values:
+            if not re.fullmatch(r"[0-9]+", values["txid"]):
+                raise ValueError("invalid txid")
+
+            if int(values["txid"]) != current["txid"]:
+                raise ValueError("transaction id mismatch")
+
+        current["state"] = "RESTORE_PENDING"
+        current["action"] = "restore"
+        current["error_code"] = 0
+
+        _write_display_control(current)
+        return current
+
+    raise ValueError("unsupported display-control action")
+
+
+def update_display_control_result(text):
+    values = _parse_control_fields(text)
+
+    required = {
+        "txid",
+        "state",
+        "active_mode",
+        "baseline_mode",
+        "error_code",
+    }
+
+    if set(values) != required:
+        raise ValueError("invalid display-control result")
+
+    if not re.fullmatch(r"[0-9]+", values["txid"]):
+        raise ValueError("invalid result txid")
+
+    if not re.fullmatch(r"[0-9]+", values["error_code"]):
+        raise ValueError("invalid result error")
+
+    txid = int(values["txid"])
+    error_code = int(values["error_code"])
+    state = values["state"]
+
+    if state not in (
+        "SWITCHING",
+        "ACTIVE_TEMP",
+        "RESTORING",
+        "RESTORED",
+        "FAILED",
+    ):
+        raise ValueError("invalid result state")
+
+    current = read_display_control()
+
+    if current is None or current["txid"] != txid:
+        raise ValueError("unknown display-control txid")
+
+    for key in ("active_mode", "baseline_mode"):
+        value = values[key]
+
+        if value and value not in DISPLAY_MODES:
+            raise ValueError(f"unsupported result {key}")
+
+    current["state"] = state
+    current["active_mode"] = values["active_mode"]
+    current["baseline_mode"] = values["baseline_mode"]
+    current["error_code"] = error_code
+
+    _write_display_control(current)
+    return current
+
+
+def acknowledge_display_control(text):
+    values = _parse_control_fields(text)
+
+    if set(values) != {"txid"}:
+        raise ValueError("invalid display-control ack")
+
+    if not re.fullmatch(r"[0-9]+", values["txid"]):
+        raise ValueError("invalid txid")
+
+    txid = int(values["txid"])
+    current = read_display_control()
+
+    if current is None:
+        raise ValueError("no display-control transaction")
+
+    if current["txid"] != txid:
+        raise ValueError("transaction id mismatch")
+
+    if current["state"] != "RESTORED":
+        raise ValueError(
+            f"display control state is {current['state']}"
+        )
+
+    if current["error_code"] != 0:
+        raise ValueError("restored display control has error")
+
+    if (
+        not current["active_mode"]
+        or current["active_mode"] != current["baseline_mode"]
+    ):
+        raise ValueError("display control is not safely restored")
+
+    _clear_display_control()
+    return _display_control_empty()
+
+
+DISPLAY_TRANSACTION_PATH = "/display-transaction"
+DISPLAY_TRANSACTION_BEGIN_PATH = "/display-transaction/begin"
+DISPLAY_TRANSACTION_COMMIT_PATH = "/display-transaction/commit"
+DISPLAY_TRANSACTION_RESTORE_PATH = "/display-transaction/restore"
+DISPLAY_TRANSACTION_RESTORED_PATH = "/display-transaction/restored"
+DISPLAY_TRANSACTION_ACK_PATH = "/display-transaction/ack"
+
+DISPLAY_TRANSACTION_INTEGER_KEYS = {
+    f"{prefix}_{key}"
+    for prefix in ("previous", "candidate")
+    for key in (
+        "logical_width",
+        "logical_height",
+        "output_x",
+        "output_y",
+        "output_width",
+        "output_height",
+    )
+}
+
+
+def parse_display_transaction_begin(text):
+    expected = {
+        f"{prefix}_{key}"
+        for prefix in ("previous", "candidate")
+        for key in DISPLAY_TRANSACTION_PROFILE_KEYS
+    }
+
+    values = {}
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+
+        if not line:
+            continue
+
+        if "=" not in line:
+            raise ValueError("invalid transaction line")
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if key not in expected:
+            raise ValueError("unknown transaction key")
+
+        if key in values:
+            raise ValueError("duplicate transaction key")
+
+        if key in DISPLAY_TRANSACTION_INTEGER_KEYS:
+            if not re.fullmatch(r"-?[0-9]+", value):
+                raise ValueError("invalid transaction integer")
+
+            value = int(value)
+
+        values[key] = value
+
+    validate_display_transaction(values)
+    return values
+
+
+def display_transaction_status_text():
+    transaction = read_display_transaction()
+
+    if transaction is None:
+        return "state=none\n"
+
+    return _serialize_display_transaction(transaction)
+
+
+class ManagementHandler(BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.0"
+
+    def send_text(self, status, text):
+        body = text.encode("ascii")
+
+        self.send_response(status)
+        self.send_header(
+            "Content-Type",
+            "text/plain; charset=us-ascii",
+        )
+        self.send_header(
+            "Content-Length",
+            str(len(body)),
+        )
+        self.send_header(
+            "Connection",
+            "close",
+        )
+        self.end_headers()
+        self.wfile.write(body)
+
+    def read_request_text(self, allow_empty=False):
+        length_text = self.headers.get("Content-Length")
+
+        if length_text is None:
+            raise ValueError("content length required")
+
+        try:
+            length = int(length_text)
+        except ValueError:
+            raise ValueError("bad length")
+
+        if length < 0 or length > 4096:
+            raise ValueError("bad length")
+
+        if length == 0:
+            if allow_empty:
+                return ""
+            raise ValueError("empty body")
+
+        raw = self.rfile.read(length)
+
+        if len(raw) != length:
+            raise ValueError("incomplete request body")
+
+        return raw.decode("ascii", errors="strict")
+
+    def do_GET(self):
+        if self.path == DISPLAY_CONTROL_PATH:
+            try:
+                body = display_control_status_text()
+            except (ValueError, OSError) as exc:
+                self.send_text(
+                    500,
+                    f"DISPLAY CONTROL READ ERROR: {exc}\n",
+                )
+                return
+
+            self.send_text(200, body)
+            return
+
+        if self.path == DISPLAY_CONTROL_PENDING_PATH:
+            try:
+                body = display_control_pending_text()
+            except (ValueError, OSError) as exc:
+                self.send_text(
+                    500,
+                    f"DISPLAY CONTROL READ ERROR: {exc}\n",
+                )
+                return
+
+            self.send_text(200, body)
+            return
+
+        if self.path == DISPLAY_CONTROL_MODES_PATH:
+            self.send_text(
+                200,
+                display_control_modes_text(),
+            )
+            return
+
+        if self.path == "/ps2vnc.conf":
+            try:
+                body = CONFIG_FILE.read_bytes()
+            except OSError:
+                self.send_text(500, "CONFIG READ ERROR\n")
+                return
+
+            self.send_response(200)
+            self.send_header(
+                "Content-Type",
+                "text/plain; charset=us-ascii",
+            )
+            self.send_header(
+                "Content-Length",
+                str(len(body)),
+            )
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        if self.path == DISPLAY_TRANSACTION_PATH:
+            try:
+                body = display_transaction_status_text()
+            except (ValueError, OSError) as exc:
+                self.send_text(
+                    500,
+                    f"TRANSACTION READ ERROR: {exc}\n",
+                )
+                return
+
+            self.send_text(200, body)
+            return
+
+        if self.path == "/status":
+            self.send_text(200, "PS2VNC MANAGEMENT OK\n")
+            return
+
+        self.send_text(404, "NOT FOUND\n")
+
+    def do_POST(self):
+        if self.path == DISPLAY_CONTROL_REQUEST_PATH:
+            try:
+                text = self.read_request_text()
+                record = request_display_control(text)
+            except (ValueError, OSError) as exc:
+                self.send_text(
+                    409,
+                    f"DISPLAY CONTROL ERROR: {exc}\n",
+                )
+                return
+
+            self.send_text(
+                200,
+                _serialize_display_control(record),
+            )
+            return
+
+        if self.path == DISPLAY_CONTROL_RESULT_PATH:
+            try:
+                text = self.read_request_text()
+                record = update_display_control_result(text)
+            except (ValueError, OSError) as exc:
+                self.send_text(
+                    409,
+                    f"DISPLAY CONTROL RESULT ERROR: {exc}\n",
+                )
+                return
+
+            self.send_text(
+                200,
+                _serialize_display_control(record),
+            )
+            return
+
+        if self.path == DISPLAY_CONTROL_ACK_PATH:
+            try:
+                text = self.read_request_text()
+                record = acknowledge_display_control(text)
+            except (ValueError, OSError) as exc:
+                self.send_text(
+                    409,
+                    f"DISPLAY CONTROL ACK ERROR: {exc}\n",
+                )
+                return
+
+            self.send_text(
+                200,
+                _serialize_display_control(record),
+            )
+            return
+
+        transaction_paths = {
+            DISPLAY_TRANSACTION_BEGIN_PATH,
+            DISPLAY_TRANSACTION_COMMIT_PATH,
+            DISPLAY_TRANSACTION_RESTORE_PATH,
+            DISPLAY_TRANSACTION_RESTORED_PATH,
+            DISPLAY_TRANSACTION_ACK_PATH,
+        }
+
+        if self.path not in (
+            "/display",
+            "/display-mode",
+            "/display-lock",
+            "/display-ui",
+            *transaction_paths,
+        ):
+            self.send_text(404, "NOT FOUND\n")
+            return
+
+        try:
+            if self.path == DISPLAY_TRANSACTION_BEGIN_PATH:
+                text = self.read_request_text()
+                profile = parse_display_transaction_begin(text)
+                begin_display_transaction(profile)
+
+            elif self.path == DISPLAY_TRANSACTION_COMMIT_PATH:
+                self.read_request_text(allow_empty=True)
+                commit_display_transaction()
+
+            elif self.path == DISPLAY_TRANSACTION_RESTORE_PATH:
+                self.read_request_text(allow_empty=True)
+                begin_display_transaction_restore()
+
+            elif self.path == DISPLAY_TRANSACTION_RESTORED_PATH:
+                self.read_request_text(allow_empty=True)
+                mark_display_transaction_restored()
+
+            elif self.path == DISPLAY_TRANSACTION_ACK_PATH:
+                self.read_request_text(allow_empty=True)
+                acknowledge_display_transaction_restore()
+
+            else:
+                # Legacy persistence operations are forbidden while any
+                # complete display transaction is unresolved.
+                if read_display_transaction() is not None:
+                    self.send_text(
+                        409,
+                        "DISPLAY TRANSACTION PENDING\n",
+                    )
+                    return
+
+                text = self.read_request_text()
+
+                if self.path == "/display":
+                    mode_name, explicit_mode, values = \
+                        parse_display_update(text)
+
+                    validate_display(values, mode_name)
+                    update_display_config(
+                        mode_name,
+                        explicit_mode,
+                        values,
+                    )
+
+                elif self.path == "/display-mode":
+                    mode_name = parse_startup_mode_update(text)
+                    update_startup_mode(mode_name)
+
+                elif self.path == "/display-lock":
+                    mode_name, locked = \
+                        parse_mode_lock_update(text)
+
+                    update_mode_lock(
+                        mode_name,
+                        locked,
+                    )
+
+                elif self.path == "/display-ui":
+                    hide_locked = \
+                        parse_display_ui_update(text)
+
+                    update_hide_locked_modes(
+                        hide_locked
+                    )
+
+                else:
+                    raise ValueError(
+                        "unsupported persistence operation"
+                    )
+
+        except (
+            ValueError,
+            UnicodeError,
+            OSError,
+        ) as exc:
+            self.send_text(
+                400,
+                f"REJECTED: {exc}\n",
+            )
+            return
+
+        self.send_text(200, "OK\n")
+
+    def log_message(self, fmt, *args):
+        print(
+            "%s - %s"
+            % (
+                self.client_address[0],
+                fmt % args,
+            ),
+            flush=True,
+        )
+
+
+def main():
+    transaction = reconcile_display_transaction()
+
+    if transaction is None:
+        transaction_state = "none"
+    else:
+        transaction_state = transaction["state"]
+
+    print(
+        f"Display transaction: {transaction_state}",
+        flush=True,
+    )
+
+    print(
+        f"PS2VNC management service "
+        f"listening on {BIND_ADDRESS}:{PORT}",
+        flush=True,
+    )
+    print(
+        f"Configuration: {CONFIG_FILE}",
+        flush=True,
+    )
+
+    server = HTTPServer(
+        (BIND_ADDRESS, PORT),
+        ManagementHandler,
+    )
+
+    server.serve_forever()
+
+
+if __name__ == "__main__":
+    main()

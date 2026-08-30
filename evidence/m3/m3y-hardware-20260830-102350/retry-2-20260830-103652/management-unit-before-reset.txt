@@ -1,0 +1,4 @@
+ExecStart={ path=/usr/bin/python3 ; argv[]=/usr/bin/python3 /usr/local/lib/ps2vnc/management-server.py ; ignore_errors=no ; start_time=[Sun 2026-08-30 04:55:12 EDT] ; stop_time=[n/a] ; pid=5789 ; code=(null) ; status=0/0 }
+Id=ps2vnc-management.service
+Description=PS2VNC management/control service
+FragmentPath=/etc/systemd/system/ps2vnc-management.service

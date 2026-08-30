@@ -1,0 +1,6 @@
+MainPID=19457
+ExecStart={ path=/usr/bin/python3 ; argv[]=/usr/bin/python3 /usr/local/lib/ps2vnc/management-server.py ; ignore_errors=no ; start_time=[Sun 2026-08-30 10:41:26 EDT] ; stop_time=[n/a] ; pid=19457 ; code=(null) ; status=0/0 }
+Environment=HOME=/home/ps2 PS2VNC_CONFIG_FILE=/var/lib/ps2vnc/ps2vnc.conf
+RuntimeDirectory=
+StateDirectory=
+CacheDirectory=

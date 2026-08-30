@@ -1,0 +1,7 @@
+usage: ps2vnc-displayctl [-h] {status,list,set-temp,restore,ack,wait} ...
+
+positional arguments:
+  {status,list,set-temp,restore,ack,wait}
+
+options:
+  -h, --help            show this help message and exit

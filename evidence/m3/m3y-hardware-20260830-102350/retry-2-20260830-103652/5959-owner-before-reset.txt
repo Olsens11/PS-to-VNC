@@ -1,0 +1,13 @@
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                              
+LISTEN 0      50         127.0.0.1:139        0.0.0.0:*    users:(("smbd",pid=818,fd=31))      
+LISTEN 0      5       192.168.50.1:5959       0.0.0.0:*    users:(("python3",pid=5789,fd=3))   
+LISTEN 0      5       192.168.50.1:5900       0.0.0.0:*    users:(("Xtigervnc",pid=27814,fd=6))
+LISTEN 0      50         127.0.0.1:445        0.0.0.0:*    users:(("smbd",pid=818,fd=30))      
+LISTEN 0      4096       127.0.0.1:33421      0.0.0.0:*    users:(("containerd",pid=597,fd=10))
+LISTEN 0      50      192.168.50.1:445        0.0.0.0:*    users:(("smbd",pid=818,fd=28))      
+LISTEN 0      50      192.168.50.1:139        0.0.0.0:*    users:(("smbd",pid=818,fd=29))      
+LISTEN 0      128          0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=606,fd=3))       
+LISTEN 0      8      192.168.0.132:5901       0.0.0.0:*    users:(("python3",pid=27729,fd=3))  
+LISTEN 0      50             [::1]:445           [::]:*    users:(("smbd",pid=818,fd=32))      
+LISTEN 0      50             [::1]:139           [::]:*    users:(("smbd",pid=818,fd=33))      
+LISTEN 0      128             [::]:22            [::]:*    users:(("sshd",pid=606,fd=4))       

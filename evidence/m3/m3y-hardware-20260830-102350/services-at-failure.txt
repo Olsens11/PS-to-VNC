@@ -1,0 +1,11 @@
+● display-manager.service                                     not-found inactive dead    display-manager.service
+                                                                                                 timeout 60         tcpdump             -ni eth0             -s 0             -U             -w '/home/ps2/ps2vnc/logs/test15/f8j2-b3a-startup-20260829-144635/startup.pcap'             'arp or host 192.168.50.2'             2>'/home/ps2/ps2vnc/logs/test15/f8j2-b3a-startup-20260829-144635/tcpdump-stderr.txt'
+● ps2vnc-d17g-trn-20260825-195605.service                     loaded    failed   failed  /bin/sh -c exec timeout 900 tcpdump -l -n -i eth0 -s 0 -A     'src host 192.168.50.2 and udp dst port 5999'     > '/home/ps2/ps2vnc/logs/test15/hardware-test15E3KH4C3D17G-20260825-195605/transition-udp5999.txt' 2>&1
+● ps2vnc-d17j-trn-20260825-201348.service                     loaded    failed   failed  /bin/sh -c exec timeout 900 tcpdump -l -n -i eth0 -s 0 -A     'src host 192.168.50.2 and udp dst port 5999'     > '/home/ps2/ps2vnc/logs/test15/hardware-test15E3KH4C3D17J-20260825-201348/transition-udp5999.txt' 2>&1
+  ps2vnc-health.service                                       loaded    active   running PS2VNC Pi runtime health supervisor
+  ps2vnc-management.service                                   loaded    active   running PS2VNC management/control service
+  ps2vnc-network.service                                      loaded    active   exited  PS2VNC dedicated PS2 Ethernet
+  ps2vnc-openbox.service                                      loaded    active   running PS2VNC Openbox desktop
+  ps2vnc-panel.service                                        loaded    active   running PS2VNC lxpanel taskbar
+  ps2vnc-vnc-pacing.service                                   loaded    active   exited  PS2VNC VNC traffic pacing
+  ps2vnc-vnc.service                                          loaded    active   running PS2VNC TigerVNC display
