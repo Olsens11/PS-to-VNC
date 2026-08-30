@@ -295,6 +295,60 @@ else
     echo 'M0_BUILD_AUTHORITY=PRE_M0C'
 fi
 
+
+echo
+echo '===== K. M0 WRITABLE SOURCE AUTHORITY ====='
+
+if [ "$CURRENT_WORKING_SOURCE" = 'NONE' ]; then
+    echo 'M0_WRITABLE_SOURCE_AUTHORITY=NOT_YET_ACTIVE'
+else
+    test "$CURRENT_STAGE" = 'M0'
+    test "$CURRENT_WORKING_SOURCE" = 'working/b4a/ps2ip.c'
+
+    test -f "$CURRENT_WORKING_SOURCE"
+    test -f working/b4a/Makefile
+    test -f working/b4a/ps2vnc_identity.c
+    test -f working/b4a/ps2vnc_gsHires.c
+    test -x scripts/build-m0-b4a.sh
+
+    test "$(
+        sha256sum "$CURRENT_WORKING_SOURCE" |
+        awk '{print $1}'
+    )" = "$M0_SOURCE_SHA256"
+
+    test "$(
+        sha256sum working/b4a/Makefile |
+        awk '{print $1}'
+    )" = "$M0_MAKEFILE_SHA256"
+
+    test "$(
+        sha256sum working/b4a/ps2vnc_identity.c |
+        awk '{print $1}'
+    )" = "$M0_IDENTITY_SOURCE_SHA256"
+
+    test "$(
+        sha256sum working/b4a/ps2vnc_gsHires.c |
+        awk '{print $1}'
+    )" = "$M0_GSHIRES_SOURCE_SHA256"
+
+    if [ "$CURRENT_SOURCE_HEAD" != 'NONE' ]; then
+        git cat-file -e "$CURRENT_SOURCE_HEAD^{commit}"
+        git merge-base --is-ancestor "$CURRENT_SOURCE_HEAD" HEAD
+
+        COMMITTED_WORKING_SHA="$(
+            git show "$CURRENT_SOURCE_HEAD:$CURRENT_WORKING_SOURCE" |
+            sha256sum |
+            awk '{print $1}'
+        )"
+
+        test "$COMMITTED_WORKING_SHA" = "$M0_SOURCE_SHA256"
+    fi
+
+    echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
+    echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
+    echo 'M0_WRITABLE_SOURCE_AUTHORITY=PASS'
+fi
+
 echo
 echo '===== FINAL ====='
 echo 'PS_TO_VNC_MIGRATION_CHECK=PASS'

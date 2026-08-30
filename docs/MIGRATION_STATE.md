@@ -178,3 +178,24 @@ No writable working source exists yet.
 Next operation:
 
     M0D_create_writable_B4A_authority_and_controlled_rebuild
+
+## M0D1 checkpoint
+
+The pristine writable B4A implementation has been established at:
+
+    working/b4a/
+
+The primary writable source is:
+
+    working/b4a/ps2ip.c
+
+At creation it is byte-identical to the frozen B4A source.
+
+A controlled reproduction builder has been established at:
+
+    scripts/build-m0-b4a.sh
+
+M0D1 does not execute the compiler.
+
+The next operation after this checkpoint is committed is the first controlled
+M0 reproduction build.

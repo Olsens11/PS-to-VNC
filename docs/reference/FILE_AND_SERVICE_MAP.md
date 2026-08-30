@@ -88,3 +88,18 @@ agree with the actual source tree.
 
 The old `/home/ps2/ps2vnc/build/` directory is historical evidence only and is
 not PS-to-VNC build authority.
+
+## M0D writable authority
+
+| Responsibility | Canonical location |
+|---|---|
+| Writable B4A application source | `working/b4a/` |
+| Writable primary source | `working/b4a/ps2ip.c` |
+| Controlled M0 build wrapper | `scripts/build-m0-b4a.sh` |
+| M0 build provenance | `docs/M0_BUILD_PROVENANCE.md` |
+| M0 build fingerprints | `runtime/M0_BUILD_AUTHORITY.env` |
+
+`working/b4a/` begins byte-identical to the frozen B4A application inputs.
+
+Generated objects, generated IRX C files, the copied build dependency, and the
+ELF are build products rather than source authority.
