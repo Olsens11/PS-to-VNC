@@ -1210,3 +1210,5 @@ normalization:
 
 NEXT_ACTION=M4H-B_video_geometry_residual_boundary_census
 BLOCKED_BY=NONE
+
+DEVELOPMENT_CONTINUITY_BASELINE_COMMIT=e88c7bfd84ee3cf056b11ff9107aca8873cb1ce5
