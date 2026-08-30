@@ -116,3 +116,14 @@ The generated `working/b4a/PS2VNC.ELF` remains a build product.
 
 The committed frozen B4A ELF remains the durable executable byte authority
 because the M0D2 result proved the generated ELF byte-identical to it.
+
+## M0 hardware-validation resolution
+
+| Responsibility | Canonical location |
+|---|---|
+| M0 hardware-validation decision | `docs/M0_HARDWARE_RESOLUTION.md` |
+| M0 reproduction result | `docs/M0_BUILD_RESULT.md` |
+| Machine M0 reproduction authority | `runtime/M0_BUILD_AUTHORITY.env` |
+
+The M0 hardware decision inherits historical B4A evidence only because the
+reproduced final executable is byte-identical. It is not a new hardware PASS.

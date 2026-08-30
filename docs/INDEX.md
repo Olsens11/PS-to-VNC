@@ -51,3 +51,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 ## M0 reproduction result
 
 - `docs/M0_BUILD_RESULT.md` — Outcome A byte-exact reproduction result and characterized slim-LTO intermediate variance.
+
+## M0 hardware-validation resolution
+
+- `docs/M0_HARDWARE_RESOLUTION.md` — explains why no new M0 hardware regression is required for the byte-identical B4A executable and distinguishes inherited evidence from a new physical observation.

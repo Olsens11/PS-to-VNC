@@ -274,6 +274,21 @@ Evidence:
 
 M0F — perform any hardware validation required by the classified outcome.
 
+Status:
+
+    COMPLETE
+
+Resolution:
+
+    Mandatory new hardware regression is NOT REQUIRED because the M0
+    executable is byte-identical to the historically validated B4A DUT.
+
+No new hardware run was performed by M0F.
+
+Authority:
+
+    docs/M0_HARDWARE_RESOLUTION.md
+
 M0G — close M0, record the resulting source/build authority, and define M1.
 
 ## Completion requirement

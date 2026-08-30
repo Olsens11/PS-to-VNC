@@ -109,3 +109,21 @@ identity.
 See:
 
     docs/M0_BUILD_RESULT.md
+
+## M0F hardware-validation resolution
+
+M0F is complete.
+
+No new hardware run was performed.
+
+A new M0 regression is not required because the independently generated M0 ELF
+is byte-identical to the historically validated B4A executable.
+
+Historical B4A validation therefore remains applicable to the identical DUT
+bytes.
+
+This is an inherited-evidence determination, not a new hardware PASS.
+
+Next:
+
+    M0G — close M0 and define the first modularization stage.

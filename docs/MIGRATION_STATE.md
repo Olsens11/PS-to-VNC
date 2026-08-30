@@ -242,3 +242,28 @@ Committed evidence:
 Next operation:
 
     M0F_resolve_hardware_validation_requirement_for_byte_exact_DUT
+
+## M0F checkpoint
+
+M0F hardware-validation requirement resolution is COMPLETE.
+
+New hardware regression required:
+
+    NO
+
+New M0 hardware run performed:
+
+    NO
+
+Reason:
+
+    the M0 reproduced ELF is byte-identical to the historically validated B4A
+    ELF, so no new DUT identity exists.
+
+Canonical resolution:
+
+    docs/M0_HARDWARE_RESOLUTION.md
+
+Next operation:
+
+    M0G_close_M0_and_define_M1
