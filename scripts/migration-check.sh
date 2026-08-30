@@ -909,7 +909,58 @@ then
     test "$M1_DUT_HOST_CONFIG_TEXT_PARITY" = 'PASS'
 
     test "$M1_DUT_HARDWARE_STATUS" = 'NOT_RUN'
-    test "$M1_DUT_DEPLOYMENT_STATUS" = 'NOT_DEPLOYED'
+
+    case "$M1_DUT_DEPLOYMENT_STATUS" in
+        NOT_DEPLOYED)
+            echo 'M1_DUT_DEPLOYMENT_AUTHORITY=NOT_YET_DEPLOYED'
+            ;;
+
+        DEPLOYED_VERIFIED)
+            test "$M1_DUT_DEPLOYED_ELF_SHA256" = \
+                "$M1_DUT_ELF_SHA256"
+
+            test "$M1_DUT_DEPLOYMENT_METHOD" = \
+                'CURL_FTP_DUAL_TARGET_READBACK_SHA256'
+
+            test -d "$M1_DUT_DEPLOYMENT_EVIDENCE"
+
+            test -f \
+                "$M1_DUT_DEPLOYMENT_EVIDENCE/DEPLOYMENT-RESULT.env"
+
+            test -f \
+                "$M1_DUT_DEPLOYMENT_EVIDENCE/SHA256SUMS.txt"
+
+            test "$(
+                sha256sum \
+                    "$M1_DUT_DEPLOYMENT_EVIDENCE/SHA256SUMS.txt" |
+                awk '{print $1}'
+            )" = \
+                "$M1_DUT_DEPLOYMENT_EVIDENCE_MANIFEST_SHA256"
+
+            (
+                cd "$M1_DUT_DEPLOYMENT_EVIDENCE"
+                sha256sum -c SHA256SUMS.txt >/dev/null
+            )
+
+            # shellcheck disable=SC1090
+            source \
+                "$M1_DUT_DEPLOYMENT_EVIDENCE/DEPLOYMENT-RESULT.env"
+
+            test "$DEPLOYMENT_RESULT" = 'PASS'
+            test "$LOCAL_ELF_SHA256" = "$M1_DUT_ELF_SHA256"
+            test "$UNIQUE_READBACK_SHA256" = "$M1_DUT_ELF_SHA256"
+            test "$ROLLING_READBACK_SHA256" = "$M1_DUT_ELF_SHA256"
+            test "$HARDWARE_RUN" = 'NO'
+
+            echo 'M1_DUT_DEPLOYMENT_AUTHORITY=PASS'
+            ;;
+
+        *)
+            echo \
+                "ERROR=UNKNOWN_M1_DUT_DEPLOYMENT_STATUS:$M1_DUT_DEPLOYMENT_STATUS"
+            exit 79
+            ;;
+    esac
 
     test -f "$M1_DUT_EVIDENCE_ELF"
 

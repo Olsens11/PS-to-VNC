@@ -240,3 +240,32 @@ Hardware validation has not yet been performed.
 Next:
 
     M1D_run_required_hardware_regression
+
+## M1D deployment checkpoint
+
+The exact M1C DUT has been deployed to the PS2 and verified by FTP
+download-back SHA256.
+
+DUT:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+Unique target:
+
+    /mass/0/PS-to-VNC-M1D1-20260830-020419-26ae06ff.ELF
+
+Rolling target:
+
+    /mass/0/PS2VNC.ELF
+
+Deployment:
+
+    PASS — VERIFIED
+
+Hardware regression:
+
+    NOT RUN
+
+Next operation remains:
+
+    M1D_run_required_hardware_regression

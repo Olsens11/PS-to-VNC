@@ -465,3 +465,34 @@ Authority:
 Next operation:
 
     M1D_run_required_hardware_regression
+
+## M1D deployment checkpoint
+
+The first modular M1 DUT is now present on the PS2.
+
+DUT SHA256:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+Deployment status:
+
+    DEPLOYED_VERIFIED
+
+Hardware status:
+
+    NOT_RUN
+
+Unique forensic PS2 target:
+
+    /mass/0/PS-to-VNC-M1D1-20260830-020419-26ae06ff.ELF
+
+Rolling launch target:
+
+    /mass/0/PS2VNC.ELF
+
+Deployment evidence:
+
+    evidence/m1/m1d1-deployment/
+
+The rolling ELF must not be treated as hardware validated until M1D records
+both machine and physical results.
