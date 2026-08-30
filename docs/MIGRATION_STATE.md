@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M3
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=42bd88e5c3515fae9244c841ec8e9eee88e53a6f
+    CURRENT_SOURCE_HEAD=68ae3fe07ed6b4e3d080da8c5b6fa98bdf603c4e
     LAST_HARDWARE_RESULT=M3V_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M3X_split_largest_remaining_blocking_leaf
+    NEXT_ACTION=M3Y_validate_eleven_object_calibration_on_hardware
 
 The canonical machine-readable source remains:
 
