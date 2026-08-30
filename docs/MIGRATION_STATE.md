@@ -1070,3 +1070,51 @@ M4G_HARDWARE_AUTHORITY_COMMIT=f19a2fd317dc440e403acef3d55de7ac0bace69f
 M4G_HARDWARE_MANIFEST_SHA256=afbfd1636dbed4d88307431fe1cfa4c588a2960bfaec209e6117c9f20f2b04d7
 
 NEXT_ACTION=M4H_video_geometry_boundary_census
+
+## M4H-A safe-area / presentation geometry — hardware pending
+
+The first permanent video/geometry subtranche is normalized.
+
+Permanent ownership:
+
+    src/video/geometry.c
+    src/video/geometry.h
+
+Public pure API:
+
+    pstvnc_video_geometry_safe_area_valid
+    pstvnc_video_geometry_safe_area_rect
+    pstvnc_video_geometry_presented_rect
+
+Historical runtime/config surfaces remain transitional adapters. Mutable
+video state, calibration state, RFB mechanics, and PS2 GS programming did
+not move.
+
+Host tests pass.
+
+Two independent canonical PS2 builds are byte reproducible.
+
+Candidate identity:
+
+    ELF_SHA256=42163c30b68ebf84b51b1c8c81d541017e64ffaa52e27bb0408f91edb25e2992
+    ELF_BYTES=2978188
+
+    PT_LOAD_SHA256=a33efdb0bee3f383d4828db8fb6a06f62ddb90fdc42a97308dc12777ed8197b9
+    PT_LOAD_BYTES=449800
+
+The loaded image is not identical to hardware-qualified M4G:
+
+    M4G_PT_LOAD_SHA256=5e6a0fe12d7562e0bd88d47b0ca1929f8565fccfd9bbb0b00b498f178ff354b3
+    M4H_PT_LOAD_SHA256=a33efdb0bee3f383d4828db8fb6a06f62ddb90fdc42a97308dc12777ed8197b9
+
+Therefore M4H-A does not inherit M4G hardware qualification.
+
+The exact reproducible M4H candidate must pass the PS2 hardware checkpoint
+before it can replace M4G as LAST_VALIDATED_WORKING_ELF.
+
+M4H_SOURCE_COMMIT=661f14576892e533475818704d6a1391ad950414
+M4H_SOURCE_AUTHORITY_COMMIT=f8abc11c187b9505f88a443d4c4878a092f8a999
+M4H_SOURCE_AUTHORITY_MANIFEST_SHA256=4ec8f03c217b71cfd9ee08621dcfc233cde0514ab8e94b964f573a5cf71c07aa
+
+NEXT_ACTION=M4H4_safe_area_presentation_hardware_checkpoint
+BLOCKED_BY=M4H3B_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
