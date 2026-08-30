@@ -1,5 +1,5 @@
 
-void display_confirm_render_bitmap(void)
+static void display_confirm_render_bitmap(void)
 {
     const unsigned short panel = osk_color(3, 3, 4);
     const unsigned short key = osk_color(8, 8, 10);
@@ -58,7 +58,7 @@ void display_confirm_render_bitmap(void)
 }
 
 
-void display_restore_ack_render_bitmap(void)
+static void display_restore_ack_render_bitmap(void)
 {
     const unsigned short panel = osk_color(3, 3, 4);
     const unsigned short key = osk_color(8, 18, 31);
@@ -99,7 +99,7 @@ void display_restore_ack_render_bitmap(void)
 
 
 
-int display_menu_tab_for_mode(
+static int display_menu_tab_for_mode(
     const ps2vnc_video_mode_t *mode)
 {
     if (mode == NULL)
@@ -240,7 +240,7 @@ static int display_menu_next_visible_tab(
 }
 
 
-void display_menu_normalize_selection(void)
+static void display_menu_normalize_selection(void)
 {
     int saved;
 
@@ -403,7 +403,7 @@ static int display_menu_move_horizontal_selection(
 }
 
 
-void display_menu_render_bitmap(void)
+static void display_menu_render_bitmap(void)
 {
     const unsigned short panel =
         osk_color(3, 3, 4);
@@ -803,7 +803,7 @@ void display_menu_render_bitmap(void)
 
 
 
-void system_menu_render_bitmap(void)
+static void system_menu_render_bitmap(void)
 {
     const unsigned short panel = osk_color(3, 3, 4);
     const unsigned short key = osk_color(10, 10, 11);

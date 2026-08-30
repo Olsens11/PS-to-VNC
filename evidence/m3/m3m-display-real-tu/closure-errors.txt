@@ -1,0 +1,6 @@
+ps2vnc_display_orchestration.inc:1596:13: error: implicit declaration of function 'display_menu_normalize_selection'; did you mean 'display_menu_mode_at_selection'? [-Wimplicit-function-declaration]
+ps2vnc_display_orchestration.inc:1805:21: error: implicit declaration of function 'display_menu_tab_for_mode'; did you mean 'display_menu_selection_for_mode'? [-Wimplicit-function-declaration]
+ps2vnc_display_orchestration.inc:2198:21: error: implicit declaration of function 'display_restore_ack_render_bitmap' [-Wimplicit-function-declaration]
+ps2vnc_display_orchestration.inc:2200:21: error: implicit declaration of function 'display_confirm_render_bitmap' [-Wimplicit-function-declaration]
+ps2vnc_display_orchestration.inc:2202:21: error: implicit declaration of function 'system_menu_render_bitmap' [-Wimplicit-function-declaration]
+ps2vnc_display_orchestration.inc:2204:21: error: implicit declaration of function 'display_menu_render_bitmap' [-Wimplicit-function-declaration]
