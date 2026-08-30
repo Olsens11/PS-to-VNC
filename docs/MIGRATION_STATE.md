@@ -879,3 +879,50 @@ implementation movement. Remaining migration-era core/tail and .inc
 partitions are treated as qualified transitional scaffolding and will be
 retired according to semantic module boundaries rather than geometric
 line-count cuts.
+
+## M4C/M4D architectural census and M4E target design
+
+M4C measured the compiled migration architecture without moving source.
+M4D then completed the link/type/interface universe.
+
+The full current link contains 18 project-root C objects. The twelve M3
+objects are the migration decomposition, while additional support/build
+objects include configuration text helpers, identity, high-resolution GS
+support, and three generated embedded IRX translation units.
+
+The four project-named symbols initially outside the M4C twelve-object
+scope were all resolved to the existing configuration text module.
+
+M4E adopts the permanent responsibility-oriented architecture documented
+in:
+
+    docs/TARGET_ARCHITECTURE.md
+    docs/STATE_OWNERSHIP.md
+    docs/DEPENDENCY_RULES.md
+    docs/NORMALIZATION_SEQUENCE.md
+
+The central architectural corrections are:
+
+    - mutable state receives subsystem owners;
+    - application-wide writable extern coupling is retired incrementally;
+    - RFB protocol and video presentation become sibling domains;
+    - cross-domain display transitions are orchestrated by app;
+    - UI/input no longer own transport effects;
+    - PS2-specific mechanisms acquire an explicit platform home;
+    - generated IRX C inputs are treated as build-generated inputs;
+    - core/tail and directional migration interfaces are transitional.
+
+No implementation was moved by M4E.
+
+The first implementation normalization tranche is:
+
+    src/config/text.c
+    src/config/text.h
+
+with host tests and permanent pstvnc_ naming.
+
+    M4C_EVIDENCE_COMMIT=d40421a65c3d78146c490f7be903a97edf391f12
+    M4D_EVIDENCE_COMMIT=bf3dc76257a692cb10b13ec8fc9e7f035e7fcbf4
+    M4E_DESIGN_COMMIT=8889c6eeae0a466c3f87d392fd7bac5bda568a1f
+    M4E_DESIGN_MANIFEST_SHA256=681fce2b475c29bfab835a88798dd1239806a13cd80b0d631dd4cb032466db31
+    NEXT_ACTION=M4F_normalize_config_text_module
