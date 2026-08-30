@@ -90,3 +90,22 @@ No writable source authority has been created yet.
 
 The next operation is read-only reconstruction and fingerprinting of the
 historical build environment before `working/b4a/` is populated.
+
+## M0 Outcome A reproduction
+
+PS-to-VNC has independently rebuilt the writable B4A authority to the exact
+historical ELF bytes.
+
+Result:
+
+    OUTCOME_A_BYTE_EXACT_ELF
+
+The sole non-identical intermediate was the slim-LTO gsHires object container.
+Its LTO payloads are identical; only generated section-name metadata differs.
+
+The final executable is byte-identical, so this does not constitute a new DUT
+identity.
+
+See:
+
+    docs/M0_BUILD_RESULT.md

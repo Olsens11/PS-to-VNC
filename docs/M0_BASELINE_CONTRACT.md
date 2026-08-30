@@ -249,7 +249,28 @@ Authority:
 
 M0D — create writable `working/b4a/` authority and perform controlled rebuild.
 
+Status:
+
+    COMPLETE
+
+Result:
+
+    Final ELF byte-exact to historical B4A.
+
 M0E — classify build result as Outcome A, B, or C.
+
+Status:
+
+    COMPLETE
+
+Classification:
+
+    OUTCOME_A_BYTE_EXACT_ELF
+
+Evidence:
+
+    docs/M0_BUILD_RESULT.md
+    evidence/m0/m0d2/
 
 M0F — perform any hardware validation required by the classified outcome.
 

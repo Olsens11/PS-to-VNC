@@ -131,7 +131,7 @@ human prose.
     CURRENT_STAGE=M0
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    NEXT_ACTION=M0D2_run_controlled_B4A_reproduction_build
+    NEXT_ACTION=M0F_resolve_hardware_validation_requirement_for_byte_exact_DUT
 
 The canonical machine-readable source remains:
 
@@ -211,3 +211,34 @@ Machine state now recognizes:
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=d1c0d6a4829c03f3a062095afd00859188e13dfe
     NEXT_ACTION=M0D2_run_controlled_B4A_reproduction_build
+
+## M0E checkpoint
+
+M0E reproduction classification is COMPLETE.
+
+Classification:
+
+    OUTCOME_A_BYTE_EXACT_ELF
+
+The independently generated working ELF is byte-identical to the historical
+and frozen B4A ELF:
+
+    2deb9f4c3dab34eebdccc31a53fe7158ebce625aec4e9cf03cda902abf2611e8
+
+The earlier M0D2 outer-harness exit 60 was caused only by an over-strict
+byte-hash requirement on the GCC slim-LTO `ps2vnc_gsHires.o` intermediate.
+
+M0D2A established that its eighteen LTO payloads are byte-identical and only
+the generated LTO section-name suffix, `.strtab`, and `.shstrtab` vary.
+
+Canonical result:
+
+    docs/M0_BUILD_RESULT.md
+
+Committed evidence:
+
+    evidence/m0/m0d2/
+
+Next operation:
+
+    M0F_resolve_hardware_validation_requirement_for_byte_exact_DUT

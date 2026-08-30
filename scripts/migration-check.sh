@@ -290,6 +290,47 @@ if [ -f runtime/M0_BUILD_AUTHORITY.env ]; then
     echo "M0_B4A_LIBPS2IP_SHA256=$M0_B4A_LIBPS2IP_SHA256"
     echo "M0_REFERENCE_ELF_SHA256=$M0_REFERENCE_ELF_SHA256"
     echo "M0_REPRODUCTION_CLASSIFICATION=$M0_REPRODUCTION_CLASSIFICATION"
+    if [ "$M0_REPRODUCTION_CLASSIFICATION" = 'OUTCOME_A_BYTE_EXACT_ELF' ]; then
+        test "$M0D2_OBSERVED_ELF_SHA256" = "$M0_REFERENCE_ELF_SHA256"
+        test "$M0D2_OBSERVED_ELF_BYTES" = "$M0_REFERENCE_ELF_BYTES"
+
+        test "$M0D2_GSHIRES_LTO_PAYLOADS" = 'BYTE_IDENTICAL'
+        test "$M0D2_GSHIRES_VARIANCE" = \
+            'SLIM_LTO_SECTION_NAME_METADATA_ONLY'
+        test "$M0D2_GSHIRES_FINAL_ELF_EFFECT" = 'NONE'
+
+        test "$M0_FINAL_ELF_IDENTITY" = 'BYTE_EXACT'
+
+        test "$LAST_BUILD_RESULT" = 'OUTCOME_A_BYTE_EXACT_ELF'
+        test "$LAST_VALIDATED_WORKING_ELF_SHA256" = \
+            "$M0_REFERENCE_ELF_SHA256"
+
+        test -f docs/M0_BUILD_RESULT.md
+        test -f evidence/m0/m0d2/SHA256SUMS.txt
+
+        ACTUAL_M0D2_EVIDENCE_MANIFEST_SHA="$(
+            sha256sum evidence/m0/m0d2/SHA256SUMS.txt |
+            awk '{print $1}'
+        )"
+
+        test "$ACTUAL_M0D2_EVIDENCE_MANIFEST_SHA" = \
+            "$M0D2_EVIDENCE_MANIFEST_SHA256"
+
+        (
+            cd evidence/m0/m0d2
+            sha256sum -c SHA256SUMS.txt >/dev/null
+        )
+
+        if [ -f working/b4a/PS2VNC.ELF ]; then
+            test "$(
+                sha256sum working/b4a/PS2VNC.ELF |
+                awk '{print $1}'
+            )" = "$M0_REFERENCE_ELF_SHA256"
+        fi
+
+        echo 'M0_OUTCOME_A_AUTHORITY=PASS'
+    fi
+
     echo 'M0_BUILD_AUTHORITY=PASS'
 else
     echo 'M0_BUILD_AUTHORITY=PRE_M0C'

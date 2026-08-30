@@ -1,0 +1,92 @@
+===== PS-to-VNC M0 B4A CONTROLLED BUILD =====
+
+===== PRE-BUILD SOURCE AUTHORITY =====
+WORKING_SOURCE_AUTHORITY=PASS
+
+===== PREPARE EXACT B4A NETWORK DEPENDENCY =====
+BUILD_LIBPS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74
+B4A_NETWORK_DEPENDENCY=PASS
+
+===== REQUIRE EXACT PINNED DOCKER IMAGE =====
+DOCKER_IMAGE=ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
+DOCKER_IMAGE_ID=sha256:f4ec5e8dfd748f2e451731c5da73660fce6549a8cfda7fc2e494b588db17ca1c
+PINNED_DOCKER_IMAGE=PASS
+
+===== BUILD =====
+rm -f PS2VNC.ELF ps2ip.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o DEV9_irx.c NETMAN_irx.c SMAP_irx.c
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2ip.c -o ps2ip.o
+ps2ip.c:13446:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+13446 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2ip.c:9286:12: warning: 'update_hires_background_region' defined but not used [-Wunused-function]
+ 9286 | static int update_hires_background_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2ip.c:8126:12: warning: 'sync_copy_hires_region' defined but not used [-Wunused-function]
+ 8126 | static int sync_copy_hires_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_identity.c -o ps2vnc_identity.o
+mips64r5900el-ps2-elf-gcc \
+	-D_EE \
+	-DF_gsKit_hires_init_screen=1 \
+	-G0 \
+	-march=r5900 \
+	-mhard-float \
+	-msingle-float \
+	-mno-llsc \
+	-mno-shared \
+	-mplt \
+	-O2 \
+	-g \
+	-flto=auto \
+	-fno-fat-lto-objects \
+	-I/usr/local/ps2dev/gsKit/include \
+	-I/usr/local/ps2dev/ps2sdk/ee/include \
+	-I/usr/local/ps2dev/ps2sdk/common/include \
+	-c ps2vnc_gsHires.c -o ps2vnc_gsHires.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c DEV9_irx.c -o DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c NETMAN_irx.c -o NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c SMAP_irx.c -o SMAP_irx.o
+mips64r5900el-ps2-elf-gcc -T/usr/local/ps2dev/ps2sdk/ee/startup/linkfile -O2 -o PS2VNC.ELF ps2ip.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o -L/usr/local/ps2dev/ps2sdk/ee/lib -Wl,-zmax-page-size=128   -L/usr/local/ps2dev/gsKit/lib -lgskit -ldmakit -lpad -lnetman /work/build/deps/libps2ip_mtu1458_wscale128.a -ldebug -lpatches -Wl,--wrap=sendto
+
+===== REFERENCE LADDER =====
+DEV9_IRX_C_SHA256=cdf6c86894b2e49aadd943c6afc59558a8ae7151dc86be5d7ab895b56af40c9f
+DEV9_IRX_C_SHA256_BYTES=67384
+DEV9_IRX_C_SHA256_MATCH=YES
+DEV9_IRX_O_SHA256=d266c9176195021d6f5bffc7123c17974706e946e221c61f7db9ff139fe2ea4b
+DEV9_IRX_O_SHA256_BYTES=13100
+DEV9_IRX_O_SHA256_MATCH=YES
+NETMAN_IRX_C_SHA256=5c39327e2bf3c4e439cfc6d511a21db0251598af2e4b3694d733bb40dee2a162
+NETMAN_IRX_C_SHA256_BYTES=80352
+NETMAN_IRX_C_SHA256_MATCH=YES
+NETMAN_IRX_O_SHA256=bc99cc61be33f00603d43b3a354771f13a0f97ddb2148cedea40100390c568f2
+NETMAN_IRX_O_SHA256_BYTES=15224
+NETMAN_IRX_O_SHA256_MATCH=YES
+SMAP_IRX_C_SHA256=bfaada6dd54ecdf816066d307cc79c3e332c48877dd75c4b08570dee4698708c
+SMAP_IRX_C_SHA256_BYTES=86958
+SMAP_IRX_C_SHA256_MATCH=YES
+SMAP_IRX_O_SHA256=5149431f2b5550ed526e209daa7b62ade808773461f3e7edfafc979d88b36550
+SMAP_IRX_O_SHA256_BYTES=16296
+SMAP_IRX_O_SHA256_MATCH=YES
+PS2IP_O_SHA256=a406425e6af6cf2ae9bc8822f3daf655115d7a14913cd961aff9ada83308ec2e
+PS2IP_O_SHA256_BYTES=593840
+PS2IP_O_SHA256_MATCH=YES
+IDENTITY_O_SHA256=f3876aa8dedb6eccd95632ae074d8af80d7b99f20635d57f250dbf961a4a7b81
+IDENTITY_O_SHA256_BYTES=6124
+IDENTITY_O_SHA256_MATCH=YES
+GSHIRES_O_SHA256=6d63b362fab80e541fb0f7fe4c77496defdb8f122607648f5102c97e7c07829f
+GSHIRES_O_SHA256_BYTES=35308
+GSHIRES_O_SHA256_MATCH=NO
+ELF_SHA256=2deb9f4c3dab34eebdccc31a53fe7158ebce625aec4e9cf03cda902abf2611e8
+ELF_SHA256_BYTES=2933552
+ELF_SHA256_MATCH=YES
+
+===== CLASSIFICATION =====
+M0_BUILD_CLASSIFICATION=OUTCOME_A_BYTE_EXACT
+
+===== FINAL =====
+M0_CONTROLLED_BUILD=COMPLETE
+ELF_SHA256=2deb9f4c3dab34eebdccc31a53fe7158ebce625aec4e9cf03cda902abf2611e8
+ELF_BYTES=2933552

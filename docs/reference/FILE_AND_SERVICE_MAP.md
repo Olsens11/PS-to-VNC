@@ -103,3 +103,16 @@ not PS-to-VNC build authority.
 
 Generated objects, generated IRX C files, the copied build dependency, and the
 ELF are build products rather than source authority.
+
+## M0D2 reproduction evidence
+
+| Responsibility | Canonical location |
+|---|---|
+| M0 reproduction result | `docs/M0_BUILD_RESULT.md` |
+| M0D2 captured evidence | `evidence/m0/m0d2/` |
+| Machine build-result authority | `runtime/M0_BUILD_AUTHORITY.env` |
+
+The generated `working/b4a/PS2VNC.ELF` remains a build product.
+
+The committed frozen B4A ELF remains the durable executable byte authority
+because the M0D2 result proved the generated ELF byte-identical to it.
