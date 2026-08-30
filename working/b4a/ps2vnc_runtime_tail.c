@@ -233,55 +233,21 @@ D17AL_VGA_OTHER(
  * Keep entries grouped and sorted for human inspection; the UI derives its
  * columns from menu_group rather than assuming a particular row count.
  */
- const ps2vnc_video_mode_t *const video_modes[] = {
-    /* TV / DTV */
-    &video_mode_480i,
-    &video_mode_480p,
-    &video_mode_480p_hires,
-    &video_mode_576i,
-    &video_mode_576p,
-    &video_mode_720p,
-    &video_mode_1080i,
-
-    /* VGA 60 Hz */
-    &video_mode_vga_640_60,
-    &video_mode_vga_800_60,
-    &video_mode_vga_1024_60,
-    &video_mode_vga_1280_60,
-
-    /* VGA alternate refresh */
-    &video_mode_vga_640_72,
-    &video_mode_vga_640_75,
-    &video_mode_vga_640_85,
-    &video_mode_vga_800_56,
-    &video_mode_vga_800_72,
-    &video_mode_vga_800_75,
-    &video_mode_vga_800_85,
-    &video_mode_vga_1024_70,
-    &video_mode_vga_1024_75,
-    &video_mode_vga_1024_85,
-    &video_mode_vga_1280_75
-};
+extern const ps2vnc_video_mode_t *const video_modes[];
 
 #define VIDEO_MODE_COUNT \
     (sizeof(video_modes) / sizeof(video_modes[0]))
 
-int ps2vnc_video_mode_supports_backend(
+extern int ps2vnc_video_mode_supports_backend(
     const ps2vnc_video_mode_t *mode,
-    ps2vnc_backend_t backend)
-{
-    if (mode == NULL || backend == PS2VNC_BACKEND_NONE)
-        return 0;
-
-    return (mode->allowed_backends & (unsigned int)backend) != 0;
-}
+    ps2vnc_backend_t backend);
 
 /* Recursive M3 subdivision scaffold remains intact. */
 /*
  * M3I recursive coarse split:
  * this TU retains runtime_support + framebuffer_engine.
  */
-#include "ps2vnc_runtime_tail_to_core.h"
+#include "ps2vnc_runtime_core_to_tail.h"
 
-#include "ps2vnc_runtime_core.inc"
+#include "ps2vnc_runtime_tail.inc"
 /* M3K: framebuffer engine compiled in ps2vnc_framebuffer.c */

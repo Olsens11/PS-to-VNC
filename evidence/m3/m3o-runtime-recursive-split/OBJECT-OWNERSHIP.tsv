@@ -1,0 +1,8 @@
+object	defined_text
+ps2ip.o	0
+ps2vnc_runtime.o	33
+ps2vnc_runtime_tail.o	36
+ps2vnc_framebuffer.o	14
+ps2vnc_ui_display.o	17
+ps2vnc_display.o	11
+ps2vnc_services.o	60

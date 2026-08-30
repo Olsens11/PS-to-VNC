@@ -1,0 +1,4 @@
+In file included from ps2vnc_runtime.c:286:
+ps2vnc_runtime_core.inc:286:21: warning: 'hires_bg_storage_row' declared 'static' but never defined [-Wunused-function]
+  286 | static unsigned int hires_bg_storage_row(unsigned int raster_y);
+      |                     ^~~~~~~~~~~~~~~~~~~~

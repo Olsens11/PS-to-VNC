@@ -281,7 +281,7 @@ int ps2vnc_video_mode_supports_backend(
  * M3I recursive coarse split:
  * this TU retains runtime_support + framebuffer_engine.
  */
-#include "ps2vnc_runtime_tail_to_core.h"
+#include "ps2vnc_runtime_core_to_tail.h"
 
-#include "ps2vnc_runtime_core.inc"
+#include "ps2vnc_runtime_tail.inc"
 /* M3K: framebuffer engine compiled in ps2vnc_framebuffer.c */

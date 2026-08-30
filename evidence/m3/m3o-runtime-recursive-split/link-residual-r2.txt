@@ -1,0 +1,3 @@
+/work/working/b4a/ps2vnc_runtime_tail.c:273: multiple definition of `ps2vnc_video_mode_supports_backend'; ps2vnc_runtime.o:/work/working/b4a/ps2vnc_runtime.c:273: first defined here
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_runtime_tail.o:/work/working/b4a/ps2vnc_runtime_tail.c:236: multiple definition of `video_modes'; ps2vnc_runtime.o:/work/working/b4a/ps2vnc_runtime.c:236: first defined here
+collect2: error: ld returned 1 exit status
