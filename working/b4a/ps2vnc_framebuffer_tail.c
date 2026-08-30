@@ -16,4 +16,5 @@
 #include "ps2vnc_ui_display_to_runtime.h"
 #include "ps2vnc_runtime_to_framebuffer.h"
 
-#include "ps2vnc_framebuffer_core.inc"
+#include "ps2vnc_framebuffer_core_to_tail.h"
+#include "ps2vnc_framebuffer_tail.inc"

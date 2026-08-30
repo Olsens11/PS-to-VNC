@@ -1,0 +1,5 @@
+name	provider	file	line	kind	source_declaration	header_declaration
+hires_bg_is_field_separated	core	ps2vnc_framebuffer_engine.inc	1056	NF	static int hires_bg_is_field_separated (void);	extern int hires_bg_is_field_separated (void);
+hires_bg_storage_row	core	ps2vnc_framebuffer_engine.inc	1062	NF	static unsigned int hires_bg_storage_row (unsigned int raster_y);	extern unsigned int hires_bg_storage_row (unsigned int raster_y);
+ps2vnc_hires_mapped_storage_row	core	ps2vnc_framebuffer_engine.inc	1081	NF	static unsigned int ps2vnc_hires_mapped_storage_row (unsigned int presentation_y);	extern unsigned int ps2vnc_hires_mapped_storage_row (unsigned int presentation_y);
+sync_copy_hires_dirty_rows	core	ps2vnc_framebuffer_engine.inc	1194	NF	static int sync_copy_hires_dirty_rows (short unsigned int *dst, const short unsigned int *src);	extern int sync_copy_hires_dirty_rows (short unsigned int *dst, const short unsigned int *src);

@@ -1,0 +1,3 @@
+ps2vnc_display_commit_update
+ps2vnc_display_publish_full_desktop
+publish_hires_background

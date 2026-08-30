@@ -1,0 +1,4 @@
+ps2vnc_framebuffer_tail.inc:394:17: error: implicit declaration of function 'ps2vnc_hires_mapped_storage_row' [-Wimplicit-function-declaration]
+ps2vnc_framebuffer_tail.inc:590:9: error: implicit declaration of function 'sync_copy_hires_dirty_rows' [-Wimplicit-function-declaration]
+ps2vnc_framebuffer_tail.inc:861:21: error: implicit declaration of function 'hires_bg_storage_row' [-Wimplicit-function-declaration]
+ps2vnc_framebuffer_tail.inc:1120:13: error: implicit declaration of function 'hires_bg_is_field_separated' [-Wimplicit-function-declaration]
