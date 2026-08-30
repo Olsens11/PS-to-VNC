@@ -1,0 +1,19 @@
+current_object	target_owner	notes
+ps2ip.o	app/startup	startup transaction/profile globals
+ps2vnc_runtime.o	MULTIPLE	video model; RFB state; UI state; input state; diagnostics; app state
+ps2vnc_runtime_tail.o	MULTIPLE	RFB session/resize/input; UI OSK; diagnostics; network status
+ps2vnc_framebuffer.o	MULTIPLE	RFB update/Hextile; video framebuffer; controller-thread start
+ps2vnc_framebuffer_tail.o	video/framebuffer+mapping	hires mapping/publish/presentation
+ps2vnc_ui_display.o	ui+input	menus; OSK actions; scrolling/input helpers
+ps2vnc_ui_tail.o	input/controller+app routing	controller thread
+ps2vnc_display.o	app/display_transition+video/display+management	display switch and remote transaction orchestration
+ps2vnc_display_tail.o	app/main	main/application orchestration
+ps2vnc_services.o	MULTIPLE	recovery; config; calibration; management HTTP helpers
+ps2vnc_management_tail.o	management	client; HTTP; transactions; display policy
+ps2vnc_calibration_tail.o	video+platform+input	calibration; graphics lifecycle; pad access
+ps2vnc_config_text.o	config/text	text parsing helpers
+ps2vnc_identity.o	diagnostics/identity	build/source identity
+ps2vnc_gsHires.o	platform/ps2/graphics_hires	PS2 hires GS support
+DEV9_irx.o	build/generated/irx	embedded generated IRX object
+NETMAN_irx.o	build/generated/irx	embedded generated IRX object
+SMAP_irx.o	build/generated/irx	embedded generated IRX object

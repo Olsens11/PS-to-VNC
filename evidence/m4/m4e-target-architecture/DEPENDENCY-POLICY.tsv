@@ -1,0 +1,14 @@
+consumer	provider	rule	reason
+app	*	MAY_DEPEND	composition/orchestration
+rfb	video	MUST_NOT_DEPEND	use explicit frame sink/update contract
+video	rfb	MUST_NOT_DEPEND	app coordinates cross-domain transition
+management	video	MUST_NOT_CONTROL	management transports data; app applies behavior
+ui	management	MUST_NOT_DEPEND	UI emits semantic actions
+ui	rfb transport internals	MUST_NOT_DEPEND	app routes remote actions
+input	rfb	MUST_NOT_DEPEND	input emits logical actions
+input	ui	MUST_NOT_CONTROL	routing is above input
+platform/ps2	app	MUST_NOT_DEPEND	platform is lower level
+platform/ps2	ui	MUST_NOT_DEPEND	platform is lower level
+platform/ps2	management	MUST_NOT_DEPEND	platform is lower level
+diagnostics	application domains	MUST_NOT_CONTROL	diagnostics is observational
+common	application domains	MUST_NOT_DEPEND	common remains low-level

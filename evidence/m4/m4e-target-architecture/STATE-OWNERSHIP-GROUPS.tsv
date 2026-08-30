@@ -1,0 +1,19 @@
+state_group	target_owner	migration_seed
+startup_transaction_profile	app/startup	startup_*
+display_transition	app/display_transition	display_confirm_*; remote_display_*; transition lifecycle
+recovery_policy	app/recovery	manual refresh/cooldown policy
+rfb_session	rfb/session	rfb_connected; rx/out queue; live protocol state
+rfb_resize	rfb/desktop_resize	rfb_extended_desktop_*; rfb_resize_expected*
+video_mode	video/mode	active_video_mode; active_display_backend
+video_geometry	video/geometry	desktop_* geometry
+video_framebuffer	video/framebuffer	hires buffers; direct-present buffers
+video_mapping	video/mapping	mapping cache/sample/edge state
+video_calibration	video/calibration	screen_fit_*
+controller	input/controller	controller_*; pad lifecycle
+bindings	input/bindings	debug_hotkey_* migrated/renamed by responsibility
+display_menu	ui/display_menu	display_menu_*
+system_menu	ui/system_menu	system_menu_*
+osk	ui/osk	osk_*
+management_policy	management/display_policy	display_policy_* where remote policy state
+debug	diagnostics/debug	debug_*
+profiling	diagnostics/profiling	profile_*

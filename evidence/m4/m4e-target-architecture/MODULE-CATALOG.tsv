@@ -1,0 +1,38 @@
+subsystem	module	responsibility
+app	main	top-level entry and composition
+app	startup	startup reconciliation
+app	display_transition	cross-domain display transaction orchestration
+app	recovery	product recovery policy
+rfb	session	RFB connection/session lifecycle
+rfb	transport	exact RFB send/receive buffering
+rfb	framebuffer_update	RFB framebuffer-update and rectangle framing
+rfb	hextile	Hextile decoding
+rfb	desktop_resize	ExtendedDesktopSize negotiation
+rfb	input	RFB pointer/key serialization
+video	mode	video mode model and backend compatibility
+video	geometry	logical/presented geometry
+video	framebuffer	framebuffer representation/update target
+video	mapping	hires raster mapping and caches
+video	display	local presentation and display mechanism
+video	calibration	safe-area calibration
+input	controller	controller polling and lifecycle
+input	bindings	bindings/hotkeys/chords
+input	action	logical input action types
+ui	display_menu	display menu
+ui	system_menu	system menu
+ui	osk	on-screen keyboard
+ui	overlay	confirmation/recovery/status overlays
+config	config	configuration model and section parsing
+config	text	text parsing helpers
+management	http	small management HTTP framing
+management	client	management GET/POST transport
+management	display_transaction	remote display transaction serialization
+management	display_policy	remote display policy
+diagnostics	debug	debug telemetry
+diagnostics	profiling	profiling counters/timing
+diagnostics	identity	build/source/version identity
+platform/ps2	bootstrap	IOP/module bootstrap
+platform/ps2	network	PS2 network platform mechanisms
+platform/ps2	pad	PS2 pad mechanisms
+platform/ps2	graphics	PS2 GS/dmaKit mechanisms
+platform/ps2	graphics_hires	PS2 high-resolution graphics support

@@ -335,3 +335,19 @@ Architectural normalization is complete when:
   functionality belongs.
 
 Line count alone is not an architectural acceptance criterion.
+
+## Detailed target design
+
+The coarse design principles in this document are refined by these
+normative M4 documents:
+
+    docs/TARGET_ARCHITECTURE.md
+    docs/STATE_OWNERSHIP.md
+    docs/DEPENDENCY_RULES.md
+    docs/NORMALIZATION_SEQUENCE.md
+
+Where the migration-era source arrangement conflicts with these documents,
+the migration-era arrangement is treated as transitional.
+
+The detailed target was adopted only after M4C/M4D compiler, state,
+dependency, link-universe, type, and header-interface censuses.
