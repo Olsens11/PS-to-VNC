@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M3
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=58d22cba30174f92ebc50418da30080cef68d7c1
+    CURRENT_SOURCE_HEAD=69368356959dfb6e0bcf2d79ba150c473027af53
     LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M3A_plan_accelerated_extraction_waves
+    NEXT_ACTION=M3B_recursive_macro_split
 
 The canonical machine-readable source remains:
 
@@ -615,3 +615,25 @@ migration cycles.
 Next:
 
     M3A_plan_accelerated_extraction_waves
+
+## M3 coarse implementation move
+
+The complete implementation envelope has been moved into:
+
+    working/b4a/ps2vnc_macro_body.inc
+
+Extracted lines:
+
+    18313
+
+Remaining ps2ip.c lines:
+
+    467
+
+PS2 load image:
+
+    BYTE_EXACT_TO_M2
+
+Next:
+
+    M3B_recursive_macro_split

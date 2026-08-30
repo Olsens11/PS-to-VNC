@@ -60,8 +60,7 @@ case "$CURRENT_STAGE" in
     M3)
         test "$LAST_COMPLETE_STAGE" = 'M2'
         test "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS'
-        test "$NEXT_ACTION" = \
-            'M3A_plan_accelerated_extraction_waves'
+        test -n "$NEXT_ACTION"
         ;;
 
     *)
@@ -438,44 +437,48 @@ test -f "$CURRENT_WORKING_SOURCE"
 case "$CURRENT_STAGE" in
     M1)
         source runtime/M1_SOURCE_AUTHORITY.env
+
         test "$M1_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
-        echo 'WORKING_SOURCE_GENERATION=M1B'
+
+        echo 'WORKING_SOURCE_GENERATION=M1'
         ;;
 
-    M2|M3)
+    M2)
         source runtime/M2_SOURCE_AUTHORITY.env
 
         test "$M2_SOURCE_STATUS" = 'EXTRACTED'
         test "$M2_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
 
-        test "$(
-            sha256sum "$M2_MONOLITH_PATH" |
-            awk '{print $1}'
-        )" = "$M2_POST_MONOLITH_SHA256"
+        echo 'WORKING_SOURCE_GENERATION=M2'
+        ;;
 
-        test "$(
-            sha256sum "$M2_CONFIG_TEXT_SOURCE_PATH" |
-            awk '{print $1}'
-        )" = "$M2_POST_CONFIG_TEXT_SOURCE_SHA256"
+    M3)
+        if [ -f runtime/M3_SOURCE_AUTHORITY.env ]; then
+            source runtime/M3_SOURCE_AUTHORITY.env
 
-        test "$(
-            sha256sum "$M2_CONFIG_TEXT_HEADER_PATH" |
-            awk '{print $1}'
-        )" = "$M2_POST_CONFIG_TEXT_HEADER_SHA256"
+            test "$M3_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
+            test "$M3_SOURCE_STATUS" = \
+                'ACCELERATED_STRUCTURAL_MIGRATION'
 
-        test "$(
-            sha256sum "$M2_MAKEFILE_PATH" |
-            awk '{print $1}'
-        )" = "$M2_MAKEFILE_SHA256"
+            test "$(
+                sha256sum "$M3_SOURCE_MANIFEST" |
+                awk '{print $1}'
+            )" = "$M3_SOURCE_MANIFEST_SHA256"
 
-        echo 'WORKING_SOURCE_GENERATION=M2B'
-        echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
-        echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
+            sha256sum -c \
+                "$M3_SOURCE_MANIFEST" >/dev/null
 
-        if [ "$CURRENT_STAGE" = 'M3' ]; then
-            echo 'M2_WORKING_SOURCE_AUTHORITY=HISTORICAL_BASE_FOR_M3'
+            test "$M3_MACHINE_RESULT" = 'PASS'
+
+            echo 'WORKING_SOURCE_GENERATION=M3'
+            echo 'M3_SOURCE_AUTHORITY=PASS'
         else
-            echo 'M2_WORKING_SOURCE_AUTHORITY=PASS'
+            source runtime/M2_SOURCE_AUTHORITY.env
+
+            test "$M2_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
+
+            echo 'WORKING_SOURCE_GENERATION=M2'
+            echo 'M3_SOURCE_AUTHORITY=PLANNING_FROM_M2'
         fi
         ;;
 

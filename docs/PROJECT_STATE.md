@@ -358,3 +358,14 @@ Current stage:
 Next:
 
     M3A_plan_accelerated_extraction_waves
+
+## Accelerated M3 structural migration
+
+The main implementation body has been moved intact into a same-translation-
+unit migration scaffold.
+
+The PS2 load image remains byte-exact to the validated M2 DUT.
+
+Next:
+
+    M3B_recursive_macro_split

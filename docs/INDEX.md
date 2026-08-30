@@ -92,3 +92,5 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 - `docs/M2C_DUT_CHARACTERIZATION.md` — reproducible M2 DUT build, linkage, parser parity and validation authority.
 
 - `docs/M2_COMPLETION.md` — authoritative M2 closure and accelerated-migration transition record.
+
+- `docs/M3_MACRO_MIGRATION.md` — coarse-first hierarchical migration authority for the M3 implementation scaffold.

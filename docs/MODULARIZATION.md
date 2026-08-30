@@ -294,3 +294,19 @@ coupled boundaries.
 Next:
 
     M3A_plan_accelerated_extraction_waves
+
+## Hierarchical macro migration
+
+M3 no longer requires each intermediate split to be a final independent
+translation unit.
+
+Large implementation regions may first be moved intact, validated, and then
+recursively subdivided.
+
+The current macro body is:
+
+    working/b4a/ps2vnc_macro_body.inc
+
+Next:
+
+    M3B_recursive_macro_split
