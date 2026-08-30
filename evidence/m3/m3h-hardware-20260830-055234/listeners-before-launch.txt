@@ -1,0 +1,2 @@
+LISTEN 0      5       192.168.50.1:5959       0.0.0.0:*    users:(("python3",pid=5789,fd=3))   
+LISTEN 0      5       192.168.50.1:5900       0.0.0.0:*    users:(("Xtigervnc",pid=27814,fd=6))

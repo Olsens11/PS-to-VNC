@@ -378,3 +378,15 @@ M3G establishes three independently linked ownership regions:
 
 The runtime region keeps its existing semantic leaves together for this move;
 those leaves are the next recursive decomposition surface.
+
+## M3H hardware-qualified three-object boundary
+
+The current coarse architecture is now hardware-qualified:
+
+1. `ps2ip.c` — canonical state/primary-source shell, 0 text symbols
+2. `ps2vnc_runtime.c` — 11933-line coarse runtime implementation
+3. `ps2vnc_services.c` — 6379-line services implementation
+
+M3H passed startup plus the five-mode hardware sweep. The next decomposition
+therefore proceeds recursively inside `ps2vnc_runtime.c`, rather than revisiting
+the already-qualified services split.

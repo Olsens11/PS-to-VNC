@@ -182,8 +182,8 @@ canonical machine-readable state.
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=1cf5ce7a65e3b69b1db612730a3a4f1edca20dd5
-    LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M3H_hardware_validate_three_object_architecture
+    LAST_HARDWARE_RESULT=M3H_PASS_MACHINE_AND_PHYSICAL
+    NEXT_ACTION=M3I_continue_recursive_runtime_translation_unit_decomposition
 
 The canonical machine-readable source remains:
 
@@ -732,3 +732,16 @@ M3G machine validation: PASS.
 - load relation: `NEW_NONIDENTICAL_THREE_TU_LOAD_IMAGE`
 - hardware requirement: `REQUIRED_NEW_LOAD_IMAGE`
 - next action: `M3H_hardware_validate_three_object_architecture`
+
+## M3H hardware checkpoint
+
+The M3G three-object architecture has completed its required hardware
+checkpoint.
+
+Machine result: PASS.
+Physical result: PASS.
+Display matrix: 5/5 PASS.
+Startup/final baseline: 480p PASS.
+Evidence: `evidence/m3/m3h-hardware-20260830-055234`.
+
+Next action: `M3I_continue_recursive_runtime_translation_unit_decomposition`.

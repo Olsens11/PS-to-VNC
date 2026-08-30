@@ -447,3 +447,16 @@ Clean-build reproduction: byte-exact.
 PS2 load-image relation: `NEW_NONIDENTICAL_THREE_TU_LOAD_IMAGE`.
 Hardware requirement: `REQUIRED_NEW_LOAD_IMAGE`.
 Next action: `M3H_hardware_validate_three_object_architecture`.
+
+## M3H hardware result
+
+M3G three-object DUT hardware qualification: PASS.
+
+- ELF SHA256: `c65368d280f3104fd4a7ff37ef2df9615842fb0578b444f500a5425ad65ba967`
+- load SHA256: `cfed368ec910dc2e43f0a40b47e39f3a75750fb1139d71c3a93dbb91c1c20ada`
+- startup desktop: PASS
+- machine mode matrix: 5/5 PASS
+- operator physical report: FULL PASS
+- final baseline: 480p PASS
+- evidence: `evidence/m3/m3h-hardware-20260830-055234`
+- next action: `M3I_continue_recursive_runtime_translation_unit_decomposition`

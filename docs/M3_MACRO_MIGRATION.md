@@ -221,3 +221,24 @@ translation unit while preserving the existing recursive semantic hierarchy.
 
 The runtime leaf hierarchy remains a migration scaffold for the next recursive
 compiler-boundary split.
+
+## M3H — three-object hardware qualification
+
+The M3G three-object build has now passed the required real-hardware
+checkpoint.
+
+- exact ELF: `c65368d280f3104fd4a7ff37ef2df9615842fb0578b444f500a5425ad65ba967`
+- PS2 load image: `cfed368ec910dc2e43f0a40b47e39f3a75750fb1139d71c3a93dbb91c1c20ada`
+- startup 480p desktop: PASS
+- machine display sweep: 5/5 PASS
+- physical display sweep: 5/5 PASS
+- modes: `480i`, `480p-hires`, `576i`, `720p`, `1080i`
+- final 480p baseline: PASS
+- post-sweep RFB transport: PASS
+- post-sweep management channel: PASS
+- automatic recovery: not used
+- PS2 reset by test tooling: no
+- evidence: `evidence/m3/m3h-hardware-20260830-055234`
+
+The real compiler boundary is hardware-qualified. Migration now resumes
+recursively inside the coarse runtime translation unit.
