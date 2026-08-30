@@ -982,3 +982,40 @@ where historical whitespace differs from current authored-source policy.
     M4F_SOURCE_AUTHORITY_COMMIT=ebab70b19f0ae3863424d2299127712eddcdf667
     M4F_RAW_EVIDENCE_MANIFEST_SHA256=543ab7d9c0cc9ef43a9ebb37ed8f935f27623cc1488712678003e93d734decef
     NEXT_ACTION=M4G_video_mode_geometry_boundary_census
+
+## M4G-A video-mode source normalization — hardware pending
+
+Permanent ownership is established for:
+
+    src/video/mode.c
+    src/video/mode.h
+
+The permanent module owns the immutable 22-entry catalog, video mode and
+backend model types, backend support/default logic, and lookup-by-name.
+
+The exact catalog order is host tested.
+
+Live runtime state remains transitional and was not moved:
+
+    active_video_mode
+    active_display_backend
+    desktop geometry state
+
+Two independent PS2 builds are byte-identical to each other:
+
+    M4G2_ELF_SHA256=6ef11851ae3965fa24504eb805a6b42cf95eaebaa7948ba99f067bed60c991f2
+    M4G2_PT_LOAD_SHA256=5e6a0fe12d7562e0bd88d47b0ca1929f8565fccfd9bbb0b00b498f178ff354b3
+    M4G2_PT_LOAD_BYTES=449416
+
+The PT_LOAD differs from the previously qualified M4F/M4A image:
+
+    PREVIOUS_PT_LOAD_SHA256=62d62c543186802e657d4ba4044e879568a6dd51b707b056846df4c563de4f8b
+    RELATION=NONIDENTICAL
+
+Therefore M4G2 is an unqualified hardware candidate until M4G4 passes.
+
+M4G_SOURCE_COMMIT=30a1ca80340e3e61a8256aabd22cca552ff8fdce
+M4G_SOURCE_AUTHORITY_COMMIT=1dba6c3d68f5275795e20be3ffd7c7d2263729a5
+M4G_SOURCE_AUTHORITY_MANIFEST_SHA256=844a43e10a320486c109bd6e16df24f8dedc97d9781b25e73ce38e307a392ad4
+
+NEXT_ACTION=M4G4_video_mode_hardware_checkpoint
