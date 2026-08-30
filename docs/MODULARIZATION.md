@@ -367,3 +367,14 @@ translation-unit boundary on the physical PS2 while preserving the validated
 display-mode matrix. Continued M3 work should keep decomposing the remaining
 large implementation regions rather than reverting to same-TU fragment-only
 organization.
+
+## M3G three-object architecture
+
+M3G establishes three independently linked ownership regions:
+
+1. shared startup-state shell
+2. coarse runtime implementation
+3. management/configuration/calibration services
+
+The runtime region keeps its existing semantic leaves together for this move;
+those leaves are the next recursive decomposition surface.

@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M3
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=746ef1d9da6f55e246841dbd7569d17b90600678
+    CURRENT_SOURCE_HEAD=1cf5ce7a65e3b69b1db612730a3a4f1edca20dd5
     LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M3G_continue_real_translation_unit_decomposition
+    NEXT_ACTION=M3H_hardware_validate_three_object_architecture
 
 The canonical machine-readable source remains:
 
@@ -718,3 +718,17 @@ hardware-qualified.
 - live VNC session after sweep: PASS
 - source repair required for M3E: NO
 - next migration action: continue real translation-unit decomposition
+
+## M3G second real translation-unit checkpoint
+
+M3G machine validation: PASS.
+
+- state TU: `ps2ip.c`
+- runtime TU: `ps2vnc_runtime.c`
+- services TU: `ps2vnc_services.c`
+- runtime semantic lines: 11933
+- services semantic lines: 6379
+- clean-build reproduction: byte-exact
+- load relation: `NEW_NONIDENTICAL_THREE_TU_LOAD_IMAGE`
+- hardware requirement: `REQUIRED_NEW_LOAD_IMAGE`
+- next action: `M3H_hardware_validate_three_object_architecture`

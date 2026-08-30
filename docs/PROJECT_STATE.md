@@ -435,3 +435,15 @@ management service, the unchanged uninstrumented M3E DUT booted and passed
 the complete checkpoint.
 
 Current trajectory: continue coarse real translation-unit decomposition.
+
+## M3G machine result
+
+The second real translation-unit migration is machine-valid.
+
+M3G ELF SHA256: `c65368d280f3104fd4a7ff37ef2df9615842fb0578b444f500a5425ad65ba967`.
+Runtime semantic region: 11933 lines.
+Services semantic region: 6379 lines.
+Clean-build reproduction: byte-exact.
+PS2 load-image relation: `NEW_NONIDENTICAL_THREE_TU_LOAD_IMAGE`.
+Hardware requirement: `REQUIRED_NEW_LOAD_IMAGE`.
+Next action: `M3H_hardware_validate_three_object_architecture`.

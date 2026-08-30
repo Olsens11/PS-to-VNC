@@ -199,3 +199,25 @@ restored health. The unchanged uninstrumented M3E DUT then booted and passed
 the hardware matrix.
 
 M3 therefore continues with coarse real translation-unit decomposition.
+
+## M3G — second coarse real translation unit
+
+The complete remaining runtime envelope now compiles as a second real
+translation unit while preserving the existing recursive semantic hierarchy.
+
+- state shell: `ps2ip.c`
+- state-shell text symbols: 0
+- runtime TU: `ps2vnc_runtime.c`
+- runtime semantic lines: 11933
+- runtime text symbols: 80
+- services TU: `ps2vnc_services.c`
+- services semantic lines: 6379
+- services text symbols: 60
+- deterministic clean builds: byte-exact
+- M3G ELF: `c65368d280f3104fd4a7ff37ef2df9615842fb0578b444f500a5425ad65ba967`
+- M3G load image: `cfed368ec910dc2e43f0a40b47e39f3a75750fb1139d71c3a93dbb91c1c20ada`
+- load relation to hardware-qualified M3E: `NEW_NONIDENTICAL_THREE_TU_LOAD_IMAGE`
+- hardware requirement: `REQUIRED_NEW_LOAD_IMAGE`
+
+The runtime leaf hierarchy remains a migration scaffold for the next recursive
+compiler-boundary split.
