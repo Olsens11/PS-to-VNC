@@ -1,0 +1,6 @@
+PID=9693
+/proc/9693/fd/0 -> /dev/null
+/proc/9693/fd/1 -> socket:[44411]
+/proc/9693/fd/2 -> socket:[44411]
+/proc/9693/fd/3 -> socket:[45351]
+/proc/9693/fd/4 -> socket:[1008839]

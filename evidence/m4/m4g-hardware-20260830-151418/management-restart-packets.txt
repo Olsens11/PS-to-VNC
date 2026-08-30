@@ -1,0 +1,18 @@
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+2026-08-30 15:30:14.438984 IP 192.168.50.1.5959 > 192.168.50.2.49676: Flags [F.], seq 53815762, ack 79854231, win 502, length 0
+2026-08-30 15:30:14.439047 IP 192.168.50.1.5959 > 192.168.50.2.49677: Flags [R.], seq 1327799523, ack 79862884, win 502, length 0
+2026-08-30 15:30:14.439083 IP 192.168.50.1.5959 > 192.168.50.2.49678: Flags [R.], seq 2163045403, ack 79871456, win 502, length 0
+2026-08-30 15:30:14.439104 IP 192.168.50.1.5959 > 192.168.50.2.49679: Flags [R.], seq 2457426178, ack 79880028, win 502, length 0
+2026-08-30 15:30:14.439132 IP 192.168.50.1.5959 > 192.168.50.2.52432: Flags [R.], seq 1912816302, ack 6578, win 502, length 0
+2026-08-30 15:30:14.442012 IP 192.168.50.2.52433 > 192.168.50.1.5959: Flags [S], seq 8090, win 65535, options [mss 1418,nop,wscale 1], length 0
+2026-08-30 15:30:14.442213 IP 192.168.50.1.5959 > 192.168.50.2.52433: Flags [R.], seq 0, ack 8091, win 0, length 0
+2026-08-30 15:30:14.640450 IP 192.168.50.1.5959 > 192.168.50.2.49676: Flags [F.], seq 0, ack 1, win 502, length 0
+2026-08-30 15:30:15.044420 IP 192.168.50.1.5959 > 192.168.50.2.49676: Flags [F.], seq 0, ack 1, win 502, length 0
+2026-08-30 15:30:15.876423 IP 192.168.50.1.5959 > 192.168.50.2.49676: Flags [F.], seq 0, ack 1, win 502, length 0
+2026-08-30 15:30:17.508428 IP 192.168.50.1.5959 > 192.168.50.2.49676: Flags [F.], seq 0, ack 1, win 502, length 0
+2026-08-30 15:30:20.740411 IP 192.168.50.1.5959 > 192.168.50.2.49676: Flags [F.], seq 0, ack 1, win 502, length 0
+
+12 packets captured
+12 packets received by filter
+0 packets dropped by kernel

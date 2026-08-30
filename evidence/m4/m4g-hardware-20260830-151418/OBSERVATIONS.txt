@@ -1,0 +1,4 @@
+After the initial Ethernet-link-up stall diagnostic, restarting only the
+Pi management service caused the running PS2VNC instance to return to
+FreeMcBoot. The user then manually relaunched the rolling PS2VNC.ELF.
+The fresh launch reached the normal 480p desktop successfully.

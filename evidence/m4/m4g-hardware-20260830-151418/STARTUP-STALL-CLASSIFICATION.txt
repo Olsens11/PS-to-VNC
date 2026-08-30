@@ -1,0 +1,1343 @@
+
+===== 1. TIMELINE WE ALREADY KNOW =====
+PREVIOUS_VNC_CLOSE=2026-08-30T15:14:14-04:00
+LINK_DOWN=2026-08-30T15:15:22-04:00
+CANDIDATE_LINK_UP=2026-08-30T15:17:03-04:00
+PASSIVE_CAPTURE_AT_15_22=NO_PACKETS
+PING_AT_15_22=3_OF_3_RESPONSES
+
+===== 2. ROOT-VISIBLE TCP SOCKET OWNERSHIP =====
+LISTEN     4      5       192.168.50.1:5959        0.0.0.0:*     users:(("python3",pid=9693,fd=3))                      
+LISTEN     0      5       192.168.50.1:5900        0.0.0.0:*     users:(("Xtigervnc",pid=709,fd=6))                     
+ESTAB      0      0       192.168.50.1:5959   192.168.50.2:49676 users:(("python3",pid=9693,fd=4))                      
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49679                                                        
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49678                                                        
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49677                                                        
+ESTAB      68     0       192.168.50.1:5959   192.168.50.2:52432                                                        
+
+===== 3. MANAGEMENT PROCESS FILE DESCRIPTORS =====
+MANAGEMENT_PID=9693
+/proc/9693/fd/0 -> /dev/null
+/proc/9693/fd/1 -> socket:[44411]
+/proc/9693/fd/2 -> socket:[44411]
+/proc/9693/fd/3 -> socket:[45351]
+/proc/9693/fd/4 -> socket:[1008839]
+
+===== 4. MANAGEMENT SERVER JOURNAL SINCE CANDIDATE LINK-UP =====
+-- No entries --
+
+===== 5. ALL PS2VNC JOURNAL SIGNALS SINCE CANDIDATE LINK-UP =====
+Aug 30 15:17:03 ps2box NetworkManager[546]: <info>  [1788117423.9731] device (eth0): carrier: link connected
+Aug 30 15:17:03 ps2box NetworkManager[546]: <info>  [1788117423.9738] device (eth0): state change: unavailable -> disconnected (reason 'carrier-changed', sys-iface-state: 'external')
+Aug 30 15:17:03 ps2box kernel: bcmgenet fd580000.ethernet eth0: Link is Up - 100Mbps/Full - flow control rx/tx
+Aug 30 15:22:20 ps2box systemd[16221]: Listening on dirmngr.socket - GnuPG network certificate management daemon.
+Aug 30 15:22:21 ps2box sudo[16308]:      ps2 : PWD=/home/ps2/PS-to-VNC ; USER=root ; COMMAND=/usr/bin/tcpdump -ni eth0 -tttt -vv 'host 192.168.50.2'
+Aug 30 15:22:21 ps2box kernel: bcmgenet fd580000.ethernet eth0: entered promiscuous mode
+Aug 30 15:22:31 ps2box kernel: bcmgenet fd580000.ethernet eth0: left promiscuous mode
+Aug 30 15:22:43 ps2box systemd[16221]: Closed dirmngr.socket - GnuPG network certificate management daemon.
+Aug 30 15:26:03 ps2box systemd[20459]: Listening on dirmngr.socket - GnuPG network certificate management daemon.
+Aug 30 15:26:03 ps2box sudo[20491]:      ps2 : PWD=/home/ps2/PS-to-VNC ; USER=root ; COMMAND=/usr/bin/ss -tanp
+
+===== 6. DISPLAY-CONTROL PERSISTENT STATE =====
+DISPLAY_CONTROL_STATE=ABSENT
+
+===== 7. OTHER RECENT DISPLAY-CONTROL STATE FILES =====
+2026-08-16 18:23:06.4773342090 3684 /var/lib/ps2vnc/ps2vnc.conf.pre-live-post
+2026-08-21 18:35:32.1437486660 3678 /var/lib/ps2vnc/ps2vnc.conf.before-1080i-20260822-165915
+2026-08-22 16:59:16.8431747690 3677 /var/lib/ps2vnc/ps2vnc.conf.before-mode-keyed-20260823-114710
+2026-08-29 19:37:01.0266831260 6491 /var/lib/ps2vnc/ps2vnc.conf
+
+===== 8. MANAGEMENT SERVER PROTOCOL / STATE SIGNALS =====
+3:from http.server import BaseHTTPRequestHandler, HTTPServer
+10:PORT = int(os.environ.get("PS2VNC_MANAGEMENT_PORT", "5959"))
+51:STARTUP_MODE_KEY = "startup_mode"
+108:def parse_startup_mode_update(text):
+124:        if key != STARTUP_MODE_KEY:
+128:            raise ValueError("duplicate startup_mode")
+136:        raise ValueError("missing startup_mode")
+255:    os.environ.get(
+262:DISPLAY_TRANSACTION_FILE = Path(
+263:    os.environ.get(
+264:        "PS2VNC_DISPLAY_TRANSACTION_FILE",
+265:        str(CONFIG_FILE.parent / "display-transaction.state"),
+270:    os.environ.get(
+272:        str(CONFIG_FILE.parent / "display-control.state"),
+277:DISPLAY_CONTROL_STATES = (
+287:DISPLAY_CONTROL_BUSY_STATES = {
+295:DISPLAY_TRANSACTION_VERSION = 1
+296:DISPLAY_TRANSACTION_STATES = (
+303:DISPLAY_TRANSACTION_BACKENDS = (
+310:# cannot accept a transaction containing internally mixed display geometry.
+315:DISPLAY_TRANSACTION_MODE_CONTRACTS = {
+411:DISPLAY_TRANSACTION_PROFILE_KEYS = (
+454:def format_startup_mode_line(old_line, mode_name):
+459:        r"^(\s*)(?:#\s*)?(startup_mode)"
+465:        return f"startup_mode = {mode_name}{ending or chr(10)}"
+470:        f"{indent}startup_mode{equals}{mode_name}"
+475:def update_startup_mode(mode_name):
+514:        r"^\s*(?:#\s*)?startup_mode\s*=.*$"
+523:        raise ValueError("duplicate startup_mode in stored config")
+527:        lines[i] = format_startup_mode_line(
+533:            f"startup_mode = {mode_name}\n",
+836:def configured_startup_mode():
+857:            r"^\s*startup_mode\s*=\s*([^#\s]+)",
+865:        raise ValueError("invalid stored startup_mode")
+868:        raise ValueError("unsupported stored startup_mode")
+916:def _clear_display_transaction():
+918:        DISPLAY_TRANSACTION_FILE.unlink()
+922:    _fsync_parent(DISPLAY_TRANSACTION_FILE)
+925:def _validate_transaction_profile(prefix, values):
+929:    contract = DISPLAY_TRANSACTION_MODE_CONTRACTS.get(mode)
+934:    if backend not in DISPLAY_TRANSACTION_BACKENDS:
+999:def validate_display_transaction(values):
+1003:        for key in DISPLAY_TRANSACTION_PROFILE_KEYS
+1007:        raise ValueError("incomplete display transaction")
+1010:        _validate_transaction_profile(prefix, values)
+1014:        for key in DISPLAY_TRANSACTION_PROFILE_KEYS
+1018:        for key in DISPLAY_TRANSACTION_PROFILE_KEYS
+1025:def _serialize_display_transaction(transaction):
+1027:        f"version={DISPLAY_TRANSACTION_VERSION}",
+1028:        f"state={transaction['state']}",
+1032:        for key in DISPLAY_TRANSACTION_PROFILE_KEYS:
+1034:                f"{prefix}_{key}={transaction[f'{prefix}_{key}']}"
+1040:def read_display_transaction():
+1041:    if not DISPLAY_TRANSACTION_FILE.exists():
+1046:    for raw_line in DISPLAY_TRANSACTION_FILE.read_text().splitlines():
+1050:            raise ValueError("invalid display transaction record")
+1055:            raise ValueError("duplicate display transaction key")
+1059:    if values.pop("version", None) != str(DISPLAY_TRANSACTION_VERSION):
+1060:        raise ValueError("unsupported display transaction version")
+1062:    state = values.pop("state", None)
+1064:    if state not in DISPLAY_TRANSACTION_STATES:
+1065:        raise ValueError("invalid display transaction state")
+1070:        for key in DISPLAY_TRANSACTION_PROFILE_KEYS:
+1074:                raise ValueError("incomplete display transaction record")
+1087:                    raise ValueError("invalid transaction integer")
+1093:        raise ValueError("unknown display transaction key")
+1095:    validate_display_transaction(parsed)
+1096:    parsed["state"] = state
+1100:def _write_display_transaction(transaction):
+1101:    state = transaction.get("state")
+1103:    if state not in DISPLAY_TRANSACTION_STATES:
+1104:        raise ValueError("invalid display transaction state")
+1108:        for key, value in transaction.items()
+1109:        if key != "state"
+1112:    validate_display_transaction(profile)
+1114:        DISPLAY_TRANSACTION_FILE,
+1115:        _serialize_display_transaction(transaction),
+1119:def begin_display_transaction(profile):
+1120:    validate_display_transaction(profile)
+1122:    if configured_startup_mode() != profile["previous_mode"]:
+1124:            "previous profile is not the confirmed startup mode"
+1127:    transaction = dict(profile)
+1128:    transaction["state"] = "provisional"
+1130:    existing = read_display_transaction()
+1133:        if existing == transaction:
+1135:        raise ValueError("display transaction already pending")
+1137:    _write_display_transaction(transaction)
+1138:    return transaction
+1141:def _transition_display_transaction(expected_state, new_state):
+1142:    transaction = read_display_transaction()
+1144:    if transaction is None:
+1145:        raise ValueError("no display transaction")
+1147:    if transaction["state"] != expected_state:
+1149:            f"display transaction state is {transaction['state']}"
+1152:    transaction["state"] = new_state
+1153:    _write_display_transaction(transaction)
+1154:    return transaction
+1157:def commit_display_transaction():
+1159:    Complete an already-authorized KEEP transaction.
+1162:    reached durable committing but died before update_startup_mode() and
+1163:    _clear_display_transaction() both completed, retrying this same operation
+1166:    No other state is accepted.
+1168:    transaction = read_display_transaction()
+1170:    if transaction is None:
+1171:        raise ValueError("no display transaction")
+1173:    if transaction["state"] == "provisional":
+1174:        transaction["state"] = "committing"
+1175:        _write_display_transaction(transaction)
+1177:    elif transaction["state"] != "committing":
+1179:            f"display transaction state is {transaction['state']}"
+1182:    update_startup_mode(transaction["candidate_mode"])
+1183:    _clear_display_transaction()
+1184:    return transaction
+1187:def begin_display_transaction_restore():
+1188:    return _transition_display_transaction(
+1194:def mark_display_transaction_restored():
+1195:    return _transition_display_transaction(
+1201:def acknowledge_display_transaction_restore():
+1202:    transaction = read_display_transaction()
+1204:    if transaction is None:
+1205:        raise ValueError("no display transaction")
+1207:    if transaction["state"] != "restored":
+1209:            f"display transaction state is {transaction['state']}"
+1212:    _clear_display_transaction()
+1213:    return transaction
+1216:def reconcile_display_transaction():
+1217:    transaction = read_display_transaction()
+1219:    if transaction is None:
+1222:    if transaction["state"] == "committing":
+1223:        if configured_startup_mode() != transaction["candidate_mode"]:
+1224:            update_startup_mode(transaction["candidate_mode"])
+1226:        _clear_display_transaction()
+1229:    return transaction
+1233:DISPLAY_CONTROL_PATH = "/display-control"
+1234:DISPLAY_CONTROL_PENDING_PATH = "/display-control/pending"
+1235:DISPLAY_CONTROL_MODES_PATH = "/display-control/modes"
+1236:DISPLAY_CONTROL_REQUEST_PATH = "/display-control/request"
+1237:DISPLAY_CONTROL_RESULT_PATH = "/display-control/result"
+1238:DISPLAY_CONTROL_ACK_PATH = "/display-control/ack"
+1244:        "txid": 0,
+1245:        "state": "IDLE",
+1258:        "txid",
+1259:        "state",
+1284:            raise ValueError("invalid display-control record")
+1291:            raise ValueError("duplicate display-control key")
+1297:        "txid",
+1298:        "state",
+1308:        raise ValueError("incomplete display-control record")
+1312:        txid = int(values["txid"])
+1316:        raise ValueError("invalid display-control integer")
+1319:        raise ValueError("unsupported display-control version")
+1321:    if txid <= 0 or txid > 0xFFFFFFFF:
+1322:        raise ValueError("invalid display-control txid")
+1325:        raise ValueError("invalid display-control lease")
+1328:        raise ValueError("invalid display-control error")
+1330:    state = values["state"]
+1332:    if state not in DISPLAY_CONTROL_STATES:
+1333:        raise ValueError("invalid display-control state")
+1340:                f"unsupported display-control {key}"
+1345:        "txid": txid,
+1346:        "state": state,
+1380:        + f"startup_mode={configured_startup_mode()}\n"
+1388:        return "state=none\n"
+1390:    if record["state"] not in (
+1394:        return "state=none\n"
+1416:            raise ValueError("invalid display-control line")
+1424:                "duplicate display-control request key"
+1432:def request_display_control(text):
+1434:    action = values.get("action")
+1443:            raise ValueError("invalid set-temp request")
+1447:            and current["state"] in DISPLAY_CONTROL_BUSY_STATES
+1451:        if read_display_transaction() is not None:
+1452:            raise ValueError("display transaction pending")
+1467:        previous_txid = (
+1468:            current["txid"]
+1473:        txid = previous_txid + 1
+1475:        if txid > 0xFFFFFFFF:
+1476:            txid = 1
+1480:            "txid": txid,
+1481:            "state": "PENDING",
+1494:        allowed = {"action", "txid"}
+1497:            raise ValueError("invalid restore request")
+1499:        if current is None or current["state"] != "ACTIVE_TEMP":
+1502:        if "txid" in values:
+1503:            if not re.fullmatch(r"[0-9]+", values["txid"]):
+1504:                raise ValueError("invalid txid")
+1506:            if int(values["txid"]) != current["txid"]:
+1507:                raise ValueError("transaction id mismatch")
+1509:        current["state"] = "RESTORE_PENDING"
+1516:    raise ValueError("unsupported display-control action")
+1523:        "txid",
+1524:        "state",
+1531:        raise ValueError("invalid display-control result")
+1533:    if not re.fullmatch(r"[0-9]+", values["txid"]):
+1534:        raise ValueError("invalid result txid")
+1539:    txid = int(values["txid"])
+1541:    state = values["state"]
+1543:    if state not in (
+1550:        raise ValueError("invalid result state")
+1554:    if current is None or current["txid"] != txid:
+1555:        raise ValueError("unknown display-control txid")
+1563:    current["state"] = state
+1575:    if set(values) != {"txid"}:
+1576:        raise ValueError("invalid display-control ack")
+1578:    if not re.fullmatch(r"[0-9]+", values["txid"]):
+1579:        raise ValueError("invalid txid")
+1581:    txid = int(values["txid"])
+1585:        raise ValueError("no display-control transaction")
+1587:    if current["txid"] != txid:
+1588:        raise ValueError("transaction id mismatch")
+1590:    if current["state"] != "RESTORED":
+1592:            f"display control state is {current['state']}"
+1608:DISPLAY_TRANSACTION_PATH = "/display-transaction"
+1609:DISPLAY_TRANSACTION_BEGIN_PATH = "/display-transaction/begin"
+1610:DISPLAY_TRANSACTION_COMMIT_PATH = "/display-transaction/commit"
+1611:DISPLAY_TRANSACTION_RESTORE_PATH = "/display-transaction/restore"
+1612:DISPLAY_TRANSACTION_RESTORED_PATH = "/display-transaction/restored"
+1613:DISPLAY_TRANSACTION_ACK_PATH = "/display-transaction/ack"
+1615:DISPLAY_TRANSACTION_INTEGER_KEYS = {
+1629:def parse_display_transaction_begin(text):
+1633:        for key in DISPLAY_TRANSACTION_PROFILE_KEYS
+1645:            raise ValueError("invalid transaction line")
+1652:            raise ValueError("unknown transaction key")
+1655:            raise ValueError("duplicate transaction key")
+1657:        if key in DISPLAY_TRANSACTION_INTEGER_KEYS:
+1659:                raise ValueError("invalid transaction integer")
+1665:    validate_display_transaction(values)
+1669:def display_transaction_status_text():
+1670:    transaction = read_display_transaction()
+1672:    if transaction is None:
+1673:        return "state=none\n"
+1675:    return _serialize_display_transaction(transaction)
+1678:class ManagementHandler(BaseHTTPRequestHandler):
+1681:    def send_text(self, status, text):
+1684:        self.send_response(status)
+1685:        self.send_header(
+1689:        self.send_header(
+1693:        self.send_header(
+1700:    def read_request_text(self, allow_empty=False):
+1701:        length_text = self.headers.get("Content-Length")
+
+===== 9. SEARCH EXACT / RELATED SCREEN STRINGS IN NEW ELF =====
+dev9: SMAP initialization failed: %d
+Network_Manager
+smap
+SMAP: module already loaded
+SMAP: smap_init -> %d
+SMAP_driver
+_smap_read_phy
+SMAP: %s: > %u ms
+_smap_write_phy
+smap: %s: > %u ms
+SMAP: restarting auto nego (BMCR=0x%x, BMSR=0x%x)
+SMAP: Resetting PHY
+SMAP: PHY reset error
+SMAP: no auto mode (conf=0x%x)
+SMAP: Waiting Valid Link for %dMbps
+SMAP: no strap mode (conf=0x%x->0x%x, bmsr=0x%x)
+SMAP: anar=0x%x->0x%x
+SMAP: auto mode (BMCR=0x%x ANAR=0x%x)
+SMAP: waiting valid link for 100Mbps Half-Duplex
+SMAP: waiting valid link for 10Mbps Half-Duplex
+SMAP: PHY: %04x %04x %04x %04x %04x %04x
+SMAP: FCSCR=%d RECR=%d
+SMAP: PHY chip: DP83846A%d
+SMAP: %s %s Duplex Mode %s Flow Control
+SMAP: WaitEventFlag -> %d
+SMAP (%s)
+Usage: smap [<option>] [thpri=<prio>] [thstack=<stack>] [<conf>]
+smap: %s: %s - invalid digit
+SMAP: CreateEventFlag -> %d
+SMAP: CreateThread -> %d
+smap: StartThread -> %d
+smap: NetManRegisterNetIF -> %d
+SMAP
+PS2VNCIDv1!BLOB!
+Connecting to %s:%d...
+TCP connected
+ERROR: unsupported VNC desktop %ux%u
+ERROR: expected %ux%u VNC desktop
+PS2VNC SYSTEM
+REFRESHING VNC SESSION...
+REFRESH VNC SESSION
+ERROR: ps2ipInit() failed
+Waiting for Ethernet link...
+Unable to establish Ethernet connection
+Ethernet link is UP
+Establishing VNC session...
+Unable to establish VNC session
+ETHERNET CONNECTION LOST
+VNC CONNECTION LOST
+Ethernet unavailable - retry %d/%d
+VNC connect attempt %d/%d
+VNC reconcile attempt %d/%d
+DISPLAY TX: unable to reconcile VNC
+/ps2vnc.conf
+PS2VNC_ID version=1 test=%s digest=%s
+Socket already connected
+Network interface is not configured
+Connection aborted by network
+Network is unreachable
+Socket is not connected
+Socket is already connected
+PS2IP
+PS2IP-msgcount
+PS2IP_PROTECT
+../../../work/forensics/test15B2K-wscale128-src/ee/network/tcpip/src
+../../../src/ee/network/netman/src
+ps2vnc_gsHires.c
+ps2ip.c
+ps2ip_ps2sdk.c
+ps2ip_internal.h
+ps2ip.c
+ps2ip_ps2sdk.c
+ps2ipee.h
+ps2ip.c
+ps2vnc_video_mode_compat.h
+ps2vnc_runtime_compat.h
+ps2vnc_runtime.c
+ps2vnc_runtime_core.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_tail.c
+ps2vnc_runtime_tail.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_core_to_tail.h
+ps2vnc_framebuffer.c
+ps2vnc_framebuffer_core.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_runtime_to_framebuffer.h
+ps2vnc_ui_display_to_runtime.h
+ps2vnc_framebuffer_tail.c
+ps2vnc_framebuffer_tail.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_runtime_to_framebuffer.h
+ps2vnc_framebuffer_core_to_tail.h
+ps2vnc_ui_display.c
+ps2vnc_ui_core.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_ui_tail.c
+ps2vnc_ui_tail.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_ui_core_to_tail.h
+ps2vnc_display.c
+ps2vnc_display_core.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_runtime_compat.h
+ps2vnc_services_imports.h
+ps2vnc_services_exports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_display_tail.c
+ps2vnc_display_tail.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_runtime_compat.h
+ps2vnc_cross_types.h
+ps2vnc_services_imports.h
+ps2vnc_services_exports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_ui_to_display.h
+ps2vnc_display_core_to_tail.h
+ps2ip.h
+ps2vnc_services.c
+ps2vnc_management_core.inc
+ps2vnc_calibration_core.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_services_compat.h
+ps2vnc_cross_types.h
+ps2vnc_services_imports.h
+ps2vnc_services_exports.h
+ps2vnc_management_tail_to_services.h
+ps2vnc_management_tail.c
+ps2vnc_management_tail.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_services_compat.h
+ps2vnc_services_imports.h
+ps2vnc_management_core_to_tail.h
+ps2vnc_calibration_tail.c
+ps2vnc_calibration_tail.inc
+ps2vnc_video_mode_compat.h
+ps2vnc_services_compat.h
+ps2vnc_services_imports.h
+ps2vnc_services_exports.h
+ps2vnc_calibration_core_to_tail.h
+ps2vnc_identity.c
+SMAP_irx.c
+ethernet.h
+ethernet.c
+ethernet.h
+ethernet.h
+ethernet.h
+ethernet.h
+ethernet.h
+ethernet.h
+
+===== 10. SAME STRING SEARCH IN LAST-VALIDATED M4F ELF =====
+dev9: SMAP initialization failed: %d
+Network_Manager
+smap
+SMAP: module already loaded
+SMAP: smap_init -> %d
+SMAP_driver
+_smap_read_phy
+SMAP: %s: > %u ms
+_smap_write_phy
+smap: %s: > %u ms
+SMAP: restarting auto nego (BMCR=0x%x, BMSR=0x%x)
+SMAP: Resetting PHY
+SMAP: PHY reset error
+SMAP: no auto mode (conf=0x%x)
+SMAP: Waiting Valid Link for %dMbps
+SMAP: no strap mode (conf=0x%x->0x%x, bmsr=0x%x)
+SMAP: anar=0x%x->0x%x
+SMAP: auto mode (BMCR=0x%x ANAR=0x%x)
+SMAP: waiting valid link for 100Mbps Half-Duplex
+SMAP: waiting valid link for 10Mbps Half-Duplex
+SMAP: PHY: %04x %04x %04x %04x %04x %04x
+SMAP: FCSCR=%d RECR=%d
+SMAP: PHY chip: DP83846A%d
+SMAP: %s %s Duplex Mode %s Flow Control
+SMAP: WaitEventFlag -> %d
+SMAP (%s)
+Usage: smap [<option>] [thpri=<prio>] [thstack=<stack>] [<conf>]
+smap: %s: %s - invalid digit
+SMAP: CreateEventFlag -> %d
+SMAP: CreateThread -> %d
+smap: StartThread -> %d
+smap: NetManRegisterNetIF -> %d
+SMAP
+PS2VNCIDv1!BLOB!
+Connecting to %s:%d...
+TCP connected
+ERROR: unsupported VNC desktop %ux%u
+ERROR: expected %ux%u VNC desktop
+PS2VNC SYSTEM
+REFRESHING VNC SESSION...
+REFRESH VNC SESSION
+ERROR: ps2ipInit() failed
+Waiting for Ethernet link...
+Unable to establish Ethernet connection
+Ethernet link is UP
+Establishing VNC session...
+Unable to establish VNC session
+ETHERNET CONNECTION LOST
+VNC CONNECTION LOST
+Ethernet unavailable - retry %d/%d
+VNC connect attempt %d/%d
+VNC reconcile attempt %d/%d
+DISPLAY TX: unable to reconcile VNC
+/ps2vnc.conf
+PS2VNC_ID version=1 test=%s digest=%s
+Socket already connected
+Network interface is not configured
+Connection aborted by network
+Network is unreachable
+Socket is not connected
+Socket is already connected
+PS2IP
+PS2IP-msgcount
+PS2IP_PROTECT
+../../../work/forensics/test15B2K-wscale128-src/ee/network/tcpip/src
+../../../src/ee/network/netman/src
+ps2vnc_gsHires.c
+ps2ip.c
+ps2ip_ps2sdk.c
+ps2ip_internal.h
+ps2ip.c
+ps2ip_ps2sdk.c
+ps2ipee.h
+ps2ip.c
+ps2vnc_runtime_compat.h
+ps2vnc_runtime.c
+ps2vnc_runtime_core.inc
+ps2vnc_runtime_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_tail.c
+ps2vnc_runtime_tail.inc
+ps2vnc_runtime_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_core_to_tail.h
+ps2vnc_framebuffer.c
+ps2vnc_framebuffer_core.inc
+ps2vnc_runtime_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_runtime_to_framebuffer.h
+ps2vnc_ui_display_to_runtime.h
+ps2vnc_framebuffer_tail.c
+ps2vnc_framebuffer_tail.inc
+ps2vnc_runtime_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_runtime_to_framebuffer.h
+ps2vnc_framebuffer_core_to_tail.h
+ps2vnc_ui_display.c
+ps2vnc_ui_core.inc
+ps2vnc_runtime_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_ui_tail.c
+ps2vnc_ui_tail.inc
+ps2vnc_runtime_compat.h
+ps2vnc_services_imports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_ui_core_to_tail.h
+ps2vnc_display.c
+ps2vnc_display_core.inc
+ps2vnc_runtime_compat.h
+ps2vnc_services_imports.h
+ps2vnc_services_exports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_display_tail.c
+ps2vnc_display_tail.inc
+ps2vnc_runtime_compat.h
+ps2vnc_cross_types.h
+ps2vnc_services_imports.h
+ps2vnc_services_exports.h
+ps2vnc_runtime_to_ui_display.h
+ps2vnc_ui_to_display.h
+ps2vnc_display_core_to_tail.h
+ps2ip.h
+ps2vnc_services.c
+ps2vnc_management_core.inc
+ps2vnc_calibration_core.inc
+ps2vnc_services_compat.h
+ps2vnc_cross_types.h
+ps2vnc_services_imports.h
+ps2vnc_services_exports.h
+ps2vnc_management_tail_to_services.h
+ps2vnc_management_tail.c
+ps2vnc_management_tail.inc
+ps2vnc_services_compat.h
+ps2vnc_services_imports.h
+ps2vnc_management_core_to_tail.h
+ps2vnc_calibration_tail.c
+ps2vnc_calibration_tail.inc
+ps2vnc_services_compat.h
+ps2vnc_services_imports.h
+ps2vnc_services_exports.h
+ps2vnc_calibration_core_to_tail.h
+ps2vnc_identity.c
+SMAP_irx.c
+ethernet.h
+ethernet.c
+ethernet.h
+ethernet.h
+ethernet.h
+ethernet.h
+ethernet.h
+ethernet.h
+PS2VNC_DISPLAY_TX_RESTORED
+PS2VNC_DISPLAY_TX_RESTORING
+ps2vnc_display_group_t
+PS2VNC_DISPLAY_GROUP_TV_DTV
+ps2vnc_display_transaction_t
+ps2vnc_video_mode_t
+
+===== 11. SOURCE LOCATIONS AROUND NETWORK / MANAGEMENT STARTUP =====
+STARTUP_SOURCE_REGIONS=55
+
+===== working/b4a/NETMAN_irx.c:1-15 =====
+     1  #ifndef __NETMAN_irx__
+     2  #define __NETMAN_irx__
+     3  
+     4  unsigned int size_NETMAN_irx = 13093;
+     5  unsigned char NETMAN_irx[] __attribute__((aligned(16))) = {
+     6  	0x7f, 0x45, 0x4c, 0x46, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+     7  	0x80, 0xff, 0x08, 0x00, 0x01, 0x00, 0x00, 0x00, 0xf0, 0x00, 0x00, 0x00, 0x34, 0x00, 0x00, 0x00, 
+     8  	0xac, 0x21, 0x00, 0x00, 0x01, 0x10, 0x00, 0x00, 0x34, 0x00, 0x20, 0x00, 0x02, 0x00, 0x28, 0x00, 
+     9  	0x0c, 0x00, 0x09, 0x00, 0x80, 0x00, 0x00, 0x70, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    10  	0x00, 0x00, 0x00, 0x00, 0x1b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 
+    11  	0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    12  	0x00, 0x00, 0x00, 0x00, 0xc0, 0x20, 0x00, 0x00, 0x50, 0x27, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 
+    13  	0x10, 0x00, 0x00, 0x00, 0x70, 0x20, 0x00, 0x00, 0xf0, 0x00, 0x00, 0x00, 0xb0, 0xa0, 0x00, 0x00, 
+    14  	0xd0, 0x1f, 0x00, 0x00, 0xf0, 0x00, 0x00, 0x00, 0x90, 0x06, 0x00, 0x00, 0x01, 0x02, 0x00, 0x00, 
+    15  	0x00, 0x00, 0xc0, 0x41, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x00, 0x00, 0x6e, 0x65, 0x74, 0x6d, 
+
+===== working/b4a/SMAP_irx.c:1-15 =====
+     1  #ifndef __SMAP_irx__
+     2  #define __SMAP_irx__
+     3  
+     4  unsigned int size_SMAP_irx = 14173;
+     5  unsigned char SMAP_irx[] __attribute__((aligned(16))) = {
+     6  	0x7f, 0x45, 0x4c, 0x46, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+     7  	0x80, 0xff, 0x08, 0x00, 0x01, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x34, 0x00, 0x00, 0x00, 
+     8  	0x8c, 0x2c, 0x00, 0x00, 0x01, 0x10, 0x00, 0x00, 0x34, 0x00, 0x20, 0x00, 0x02, 0x00, 0x28, 0x00, 
+     9  	0x0c, 0x00, 0x09, 0x00, 0x80, 0x00, 0x00, 0x70, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    10  	0x00, 0x00, 0x00, 0x00, 0x1b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 
+    11  	0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    12  	0x00, 0x00, 0x00, 0x00, 0xa0, 0x2b, 0x00, 0x00, 0x10, 0x2c, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 
+    13  	0x10, 0x00, 0x00, 0x00, 0x60, 0x2b, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00, 0x90, 0xab, 0x00, 0x00, 
+    14  	0xd0, 0x25, 0x00, 0x00, 0xd0, 0x05, 0x00, 0x00, 0x70, 0x00, 0x00, 0x00, 0x1a, 0x02, 0x00, 0x00, 
+    15  	0x00, 0x00, 0xc0, 0x41, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x73, 0x6d, 0x61, 0x70, 
+
+===== working/b4a/ps2vnc_calibration_core.inc:95-111 =====
+    95      body = (unsigned char *)malloc(
+    96          PS2VNC_DISPLAY_TX_MAX_BYTES + 1);
+    97  
+    98      if (body == NULL)
+    99          return -1;
+   100  
+   101      if (ps2vnc_management_get(
+   102              PS2VNC_DISPLAY_TX_PATH,
+   103              body,
+   104              PS2VNC_DISPLAY_TX_MAX_BYTES,
+   105              &body_len) < 0)
+   106          goto done;
+   107  
+   108      if (body_len == 0 ||
+   109          body_len > PS2VNC_DISPLAY_TX_MAX_BYTES)
+   110          goto done;
+   111  
+
+===== working/b4a/ps2vnc_calibration_core.inc:478-494 =====
+   478  
+   479          int sock = -1;
+   480          int ok = 1;
+   481  
+   482          if (!ethGetNetIFLinkStatus()) {
+   483              screenf(
+   484                  "Ethernet unavailable - retry %d/%d",
+   485                  attempt + 1,
+   486                  RECONNECT_MAX_ATTEMPTS);
+   487  
+   488              nanosleep(&retry_delay, NULL);
+   489              continue;
+   490          }
+   491  
+   492          reset_rfb_transport_state();
+   493  
+   494          /*
+
+===== working/b4a/ps2vnc_calibration_core.inc:673-695 =====
+   673  }
+   674  
+   675  
+   676  /*
+   677   * TEST13J-D4-A4:
+   678   * Persist an accepted interactive display calibration through the
+   679   * dedicated management service on TCP 5959.
+   680   *
+   681   * width/height are the OUTER disappearing-border rectangle used by
+   682   * calibration.  The persistent representation stores the safe interior.
+   683   *
+   684   * Failure is non-fatal.  The accepted calibration remains valid for the
+   685   * current session even if the Pi management service cannot save it.
+   686   */
+   687  static int ps2vnc_startup_mode_save_to_pi(
+   688      const ps2vnc_video_mode_t *mode)
+   689  {
+   690      struct sockaddr_in server;
+   691      char body[96];
+   692      char request[384];
+   693      unsigned char response[PS2VNC_HTTP_MAX_HEADER];
+   694      unsigned int response_len = 0;
+   695      int body_len;
+
+===== working/b4a/ps2vnc_calibration_core.inc:1002-1018 =====
+  1002          return 0;
+  1003  
+  1004      text = (unsigned char *)malloc(PS2VNC_CONFIG_MAX_BYTES);
+  1005      if (text == NULL)
+  1006          return 0;
+  1007  
+  1008      if (ps2vnc_management_get(
+  1009              PS2VNC_CONFIG_PATH,
+  1010              text, PS2VNC_CONFIG_MAX_BYTES, &len) < 0) {
+  1011          free(text);
+  1012          return 0;
+  1013      }
+  1014  
+  1015      result = ps2vnc_config_parse_display_for_mode(
+  1016          (const char *)text, len, mode, out_config
+  1017      );
+  1018  
+
+===== working/b4a/ps2vnc_calibration_core.inc:1320-1336 =====
+  1320  
+  1321      if (config_text == NULL) {
+  1322          screenf("CONFIG: buffer allocation failed");
+  1323          return 0;
+  1324      }
+  1325  
+  1326      if (ps2vnc_management_get(
+  1327              PS2VNC_CONFIG_PATH,
+  1328              config_text,
+  1329              PS2VNC_CONFIG_MAX_BYTES,
+  1330              &config_len) < 0) {
+  1331  
+  1332          free(config_text);
+  1333  
+  1334          screenf("CONFIG: using calibration");
+  1335          return 0;
+  1336      }
+
+===== working/b4a/ps2vnc_calibration_core_to_tail.h:2-18 =====
+     2  #define PS2VNC_CALIBRATION_CORE_TO_TAIL_H
+     3  
+     4  /*
+     5   * M3X calibration tail interface.
+     6   *
+     7   * SCREEN_FIT constants are exact definitions
+     8   * from management_config. Function declarations
+     9   * are derived from qualified pre-cut GCC aux-info.
+    10   */
+    11  
+    12  #define SCREEN_FIT_FINE_STEP            1
+    13  #define SCREEN_FIT_FAST_STEP            4
+    14  #define SCREEN_FIT_BORDER               4
+    15  #define SCREEN_FIT_CORNER_SIZE          56
+    16  #define SCREEN_FIT_REPEAT_DELAY_POLLS  18
+    17  #define SCREEN_FIT_REPEAT_POLLS         4
+    18  #define SCREEN_FIT_START_WIDTH   (OUTPUT_WIDTH)
+
+===== working/b4a/ps2vnc_display_core.inc:546-562 =====
+   546   * One global rollback boundary for every rollback cause.
+   547   *
+   548   * The durable Pi transaction enters RESTORING before the existing
+   549   * complete local/RFB reconstruction of confirmed profile A. Only after
+   550   * A has been reconstructed successfully may the Pi record RESTORED.
+   551   *
+   552   * If either management transition fails, the best-effort local restore
+   553   * still runs, but the caller receives failure: global reconciliation is
+   554   * incomplete and must never be silently treated as success.
+   555   */
+   556  /*
+   557   * Publish the existing H4B2C restored acknowledgement UI.
+   558   *
+   559   * The durable transaction remains RESTORED until controller X causes the
+   560   * main thread to POST ACK successfully.
+   561   */
+   562  static void ps2vnc_publish_restored_ack(
+
+===== working/b4a/ps2vnc_display_core.inc:849-865 =====
+   849          error_code);
+   850  
+   851      if (n <= 0 ||
+   852          n >= (int)sizeof(body))
+   853          return -1;
+   854  
+   855      return ps2vnc_management_post_text(
+   856          PS2VNC_DISPLAY_CONTROL_RESULT_PATH,
+   857          body);
+   858  }
+   859  
+   860  
+   861  static void ps2vnc_remote_display_reset(void)
+   862  {
+   863      remote_display_state = REMOTE_DISPLAY_IDLE;
+   864      display_mode_request_remote = 0;
+   865  
+
+===== working/b4a/ps2vnc_display_core.inc:950-975 =====
+   950              remote_display_last_poll_tick) <
+   951              PS2VNC_REMOTE_CONTROL_POLL_US)
+   952          return 0;
+   953  
+   954      remote_display_last_poll_tick = now;
+   955  
+   956      if (ps2vnc_management_get_bounded_quiet(
+   957              PS2VNC_DISPLAY_CONTROL_PENDING_PATH,
+   958              body,
+   959              PS2VNC_DISPLAY_CONTROL_MAX_BYTES,
+   960              &len,
+   961              PS2VNC_REMOTE_CONTROL_GET_BUDGET_US) < 0) {
+   962  
+   963          /*
+   964           * Development control is best-effort.
+   965           * A missing Pi management service must never damage VNC.
+   966           */
+   967          return 0;
+   968      }
+   969  
+   970      if (len == 0 ||
+   971          len > PS2VNC_DISPLAY_CONTROL_MAX_BYTES)
+   972          return 0;
+   973  
+   974      body[len] = '\0';
+   975  
+
+===== working/b4a/ps2vnc_display_tail.inc:239-255 =====
+   239              continue;
+   240          }
+   241  
+   242          /*
+   243           * H4B2C:
+   244           * Controller X publishes only an acknowledgement request.  The main
+   245           * RFB/render thread owns the management socket and releases this UI
+   246           * only after the Pi confirms ACK with HTTP 200.
+   247           */
+   248          if (display_restore_ack_visible &&
+   249              display_restore_ack_request) {
+   250  
+   251              display_restore_ack_request = 0;
+   252  
+   253              if (ps2vnc_display_transaction_ack_to_pi() < 0) {
+   254                  screenf("DISPLAY TX: ACK failed; retry with X");
+   255  
+
+===== working/b4a/ps2vnc_display_tail.inc:284-300 =====
+   284           * before the next incremental framebuffer request can be issued.
+   285           */
+   286  
+   287          /*
+   288           * D17AL-F2:
+   289           *
+   290           * Display admission/UI policy uses the same main-thread management
+   291           * ownership boundary as calibration and mode transactions.
+   292           */
+   293          if (display_policy_request !=
+   294                  DISPLAY_POLICY_REQUEST_NONE) {
+   295  
+   296              int request =
+   297                  display_policy_request;
+   298  
+   299              int selection =
+   300                  display_policy_request_selection;
+
+===== working/b4a/ps2vnc_display_tail.inc:642-658 =====
+   642                  continue;
+   643              }
+   644  
+   645              /*
+   646               * Global transaction record FIRST.
+   647               *
+   648               * If BEGIN is refused or the management service is unavailable,
+   649               * A remains fully active on both machines and no risky display
+   650               * reconstruction begins.
+   651               */
+   652              if (request_is_remote) {
+   653                  remote_display_state =
+   654                      REMOTE_DISPLAY_SWITCHING;
+   655  
+   656                  remote_display_error_code = 0;
+   657  
+   658                  (void)ps2vnc_remote_result_post(
+
+===== working/b4a/ps2vnc_display_tail.inc:1488-1507 =====
+  1488      sceSifInitRpc(0);
+  1489      SifLoadFileInit();
+  1490      SifInitIopHeap();
+  1491      sbv_patch_enable_lmb();
+  1492  
+  1493      SifExecModuleBuffer(DEV9_irx, size_DEV9_irx, 0, NULL, NULL);
+  1494      SifExecModuleBuffer(NETMAN_irx, size_NETMAN_irx, 0, NULL, NULL);
+  1495      SifExecModuleBuffer(SMAP_irx, size_SMAP_irx, 0, NULL, NULL);
+  1496  
+  1497      NetManInit();
+  1498  
+  1499      init_scr();
+  1500      scr_setCursor(0);
+  1501      screen_row = 0;
+  1502  
+  1503      screenf("TEST31 RX SENTINEL TRACE");
+  1504      screenf("Hold L1 + R1 to force display calibration");
+  1505  
+  1506      screenf("PAD MOD 1");
+  1507      if (SifLoadModule("rom0:XSIO2MAN", 0, NULL) < 0) {
+
+===== working/b4a/ps2vnc_display_tail.inc:1567-1596 =====
+  1567      IP4_ADDR(&IP, 192, 168, 50, 2);
+  1568      IP4_ADDR(&NM, 255, 255, 255, 0);
+  1569      IP4_ADDR(&GW, 192, 168, 50, 1);
+  1570  
+  1571      screenf("TCP INIT");
+  1572  
+  1573      if (ps2ipInit(&IP, &NM, &GW) < 0) {
+  1574          screenf("ERROR: ps2ipInit() failed");
+  1575          goto wait;
+  1576      }
+  1577  
+  1578      screenf("Waiting for Ethernet link...");
+  1579  
+  1580      if (ethWaitValidNetIFLinkState() != 0) {
+  1581          screenf("Unable to establish Ethernet connection");
+  1582          screenf("Returning to system menu...");
+  1583          goto exit_to_osdsys;
+  1584      }
+  1585  
+  1586      screenf("Ethernet link is UP");
+  1587  
+  1588      /*
+  1589       * TEST13J-D4-A3:
+  1590       * Retrieve the general PS2VNC configuration before opening RFB.
+  1591       *
+  1592       * Failure is intentionally non-fatal.  Without a valid stored display
+  1593       * preset, the existing interactive calibration path remains authoritative.
+  1594       */
+  1595      ps2vnc_config_load_from_pi();
+  1596  
+
+===== working/b4a/ps2vnc_identity.c:1-24 =====
+     1  /*
+     2   * PS2VNC runtime ELF identity transport.
+     3   *
+     4   * This file deliberately does not depend on experiment-specific ps2ip.c
+     5   * source.  The linker wraps sendto().  Immediately before the first
+     6   * diagnostic UDP datagram to port 5999, the wrapper emits one identity
+     7   * datagram using the same socket and destination.
+     8   *
+     9   * The identity blob is fixed-size so TestKit can stamp it after link
+    10   * without changing ELF layout or addresses.
+    11   */
+    12  
+    13  #include <stdio.h>
+    14  #include <ps2ip.h>
+    15  
+    16  #define PS2VNC_IDENTITY_UDP_PORT 5999
+    17  
+    18  #define PS2VNC_IDENTITY_ZERO64 \
+    19      "0000000000000000" \
+    20      "0000000000000000" \
+    21      "0000000000000000" \
+    22      "0000000000000000"
+    23  
+    24  struct __attribute__((packed)) ps2vnc_identity_blob_v1 {
+
+===== working/b4a/ps2vnc_management_config.inc:1-12 =====
+     1  /*
+     2   * PS-to-VNC management/config structural wrapper.
+     3   *
+     4   * M3Z recursively partitions the qualified management/config
+     5   * semantic leaf at a GCC-authorized function-definition boundary.
+     6   *
+     7   * Real translation units own the core and tail regions separately.
+     8   * This wrapper preserves complete source ordering for migration
+     9   * provenance and inspection.
+    10   */
+    11  #include "ps2vnc_management_core.inc"
+    12  #include "ps2vnc_management_tail.inc"
+
+===== working/b4a/ps2vnc_management_core.inc:106-122 =====
+   106      return 0;
+   107  }
+   108  
+   109  
+   110  /*
+   111   * Initial startup gets the same ten-second grace period for the
+   112   * VNC server. The Ethernet link itself is already waited on by main().
+   113   */
+   114  static int initial_rfb_connect_with_retry(
+   115      unsigned short *rfb_framebuffer,
+   116      unsigned short *gs_framebuffer)
+   117  {
+   118      const struct timespec retry_delay = {
+   119          1,
+   120          0
+   121      };
+   122  
+
+===== working/b4a/ps2vnc_management_core.inc:127-143 =====
+   127           attempt++) {
+   128  
+   129          int sock;
+   130  
+   131          if (!ethGetNetIFLinkStatus()) {
+   132              screenf(
+   133                  "Ethernet unavailable - retry %d/%d",
+   134                  attempt + 1,
+   135                  RECONNECT_MAX_ATTEMPTS
+   136              );
+   137  
+   138              nanosleep(
+   139                  &retry_delay,
+   140                  NULL
+   141              );
+   142  
+   143              continue;
+
+===== working/b4a/ps2vnc_management_core.inc:258-274 =====
+   258  
+   259          if (!ethGetNetIFLinkStatus()) {
+   260  
+   261              if (draw_recovery_status(
+   262                  gsGlobal,
+   263                  osk_tex,
+   264                  "ETHERNET CONNECTION LOST",
+   265                  "ATTEMPTING TO REESTABLISH",
+   266                  seconds_left
+   267              ) < 0)
+   268                  return -1;
+   269  
+   270              nanosleep(
+   271                  &retry_delay,
+   272                  NULL
+   273              );
+   274  
+
+===== working/b4a/ps2vnc_management_core.inc:719-735 =====
+   719  }
+   720  
+   721  
+   722  
+   723  /*
+   724   * Preserve the historical active-display acceptance gate.
+   725   * Runtime mode management can validate a target mode explicitly through
+   726   * screen_fit_geometry_valid_for_mode() without changing GS state.
+   727   */
+   728  int screen_fit_geometry_valid(
+   729      int width,
+   730      int height,
+   731      int offset_x,
+   732      int offset_y)
+   733  {
+   734      return screen_fit_geometry_valid_for_mode(
+   735          active_video_mode,
+
+===== working/b4a/ps2vnc_management_core_to_tail.h:1-19 =====
+     1  #ifndef PS2VNC_MANAGEMENT_CORE_TO_TAIL_H
+     2  #define PS2VNC_MANAGEMENT_CORE_TO_TAIL_H
+     3  
+     4  /*
+     5   * M3Z management-core -> management-tail interface.
+     6   *
+     7   * Function declarations are derived from the qualified post-M3X
+     8   * GCC aux-info. Macro definitions are copied exactly from the
+     9   * qualified management/config parent.
+    10   */
+    11  
+    12  #define PS2VNC_CONFIG_MAX_BYTES  16384
+    13  #define PS2VNC_CONFIG_MAX_LINE     512
+    14  
+    15  extern int ps2vnc_http_find_header_end(
+    16      const unsigned char *data,
+    17      unsigned int len);
+    18  
+    19  extern int ps2vnc_http_status_is_200(
+
+===== working/b4a/ps2vnc_management_tail.c:3-10 =====
+     3   *
+     4   * Broad compatibility is deliberate during physical migration.
+     5   */
+     6  #include "ps2vnc_services_compat.h"
+     7  #include "ps2vnc_services_exports.h"
+     8  
+     9  #include "ps2vnc_management_core_to_tail.h"
+    10  #include "ps2vnc_management_tail.inc"
+OUTPUT_TRUNCATED_AFTER_24_REGIONS=YES
+
+===== 12. MAIN / STARTUP FUNCTION SIGNALS =====
+working/b4a/ps2vnc_ui_tail.inc:535:                     * established OSDSYS path used by main().
+working/b4a/ps2vnc_ui_tail.inc:538:                     * provisional.  Existing startup reconciliation therefore
+working/b4a/ps2vnc_ui_tail.inc:970:                             * no GS operation, no startup persistence.
+working/b4a/ps2vnc_framebuffer_core.inc:802:                if (rfb_connected) {
+working/b4a/ps2vnc_display_core_to_tail.h:16:extern int ps2vnc_startup_finalize_display_transaction (void);
+working/b4a/ps2vnc_calibration_core.inc:159: * fail-closed until H4C wires their explicit startup reconciliation paths.
+working/b4a/ps2vnc_calibration_core.inc:161:static int ps2vnc_display_transaction_select_startup_authority(void)
+working/b4a/ps2vnc_calibration_core.inc:165:    startup_authoritative_display_profile_loaded = 0;
+working/b4a/ps2vnc_calibration_core.inc:167:    startup_display_commit_finish_required = 0;
+working/b4a/ps2vnc_calibration_core.inc:168:    startup_display_restore_required = 0;
+working/b4a/ps2vnc_calibration_core.inc:169:    startup_display_restored_mark_required = 0;
+working/b4a/ps2vnc_calibration_core.inc:170:    startup_display_restore_ack_required = 0;
+working/b4a/ps2vnc_calibration_core.inc:173:        &startup_authoritative_display_profile,
+working/b4a/ps2vnc_calibration_core.inc:175:        sizeof(startup_authoritative_display_profile));
+working/b4a/ps2vnc_calibration_core.inc:177:    if (!startup_display_transaction_loaded)
+working/b4a/ps2vnc_calibration_core.inc:180:    switch (startup_display_transaction.state) {
+working/b4a/ps2vnc_calibration_core.inc:188:             * interactive-calibration startup path, so absence of a
+working/b4a/ps2vnc_calibration_core.inc:191:            if (!startup_confirmed_display_profile_loaded)
+working/b4a/ps2vnc_calibration_core.inc:194:            source = &startup_confirmed_display_profile;
+working/b4a/ps2vnc_calibration_core.inc:208:            if (startup_confirmed_display_profile_loaded &&
+working/b4a/ps2vnc_calibration_core.inc:210:                    &startup_confirmed_display_profile,
+working/b4a/ps2vnc_calibration_core.inc:211:                    &startup_display_transaction.previous) &&
+working/b4a/ps2vnc_calibration_core.inc:213:                    &startup_confirmed_display_profile,
+working/b4a/ps2vnc_calibration_core.inc:214:                    &startup_display_transaction.candidate)) {
+working/b4a/ps2vnc_calibration_core.inc:220:            source = &startup_display_transaction.candidate;
+working/b4a/ps2vnc_calibration_core.inc:221:            startup_display_commit_finish_required = 1;
+working/b4a/ps2vnc_calibration_core.inc:233:            if (!startup_confirmed_display_profile_loaded ||
+working/b4a/ps2vnc_calibration_core.inc:235:                    &startup_confirmed_display_profile,
+working/b4a/ps2vnc_calibration_core.inc:236:                    &startup_display_transaction.previous)) {
+working/b4a/ps2vnc_calibration_core.inc:242:            source = &startup_display_transaction.previous;
+working/b4a/ps2vnc_calibration_core.inc:243:            startup_display_restore_required = 1;
+working/b4a/ps2vnc_calibration_core.inc:244:            startup_display_restored_mark_required = 1;
+working/b4a/ps2vnc_calibration_core.inc:245:            startup_display_restore_ack_required = 1;
+working/b4a/ps2vnc_calibration_core.inc:250:            if (!startup_confirmed_display_profile_loaded ||
+working/b4a/ps2vnc_calibration_core.inc:252:                    &startup_confirmed_display_profile,
+working/b4a/ps2vnc_calibration_core.inc:253:                    &startup_display_transaction.previous)) {
+working/b4a/ps2vnc_calibration_core.inc:259:            source = &startup_display_transaction.previous;
+working/b4a/ps2vnc_calibration_core.inc:260:            startup_display_restored_mark_required = 1;
+working/b4a/ps2vnc_calibration_core.inc:261:            startup_display_restore_ack_required = 1;
+working/b4a/ps2vnc_calibration_core.inc:266:            if (!startup_confirmed_display_profile_loaded ||
+working/b4a/ps2vnc_calibration_core.inc:268:                    &startup_confirmed_display_profile,
+working/b4a/ps2vnc_calibration_core.inc:269:                    &startup_display_transaction.previous)) {
+working/b4a/ps2vnc_calibration_core.inc:275:            source = &startup_display_transaction.previous;
+working/b4a/ps2vnc_calibration_core.inc:276:            startup_display_restore_ack_required = 1;
+working/b4a/ps2vnc_calibration_core.inc:287:    startup_authoritative_display_profile = *source;
+working/b4a/ps2vnc_calibration_core.inc:288:    startup_authoritative_display_profile_loaded = 1;
+working/b4a/ps2vnc_calibration_core.inc:294:int ps2vnc_display_transaction_startup_preflight(void)
+working/b4a/ps2vnc_calibration_core.inc:296:    startup_display_transaction_loaded = 0;
+working/b4a/ps2vnc_calibration_core.inc:299:        &startup_display_transaction,
+working/b4a/ps2vnc_calibration_core.inc:301:        sizeof(startup_display_transaction));
+working/b4a/ps2vnc_calibration_core.inc:304:            &startup_display_transaction) < 0) {
+working/b4a/ps2vnc_calibration_core.inc:306:        screenf("DISPLAY TX: startup read failed");
+working/b4a/ps2vnc_calibration_core.inc:310:    startup_display_transaction_loaded = 1;
+working/b4a/ps2vnc_calibration_core.inc:313:        "DISPLAY TX: startup state %s",
+working/b4a/ps2vnc_calibration_core.inc:315:            startup_display_transaction.state));
+working/b4a/ps2vnc_calibration_core.inc:317:    if (ps2vnc_display_transaction_select_startup_authority() < 0) {
+working/b4a/ps2vnc_calibration_core.inc:322:    if (startup_authoritative_display_profile_loaded) {
+working/b4a/ps2vnc_calibration_core.inc:325:            startup_authoritative_display_profile.mode->name,
+working/b4a/ps2vnc_calibration_core.inc:326:            startup_authoritative_display_profile.logical_width,
+working/b4a/ps2vnc_calibration_core.inc:327:            startup_authoritative_display_profile.logical_height);
+working/b4a/ps2vnc_calibration_core.inc:332:    if (startup_display_transaction.state !=
+working/b4a/ps2vnc_calibration_core.inc:336:            "DISPLAY TX: startup recovery %s",
+working/b4a/ps2vnc_calibration_core.inc:338:                startup_display_transaction.state));
+working/b4a/ps2vnc_calibration_core.inc:347: * Prepare durable startup recovery before any RFB/display reconstruction.
+working/b4a/ps2vnc_calibration_core.inc:349: * A provisional candidate was never accepted.  On fresh startup this is
+working/b4a/ps2vnc_calibration_core.inc:355:int ps2vnc_startup_prepare_display_transaction(void)
+working/b4a/ps2vnc_calibration_core.inc:357:    if (!startup_display_transaction_loaded)
+working/b4a/ps2vnc_calibration_core.inc:360:    if (!startup_display_restore_required)
+working/b4a/ps2vnc_calibration_core.inc:363:    if (startup_display_transaction.state !=
+working/b4a/ps2vnc_calibration_core.inc:371:        screenf("DISPLAY TX: startup RESTORE failed");
+working/b4a/ps2vnc_calibration_core.inc:375:    startup_display_transaction.state =
+working/b4a/ps2vnc_calibration_core.inc:378:    startup_display_restore_required = 0;
+working/b4a/ps2vnc_calibration_core.inc:380:    screenf("DISPLAY TX: startup RESTORING");
+working/b4a/ps2vnc_calibration_core.inc:390: * authoritative startup profile.
+working/b4a/ps2vnc_calibration_core.inc:392: * Durable startup state has already selected exactly one complete authority
+working/b4a/ps2vnc_calibration_core.inc:400: * authority: the complete startup_authoritative_display_profile remains the
+working/b4a/ps2vnc_calibration_core.inc:403:int ps2vnc_startup_connect_reconciled(
+working/b4a/ps2vnc_calibration_core.inc:421:     * path remains appropriate. Do not widen that unrelated startup case.
+working/b4a/ps2vnc_calibration_core.inc:423:    if (!startup_authoritative_display_profile_loaded) {
+working/b4a/ps2vnc_calibration_core.inc:425:        if (!startup_display_transaction_loaded ||
+working/b4a/ps2vnc_calibration_core.inc:426:            startup_display_transaction.state !=
+working/b4a/ps2vnc_calibration_core.inc:433:        return initial_rfb_connect_with_retry(
+working/b4a/ps2vnc_calibration_core.inc:438:    if (!startup_display_transaction_loaded) {
+working/b4a/ps2vnc_calibration_core.inc:443:    target = &startup_authoritative_display_profile;
+working/b4a/ps2vnc_calibration_core.inc:446:     * ps2vnc_startup_apply_authoritative_profile() must have installed the
+working/b4a/ps2vnc_calibration_core.inc:506:        sock = rfb_connect_and_handshake_limited(
+working/b4a/ps2vnc_calibration_core.inc:529:         * Same proven sequence used by startup/recovery:
+working/b4a/ps2vnc_calibration_core.inc:603:                 * tightly-packed stride before ordinary startup continues.
+working/b4a/ps2vnc_calibration_core.inc:687:static int ps2vnc_startup_mode_save_to_pi(
+working/b4a/ps2vnc_calibration_core.inc:708:        "startup_mode = %s\n",
+working/b4a/ps2vnc_calibration_core.inc:1107: * Install the already-selected complete startup display authority locally.
+working/b4a/ps2vnc_calibration_core.inc:1110: * function does NOT choose between A and B. It only makes local startup
+working/b4a/ps2vnc_calibration_core.inc:1116:int ps2vnc_startup_apply_authoritative_profile(void)
+working/b4a/ps2vnc_calibration_core.inc:1132:     * first-run/calibration startup path.
+working/b4a/ps2vnc_calibration_core.inc:1134:    if (!startup_authoritative_display_profile_loaded) {
+working/b4a/ps2vnc_calibration_core.inc:1136:        if (!startup_display_transaction_loaded ||
+working/b4a/ps2vnc_calibration_core.inc:1137:            startup_display_transaction.state !=
+working/b4a/ps2vnc_calibration_core.inc:1147:    if (!startup_display_transaction_loaded)
+working/b4a/ps2vnc_calibration_core.inc:1150:    target = &startup_authoritative_display_profile;
+working/b4a/ps2vnc_calibration_core.inc:1153:        screenf("DISPLAY TX: startup profile invalid");
+working/b4a/ps2vnc_calibration_core.inc:1173:     * Usually the startup config already describes the authoritative
+working/b4a/ps2vnc_calibration_core.inc:1182:     *   startup config = complete A
+working/b4a/ps2vnc_calibration_core.inc:1189:    if (!startup_confirmed_display_profile_loaded ||
+working/b4a/ps2vnc_calibration_core.inc:1191:            &startup_confirmed_display_profile,
+working/b4a/ps2vnc_calibration_core.inc:1194:        if (startup_display_transaction.state !=
+working/b4a/ps2vnc_calibration_core.inc:1196:            !startup_confirmed_display_profile_loaded ||
+working/b4a/ps2vnc_calibration_core.inc:1198:                &startup_confirmed_display_profile,
+working/b4a/ps2vnc_calibration_core.inc:1199:                &startup_display_transaction.previous)) {
+working/b4a/ps2vnc_calibration_core.inc:1299:    const ps2vnc_video_mode_t *startup_mode = NULL;
+working/b4a/ps2vnc_calibration_core.inc:1306:    int startup_result;
+working/b4a/ps2vnc_calibration_core.inc:1310:    startup_confirmed_display_profile_loaded = 0;
+working/b4a/ps2vnc_calibration_core.inc:1313:        &startup_confirmed_display_profile,
+working/b4a/ps2vnc_calibration_core.inc:1315:        sizeof(startup_confirmed_display_profile));
+working/b4a/ps2vnc_calibration_core.inc:1346:     * A missing or malformed startup_mode never prevents PS2VNC from
+working/b4a/ps2vnc_calibration_core.inc:1351:    startup_result =
+working/b4a/ps2vnc_calibration_core.inc:1352:        ps2vnc_config_parse_startup_mode(
+working/b4a/ps2vnc_calibration_core.inc:1355:            &startup_mode
+working/b4a/ps2vnc_calibration_core.inc:1358:    if (startup_result > 0) {
+working/b4a/ps2vnc_calibration_core.inc:1359:        active_video_mode = startup_mode;
+working/b4a/ps2vnc_calibration_core.inc:1362:            "CONFIG: startup mode %s",
+working/b4a/ps2vnc_calibration_core.inc:1366:    } else if (startup_result < 0) {
+working/b4a/ps2vnc_calibration_core.inc:1368:        screenf("CONFIG: invalid startup mode");
+working/b4a/ps2vnc_calibration_core.inc:1377:            "CONFIG: no startup mode; default %s",
+working/b4a/ps2vnc_calibration_core.inc:1441:     * H4 display profile before discarding startup configuration context.
+working/b4a/ps2vnc_calibration_core.inc:1459:            &startup_confirmed_display_profile) < 0) {
+working/b4a/ps2vnc_calibration_core.inc:1466:    startup_confirmed_display_profile_loaded = 1;
+working/b4a/ps2vnc_display_core.inc:538:    rfb_connected = 1;
+working/b4a/ps2vnc_display_core.inc:585: * Complete durable startup recovery ONLY after the entire local runtime
+working/b4a/ps2vnc_display_core.inc:598:int ps2vnc_startup_finalize_display_transaction(void)
+working/b4a/ps2vnc_display_core.inc:603:    if (!startup_display_transaction_loaded)
+working/b4a/ps2vnc_display_core.inc:606:    if (!startup_authoritative_display_profile_loaded) {
+working/b4a/ps2vnc_display_core.inc:608:        return startup_display_transaction.state ==
+working/b4a/ps2vnc_display_core.inc:612:    target = &startup_authoritative_display_profile;
+working/b4a/ps2vnc_display_core.inc:624:    switch (startup_display_transaction.state) {
+working/b4a/ps2vnc_display_core.inc:628:            if (startup_display_commit_finish_required ||
+working/b4a/ps2vnc_display_core.inc:629:                startup_display_restored_mark_required ||
+working/b4a/ps2vnc_display_core.inc:630:                startup_display_restore_ack_required) {
+working/b4a/ps2vnc_display_core.inc:641:            if (!startup_display_commit_finish_required) {
+working/b4a/ps2vnc_display_core.inc:652:                screenf("DISPLAY TX: startup COMMIT failed");
+working/b4a/ps2vnc_display_core.inc:656:            startup_display_commit_finish_required = 0;
+working/b4a/ps2vnc_display_core.inc:657:            startup_display_transaction.state =
+working/b4a/ps2vnc_display_core.inc:661:                "DISPLAY TX: startup committed %s",
+working/b4a/ps2vnc_display_core.inc:679:            if (!startup_display_restored_mark_required ||
+working/b4a/ps2vnc_display_core.inc:680:                !startup_display_restore_ack_required) {
+working/b4a/ps2vnc_display_core.inc:691:                screenf("DISPLAY TX: startup RESTORED failed");
+working/b4a/ps2vnc_display_core.inc:695:            startup_display_restored_mark_required = 0;
+working/b4a/ps2vnc_display_core.inc:696:            startup_display_transaction.state =
+working/b4a/ps2vnc_display_core.inc:706:            if (!startup_display_restore_ack_required) {
+working/b4a/ps2vnc_services_imports.h:35:extern volatile int rfb_connected;
+working/b4a/ps2vnc_services_imports.h:38:extern ps2vnc_display_profile_t startup_authoritative_display_profile;
+working/b4a/ps2vnc_services_imports.h:39:extern int startup_authoritative_display_profile_loaded;
+working/b4a/ps2vnc_services_imports.h:40:extern ps2vnc_display_profile_t startup_confirmed_display_profile;
+working/b4a/ps2vnc_services_imports.h:41:extern int startup_confirmed_display_profile_loaded;
+working/b4a/ps2vnc_services_imports.h:42:extern int startup_display_commit_finish_required;
+working/b4a/ps2vnc_services_imports.h:43:extern int startup_display_restore_ack_required;
+working/b4a/ps2vnc_services_imports.h:44:extern int startup_display_restore_required;
+working/b4a/ps2vnc_services_imports.h:45:extern int startup_display_restored_mark_required;
+working/b4a/ps2vnc_services_imports.h:46:extern ps2vnc_display_transaction_t startup_display_transaction;
+working/b4a/ps2vnc_services_imports.h:47:extern int startup_display_transaction_loaded;
+working/b4a/ps2vnc_services_imports.h:83:int rfb_connect_and_handshake(void);
+working/b4a/ps2vnc_services_imports.h:84:int rfb_connect_and_handshake_limited( unsigned int max_width, unsigned int max_height);
+working/b4a/ps2vnc_calibration_tail.inc:1012: * touch startup_mode. The existing calibration save path writes only the
+working/b4a/ps2vnc_calibration_tail.inc:1096:     * exactly like startup-mode persistence after a successful mode switch.
+working/b4a/ps2vnc_runtime_tail.inc:400: * Normal startup returns immediately when L1+R1 are not held.  If both
+working/b4a/ps2vnc_runtime_tail.inc:404: int startup_force_calibration_requested(void)
+working/b4a/ps2vnc_runtime_tail.inc:483:int rfb_connect_and_handshake_limited(
+working/b4a/ps2vnc_runtime_tail.inc:756: * no existing startup/recovery path is silently weakened.
+working/b4a/ps2vnc_runtime_tail.inc:758:int rfb_connect_and_handshake(void)
+working/b4a/ps2vnc_runtime_tail.inc:760:    return rfb_connect_and_handshake_limited(
+working/b4a/ps2ip.c:2: * PS-to-VNC M3G shared startup-state translation unit.
+working/b4a/ps2ip.c:11: * H4C startup preflight result.
+working/b4a/ps2ip.c:14: * re-querying authority after RFB startup has begun.
+working/b4a/ps2ip.c:16:ps2vnc_display_transaction_t startup_display_transaction;
+working/b4a/ps2ip.c:18:int startup_display_transaction_loaded = 0;
+working/b4a/ps2ip.c:23: * startup applied. Do not re-fetch configuration later to reconstruct it.
+working/b4a/ps2ip.c:25:ps2vnc_display_profile_t startup_confirmed_display_profile;
+working/b4a/ps2ip.c:27:int startup_confirmed_display_profile_loaded = 0;
+working/b4a/ps2ip.c:29:ps2vnc_display_profile_t startup_authoritative_display_profile;
+working/b4a/ps2ip.c:31:int startup_authoritative_display_profile_loaded = 0;
+working/b4a/ps2ip.c:40:int startup_display_commit_finish_required = 0;
+working/b4a/ps2ip.c:41:int startup_display_restore_required = 0;
+working/b4a/ps2ip.c:42:int startup_display_restored_mark_required = 0;
+working/b4a/ps2ip.c:43:int startup_display_restore_ack_required = 0;
+working/b4a/ps2vnc_runtime_core.inc:3:/* Built-in fallback when no valid persisted startup mode exists. */
+working/b4a/ps2vnc_runtime_core.inc:627:volatile int rfb_connected = 0;
+working/b4a/ps2vnc_runtime_core.inc:631: * D4 startup override:
+working/b4a/ps2vnc_runtime_core.inc:1267:    if (!rfb_connected)
+working/b4a/ps2vnc_runtime_core.inc:1373: * The controller thread may continue polling the pad, but rfb_connected
+working/b4a/ps2vnc_management_core.inc:111: * Initial startup gets the same ten-second grace period for the
+working/b4a/ps2vnc_management_core.inc:112: * VNC server. The Ethernet link itself is already waited on by main().
+working/b4a/ps2vnc_management_core.inc:114:static int initial_rfb_connect_with_retry(
+working/b4a/ps2vnc_management_core.inc:154:        sock = rfb_connect_and_handshake();
+working/b4a/ps2vnc_management_core.inc:217:int recover_rfb_connection(
+working/b4a/ps2vnc_management_core.inc:239:    rfb_connected = 0;
+working/b4a/ps2vnc_management_core.inc:295:        new_sock = rfb_connect_and_handshake();
+working/b4a/ps2vnc_management_core.inc:388:                    rfb_connected = 1;
+working/b4a/ps2vnc_management_core.inc:465:    rfb_connected = 0;
+working/b4a/ps2vnc_management_core.inc:508:        new_sock = rfb_connect_and_handshake_limited(
+working/b4a/ps2vnc_management_core.inc:595:    new_sock = recover_rfb_connection(
+working/b4a/ps2vnc_management_core.inc:865: * Parse the global [display] startup_mode selector independently from
+working/b4a/ps2vnc_management_core.inc:869:static int ps2vnc_config_parse_startup_mode(
+working/b4a/ps2vnc_management_core.inc:878:    int startup_seen = 0;
+working/b4a/ps2vnc_management_core.inc:959:        if (strcmp(key, "startup_mode") != 0)
+working/b4a/ps2vnc_management_core.inc:962:        if (startup_seen)
+working/b4a/ps2vnc_management_core.inc:976:        startup_seen = 1;
+working/b4a/ps2vnc_management_core.inc:979:    return startup_seen ? 1 : 0;
+working/b4a/ps2vnc_services_exports.h:40:int ps2vnc_display_transaction_startup_preflight(void);
+working/b4a/ps2vnc_services_exports.h:47:int ps2vnc_startup_apply_authoritative_profile(void);
+working/b4a/ps2vnc_services_exports.h:48:int ps2vnc_startup_connect_reconciled( unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer);
+working/b4a/ps2vnc_services_exports.h:49:int ps2vnc_startup_prepare_display_transaction(void);
+working/b4a/ps2vnc_services_exports.h:50:int recover_rfb_connection( int old_sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, GSGLOBAL *gsGlobal, GSTEXTURE *tex, GSTEXTURE *osk_tex);
+working/b4a/ps2vnc_display_tail.inc:169:     * startup recovery promote B or mark restored A durable.
+working/b4a/ps2vnc_display_tail.inc:171:    if (ps2vnc_startup_finalize_display_transaction() < 0) {
+working/b4a/ps2vnc_display_tail.inc:172:        screenf("DISPLAY TX: startup finalization failed");
+working/b4a/ps2vnc_display_tail.inc:182:    rfb_connected = 1;
+working/b4a/ps2vnc_display_tail.inc:185:        rfb_connected = 0;
+working/b4a/ps2vnc_display_tail.inc:858:                 * KEEP/COMMIT confirmation UI and do not mutate startup_mode.
+working/b4a/ps2vnc_display_tail.inc:1203:                recover_rfb_connection(
+working/b4a/ps2vnc_display_tail.inc:1404:                        recover_rfb_connection(
+working/b4a/ps2vnc_display_tail.inc:1451:int main(int argc, char *argv[])
+
+===== 13. PASSIVE TCP OBSERVATION — NO GENERATED TRAFFIC =====
+INTERFACE=eth0
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+
+0 packets captured
+0 packets received by filter
+0 packets dropped by kernel
+
+===== 14. FINAL SOCKET SNAPSHOT =====
+LISTEN     4      5       192.168.50.1:5959        0.0.0.0:*     users:(("python3",pid=9693,fd=3))                      
+LISTEN     0      5       192.168.50.1:5900        0.0.0.0:*     users:(("Xtigervnc",pid=709,fd=6))                     
+ESTAB      0      0       192.168.50.1:5959   192.168.50.2:49676 users:(("python3",pid=9693,fd=4))                      
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49679                                                        
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49678                                                        
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49677                                                        
+ESTAB      68     0       192.168.50.1:5959   192.168.50.2:52432                                                        
+
+===== FINAL =====
+PS2_LEFT_RUNNING=YES
+PS2_RESET=NO
+SERVICE_RESTART=NO
+ACTIVE_PROBE=NO
+NEXT=DETERMINE_EXACT_BLOCKING_STARTUP_STAGE

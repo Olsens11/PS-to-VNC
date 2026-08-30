@@ -1,0 +1,120 @@
+===== LIVE STALL SNAPSHOT =====
+2026-08-30T15:22:21,114916856-04:00
+
+===== 2. DEPLOYMENT AUTHORITY =====
+RESULT=PASS
+SOURCE_HEAD=30a1ca80340e3e61a8256aabd22cca552ff8fdce
+SOURCE_AUTHORITY_HEAD=1dba6c3d68f5275795e20be3ffd7c7d2263729a5
+STATE_HEAD=f462bd7fd5eb07cc79852fdb4acc4d0ad1f6bf17
+SOURCE_ELF_SHA256=6ef11851ae3965fa24504eb805a6b42cf95eaebaa7948ba99f067bed60c991f2
+SOURCE_PT_LOAD_SHA256=5e6a0fe12d7562e0bd88d47b0ca1929f8565fccfd9bbb0b00b498f178ff354b3
+UNIQUE_ROUNDTRIP_SHA256=6ef11851ae3965fa24504eb805a6b42cf95eaebaa7948ba99f067bed60c991f2
+ROLLING_ROUNDTRIP_SHA256=6ef11851ae3965fa24504eb805a6b42cf95eaebaa7948ba99f067bed60c991f2
+FTP_ROUNDTRIP_IDENTITY=PASS
+
+===== 3. CURRENT REPOSITORY / ELF =====
+GIT_HEAD=f462bd7fd5eb07cc79852fdb4acc4d0ad1f6bf17
+WORKING_ELF_SHA256=6ef11851ae3965fa24504eb805a6b42cf95eaebaa7948ba99f067bed60c991f2
+?? evidence/m4/m4g-hardware-20260830-151418/
+
+===== 4. LOCATE EXACT SCREEN MESSAGE IN SOURCE =====
+ETHERNET_LINK_UP_SOURCE_HITS=0
+
+===== 5. PI ROUTE TO PS2 =====
+ROUTE=192.168.50.2 dev eth0 src 192.168.50.1 uid 1000 
+PS2_INTERFACE=eth0
+eth0             UP             d8:3a:dd:90:86:d9 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+eth0             UP             192.168.50.1/24 
+
+===== 6. NEIGHBOR / ARP STATE BEFORE WE GENERATE TRAFFIC =====
+192.168.50.2 dev eth0 lladdr 00:04:1f:b1:4c:ea STALE 
+
+===== 7. CURRENT TCP SOCKETS =====
+--- listeners ---
+LISTEN 4      5       192.168.50.1:5959       0.0.0.0:*    users:(("python3",pid=9693,fd=3)) 
+LISTEN 0      5       192.168.50.1:5900       0.0.0.0:*    users:(("Xtigervnc",pid=709,fd=6))
+
+--- PS2-related established/pending sockets ---
+LISTEN     4      5       192.168.50.1:5959        0.0.0.0:*     users:(("python3",pid=9693,fd=3)) 
+LISTEN     0      5       192.168.50.1:5900        0.0.0.0:*     users:(("Xtigervnc",pid=709,fd=6))
+ESTAB      0      0       192.168.50.1:5959   192.168.50.2:49676 users:(("python3",pid=9693,fd=4)) 
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49679                                   
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49678                                   
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49677                                   
+ESTAB      68     0       192.168.50.1:5959   192.168.50.2:52432                                   
+
+===== 8. VNC / PS2 SERVICE PROCESSES =====
+root       608     1  0 10:58 ?        00:01:31 bash /usr/local/lib/ps2vnc/health-supervisor.sh
+ps2        709     1  0 10:58 ?        00:00:23 /usr/bin/Xtigervnc :1 -geometry 1280x720 -depth 24 -rfbport 5900 -SecurityTypes None -localhost no -AlwaysShared -ac -interface 192.168.50.1
+ps2       9693     1  0 11:05 ?        00:00:23 /usr/bin/python3 /usr/local/lib/ps2vnc/management-server.py
+
+===== 9. PASSIVE PACKET CAPTURE WHILE PS2 REMAINS STUCK =====
+PASSIVE_CAPTURE_SECONDS=10
+tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+
+0 packets captured
+0 packets received by filter
+0 packets dropped by kernel
+
+===== 10. NEIGHBOR STATE AFTER PASSIVE OBSERVATION =====
+192.168.50.2 dev eth0 lladdr 00:04:1f:b1:4c:ea STALE 
+
+===== 11. CONTROLLED REACHABILITY PROBE =====
+PING 192.168.50.2 (192.168.50.2) 56(84) bytes of data.
+64 bytes from 192.168.50.2: icmp_seq=1 ttl=255 time=2.90 ms
+64 bytes from 192.168.50.2: icmp_seq=2 ttl=255 time=1.49 ms
+64 bytes from 192.168.50.2: icmp_seq=3 ttl=255 time=1.50 ms
+
+--- 192.168.50.2 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 1.493/1.964/2.899/0.660 ms
+
+===== 12. NEIGHBOR STATE AFTER PING =====
+192.168.50.2 dev eth0 lladdr 00:04:1f:b1:4c:ea DELAY 
+
+===== 13. TCP SOCKETS AFTER PROBE =====
+LISTEN     4      5       192.168.50.1:5959        0.0.0.0:*     users:(("python3",pid=9693,fd=3)) 
+LISTEN     0      5       192.168.50.1:5900        0.0.0.0:*     users:(("Xtigervnc",pid=709,fd=6))
+ESTAB      0      0       192.168.50.1:5959   192.168.50.2:49676 users:(("python3",pid=9693,fd=4)) 
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49679                                   
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49678                                   
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49677                                   
+ESTAB      68     0       192.168.50.1:5959   192.168.50.2:52432                                   
+
+===== 14. RECENT VNC / NETWORK LOG SIGNALS =====
+Aug 30 15:13:59 ps2box kernel: bcmgenet fd580000.ethernet eth0: Link is Down
+Aug 30 15:14:12 ps2box kernel: bcmgenet fd580000.ethernet eth0: Link is Up - 100Mbps/Full - flow control rx/tx
+Aug 30 15:14:14 ps2box Xtigervnc[709]: Sun Aug 30 15:14:14 2026
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  VNCSConnST:  closing 192.168.50.2::52434: read: Connection reset by peer (104)
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager: Framebuffer updates: 176
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:   Raw:
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:     Solid: 107 rects, 5.21547 Mpixels
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:            9.94894 MiB (1:1 ratio)
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:     Indexed RLE: 2 rects, 74.753 kpixels
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:                  146.025 KiB (1:1 ratio)
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:     Full Colour: 24 rects, 754.144 kpixels
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:                  1.43869 MiB (1:1 ratio)
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:   Hextile:
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:     Solid: 4 rects, 378 pixels
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:            64 B (1:12.5625 ratio)
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:     Indexed RLE: 22 rects, 4.212 kpixels
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:                  3.67676 KiB (1:2.30757 ratio)
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:     Full Colour: 142 rects, 24.318 kpixels
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:                  27.6963 KiB (1:1.77497 ratio)
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:   Total: 301 rects, 6.07327 Mpixels
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  EncodeManager:          11.5609 MiB (1:1.00228 ratio)
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  Connections: closed: 192.168.50.2::52434
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  ComparingUpdateTracker: 284.372 kpixels in / 34.204 kpixels out
+Aug 30 15:14:14 ps2box Xtigervnc[709]:  ComparingUpdateTracker: (1:8.314 ratio)
+Aug 30 15:15:22 ps2box kernel: bcmgenet fd580000.ethernet eth0: Link is Down
+Aug 30 15:17:03 ps2box kernel: bcmgenet fd580000.ethernet eth0: Link is Up - 100Mbps/Full - flow control rx/tx
+Aug 30 15:22:21 ps2box sudo[16308]:      ps2 : PWD=/home/ps2/PS-to-VNC ; USER=root ; COMMAND=/usr/bin/tcpdump -ni eth0 -tttt -vv 'host 192.168.50.2'
+Aug 30 15:22:21 ps2box kernel: bcmgenet fd580000.ethernet eth0: entered promiscuous mode
+Aug 30 15:22:31 ps2box kernel: bcmgenet fd580000.ethernet eth0: left promiscuous mode
+
+===== 15. FINAL =====
+STALL_SCREEN=ETHERNET_LINK_IS_UP
+PS2_LEFT_RUNNING=YES
+RECOVERY_ATTEMPTED=NO
+SERVICE_RESTARTED=NO
+NEXT=CLASSIFY_STARTUP_LAYER_FROM_LIVE_CAPTURE

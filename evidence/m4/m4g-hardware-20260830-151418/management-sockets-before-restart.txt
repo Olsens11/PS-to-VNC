@@ -1,0 +1,18 @@
+State      Recv-Q Send-Q Local Address:Port   Peer Address:Port Process                                                 
+LISTEN     0      50      192.168.50.1:445         0.0.0.0:*     users:(("smbd",pid=892,fd=28))                         
+LISTEN     0      50      192.168.50.1:139         0.0.0.0:*     users:(("smbd",pid=892,fd=29))                         
+LISTEN     0      128          0.0.0.0:22          0.0.0.0:*     users:(("sshd",pid=630,fd=3))                          
+LISTEN     4      5       192.168.50.1:5959        0.0.0.0:*     users:(("python3",pid=9693,fd=3))                      
+LISTEN     0      5       192.168.50.1:5900        0.0.0.0:*     users:(("Xtigervnc",pid=709,fd=6))                     
+LISTEN     0      4096       127.0.0.1:40981       0.0.0.0:*     users:(("containerd",pid=600,fd=10))                   
+LISTEN     0      50         127.0.0.1:139         0.0.0.0:*     users:(("smbd",pid=892,fd=31))                         
+LISTEN     0      50         127.0.0.1:445         0.0.0.0:*     users:(("smbd",pid=892,fd=30))                         
+ESTAB      0      0       192.168.50.1:5959   192.168.50.2:49676 users:(("python3",pid=9693,fd=4))                      
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49679                                                        
+ESTAB      0      0      192.168.0.132:22    192.168.0.125:55928 users:(("sshd",pid=25229,fd=4),("sshd",pid=25204,fd=4))
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49678                                                        
+CLOSE-WAIT 81     0       192.168.50.1:5959   192.168.50.2:49677                                                        
+ESTAB      68     0       192.168.50.1:5959   192.168.50.2:52432                                                        
+LISTEN     0      128             [::]:22             [::]:*     users:(("sshd",pid=630,fd=4))                          
+LISTEN     0      50             [::1]:139            [::]:*     users:(("smbd",pid=892,fd=33))                         
+LISTEN     0      50             [::1]:445            [::]:*     users:(("smbd",pid=892,fd=32))                         
