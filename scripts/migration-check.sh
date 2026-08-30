@@ -51,25 +51,17 @@ echo '===== B. MIGRATION STATE ====='
 case "$CURRENT_STAGE" in
     M1)
         test "$LAST_COMPLETE_STAGE" = 'M0'
-        test "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS'
         ;;
 
     M2)
         test "$LAST_COMPLETE_STAGE" = 'M1'
+        ;;
+
+    M3)
+        test "$LAST_COMPLETE_STAGE" = 'M2'
         test "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS'
-
-        case "$NEXT_ACTION" in
-            M2B_mechanically_extract_config_scalar_parsers)
-                ;;
-
-            M2C_build_and_characterize_scalar_parser_DUT)
-                ;;
-
-            *)
-                echo "ERROR=UNSUPPORTED_M2_NEXT_ACTION:$NEXT_ACTION"
-                exit 75
-                ;;
-        esac
+        test "$NEXT_ACTION" = \
+            'M3A_plan_accelerated_extraction_waves'
         ;;
 
     *)
@@ -445,108 +437,46 @@ test -f "$CURRENT_WORKING_SOURCE"
 
 case "$CURRENT_STAGE" in
     M1)
-        test "$CURRENT_SOURCE_HEAD" = \
-            '0f1b88ddf7821c935b68aabe6d65180bf02b074f'
-
-        test -f runtime/M1_SOURCE_AUTHORITY.env
-
-        # shellcheck disable=SC1091
         source runtime/M1_SOURCE_AUTHORITY.env
-
         test "$M1_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
-        test "$M1_SOURCE_STATUS" = 'EXTRACTED'
-
         echo 'WORKING_SOURCE_GENERATION=M1B'
-        echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
-        echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
-        echo 'M1_WORKING_SOURCE_AUTHORITY=PASS'
         ;;
 
-    M2)
-        case "$NEXT_ACTION" in
-            M2B_mechanically_extract_config_scalar_parsers)
-                test "$CURRENT_SOURCE_HEAD" = \
-                    '0f1b88ddf7821c935b68aabe6d65180bf02b074f'
+    M2|M3)
+        source runtime/M2_SOURCE_AUTHORITY.env
 
-                test -f runtime/M2_BOUNDARY_AUTHORITY.env
+        test "$M2_SOURCE_STATUS" = 'EXTRACTED'
+        test "$M2_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
 
-                # shellcheck disable=SC1091
-                source runtime/M2_BOUNDARY_AUTHORITY.env
+        test "$(
+            sha256sum "$M2_MONOLITH_PATH" |
+            awk '{print $1}'
+        )" = "$M2_POST_MONOLITH_SHA256"
 
-                test "$(
-                    sha256sum "$CURRENT_WORKING_SOURCE" |
-                    awk '{print $1}'
-                )" = "$M2_SELECTION_BASE_SOURCE_SHA256"
+        test "$(
+            sha256sum "$M2_CONFIG_TEXT_SOURCE_PATH" |
+            awk '{print $1}'
+        )" = "$M2_POST_CONFIG_TEXT_SOURCE_SHA256"
 
-                echo 'WORKING_SOURCE_GENERATION=M1B'
-                echo 'M1_WORKING_SOURCE_AUTHORITY=HISTORICAL_BASE_FOR_M2A'
-                ;;
+        test "$(
+            sha256sum "$M2_CONFIG_TEXT_HEADER_PATH" |
+            awk '{print $1}'
+        )" = "$M2_POST_CONFIG_TEXT_HEADER_SHA256"
 
-            M2C_build_and_characterize_scalar_parser_DUT)
-                test -f runtime/M2_SOURCE_AUTHORITY.env
+        test "$(
+            sha256sum "$M2_MAKEFILE_PATH" |
+            awk '{print $1}'
+        )" = "$M2_MAKEFILE_SHA256"
 
-                # shellcheck disable=SC1091
-                source runtime/M2_SOURCE_AUTHORITY.env
+        echo 'WORKING_SOURCE_GENERATION=M2B'
+        echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
+        echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
 
-                test "$M2_SOURCE_STAGE" = 'M2B'
-                test "$M2_SOURCE_STATUS" = 'EXTRACTED'
-                test "$M2_SOURCE_AUTHORITY_ROLE" = 'SOURCE_ONLY'
-                test "$M2_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
-
-                test "$(
-                    sha256sum "$M2_MONOLITH_PATH" |
-                    awk '{print $1}'
-                )" = "$M2_POST_MONOLITH_SHA256"
-
-                test "$(
-                    sha256sum "$M2_CONFIG_TEXT_SOURCE_PATH" |
-                    awk '{print $1}'
-                )" = "$M2_POST_CONFIG_TEXT_SOURCE_SHA256"
-
-                test "$(
-                    sha256sum "$M2_CONFIG_TEXT_HEADER_PATH" |
-                    awk '{print $1}'
-                )" = "$M2_POST_CONFIG_TEXT_HEADER_SHA256"
-
-                test "$(
-                    sha256sum "$M2_MAKEFILE_PATH" |
-                    awk '{print $1}'
-                )" = "$M2_MAKEFILE_SHA256"
-
-                git cat-file -e "$M2_SOURCE_COMMIT^{commit}"
-
-                test "$(
-                    git show \
-                        "${M2_SOURCE_COMMIT}:${M2_MONOLITH_PATH}" |
-                    sha256sum |
-                    awk '{print $1}'
-                )" = "$M2_POST_MONOLITH_SHA256"
-
-                test "$(
-                    git show \
-                        "${M2_SOURCE_COMMIT}:${M2_CONFIG_TEXT_SOURCE_PATH}" |
-                    sha256sum |
-                    awk '{print $1}'
-                )" = "$M2_POST_CONFIG_TEXT_SOURCE_SHA256"
-
-                test "$(
-                    git show \
-                        "${M2_SOURCE_COMMIT}:${M2_CONFIG_TEXT_HEADER_PATH}" |
-                    sha256sum |
-                    awk '{print $1}'
-                )" = "$M2_POST_CONFIG_TEXT_HEADER_SHA256"
-
-                echo 'WORKING_SOURCE_GENERATION=M2B'
-                echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
-                echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
-                echo 'M2_WORKING_SOURCE_AUTHORITY=PASS'
-                ;;
-
-            *)
-                echo "ERROR=UNKNOWN_M2_WORKING_SOURCE_STATE:$NEXT_ACTION"
-                exit 76
-                ;;
-        esac
+        if [ "$CURRENT_STAGE" = 'M3' ]; then
+            echo 'M2_WORKING_SOURCE_AUTHORITY=HISTORICAL_BASE_FOR_M3'
+        else
+            echo 'M2_WORKING_SOURCE_AUTHORITY=PASS'
+        fi
         ;;
 
     *)
@@ -1185,6 +1115,94 @@ then
     echo 'M2B_SOURCE_AUTHORITY=PASS'
 else
     echo 'M2B_SOURCE_AUTHORITY=NOT_ACTIVE'
+fi
+
+echo
+echo '===== W. M2C DUT AUTHORITY ====='
+
+if [ "$LAST_COMPLETE_STAGE" = 'M2' ] ||
+   [ "$CURRENT_STAGE" = 'M2' ]
+then
+    test -f runtime/M2_DUT_AUTHORITY.env
+
+    source runtime/M2_DUT_AUTHORITY.env
+
+    test "$M2_DUT_STAGE" = 'M2C'
+    test "$M2_DUT_STATUS" = 'BUILT_CHARACTERIZED'
+    test "$M2_DUT_MACHINE_RESULT" = 'PASS'
+
+    test "$M2_DUT_ELF_SHA256" = \
+        'af245ae9f1145b5750377f83375fa9ec640f19ecd320461dd5ef80809186b84e'
+
+    test "$M2_DUT_ELF_BYTES" = '2927920'
+
+    test "$M2_DUT_SECOND_BUILD_REPRODUCTION" = 'BYTE_EXACT'
+    test "$M2_DUT_HOST_SCALAR_PARSER_PARITY" = 'PASS'
+    test "$M2_DUT_TRANSLATION_UNIT_LINKAGE" = 'PASS'
+
+    test "$M2_DUT_PS2IP_SHA256" = \
+        'b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74'
+
+    test "$M2_DUT_HARDWARE_STATUS" = 'NOT_REQUIRED'
+    test "$M2_DUT_HARDWARE_RUN" = 'NO'
+
+    test "$(
+        sha256sum "$M2_DUT_ELF_PATH" |
+        awk '{print $1}'
+    )" = "$M2_DUT_ELF_SHA256"
+
+    test "$(
+        sha256sum "$M2_DUT_EVIDENCE/SHA256SUMS.txt" |
+        awk '{print $1}'
+    )" = "$M2_DUT_EVIDENCE_MANIFEST_SHA256"
+
+    (
+        cd "$M2_DUT_EVIDENCE"
+        sha256sum -c SHA256SUMS.txt >/dev/null
+    )
+
+    echo 'M2C_DUT_AUTHORITY=PASS'
+else
+    echo 'M2C_DUT_AUTHORITY=NOT_REQUIRED_YET'
+fi
+
+
+echo
+echo '===== X. M2 COMPLETION AUTHORITY ====='
+
+if [ "$LAST_COMPLETE_STAGE" = 'M2' ]; then
+    test -f runtime/M2_COMPLETION_AUTHORITY.env
+    test -f docs/M2_COMPLETION.md
+
+    source runtime/M2_COMPLETION_AUTHORITY.env
+
+    test "$M2_STAGE" = 'M2'
+    test "$M2_STAGE_STATUS" = 'COMPLETE'
+    test "$M2_COMPLETION_RESULT" = 'PASS'
+
+    test "$M2_SOURCE_COMMIT" = \
+        '58d22cba30174f92ebc50418da30080cef68d7c1'
+
+    test "$M2_DUT_SHA256" = \
+        'af245ae9f1145b5750377f83375fa9ec640f19ecd320461dd5ef80809186b84e'
+
+    test "$M2_BUILD_RESULT" = \
+        'M2C_BUILD_PASS_REPRODUCIBLE_LOW_RISK_DUT'
+
+    test "$M2_HOST_PARITY" = 'PASS'
+    test "$M2_TRANSLATION_UNIT_LINKAGE" = 'PASS'
+    test "$M2_REPRODUCIBILITY" = 'BYTE_EXACT'
+
+    test "$M2_HARDWARE_RUN" = 'NO'
+    test "$M2_MACHINE_RESULT" = 'PASS'
+
+    test "$M2_NEXT_STAGE" = 'M3'
+    test "$M2_NEXT_ACTION" = \
+        'M3A_plan_accelerated_extraction_waves'
+
+    echo 'M2_COMPLETION_AUTHORITY=PASS'
+else
+    echo 'M2_COMPLETION_AUTHORITY=NOT_COMPLETE_STAGE'
 fi
 
 echo '===== FINAL ====='

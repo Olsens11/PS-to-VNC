@@ -341,3 +341,20 @@ changed by M2B.
 Next:
 
     M2C_build_and_characterize_scalar_parser_DUT
+
+## M2 complete — accelerated migration begins
+
+M2 is complete with exact DUT:
+
+    af245ae9f1145b5750377f83375fa9ec640f19ecd320461dd5ef80809186b84e
+
+The migration now changes strategy from proof-sized helper moves to larger
+dependency-informed extraction waves.
+
+Current stage:
+
+    M3
+
+Next:
+
+    M3A_plan_accelerated_extraction_waves

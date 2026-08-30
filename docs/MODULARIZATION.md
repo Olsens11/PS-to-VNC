@@ -278,3 +278,19 @@ Source commit:
 Next:
 
     M2C_build_and_characterize_scalar_parser_DUT
+
+## Accelerated migration policy
+
+M1 and M2 established the safe mechanical-extraction process.
+
+Beginning with M3, migration units should be coherent clusters rather than
+individual helpers whenever dependency evidence permits.
+
+Low-risk waves use automated build, linkage, parity and structural checks.
+
+Physical PS2 regression gates are reserved for hardware-facing or materially
+coupled boundaries.
+
+Next:
+
+    M3A_plan_accelerated_extraction_waves

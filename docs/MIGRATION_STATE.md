@@ -177,13 +177,13 @@ resumes.
 The following exact indented tokens mirror the stable migration fields in the
 canonical machine-readable state.
 
-    LAST_COMPLETE_STAGE=M1
-    CURRENT_STAGE=M2
+    LAST_COMPLETE_STAGE=M2
+    CURRENT_STAGE=M3
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=58d22cba30174f92ebc50418da30080cef68d7c1
     LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M2C_build_and_characterize_scalar_parser_DUT
+    NEXT_ACTION=M3A_plan_accelerated_extraction_waves
 
 The canonical machine-readable source remains:
 
@@ -589,3 +589,29 @@ Hardware run performed:
 Next:
 
     M2C_build_and_characterize_scalar_parser_DUT
+
+## M2 closure / accelerated migration transition
+
+M2 is complete.
+
+M2 DUT:
+
+    af245ae9f1145b5750377f83375fa9ec640f19ecd320461dd5ef80809186b84e
+
+M2 validation:
+
+    PASS
+
+Physical PS2 hardware requirement:
+
+    NOT_REQUIRED
+
+The active stage is now M3.
+
+M3 begins the accelerated migration strategy by planning the remaining
+monolith as coherent extraction waves rather than repeating one-helper
+migration cycles.
+
+Next:
+
+    M3A_plan_accelerated_extraction_waves
