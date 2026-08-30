@@ -1,0 +1,4 @@
+In file included from ps2vnc_services.c:10:
+ps2vnc_calibration_core.inc:687:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+  687 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

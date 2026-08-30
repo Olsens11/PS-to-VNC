@@ -1,0 +1,11 @@
+00001880 T hires_bg_is_field_separated
+000018b0 T hires_bg_storage_row
+000016a8 T probe_extended_desktop_size
+000019a0 T ps2vnc_display_begin_update
+00001990 T ps2vnc_display_direct_write_cancel
+00001a00 T ps2vnc_display_finish_update_decode
+00001908 T ps2vnc_hires_mapped_storage_row
+00000400 T receive_framebuffer_update
+00000350 T request_framebuffer
+00000260 T start_controller_thread
+00001a10 T sync_copy_hires_dirty_rows

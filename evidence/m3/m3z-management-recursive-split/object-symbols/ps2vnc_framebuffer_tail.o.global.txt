@@ -1,0 +1,3 @@
+00000810 T ps2vnc_display_commit_update
+00001050 T ps2vnc_display_publish_full_desktop
+00000c08 T publish_hires_background

@@ -1,0 +1,48 @@
+In file included from ps2vnc_management_tail.c:9:
+ps2vnc_management_tail.inc: In function 'ps2vnc_display_profile_valid':
+ps2vnc_management_tail.inc:17:9: error: implicit declaration of function 'ps2vnc_backend_transaction_name' [-Wimplicit-function-declaration]
+   17 |     if (ps2vnc_backend_transaction_name(
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_tail.inc:18:31: warning: comparison between pointer and integer
+   18 |             profile->backend) == NULL)
+      |                               ^~
+ps2vnc_management_tail.inc: In function 'ps2vnc_management_post':
+ps2vnc_management_tail.inc:220:22: error: implicit declaration of function 'ps2vnc_http_find_header_end' [-Wimplicit-function-declaration]
+  220 |         header_end = ps2vnc_http_find_header_end(
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_tail.inc:233:10: error: implicit declaration of function 'ps2vnc_http_status_is_200' [-Wimplicit-function-declaration]
+  233 |     if (!ps2vnc_http_status_is_200(
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_tail.inc: In function 'ps2vnc_display_transaction_begin_to_pi':
+ps2vnc_management_tail.inc:271:22: error: assignment to 'const char *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
+  271 |     previous_backend =
+      |                      ^
+ps2vnc_management_tail.inc:273:23: error: assignment to 'const char *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
+  273 |     candidate_backend =
+      |                       ^
+ps2vnc_management_tail.inc: In function 'ps2vnc_config_parse_display_policy':
+ps2vnc_management_tail.inc:1115:20: error: 'PS2VNC_CONFIG_MAX_BYTES' undeclared (first use in this function); did you mean 'PS2VNC_CONFIG_PATH'?
+ 1115 |     if (text_len > PS2VNC_CONFIG_MAX_BYTES)
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~
+      |                    PS2VNC_CONFIG_PATH
+ps2vnc_management_tail.inc:1115:20: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_management_tail.inc:1138:19: error: 'PS2VNC_CONFIG_MAX_LINE' undeclared (first use in this function); did you mean 'PS2VNC_CONFIG_PATH'?
+ 1138 |         char line[PS2VNC_CONFIG_MAX_LINE];
+      |                   ^~~~~~~~~~~~~~~~~~~~~~
+      |                   PS2VNC_CONFIG_PATH
+ps2vnc_management_tail.inc:1138:14: warning: unused variable 'line' [-Wunused-variable]
+ 1138 |         char line[PS2VNC_CONFIG_MAX_LINE];
+      |              ^~~~
+ps2vnc_management_tail.inc: In function 'ps2vnc_display_policy_refresh_from_pi':
+ps2vnc_management_tail.inc:1299:9: error: 'PS2VNC_CONFIG_MAX_BYTES' undeclared (first use in this function); did you mean 'PS2VNC_CONFIG_PATH'?
+ 1299 |         PS2VNC_CONFIG_MAX_BYTES + 1
+      |         ^~~~~~~~~~~~~~~~~~~~~~~
+      |         PS2VNC_CONFIG_PATH
+ps2vnc_management_tail.inc: In function 'ps2vnc_display_tx_parse_profile':
+ps2vnc_management_tail.inc:1540:9: error: implicit declaration of function 'ps2vnc_backend_from_transaction_name' [-Wimplicit-function-declaration]
+ 1540 |         ps2vnc_backend_from_transaction_name(value);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_tail.inc: At top level:
+ps2vnc_management_tail.inc:1511:12: warning: 'ps2vnc_display_tx_parse_profile' defined but not used [-Wunused-function]
+ 1511 | static int ps2vnc_display_tx_parse_profile(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

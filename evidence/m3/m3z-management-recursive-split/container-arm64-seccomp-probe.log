@@ -1,0 +1,2 @@
+CONTAINER_SHELL=PASS
+/bin/sh: uname: not found

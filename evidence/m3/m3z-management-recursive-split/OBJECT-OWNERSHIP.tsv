@@ -1,0 +1,13 @@
+object	defined_func_symbols
+ps2ip.o	0
+ps2vnc_runtime.o	33
+ps2vnc_runtime_tail.o	36
+ps2vnc_framebuffer.o	13
+ps2vnc_framebuffer_tail.o	4
+ps2vnc_ui_display.o	22
+ps2vnc_ui_tail.o	1
+ps2vnc_display.o	11
+ps2vnc_display_tail.o	1
+ps2vnc_services.o	27
+ps2vnc_management_tail.o	20
+ps2vnc_calibration_tail.o	17

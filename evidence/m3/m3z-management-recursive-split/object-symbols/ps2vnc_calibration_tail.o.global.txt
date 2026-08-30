@@ -1,0 +1,14 @@
+00000dc0 T calculate_presented_desktop_geometry
+00000f58 T ps2vnc_controller_pad_acquire
+00001030 T ps2vnc_controller_pad_release
+00001550 T ps2vnc_display_create
+00001900 T ps2vnc_display_destroy
+00001c48 T ps2vnc_display_draw_desktop
+00001820 T ps2vnc_display_finish_draw
+00001890 T ps2vnc_display_flip
+000019d0 T ps2vnc_display_prepare_desktop
+00001f58 T ps2vnc_display_prepare_osk
+00001768 T ps2vnc_display_wait_presentation_memory_idle
+000017c8 T ps2vnc_display_wait_texture_idle
+000010b8 T ps2vnc_run_runtime_calibration
+00000418 T run_screen_fit_calibration

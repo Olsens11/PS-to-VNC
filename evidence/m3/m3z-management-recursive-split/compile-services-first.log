@@ -1,0 +1,28 @@
+In file included from ps2vnc_services.c:10:
+ps2vnc_calibration_core.inc: In function 'ps2vnc_display_tx_parse':
+ps2vnc_calibration_core.inc:35:10: error: implicit declaration of function 'ps2vnc_display_tx_take_line'; did you mean 'ps2vnc_display_tx_parse'? [-Wimplicit-function-declaration]
+   35 |     if (!ps2vnc_display_tx_take_line(
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |          ps2vnc_display_tx_parse
+ps2vnc_calibration_core.inc:55:9: error: implicit declaration of function 'ps2vnc_display_tx_parse_profile'; did you mean 'ps2vnc_display_tx_parse'? [-Wimplicit-function-declaration]
+   55 |     if (ps2vnc_display_tx_parse_profile(
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |         ps2vnc_display_tx_parse
+ps2vnc_calibration_core.inc: In function 'ps2vnc_display_transaction_fetch_from_pi':
+ps2vnc_calibration_core.inc:101:9: error: implicit declaration of function 'ps2vnc_management_get'; did you mean 'ps2vnc_management_post_text'? [-Wimplicit-function-declaration]
+  101 |     if (ps2vnc_management_get(
+      |         ^~~~~~~~~~~~~~~~~~~~~
+      |         ps2vnc_management_post_text
+ps2vnc_calibration_core.inc: In function 'ps2vnc_display_transaction_select_startup_authority':
+ps2vnc_calibration_core.inc:284:10: error: implicit declaration of function 'ps2vnc_display_profile_valid'; did you mean 'ps2vnc_display_tx_profiles_equal'? [-Wimplicit-function-declaration]
+  284 |         !ps2vnc_display_profile_valid(source))
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |          ps2vnc_display_tx_profiles_equal
+ps2vnc_calibration_core.inc: At top level:
+ps2vnc_calibration_core.inc:687:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+  687 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from ps2vnc_services.c:9:
+ps2vnc_management_core.inc:1519:25: warning: 'ps2vnc_backend_from_transaction_name' defined but not used [-Wunused-function]
+ 1519 | static ps2vnc_backend_t ps2vnc_backend_from_transaction_name(
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
