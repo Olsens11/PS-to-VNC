@@ -12,6 +12,8 @@ Do not perform a mass rewrite.
 
 ## Tranche 1: config text
 
+Status: **COMPLETE — M4F**
+
 Target:
 
     src/config/text.c

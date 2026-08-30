@@ -926,3 +926,59 @@ with host tests and permanent pstvnc_ naming.
     M4E_DESIGN_COMMIT=8889c6eeae0a466c3f87d392fd7bac5bda568a1f
     M4E_DESIGN_MANIFEST_SHA256=681fce2b475c29bfab835a88798dd1239806a13cd80b0d631dd4cb032466db31
     NEXT_ACTION=M4F_normalize_config_text_module
+
+## M4F first permanent-module normalization
+
+M4F completed the first implementation tranche of the permanent
+responsibility-oriented architecture.
+
+The historical configuration text helper module:
+
+    working/b4a/ps2vnc_config_text.c
+    working/b4a/ps2vnc_config_text.h
+
+was retired and replaced by:
+
+    src/config/text.c
+    src/config/text.h
+
+The permanent API now uses:
+
+    pstvnc_config_trim_left
+    pstvnc_config_trim_right
+    pstvnc_config_parse_int
+    pstvnc_config_parse_bool
+
+Only those four module-owned symbols were renamed. Historical management
+functions sharing the old ps2vnc_config_ prefix retained their names until
+their own owning domain is normalized.
+
+M4F also established host-side C unit tests, repository LF/editor policy,
+and the current repository-level reproducible PS2 build authority:
+
+    scripts/build.sh
+
+Two independent PS2 builds were byte-identical:
+
+    ELF_SHA256=9416044effd726cc9233ca8ae3f18bf1234d9d11c3a2cbd78a6674df5ea075cd
+    ELF_BYTES=2970896
+
+The full ELF differs from M4A because source/debug/symbol identity changed.
+
+The PS2-loaded PT_LOAD image remains byte-exact:
+
+    M4F_PT_LOAD_SHA256=62d62c543186802e657d4ba4044e879568a6dd51b707b056846df4c563de4f8b
+    M4A_PT_LOAD_SHA256=62d62c543186802e657d4ba4044e879568a6dd51b707b056846df4c563de4f8b
+    RELATION=BYTE_EXACT_IDENTICAL
+
+No new hardware run was required. M4F inherits the M4A physical
+qualification for these exact loaded bytes while M4A remains the most
+recent direct hardware checkpoint.
+
+Raw machine/pre-normalization evidence retains its captured bytes even
+where historical whitespace differs from current authored-source policy.
+
+    M4F_SOURCE_COMMIT=ab9ae2ee34631c657b6e75a80d79a3a0595e0128
+    M4F_SOURCE_AUTHORITY_COMMIT=ebab70b19f0ae3863424d2299127712eddcdf667
+    M4F_RAW_EVIDENCE_MANIFEST_SHA256=543ab7d9c0cc9ef43a9ebb37ed8f935f27623cc1488712678003e93d734decef
+    NEXT_ACTION=M4G_video_mode_geometry_boundary_census

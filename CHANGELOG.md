@@ -11,6 +11,17 @@ not replace product versions.
 Development after the first versioned baseline is focused on architectural
 normalization before substantial new feature work.
 
+### Architecture normalization
+
+- Normalized configuration text helpers into the first permanent
+  `src/config/` module.
+- Introduced the permanent `pstvnc_` module API naming convention in
+  compiled application code.
+- Added host-side C unit-test infrastructure.
+- Added the current repository-level reproducible PS2 build script.
+- Confirmed the normalized build retains the exact M4A-qualified PS2
+  PT_LOAD image.
+
 ## 0.1.0-alpha.1 - 2026-08-30
 
 ### Baseline
