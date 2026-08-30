@@ -1,5 +1,3 @@
-#include "video/geometry.h"
-
 
 int draw_recovery_status(
     GSGLOBAL *gsGlobal,
@@ -665,20 +663,59 @@ int screen_fit_full_bypass = 0;
  * placement, not absolute framebuffer coordinates.
  */
 
-int screen_fit_geometry_valid_for_mode(
+static int screen_fit_geometry_valid_for_mode(
     const ps2vnc_video_mode_t *mode,
     int width,
     int height,
     int offset_x,
     int offset_y)
 {
-    return pstvnc_video_geometry_safe_area_valid(
-        mode,
-        width,
-        height,
-        offset_x,
-        offset_y
-    );
+    int output_width;
+    int output_height;
+    int remaining_x;
+    int remaining_y;
+    int centered_x;
+    int centered_y;
+    int max_positive_x;
+    int max_positive_y;
+
+    if (mode == NULL)
+        return 0;
+
+    output_width = (int)mode->raster_width;
+    output_height = (int)mode->raster_height;
+
+    /*
+     * D17AL-F1:
+     *
+     * width/height are the exact selected safe desktop rectangle.
+     * SCREEN_FIT_BORDER is visualization only and consumes no pixels.
+     */
+    if (width <= 0 || height <= 0)
+        return 0;
+
+    if (width > output_width ||
+        height > output_height)
+        return 0;
+
+    remaining_x = output_width - width;
+    remaining_y = output_height - height;
+
+    centered_x = remaining_x / 2;
+    centered_y = remaining_y / 2;
+
+    max_positive_x = remaining_x - centered_x;
+    max_positive_y = remaining_y - centered_y;
+
+    if (offset_x < -centered_x ||
+        offset_x > max_positive_x)
+        return 0;
+
+    if (offset_y < -centered_y ||
+        offset_y > max_positive_y)
+        return 0;
+
+    return 1;
 }
 
 

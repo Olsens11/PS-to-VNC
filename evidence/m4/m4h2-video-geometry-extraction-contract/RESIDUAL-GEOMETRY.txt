@@ -1,0 +1,27 @@
+M4H residual geometry after M4H-A
+
+M4H-A is intentionally not the whole video/geometry tranche.
+
+A later residual audit must classify mode-derived helpers currently tied
+to active_video_mode / active_display_backend, including areas such as:
+
+    HIRES effective width
+    HIRES full-frame/storage height
+    horizontal raster mapping requirement
+    vertical raster mapping requirement
+    raster mapping requirement
+    logical desktop size
+    other mode-derived mapping calculations
+
+Those helpers may become M4H-B if they are pure geometry after explicit
+mode/backend parameterization.
+
+Framebuffer copying/publishing itself does not move merely because it
+uses geometry values.
+
+PS2 GS programming does not move.
+
+Mutable desktop state does not move.
+
+Completion of M4H-A therefore does NOT by itself mark video/geometry
+fully normalized.

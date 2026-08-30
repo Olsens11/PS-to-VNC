@@ -1,0 +1,48 @@
+src/video/mode.h:33:    unsigned int raster_width;
+src/video/mode.h:34:    unsigned int raster_height;
+src/video/mode.h:43:    int standard_offset_x;
+src/video/mode.h:44:    int standard_offset_y;
+src/video/mode.h:47:    unsigned int standard_logical_width;
+src/video/mode.h:48:    unsigned int standard_logical_height;
+src/video/mode.h:51:    unsigned int hires_width;
+src/video/mode.h:52:    unsigned int hires_height;
+working/b4a/ps2vnc_calibration_core.inc:1057:        ((int)mode->raster_width - config->safe_width) / 2 +
+working/b4a/ps2vnc_calibration_core.inc:1061:        ((int)mode->raster_height - config->safe_height) / 2 +
+working/b4a/ps2vnc_calibration_core.inc:1091:        mode->raster_width,
+working/b4a/ps2vnc_calibration_core.inc:1092:        mode->raster_height
+working/b4a/ps2vnc_display_core.inc:28:            mode->raster_width, mode->raster_height))
+working/b4a/ps2vnc_runtime_core_to_tail.h:19:#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+working/b4a/ps2vnc_runtime_core_to_tail.h:21:#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+working/b4a/ps2vnc_calibration_tail.inc:986:    if (desktop_width != active_video_mode->standard_logical_width ||
+working/b4a/ps2vnc_calibration_tail.inc:987:        desktop_height != active_video_mode->standard_logical_height ||
+working/b4a/ps2vnc_calibration_tail.inc:1156:    gsGlobal->Height = active_video_mode->hires_height;
+working/b4a/ps2vnc_calibration_tail.inc:1228:        active_video_mode->standard_offset_x,
+working/b4a/ps2vnc_calibration_tail.inc:1229:        active_video_mode->standard_offset_y);
+working/b4a/ps2vnc_services_compat.h:104:#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+working/b4a/ps2vnc_services_compat.h:105:#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+working/b4a/ps2vnc_management_tail.inc:29:    if (profile->output_x > profile->mode->raster_width ||
+working/b4a/ps2vnc_management_tail.inc:30:        profile->output_y > profile->mode->raster_height)
+working/b4a/ps2vnc_management_tail.inc:34:            profile->mode->raster_width - profile->output_x ||
+working/b4a/ps2vnc_management_tail.inc:36:            profile->mode->raster_height - profile->output_y)
+working/b4a/ps2vnc_management_tail.inc:44:            profile->mode->standard_logical_width;
+working/b4a/ps2vnc_management_tail.inc:46:            profile->mode->standard_logical_height;
+working/b4a/ps2vnc_management_tail.inc:118:        profile->logical_width = mode->standard_logical_width;
+working/b4a/ps2vnc_management_tail.inc:119:        profile->logical_height = mode->standard_logical_height;
+working/b4a/ps2vnc_runtime_core.inc:29:    width = active_video_mode->hires_width;
+working/b4a/ps2vnc_runtime_core.inc:50:        active_video_mode->hires_height == 0) {
+working/b4a/ps2vnc_runtime_core.inc:56:        (u64)active_video_mode->hires_height;
+working/b4a/ps2vnc_runtime_core.inc:73:        active_video_mode->raster_width == 0) {
+working/b4a/ps2vnc_runtime_core.inc:86:            active_video_mode->raster_width;
+working/b4a/ps2vnc_runtime_core.inc:95:        active_video_mode->raster_height == 0) {
+working/b4a/ps2vnc_runtime_core.inc:108:            (u64)active_video_mode->raster_height;
+working/b4a/ps2vnc_runtime_core.inc:140:        return active_video_mode->hires_height;
+working/b4a/ps2vnc_runtime_core.inc:142:    return active_video_mode->raster_height;
+working/b4a/ps2vnc_runtime_core.inc:154:#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+working/b4a/ps2vnc_runtime_core.inc:155:#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+working/b4a/ps2vnc_runtime_core.inc:179:        *width = active_video_mode->standard_logical_width;
+working/b4a/ps2vnc_runtime_core.inc:180:        *height = active_video_mode->standard_logical_height;
+working/b4a/ps2vnc_runtime_core.inc:216:        draw_height = active_video_mode->hires_height;
+working/b4a/ps2vnc_management_core.inc:685:    output_width = (int)mode->raster_width;
+working/b4a/ps2vnc_management_core.inc:686:    output_height = (int)mode->raster_height;
+working/b4a/ps2vnc_runtime_to_ui_display.h:124:#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+working/b4a/ps2vnc_runtime_to_ui_display.h:126:#define OUTPUT_WIDTH   (active_video_mode->raster_width)

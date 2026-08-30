@@ -1,0 +1,79 @@
+M4H-A permanent module
+
+    src/video/geometry.c
+    src/video/geometry.h
+
+Permanent dependency direction:
+
+    video/geometry -> video/mode
+
+video/geometry MUST NOT depend on:
+
+    PS2SDK headers
+    gsKit
+    RFB/socket code
+    configuration parser/storage types
+    management protocol types
+    UI/menu code
+    calibration globals
+    active_video_mode
+    active_display_backend
+    desktop_* mutable state
+
+Permanent value type:
+
+    typedef struct pstvnc_video_rect {
+        unsigned int x;
+        unsigned int y;
+        unsigned int width;
+        unsigned int height;
+    } pstvnc_video_rect_t;
+
+Permanent API:
+
+    int pstvnc_video_geometry_safe_area_valid(
+        const pstvnc_video_mode_t *mode,
+        int width,
+        int height,
+        int offset_x,
+        int offset_y
+    );
+
+    int pstvnc_video_geometry_safe_area_rect(
+        const pstvnc_video_mode_t *mode,
+        int width,
+        int height,
+        int offset_x,
+        int offset_y,
+        pstvnc_video_rect_t *out_rect
+    );
+
+    int pstvnc_video_geometry_presented_rect(
+        const pstvnc_video_mode_t *mode,
+        const pstvnc_video_rect_t *safe_area,
+        unsigned int desktop_capacity_width,
+        unsigned int desktop_capacity_height,
+        pstvnc_video_rect_t *out_rect
+    );
+
+Semantics
+
+safe_area_valid:
+    Preserve the exact historical center-relative signed-offset validity
+    rules of screen_fit_geometry_valid_for_mode().
+
+safe_area_rect:
+    Validate the supplied safe-area dimensions/offsets and convert them
+    into an absolute raster rectangle.
+
+presented_rect:
+    Fit min(safe-area dimensions, supplied desktop capacity) inside the
+    safe rectangle and center it using the existing integer division
+    behavior.
+
+The permanent geometry module owns arithmetic only.
+
+It does not own the screen-fit FULL/bypass state flag.  A transitional
+caller that has FULL/bypass policy may supply the full raster rectangle
+directly.  This deliberately keeps calibration state/policy outside the
+mathematical geometry layer.

@@ -1,0 +1,3612 @@
+
+============================================================
+src/video/mode.h:28-56
+============================================================
+    28      int gs_mode;
+    29      int interlace;
+    30      int field;
+    31  
+    32      /* Electrical / physical raster. */
+    33      unsigned int raster_width;
+    34      unsigned int raster_height;
+    35  
+    36      /*
+    37       * Ordinary gsKit drawing/framebuffer geometry.
+    38       *
+    39       * A zero Standard geometry means that backend is unavailable.
+    40       */
+    41      unsigned int standard_fb_width;
+    42      unsigned int standard_fb_height;
+    43      int standard_offset_x;
+    44      int standard_offset_y;
+    45  
+    46      /* Fixed RFB/logical desktop for the Standard backend. */
+    47      unsigned int standard_logical_width;
+    48      unsigned int standard_logical_height;
+    49  
+    50      /* HIRES drawing geometry and pass count. */
+    51      unsigned int hires_width;
+    52      unsigned int hires_height;
+    53      unsigned int hires_passes;
+    54  
+    55      unsigned int allowed_backends;
+    56      pstvnc_video_backend_t recommended_backend;
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:183-196
+============================================================
+   183  
+   184              /*
+   185               * No durable transaction means confirmed ps2vnc.conf wins.
+   186               *
+   187               * A machine without a stored preset retains the historical
+   188               * interactive-calibration startup path, so absence of a
+   189               * confirmed profile is not itself an error here.
+   190               */
+   191              if (!startup_confirmed_display_profile_loaded)
+   192                  return 0;
+   193  
+   194              source = &startup_confirmed_display_profile;
+   195              break;
+   196  
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:415-428
+============================================================
+   415      unsigned int target_height;
+   416  
+   417      int attempt;
+   418  
+   419      /*
+   420       * No stored complete profile means the historical first-run/calibration
+   421       * path remains appropriate. Do not widen that unrelated startup case.
+   422       */
+   423      if (!startup_authoritative_display_profile_loaded) {
+   424  
+   425          if (!startup_display_transaction_loaded ||
+   426              startup_display_transaction.state !=
+   427                  PS2VNC_DISPLAY_TX_NONE) {
+   428  
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:494-507
+============================================================
+   494          /*
+   495           * ServerInit's dimensions are unknown until the fresh handshake.
+   496           * Leave the ordinary geometry lock open only across this special
+   497           * bounded recovery boundary.
+   498           */
+   499          desktop_geometry_locked = 0;
+   500  
+   501          screenf(
+   502              "VNC reconcile attempt %d/%d",
+   503              attempt + 1,
+   504              RECONNECT_MAX_ATTEMPTS);
+   505  
+   506          sock = rfb_connect_and_handshake_limited(
+   507              VNC_WIDTH,
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:510-534
+============================================================
+   510          if (sock < 0) {
+   511              /*
+   512               * The failed handshake may have temporarily touched desktop
+   513               * geometry. Reassert the selected authority locally before retry.
+   514               */
+   515              desktop_width = target_width;
+   516              desktop_height = target_height;
+   517              desktop_geometry_locked = 0;
+   518  
+   519              nanosleep(&retry_delay, NULL);
+   520              continue;
+   521          }
+   522  
+   523          screenf(
+   524              "DISPLAY TX: server actual %ux%u",
+   525              desktop_width,
+   526              desktop_height);
+   527  
+   528          /*
+   529           * Same proven sequence used by startup/recovery:
+   530           * RGB565 -> Raw -> one complete framebuffer -> EDS capability probe.
+   531           *
+   532           * The complete Raw receive is safe because the widened handshake is
+   533           * bounded by the actual allocated framebuffer capacity.
+   534           */
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:563-582
+============================================================
+   563           * EDS probe above describes the ACTUAL server geometry adopted by the
+   564           * unlocked handshake. Only now may we ask TigerVNC to converge to the
+   565           * complete authoritative profile.
+   566           */
+   567          if (ok &&
+   568              (desktop_width != target_width ||
+   569               desktop_height != target_height)) {
+   570  
+   571              screenf(
+   572                  "DISPLAY TX: resize %ux%u -> %ux%u",
+   573                  desktop_width,
+   574                  desktop_height,
+   575                  target_width,
+   576                  target_height);
+   577  
+   578              if (request_and_confirm_desktop_size(
+   579                      sock,
+   580                      rfb_framebuffer,
+   581                      gs_framebuffer,
+   582                      target_width,
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:592-607
+============================================================
+   592               * Publish the new PS2-side logical geometry ONLY after that
+   593               * confirmation. This is the no-hybrid commit point for runtime
+   594               * RFB geometry.
+   595               */
+   596              if (ok) {
+   597                  desktop_width = target_width;
+   598                  desktop_height = target_height;
+   599                  desktop_geometry_locked = 1;
+   600  
+   601                  /*
+   602                   * Obtain a clean authoritative framebuffer using the NEW
+   603                   * tightly-packed stride before ordinary startup continues.
+   604                   */
+   605                  if (set_raw_encoding(sock) < 0 ||
+   606                      request_framebuffer(sock, 0) < 0 ||
+   607                      receive_framebuffer_update(
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:619-692
+============================================================
+   619  
+   620              /*
+   621               * TigerVNC was already coherent with A. Lock that exact geometry
+   622               * without performing a redundant SetDesktopSize transaction.
+   623               */
+   624              desktop_width = target_width;
+   625              desktop_height = target_height;
+   626              desktop_geometry_locked = 1;
+   627          }
+   628  
+   629          if (ok) {
+   630  
+   631              if (desktop_width != target_width ||
+   632                  desktop_height != target_height ||
+   633                  !desktop_geometry_locked) {
+   634  
+   635                  screenf("DISPLAY TX: final geometry mismatch");
+   636                  ok = 0;
+   637              }
+   638          }
+   639  
+   640          if (ok) {
+   641              screenf(
+   642                  "DISPLAY TX: RFB coherent %ux%u",
+   643                  desktop_width,
+   644                  desktop_height);
+   645  
+   646              return sock;
+   647          }
+   648  
+   649          if (sock >= 0)
+   650              close(sock);
+   651  
+   652          reset_rfb_transport_state();
+   653  
+   654          /*
+   655           * A failed/partial resize may leave TigerVNC at either geometry.
+   656           * Keep authority A locally and let the next widened handshake discover
+   657           * the server's actual state again.
+   658           */
+   659          desktop_width = target_width;
+   660          desktop_height = target_height;
+   661          desktop_geometry_locked = 0;
+   662  
+   663          nanosleep(&retry_delay, NULL);
+   664      }
+   665  
+   666      screenf("DISPLAY TX: unable to reconcile VNC");
+   667  
+   668      desktop_width = target_width;
+   669      desktop_height = target_height;
+   670      desktop_geometry_locked = 0;
+   671  
+   672      return -1;
+   673  }
+   674  
+   675  
+   676  /*
+   677   * TEST13J-D4-A4:
+   678   * Persist an accepted interactive display calibration through the
+   679   * dedicated management service on TCP 5959.
+   680   *
+   681   * width/height are the OUTER disappearing-border rectangle used by
+   682   * calibration.  The persistent representation stores the safe interior.
+   683   *
+   684   * Failure is non-fatal.  The accepted calibration remains valid for the
+   685   * current session even if the Pi management service cannot save it.
+   686   */
+   687  static int ps2vnc_startup_mode_save_to_pi(
+   688      const ps2vnc_video_mode_t *mode)
+   689  {
+   690      struct sockaddr_in server;
+   691      char body[96];
+   692      char request[384];
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:829-842
+============================================================
+   829          return -1;
+   830      }
+   831  
+   832      /*
+   833       * D17AL-F1:
+   834       * Persist exactly what the calibration rectangle selected.
+   835       */
+   836      safe_width = width;
+   837      safe_height = height;
+   838  
+   839      if (active_video_mode == NULL ||
+   840          active_video_mode->name == NULL)
+   841          return -1;
+   842  
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1052-1069
+============================================================
+  1052              config->safe_x,
+  1053              config->safe_y))
+  1054          return -1;
+  1055  
+  1056      safe_x =
+  1057          ((int)mode->raster_width - config->safe_width) / 2 +
+  1058          config->safe_x;
+  1059  
+  1060      safe_y =
+  1061          ((int)mode->raster_height - config->safe_height) / 2 +
+  1062          config->safe_y;
+  1063  
+  1064      if (safe_x < 0 || safe_y < 0)
+  1065          return -1;
+  1066  
+  1067      width =
+  1068          ((unsigned int)config->safe_width < VNC_WIDTH) ?
+  1069          (unsigned int)config->safe_width : VNC_WIDTH;
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1086-1106
+============================================================
+  1086      return region_fits_u32(
+  1087          *out_x,
+  1088          *out_y,
+  1089          *out_w,
+  1090          *out_h,
+  1091          mode->raster_width,
+  1092          mode->raster_height
+  1093      ) ? 0 : -1;
+  1094  }
+  1095  
+  1096  
+  1097  
+  1098   int calculate_presented_desktop_geometry(
+  1099      unsigned int *out_x,
+  1100      unsigned int *out_y,
+  1101      unsigned int *out_w,
+  1102      unsigned int *out_h);
+  1103  
+  1104  
+  1105  /*
+  1106   * H4C3C3B3:
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1127-1140
+============================================================
+  1127      unsigned int check_w;
+  1128      unsigned int check_h;
+  1129  
+  1130      /*
+  1131       * No stored preset + no transaction retains the historical
+  1132       * first-run/calibration startup path.
+  1133       */
+  1134      if (!startup_authoritative_display_profile_loaded) {
+  1135  
+  1136          if (!startup_display_transaction_loaded ||
+  1137              startup_display_transaction.state !=
+  1138                  PS2VNC_DISPLAY_TX_NONE) {
+  1139  
+  1140              screenf("DISPLAY TX: missing pending authority");
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1180-1193
+============================================================
+  1180       * The special interrupted-COMMITTING window can instead have:
+  1181       *
+  1182       *   startup config = complete A
+  1183       *   durable authority = complete B
+  1184       *
+  1185       * In that one case, load B's existing mode-specific calibration,
+  1186       * derive a complete profile from it WITHOUT mutating state, and require
+  1187       * exact equality with durable candidate B before applying it.
+  1188       */
+  1189      if (!startup_confirmed_display_profile_loaded ||
+  1190          !ps2vnc_display_tx_profiles_equal(
+  1191              &startup_confirmed_display_profile,
+  1192              target)) {
+  1193  
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1263-1276
+============================================================
+  1263       * Prove that the local screen-fit state now reconstructs the exact
+  1264       * physical presentation rectangle stored in the complete authority.
+  1265       *
+  1266       * Do this before RFB or GS initialization.
+  1267       */
+  1268      if (calculate_presented_desktop_geometry(
+  1269              &check_x,
+  1270              &check_y,
+  1271              &check_w,
+  1272              &check_h) < 0 ||
+  1273          check_x != target->output_x ||
+  1274          check_y != target->output_y ||
+  1275          check_w != target->output_width ||
+  1276          check_h != target->output_height) {
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1329-1357
+============================================================
+  1329              PS2VNC_CONFIG_MAX_BYTES,
+  1330              &config_len) < 0) {
+  1331  
+  1332          free(config_text);
+  1333  
+  1334          screenf("CONFIG: using calibration");
+  1335          return 0;
+  1336      }
+  1337  
+  1338      screenf(
+  1339          "CONFIG: fetched %u bytes",
+  1340          config_len
+  1341      );
+  1342  
+  1343      /*
+  1344       * Startup selection and calibration are deliberately separate.
+  1345       *
+  1346       * A missing or malformed startup_mode never prevents PS2VNC from
+  1347       * starting.  The compiled 1080i mode remains the fallback.  When a
+  1348       * valid symbolic mode is present, select it before interpreting any
+  1349       * mode-specific calibration.
+  1350       */
+  1351      startup_result =
+  1352          ps2vnc_config_parse_startup_mode(
+  1353              (const char *)config_text,
+  1354              config_len,
+  1355              &startup_mode
+  1356          );
+  1357  
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1400-1448
+============================================================
+  1400              PS2VNC_CONFIG_INVALID_TEXT) {
+  1401  
+  1402          free(config_text);
+  1403  
+  1404          screenf("CONFIG: invalid display text");
+  1405          screenf("CONFIG: using calibration");
+  1406          return 0;
+  1407      }
+  1408  
+  1409      if (parse_result ==
+  1410              PS2VNC_CONFIG_INVALID_GEOMETRY) {
+  1411  
+  1412          free(config_text);
+  1413  
+  1414          screenf("CONFIG: invalid geometry");
+  1415          screenf("CONFIG: using calibration");
+  1416          return 0;
+  1417      }
+  1418  
+  1419      if (parse_result !=
+  1420              PS2VNC_CONFIG_OK) {
+  1421  
+  1422          free(config_text);
+  1423  
+  1424          screenf("CONFIG: unknown parser result");
+  1425          screenf("CONFIG: using calibration");
+  1426          return 0;
+  1427      }
+  1428  
+  1429      free(config_text);
+  1430  
+  1431      if (!ps2vnc_config_apply_display(
+  1432              &display)) {
+  1433  
+  1434          screenf("CONFIG: preset apply rejected");
+  1435          screenf("CONFIG: using calibration");
+  1436          return 0;
+  1437      }
+  1438  
+  1439      /*
+  1440       * Convert the stored safe-area calibration into the exact coherent
+  1441       * H4 display profile before discarding startup configuration context.
+  1442       *
+  1443       * At this point no GS backend has been constructed yet, so use the
+  1444       * mode's normal backend resolution rather than capture_active().
+  1445       */
+  1446      if (ps2vnc_config_presented_geometry_for_mode(
+  1447              active_video_mode,
+  1448              &display,
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1457-1470
+============================================================
+  1457              profile_w,
+  1458              profile_h,
+  1459              &startup_confirmed_display_profile) < 0) {
+  1460  
+  1461          screenf("CONFIG: confirmed profile invalid");
+  1462          screenf("CONFIG: using calibration");
+  1463          return 0;
+  1464      }
+  1465  
+  1466      startup_confirmed_display_profile_loaded = 1;
+  1467      ps2vnc_display_config_loaded = 1;
+  1468  
+  1469      screenf(
+  1470          "CONFIG: display %dx%d %d,%d",
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1481-1494
+============================================================
+  1481  
+  1482  
+  1483  /*
+  1484   * D4-A4 geometry diagnostic.
+  1485   *
+  1486   * Emit one concise snapshot after calibrated geometry has been converted
+  1487   * into the physical 1280x720 output position.
+  1488   */
+  1489  void debug_emit_geometry_snapshot(void)
+  1490  {
+  1491      char msg[192];
+  1492      int len;
+  1493  
+  1494      if (debug_udp_sock < 0)
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1502-1520
+============================================================
+  1502          screen_fit_width,
+  1503          screen_fit_height,
+  1504          screen_fit_offset_x,
+  1505          screen_fit_offset_y,
+  1506          screen_fit_full_bypass,
+  1507          desktop_width,
+  1508          desktop_height,
+  1509          desktop_output_x,
+  1510          desktop_output_y,
+  1511          ps2vnc_display_config_loaded,
+  1512          force_screen_fit_calibration
+  1513      );
+  1514  
+  1515      if (len <= 0)
+  1516          return;
+  1517  
+  1518      if (len >= (int)sizeof(msg))
+  1519          len = sizeof(msg) - 1;
+  1520  
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1528-1541
+============================================================
+  1528      );
+  1529  }
+  1530  
+  1531  
+  1532  /*
+  1533   * Interactive calibration policy.
+  1534   *
+  1535   * Size and position are constrained together against the physical
+  1536   * output coordinate space.
+  1537   */
+  1538  void screen_fit_clamp_interactive(
+  1539      int *width,
+  1540      int *height,
+  1541      int *offset_x,
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1583-1596
+============================================================
+  1583  }
+  1584  
+  1585  
+  1586  /*
+  1587   * Draw text directly with the existing 5x7 OSK font.
+  1588   * Calibration is temporary, so a few tiny GS sprites per glyph are
+  1589   * preferable to allocating another texture or consuming more VRAM.
+  1590   */
+  1591  static float screen_fit_draw_x(int x)
+  1592  {
+  1593      return ps2vnc_display_output_x((float)x);
+  1594  }
+  1595  
+  1596  static float screen_fit_draw_y(int y)
+
+============================================================
+working/b4a/ps2vnc_calibration_core.inc:1608-1619
+============================================================
+  1608  
+  1609  
+  1610  /*
+  1611   * D17AL-F5:
+  1612   *
+  1613   * Calibration decoration may intentionally extend beyond the physical
+  1614   * raster while the selected SAFE DESKTOP remains fully in-bounds.
+  1615   *
+  1616   * Clip that decoration here before applying the backend coordinate
+  1617   * transform. Negative/out-of-range visualization coordinates therefore
+  1618   * never reach gsKit/GS.
+  1619   */
+
+============================================================
+working/b4a/ps2vnc_calibration_core_to_tail.h:1-13
+============================================================
+     1  #ifndef PS2VNC_CALIBRATION_CORE_TO_TAIL_H
+     2  #define PS2VNC_CALIBRATION_CORE_TO_TAIL_H
+     3  
+     4  /*
+     5   * M3X calibration tail interface.
+     6   *
+     7   * SCREEN_FIT constants are exact definitions
+     8   * from management_config. Function declarations
+     9   * are derived from qualified pre-cut GCC aux-info.
+    10   */
+    11  
+    12  #define SCREEN_FIT_FINE_STEP            1
+    13  #define SCREEN_FIT_FAST_STEP            4
+
+============================================================
+working/b4a/ps2vnc_calibration_state.inc:1-2
+============================================================
+     1  #include "ps2vnc_calibration_core.inc"
+     2  #include "ps2vnc_calibration_tail.inc"
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.c:5-11
+============================================================
+     5   */
+     6  #include "ps2vnc_services_compat.h"
+     7  #include "ps2vnc_services_exports.h"
+     8  
+     9  
+    10  #include "ps2vnc_calibration_core_to_tail.h"
+    11  #include "ps2vnc_calibration_tail.inc"
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:92-112
+============================================================
+    92  }
+    93  
+    94  
+    95  /*
+    96   * TEST13J-D3-A3:
+    97   * Draw a square centered on one theoretical calibration corner.
+    98   *
+    99   * The square is split diagonally into two right triangles:
+   100   *
+   101   *   bright = toward the usable desktop
+   102   *   gray   = toward the hidden/outside area
+   103   *
+   104   * Since the marker straddles the calibration corner, comparing the
+   105   * visible pieces at all four corners gives an immediate indication
+   106   * that the hidden border is positioned evenly.
+   107   */
+   108  static void screen_fit_draw_corner_marker(
+   109      GSGLOBAL *gsGlobal,
+   110      int corner_x,
+   111      int corner_y,
+   112      int sx,
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:204-217
+============================================================
+   204              corner_color
+   205          );
+   206      }
+   207  }
+   208  
+   209  static int draw_screen_fit_calibration(
+   210      GSGLOBAL *gsGlobal,
+   211      int width,
+   212      int height,
+   213      int offset_x,
+   214      int offset_y,
+   215      u64 black)
+   216  {
+   217      const u64 white =
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:253-266
+============================================================
+   253       * SCREEN_FIT_BORDER is visualization only, so draw it immediately
+   254       * OUTSIDE those edges rather than consuming safe pixels inside them.
+   255       *
+   256       * When an edge of the safe desktop reaches the physical raster edge,
+   257       * the corresponding border clips completely away. This is precisely
+   258       * the calibration indication we want.
+   259       */
+   260      screen_fit_prim_sprite_clipped(
+   261          gsGlobal,
+   262          x0 - SCREEN_FIT_BORDER,
+   263          y0 - SCREEN_FIT_BORDER,
+   264          x1 + SCREEN_FIT_BORDER,
+   265          y0,
+   266          2,
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:307-320
+============================================================
+   307       * markers remains visible.
+   308       */
+   309      /*
+   310       * Four high-contrast clipping gauges.
+   311       *
+   312       * Anchor them at the INNER edges of the white calibration border.
+   313       * Nothing in these markers overlaps the border itself.
+   314       */
+   315  
+   316      /* Top-left */
+   317      screen_fit_draw_corner_marker(
+   318          gsGlobal,
+   319          x0,
+   320          y0,
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:404-417
+============================================================
+   404  
+   405      return 0;
+   406  }
+   407  
+   408  
+   409  int run_screen_fit_calibration(
+   410      GSGLOBAL *gsGlobal,
+   411      u64 black,
+   412      int save_on_accept,
+   413      int *accepted_out)
+   414  {
+   415      struct padButtonStatus buttons;
+   416  
+   417      unsigned int pressed = 0;
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:420-433
+============================================================
+   420  
+   421      unsigned int hold_action = 0;
+   422      unsigned int hold_ticks = 0;
+   423  
+   424      /*
+   425       * Start forced recalibration from the exact persistent geometry when
+   426       * one was loaded.  screen_fit_* already describes the validated OUTER
+   427       * disappearing-border rectangle and its center-relative position.
+   428       *
+   429       * With no stored display preset, preserve the original first-run
+   430       * behavior by reconstructing the OUTER rectangle from the current
+   431       * TigerVNC safe-interior dimensions and starting centered.
+   432       */
+   433      int width;
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:449-495
+============================================================
+   449      } else {
+   450          offset_x = 0;
+   451          offset_y = 0;
+   452  
+   453          /*
+   454           * Reconstruct the OUTER calibration rectangle without trusting
+   455           * runtime dimensions enough to perform an unchecked
+   456           * addition/conversion.
+   457           */
+   458          if (desktop_width >
+   459                  (unsigned int)OUTPUT_WIDTH) {
+   460  
+   461              width = OUTPUT_WIDTH;
+   462  
+   463          } else {
+   464              width =
+   465                  (int)desktop_width;
+   466          }
+   467  
+   468          if (desktop_height >
+   469                  (unsigned int)OUTPUT_HEIGHT) {
+   470  
+   471              height = OUTPUT_HEIGHT;
+   472  
+   473          } else {
+   474              height =
+   475                  (int)desktop_height;
+   476          }
+   477      }
+   478  
+   479      screen_fit_clamp_interactive(
+   480          &width,
+   481          &height,
+   482          &offset_x,
+   483          &offset_y
+   484      );
+   485  
+   486      for (;;) {
+   487          if (draw_screen_fit_calibration(
+   488                  gsGlobal,
+   489                  width,
+   490                  height,
+   491                  offset_x,
+   492                  offset_y,
+   493                  black) < 0)
+   494              return -1;
+   495  
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:513-526
+============================================================
+   513          }
+   514  
+   515          changed = pressed ^ last_pressed;
+   516  
+   517          /*
+   518           * X saves this calibration.
+   519           */
+   520          if ((changed & PAD_CROSS) &&
+   521              (pressed & PAD_CROSS)) {
+   522  
+   523              /*
+   524               * Interactive values are already clamped, but saving still
+   525               * passes through the authoritative validation boundary.
+   526               */
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:533-547
+============================================================
+   533  
+   534                  if (accepted_out != NULL)
+   535                      *accepted_out = 1;
+   536  
+   537                  /*
+   538                   * Startup calibration retains its proven immediate-save
+   539                   * behavior. Runtime calibration passes save_on_accept=0 and
+   540                   * persists only after its live geometry transaction succeeds.
+   541                   */
+   542                  if (save_on_accept) {
+   543                      if (ps2vnc_display_save_to_pi(
+   544                              width,
+   545                              height,
+   546                              offset_x,
+   547                              offset_y) < 0) {
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:560-573
+============================================================
+   560  
+   561              return 0;
+   562          }
+   563  
+   564          /*
+   565           * Circle bypasses calibration.
+   566           */
+   567          if ((changed & PAD_CIRCLE) &&
+   568              (pressed & PAD_CIRCLE)) {
+   569  
+   570              screen_fit_apply_preset(
+   571                  OUTPUT_WIDTH,
+   572                  OUTPUT_HEIGHT,
+   573                  0,
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:690-705
+============================================================
+   690  
+   691  
+   692  
+   693  /*
+   694   * TEST13J-D3-A2:
+   695   * Convert the visible calibration result into the actual remote desktop.
+   696   *
+   697   * X calibration:
+   698   *     white border is deliberately pushed outside the visible TV area;
+   699   *     use the interior of that border as guaranteed-safe pixels.
+   700   *
+   701   * Circle:
+   702   *     deliberate full 1280x720 bypass.
+   703   */
+   704  
+   705  static int calculate_safe_desktop_geometry(
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:755-774
+============================================================
+   755  }
+   756  
+   757  
+   758  
+   759  /*
+   760   * Physical screen calibration and RFB desktop capacity are independent.
+   761   *
+   762   * Preserve the historical behavior when the calibrated safe area is
+   763   * smaller than the RFB capacity.  When it is larger, retain the maximum
+   764   * supported RFB desktop and center it inside the physical safe region.
+   765   */
+   766  int calculate_presented_desktop_geometry(
+   767      unsigned int *out_x,
+   768      unsigned int *out_y,
+   769      unsigned int *out_w,
+   770      unsigned int *out_h)
+   771  {
+   772      unsigned int safe_x;
+   773      unsigned int safe_y;
+   774      unsigned int safe_w;
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:820-833
+============================================================
+   820      return -1;
+   821  }
+   822  
+   823  
+   824  /*
+   825   * The controller must not resume until every calibration button has been
+   826   * physically released. This prevents the accepting X/Circle/D-pad state
+   827   * from becoming remote-desktop input after ownership returns.
+   828   */
+   829  static int ps2vnc_controller_pad_wait_release(void)
+   830  {
+   831      const struct timespec delay = { 0, 10000000 };
+   832      struct padButtonStatus buttons;
+   833  
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:864-882
+============================================================
+   864      return -1;
+   865  }
+   866  
+   867  
+   868  /*
+   869   * Rebuild the RFB desktop at a newly calibrated geometry without changing
+   870   * the electrical video mode or reconstructing the GS display.
+   871   *
+   872   * HIRES is geometry-independent at the allocation level: its presentation
+   873   * buffers already span the complete physical output. Standard currently
+   874   * sizes its VRAM desktop texture from desktop_width/desktop_height, so
+   875   * Standard remains deliberately rejected here until its resize contract is
+   876   * added before the first Standard mode becomes selectable.
+   877   */
+   878  static int ps2vnc_reconfigure_current_desktop_hires(
+   879      int sock,
+   880      unsigned short *rfb_framebuffer,
+   881      unsigned short *gs_framebuffer,
+   882      GSGLOBAL *gsGlobal,
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:899-939
+============================================================
+   899       * before a possible SetDesktopSize transaction.
+   900       */
+   901      if (set_raw_extended_desktop_encoding(sock) < 0)
+   902          return -1;
+   903  
+   904      if (desktop_width != width ||
+   905          desktop_height != height) {
+   906  
+   907          if (request_and_confirm_desktop_size(
+   908                  sock,
+   909                  rfb_framebuffer,
+   910                  gs_framebuffer,
+   911                  width,
+   912                  height) < 0)
+   913              return -1;
+   914      }
+   915  
+   916      /*
+   917       * From here forward gs_framebuffer is interpreted at the new tightly
+   918       * packed RFB stride.
+   919       */
+   920      desktop_width = width;
+   921      desktop_height = height;
+   922      desktop_output_x = out_x;
+   923      desktop_output_y = out_y;
+   924      desktop_output_width = width;
+   925      desktop_output_height = height;
+   926      desktop_geometry_locked = 1;
+   927  
+   928      debug_emit_geometry_snapshot();
+   929  
+   930      /*
+   931       * Calibration has temporarily replaced the visible frame. Obtain one
+   932       * authoritative full Raw desktop and republish both HIRES buffers before
+   933       * incremental Hextile traffic resumes.
+   934       */
+   935      if (set_raw_encoding(sock) < 0)
+   936          return -1;
+   937  
+   938      if (request_framebuffer(sock, 0) < 0)
+   939          return -1;
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:959-972
+============================================================
+   959  }
+   960  
+   961  
+   962  /*
+   963   * Standard keeps a fixed logical RFB desktop and VRAM texture. Runtime
+   964   * calibration therefore changes only the physical presentation rectangle;
+   965   * the next normal draw reuses the existing authoritative texture.
+   966   */
+   967  static int ps2vnc_reconfigure_current_desktop_standard(
+   968      GSTEXTURE *tex,
+   969      unsigned int out_x,
+   970      unsigned int out_y,
+   971      unsigned int width,
+   972      unsigned int height)
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:981-1040
+============================================================
+   981       * D17AL-F3:
+   982       * Standard logical/RFB geometry is deliberately independent from its
+   983       * GS framebuffer geometry.  In particular, 480i is 704x464 logical
+   984       * pixels backed by a 704x232 interlaced FRAME drawing surface.
+   985       */
+   986      if (desktop_width != active_video_mode->standard_logical_width ||
+   987          desktop_height != active_video_mode->standard_logical_height ||
+   988          tex->Width != desktop_width ||
+   989          tex->Height != desktop_height)
+   990          return -1;
+   991  
+   992      if (!region_fits_u32(
+   993              out_x, out_y, width, height,
+   994              OUTPUT_WIDTH, OUTPUT_HEIGHT))
+   995          return -1;
+   996  
+   997      desktop_output_x = out_x;
+   998      desktop_output_y = out_y;
+   999      desktop_output_width = width;
+  1000      desktop_output_height = height;
+  1001      desktop_geometry_locked = 1;
+  1002  
+  1003      debug_emit_geometry_snapshot();
+  1004      return 0;
+  1005  }
+  1006  
+  1007  
+  1008  /*
+  1009   * Complete live same-mode calibration transaction.
+  1010   *
+  1011   * This deliberately does NOT call ps2vnc_switch_display_mode() and does not
+  1012   * touch startup_mode. The existing calibration save path writes only the
+  1013   * active mode's [display.<mode>] safe-area values.
+  1014   *
+  1015   * D2A leaves this function unreachable; D2B will publish the semantic menu
+  1016   * request only after this transaction has built cleanly.
+  1017   */
+  1018  int ps2vnc_run_runtime_calibration(
+  1019      int sock,
+  1020      unsigned short *rfb_framebuffer,
+  1021      unsigned short *gs_framebuffer,
+  1022      GSGLOBAL *gsGlobal,
+  1023      GSTEXTURE *tex,
+  1024      u64 black)
+  1025  {
+  1026      unsigned int target_x;
+  1027      unsigned int target_y;
+  1028      unsigned int target_w;
+  1029      unsigned int target_h;
+  1030      int result = -1;
+  1031      int pad_owned = 0;
+  1032      int persist_calibration = 0;
+  1033  
+  1034      if (active_display_backend != PS2VNC_BACKEND_HIRES &&
+  1035          active_display_backend != PS2VNC_BACKEND_STANDARD)
+  1036          return -1;
+  1037  
+  1038      if (ps2vnc_controller_pad_acquire() < 0)
+  1039          return -1;
+  1040  
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:1052-1072
+============================================================
+  1052  
+  1053      if (ps2vnc_display_wait_presentation_memory_idle(
+  1054              gsGlobal) < 0)
+  1055          goto done;
+  1056  
+  1057      if (run_screen_fit_calibration(
+  1058              gsGlobal,
+  1059              black,
+  1060              0,
+  1061              &persist_calibration) < 0)
+  1062          goto done;
+  1063  
+  1064      if (calculate_presented_desktop_geometry(
+  1065              &target_x,
+  1066              &target_y,
+  1067              &target_w,
+  1068              &target_h) < 0)
+  1069          goto done;
+  1070  
+  1071      if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+  1072          if (ps2vnc_reconfigure_current_desktop_hires(
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:1090-1109
+============================================================
+  1090              goto done;
+  1091      }
+  1092  
+  1093      /*
+  1094       * Persist only after the complete live geometry transaction succeeds.
+  1095       * Save failure is non-fatal: the calibrated live session remains valid,
+  1096       * exactly like startup-mode persistence after a successful mode switch.
+  1097       *
+  1098       * Circle/FULL does not request persistence, preserving the historical
+  1099       * calibration bypass behavior.
+  1100       */
+  1101      if (persist_calibration) {
+  1102          if (ps2vnc_display_save_to_pi(
+  1103                  screen_fit_width,
+  1104                  screen_fit_height,
+  1105                  screen_fit_offset_x,
+  1106                  screen_fit_offset_y) < 0) {
+  1107  
+  1108              screenf("CONFIG: display save failed");
+  1109  
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:1202-1215
+============================================================
+  1202      gsGlobal->Interlace = active_video_mode->interlace;
+  1203      gsGlobal->Field = active_video_mode->field;
+  1204  
+  1205      /*
+  1206       * These are GS framebuffer/drawing dimensions, not physical-raster or
+  1207       * calibrated RFB desktop dimensions. Interlaced FRAME modes therefore
+  1208       * store their already-halved GS framebuffer height in the mode record.
+  1209       */
+  1210      gsGlobal->Width = active_video_mode->standard_fb_width;
+  1211      gsGlobal->Height = active_video_mode->standard_fb_height;
+  1212  
+  1213      /*
+  1214       * Preserve the hardware-proven Test13 Standard presentation format.
+  1215       * The remote desktop remains a separate 16-bit texture.
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:1505-1525
+============================================================
+  1505      unsigned short *gs_framebuffer)
+  1506  {
+  1507      if (gsGlobal == NULL ||
+  1508          tex == NULL ||
+  1509          gs_framebuffer == NULL ||
+  1510          desktop_width == 0 ||
+  1511          desktop_height == 0)
+  1512          return -1;
+  1513  
+  1514      memset(tex, 0, sizeof(*tex));
+  1515  
+  1516      tex->Width = desktop_width;
+  1517      tex->Height = desktop_height;
+  1518      tex->PSM = GS_PSM_CT16;
+  1519      tex->Mem = (u32 *)gs_framebuffer;
+  1520      tex->Filter = GS_FILTER_NEAREST;
+  1521      tex->VramClut = 0;
+  1522  
+  1523      tex->Vram = gsKit_vram_alloc(
+  1524          gsGlobal,
+  1525          gsKit_texture_size(
+
+============================================================
+working/b4a/ps2vnc_calibration_tail.inc:1579-1603
+============================================================
+  1579          return 0;
+  1580  
+  1581      if (active_display_backend != PS2VNC_BACKEND_STANDARD)
+  1582          return -1;
+  1583  
+  1584      if (tex->Width != desktop_width ||
+  1585          tex->Height != desktop_height ||
+  1586          tex->Mem == NULL)
+  1587          return -1;
+  1588  
+  1589      x0 = ps2vnc_display_output_x((float)desktop_output_x);
+  1590      y0 = ps2vnc_display_output_y((float)desktop_output_y);
+  1591  
+  1592      x1 = ps2vnc_display_output_x(
+  1593          (float)(desktop_output_x + desktop_output_width));
+  1594      y1 = ps2vnc_display_output_y(
+  1595          (float)(desktop_output_y + desktop_output_height));
+  1596  
+  1597      gsKit_clear(gsGlobal, clear_color);
+  1598  
+  1599      gsKit_prim_sprite_texture(
+  1600          gsGlobal,
+  1601          tex,
+  1602          x0, y0,
+  1603          0.0f, 0.0f,
+
+============================================================
+working/b4a/ps2vnc_display_core.inc:23-36
+============================================================
+    23              return -1;
+    24          }
+    25  
+    26      if (!region_fits_u32(
+    27              out_x, out_y, width, height,
+    28              mode->raster_width, mode->raster_height))
+    29  {
+    30              display_switch_failure_stage = 2u;
+    31              return -1;
+    32          }
+    33  
+    34      /*
+    35       * Main thread remains the sole RFB socket writer. Empty any controller
+    36       * traffic accumulated before entering the display transaction.
+
+============================================================
+working/b4a/ps2vnc_display_core.inc:75-108
+============================================================
+    75  {
+    76              display_switch_failure_stage = 7u;
+    77              return -1;
+    78          }
+    79  
+    80      if (desktop_width != logical_width ||
+    81          desktop_height != logical_height) {
+    82          if (request_and_confirm_desktop_size(
+    83                  sock,
+    84                  rfb_framebuffer,
+    85                  gs_framebuffer,
+    86                  logical_width,
+    87                  logical_height) < 0)
+    88  {
+    89                  display_switch_failure_stage = 8u;
+    90                  return -1;
+    91              }
+    92      }
+    93  
+    94      desktop_width = logical_width;
+    95      desktop_height = logical_height;
+    96      desktop_output_x = out_x;
+    97      desktop_output_y = out_y;
+    98      desktop_output_width = width;
+    99      desktop_output_height = height;
+   100      desktop_geometry_locked = 1;
+   101  
+   102      debug_emit_geometry_snapshot();
+   103  
+   104      /*
+   105       * Build an authoritative framebuffer at the backend-selected logical
+   106       * desktop geometry before preparing the reconstructed presentation.
+   107       */
+   108      if (set_raw_encoding(sock) < 0)
+
+============================================================
+working/b4a/ps2vnc_display_core.inc:515-533
+============================================================
+   515      /*
+   516       * Verify that the exact saved known-good configuration came back.
+   517       */
+   518      if (active_video_mode != previous_mode ||
+   519          active_display_backend != previous_backend ||
+   520          desktop_width != previous_desktop_w ||
+   521          desktop_height != previous_desktop_h ||
+   522          desktop_output_x != previous_x ||
+   523          desktop_output_y != previous_y ||
+   524          desktop_output_width != previous_w ||
+   525          desktop_output_height != previous_h ||
+   526          screen_fit_width != previous_screen_fit_width ||
+   527          screen_fit_height != previous_screen_fit_height ||
+   528          screen_fit_offset_x != previous_screen_fit_offset_x ||
+   529          screen_fit_offset_y != previous_screen_fit_offset_y ||
+   530          screen_fit_full_bypass !=
+   531              previous_screen_fit_full_bypass) {
+   532  
+   533          close(new_sock);
+
+============================================================
+working/b4a/ps2vnc_display_core.inc:1002-1015
+============================================================
+  1002           */
+  1003          if (display_confirm_pending ||
+  1004              display_transition_switch_in_progress ||
+  1005              display_mode_request !=
+  1006                  DISPLAY_MODE_REQUEST_NONE ||
+  1007              display_calibration_request !=
+  1008                  DISPLAY_MODE_REQUEST_NONE ||
+  1009              controller_pad_pause_requested ||
+  1010              remote_display_state !=
+  1011                  REMOTE_DISPLAY_IDLE)
+  1012              return 0;
+  1013  
+  1014          if (!ps2vnc_remote_control_get_value(
+  1015                  (const char *)body,
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:45-108
+============================================================
+    45       * TEST13J-A:
+    46       * Determine the centered area the television actually exposes before
+    47       * publishing the VNC desktop. No VNC geometry changes are made yet.
+    48       */
+    49      if (!ps2vnc_display_config_loaded ||
+    50          force_screen_fit_calibration) {
+    51  
+    52          if (run_screen_fit_calibration(
+    53                  gsGlobal,
+    54                  black,
+    55                  1,
+    56                  NULL) < 0)
+    57              return -1;
+    58  
+    59          /*
+    60           * Startup override is one-shot.  A later reconnect in this same
+    61           * session must not unexpectedly reopen calibration.
+    62           */
+    63          force_screen_fit_calibration = 0;
+    64      }
+    65  
+    66      /*
+    67       * TEST13J-D3-A2:
+    68       *
+    69       * Keep the physical GS output at 1280x720, but make TigerVNC itself
+    70       * render only the guaranteed-visible calibrated desktop.
+    71       */
+    72      {
+    73          unsigned int target_x;
+    74          unsigned int target_y;
+    75          unsigned int target_w;
+    76          unsigned int target_h;
+    77          unsigned int logical_w;
+    78          unsigned int logical_h;
+    79  
+    80          if (calculate_presented_desktop_geometry(
+    81                  &target_x,
+    82                  &target_y,
+    83                  &target_w,
+    84                  &target_h) < 0) {
+    85  
+    86              screenf("ERROR: invalid calibrated desktop geometry");
+    87              return -1;
+    88          }
+    89  
+    90          /*
+    91           * D2 already proved this SetDesktopSize + 1x1 acknowledgement
+    92           * path. Resize only when the server is not already at the target.
+    93           */
+    94          if (ps2vnc_display_logical_desktop_size(
+    95                  target_w, target_h,
+    96                  &logical_w, &logical_h) < 0)
+    97              return -1;
+    98  
+    99          if (desktop_width != logical_w ||
+   100              desktop_height != logical_h) {
+   101  
+   102              if (request_and_confirm_desktop_size(
+   103                      sock,
+   104                      rfb_framebuffer,
+   105                      gs_framebuffer,
+   106                      logical_w,
+   107                      logical_h) < 0) {
+   108  
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:111-136
+============================================================
+   111          }
+   112  
+   113          /*
+   114           * From this point onward the RFB framebuffer is tightly packed at
+   115           * the backend-selected logical desktop width. HIRES uses the
+   116           * calibrated width; Standard uses its fixed framebuffer width.
+   117           */
+   118          desktop_width = logical_w;
+   119          desktop_height = logical_h;
+   120  
+   121          desktop_output_x = target_x;
+   122          desktop_output_y = target_y;
+   123          desktop_output_width = target_w;
+   124          desktop_output_height = target_h;
+   125  
+   126          debug_emit_geometry_snapshot();
+   127  
+   128          desktop_geometry_locked = 1;
+   129  
+   130          /*
+   131           * Stop requesting EDS during normal rendering and obtain a clean
+   132           * complete Raw framebuffer at the NEW desktop geometry.
+   133           *
+   134           * Unlike D2/A1, there is deliberately NO restore to 1280x720.
+   135           */
+   136          if (set_raw_encoding(sock) < 0)
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:277-299
+============================================================
+   277              continue;
+   278          }
+   279  
+   280          /*
+   281           * TEST15E3K A14-G2-D2B:
+   282           * Same-mode calibration is a main-thread transaction.  Consume it at
+   283           * the same proven between-RFB boundary used by runtime mode switching,
+   284           * before the next incremental framebuffer request can be issued.
+   285           */
+   286  
+   287          /*
+   288           * D17AL-F2:
+   289           *
+   290           * Display admission/UI policy uses the same main-thread management
+   291           * ownership boundary as calibration and mode transactions.
+   292           */
+   293          if (display_policy_request !=
+   294                  DISPLAY_POLICY_REQUEST_NONE) {
+   295  
+   296              int request =
+   297                  display_policy_request;
+   298  
+   299              int selection =
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:366-416
+============================================================
+   366  
+   367              continue;
+   368          }
+   369  
+   370  
+   371          if (display_calibration_request != DISPLAY_MODE_REQUEST_NONE) {
+   372              int request = display_calibration_request;
+   373              const ps2vnc_video_mode_t *target_mode;
+   374  
+   375              display_calibration_request = DISPLAY_MODE_REQUEST_NONE;
+   376              target_mode = display_mode_request_target(request);
+   377  
+   378              /*
+   379               * The request is valid only while it still names the active mode.
+   380               * Never reinterpret a stale calibration request as a mode switch.
+   381               */
+   382              if (target_mode == NULL ||
+   383                  target_mode != active_video_mode) {
+   384  
+   385                  display_menu_selection =
+   386                      display_menu_selection_for_mode(active_video_mode);
+   387                  display_menu_error = 1;
+   388                  display_menu_visible = 1;
+   389                  display_menu_parent_system = 0;
+   390                  osk_generation++;
+   391                  rendered_osk_generation = osk_generation - 1;
+   392                  continue;
+   393              }
+   394  
+   395              if (ps2vnc_run_runtime_calibration(
+   396                      sock,
+   397                      rfb_framebuffer,
+   398                      gs_framebuffer,
+   399                      gsGlobal,
+   400                      &tex,
+   401                      black) < 0) {
+   402  
+   403                  return -1;
+   404              }
+   405  
+   406              /*
+   407               * Return directly to the active row so X once again means
+   408               * "Calibrate <mode> Safe Area".
+   409               */
+   410              display_menu_selection =
+   411                  display_menu_selection_for_mode(active_video_mode);
+   412              display_menu_error = 0;
+   413              display_menu_visible = 1;
+   414              display_menu_parent_system = 0;
+   415              osk_generation++;
+   416              rendered_osk_generation = osk_generation - 1;
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:688-704
+============================================================
+   688               * Arm the local timeout/rollback obligation before touching GS
+   689               * or RFB runtime state.
+   690               */
+   691              display_confirm_arm_transaction(
+   692                  active_video_mode,
+   693                  desktop_output_x,
+   694                  desktop_output_y,
+   695                  desktop_output_width,
+   696                  desktop_output_height,
+   697                  screen_fit_width,
+   698                  screen_fit_height,
+   699                  screen_fit_offset_x,
+   700                  screen_fit_offset_y,
+   701                  screen_fit_full_bypass);
+   702  
+   703              display_transition_switch_in_progress = 1;
+   704  
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:787-814
+============================================================
+   787              }
+   788  
+   789              /*
+   790               * D17AL-F3:
+   791               * The GS/RFB candidate is now complete. Publish the already-
+   792               * validated mode-specific calibration into local screen-fit
+   793               * authority before exposing B to confirmation.
+   794               *
+   795               * target_config was fetched and validated while A was still
+   796               * active. Any unexpected publication mismatch is treated exactly
+   797               * like a candidate failure and rolls back the complete profile.
+   798               */
+   799              {
+   800                  unsigned int verify_x;
+   801                  unsigned int verify_y;
+   802                  unsigned int verify_w;
+   803                  unsigned int verify_h;
+   804  
+   805                  if (!ps2vnc_config_apply_display(&target_config) ||
+   806                      calculate_presented_desktop_geometry(
+   807                          &verify_x,
+   808                          &verify_y,
+   809                          &verify_w,
+   810                          &verify_h) < 0 ||
+   811                      verify_x != target_x ||
+   812                      verify_y != target_y ||
+   813                      verify_w != target_w ||
+   814                      verify_h != target_h) {
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:817-830
+============================================================
+   817  
+   818                      if (request_is_remote)
+   819                          remote_display_error_code = 9;
+   820  
+   821                      screenf(
+   822                          "DISPLAY TX: candidate calibration apply failed");
+   823  
+   824                      display_confirm_action =
+   825                          DISPLAY_CONFIRM_ACTION_ROLLBACK;
+   826  
+   827                      rollback_sock =
+   828                          ps2vnc_global_rollback_display_transaction(
+   829                              sock,
+   830                              0,
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:1001-1030
+============================================================
+  1001                      float dst_h;
+  1002  
+  1003                      /*
+  1004                       * D17AL-F1:
+  1005                       *
+  1006                       * Ordinary local PS2VNC UI is contained by the calibrated
+  1007                       * safe desktop. Calibration itself is intentionally drawn
+  1008                       * directly against the physical raster elsewhere.
+  1009                       */
+  1010                      if (desktop_geometry_locked &&
+  1011                          region_fits_u32(
+  1012                              desktop_output_x,
+  1013                              desktop_output_y,
+  1014                              desktop_output_width,
+  1015                              desktop_output_height,
+  1016                              OUTPUT_WIDTH,
+  1017                              OUTPUT_HEIGHT)) {
+  1018  
+  1019                          safe_x0 = (float)desktop_output_x;
+  1020                          safe_y0 = (float)desktop_output_y;
+  1021                          safe_w = (float)desktop_output_width;
+  1022                          safe_h = (float)desktop_output_height;
+  1023                      }
+  1024  
+  1025                      scale_x =
+  1026                          (safe_w - 12.0f) /
+  1027                          (float)OSK_WIDTH;
+  1028  
+  1029                      scale_y =
+  1030                          (safe_h - 12.0f) /
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:1499-1512
+============================================================
+  1499      init_scr();
+  1500      scr_setCursor(0);
+  1501      screen_row = 0;
+  1502  
+  1503      screenf("TEST31 RX SENTINEL TRACE");
+  1504      screenf("Hold L1 + R1 to force display calibration");
+  1505  
+  1506      screenf("PAD MOD 1");
+  1507      if (SifLoadModule("rom0:XSIO2MAN", 0, NULL) < 0) {
+  1508          screenf("ERR XSIO2");
+  1509          goto wait;
+  1510      }
+  1511  
+  1512      screenf("PAD MOD 2");
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:1556-1573
+============================================================
+  1556          goto wait;
+  1557      }
+  1558  
+  1559      screenf("PAD OK");
+  1560  
+  1561      force_screen_fit_calibration =
+  1562          startup_force_calibration_requested();
+  1563  
+  1564      if (force_screen_fit_calibration)
+  1565          screenf("L1+R1: FORCE CALIBRATION");
+  1566  
+  1567      IP4_ADDR(&IP, 192, 168, 50, 2);
+  1568      IP4_ADDR(&NM, 255, 255, 255, 0);
+  1569      IP4_ADDR(&GW, 192, 168, 50, 1);
+  1570  
+  1571      screenf("TCP INIT");
+  1572  
+  1573      if (ps2ipInit(&IP, &NM, &GW) < 0) {
+
+============================================================
+working/b4a/ps2vnc_display_tail.inc:1588-1601
+============================================================
+  1588      /*
+  1589       * TEST13J-D4-A3:
+  1590       * Retrieve the general PS2VNC configuration before opening RFB.
+  1591       *
+  1592       * Failure is intentionally non-fatal.  Without a valid stored display
+  1593       * preset, the existing interactive calibration path remains authoritative.
+  1594       */
+  1595      ps2vnc_config_load_from_pi();
+  1596  
+  1597      /*
+  1598       * H4C3B2B:
+  1599       * Durable display authority must be known before ordinary RFB startup.
+  1600       * A pending transaction may imply that TigerVNC is still at a geometry
+  1601       * incompatible with the confirmed startup profile.
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:44-60
+============================================================
+    44  {
+    45      unsigned char msg[10] = {
+    46          3, 0,
+    47          0, 0,
+    48          0, 0,
+    49          (desktop_width >> 8) & 0xFF,
+    50          desktop_width & 0xFF,
+    51          (desktop_height >> 8) & 0xFF,
+    52          desktop_height & 0xFF
+    53      };
+    54  
+    55      /*
+    56       * FramebufferUpdateRequest byte 1:
+    57       *   0 = non-incremental: send the complete requested region
+    58       *   1 = incremental: send only regions changed since our last request
+    59       */
+    60      msg[1] = incremental ? 1 : 0;
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:115-128
+============================================================
+   115      unsigned short wire_pixel)
+   116  {
+   117      unsigned int row, col;
+   118  
+   119      for (row = 0; row < h; row++) {
+   120          unsigned int base = (y + row) * desktop_width + x;
+   121          unsigned short *direct_row = NULL;
+   122  
+   123          direct_row = ps2vnc_display_direct_write_row(
+   124              x,
+   125              y + row);
+   126  
+   127          for (col = 0; col < w; col++)
+   128              hextile_store_pixel(
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:156-180
+============================================================
+   156      unsigned int row, col;
+   157  
+   158      for (row = 0; row < th; row++) {
+   159          unsigned short *dest =
+   160              (write_pixels && !ps2vnc_display_direct_write_active())
+   161              ? &rfb_framebuffer[(ty + row) * desktop_width + tx]
+   162              : scratch;
+   163          unsigned int n = tw * 2;
+   164  
+   165          if (recv_exact(sock, dest, n) != (int)n)
+   166              return -1;
+   167  
+   168          *wire_bytes += n;
+   169  
+   170          if (write_pixels) {
+   171              unsigned int base =
+   172                  (ty + row) * desktop_width + tx;
+   173              unsigned short *direct_row = NULL;
+   174  
+   175              direct_row = ps2vnc_display_direct_write_row(
+   176                  tx,
+   177                  ty + row);
+   178  
+   179              for (col = 0; col < tw; col++)
+   180                  hextile_store_pixel(
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:660-674
+============================================================
+   660                      screen_count = layout_hdr[0];
+   661  
+   662                      rfb_extended_desktop_seen = 1;
+   663                      rfb_extended_desktop_reason = x;
+   664                      rfb_extended_desktop_result = y;
+   665                      rfb_extended_desktop_width = w;
+   666                      rfb_extended_desktop_height = h;
+   667                      rfb_extended_desktop_screen_count =
+   668                          screen_count;
+   669  
+   670                      /*
+   671                       * Clear the first-screen snapshot before parsing
+   672                       * the new layout.
+   673                       */
+   674                      rfb_first_screen_id = 0;
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:752-765
+============================================================
+   752                       *
+   753                       * While a SetDesktopSize transaction is pending, the
+   754                       * EDS rectangle must match the requested new geometry.
+   755                       *
+   756                       * Otherwise it describes the server's CURRENT desktop,
+   757                       * which may already be the calibrated size left by a
+   758                       * previous PS2VNC run.
+   759                       */
+   760                      if (rfb_resize_expected) {
+   761                          if (w != rfb_resize_expected_width ||
+   762                              h != rfb_resize_expected_height) {
+   763  
+   764                              live_error_code = 118;
+   765  
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:769-783
+============================================================
+   769                                  );
+   770  
+   771                              return -1;
+   772                          }
+   773                      } else {
+   774                          if (w != desktop_width ||
+   775                              h != desktop_height) {
+   776  
+   777                              live_error_code = 118;
+   778  
+   779                              if (verbose)
+   780                                  screenf(
+   781                                      "ERROR: unexpected desktop resize"
+   782                                  );
+   783  
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:806-820
+============================================================
+   806                          profile_hextile_rects++;
+   807                  }
+   808  
+   809                  if (!region_fits_u32(
+   810                      x, y, w, h,
+   811                      desktop_width,
+   812                      desktop_height)) {
+   813                      live_error_code = 111;
+   814                      if (verbose)
+   815                          screenf("ERROR: rectangle outside framebuffer");
+   816                      return -1;
+   817                  }
+   818  
+   819                  /*
+   820                   * TEST13F:
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:892-909
+============================================================
+   892                              return -1;
+   893                          }
+   894                      } else {
+   895                          unsigned short *rfb_dest =
+   896                              &rfb_framebuffer[
+   897                                  (y + row) * desktop_width + x
+   898                              ];
+   899                          unsigned short *gs_dest =
+   900                              &gs_framebuffer[
+   901                                  (y + row) * desktop_width + x
+   902                              ];
+   903                          unsigned int col;
+   904  
+   905                          if (recv_exact(
+   906                                  sock,
+   907                                  rfb_dest,
+   908                                  row_bytes) != (int)row_bytes) {
+   909                              live_error_code = 112;
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:923-941
+============================================================
+   923  
+   924              if (verbose)
+   925                  screenf("Raw framebuffer bytes: %u", total_bytes);
+   926  
+   927              if (require_full &&
+   928                  total_bytes != (desktop_width * desktop_height * 2)) {
+   929                  if (verbose)
+   930                      screenf(
+   931                          "ERROR: initial full update expected %u bytes",
+   932                          (unsigned int)(
+   933                              desktop_width * desktop_height * 2
+   934                          )
+   935                      );
+   936                  live_error_code = 113;
+   937                  return -1;
+   938              }
+   939  
+   940              return (int)total_bytes;
+   941          }
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:973-987
+============================================================
+   973      unsigned short *gs_framebuffer)
+   974  {
+   975      rfb_extended_desktop_seen = 0;
+   976      rfb_extended_desktop_reason = 0;
+   977      rfb_extended_desktop_result = 0;
+   978      rfb_extended_desktop_width = 0;
+   979      rfb_extended_desktop_height = 0;
+   980      rfb_extended_desktop_screen_count = 0;
+   981  
+   982      rfb_first_screen_id = 0;
+   983      rfb_first_screen_x = 0;
+   984      rfb_first_screen_y = 0;
+   985      rfb_first_screen_width = 0;
+   986      rfb_first_screen_height = 0;
+   987      rfb_first_screen_flags = 0;
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:1015-1043
+============================================================
+  1015      if (rfb_extended_desktop_screen_count == 0) {
+  1016          screenf("ERROR: EDS reported no screens");
+  1017          return -1;
+  1018      }
+  1019  
+  1020      if (rfb_extended_desktop_width != desktop_width ||
+  1021          rfb_extended_desktop_height != desktop_height) {
+  1022  
+  1023          screenf(
+  1024              "ERROR: EDS size %ux%u",
+  1025              rfb_extended_desktop_width,
+  1026              rfb_extended_desktop_height
+  1027          );
+  1028  
+  1029          return -1;
+  1030      }
+  1031  
+  1032      screenf(
+  1033          "EDS OK %ux%u screen id=%u",
+  1034          rfb_extended_desktop_width,
+  1035          rfb_extended_desktop_height,
+  1036          rfb_first_screen_id
+  1037      );
+  1038  
+  1039      return 0;
+  1040  }
+  1041  
+  1042  
+  1043  
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:1115-1133
+============================================================
+  1115      unsigned int y)
+  1116  {
+  1117      if (!ps2vnc_display_direct_write_active())
+  1118          return NULL;
+  1119  
+  1120      if (x >= desktop_width || y >= desktop_height)
+  1121          return NULL;
+  1122  
+  1123      return &live_direct_present_buffer[
+  1124          hires_bg_storage_row(desktop_output_y + y) *
+  1125          OUTPUT_WIDTH + desktop_output_x + x];
+  1126  }
+  1127  
+  1128  void ps2vnc_display_direct_write_cancel(void)
+  1129  {
+  1130      live_direct_present_safe = 0;
+  1131  }
+  1132  
+  1133   int ps2vnc_display_begin_update(void)
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:1165-1186
+============================================================
+  1165  {
+  1166      unsigned int row;
+  1167      unsigned int row_bytes;
+  1168  
+  1169      if (dst == NULL || w == 0 || h == 0 ||
+  1170          !region_fits_u32(x, y, w, h, desktop_width, desktop_height))
+  1171          return -1;
+  1172  
+  1173      row_bytes = w * sizeof(unsigned short);
+  1174  
+  1175      for (row = 0; row < h; row++) {
+  1176          unsigned int i =
+  1177              hires_bg_storage_row(desktop_output_y + y + row) *
+  1178              OUTPUT_WIDTH + desktop_output_x + x;
+  1179  
+  1180          if (src != NULL)
+  1181              memcpy(&dst[i], &src[i], row_bytes);
+  1182  
+  1183          SyncDCache(&dst[i], (unsigned char *)&dst[i] + row_bytes);
+  1184      }
+  1185  
+  1186      return 0;
+
+============================================================
+working/b4a/ps2vnc_framebuffer_core.inc:1198-1232
+============================================================
+  1198      unsigned int y;
+  1199      int saw_row = 0;
+  1200  
+  1201      if (dst == NULL ||
+  1202          !rfb_dirty_valid ||
+  1203          desktop_height > VNC_HEIGHT ||
+  1204          rfb_dirty_y1 > desktop_height)
+  1205          return -1;
+  1206  
+  1207      for (y = rfb_dirty_y0; y < rfb_dirty_y1; y++) {
+  1208          unsigned int x0;
+  1209          unsigned int x1;
+  1210          unsigned int i;
+  1211          unsigned int row_bytes;
+  1212  
+  1213          if (!rfb_dirty_row_valid[y])
+  1214              continue;
+  1215  
+  1216          x0 = rfb_dirty_row_x0[y];
+  1217          x1 = rfb_dirty_row_x1[y];
+  1218  
+  1219          if (x1 <= x0 || x1 > desktop_width)
+  1220              return -1;
+  1221  
+  1222          i =
+  1223              hires_bg_storage_row(desktop_output_y + y) *
+  1224              OUTPUT_WIDTH + desktop_output_x + x0;
+  1225  
+  1226          row_bytes = (x1 - x0) * sizeof(unsigned short);
+  1227  
+  1228          if (src != NULL)
+  1229              memcpy(&dst[i], &src[i], row_bytes);
+  1230  
+  1231          SyncDCache(&dst[i], (unsigned char *)&dst[i] + row_bytes);
+  1232          saw_row = 1;
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:73-86
+============================================================
+    73   * RFB/source pixels were touched by the completed incremental
+    74   * FramebufferUpdate.
+    75   *
+    76   * F7B established the arithmetic with the hardware-validated relationship:
+    77   *
+    78   *     physical/calibration raster: 720x480
+    79   *     gsHires presentation:        704x462
+    80   *
+    81   * Production mapping now applies the same relationship generically using the
+    82   * active raster and presentation dimensions. rfb_dirty_row_* remains expressed
+    83   * in authoritative RFB desktop coordinates. For each destination row that
+    84   * samples a dirty source row, map that row's dirty x-span into the destination
+    85   * rectangle and resample only that span.
+    86   *
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:94-107
+============================================================
+    94  {
+    95      /*
+    96       * D17AL-F7C4:
+    97       *
+    98       * The active raster/presentation relationship changes only when display,
+    99       * desktop geometry, or calibration changes. Cache both forward nearest-
+   100       * neighbor sampling and inverse dirty-boundary mappings instead of doing
+   101       * 64-bit multiply/divide for every presentation pixel on every update.
+   102       *
+   103       * Normal incremental updates therefore perform table lookups only:
+   104       *
+   105       *     destination x/y -> source x/y
+   106       *     source dirty edge -> destination dirty edge
+   107       *
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:114-128
+============================================================
+   114      static unsigned int cached_storage_height;
+   115  
+   116      static unsigned int cached_output_width;
+   117      static unsigned int cached_output_height;
+   118  
+   119      static unsigned int cached_desktop_width;
+   120      static unsigned int cached_desktop_height;
+   121  
+   122      static unsigned int cached_output_x;
+   123      static unsigned int cached_output_y;
+   124      static unsigned int cached_output_w;
+   125      static unsigned int cached_output_h;
+   126  
+   127      static unsigned int cached_dst_x0;
+   128      static unsigned int cached_dst_y0;
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:155-182
+============================================================
+   155  
+   156      if (!ps2vnc_hires_requires_raster_mapping() ||
+   157          dst == NULL ||
+   158          gs_framebuffer == NULL ||
+   159          !rfb_dirty_valid ||
+   160          desktop_width == 0 ||
+   161          desktop_height == 0 ||
+   162          desktop_output_width == 0 ||
+   163          desktop_output_height == 0 ||
+   164          OUTPUT_WIDTH == 0 ||
+   165          OUTPUT_HEIGHT == 0 ||
+   166          desktop_width > VNC_WIDTH ||
+   167          desktop_height > VNC_HEIGHT ||
+   168          rfb_dirty_y1 > desktop_height ||
+   169          rfb_dirty_y0 >= rfb_dirty_y1 ||
+   170          !region_fits_u32(
+   171              desktop_output_x,
+   172              desktop_output_y,
+   173              desktop_output_width,
+   174              desktop_output_height,
+   175              OUTPUT_WIDTH,
+   176              OUTPUT_HEIGHT)) {
+   177  
+   178          return -1;
+   179      }
+   180  
+   181      storage_width =
+   182          ps2vnc_hires_storage_width();
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:196-244
+============================================================
+   196          !map_valid ||
+   197          cached_storage_width != storage_width ||
+   198          cached_storage_height != storage_height ||
+   199          cached_output_width != OUTPUT_WIDTH ||
+   200          cached_output_height != OUTPUT_HEIGHT ||
+   201          cached_desktop_width != desktop_width ||
+   202          cached_desktop_height != desktop_height ||
+   203          cached_output_x != desktop_output_x ||
+   204          cached_output_y != desktop_output_y ||
+   205          cached_output_w != desktop_output_width ||
+   206          cached_output_h != desktop_output_height;
+   207  
+   208      if (rebuild_map) {
+   209          unsigned int i;
+   210  
+   211          /*
+   212           * Preserve F7B's hardware-proven physical->native rectangle arithmetic
+   213           * exactly: floor the leading edge, ceil the trailing edge.
+   214           */
+   215          dst_x0 =
+   216              (unsigned int)(
+   217                  ((u64)desktop_output_x * storage_width) /
+   218                  OUTPUT_WIDTH);
+   219  
+   220          dst_y0 =
+   221              (unsigned int)(
+   222                  ((u64)desktop_output_y * storage_height) /
+   223                  OUTPUT_HEIGHT);
+   224  
+   225          dst_x1 =
+   226              (unsigned int)(
+   227                  (((u64)(
+   228                      desktop_output_x + desktop_output_width) *
+   229                      storage_width) +
+   230                    OUTPUT_WIDTH - 1) /
+   231                   OUTPUT_WIDTH);
+   232  
+   233          dst_y1 =
+   234              (unsigned int)(
+   235                  (((u64)(
+   236                      desktop_output_y + desktop_output_height) *
+   237                      storage_height) +
+   238                    OUTPUT_HEIGHT - 1) /
+   239                   OUTPUT_HEIGHT);
+   240  
+   241          if (dst_x1 > storage_width)
+   242              dst_x1 = storage_width;
+   243  
+   244          if (dst_y1 > storage_height)
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:263-320
+============================================================
+   263           * Exact F7B nearest-neighbor forward samples.
+   264           */
+   265          for (i = 0; i < dst_w; i++) {
+   266              x_sample[i] =
+   267                  (unsigned int)(
+   268                      ((u64)i * desktop_width) /
+   269                      dst_w);
+   270          }
+   271  
+   272          for (i = 0; i < dst_h; i++) {
+   273              y_sample[i] =
+   274                  (unsigned int)(
+   275                      ((u64)i * desktop_height) /
+   276                      dst_h);
+   277          }
+   278  
+   279          /*
+   280           * Exact inverse boundaries used by F7C2:
+   281           *
+   282           *     ceil(source_edge * destination_size / source_size)
+   283           */
+   284          for (i = 0; i <= desktop_width; i++) {
+   285              x_edge[i] =
+   286                  (unsigned int)(
+   287                      (((u64)i * dst_w) +
+   288                       desktop_width - 1) /
+   289                      desktop_width);
+   290          }
+   291  
+   292          for (i = 0; i <= desktop_height; i++) {
+   293              y_edge[i] =
+   294                  (unsigned int)(
+   295                      (((u64)i * dst_h) +
+   296                       desktop_height - 1) /
+   297                      desktop_height);
+   298          }
+   299  
+   300          cached_storage_width = storage_width;
+   301          cached_storage_height = storage_height;
+   302  
+   303          cached_output_width = OUTPUT_WIDTH;
+   304          cached_output_height = OUTPUT_HEIGHT;
+   305  
+   306          cached_desktop_width = desktop_width;
+   307          cached_desktop_height = desktop_height;
+   308  
+   309          cached_output_x = desktop_output_x;
+   310          cached_output_y = desktop_output_y;
+   311          cached_output_w = desktop_output_width;
+   312          cached_output_h = desktop_output_height;
+   313  
+   314          cached_dst_x0 = dst_x0;
+   315          cached_dst_y0 = dst_y0;
+   316          cached_dst_x1 = dst_x1;
+   317          cached_dst_y1 = dst_y1;
+   318          cached_dst_w = dst_w;
+   319          cached_dst_h = dst_h;
+   320  
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:357-380
+============================================================
+   357          unsigned short *dst_row;
+   358          const unsigned short *src_row;
+   359  
+   360          src_y = y_sample[dy];
+   361  
+   362          if (src_y >= desktop_height)
+   363              return -1;
+   364  
+   365          if (!rfb_dirty_row_valid[src_y])
+   366              continue;
+   367  
+   368          src_x0 = rfb_dirty_row_x0[src_y];
+   369          src_x1 = rfb_dirty_row_x1[src_y];
+   370  
+   371          if (src_x1 <= src_x0 ||
+   372              src_x1 > desktop_width) {
+   373  
+   374              return -1;
+   375          }
+   376  
+   377          dirty_dx0 = x_edge[src_x0];
+   378          dirty_dx1 = x_edge[src_x1];
+   379  
+   380          if (dirty_dx0 > dst_w)
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:397-422
+============================================================
+   397                  dst_x0
+   398              ];
+   399  
+   400          src_row =
+   401              &gs_framebuffer[
+   402                  src_y * desktop_width
+   403              ];
+   404  
+   405          for (dx = dirty_dx0;
+   406               dx < dirty_dx1;
+   407               dx++) {
+   408  
+   409              unsigned int src_x =
+   410                  x_sample[dx];
+   411  
+   412              if (src_x < src_x0 ||
+   413                  src_x >= src_x1 ||
+   414                  src_x >= desktop_width) {
+   415  
+   416                  return -1;
+   417              }
+   418  
+   419              dst_row[dx] = src_row[src_x];
+   420          }
+   421  
+   422          SyncDCache(
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:649-663
+============================================================
+   649      if (live_linear_framebuffer_stale) {
+   650          live_error_code = 209;
+   651          return -1;
+   652      }
+   653  
+   654      if (tex->Width != desktop_width ||
+   655          tex->Height != desktop_height ||
+   656          tex->Mem == NULL) {
+   657          live_error_code = 210;
+   658          return -1;
+   659      }
+   660  
+   661      profile_dirty_work_start_tick = GetTimerSystemTime();
+   662      profile_dirty_updates++;
+   663  
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:723-742
+============================================================
+   723      unsigned int i;
+   724  
+   725      if (hires_bg_buffer == NULL)
+   726          return -1;
+   727  
+   728      if (desktop_width == 0 ||
+   729          desktop_height == 0 ||
+   730          !region_fits_u32(
+   731              desktop_output_x,
+   732              desktop_output_y,
+   733              desktop_width,
+   734              desktop_height,
+   735              OUTPUT_WIDTH,
+   736              OUTPUT_HEIGHT)) {
+   737  
+   738          return -1;
+   739      }
+   740  
+   741      /*
+   742       * The HIRES queues DMA directly from this EE-memory backing buffer.
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:752-808
+============================================================
+   752       */
+   753      for (i = 0; i < output_pixels; i++)
+   754          hires_bg_buffer[i] = 0x8000;
+   755  
+   756      /*
+   757       * The RFB framebuffer remains tightly packed at desktop_width. Presentation
+   758       * placement is expressed in physical-raster coordinates and is either
+   759       * mapped into the active HIRES surface or copied through the 1:1 path.
+   760       */
+   761      if (ps2vnc_hires_requires_raster_mapping()) {
+   762          unsigned int dst_x0;
+   763          unsigned int dst_y0;
+   764          unsigned int dst_x1;
+   765          unsigned int dst_y1;
+   766          unsigned int dst_w;
+   767          unsigned int dst_h;
+   768          unsigned int col;
+   769  
+   770          /*
+   771           * F7B proved that calibration/RFB geometry remains authoritative in
+   772           * physical-raster space while only the presentation rectangle is
+   773           * converted into gsHires drawing/storage space. F8E applies that rule
+   774           * from the active raster and presentation dimensions.
+   775           *
+   776           * Floor the leading edge and ceil the trailing edge so no physical
+   777           * safe-area pixel is silently lost to integer truncation.
+   778           */
+   779          dst_x0 =
+   780              (unsigned int)(
+   781                  ((u64)desktop_output_x * storage_width) /
+   782                  OUTPUT_WIDTH);
+   783  
+   784          dst_y0 =
+   785              (unsigned int)(
+   786                  ((u64)desktop_output_y * storage_height) /
+   787                  OUTPUT_HEIGHT);
+   788  
+   789          dst_x1 =
+   790              (unsigned int)(
+   791                  (((u64)(
+   792                      desktop_output_x + desktop_output_width) *
+   793                      storage_width) +
+   794                    OUTPUT_WIDTH - 1) /
+   795                   OUTPUT_WIDTH);
+   796  
+   797          dst_y1 =
+   798              (unsigned int)(
+   799                  (((u64)(
+   800                      desktop_output_y + desktop_output_height) *
+   801                      storage_height) +
+   802                    OUTPUT_HEIGHT - 1) /
+   803                   OUTPUT_HEIGHT);
+   804  
+   805          if (dst_x1 > storage_width)
+   806              dst_x1 = storage_width;
+   807  
+   808          if (dst_y1 > storage_height)
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:822-882
+============================================================
+   822           * authoritative raster-to-presentation geometry.
+   823           */
+   824          for (row = 0; row < dst_h; row++) {
+   825              unsigned int src_y =
+   826                  (unsigned int)(
+   827                      ((u64)row * desktop_height) /
+   828                      dst_h);
+   829  
+   830              unsigned short *dst =
+   831                  &hires_bg_buffer[
+   832                      ps2vnc_hires_mapped_storage_row(
+   833                          dst_y0 + row) *
+   834                      storage_width +
+   835                      dst_x0
+   836                  ];
+   837  
+   838              const unsigned short *src =
+   839                  &gs_framebuffer[
+   840                      src_y * desktop_width
+   841                  ];
+   842  
+   843              for (col = 0; col < dst_w; col++) {
+   844                  unsigned int src_x =
+   845                      (unsigned int)(
+   846                          ((u64)col * desktop_width) /
+   847                          dst_w);
+   848  
+   849                  dst[col] = src[src_x];
+   850              }
+   851          }
+   852  
+   853      } else {
+   854          /*
+   855           * Exact 1:1 HIRES behavior: raster-sized presentation requires no
+   856           * raster-to-presentation conversion.
+   857           */
+   858          for (row = 0; row < desktop_height; row++) {
+   859              unsigned short *dst =
+   860                  &hires_bg_buffer[
+   861                      hires_bg_storage_row(desktop_output_y + row) *
+   862                      OUTPUT_WIDTH +
+   863                      desktop_output_x
+   864                  ];
+   865  
+   866              const unsigned short *src =
+   867                  &gs_framebuffer[
+   868                      row * desktop_width
+   869                  ];
+   870  
+   871              memcpy(
+   872                  dst,
+   873                  src,
+   874                  desktop_width * sizeof(unsigned short)
+   875              );
+   876          }
+   877      }
+   878  
+   879      SyncDCache(
+   880          hires_bg_buffer,
+   881          (unsigned char *)hires_bg_buffer + output_bytes
+   882      );
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:1013-1027
+============================================================
+  1013      unsigned short *gs_framebuffer)
+  1014  {
+  1015      if (gsGlobal == NULL ||
+  1016          tex == NULL ||
+  1017          gs_framebuffer == NULL ||
+  1018          tex->Width != desktop_width ||
+  1019          tex->Height != desktop_height)
+  1020          return -1;
+  1021  
+  1022      /*
+  1023       * Standard decoding keeps this linear GS16 framebuffer authoritative.
+  1024       * Reassert the pointer and upload the complete replacement desktop.
+  1025       */
+  1026      tex->Mem = (u32 *)gs_framebuffer;
+  1027  
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:1068-1089
+============================================================
+  1068      if (w == 0 || h == 0)
+  1069          return 0;
+  1070  
+  1071      if (!region_fits_u32(
+  1072              x, y, w, h,
+  1073              desktop_width,
+  1074              desktop_height))
+  1075          return -1;
+  1076  
+  1077      if (!region_fits_u32(
+  1078              desktop_output_x,
+  1079              desktop_output_y,
+  1080              desktop_width,
+  1081              desktop_height,
+  1082              OUTPUT_WIDTH,
+  1083              OUTPUT_HEIGHT))
+  1084          return -1;
+  1085  
+  1086      /*
+  1087       * One synchronization for the entire completed RFB update.
+  1088       */
+  1089      if (copy_pixels) {
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:1108-1149
+============================================================
+  1108       * differ, so each row must be copied separately.
+  1109       *
+  1110       * We still perform only one cache flush over the resulting physical
+  1111       * band. The flush harmlessly spans the margin gaps between rows.
+  1112       */
+  1113      if (w >= (desktop_width / 4)) {
+  1114          unsigned short *first_dst;
+  1115          unsigned short *last_dst_end;
+  1116  
+  1117          row_bytes =
+  1118              desktop_width * sizeof(unsigned short);
+  1119  
+  1120          if (hires_bg_is_field_separated()) {
+  1121              unsigned short *first[2] = { NULL, NULL };
+  1122              unsigned short *last[2] = { NULL, NULL };
+  1123  
+  1124              for (row = 0; row < h; row++) {
+  1125                  unsigned int storage_row =
+  1126                      hires_bg_storage_row(desktop_output_y + y + row);
+  1127                  unsigned int field =
+  1128                      storage_row >= (OUTPUT_HEIGHT / 2);
+  1129                  unsigned short *dst =
+  1130                      &hires_bg_buffer[
+  1131                          storage_row * OUTPUT_WIDTH + desktop_output_x];
+  1132                  const unsigned short *src =
+  1133                      &gs_framebuffer[(y + row) * desktop_width];
+  1134  
+  1135                  if (copy_pixels)
+  1136  
+  1137                      memcpy(dst, src, row_bytes);
+  1138  
+  1139                  if (first[field] == NULL)
+  1140                      first[field] = dst;
+  1141                  last[field] = dst + desktop_width;
+  1142              }
+  1143  
+  1144              for (row = 0; row < 2; row++) {
+  1145                  if (first[row] != NULL)
+  1146                      SyncDCache(first[row],
+  1147                                 (unsigned char *)last[row]);
+  1148              }
+  1149  
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:1152-1192
+============================================================
+  1152              return 0;
+  1153          }
+  1154  
+  1155          first_dst =
+  1156              &hires_bg_buffer[
+  1157                  (desktop_output_y + y) * OUTPUT_WIDTH +
+  1158                  desktop_output_x
+  1159              ];
+  1160  
+  1161          for (row = 0; row < h; row++) {
+  1162              unsigned short *dst =
+  1163                  &hires_bg_buffer[
+  1164                      hires_bg_storage_row(desktop_output_y + y + row) *
+  1165                      OUTPUT_WIDTH +
+  1166                      desktop_output_x
+  1167                  ];
+  1168  
+  1169              const unsigned short *src =
+  1170                  &gs_framebuffer[
+  1171                      (y + row) * desktop_width
+  1172                  ];
+  1173  
+  1174              if (copy_pixels)
+  1175  
+  1176                  memcpy(dst, src, row_bytes);
+  1177          }
+  1178  
+  1179          last_dst_end =
+  1180              &hires_bg_buffer[
+  1181                  (desktop_output_y + y + h - 1) *
+  1182                  OUTPUT_WIDTH +
+  1183                  desktop_output_x +
+  1184                  desktop_width
+  1185              ];
+  1186  
+  1187          SyncDCache(
+  1188              first_dst,
+  1189              (unsigned char *)last_dst_end
+  1190          );
+  1191  
+  1192          profile_dirty_work_ticks +=
+
+============================================================
+working/b4a/ps2vnc_framebuffer_tail.inc:1200-1221
+============================================================
+  1200      row_bytes = w * sizeof(unsigned short);
+  1201  
+  1202      for (row = 0; row < h; row++) {
+  1203          unsigned short *dst =
+  1204              &hires_bg_buffer[
+  1205                  hires_bg_storage_row(desktop_output_y + y + row) *
+  1206                  OUTPUT_WIDTH +
+  1207                  desktop_output_x +
+  1208                  x
+  1209              ];
+  1210  
+  1211          const unsigned short *src =
+  1212              &gs_framebuffer[
+  1213                  (y + row) * desktop_width +
+  1214                  x
+  1215              ];
+  1216  
+  1217          if (copy_pixels)
+  1218  
+  1219              memcpy(dst, src, row_bytes);
+  1220  
+  1221          SyncDCache(
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:231-245
+============================================================
+   231          0,
+   232          500000000
+   233      };
+   234  
+   235      int attempt;
+   236      const unsigned int recovery_target_width = desktop_width;
+   237      const unsigned int recovery_target_height = desktop_height;
+   238  
+   239      rfb_connected = 0;
+   240  
+   241      reset_rfb_transport_state();
+   242  
+   243      if (old_sock >= 0)
+   244          close(old_sock);
+   245  
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:286-308
+============================================================
+   286  
+   287          reset_rfb_transport_state();
+   288  
+   289          /*
+   290           * A restarted TigerVNC returns at its bootstrap geometry.
+   291           * Accept that ServerInit temporarily; the calibrated desktop
+   292           * remains the recovery target saved above.
+   293           */
+   294          desktop_geometry_locked = 0;
+   295          new_sock = rfb_connect_and_handshake();
+   296          desktop_geometry_locked = 1;
+   297  
+   298          if (new_sock < 0) {
+   299              desktop_width = recovery_target_width;
+   300              desktop_height = recovery_target_height;
+   301          }
+   302  
+   303          if (new_sock >= 0) {
+   304              int ok = 1;
+   305  
+   306              if (set_gs555_pixel_format(
+   307                      new_sock) < 0)
+   308                  ok = 0;
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:336-363
+============================================================
+   336                      rfb_framebuffer,
+   337                      gs_framebuffer) < 0)
+   338                  ok = 0;
+   339  
+   340              if (ok &&
+   341                  (desktop_width != recovery_target_width ||
+   342                   desktop_height != recovery_target_height)) {
+   343  
+   344                  if (request_and_confirm_desktop_size(
+   345                          new_sock,
+   346                          rfb_framebuffer,
+   347                          gs_framebuffer,
+   348                          recovery_target_width,
+   349                          recovery_target_height) < 0) {
+   350                      ok = 0;
+   351                  }
+   352  
+   353                  if (ok) {
+   354                      desktop_width = recovery_target_width;
+   355                      desktop_height = recovery_target_height;
+   356  
+   357                      if (set_raw_encoding(new_sock) < 0 ||
+   358                          request_framebuffer(new_sock, 0) < 0 ||
+   359                          receive_framebuffer_update(
+   360                              new_sock,
+   361                              rfb_framebuffer,
+   362                              gs_framebuffer,
+   363                              1,
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:390-404
+============================================================
+   390                  }
+   391              }
+   392  
+   393              close(new_sock);
+   394              reset_rfb_transport_state();
+   395              desktop_width = recovery_target_width;
+   396              desktop_height = recovery_target_height;
+   397          }
+   398  
+   399          nanosleep(
+   400              &retry_delay,
+   401              NULL
+   402          );
+   403      }
+   404  
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:449-462
+============================================================
+   449  
+   450      const ps2vnc_video_mode_t *saved_active_mode =
+   451          active_video_mode;
+   452  
+   453      const int saved_geometry_locked =
+   454          desktop_geometry_locked;
+   455  
+   456      int attempt;
+   457  
+   458      if (handshake_mode == NULL)
+   459          return -1;
+   460  
+   461      /*
+   462       * Controller-generated RFB events are discarded until the rollback
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:501-520
+============================================================
+   501           * Do not alter active_display_backend here: the candidate GS object
+   502           * still owns its backend resources until the later display switch
+   503           * destroys it.
+   504           */
+   505          active_video_mode = handshake_mode;
+   506          desktop_geometry_locked = 0;
+   507  
+   508          new_sock = rfb_connect_and_handshake_limited(
+   509              VNC_WIDTH,
+   510              VNC_HEIGHT);
+   511  
+   512          desktop_geometry_locked = saved_geometry_locked;
+   513          active_video_mode = saved_active_mode;
+   514  
+   515          if (new_sock < 0) {
+   516              nanosleep(&retry_delay, NULL);
+   517              continue;
+   518          }
+   519  
+   520          if (set_gs555_pixel_format(new_sock) < 0)
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:552-565
+============================================================
+   552  
+   553          nanosleep(&retry_delay, NULL);
+   554      }
+   555  
+   556      active_video_mode = saved_active_mode;
+   557      desktop_geometry_locked = saved_geometry_locked;
+   558  
+   559      return -1;
+   560  }
+   561  
+   562  
+   563  int perform_manual_rfb_recovery(
+   564      int old_sock,
+   565      unsigned short *rfb_framebuffer,
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:616-629
+============================================================
+   616      return new_sock;
+   617  }
+   618  
+   619  
+   620  /*
+   621   * TEST13J-B: single-screen size + position calibration.
+   622   *
+   623   * width/height/offset select the exact usable safe desktop.
+   624   *
+   625   * The white border is visualization only and is drawn immediately OUTSIDE
+   626   * that safe rectangle. The user expands/moves the safe desktop until the
+   627   * external border disappears evenly into the television's overscan.
+   628   *
+   629   * The safe desktop itself always remains inside the physical raster.
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:680-694
+============================================================
+   680      int max_positive_y;
+   681  
+   682      if (mode == NULL)
+   683          return 0;
+   684  
+   685      output_width = (int)mode->raster_width;
+   686      output_height = (int)mode->raster_height;
+   687  
+   688      /*
+   689       * D17AL-F1:
+   690       *
+   691       * width/height are the exact selected safe desktop rectangle.
+   692       * SCREEN_FIT_BORDER is visualization only and consumes no pixels.
+   693       */
+   694      if (width <= 0 || height <= 0)
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:822-835
+============================================================
+   822   *     safe_x      = ...
+   823   *     safe_y      = ...
+   824   *
+   825   * safe_width / safe_height describe the ACTUAL usable VNC desktop.
+   826   *
+   827   * D17AL-F1: the white calibration border is visualization only.
+   828   * Stored dimensions are never expanded or contracted to account for it.
+   829   *
+   830   * safe_x / safe_y use the existing signed, center-relative offset
+   831   * convention.  Negative values are valid.
+   832   *
+   833   * Security rules:
+   834   *
+   835   *   - configuration is data, never code
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:861-874
+============================================================
+   861  
+   862  
+   863  
+   864  /*
+   865   * Parse the global [display] startup_mode selector independently from
+   866   * per-mode calibration. Return 1 when present and valid, 0 when absent,
+   867   * and -1 when the recognized setting is malformed or unsupported.
+   868   */
+   869  static int ps2vnc_config_parse_startup_mode(
+   870      const char *text,
+   871      unsigned int text_len,
+   872      const ps2vnc_video_mode_t **out_mode)
+   873  {
+   874      unsigned int pos = 0;
+
+============================================================
+working/b4a/ps2vnc_management_core.inc:1330-1343
+============================================================
+  1330  }
+  1331  
+  1332  
+  1333  /*
+  1334   * TEST15E2-B2:
+  1335   * Select the calibration belonging to an explicit physical video mode.
+  1336   *
+  1337   * New configuration prefers [display.<mode>].  The historical [display]
+  1338   * section remains a backward-compatible 1080i fallback while old configs
+  1339   * are migrated.  An invalid keyed preset is authoritative and is never
+  1340   * hidden by falling back to legacy data.
+  1341   */
+  1342  static int ps2vnc_config_parse_display_for_mode(
+  1343      const char *text,
+
+============================================================
+working/b4a/ps2vnc_management_tail.inc:24-54
+============================================================
+    24          profile->logical_height > VNC_HEIGHT ||
+    25          profile->output_width == 0 ||
+    26          profile->output_height == 0)
+    27          return 0;
+    28  
+    29      if (profile->output_x > profile->mode->raster_width ||
+    30          profile->output_y > profile->mode->raster_height)
+    31          return 0;
+    32  
+    33      if (profile->output_width >
+    34              profile->mode->raster_width - profile->output_x ||
+    35          profile->output_height >
+    36              profile->mode->raster_height - profile->output_y)
+    37          return 0;
+    38  
+    39      if (profile->backend == PS2VNC_BACKEND_HIRES) {
+    40          expected_logical_w = profile->output_width;
+    41          expected_logical_h = profile->output_height;
+    42      } else {
+    43          expected_logical_w =
+    44              profile->mode->standard_logical_width;
+    45          expected_logical_h =
+    46              profile->mode->standard_logical_height;
+    47      }
+    48  
+    49      if (expected_logical_w == 0 ||
+    50          expected_logical_h == 0 ||
+    51          profile->logical_width != expected_logical_w ||
+    52          profile->logical_height != expected_logical_h)
+    53          return 0;
+    54  
+
+============================================================
+working/b4a/ps2vnc_management_tail.inc:69-97
+============================================================
+    69          return -1;
+    70  
+    71      profile->mode = active_video_mode;
+    72      profile->backend = active_display_backend;
+    73  
+    74      profile->logical_width = desktop_width;
+    75      profile->logical_height = desktop_height;
+    76  
+    77      profile->output_x = desktop_output_x;
+    78      profile->output_y = desktop_output_y;
+    79      profile->output_width = desktop_output_width;
+    80      profile->output_height = desktop_output_height;
+    81  
+    82      return ps2vnc_display_profile_valid(profile) ? 0 : -1;
+    83  }
+    84  
+    85  
+    86  /*
+    87   * Resolve a complete candidate profile without changing any live state.
+    88   *
+    89   * HIRES logical geometry is the calibrated presentation rectangle.
+    90   * Standard logical geometry is the mode's fixed gsKit framebuffer.
+    91   */
+    92  int ps2vnc_display_profile_resolve_candidate(
+    93      const ps2vnc_video_mode_t *mode,
+    94      unsigned int out_x,
+    95      unsigned int out_y,
+    96      unsigned int out_w,
+    97      unsigned int out_h,
+
+============================================================
+working/b4a/ps2vnc_management_tail.inc:113-127
+============================================================
+   113      if (backend == PS2VNC_BACKEND_HIRES) {
+   114          profile->logical_width = out_w;
+   115          profile->logical_height = out_h;
+   116  
+   117      } else if (backend == PS2VNC_BACKEND_STANDARD) {
+   118          profile->logical_width = mode->standard_logical_width;
+   119          profile->logical_height = mode->standard_logical_height;
+   120  
+   121      } else {
+   122          return -1;
+   123      }
+   124  
+   125      profile->output_x = out_x;
+   126      profile->output_y = out_y;
+   127      profile->output_width = out_w;
+
+============================================================
+working/b4a/ps2vnc_management_tail_to_services.h:1-13
+============================================================
+     1  #ifndef PS2VNC_MANAGEMENT_TAIL_TO_SERVICES_H
+     2  #define PS2VNC_MANAGEMENT_TAIL_TO_SERVICES_H
+     3  
+     4  /*
+     5   * M3Z management-tail -> services/calibration-core interface.
+     6   *
+     7   * Declarations are derived from the qualified post-M3X
+     8   * GCC aux-info.
+     9   */
+    10  
+    11  extern int ps2vnc_display_profile_valid(
+    12      const ps2vnc_display_profile_t *profile);
+    13  
+
+============================================================
+working/b4a/ps2vnc_runtime_compat.h:63-76
+============================================================
+    63   * eventually coexist in one ELF and be selected from ps2vnc.conf.
+    64   */
+    65  /*
+    66   * Test15B2: provision enough EE-side RGB565 storage for a genuine
+    67   * high-resolution 1080i desktop.  Runtime desktop geometry remains
+    68   * calibration-driven and may be smaller than this capacity.
+    69   */
+    70  #define RFB_CAPACITY_WIDTH   1920
+    71  #define RFB_CAPACITY_HEIGHT  1080
+    72  
+    73  #include "ps2vnc_video_mode_compat.h"
+    74  
+    75  /*
+    76   * H4B1:
+
+============================================================
+working/b4a/ps2vnc_runtime_core.inc:68-116
+============================================================
+    68  static int ps2vnc_hires_requires_horizontal_mapping(void)
+    69  {
+    70      unsigned int effective_width;
+    71  
+    72      if (active_video_mode == NULL ||
+    73          active_video_mode->raster_width == 0) {
+    74  
+    75          return 0;
+    76      }
+    77  
+    78      effective_width =
+    79          ps2vnc_hires_effective_width();
+    80  
+    81      if (effective_width == 0)
+    82          return 0;
+    83  
+    84      return
+    85          effective_width !=
+    86              active_video_mode->raster_width;
+    87  }
+    88  
+    89  
+    90   int ps2vnc_hires_requires_vertical_mapping(void)
+    91  {
+    92      u64 full_frame_height;
+    93  
+    94      if (active_video_mode == NULL ||
+    95          active_video_mode->raster_height == 0) {
+    96  
+    97          return 0;
+    98      }
+    99  
+   100      full_frame_height =
+   101          ps2vnc_hires_full_frame_height();
+   102  
+   103      if (full_frame_height == 0)
+   104          return 0;
+   105  
+   106      return
+   107          full_frame_height !=
+   108              (u64)active_video_mode->raster_height;
+   109  }
+   110  
+   111  
+   112  int ps2vnc_hires_requires_raster_mapping(void)
+   113  {
+   114      return
+   115          ps2vnc_hires_requires_horizontal_mapping() ||
+   116          ps2vnc_hires_requires_vertical_mapping();
+
+============================================================
+working/b4a/ps2vnc_runtime_core.inc:137-163
+============================================================
+   137          return 0;
+   138  
+   139      if (ps2vnc_hires_requires_vertical_mapping())
+   140          return active_video_mode->hires_height;
+   141  
+   142      return active_video_mode->raster_height;
+   143  }
+   144  
+   145  
+   146  unsigned int ps2vnc_hires_storage_bytes(void)
+   147  {
+   148      return
+   149          ps2vnc_hires_storage_width() *
+   150          ps2vnc_hires_storage_height() *
+   151          sizeof(unsigned short);
+   152  }
+   153  
+   154  #define OUTPUT_WIDTH   (active_video_mode->raster_width)
+   155  #define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+   156  #define VNC_WIDTH      RFB_CAPACITY_WIDTH
+   157  #define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+   158  
+   159  /*
+   160   * Convert physical output-raster coordinates into the active renderer's
+   161   * drawing space.
+   162   *
+   163   * Physical raster, renderer framebuffer, and RFB desktop geometry are
+
+============================================================
+working/b4a/ps2vnc_runtime_core.inc:174-188
+============================================================
+   174  
+   175      if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+   176          *width = output_width;
+   177          *height = output_height;
+   178      } else if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+   179          *width = active_video_mode->standard_logical_width;
+   180          *height = active_video_mode->standard_logical_height;
+   181      } else {
+   182          return -1;
+   183      }
+   184  
+   185      if (*width == 0 || *height == 0 ||
+   186          *width > VNC_WIDTH || *height > VNC_HEIGHT)
+   187          return -1;
+   188  
+
+============================================================
+working/b4a/ps2vnc_runtime_core.inc:227-250
+============================================================
+   227   * TEST13J-D3-A1:
+   228   * Runtime RFB framebuffer geometry.
+   229   *
+   230   * Physical GS output remains fixed at 1280x720.
+   231   */
+   232  unsigned int desktop_width = VNC_WIDTH;
+   233  unsigned int desktop_height = VNC_HEIGHT;
+   234  
+   235  /*
+   236   * Position of the 1:1 remote desktop inside the fixed 1280x720
+   237   * physical HIRES output.
+   238   */
+   239  unsigned int desktop_output_x = 0;
+   240  unsigned int desktop_output_y = 0;
+   241  unsigned int desktop_output_width = VNC_WIDTH;
+   242  unsigned int desktop_output_height = VNC_HEIGHT;
+   243  
+   244  unsigned short *hires_bg_buffer = NULL;
+   245  unsigned short *hires_bg_back_buffer = NULL;
+   246  unsigned short *live_direct_present_buffer = NULL;
+   247  
+   248  /*
+   249   * D17AL-F7B:
+   250   *
+
+============================================================
+working/b4a/ps2vnc_runtime_core.inc:257-274
+============================================================
+   257  int live_direct_present_safe = 0;
+   258  int live_linear_framebuffer_stale = 0;
+   259  static unsigned int hires_bg_storage_row(unsigned int raster_y);
+   260  
+   261  /*
+   262   * Before calibration we accept whatever <=1280x720 geometry TigerVNC
+   263   * currently has. Once the safe desktop is finalized, recovery sessions
+   264   * will be required to return at exactly that geometry.
+   265   */
+   266  int desktop_geometry_locked = 0;
+   267  /*
+   268   * PS2VNC private-link bootstrap contract.
+   269   *
+   270   * The installer will provide the same dedicated Ethernet topology on every
+   271   * supported installation.  The PS2 must know this address before it can
+   272   * retrieve the general configuration file, so it cannot itself live inside
+   273   * that remotely hosted configuration.
+   274   *
+
+============================================================
+working/b4a/ps2vnc_runtime_core.inc:598-611
+============================================================
+   598      }
+   599  }
+   600  
+   601  
+   602  /*
+   603   * Runtime calibration temporarily transfers libpad ownership from the
+   604   * controller thread to the main/render thread.
+   605   *
+   606   * requested is written by the main thread. ack is written only by the
+   607   * controller thread after it has stopped calling padGetState()/padRead().
+   608   *
+   609   * G2-C installs only the dormant ownership boundary. No current UI action
+   610   * requests a handoff yet, so existing runtime behavior remains unchanged.
+   611   */
+
+============================================================
+working/b4a/ps2vnc_runtime_core.inc:628-643
+============================================================
+   628  volatile int exit_requested = 0;
+   629  
+   630  /*
+   631   * D4 startup override:
+   632   * hold L1 + R1 while PS2VNC starts to force interactive display
+   633   * calibration even when a valid stored display preset was loaded.
+   634   */
+   635  int force_screen_fit_calibration = 0;
+   636  
+   637   int controller_sock = -1;
+   638  
+   639  /* Last live RFB failure context, displayed if the render loop exits. */
+   640   volatile int live_error_code = 0;
+   641   volatile unsigned int live_message_type = 0;
+   642   volatile unsigned int live_rect_count = 0;
+   643   volatile unsigned int live_rect_index = 0;
+
+============================================================
+working/b4a/ps2vnc_runtime_core.inc:797-815
+============================================================
+   797   volatile int display_menu_selection = 0;
+   798   volatile int display_menu_error = 0;
+   799   volatile int display_mode_request = DISPLAY_MODE_REQUEST_NONE;
+   800  
+   801  /*
+   802   * A calibration request is semantically distinct from a mode switch even
+   803   * though both carry the registry selection as index+1.  Same-mode X publishes
+   804   * only this channel; it must never enter ps2vnc_switch_display_mode().
+   805   */
+   806  
+   807   volatile int display_calibration_request =
+   808      DISPLAY_MODE_REQUEST_NONE;
+   809  
+   810  
+   811  enum {
+   812      REMOTE_DISPLAY_IDLE = 0,
+   813      REMOTE_DISPLAY_SWITCH_REQUESTED,
+   814      REMOTE_DISPLAY_SWITCHING,
+   815      REMOTE_DISPLAY_ACTIVE_TEMP,
+
+============================================================
+working/b4a/ps2vnc_runtime_core.inc:952-965
+============================================================
+   952  
+   953  /*
+   954   * D17AL-F3:
+   955   * screen_fit_* is part of the complete local display profile.
+   956   *
+   957   * A provisional mode switch must not allow candidate B's calibration state
+   958   * to survive a Go Back/timeout reconstruction of confirmed profile A.
+   959   */
+   960   int display_confirm_previous_screen_fit_width = 0;
+   961   int display_confirm_previous_screen_fit_height = 0;
+   962   int display_confirm_previous_screen_fit_offset_x = 0;
+   963   int display_confirm_previous_screen_fit_offset_y = 0;
+   964   int display_confirm_previous_screen_fit_full_bypass = 0;
+   965  
+
+============================================================
+working/b4a/ps2vnc_runtime_core_to_tail.h:14-29
+============================================================
+    14  
+    15  #define OSK_ROWS     5
+    16  
+    17  #define OSK_WIDTH    600
+    18  
+    19  #define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+    20  
+    21  #define OUTPUT_WIDTH   (active_video_mode->raster_width)
+    22  
+    23  #define PS2VNC_BOOTSTRAP_PI_IP      "192.168.50.1"
+    24  
+    25  #define SYSTEM_REFRESH_COOLDOWN_SECONDS 3u
+    26  
+    27  #define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+    28  
+    29  #define VNC_PORT                    5900
+
+============================================================
+working/b4a/ps2vnc_runtime_core_to_tail.h:134-147
+============================================================
+   134  extern volatile unsigned int debug_hotkey_settle_target ;
+   135  extern volatile unsigned int debug_hotkey_stable_polls ;
+   136  extern volatile int debug_hotkey_trigger ;
+   137  extern unsigned int debug_idle_poll_counter ;
+   138  extern volatile unsigned int debug_transition_phase ;
+   139  extern volatile int display_calibration_request ;
+   140  extern volatile int display_confirm_action ;
+   141  extern volatile int display_confirm_pending ;
+   142  extern ps2vnc_backend_t display_confirm_previous_backend ;
+   143  extern unsigned int display_confirm_previous_desktop_h ;
+   144  extern unsigned int display_confirm_previous_desktop_w ;
+   145  extern unsigned int display_confirm_previous_h ;
+   146  extern const ps2vnc_video_mode_t *display_confirm_previous_mode ;
+   147  extern int display_confirm_previous_screen_fit_full_bypass ;
+
+============================================================
+working/b4a/ps2vnc_runtime_tail.inc:96-121
+============================================================
+    96  
+    97  /*
+    98   * D17AL-F8I1B:
+    99   *
+   100   * The System menu is global over ORDINARY local UI, but it must never
+   101   * punch through a provisional display transaction or libpad calibration
+   102   * ownership boundary.
+   103   *
+   104   * Pending mode/calibration requests are included so there is no race
+   105   * between controller publication and main-thread transaction ownership.
+   106   */
+   107   int ps2vnc_system_overlay_allowed(void)
+   108  {
+   109      if (display_restore_ack_visible ||
+   110          display_confirm_pending ||
+   111          display_transition_switch_in_progress ||
+   112          display_mode_request != DISPLAY_MODE_REQUEST_NONE ||
+   113          display_calibration_request != DISPLAY_MODE_REQUEST_NONE ||
+   114          controller_pad_pause_requested)
+   115          return 0;
+   116  
+   117      return 1;
+   118  }
+   119  
+   120  
+   121  /*
+
+============================================================
+working/b4a/ps2vnc_runtime_tail.inc:210-224
+============================================================
+   210      display_confirm_previous_backend = active_display_backend;
+   211      display_confirm_previous_x = previous_x;
+   212      display_confirm_previous_y = previous_y;
+   213      display_confirm_previous_w = previous_w;
+   214      display_confirm_previous_h = previous_h;
+   215      display_confirm_previous_desktop_w = desktop_width;
+   216      display_confirm_previous_desktop_h = desktop_height;
+   217  
+   218      display_confirm_previous_screen_fit_width =
+   219          previous_screen_fit_width;
+   220      display_confirm_previous_screen_fit_height =
+   221          previous_screen_fit_height;
+   222      display_confirm_previous_screen_fit_offset_x =
+   223          previous_screen_fit_offset_x;
+   224      display_confirm_previous_screen_fit_offset_y =
+
+============================================================
+working/b4a/ps2vnc_runtime_tail.inc:390-412
+============================================================
+   390      return -1;
+   391  }
+   392  
+   393  
+   394  /*
+   395   * Startup-only display recalibration chord.
+   396   *
+   397   * The normal libpad button bits are active-low, matching the controller
+   398   * thread's existing 0xFFFF ^ buttons.btns decoding.
+   399   *
+   400   * Normal startup returns immediately when L1+R1 are not held.  If both
+   401   * buttons are already down, require about 300 ms of continuous hold before
+   402   * accepting the override.
+   403   */
+   404   int startup_force_calibration_requested(void)
+   405  {
+   406      const struct timespec delay = { 0, 10000000 }; /* 10 ms */
+   407      struct padButtonStatus buttons;
+   408      unsigned int pressed;
+   409      int consecutive = 0;
+   410      int saw_valid_sample = 0;
+   411      int i;
+   412  
+
+============================================================
+working/b4a/ps2vnc_runtime_tail.inc:683-714
+============================================================
+   683              height
+   684          );
+   685          goto fail;
+   686      }
+   687  
+   688      if (desktop_geometry_locked) {
+   689          if (width != desktop_width ||
+   690              height != desktop_height) {
+   691  
+   692              screenf(
+   693                  "ERROR: expected %ux%u VNC desktop",
+   694                  desktop_width,
+   695                  desktop_height
+   696              );
+   697              goto fail;
+   698          }
+   699      } else {
+   700          /*
+   701           * A prior interrupted resize may have left TigerVNC smaller than
+   702           * 1280x720. Treat the server's actual geometry as authoritative
+   703           * until calibration locks the final safe desktop.
+   704           */
+   705          desktop_width = width;
+   706          desktop_height = height;
+   707      }
+   708  
+   709      name_take = name_len;
+   710  
+   711      if (name_take > sizeof(desktop_name) - 1)
+   712          name_take = sizeof(desktop_name) - 1;
+   713  
+   714      if (name_take > 0) {
+
+============================================================
+working/b4a/ps2vnc_runtime_tail.inc:796-810
+============================================================
+   796   * request a new size yet.
+   797   */
+   798   int rfb_extended_desktop_seen = 0;
+   799   unsigned int rfb_extended_desktop_reason = 0;
+   800   unsigned int rfb_extended_desktop_result = 0;
+   801   unsigned int rfb_extended_desktop_width = 0;
+   802   unsigned int rfb_extended_desktop_height = 0;
+   803   unsigned int rfb_extended_desktop_screen_count = 0;
+   804  
+   805   unsigned int rfb_first_screen_id = 0;
+   806   unsigned int rfb_first_screen_x = 0;
+   807   unsigned int rfb_first_screen_y = 0;
+   808   unsigned int rfb_first_screen_width = 0;
+   809   unsigned int rfb_first_screen_height = 0;
+   810   unsigned int rfb_first_screen_flags = 0;
+
+============================================================
+working/b4a/ps2vnc_runtime_tail.inc:1049-1063
+============================================================
+  1049           * inherit a previous EDS notification.
+  1050           */
+  1051          rfb_extended_desktop_seen = 0;
+  1052          rfb_extended_desktop_reason = 0;
+  1053          rfb_extended_desktop_result = 0;
+  1054          rfb_extended_desktop_width = 0;
+  1055          rfb_extended_desktop_height = 0;
+  1056          rfb_extended_desktop_screen_count = 0;
+  1057  
+  1058          if (receive_framebuffer_update(
+  1059                  sock,
+  1060                  rfb_framebuffer,
+  1061                  gs_framebuffer,
+  1062                  0,
+  1063                  0) < 0) {
+
+============================================================
+working/b4a/ps2vnc_runtime_tail.inc:1093-1107
+============================================================
+  1093          if (rfb_extended_desktop_result != 0) {
+  1094              live_error_code = 121;
+  1095              return -1;
+  1096          }
+  1097  
+  1098          if (rfb_extended_desktop_width != width ||
+  1099              rfb_extended_desktop_height != height) {
+  1100  
+  1101              /*
+  1102               * Normally unreachable because the receiver validates this
+  1103               * while rfb_resize_expected is active.  Keep an explicit
+  1104               * defensive diagnostic at the ownership boundary.
+  1105               */
+  1106              live_error_code = 118;
+  1107              return -1;
+
+============================================================
+working/b4a/ps2vnc_runtime_to_framebuffer.h:95-110
+============================================================
+    95  
+    96  extern unsigned int rfb_extended_desktop_reason ;
+    97  
+    98  extern unsigned int rfb_extended_desktop_result ;
+    99  
+   100  extern unsigned int rfb_extended_desktop_width ;
+   101  
+   102  extern unsigned int rfb_extended_desktop_height ;
+   103  
+   104  extern unsigned int rfb_extended_desktop_screen_count ;
+   105  
+   106  extern unsigned int rfb_first_screen_id ;
+   107  
+   108  extern unsigned int rfb_first_screen_x ;
+   109  
+   110  extern unsigned int rfb_first_screen_y ;
+
+============================================================
+working/b4a/ps2vnc_runtime_to_ui_display.h:119-134
+============================================================
+   119  
+   120  #define OSK_ROWS     5
+   121  
+   122  #define OSK_WIDTH    600
+   123  
+   124  #define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+   125  
+   126  #define OUTPUT_WIDTH   (active_video_mode->raster_width)
+   127  
+   128  #define PS2VNC_DISPLAY_CONTROL_MAX_BYTES 768
+   129  
+   130  #define PS2VNC_DISPLAY_CONTROL_PENDING_PATH \
+   131      "/display-control/pending"
+   132  
+   133  #define PS2VNC_DISPLAY_CONTROL_RESULT_PATH \
+   134      "/display-control/result"
+
+============================================================
+working/b4a/ps2vnc_runtime_to_ui_display.h:261-274
+============================================================
+   261  
+   262  extern volatile int debug_hotkey_trigger ;
+   263  
+   264  extern volatile unsigned int debug_transition_phase ;
+   265  
+   266  extern volatile int display_calibration_request ;
+   267  
+   268  extern volatile int display_confirm_action ;
+   269  
+   270  extern volatile int display_confirm_pending ;
+   271  
+   272  extern ps2vnc_backend_t display_confirm_previous_backend ;
+   273  
+   274  extern unsigned int display_confirm_previous_desktop_h ;
+
+============================================================
+working/b4a/ps2vnc_runtime_to_ui_display.h:491-500
+============================================================
+   491  
+   492  extern int send_pointer_event (int sock, unsigned char button_mask, unsigned int x, unsigned int y);
+   493  
+   494  extern int start_controller_thread (int sock);
+   495  
+   496  extern int startup_force_calibration_requested (void);
+   497  
+   498  extern int wait_pad_ready_after_mode_change (void);
+   499  
+   500  #endif /* PS2VNC_RUNTIME_TO_UI_DISPLAY_H */
+
+============================================================
+working/b4a/ps2vnc_services.c:6-11
+============================================================
+     6  #include "ps2vnc_services_compat.h"
+     7  #include "ps2vnc_services_exports.h"
+     8  
+     9  #include "ps2vnc_management_core.inc"
+    10  #include "ps2vnc_management_tail_to_services.h"
+    11  #include "ps2vnc_calibration_core.inc"
+
+============================================================
+working/b4a/ps2vnc_services_compat.h:47-60
+============================================================
+    47   * eventually coexist in one ELF and be selected from ps2vnc.conf.
+    48   */
+    49  /*
+    50   * Test15B2: provision enough EE-side RGB565 storage for a genuine
+    51   * high-resolution 1080i desktop.  Runtime desktop geometry remains
+    52   * calibration-driven and may be smaller than this capacity.
+    53   */
+    54  #define RFB_CAPACITY_WIDTH   1920
+    55  #define RFB_CAPACITY_HEIGHT  1080
+    56  
+    57  #include "ps2vnc_video_mode_compat.h"
+    58  
+    59  /*
+    60   * H4B1:
+
+============================================================
+working/b4a/ps2vnc_services_compat.h:99-113
+============================================================
+    99  #ifndef VIDEO_MODE_COUNT
+   100  #define VIDEO_MODE_COUNT PSTVNC_VIDEO_MODE_COUNT
+   101  #endif
+   102  
+   103  /* Main-side macros referenced by services. */
+   104  #define OUTPUT_WIDTH   (active_video_mode->raster_width)
+   105  #define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+   106  #define VNC_WIDTH      RFB_CAPACITY_WIDTH
+   107  #define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+   108  #define PS2VNC_BOOTSTRAP_PI_IP      "192.168.50.1"
+   109  #define PS2VNC_CONFIG_PORT          5959
+   110  #define PS2VNC_CONFIG_PATH          "/ps2vnc.conf"
+   111  #define PS2VNC_DISPLAY_PATH         "/display"
+   112  #define PS2VNC_DISPLAY_MODE_PATH    "/display-mode"
+   113  #define PS2VNC_DISPLAY_LOCK_PATH    "/display-lock"
+
+============================================================
+working/b4a/ps2vnc_services_exports.h:8-21
+============================================================
+     8  extern int screen_fit_height;
+     9  extern int screen_fit_offset_x;
+    10  extern int screen_fit_offset_y;
+    11  extern int screen_fit_width;
+    12  
+    13  int calculate_presented_desktop_geometry( unsigned int *out_x, unsigned int *out_y, unsigned int *out_w, unsigned int *out_h);
+    14  void debug_emit_geometry_snapshot(void);
+    15  int draw_recovery_status( GSGLOBAL *gsGlobal, GSTEXTURE *osk_tex, const char *line1, const char *line2, int seconds_left);
+    16  int perform_manual_rfb_recovery( int old_sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, GSGLOBAL *gsGlobal, GSTEXTURE *tex, GSTEXTURE *osk_tex);
+    17  int ps2vnc_config_apply_display( const ps2vnc_display_config_t *config);
+    18  int ps2vnc_config_get_display_for_mode( const ps2vnc_video_mode_t *mode, ps2vnc_display_config_t *out_config);
+    19  int ps2vnc_config_load_from_pi(void);
+    20  int ps2vnc_config_presented_geometry_for_mode( const ps2vnc_video_mode_t *mode, const ps2vnc_display_config_t *config, unsigned int *out_x, unsigned int *out_y, unsigned int *out_w, unsigned int *out_h);
+    21  int ps2vnc_controller_pad_acquire(void);
+
+============================================================
+working/b4a/ps2vnc_services_exports.h:41-59
+============================================================
+    41  int ps2vnc_display_tx_profiles_equal( const ps2vnc_display_profile_t *a, const ps2vnc_display_profile_t *b);
+    42  int ps2vnc_display_wait_presentation_memory_idle( GSGLOBAL *gsGlobal);
+    43  int ps2vnc_display_wait_texture_idle( GSGLOBAL *gsGlobal);
+    44  int ps2vnc_management_get_bounded_quiet( const char *path, unsigned char *out_body, unsigned int out_capacity, unsigned int *out_len, unsigned int budget_us);
+    45  int ps2vnc_management_post_text( const char *path, const char *body);
+    46  int ps2vnc_run_runtime_calibration( int sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, GSGLOBAL *gsGlobal, GSTEXTURE *tex, u64 black);
+    47  int ps2vnc_startup_apply_authoritative_profile(void);
+    48  int ps2vnc_startup_connect_reconciled( unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer);
+    49  int ps2vnc_startup_prepare_display_transaction(void);
+    50  int recover_rfb_connection( int old_sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, GSGLOBAL *gsGlobal, GSTEXTURE *tex, GSTEXTURE *osk_tex);
+    51  int recover_rfb_transport_for_display_rollback( int old_sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, const ps2vnc_video_mode_t *handshake_mode);
+    52  int run_screen_fit_calibration( GSGLOBAL *gsGlobal, u64 black, int save_on_accept, int *accepted_out);
+    53  int screen_fit_apply_preset( int width, int height, int offset_x, int offset_y, int full_bypass);
+    54  
+    55  
+    56  /* M3E actual-source call closure. */
+    57  GSGLOBAL *ps2vnc_display_create(void);
+    58  
+    59  #endif
+
+============================================================
+working/b4a/ps2vnc_services_imports.h:9-33
+============================================================
+     9  extern volatile int controller_pad_pause_requested;
+    10  extern volatile int controller_thread_error;
+    11  extern volatile unsigned int debug_stage_id;
+    12  extern struct sockaddr_in debug_udp_addr;
+    13  extern int debug_udp_sock;
+    14  extern int desktop_geometry_locked;
+    15  extern unsigned int desktop_height;
+    16  extern unsigned int desktop_output_height;
+    17  extern unsigned int desktop_output_width;
+    18  extern unsigned int desktop_output_x;
+    19  extern unsigned int desktop_output_y;
+    20  extern unsigned int desktop_width;
+    21  extern volatile int display_hide_locked_modes;
+    22  extern volatile unsigned char display_mode_locked[];
+    23  extern volatile int display_policy_loaded;
+    24  extern volatile int exit_requested;
+    25  extern int force_screen_fit_calibration;
+    26  extern unsigned short *hires_bg_back_buffer;
+    27  extern unsigned short *hires_bg_buffer;
+    28  extern int hires_bg_configured;
+    29  extern unsigned short *hires_mapped_source_framebuffer;
+    30  extern unsigned short *live_direct_present_buffer;
+    31  extern int live_direct_present_safe;
+    32  extern int live_linear_framebuffer_stale;
+    33  extern volatile unsigned int osk_generation;
+
+============================================================
+working/b4a/ps2vnc_ui_core.inc:757-770
+============================================================
+   757              selected_mode == active_video_mode) {
+   758  
+   759              snprintf(
+   760                  footer,
+   761                  sizeof(footer),
+   762                  "X CALIBRATE %s SAFE AREA   O BACK",
+   763                  selected_mode->name
+   764              );
+   765  
+   766          } else if (selected_mode != NULL &&
+   767                     display_mode_locked[
+   768                         display_menu_selection]) {
+   769  
+   770              snprintf(
+
+============================================================
+working/b4a/ps2vnc_ui_core.inc:1176-1189
+============================================================
+  1176      int x,
+  1177      int y)
+  1178  {
+  1179      int jiggle_x;
+  1180  
+  1181      if (x < desktop_width - 1)
+  1182          jiggle_x = x + 1;
+  1183      else
+  1184          jiggle_x = x - 1;
+  1185  
+  1186      if (send_pointer_event(sock, 0,
+  1187                             (unsigned int)jiggle_x,
+  1188                             (unsigned int)y) < 0)
+  1189          return -1;
+
+============================================================
+working/b4a/ps2vnc_ui_tail.inc:1-13
+============================================================
+     1   void controller_thread(void *arg)
+     2  {
+     3      int sock = *(int *)arg;
+     4      int cursor_x = desktop_width / 2;
+     5      int cursor_y = desktop_height / 2;
+     6      unsigned char last_button_mask = 0;
+     7      unsigned int last_pressed = 0;
+     8  
+     9      /*
+    10       * Precision D-pad mouse movement:
+    11       * immediate 2px step, then delayed repeat if held.
+    12       */
+    13      unsigned int dpad_hold_direction = 0;
+
+============================================================
+working/b4a/ps2vnc_ui_tail.inc:97-110
+============================================================
+    97              }
+    98  
+    99              /*
+   100               * The main thread will return ownership only after a clean
+   101               * physical release. Forget every pre-handoff edge/hold state so
+   102               * no calibration button can become desktop input afterward.
+   103               */
+   104              last_pressed = 0;
+   105              last_button_mask = 0;
+   106  
+   107              dpad_hold_direction = 0;
+   108              dpad_hold_ticks = 0;
+   109              dpad_x_q8 = 0;
+   110              dpad_y_q8 = 0;
+
+============================================================
+working/b4a/ps2vnc_ui_tail.inc:941-954
+============================================================
+   941                              display_menu_visible = 0;
+   942                              display_menu_error = 0;
+   943                              display_policy_error = 0;
+   944                              display_menu_parent_system = 0;
+   945  
+   946                              display_calibration_request =
+   947                                  display_mode_request_for_selection(
+   948                                      display_menu_selection);
+   949  
+   950                              osk_generation++;
+   951                              menu_changed = 1;
+   952  
+   953                          } else if (!display_policy_loaded) {
+   954  
+
+============================================================
+working/b4a/ps2vnc_ui_tail.inc:1365-1384
+============================================================
+  1365                  cursor_x += dx;
+  1366                  cursor_y += dy;
+  1367  
+  1368                  if (cursor_x < 0)
+  1369                      cursor_x = 0;
+  1370                  if (cursor_x >= (int)desktop_width)
+  1371                      cursor_x = (int)desktop_width - 1;
+  1372  
+  1373                  if (cursor_y < 0)
+  1374                      cursor_y = 0;
+  1375                  if (cursor_y >= (int)desktop_height)
+  1376                      cursor_y = (int)desktop_height - 1;
+  1377  
+  1378                  button_mask =
+  1379                      ((desktop_pressed & PAD_CROSS)  ? 0x01 : 0x00) |
+  1380                      ((desktop_pressed & PAD_CIRCLE) ? 0x04 : 0x00);
+  1381  
+  1382                  if (cursor_x != old_x ||
+  1383                      cursor_y != old_y ||
+  1384                      button_mask != last_button_mask) {

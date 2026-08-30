@@ -1,5 +1,3 @@
-#include "video/geometry.h"
-
 static void screen_fit_prim_sprite_clipped(
     GSGLOBAL *g,
     int x0,
@@ -704,13 +702,14 @@ int run_screen_fit_calibration(
  *     deliberate full 1280x720 bypass.
  */
 
-int calculate_safe_desktop_geometry(
+static int calculate_safe_desktop_geometry(
     unsigned int *out_x,
     unsigned int *out_y,
     unsigned int *out_w,
     unsigned int *out_h)
 {
-    pstvnc_video_rect_t safe_area;
+    int safe_x;
+    int safe_y;
 
     if (screen_fit_full_bypass) {
         *out_x = 0;
@@ -720,19 +719,37 @@ int calculate_safe_desktop_geometry(
         return 0;
     }
 
-    if (pstvnc_video_geometry_safe_area_rect(
-            active_video_mode,
+    if (!screen_fit_geometry_valid(
             screen_fit_width,
             screen_fit_height,
             screen_fit_offset_x,
-            screen_fit_offset_y,
-            &safe_area) < 0)
+            screen_fit_offset_y))
         return -1;
 
-    *out_x = safe_area.x;
-    *out_y = safe_area.y;
-    *out_w = safe_area.width;
-    *out_h = safe_area.height;
+    safe_x =
+        (OUTPUT_WIDTH - screen_fit_width) / 2 +
+        screen_fit_offset_x;
+
+    safe_y =
+        (OUTPUT_HEIGHT - screen_fit_height) / 2 +
+        screen_fit_offset_y;
+
+    if (safe_x < 0 || safe_y < 0)
+        return -1;
+
+    if (!region_fits_u32(
+            (unsigned int)safe_x,
+            (unsigned int)safe_y,
+            (unsigned int)screen_fit_width,
+            (unsigned int)screen_fit_height,
+            OUTPUT_WIDTH,
+            OUTPUT_HEIGHT))
+        return -1;
+
+    *out_x = (unsigned int)safe_x;
+    *out_y = (unsigned int)safe_y;
+    *out_w = (unsigned int)screen_fit_width;
+    *out_h = (unsigned int)screen_fit_height;
 
     return 0;
 }
@@ -752,30 +769,28 @@ int calculate_presented_desktop_geometry(
     unsigned int *out_w,
     unsigned int *out_h)
 {
-    pstvnc_video_rect_t safe_area;
-    pstvnc_video_rect_t presented;
+    unsigned int safe_x;
+    unsigned int safe_y;
+    unsigned int safe_w;
+    unsigned int safe_h;
+    unsigned int width;
+    unsigned int height;
 
     if (calculate_safe_desktop_geometry(
-            &safe_area.x,
-            &safe_area.y,
-            &safe_area.width,
-            &safe_area.height) < 0)
+            &safe_x, &safe_y, &safe_w, &safe_h) < 0)
         return -1;
 
-    if (pstvnc_video_geometry_presented_rect(
-            active_video_mode,
-            &safe_area,
-            VNC_WIDTH,
-            VNC_HEIGHT,
-            &presented) < 0)
-        return -1;
+    width = (safe_w < VNC_WIDTH) ? safe_w : VNC_WIDTH;
+    height = (safe_h < VNC_HEIGHT) ? safe_h : VNC_HEIGHT;
 
-    *out_x = presented.x;
-    *out_y = presented.y;
-    *out_w = presented.width;
-    *out_h = presented.height;
+    *out_x = safe_x + ((safe_w - width) / 2);
+    *out_y = safe_y + ((safe_h - height) / 2);
+    *out_w = width;
+    *out_h = height;
 
-    return 0;
+    return region_fits_u32(
+        *out_x, *out_y, *out_w, *out_h,
+        OUTPUT_WIDTH, OUTPUT_HEIGHT) ? 0 : -1;
 }
 
 

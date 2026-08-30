@@ -1,0 +1,55 @@
+M4H-A host tests
+
+A new host unit test must exercise the permanent geometry API without
+PS2SDK or gsKit runtime dependencies.
+
+Required validation coverage:
+
+1. NULL mode rejection.
+
+2. NULL output rectangle rejection where applicable.
+
+3. width <= 0 rejection.
+
+4. height <= 0 rejection.
+
+5. safe width greater than raster rejection.
+
+6. safe height greater than raster rejection.
+
+7. centered safe-area rectangle.
+
+8. negative center-relative X offset at its exact legal boundary.
+
+9. positive center-relative X offset at its exact legal boundary.
+
+10. one-pixel-outside X rejection.
+
+11. equivalent Y offset boundary tests.
+
+12. odd remaining raster pixels preserve historical integer truncation
+    and asymmetric positive/negative legal offset boundaries.
+
+13. full-raster 0,0 safe area succeeds.
+
+14. safe area smaller than desktop capacity:
+        presented rectangle equals safe rectangle.
+
+15. safe area larger than desktop capacity:
+        capacity rectangle is centered inside safe area.
+
+16. width-only capacity clamp.
+
+17. height-only capacity clamp.
+
+18. presented rectangle remains within mode raster.
+
+19. representative catalog modes:
+        480p
+        720p
+        1080i
+
+20. permanent geometry header includes no PS2SDK/gsKit header.
+
+The tests must compare permanent results against the exact historical
+arithmetic for representative and boundary cases.

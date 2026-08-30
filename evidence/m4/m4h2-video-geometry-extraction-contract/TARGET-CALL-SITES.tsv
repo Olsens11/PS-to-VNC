@@ -1,0 +1,38 @@
+symbol	file	line	source
+calculate_presented_desktop_geometry	working/b4a/ps2vnc_calibration_core.inc	1098	int calculate_presented_desktop_geometry(
+calculate_presented_desktop_geometry	working/b4a/ps2vnc_calibration_core.inc	1268	if (calculate_presented_desktop_geometry(
+calculate_presented_desktop_geometry	working/b4a/ps2vnc_calibration_tail.inc	766	int calculate_presented_desktop_geometry(
+calculate_presented_desktop_geometry	working/b4a/ps2vnc_calibration_tail.inc	1064	if (calculate_presented_desktop_geometry(
+calculate_presented_desktop_geometry	working/b4a/ps2vnc_display_tail.inc	80	if (calculate_presented_desktop_geometry(
+calculate_presented_desktop_geometry	working/b4a/ps2vnc_display_tail.inc	806	calculate_presented_desktop_geometry(
+calculate_presented_desktop_geometry	working/b4a/ps2vnc_services_exports.h	13	int calculate_presented_desktop_geometry( unsigned int *out_x, unsigned int *out_y, unsigned int *out_w, unsigned int *out_h);
+calculate_safe_desktop_geometry	working/b4a/ps2vnc_calibration_tail.inc	705	static int calculate_safe_desktop_geometry(
+calculate_safe_desktop_geometry	working/b4a/ps2vnc_calibration_tail.inc	779	if (calculate_safe_desktop_geometry(
+ps2vnc_config_presented_geometry_for_mode	working/b4a/ps2vnc_calibration_core.inc	1030	int ps2vnc_config_presented_geometry_for_mode(
+ps2vnc_config_presented_geometry_for_mode	working/b4a/ps2vnc_calibration_core.inc	1213	if (ps2vnc_config_presented_geometry_for_mode(
+ps2vnc_config_presented_geometry_for_mode	working/b4a/ps2vnc_calibration_core.inc	1446	if (ps2vnc_config_presented_geometry_for_mode(
+ps2vnc_config_presented_geometry_for_mode	working/b4a/ps2vnc_display_tail.inc	589	ps2vnc_config_presented_geometry_for_mode(
+ps2vnc_config_presented_geometry_for_mode	working/b4a/ps2vnc_services_exports.h	20	int ps2vnc_config_presented_geometry_for_mode( const ps2vnc_video_mode_t *mode, const ps2vnc_display_config_t *config, unsigned int *out_x, unsigned int *out_y, unsigned int *out_w, unsigned int *out_h);
+screen_fit_apply_preset	working/b4a/ps2vnc_calibration_core.inc	1241	* screen_fit_apply_preset() validates against active_video_mode,
+screen_fit_apply_preset	working/b4a/ps2vnc_calibration_tail.inc	527	if (screen_fit_apply_preset(
+screen_fit_apply_preset	working/b4a/ps2vnc_calibration_tail.inc	570	screen_fit_apply_preset(
+screen_fit_apply_preset	working/b4a/ps2vnc_display_core.inc	503	if (!screen_fit_apply_preset(
+screen_fit_apply_preset	working/b4a/ps2vnc_management_core.inc	750	int screen_fit_apply_preset(
+screen_fit_apply_preset	working/b4a/ps2vnc_management_core.inc	846	* translated OUTER rectangle through screen_fit_apply_preset().
+screen_fit_apply_preset	working/b4a/ps2vnc_management_core.inc	1404	return screen_fit_apply_preset(
+screen_fit_apply_preset	working/b4a/ps2vnc_management_core.inc	1441	*     ps2vnc_config_apply_display() -> screen_fit_apply_preset()
+screen_fit_apply_preset	working/b4a/ps2vnc_services_exports.h	53	int screen_fit_apply_preset( int width, int height, int offset_x, int offset_y, int full_bypass);
+screen_fit_clamp_interactive	working/b4a/ps2vnc_calibration_core.inc	1538	void screen_fit_clamp_interactive(
+screen_fit_clamp_interactive	working/b4a/ps2vnc_calibration_core_to_tail.h	23	extern void screen_fit_clamp_interactive (int *width, int *height, int *offset_x, int *offset_y);
+screen_fit_clamp_interactive	working/b4a/ps2vnc_calibration_tail.inc	479	screen_fit_clamp_interactive(
+screen_fit_clamp_interactive	working/b4a/ps2vnc_calibration_tail.inc	678	screen_fit_clamp_interactive(
+screen_fit_geometry_valid	working/b4a/ps2vnc_calibration_core.inc	823	if (!screen_fit_geometry_valid(
+screen_fit_geometry_valid	working/b4a/ps2vnc_calibration_core_to_tail.h	24	extern int screen_fit_geometry_valid (int width, int height, int offset_x, int offset_y);
+screen_fit_geometry_valid	working/b4a/ps2vnc_calibration_tail.inc	722	if (!screen_fit_geometry_valid(
+screen_fit_geometry_valid	working/b4a/ps2vnc_management_core.inc	728	int screen_fit_geometry_valid(
+screen_fit_geometry_valid	working/b4a/ps2vnc_management_core.inc	776	} else if (screen_fit_geometry_valid(
+screen_fit_geometry_valid_for_mode	working/b4a/ps2vnc_calibration_core.inc	1048	if (!screen_fit_geometry_valid_for_mode(
+screen_fit_geometry_valid_for_mode	working/b4a/ps2vnc_management_core.inc	666	static int screen_fit_geometry_valid_for_mode(
+screen_fit_geometry_valid_for_mode	working/b4a/ps2vnc_management_core.inc	726	* screen_fit_geometry_valid_for_mode() without changing GS state.
+screen_fit_geometry_valid_for_mode	working/b4a/ps2vnc_management_core.inc	734	return screen_fit_geometry_valid_for_mode(
+screen_fit_geometry_valid_for_mode	working/b4a/ps2vnc_management_core.inc	1310	if (!screen_fit_geometry_valid_for_mode(

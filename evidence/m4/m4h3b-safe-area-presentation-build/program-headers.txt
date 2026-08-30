@@ -1,0 +1,14 @@
+
+Elf file type is EXEC (Executable file)
+Entry point 0x103210
+There are 2 program headers, starting at offset 52
+
+Program Headers:
+  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align
+  ABIFLAGS       0x06dd00 0x0016dc80 0x0016dc80 0x00018 0x00018 R   0x8
+  LOAD           0x000080 0x00100000 0x00100000 0x6dd08 0x127fc8 RWE 0x80
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     .MIPS.abiflags 
+   01     .text .ctors .dtors .data .rodata .MIPS.abiflags .eh_frame .sdata .bss 

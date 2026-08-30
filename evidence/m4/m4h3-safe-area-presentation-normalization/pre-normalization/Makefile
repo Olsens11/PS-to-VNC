@@ -1,7 +1,7 @@
 GSKIT ?= $(PS2DEV)/gsKit
 
 EE_BIN = PS2VNC.ELF
-EE_OBJS = ps2ip.o pstvnc_video_mode.o pstvnc_video_geometry.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_framebuffer_tail.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_management_tail.o ps2vnc_calibration_tail.o pstvnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
+EE_OBJS = ps2ip.o pstvnc_video_mode.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_framebuffer_tail.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_management_tail.o ps2vnc_calibration_tail.o pstvnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
 
 EE_INCS = -I$(GSKIT)/include -I../../src
 
@@ -85,6 +85,3 @@ include $(PS2SDK)/samples/Makefile.eeglobal
 ps2ip.o: ps2vnc_macro_body.inc ps2vnc_macro_region1.inc ps2vnc_macro_region2.inc ps2vnc_macro_region3.inc ps2vnc_runtime_support.inc ps2vnc_ui_controller.inc ps2vnc_framebuffer_engine.inc ps2vnc_cross_types.h ps2vnc_services_exports.h
 ps2vnc_services.o: ps2vnc_services.c ps2vnc_services_compat.h ps2vnc_cross_types.h ps2vnc_services_imports.h ps2vnc_display_orchestration.inc ps2vnc_management_core.inc ps2vnc_calibration_core.inc ps2vnc_management_tail_to_services.h
 ps2vnc_management_tail.o: ps2vnc_management_tail.c ps2vnc_services_compat.h ps2vnc_cross_types.h ps2vnc_services_imports.h ps2vnc_management_tail.inc ps2vnc_management_core_to_tail.h
-
-pstvnc_video_geometry.o: ../../src/video/geometry.c ../../src/video/geometry.h ../../src/video/mode.h
-	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@

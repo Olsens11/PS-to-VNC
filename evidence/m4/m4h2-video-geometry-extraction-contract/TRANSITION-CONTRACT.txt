@@ -1,0 +1,44 @@
+M4H-A transitional integration
+
+Historical callable surfaces remain available during this subtranche.
+
+screen_fit_geometry_valid_for_mode()
+    Becomes a thin adapter to:
+        pstvnc_video_geometry_safe_area_valid()
+
+screen_fit_geometry_valid()
+    Remains the active_video_mode adapter.
+    It does not move to permanent geometry.
+
+calculate_safe_desktop_geometry()
+    Remains a compatibility/runtime adapter.
+    It reads the current screen-fit state.
+    For FULL/bypass it preserves current full-raster behavior.
+    Otherwise it calls:
+        pstvnc_video_geometry_safe_area_rect()
+
+calculate_presented_desktop_geometry()
+    Remains a compatibility/runtime adapter.
+    It obtains current safe geometry and calls:
+        pstvnc_video_geometry_presented_rect()
+    with the existing VNC capacity.
+
+ps2vnc_config_presented_geometry_for_mode()
+    Remains owned by config/management as an adapter.
+    It converts config fields to geometry inputs and delegates the shared
+    rectangle arithmetic to the permanent geometry API.
+
+screen_fit_apply_preset()
+    Does NOT move.
+    It mutates calibration state and retains fallback policy.
+
+screen_fit_clamp_interactive()
+    Does NOT move in M4H-A.
+    It remains calibration-interaction policy.
+
+region_fits_u32()
+    Does NOT become a public geometry dependency in M4H-A.
+    geometry.c may use its own private overflow-safe rectangle bounds
+    helper so the permanent module remains self-contained.
+
+No mutable global state moves in M4H-A.

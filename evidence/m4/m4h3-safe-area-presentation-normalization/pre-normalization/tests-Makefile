@@ -39,22 +39,3 @@ $(BUILD_DIR)/video_mode_test: \
 
 clean:
 	rm -rf $(BUILD_DIR)
-
-
-GEOMETRY_TEST := .build/video_geometry_test
-
-.PHONY: geometry-unit
-unit: geometry-unit
-
-geometry-unit: $(GEOMETRY_TEST)
-	./$(GEOMETRY_TEST)
-
-$(GEOMETRY_TEST): unit/video_geometry_test.c ../src/video/geometry.c ../src/video/geometry.h ../src/video/mode.c ../src/video/mode.h support/gsKit.h
-	mkdir -p .build
-	$(CC) -O2 -std=c99 -Wall -Wextra -Werror -pedantic \
-		-Isupport \
-		-I../src \
-		unit/video_geometry_test.c \
-		../src/video/geometry.c \
-		../src/video/mode.c \
-		-o $(GEOMETRY_TEST)

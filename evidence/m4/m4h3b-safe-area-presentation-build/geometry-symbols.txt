@@ -1,0 +1,7 @@
+0011ca38 T calculate_presented_desktop_geometry
+0011c958 T calculate_safe_desktop_geometry
+00119448 T ps2vnc_config_presented_geometry_for_mode
+00109ba0 T pstvnc_video_geometry_presented_rect
+00109ab8 T pstvnc_video_geometry_safe_area_rect
+00109a18 T pstvnc_video_geometry_safe_area_valid
+00118188 T screen_fit_geometry_valid_for_mode

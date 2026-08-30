@@ -1,0 +1,35 @@
+M4H video/geometry boundary census policy
+
+The purpose of this tranche is not to move everything related to display
+layout into one module.
+
+The intended permanent video/geometry responsibility is pure or nearly
+pure calculation:
+
+  * logical desktop dimensions
+  * presented desktop rectangle
+  * mapping between logical and output coordinates
+  * mode-derived geometry calculations
+  * safe-area-related arithmetic when expressed through explicit inputs
+
+The following are NOT automatically owned by video/geometry:
+
+  * active_video_mode mutable state
+  * active_display_backend mutable state
+  * desktop geometry mutable state
+  * calibration persistence or UI
+  * RFB resize/session mechanics
+  * menu/display-mode UI
+  * PS2 GS programming
+  * framebuffer ownership
+  * display-control transactions
+
+M4H1 performs classification only.
+
+No live mutable state is moved in this census.
+No source code is modified.
+No machine image is built.
+No hardware qualification is required.
+
+The next gate is an exact extraction contract based on the evidence from
+this census.

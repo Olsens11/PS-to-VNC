@@ -1,0 +1,347 @@
+
+============================================================
+calculate_presented_desktop_geometry
+working/b4a/ps2vnc_calibration_tail.inc:766
+============================================================
+int calculate_presented_desktop_geometry(
+    unsigned int *out_x,
+    unsigned int *out_y,
+    unsigned int *out_w,
+    unsigned int *out_h)
+{
+    unsigned int safe_x;
+    unsigned int safe_y;
+    unsigned int safe_w;
+    unsigned int safe_h;
+    unsigned int width;
+    unsigned int height;
+
+    if (calculate_safe_desktop_geometry(
+            &safe_x, &safe_y, &safe_w, &safe_h) < 0)
+        return -1;
+
+    width = (safe_w < VNC_WIDTH) ? safe_w : VNC_WIDTH;
+    height = (safe_h < VNC_HEIGHT) ? safe_h : VNC_HEIGHT;
+
+    *out_x = safe_x + ((safe_w - width) / 2);
+    *out_y = safe_y + ((safe_h - height) / 2);
+    *out_w = width;
+    *out_h = height;
+
+    return region_fits_u32(
+        *out_x, *out_y, *out_w, *out_h,
+        OUTPUT_WIDTH, OUTPUT_HEIGHT) ? 0 : -1;
+}
+
+============================================================
+calculate_safe_desktop_geometry
+working/b4a/ps2vnc_calibration_tail.inc:705
+============================================================
+static int calculate_safe_desktop_geometry(
+    unsigned int *out_x,
+    unsigned int *out_y,
+    unsigned int *out_w,
+    unsigned int *out_h)
+{
+    int safe_x;
+    int safe_y;
+
+    if (screen_fit_full_bypass) {
+        *out_x = 0;
+        *out_y = 0;
+        *out_w = OUTPUT_WIDTH;
+        *out_h = OUTPUT_HEIGHT;
+        return 0;
+    }
+
+    if (!screen_fit_geometry_valid(
+            screen_fit_width,
+            screen_fit_height,
+            screen_fit_offset_x,
+            screen_fit_offset_y))
+        return -1;
+
+    safe_x =
+        (OUTPUT_WIDTH - screen_fit_width) / 2 +
+        screen_fit_offset_x;
+
+    safe_y =
+        (OUTPUT_HEIGHT - screen_fit_height) / 2 +
+        screen_fit_offset_y;
+
+    if (safe_x < 0 || safe_y < 0)
+        return -1;
+
+    if (!region_fits_u32(
+            (unsigned int)safe_x,
+            (unsigned int)safe_y,
+            (unsigned int)screen_fit_width,
+            (unsigned int)screen_fit_height,
+            OUTPUT_WIDTH,
+            OUTPUT_HEIGHT))
+        return -1;
+
+    *out_x = (unsigned int)safe_x;
+    *out_y = (unsigned int)safe_y;
+    *out_w = (unsigned int)screen_fit_width;
+    *out_h = (unsigned int)screen_fit_height;
+
+    return 0;
+}
+
+============================================================
+ps2vnc_config_presented_geometry_for_mode
+working/b4a/ps2vnc_calibration_core.inc:1030
+============================================================
+int ps2vnc_config_presented_geometry_for_mode(
+    const ps2vnc_video_mode_t *mode,
+    const ps2vnc_display_config_t *config,
+    unsigned int *out_x,
+    unsigned int *out_y,
+    unsigned int *out_w,
+    unsigned int *out_h)
+{
+    int safe_x;
+    int safe_y;
+    unsigned int width;
+    unsigned int height;
+
+    if (mode == NULL || config == NULL ||
+        out_x == NULL || out_y == NULL ||
+        out_w == NULL || out_h == NULL)
+        return -1;
+
+    if (!screen_fit_geometry_valid_for_mode(
+            mode,
+            config->safe_width,
+            config->safe_height,
+            config->safe_x,
+            config->safe_y))
+        return -1;
+
+    safe_x =
+        ((int)mode->raster_width - config->safe_width) / 2 +
+        config->safe_x;
+
+    safe_y =
+        ((int)mode->raster_height - config->safe_height) / 2 +
+        config->safe_y;
+
+    if (safe_x < 0 || safe_y < 0)
+        return -1;
+
+    width =
+        ((unsigned int)config->safe_width < VNC_WIDTH) ?
+        (unsigned int)config->safe_width : VNC_WIDTH;
+
+    height =
+        ((unsigned int)config->safe_height < VNC_HEIGHT) ?
+        (unsigned int)config->safe_height : VNC_HEIGHT;
+
+    *out_x =
+        (unsigned int)safe_x +
+        ((unsigned int)config->safe_width - width) / 2;
+
+    *out_y =
+        (unsigned int)safe_y +
+        ((unsigned int)config->safe_height - height) / 2;
+
+    *out_w = width;
+    *out_h = height;
+
+    return region_fits_u32(
+        *out_x,
+        *out_y,
+        *out_w,
+        *out_h,
+        mode->raster_width,
+        mode->raster_height
+    ) ? 0 : -1;
+}
+
+============================================================
+screen_fit_apply_preset
+working/b4a/ps2vnc_management_core.inc:750
+============================================================
+int screen_fit_apply_preset(
+    int width,
+    int height,
+    int offset_x,
+    int offset_y,
+    int full_bypass)
+{
+    if (full_bypass) {
+
+        /*
+         * FULL is one exact intentional preset.
+         */
+        if (width == OUTPUT_WIDTH &&
+            height == OUTPUT_HEIGHT &&
+            offset_x == 0 &&
+            offset_y == 0) {
+
+            screen_fit_width = OUTPUT_WIDTH;
+            screen_fit_height = OUTPUT_HEIGHT;
+            screen_fit_offset_x = 0;
+            screen_fit_offset_y = 0;
+            screen_fit_full_bypass = 1;
+
+            return 1;
+        }
+
+    } else if (screen_fit_geometry_valid(
+                   width,
+                   height,
+                   offset_x,
+                   offset_y)) {
+
+        screen_fit_width = width;
+        screen_fit_height = height;
+        screen_fit_offset_x = offset_x;
+        screen_fit_offset_y = offset_y;
+        screen_fit_full_bypass = 0;
+
+        return 1;
+    }
+
+    /*
+     * Reject the complete supplied preset.
+     * Do not preserve any component from bad input.
+     */
+    screen_fit_width = SCREEN_FIT_START_WIDTH;
+    screen_fit_height = SCREEN_FIT_START_HEIGHT;
+    screen_fit_offset_x = 0;
+    screen_fit_offset_y = 0;
+    screen_fit_full_bypass = 0;
+
+    return 0;
+}
+
+============================================================
+screen_fit_clamp_interactive
+working/b4a/ps2vnc_calibration_core.inc:1538
+============================================================
+void screen_fit_clamp_interactive(
+    int *width,
+    int *height,
+    int *offset_x,
+    int *offset_y)
+{
+    int remaining_x;
+    int remaining_y;
+    int centered_x;
+    int centered_y;
+    int max_positive_x;
+    int max_positive_y;
+
+    if (*width < SCREEN_FIT_MIN_WIDTH)
+        *width = SCREEN_FIT_MIN_WIDTH;
+
+    if (*width > OUTPUT_WIDTH)
+        *width = OUTPUT_WIDTH;
+
+    if (*height < SCREEN_FIT_MIN_HEIGHT)
+        *height = SCREEN_FIT_MIN_HEIGHT;
+
+    if (*height > OUTPUT_HEIGHT)
+        *height = OUTPUT_HEIGHT;
+
+    remaining_x = OUTPUT_WIDTH - *width;
+    remaining_y = OUTPUT_HEIGHT - *height;
+
+    centered_x = remaining_x / 2;
+    centered_y = remaining_y / 2;
+
+    max_positive_x = remaining_x - centered_x;
+    max_positive_y = remaining_y - centered_y;
+
+    if (*offset_x < -centered_x)
+        *offset_x = -centered_x;
+
+    if (*offset_x > max_positive_x)
+        *offset_x = max_positive_x;
+
+    if (*offset_y < -centered_y)
+        *offset_y = -centered_y;
+
+    if (*offset_y > max_positive_y)
+        *offset_y = max_positive_y;
+}
+
+============================================================
+screen_fit_geometry_valid
+working/b4a/ps2vnc_management_core.inc:728
+============================================================
+int screen_fit_geometry_valid(
+    int width,
+    int height,
+    int offset_x,
+    int offset_y)
+{
+    return screen_fit_geometry_valid_for_mode(
+        active_video_mode,
+        width,
+        height,
+        offset_x,
+        offset_y
+    );
+}
+
+============================================================
+screen_fit_geometry_valid_for_mode
+working/b4a/ps2vnc_management_core.inc:666
+============================================================
+static int screen_fit_geometry_valid_for_mode(
+    const ps2vnc_video_mode_t *mode,
+    int width,
+    int height,
+    int offset_x,
+    int offset_y)
+{
+    int output_width;
+    int output_height;
+    int remaining_x;
+    int remaining_y;
+    int centered_x;
+    int centered_y;
+    int max_positive_x;
+    int max_positive_y;
+
+    if (mode == NULL)
+        return 0;
+
+    output_width = (int)mode->raster_width;
+    output_height = (int)mode->raster_height;
+
+    /*
+     * D17AL-F1:
+     *
+     * width/height are the exact selected safe desktop rectangle.
+     * SCREEN_FIT_BORDER is visualization only and consumes no pixels.
+     */
+    if (width <= 0 || height <= 0)
+        return 0;
+
+    if (width > output_width ||
+        height > output_height)
+        return 0;
+
+    remaining_x = output_width - width;
+    remaining_y = output_height - height;
+
+    centered_x = remaining_x / 2;
+    centered_y = remaining_y / 2;
+
+    max_positive_x = remaining_x - centered_x;
+    max_positive_y = remaining_y - centered_y;
+
+    if (offset_x < -centered_x ||
+        offset_x > max_positive_x)
+        return 0;
+
+    if (offset_y < -centered_y ||
+        offset_y > max_positive_y)
+        return 0;
+
+    return 1;
+}

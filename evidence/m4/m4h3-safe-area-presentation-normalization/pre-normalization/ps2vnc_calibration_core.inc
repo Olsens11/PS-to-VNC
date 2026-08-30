@@ -1,5 +1,3 @@
-#include "video/geometry.h"
-
 
 
 static int ps2vnc_display_tx_parse(
@@ -1037,37 +1035,62 @@ int ps2vnc_config_presented_geometry_for_mode(
     unsigned int *out_w,
     unsigned int *out_h)
 {
-    pstvnc_video_rect_t safe_area;
-    pstvnc_video_rect_t presented;
+    int safe_x;
+    int safe_y;
+    unsigned int width;
+    unsigned int height;
 
     if (mode == NULL || config == NULL ||
         out_x == NULL || out_y == NULL ||
         out_w == NULL || out_h == NULL)
         return -1;
 
-    if (pstvnc_video_geometry_safe_area_rect(
+    if (!screen_fit_geometry_valid_for_mode(
             mode,
             config->safe_width,
             config->safe_height,
             config->safe_x,
-            config->safe_y,
-            &safe_area) < 0)
+            config->safe_y))
         return -1;
 
-    if (pstvnc_video_geometry_presented_rect(
-            mode,
-            &safe_area,
-            VNC_WIDTH,
-            VNC_HEIGHT,
-            &presented) < 0)
+    safe_x =
+        ((int)mode->raster_width - config->safe_width) / 2 +
+        config->safe_x;
+
+    safe_y =
+        ((int)mode->raster_height - config->safe_height) / 2 +
+        config->safe_y;
+
+    if (safe_x < 0 || safe_y < 0)
         return -1;
 
-    *out_x = presented.x;
-    *out_y = presented.y;
-    *out_w = presented.width;
-    *out_h = presented.height;
+    width =
+        ((unsigned int)config->safe_width < VNC_WIDTH) ?
+        (unsigned int)config->safe_width : VNC_WIDTH;
 
-    return 0;
+    height =
+        ((unsigned int)config->safe_height < VNC_HEIGHT) ?
+        (unsigned int)config->safe_height : VNC_HEIGHT;
+
+    *out_x =
+        (unsigned int)safe_x +
+        ((unsigned int)config->safe_width - width) / 2;
+
+    *out_y =
+        (unsigned int)safe_y +
+        ((unsigned int)config->safe_height - height) / 2;
+
+    *out_w = width;
+    *out_h = height;
+
+    return region_fits_u32(
+        *out_x,
+        *out_y,
+        *out_w,
+        *out_h,
+        mode->raster_width,
+        mode->raster_height
+    ) ? 0 : -1;
 }
 
 

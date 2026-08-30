@@ -1,0 +1,1096 @@
+diff --git a/tests/Makefile b/tests/Makefile
+index 1019267..7cdfb74 100644
+--- a/tests/Makefile
++++ b/tests/Makefile
+@@ -39,3 +39,22 @@ $(BUILD_DIR)/video_mode_test: \
+ 
+ clean:
+ 	rm -rf $(BUILD_DIR)
++
++
++GEOMETRY_TEST := .build/video_geometry_test
++
++.PHONY: geometry-unit
++unit: geometry-unit
++
++geometry-unit: $(GEOMETRY_TEST)
++	./$(GEOMETRY_TEST)
++
++$(GEOMETRY_TEST): unit/video_geometry_test.c ../src/video/geometry.c ../src/video/geometry.h ../src/video/mode.c ../src/video/mode.h support/gsKit.h
++	mkdir -p .build
++	$(CC) -O2 -std=c99 -Wall -Wextra -Werror -pedantic \
++		-Isupport \
++		-I../src \
++		unit/video_geometry_test.c \
++		../src/video/geometry.c \
++		../src/video/mode.c \
++		-o $(GEOMETRY_TEST)
+diff --git a/working/b4a/Makefile b/working/b4a/Makefile
+index 521fe1e..9fad776 100644
+--- a/working/b4a/Makefile
++++ b/working/b4a/Makefile
+@@ -1,7 +1,7 @@
+ GSKIT ?= $(PS2DEV)/gsKit
+ 
+ EE_BIN = PS2VNC.ELF
+-EE_OBJS = ps2ip.o pstvnc_video_mode.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_framebuffer_tail.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_management_tail.o ps2vnc_calibration_tail.o pstvnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
++EE_OBJS = ps2ip.o pstvnc_video_mode.o pstvnc_video_geometry.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_framebuffer_tail.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_management_tail.o ps2vnc_calibration_tail.o pstvnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
+ 
+ EE_INCS = -I$(GSKIT)/include -I../../src
+ 
+@@ -85,3 +85,6 @@ include $(PS2SDK)/samples/Makefile.eeglobal
+ ps2ip.o: ps2vnc_macro_body.inc ps2vnc_macro_region1.inc ps2vnc_macro_region2.inc ps2vnc_macro_region3.inc ps2vnc_runtime_support.inc ps2vnc_ui_controller.inc ps2vnc_framebuffer_engine.inc ps2vnc_cross_types.h ps2vnc_services_exports.h
+ ps2vnc_services.o: ps2vnc_services.c ps2vnc_services_compat.h ps2vnc_cross_types.h ps2vnc_services_imports.h ps2vnc_display_orchestration.inc ps2vnc_management_core.inc ps2vnc_calibration_core.inc ps2vnc_management_tail_to_services.h
+ ps2vnc_management_tail.o: ps2vnc_management_tail.c ps2vnc_services_compat.h ps2vnc_cross_types.h ps2vnc_services_imports.h ps2vnc_management_tail.inc ps2vnc_management_core_to_tail.h
++
++pstvnc_video_geometry.o: ../../src/video/geometry.c ../../src/video/geometry.h ../../src/video/mode.h
++	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+diff --git a/working/b4a/ps2vnc_calibration_core.inc b/working/b4a/ps2vnc_calibration_core.inc
+index 87c256e..cf57b5c 100644
+--- a/working/b4a/ps2vnc_calibration_core.inc
++++ b/working/b4a/ps2vnc_calibration_core.inc
+@@ -1,3 +1,5 @@
++#include "video/geometry.h"
++
+ 
+ 
+ static int ps2vnc_display_tx_parse(
+@@ -1035,62 +1037,37 @@ int ps2vnc_config_presented_geometry_for_mode(
+     unsigned int *out_w,
+     unsigned int *out_h)
+ {
+-    int safe_x;
+-    int safe_y;
+-    unsigned int width;
+-    unsigned int height;
++    pstvnc_video_rect_t safe_area;
++    pstvnc_video_rect_t presented;
+ 
+     if (mode == NULL || config == NULL ||
+         out_x == NULL || out_y == NULL ||
+         out_w == NULL || out_h == NULL)
+         return -1;
+ 
+-    if (!screen_fit_geometry_valid_for_mode(
++    if (pstvnc_video_geometry_safe_area_rect(
+             mode,
+             config->safe_width,
+             config->safe_height,
+             config->safe_x,
+-            config->safe_y))
++            config->safe_y,
++            &safe_area) < 0)
+         return -1;
+ 
+-    safe_x =
+-        ((int)mode->raster_width - config->safe_width) / 2 +
+-        config->safe_x;
+-
+-    safe_y =
+-        ((int)mode->raster_height - config->safe_height) / 2 +
+-        config->safe_y;
+-
+-    if (safe_x < 0 || safe_y < 0)
++    if (pstvnc_video_geometry_presented_rect(
++            mode,
++            &safe_area,
++            VNC_WIDTH,
++            VNC_HEIGHT,
++            &presented) < 0)
+         return -1;
+ 
+-    width =
+-        ((unsigned int)config->safe_width < VNC_WIDTH) ?
+-        (unsigned int)config->safe_width : VNC_WIDTH;
+-
+-    height =
+-        ((unsigned int)config->safe_height < VNC_HEIGHT) ?
+-        (unsigned int)config->safe_height : VNC_HEIGHT;
+-
+-    *out_x =
+-        (unsigned int)safe_x +
+-        ((unsigned int)config->safe_width - width) / 2;
+-
+-    *out_y =
+-        (unsigned int)safe_y +
+-        ((unsigned int)config->safe_height - height) / 2;
+-
+-    *out_w = width;
+-    *out_h = height;
+-
+-    return region_fits_u32(
+-        *out_x,
+-        *out_y,
+-        *out_w,
+-        *out_h,
+-        mode->raster_width,
+-        mode->raster_height
+-    ) ? 0 : -1;
++    *out_x = presented.x;
++    *out_y = presented.y;
++    *out_w = presented.width;
++    *out_h = presented.height;
++
++    return 0;
+ }
+ 
+ 
+diff --git a/working/b4a/ps2vnc_calibration_tail.inc b/working/b4a/ps2vnc_calibration_tail.inc
+index 73952c4..22533b5 100644
+--- a/working/b4a/ps2vnc_calibration_tail.inc
++++ b/working/b4a/ps2vnc_calibration_tail.inc
+@@ -1,3 +1,5 @@
++#include "video/geometry.h"
++
+ static void screen_fit_prim_sprite_clipped(
+     GSGLOBAL *g,
+     int x0,
+@@ -702,14 +704,13 @@ int run_screen_fit_calibration(
+  *     deliberate full 1280x720 bypass.
+  */
+ 
+-static int calculate_safe_desktop_geometry(
++int calculate_safe_desktop_geometry(
+     unsigned int *out_x,
+     unsigned int *out_y,
+     unsigned int *out_w,
+     unsigned int *out_h)
+ {
+-    int safe_x;
+-    int safe_y;
++    pstvnc_video_rect_t safe_area;
+ 
+     if (screen_fit_full_bypass) {
+         *out_x = 0;
+@@ -719,37 +720,19 @@ static int calculate_safe_desktop_geometry(
+         return 0;
+     }
+ 
+-    if (!screen_fit_geometry_valid(
++    if (pstvnc_video_geometry_safe_area_rect(
++            active_video_mode,
+             screen_fit_width,
+             screen_fit_height,
+             screen_fit_offset_x,
+-            screen_fit_offset_y))
+-        return -1;
+-
+-    safe_x =
+-        (OUTPUT_WIDTH - screen_fit_width) / 2 +
+-        screen_fit_offset_x;
+-
+-    safe_y =
+-        (OUTPUT_HEIGHT - screen_fit_height) / 2 +
+-        screen_fit_offset_y;
+-
+-    if (safe_x < 0 || safe_y < 0)
++            screen_fit_offset_y,
++            &safe_area) < 0)
+         return -1;
+ 
+-    if (!region_fits_u32(
+-            (unsigned int)safe_x,
+-            (unsigned int)safe_y,
+-            (unsigned int)screen_fit_width,
+-            (unsigned int)screen_fit_height,
+-            OUTPUT_WIDTH,
+-            OUTPUT_HEIGHT))
+-        return -1;
+-
+-    *out_x = (unsigned int)safe_x;
+-    *out_y = (unsigned int)safe_y;
+-    *out_w = (unsigned int)screen_fit_width;
+-    *out_h = (unsigned int)screen_fit_height;
++    *out_x = safe_area.x;
++    *out_y = safe_area.y;
++    *out_w = safe_area.width;
++    *out_h = safe_area.height;
+ 
+     return 0;
+ }
+@@ -769,28 +752,30 @@ int calculate_presented_desktop_geometry(
+     unsigned int *out_w,
+     unsigned int *out_h)
+ {
+-    unsigned int safe_x;
+-    unsigned int safe_y;
+-    unsigned int safe_w;
+-    unsigned int safe_h;
+-    unsigned int width;
+-    unsigned int height;
++    pstvnc_video_rect_t safe_area;
++    pstvnc_video_rect_t presented;
+ 
+     if (calculate_safe_desktop_geometry(
+-            &safe_x, &safe_y, &safe_w, &safe_h) < 0)
++            &safe_area.x,
++            &safe_area.y,
++            &safe_area.width,
++            &safe_area.height) < 0)
+         return -1;
+ 
+-    width = (safe_w < VNC_WIDTH) ? safe_w : VNC_WIDTH;
+-    height = (safe_h < VNC_HEIGHT) ? safe_h : VNC_HEIGHT;
++    if (pstvnc_video_geometry_presented_rect(
++            active_video_mode,
++            &safe_area,
++            VNC_WIDTH,
++            VNC_HEIGHT,
++            &presented) < 0)
++        return -1;
+ 
+-    *out_x = safe_x + ((safe_w - width) / 2);
+-    *out_y = safe_y + ((safe_h - height) / 2);
+-    *out_w = width;
+-    *out_h = height;
++    *out_x = presented.x;
++    *out_y = presented.y;
++    *out_w = presented.width;
++    *out_h = presented.height;
+ 
+-    return region_fits_u32(
+-        *out_x, *out_y, *out_w, *out_h,
+-        OUTPUT_WIDTH, OUTPUT_HEIGHT) ? 0 : -1;
++    return 0;
+ }
+ 
+ 
+diff --git a/working/b4a/ps2vnc_management_core.inc b/working/b4a/ps2vnc_management_core.inc
+index f6336c8..b6d84b1 100644
+--- a/working/b4a/ps2vnc_management_core.inc
++++ b/working/b4a/ps2vnc_management_core.inc
+@@ -1,3 +1,5 @@
++#include "video/geometry.h"
++
+ 
+ int draw_recovery_status(
+     GSGLOBAL *gsGlobal,
+@@ -663,59 +665,20 @@ int screen_fit_full_bypass = 0;
+  * placement, not absolute framebuffer coordinates.
+  */
+ 
+-static int screen_fit_geometry_valid_for_mode(
++int screen_fit_geometry_valid_for_mode(
+     const ps2vnc_video_mode_t *mode,
+     int width,
+     int height,
+     int offset_x,
+     int offset_y)
+ {
+-    int output_width;
+-    int output_height;
+-    int remaining_x;
+-    int remaining_y;
+-    int centered_x;
+-    int centered_y;
+-    int max_positive_x;
+-    int max_positive_y;
+-
+-    if (mode == NULL)
+-        return 0;
+-
+-    output_width = (int)mode->raster_width;
+-    output_height = (int)mode->raster_height;
+-
+-    /*
+-     * D17AL-F1:
+-     *
+-     * width/height are the exact selected safe desktop rectangle.
+-     * SCREEN_FIT_BORDER is visualization only and consumes no pixels.
+-     */
+-    if (width <= 0 || height <= 0)
+-        return 0;
+-
+-    if (width > output_width ||
+-        height > output_height)
+-        return 0;
+-
+-    remaining_x = output_width - width;
+-    remaining_y = output_height - height;
+-
+-    centered_x = remaining_x / 2;
+-    centered_y = remaining_y / 2;
+-
+-    max_positive_x = remaining_x - centered_x;
+-    max_positive_y = remaining_y - centered_y;
+-
+-    if (offset_x < -centered_x ||
+-        offset_x > max_positive_x)
+-        return 0;
+-
+-    if (offset_y < -centered_y ||
+-        offset_y > max_positive_y)
+-        return 0;
+-
+-    return 1;
++    return pstvnc_video_geometry_safe_area_valid(
++        mode,
++        width,
++        height,
++        offset_x,
++        offset_y
++    );
+ }
+ 
+ 
+diff --git a/src/video/geometry.c b/src/video/geometry.c
+new file mode 100644
+index 0000000..d6f36e0
+--- /dev/null
++++ b/src/video/geometry.c
+@@ -0,0 +1,193 @@
++#include "video/geometry.h"
++
++#include <limits.h>
++#include <stddef.h>
++
++static int pstvnc_video_geometry_rect_fits(
++    const pstvnc_video_rect_t *rect,
++    unsigned int bounds_width,
++    unsigned int bounds_height
++)
++{
++    if (rect == NULL)
++        return 0;
++
++    if (rect->width == 0u || rect->height == 0u)
++        return 0;
++
++    if (rect->x > bounds_width ||
++        rect->y > bounds_height)
++        return 0;
++
++    if (rect->width > bounds_width - rect->x ||
++        rect->height > bounds_height - rect->y)
++        return 0;
++
++    return 1;
++}
++
++int pstvnc_video_geometry_safe_area_valid(
++    const pstvnc_video_mode_t *mode,
++    int width,
++    int height,
++    int offset_x,
++    int offset_y
++)
++{
++    int output_width;
++    int output_height;
++    int remaining_x;
++    int remaining_y;
++    int centered_x;
++    int centered_y;
++    int max_positive_x;
++    int max_positive_y;
++
++    if (mode == NULL)
++        return 0;
++
++    /*
++     * Current PS-to-VNC modes are far below INT_MAX.  Keep the permanent
++     * arithmetic explicit rather than relying on an implementation-defined
++     * unsigned-to-signed conversion for a future malformed descriptor.
++     */
++    if (mode->raster_width > (unsigned int)INT_MAX ||
++        mode->raster_height > (unsigned int)INT_MAX)
++        return 0;
++
++    output_width = (int)mode->raster_width;
++    output_height = (int)mode->raster_height;
++
++    if (width <= 0 || height <= 0)
++        return 0;
++
++    if (width > output_width ||
++        height > output_height)
++        return 0;
++
++    remaining_x = output_width - width;
++    remaining_y = output_height - height;
++
++    centered_x = remaining_x / 2;
++    centered_y = remaining_y / 2;
++
++    /*
++     * With an odd remainder, integer centering leaves the extra pixel on
++     * the positive side.  This is the historical PS2VNC acceptance rule.
++     */
++    max_positive_x = remaining_x - centered_x;
++    max_positive_y = remaining_y - centered_y;
++
++    if (offset_x < -centered_x ||
++        offset_x > max_positive_x)
++        return 0;
++
++    if (offset_y < -centered_y ||
++        offset_y > max_positive_y)
++        return 0;
++
++    return 1;
++}
++
++int pstvnc_video_geometry_safe_area_rect(
++    const pstvnc_video_mode_t *mode,
++    int width,
++    int height,
++    int offset_x,
++    int offset_y,
++    pstvnc_video_rect_t *out_rect
++)
++{
++    int x;
++    int y;
++    pstvnc_video_rect_t rect;
++
++    if (mode == NULL || out_rect == NULL)
++        return -1;
++
++    if (!pstvnc_video_geometry_safe_area_valid(
++            mode,
++            width,
++            height,
++            offset_x,
++            offset_y))
++        return -1;
++
++    x =
++        ((int)mode->raster_width - width) / 2 +
++        offset_x;
++
++    y =
++        ((int)mode->raster_height - height) / 2 +
++        offset_y;
++
++    if (x < 0 || y < 0)
++        return -1;
++
++    rect.x = (unsigned int)x;
++    rect.y = (unsigned int)y;
++    rect.width = (unsigned int)width;
++    rect.height = (unsigned int)height;
++
++    if (!pstvnc_video_geometry_rect_fits(
++            &rect,
++            mode->raster_width,
++            mode->raster_height))
++        return -1;
++
++    *out_rect = rect;
++    return 0;
++}
++
++int pstvnc_video_geometry_presented_rect(
++    const pstvnc_video_mode_t *mode,
++    const pstvnc_video_rect_t *safe_area,
++    unsigned int desktop_capacity_width,
++    unsigned int desktop_capacity_height,
++    pstvnc_video_rect_t *out_rect
++)
++{
++    pstvnc_video_rect_t result;
++
++    if (mode == NULL ||
++        safe_area == NULL ||
++        out_rect == NULL)
++        return -1;
++
++    if (desktop_capacity_width == 0u ||
++        desktop_capacity_height == 0u)
++        return -1;
++
++    if (!pstvnc_video_geometry_rect_fits(
++            safe_area,
++            mode->raster_width,
++            mode->raster_height))
++        return -1;
++
++    result.width =
++        (safe_area->width < desktop_capacity_width) ?
++        safe_area->width :
++        desktop_capacity_width;
++
++    result.height =
++        (safe_area->height < desktop_capacity_height) ?
++        safe_area->height :
++        desktop_capacity_height;
++
++    result.x =
++        safe_area->x +
++        ((safe_area->width - result.width) / 2u);
++
++    result.y =
++        safe_area->y +
++        ((safe_area->height - result.height) / 2u);
++
++    if (!pstvnc_video_geometry_rect_fits(
++            &result,
++            mode->raster_width,
++            mode->raster_height))
++        return -1;
++
++    *out_rect = result;
++    return 0;
++}
+diff --git a/src/video/geometry.h b/src/video/geometry.h
+new file mode 100644
+index 0000000..7a5740e
+--- /dev/null
++++ b/src/video/geometry.h
+@@ -0,0 +1,68 @@
++#ifndef PSTVNC_VIDEO_GEOMETRY_H
++#define PSTVNC_VIDEO_GEOMETRY_H
++
++#include "video/mode.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/*
++ * Absolute rectangle in video-raster coordinates.
++ */
++typedef struct pstvnc_video_rect {
++    unsigned int x;
++    unsigned int y;
++    unsigned int width;
++    unsigned int height;
++} pstvnc_video_rect_t;
++
++/*
++ * Validate a safe-area selection.
++ *
++ * width/height describe the selected rectangle.
++ * offset_x/offset_y are signed displacements from centered placement.
++ */
++int pstvnc_video_geometry_safe_area_valid(
++    const pstvnc_video_mode_t *mode,
++    int width,
++    int height,
++    int offset_x,
++    int offset_y
++);
++
++/*
++ * Convert a valid center-relative safe-area selection to an absolute
++ * rectangle in the video-mode raster.
++ */
++int pstvnc_video_geometry_safe_area_rect(
++    const pstvnc_video_mode_t *mode,
++    int width,
++    int height,
++    int offset_x,
++    int offset_y,
++    pstvnc_video_rect_t *out_rect
++);
++
++/*
++ * Fit a logical desktop capacity inside an already resolved safe area.
++ *
++ * The selected desktop dimensions are:
++ *
++ *     min(safe_area, desktop_capacity)
++ *
++ * and are centered inside the safe area.
++ */
++int pstvnc_video_geometry_presented_rect(
++    const pstvnc_video_mode_t *mode,
++    const pstvnc_video_rect_t *safe_area,
++    unsigned int desktop_capacity_width,
++    unsigned int desktop_capacity_height,
++    pstvnc_video_rect_t *out_rect
++);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
+diff --git a/tests/unit/video_geometry_test.c b/tests/unit/video_geometry_test.c
+new file mode 100644
+index 0000000..396cd59
+--- /dev/null
++++ b/tests/unit/video_geometry_test.c
+@@ -0,0 +1,482 @@
++#include <stdio.h>
++
++#include "video/geometry.h"
++#include "video/mode.h"
++
++static int failures = 0;
++
++#define CHECK(expr)                                                     \
++    do {                                                                \
++        if (!(expr)) {                                                  \
++            fprintf(                                                    \
++                stderr,                                                 \
++                "FAIL:%s:%d: %s\n",                                     \
++                __FILE__,                                               \
++                __LINE__,                                               \
++                #expr                                                   \
++            );                                                          \
++            failures++;                                                 \
++        }                                                               \
++    } while (0)
++
++static pstvnc_video_mode_t synthetic_mode(
++    unsigned int width,
++    unsigned int height
++)
++{
++    pstvnc_video_mode_t mode = {0};
++
++    mode.name = "synthetic";
++    mode.raster_width = width;
++    mode.raster_height = height;
++
++    return mode;
++}
++
++static int historical_safe_area_valid(
++    const pstvnc_video_mode_t *mode,
++    int width,
++    int height,
++    int offset_x,
++    int offset_y
++)
++{
++    int output_width;
++    int output_height;
++    int remaining_x;
++    int remaining_y;
++    int centered_x;
++    int centered_y;
++    int max_positive_x;
++    int max_positive_y;
++
++    if (mode == NULL)
++        return 0;
++
++    output_width = (int)mode->raster_width;
++    output_height = (int)mode->raster_height;
++
++    if (width <= 0 || height <= 0)
++        return 0;
++
++    if (width > output_width ||
++        height > output_height)
++        return 0;
++
++    remaining_x = output_width - width;
++    remaining_y = output_height - height;
++
++    centered_x = remaining_x / 2;
++    centered_y = remaining_y / 2;
++
++    max_positive_x = remaining_x - centered_x;
++    max_positive_y = remaining_y - centered_y;
++
++    if (offset_x < -centered_x ||
++        offset_x > max_positive_x)
++        return 0;
++
++    if (offset_y < -centered_y ||
++        offset_y > max_positive_y)
++        return 0;
++
++    return 1;
++}
++
++static void check_validity_contract(void)
++{
++    pstvnc_video_mode_t mode =
++        synthetic_mode(100u, 80u);
++
++    int width;
++    int height;
++    int x;
++    int y;
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            NULL, 80, 60, 0, 0
++        ) == 0
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 0, 60, 0, 0
++        ) == 0
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 0, 0, 0
++        ) == 0
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 101, 60, 0, 0
++        ) == 0
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 81, 0, 0
++        ) == 0
++    );
++
++    /*
++     * Compare a representative grid directly against the exact historical
++     * acceptance arithmetic.
++     */
++    for (width = 79; width <= 100; width += 7) {
++        for (height = 59; height <= 80; height += 7) {
++            for (x = -15; x <= 15; x++) {
++                for (y = -15; y <= 15; y++) {
++                    CHECK(
++                        pstvnc_video_geometry_safe_area_valid(
++                            &mode,
++                            width,
++                            height,
++                            x,
++                            y
++                        )
++                        ==
++                        historical_safe_area_valid(
++                            &mode,
++                            width,
++                            height,
++                            x,
++                            y
++                        )
++                    );
++                }
++            }
++        }
++    }
++}
++
++static void check_offset_boundaries(void)
++{
++    pstvnc_video_mode_t mode =
++        synthetic_mode(100u, 80u);
++
++    /*
++     * Even remainder:
++     * 100 - 80 = 20, so X legal range is -10..+10.
++     */
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 60, -10, 0
++        ) == 1
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 60, 10, 0
++        ) == 1
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 60, -11, 0
++        ) == 0
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 60, 11, 0
++        ) == 0
++    );
++
++    /*
++     * Odd remainder:
++     * 100 - 79 = 21.
++     * Historical integer centering yields -10..+11.
++     */
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 79, 60, -10, 0
++        ) == 1
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 79, 60, 11, 0
++        ) == 1
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 79, 60, -11, 0
++        ) == 0
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 79, 60, 12, 0
++        ) == 0
++    );
++
++    /*
++     * Equivalent Y boundary:
++     * 80 - 60 = 20, so -10..+10.
++     */
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 60, 0, -10
++        ) == 1
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 60, 0, 10
++        ) == 1
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 60, 0, -11
++        ) == 0
++    );
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_valid(
++            &mode, 80, 60, 0, 11
++        ) == 0
++    );
++}
++
++static void check_safe_area_rect(void)
++{
++    pstvnc_video_mode_t mode =
++        synthetic_mode(100u, 80u);
++
++    pstvnc_video_rect_t rect;
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_rect(
++            &mode,
++            80,
++            60,
++            0,
++            0,
++            &rect
++        ) == 0
++    );
++
++    CHECK(rect.x == 10u);
++    CHECK(rect.y == 10u);
++    CHECK(rect.width == 80u);
++    CHECK(rect.height == 60u);
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_rect(
++            &mode,
++            80,
++            60,
++            -10,
++            -10,
++            &rect
++        ) == 0
++    );
++
++    CHECK(rect.x == 0u);
++    CHECK(rect.y == 0u);
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_rect(
++            &mode,
++            100,
++            80,
++            0,
++            0,
++            &rect
++        ) == 0
++    );
++
++    CHECK(rect.x == 0u);
++    CHECK(rect.y == 0u);
++    CHECK(rect.width == 100u);
++    CHECK(rect.height == 80u);
++
++    CHECK(
++        pstvnc_video_geometry_safe_area_rect(
++            &mode,
++            80,
++            60,
++            0,
++            0,
++            NULL
++        ) == -1
++    );
++}
++
++static void check_presented_rect(void)
++{
++    pstvnc_video_mode_t mode =
++        synthetic_mode(100u, 80u);
++
++    pstvnc_video_rect_t safe = {
++        10u,
++        10u,
++        80u,
++        60u,
++    };
++
++    pstvnc_video_rect_t presented;
++
++    /*
++     * Safe area is smaller than capacity: preserve it exactly.
++     */
++    CHECK(
++        pstvnc_video_geometry_presented_rect(
++            &mode,
++            &safe,
++            100u,
++            100u,
++            &presented
++        ) == 0
++    );
++
++    CHECK(presented.x == 10u);
++    CHECK(presented.y == 10u);
++    CHECK(presented.width == 80u);
++    CHECK(presented.height == 60u);
++
++    /*
++     * Both dimensions constrained by desktop capacity.
++     */
++    CHECK(
++        pstvnc_video_geometry_presented_rect(
++            &mode,
++            &safe,
++            40u,
++            20u,
++            &presented
++        ) == 0
++    );
++
++    CHECK(presented.x == 30u);
++    CHECK(presented.y == 30u);
++    CHECK(presented.width == 40u);
++    CHECK(presented.height == 20u);
++
++    /*
++     * Width-only capacity clamp.
++     */
++    CHECK(
++        pstvnc_video_geometry_presented_rect(
++            &mode,
++            &safe,
++            40u,
++            100u,
++            &presented
++        ) == 0
++    );
++
++    CHECK(presented.x == 30u);
++    CHECK(presented.y == 10u);
++    CHECK(presented.width == 40u);
++    CHECK(presented.height == 60u);
++
++    /*
++     * Height-only capacity clamp.
++     */
++    CHECK(
++        pstvnc_video_geometry_presented_rect(
++            &mode,
++            &safe,
++            100u,
++            20u,
++            &presented
++        ) == 0
++    );
++
++    CHECK(presented.x == 10u);
++    CHECK(presented.y == 30u);
++    CHECK(presented.width == 80u);
++    CHECK(presented.height == 20u);
++
++    CHECK(
++        pstvnc_video_geometry_presented_rect(
++            &mode,
++            &safe,
++            0u,
++            20u,
++            &presented
++        ) == -1
++    );
++}
++
++static void check_catalog_modes(void)
++{
++    static const char *names[] = {
++        "480p",
++        "720p",
++        "1080i",
++    };
++
++    unsigned int i;
++
++    for (i = 0u;
++         i < sizeof(names) / sizeof(names[0]);
++         i++) {
++
++        const pstvnc_video_mode_t *mode =
++            pstvnc_video_mode_by_name(names[i]);
++
++        pstvnc_video_rect_t rect;
++
++        CHECK(mode != NULL);
++
++        if (mode == NULL)
++            continue;
++
++        CHECK(
++            pstvnc_video_geometry_safe_area_valid(
++                mode,
++                (int)mode->raster_width,
++                (int)mode->raster_height,
++                0,
++                0
++            ) == 1
++        );
++
++        CHECK(
++            pstvnc_video_geometry_safe_area_rect(
++                mode,
++                (int)mode->raster_width,
++                (int)mode->raster_height,
++                0,
++                0,
++                &rect
++            ) == 0
++        );
++
++        CHECK(rect.x == 0u);
++        CHECK(rect.y == 0u);
++        CHECK(rect.width == mode->raster_width);
++        CHECK(rect.height == mode->raster_height);
++    }
++}
++
++int main(void)
++{
++    check_validity_contract();
++    check_offset_boundaries();
++    check_safe_area_rect();
++    check_presented_rect();
++    check_catalog_modes();
++
++    if (failures != 0) {
++        fprintf(
++            stderr,
++            "video_geometry_test: FAIL (%d)\n",
++            failures
++        );
++
++        return 1;
++    }
++
++    puts("video_geometry_test: PASS");
++    return 0;
++}
