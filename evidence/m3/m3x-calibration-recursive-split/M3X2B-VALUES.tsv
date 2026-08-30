@@ -1,0 +1,10 @@
+name	provider	definition_line
+SCREEN_FIT_FINE_STEP	management_macro	637
+SCREEN_FIT_FAST_STEP	management_macro	638
+SCREEN_FIT_BORDER	management_macro	639
+SCREEN_FIT_CORNER_SIZE	management_macro	640
+SCREEN_FIT_REPEAT_DELAY_POLLS	management_macro	641
+SCREEN_FIT_REPEAT_POLLS	management_macro	642
+SCREEN_FIT_START_WIDTH	management_macro	644
+SCREEN_FIT_START_HEIGHT	management_macro	645
+SCREEN_FIT_ACTION_MOVE	management_macro	650

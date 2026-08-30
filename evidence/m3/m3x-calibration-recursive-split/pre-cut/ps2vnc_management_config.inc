@@ -725,7 +725,7 @@ static int screen_fit_geometry_valid_for_mode(
  * Runtime mode management can validate a target mode explicitly through
  * screen_fit_geometry_valid_for_mode() without changing GS state.
  */
-int screen_fit_geometry_valid(
+static int screen_fit_geometry_valid(
     int width,
     int height,
     int offset_x,

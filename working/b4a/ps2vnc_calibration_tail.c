@@ -6,5 +6,6 @@
 #include "ps2vnc_services_compat.h"
 #include "ps2vnc_services_exports.h"
 
-#include "ps2vnc_management_config.inc"
-#include "ps2vnc_calibration_core.inc"
+
+#include "ps2vnc_calibration_core_to_tail.h"
+#include "ps2vnc_calibration_tail.inc"

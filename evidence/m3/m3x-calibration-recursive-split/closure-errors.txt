@@ -1,0 +1,14 @@
+ps2vnc_calibration_tail.inc:25:5: error: implicit declaration of function 'screen_fit_prim_sprite'; did you mean 'screen_fit_prim_sprite_clipped'? [-Wimplicit-function-declaration]
+ps2vnc_calibration_tail.inc:117:22: error: 'SCREEN_FIT_CORNER_SIZE' undeclared (first use in this function)
+ps2vnc_calibration_tail.inc:117:22: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_calibration_tail.inc:262:14: error: 'SCREEN_FIT_BORDER' undeclared (first use in this function)
+ps2vnc_calibration_tail.inc:479:5: error: implicit declaration of function 'screen_fit_clamp_interactive' [-Wimplicit-function-declaration]
+ps2vnc_calibration_tail.inc:543:25: error: implicit declaration of function 'ps2vnc_display_save_to_pi'; did you mean 'ps2vnc_display_destroy'? [-Wimplicit-function-declaration]
+ps2vnc_calibration_tail.inc:586:21: error: 'SCREEN_FIT_START_WIDTH' undeclared (first use in this function)
+ps2vnc_calibration_tail.inc:587:22: error: 'SCREEN_FIT_START_HEIGHT' undeclared (first use in this function)
+ps2vnc_calibration_tail.inc:602:24: error: 'SCREEN_FIT_FINE_STEP' undeclared (first use in this function)
+ps2vnc_calibration_tail.inc:612:27: error: 'SCREEN_FIT_ACTION_MOVE' undeclared (first use in this function)
+ps2vnc_calibration_tail.inc:630:25: error: 'SCREEN_FIT_REPEAT_DELAY_POLLS' undeclared (first use in this function)
+ps2vnc_calibration_tail.inc:633:22: error: 'SCREEN_FIT_REPEAT_POLLS' undeclared (first use in this function)
+ps2vnc_calibration_tail.inc:636:28: error: 'SCREEN_FIT_FAST_STEP' undeclared (first use in this function)
+ps2vnc_calibration_tail.inc:722:10: error: implicit declaration of function 'screen_fit_geometry_valid' [-Wimplicit-function-declaration]

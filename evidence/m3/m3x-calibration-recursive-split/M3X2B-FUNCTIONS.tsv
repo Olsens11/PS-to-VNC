@@ -1,0 +1,5 @@
+name	provider	file	line	kind	source_declaration	header_declaration
+ps2vnc_display_save_to_pi	calibration_core	ps2vnc_calibration_state.inc	796	NF	static int ps2vnc_display_save_to_pi (int width, int height, int offset_x, int offset_y);	extern int ps2vnc_display_save_to_pi (int width, int height, int offset_x, int offset_y);
+screen_fit_clamp_interactive	calibration_core	ps2vnc_calibration_state.inc	1538	NF	static void screen_fit_clamp_interactive (int *width, int *height, int *offset_x, int *offset_y);	extern void screen_fit_clamp_interactive (int *width, int *height, int *offset_x, int *offset_y);
+screen_fit_geometry_valid	management	ps2vnc_management_config.inc	728	NF	static int screen_fit_geometry_valid (int width, int height, int offset_x, int offset_y);	extern int screen_fit_geometry_valid (int width, int height, int offset_x, int offset_y);
+screen_fit_prim_sprite	calibration_core	ps2vnc_calibration_state.inc	1601	NF	static void screen_fit_prim_sprite (GSGLOBAL *g, int x0, int y0, int x1, int y1, int z, u64 color);	extern void screen_fit_prim_sprite (GSGLOBAL *g, int x0, int y0, int x1, int y1, int z, u64 color);

@@ -1,0 +1,154 @@
+rm -f PS2VNC.ELF ps2ip.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_framebuffer_tail.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_calibration_tail.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o DEV9_irx.c NETMAN_irx.c SMAP_irx.c
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2ip.c -o ps2ip.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_runtime.c -o ps2vnc_runtime.o
+In file included from ps2vnc_runtime.c:286:
+ps2vnc_runtime_core.inc:286:21: warning: 'hires_bg_storage_row' declared 'static' but never defined [-Wunused-function]
+  286 | static unsigned int hires_bg_storage_row(unsigned int raster_y);
+      |                     ^~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_runtime_tail.c -o ps2vnc_runtime_tail.o
+ps2vnc_runtime_tail.c:225:5: warning: 'video_mode_vga_1280_75' defined but not used [-Wunused-const-variable=]
+  225 |     video_mode_vga_1280_75,
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:221:5: warning: 'video_mode_vga_1024_85' defined but not used [-Wunused-const-variable=]
+  221 |     video_mode_vga_1024_85,
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:217:5: warning: 'video_mode_vga_1024_75' defined but not used [-Wunused-const-variable=]
+  217 |     video_mode_vga_1024_75,
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:213:5: warning: 'video_mode_vga_1024_70' defined but not used [-Wunused-const-variable=]
+  213 |     video_mode_vga_1024_70,
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:209:5: warning: 'video_mode_vga_800_85' defined but not used [-Wunused-const-variable=]
+  209 |     video_mode_vga_800_85,
+      |     ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:205:5: warning: 'video_mode_vga_800_75' defined but not used [-Wunused-const-variable=]
+  205 |     video_mode_vga_800_75,
+      |     ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:201:5: warning: 'video_mode_vga_800_72' defined but not used [-Wunused-const-variable=]
+  201 |     video_mode_vga_800_72,
+      |     ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:197:5: warning: 'video_mode_vga_800_56' defined but not used [-Wunused-const-variable=]
+  197 |     video_mode_vga_800_56,
+      |     ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:193:5: warning: 'video_mode_vga_640_85' defined but not used [-Wunused-const-variable=]
+  193 |     video_mode_vga_640_85,
+      |     ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:189:5: warning: 'video_mode_vga_640_75' defined but not used [-Wunused-const-variable=]
+  189 |     video_mode_vga_640_75,
+      |     ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:185:5: warning: 'video_mode_vga_640_72' defined but not used [-Wunused-const-variable=]
+  185 |     video_mode_vga_640_72,
+      |     ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:174:34: note: in definition of macro 'D17AL_VGA_OTHER'
+  174 | static const ps2vnc_video_mode_t var = { \
+      |                                  ^~~
+ps2vnc_runtime_tail.c:160:34: warning: 'video_mode_vga_1280_60' defined but not used [-Wunused-const-variable=]
+  160 | static const ps2vnc_video_mode_t video_mode_vga_1280_60 = {
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:150:34: warning: 'video_mode_vga_1024_60' defined but not used [-Wunused-const-variable=]
+  150 | static const ps2vnc_video_mode_t video_mode_vga_1024_60 = {
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:140:34: warning: 'video_mode_vga_800_60' defined but not used [-Wunused-const-variable=]
+  140 | static const ps2vnc_video_mode_t video_mode_vga_800_60 = {
+      |                                  ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:130:34: warning: 'video_mode_vga_640_60' defined but not used [-Wunused-const-variable=]
+  130 | static const ps2vnc_video_mode_t video_mode_vga_640_60 = {
+      |                                  ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:116:34: warning: 'video_mode_1080i' defined but not used [-Wunused-const-variable=]
+  116 | static const ps2vnc_video_mode_t video_mode_1080i = {
+      |                                  ^~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:105:34: warning: 'video_mode_720p' defined but not used [-Wunused-const-variable=]
+  105 | static const ps2vnc_video_mode_t video_mode_720p = {
+      |                                  ^~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:94:34: warning: 'video_mode_576p' defined but not used [-Wunused-const-variable=]
+   94 | static const ps2vnc_video_mode_t video_mode_576p = {
+      |                                  ^~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:83:34: warning: 'video_mode_576i' defined but not used [-Wunused-const-variable=]
+   83 | static const ps2vnc_video_mode_t video_mode_576i = {
+      |                                  ^~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:60:34: warning: 'video_mode_480p_hires' defined but not used [-Wunused-const-variable=]
+   60 | static const ps2vnc_video_mode_t video_mode_480p_hires = {
+      |                                  ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:49:34: warning: 'video_mode_480p' defined but not used [-Wunused-const-variable=]
+   49 | static const ps2vnc_video_mode_t video_mode_480p = {
+      |                                  ^~~~~~~~~~~~~~~
+ps2vnc_runtime_tail.c:38:34: warning: 'video_mode_480i' defined but not used [-Wunused-const-variable=]
+   38 | static const ps2vnc_video_mode_t video_mode_480i = {
+      |                                  ^~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_framebuffer.c -o ps2vnc_framebuffer.o
+In file included from ps2vnc_framebuffer.c:19:
+ps2vnc_framebuffer_core.inc:1158:12: warning: 'sync_copy_hires_region' defined but not used [-Wunused-function]
+ 1158 | static int sync_copy_hires_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_framebuffer_tail.c -o ps2vnc_framebuffer_tail.o
+In file included from ps2vnc_framebuffer_tail.c:20:
+ps2vnc_framebuffer_tail.inc:1052:12: warning: 'update_hires_background_region' defined but not used [-Wunused-function]
+ 1052 | static int update_hires_background_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_ui_display.c -o ps2vnc_ui_display.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_ui_tail.c -o ps2vnc_ui_tail.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_display.c -o ps2vnc_display.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_display_tail.c -o ps2vnc_display_tail.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_services.c -o ps2vnc_services.o
+In file included from ps2vnc_services.c:10:
+ps2vnc_calibration_core.inc:687:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+  687 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_calibration_tail.c -o ps2vnc_calibration_tail.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_config_text.c -o ps2vnc_config_text.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_identity.c -o ps2vnc_identity.o
+mips64r5900el-ps2-elf-gcc \
+	-D_EE \
+	-DF_gsKit_hires_init_screen=1 \
+	-G0 \
+	-march=r5900 \
+	-mhard-float \
+	-msingle-float \
+	-mno-llsc \
+	-mno-shared \
+	-mplt \
+	-O2 \
+	-g \
+	-flto=auto \
+	-fno-fat-lto-objects \
+	-I/usr/local/ps2dev/gsKit/include \
+	-I/usr/local/ps2dev/ps2sdk/ee/include \
+	-I/usr/local/ps2dev/ps2sdk/common/include \
+	-c ps2vnc_gsHires.c -o ps2vnc_gsHires.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c DEV9_irx.c -o DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c NETMAN_irx.c -o NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c SMAP_irx.c -o SMAP_irx.o
+mips64r5900el-ps2-elf-gcc -T/usr/local/ps2dev/ps2sdk/ee/startup/linkfile -O2 -o PS2VNC.ELF ps2ip.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_framebuffer_tail.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_calibration_tail.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o -L/usr/local/ps2dev/ps2sdk/ee/lib -Wl,-zmax-page-size=128   -L/usr/local/ps2dev/gsKit/lib -lgskit -ldmakit -lpad -lnetman /work/build/deps/libps2ip_mtu1458_wscale128.a -ldebug -lpatches -Wl,--wrap=sendto

@@ -1,0 +1,30 @@
+working/b4a/ps2vnc_calibration_tail.inc:117:    const int size = SCREEN_FIT_CORNER_SIZE;
+working/b4a/ps2vnc_calibration_tail.inc:253:     * SCREEN_FIT_BORDER is visualization only, so draw it immediately
+working/b4a/ps2vnc_calibration_tail.inc:262:        x0 - SCREEN_FIT_BORDER,
+working/b4a/ps2vnc_calibration_tail.inc:263:        y0 - SCREEN_FIT_BORDER,
+working/b4a/ps2vnc_calibration_tail.inc:264:        x1 + SCREEN_FIT_BORDER,
+working/b4a/ps2vnc_calibration_tail.inc:272:        x0 - SCREEN_FIT_BORDER,
+working/b4a/ps2vnc_calibration_tail.inc:274:        x1 + SCREEN_FIT_BORDER,
+working/b4a/ps2vnc_calibration_tail.inc:275:        y1 + SCREEN_FIT_BORDER,
+working/b4a/ps2vnc_calibration_tail.inc:282:        x0 - SCREEN_FIT_BORDER,
+working/b4a/ps2vnc_calibration_tail.inc:294:        x1 + SCREEN_FIT_BORDER,
+working/b4a/ps2vnc_calibration_tail.inc:586:            width = SCREEN_FIT_START_WIDTH;
+working/b4a/ps2vnc_calibration_tail.inc:587:            height = SCREEN_FIT_START_HEIGHT;
+working/b4a/ps2vnc_calibration_tail.inc:602:            int step = SCREEN_FIT_FINE_STEP;
+working/b4a/ps2vnc_calibration_tail.inc:612:                action |= SCREEN_FIT_ACTION_MOVE;
+working/b4a/ps2vnc_calibration_tail.inc:630:                        SCREEN_FIT_REPEAT_DELAY_POLLS &&
+working/b4a/ps2vnc_calibration_tail.inc:632:                      SCREEN_FIT_REPEAT_DELAY_POLLS) %
+working/b4a/ps2vnc_calibration_tail.inc:633:                     SCREEN_FIT_REPEAT_POLLS) == 0) {
+working/b4a/ps2vnc_calibration_tail.inc:636:                    step = SCREEN_FIT_FAST_STEP;
+working/b4a/ps2vnc_management_config.inc:637:#define SCREEN_FIT_FINE_STEP            1
+working/b4a/ps2vnc_management_config.inc:638:#define SCREEN_FIT_FAST_STEP            4
+working/b4a/ps2vnc_management_config.inc:639:#define SCREEN_FIT_BORDER               4
+working/b4a/ps2vnc_management_config.inc:640:#define SCREEN_FIT_CORNER_SIZE          56
+working/b4a/ps2vnc_management_config.inc:641:#define SCREEN_FIT_REPEAT_DELAY_POLLS  18
+working/b4a/ps2vnc_management_config.inc:642:#define SCREEN_FIT_REPEAT_POLLS         4
+working/b4a/ps2vnc_management_config.inc:644:#define SCREEN_FIT_START_WIDTH   (OUTPUT_WIDTH)
+working/b4a/ps2vnc_management_config.inc:645:#define SCREEN_FIT_START_HEIGHT  (OUTPUT_HEIGHT)
+working/b4a/ps2vnc_management_config.inc:650:#define SCREEN_FIT_ACTION_MOVE   0x10000u
+working/b4a/ps2vnc_management_config.inc:692:     * SCREEN_FIT_BORDER is visualization only and consumes no pixels.
+working/b4a/ps2vnc_management_config.inc:795:    screen_fit_width = SCREEN_FIT_START_WIDTH;
+working/b4a/ps2vnc_management_config.inc:796:    screen_fit_height = SCREEN_FIT_START_HEIGHT;
