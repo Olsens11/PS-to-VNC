@@ -1,0 +1,5 @@
+mode = 480p
+safe_width = 640
+safe_height = 400
+safe_x = 20
+safe_y = -10

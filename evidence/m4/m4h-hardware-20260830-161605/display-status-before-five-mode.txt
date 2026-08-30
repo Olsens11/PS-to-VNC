@@ -1,0 +1,10 @@
+version=1
+txid=0
+state=IDLE
+action=
+mode=
+lease_seconds=0
+active_mode=
+baseline_mode=
+error_code=0
+startup_mode=480p

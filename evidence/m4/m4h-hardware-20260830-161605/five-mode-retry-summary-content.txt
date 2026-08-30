@@ -1,0 +1,15 @@
+
+============================================================
+/home/ps2/PS-to-VNC/evidence/m4/m4h-hardware-20260830-161605/five-mode-regression-clean/SUMMARY.txt
+============================================================
+RESULT=PASS
+PASS_COUNT=5
+FAIL_COUNT=0
+ITERATIONS_REQUESTED=5
+STARTUP_MODE_INVARIANT=480p
+CURRENT_ITERATION=5
+CURRENT_TXID=
+CURRENT_MODE=1080i
+ERROR=
+AUTOMATIC_FAILURE_RESTORE=NO
+LEASE_IS_FAILURE_SAFETY_AUTHORITY=YES

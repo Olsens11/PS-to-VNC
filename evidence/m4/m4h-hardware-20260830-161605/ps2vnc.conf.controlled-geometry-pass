@@ -1,0 +1,286 @@
+# =============================================================================
+# PS2VNC Configuration
+# =============================================================================
+#
+# This file contains user-adjustable PS2VNC settings.
+#
+# It is intended to remain readable and editable by a person.  Future PS2VNC
+# versions may add additional sections and settings here rather than creating
+# separate configuration files for every feature.
+#
+#
+# FILE FORMAT
+# -----------
+#
+# Settings are grouped into sections:
+#
+#     [section]
+#
+# Individual settings use:
+#
+#     setting_name = value
+#
+# Blank lines are allowed.
+#
+# A line beginning with # is a comment.
+#
+# A # after a setting also begins a comment:
+#
+#     example = 123    # explanatory comment
+#
+#
+# FORWARD COMPATIBILITY
+# ---------------------
+#
+# Older PS2VNC versions ignore settings and sections they do not understand.
+# This allows newer versions to add options without making the whole file
+# unusable by older builds.
+#
+# Do not reuse the same recognized setting twice in one section.  Duplicate
+# active settings are treated as an invalid configuration because it would be
+# ambiguous which value should win.
+#
+#
+# SAFETY
+# ------
+#
+# Configuration values are treated only as DATA.
+#
+# PS2VNC does not execute shell commands, expand variables, evaluate
+# expressions, or interpret executable text from this file.
+#
+# Numeric settings recognized by the PS2 client must contain plain decimal
+# numbers.  Examples such as these are INVALID:
+#
+#     safe_width = $WIDTH
+#     safe_width = 640+20
+#     safe_width = 0x500
+#     safe_width = 1280px
+#     safe_width = $(command)
+#
+# If a recognized display setting is malformed or describes geometry that
+# cannot safely fit inside the current video mode, PS2VNC will reject that
+# stored display preset instead of using unsafe coordinates.
+#
+#
+# =============================================================================
+# DISPLAY
+# =============================================================================
+#
+# These settings store the result of screen calibration.
+#
+# IMPORTANT:
+#
+# safe_width and safe_height are the dimensions of the ACTUAL USABLE remote
+# desktop shown by PS2VNC.  They are NOT the larger temporary white calibration
+# border that is drawn while adjusting the television.
+#
+# safe_x and safe_y move that calibrated area relative to the normal centered
+# position:
+#
+#     negative safe_x = move left
+#     positive safe_x = move right
+#
+#     negative safe_y = move up
+#     positive safe_y = move down
+#
+# The valid numerical range depends on the physical video mode and the chosen
+# safe width/height.  PS2VNC validates the complete rectangle before using it.
+#
+# The settings below are intentionally COMMENTED OUT in the template.
+#
+# Until calibration has actually been saved, PS2VNC should behave as though no
+# stored display preset exists and show the normal calibration interface.
+#
+# When persistence is wired in, PS2VNC will update the active values while
+# preserving the comments and unrelated future settings in this file.
+#
+
+[display]
+hide_locked_modes = true
+startup_mode = 480p
+
+safe_width = 1823
+safe_height = 1026
+safe_x = 2
+safe_y = 2
+
+
+# =============================================================================
+# FUTURE SETTINGS
+# =============================================================================
+#
+# Additional PS2VNC options can be added below in their own sections.
+#
+# Examples of categories we may eventually want here include:
+#
+#     [input]
+#     [network]
+#     [desktop]
+#     [interface]
+#
+# These are documentation placeholders only.  No settings in those future
+# sections are currently interpreted by the PS2VNC client.
+#
+
+[display.720p]
+safe_width = 1225
+safe_height = 696
+safe_x = -2
+safe_y = -2
+
+[display.1080i]
+locked = false
+safe_width = 1822
+safe_height = 1026
+safe_x = 1
+safe_y = 2
+
+[display.480p]
+safe_width = 640
+safe_height = 400
+safe_x = 20
+safe_y = -10
+
+[display.576p]
+locked = true
+safe_width = 712
+safe_height = 568
+safe_x = 0
+safe_y = 0
+
+# -----------------------------------------------------------------------------
+# D17AK 480p HIRES comparison profile.
+#
+# Same DTV 480p electrical output as ordinary 480p, but rendered through the
+# HIRES pass engine.  Keep ordinary [display.480p] intact as the Standard
+# control.  Initial usable desktop deliberately stays near the historical
+# 704x462 480p framebuffer size for meaningful A/B performance testing.
+# -----------------------------------------------------------------------------
+[display.480p-hires]
+safe_width = 702
+safe_height = 477
+safe_x = 1
+safe_y = 2
+
+# ============================================================================
+# D17AL expanded display-mode calibration presets.
+# Added automatically after PS2/Pi contract validation.
+# Existing calibrated sections above were left untouched.
+# ============================================================================
+
+[display.480i]
+safe_width = 700
+safe_height = 472
+safe_x = 2
+safe_y = -4
+
+[display.576i]
+locked = false
+safe_width = 701
+safe_height = 548
+safe_x = -1
+safe_y = 0
+
+[display.640x480-60]
+safe_width = 619
+safe_height = 455
+safe_x = 10
+safe_y = 13
+
+[display.640x480-72]
+locked = true
+safe_width = 632
+safe_height = 472
+safe_x = 0
+safe_y = 0
+
+[display.640x480-75]
+locked = true
+safe_width = 632
+safe_height = 472
+safe_x = 0
+safe_y = 0
+
+[display.640x480-85]
+locked = true
+safe_width = 632
+safe_height = 472
+safe_x = 0
+safe_y = 0
+
+[display.800x600-56]
+locked = true
+safe_width = 792
+safe_height = 592
+safe_x = 0
+safe_y = 0
+
+[display.800x600-60]
+safe_width = 793
+safe_height = 459
+safe_x = -3
+safe_y = -50
+
+[display.800x600-72]
+locked = true
+safe_width = 792
+safe_height = 592
+safe_x = 0
+safe_y = 0
+
+[display.800x600-75]
+locked = true
+safe_width = 792
+safe_height = 592
+safe_x = 0
+safe_y = 0
+
+[display.800x600-85]
+locked = true
+safe_width = 792
+safe_height = 592
+safe_x = 0
+safe_y = 0
+
+[display.1024x768-60]
+safe_width = 947
+safe_height = 696
+safe_x = 39
+safe_y = -31
+
+[display.1024x768-70]
+locked = true
+safe_width = 1016
+safe_height = 760
+safe_x = 0
+safe_y = 0
+
+[display.1024x768-75]
+locked = true
+safe_width = 1016
+safe_height = 760
+safe_x = 0
+safe_y = 0
+
+[display.1024x768-85]
+locked = true
+safe_width = 1016
+safe_height = 760
+safe_x = 0
+safe_y = 0
+
+[display.1280x1024-60]
+locked = true
+safe_width = 1272
+safe_height = 1016
+safe_x = 0
+safe_y = 0
+
+[display.1280x1024-75]
+locked = true
+safe_width = 1272
+safe_height = 1016
+safe_x = 0
+safe_y = 0
+

@@ -1,0 +1,11 @@
+257:        str(Path.home() / "ps2vnc/runtime/ps2vnc.conf"),
+479:    text = CONFIG_FILE.read_text()
+540:        prefix=".ps2vnc.conf.",
+559:    text = CONFIG_FILE.read_text()
+649:        prefix=".ps2vnc.conf.",
+705:    text = CONFIG_FILE.read_text()
+798:        prefix=".ps2vnc.conf.",
+837:    text = CONFIG_FILE.read_text()
+1726:    def do_GET(self):
+1760:        if self.path == "/ps2vnc.conf":
+1762:                body = CONFIG_FILE.read_bytes()

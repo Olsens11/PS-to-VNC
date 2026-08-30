@@ -1,0 +1,6 @@
+XTIGERVNC_PID=709
+/usr/bin/Xtigervnc :1 -geometry 1280x720 -depth 24 -rfbport 5900 -SecurityTypes None -localhost no -AlwaysShared -ac -interface 192.168.50.1 
+TRY_DISPLAY=:1
+  dimensions:    704x462 pixels (186x122 millimeters)
+TRY_DISPLAY=:0
+TRY_DISPLAY=:2
