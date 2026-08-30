@@ -230,3 +230,16 @@ A second clean build reproduced that identity exactly.
 The moved trim behavior passed a deterministic M0-vs-M1 host parity test.
 
 M1D hardware regression remains mandatory before M1 may close.
+
+## M1D hardware gate
+
+The first extracted module passed the required real-hardware regression.
+
+Machine result: PASS.
+
+Physical result: PASS.
+
+Startup gate: PASS.
+
+The migration can proceed to M1E closure and selection of the next mechanical
+extraction boundary.

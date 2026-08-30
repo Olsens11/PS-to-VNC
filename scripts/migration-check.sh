@@ -908,7 +908,56 @@ then
     test "$M1_DUT_TRANSLATION_UNIT_LINKAGE" = 'PASS'
     test "$M1_DUT_HOST_CONFIG_TEXT_PARITY" = 'PASS'
 
-    test "$M1_DUT_HARDWARE_STATUS" = 'NOT_RUN'
+    case "$M1_DUT_HARDWARE_STATUS" in
+        NOT_RUN)
+            echo 'M1_DUT_HARDWARE_AUTHORITY=NOT_YET_RUN'
+            ;;
+
+        PASS)
+            test "$M1_DUT_HARDWARE_RESULT" = \
+                'M1D_PASS_MACHINE_AND_PHYSICAL'
+
+            test "$M1_DUT_MACHINE_RESULT" = 'PASS'
+            test "$M1_DUT_PHYSICAL_RESULT" = 'PASS'
+            test "$M1_DUT_STARTUP_GATE" = 'PASS'
+
+            test -d "$M1_DUT_HARDWARE_EVIDENCE"
+            test -f \
+                "$M1_DUT_HARDWARE_EVIDENCE/MACHINE-RESULT.env"
+            test -f \
+                "$M1_DUT_HARDWARE_EVIDENCE/PHYSICAL-OBSERVATION.txt"
+            test -f \
+                "$M1_DUT_HARDWARE_EVIDENCE/SHA256SUMS.txt"
+
+            test "$(
+                sha256sum \
+                    "$M1_DUT_HARDWARE_EVIDENCE/SHA256SUMS.txt" |
+                awk '{print $1}'
+            )" = \
+                "$M1_DUT_HARDWARE_EVIDENCE_MANIFEST_SHA256"
+
+            (
+                cd "$M1_DUT_HARDWARE_EVIDENCE"
+                sha256sum -c SHA256SUMS.txt >/dev/null
+            )
+
+            grep -Fxq \
+                'MACHINE_RESULT=PASS' \
+                "$M1_DUT_HARDWARE_EVIDENCE/MACHINE-RESULT.env"
+
+            grep -Fxq \
+                'PHYSICAL_RESULT=PASS' \
+                "$M1_DUT_HARDWARE_EVIDENCE/PHYSICAL-OBSERVATION.txt"
+
+            echo 'M1_DUT_HARDWARE_AUTHORITY=PASS'
+            ;;
+
+        *)
+            echo \
+                "ERROR=UNKNOWN_M1_DUT_HARDWARE_STATUS:$M1_DUT_HARDWARE_STATUS"
+            exit 1
+            ;;
+    esac
 
     case "$M1_DUT_DEPLOYMENT_STATUS" in
         NOT_DEPLOYED)
@@ -997,7 +1046,7 @@ then
     echo "M1_DUT_ELF_SHA256=$M1_DUT_ELF_SHA256"
     echo 'M1_DUT_SECOND_BUILD_REPRODUCTION=BYTE_EXACT'
     echo 'M1_DUT_HOST_CONFIG_TEXT_PARITY=PASS'
-    echo 'M1_DUT_HARDWARE_STATUS=NOT_RUN'
+    echo "M1_DUT_HARDWARE_STATUS=$M1_DUT_HARDWARE_STATUS"
     echo 'M1C_DUT_AUTHORITY=PASS'
 else
     echo 'M1C_DUT_AUTHORITY=NOT_AT_M1D_GATE'

@@ -1,0 +1,6 @@
+M1D_PHYSICAL_OBSERVATION_VERSION=1
+
+PHYSICAL_RESULT=PASS
+OPERATOR_NOTE='Operator reported physical pass. All five requested temporary modes visibly appeared and returned to the 480p baseline normally; cursor behavior returned normally; no freeze, corrupt or green output, or persistent no-signal was observed.'
+
+POLICY=physical_and_machine_evidence_are_separate_authorities

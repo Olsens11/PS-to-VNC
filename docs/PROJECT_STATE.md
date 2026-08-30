@@ -269,3 +269,30 @@ Hardware regression:
 Next operation remains:
 
     M1D_run_required_hardware_regression
+
+## M1D hardware regression passed
+
+The first modular M1 DUT passed its required real-hardware migration gate.
+
+Exact DUT SHA256:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+Machine result:
+
+    PASS
+
+Physical result:
+
+    PASS
+
+Startup gate:
+
+    PASS
+
+Evidence:
+
+    evidence/m1/m1d2-hardware-20260830-022035/
+
+M1D hardware authority is complete. The next migration operation is M1E
+closure and selection of the next mechanical extraction boundary.

@@ -182,6 +182,7 @@ canonical machine-readable state.
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=0f1b88ddf7821c935b68aabe6d65180bf02b074f
+    LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
     NEXT_ACTION=M1D_run_required_hardware_regression
 
 The canonical machine-readable source remains:
@@ -496,3 +497,29 @@ Deployment evidence:
 
 The rolling ELF must not be treated as hardware validated until M1D records
 both machine and physical results.
+
+## M1D hardware-regression completion
+
+M1D completed with independent machine and physical PASS authorities.
+
+Exact DUT SHA256:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+Startup gate:
+
+    PASS
+
+Machine result:
+
+    PASS
+
+Physical result:
+
+    PASS
+
+Evidence:
+
+    evidence/m1/m1d2-hardware-20260830-022035/
+
+The next lifecycle operation is M1E closure.
