@@ -1,0 +1,13 @@
+parent	project_inc_child
+ps2vnc_calibration_tail.c	ps2vnc_calibration_tail.inc
+ps2vnc_display.c	ps2vnc_display_core.inc
+ps2vnc_display_tail.c	ps2vnc_display_tail.inc
+ps2vnc_framebuffer.c	ps2vnc_framebuffer_core.inc
+ps2vnc_framebuffer_tail.c	ps2vnc_framebuffer_tail.inc
+ps2vnc_management_tail.c	ps2vnc_management_tail.inc
+ps2vnc_runtime.c	ps2vnc_runtime_core.inc
+ps2vnc_runtime_tail.c	ps2vnc_runtime_tail.inc
+ps2vnc_services.c	ps2vnc_calibration_core.inc
+ps2vnc_services.c	ps2vnc_management_core.inc
+ps2vnc_ui_display.c	ps2vnc_ui_core.inc
+ps2vnc_ui_tail.c	ps2vnc_ui_tail.inc

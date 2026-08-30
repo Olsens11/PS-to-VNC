@@ -1,0 +1,13 @@
+object	source
+ps2ip.o	ps2ip.c
+ps2vnc_calibration_tail.o	ps2vnc_calibration_tail.c
+ps2vnc_display.o	ps2vnc_display.c
+ps2vnc_display_tail.o	ps2vnc_display_tail.c
+ps2vnc_framebuffer.o	ps2vnc_framebuffer.c
+ps2vnc_framebuffer_tail.o	ps2vnc_framebuffer_tail.c
+ps2vnc_management_tail.o	ps2vnc_management_tail.c
+ps2vnc_runtime.o	ps2vnc_runtime.c
+ps2vnc_runtime_tail.o	ps2vnc_runtime_tail.c
+ps2vnc_services.o	ps2vnc_services.c
+ps2vnc_ui_display.o	ps2vnc_ui_display.c
+ps2vnc_ui_tail.o	ps2vnc_ui_tail.c
