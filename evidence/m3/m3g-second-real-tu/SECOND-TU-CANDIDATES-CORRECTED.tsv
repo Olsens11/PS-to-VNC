@@ -1,0 +1,16 @@
+rank	candidate	candidate_lines	remaining_leaf_lines	corrected_new_cross_globals	new_cross_functions	new_cross_calls	corrected_score
+1	runtime_support+ui_controller+framebuffer_engine+display_orchestration	11933	0	7	82	256	86845
+2	runtime_support+ui_controller+display_orchestration	9433	2500	27	89	336	64506
+3	runtime_support+ui_controller+framebuffer_engine	9008	2925	22	70	367	62893
+4	runtime_support+framebuffer_engine+display_orchestration	8837	3096	24	105	372	60044
+5	ui_controller+framebuffer_engine+display_orchestration	8521	3412	42	112	447	54091
+6	runtime_support+ui_controller	6508	5425	29	63	423	43432
+7	runtime_support+display_orchestration	6337	5596	39	112	452	38605
+8	runtime_support+framebuffer_engine	5912	6021	28	78	469	38552
+9	ui_controller+display_orchestration	6021	5912	35	102	333	37596
+10	ui_controller+framebuffer_engine	5596	6337	32	59	254	36188
+11	framebuffer_engine+display_orchestration	5425	6508	36	99	345	32404
+12	ui_controller	3096	8837	17	30	116	18513
+13	runtime_support	3412	8521	35	71	525	15758
+14	framebuffer_engine	2500	9433	20	30	138	12763
+15	display_orchestration	2925	9008	29	89	231	12576
