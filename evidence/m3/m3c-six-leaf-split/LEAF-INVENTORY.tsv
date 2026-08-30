@@ -1,0 +1,7 @@
+leaf	lines	bytes	functions	first_function	last_function	modules
+ps2vnc_macro_region1a.inc	3414	95872	72	ps2vnc_video_mode_default_backend	osk_render_bitmap	rfb_transport:5/546,other:25/522,ui:11/292,diag:6/187,input:5/127,display_backend:8/109,display_control:4/107,rfb_decode:4/75,display_geometry:3/52,display_calibration:1/42
+ps2vnc_macro_region1b.inc	3096	95209	29	display_confirm_render_bitmap	controller_thread	orchestration:1/1546,ui:21/1126,other:6/246,input:1/44
+ps2vnc_macro_region2a.inc	2500	71928	33	start_controller_thread	update_hires_background_region	display_backend:19/1280,rfb_decode:7/802,other:5/146,rfb_transport:2/30
+ps2vnc_macro_region2b.inc	3125	71128	38	draw_recovery_status	ps2vnc_display_tx_profiles_equal	management:14/993,config:5/714,other:13/546,rfb_transport:3/416,display_calibration:3/121
+ps2vnc_macro_region3a.inc	3254	82261	48	ps2vnc_display_tx_parse	ps2vnc_display_prepare_osk	other:18/1156,display_calibration:11/843,config:4/390,display_backend:8/303,management:3/144,input:3/55,diag:1/41
+ps2vnc_macro_region3b.inc	2924	85416	15	ps2vnc_switch_display_mode_core	main	orchestration:1/1449,display_control:7/892,other:6/256,core:1/240

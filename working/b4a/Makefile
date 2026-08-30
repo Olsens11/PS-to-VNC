@@ -69,4 +69,6 @@ include $(PS2SDK)/samples/Makefile.eeglobal
 # M3 coarse migration scaffold.
 
 # M3 hierarchical migration dependencies.
-ps2ip.o: ps2vnc_macro_body.inc ps2vnc_macro_region1.inc ps2vnc_macro_region2.inc ps2vnc_macro_region3.inc
+
+# M3 recursive hierarchy dependencies.
+ps2ip.o: ps2vnc_macro_body.inc ps2vnc_macro_region1.inc ps2vnc_macro_region2.inc ps2vnc_macro_region3.inc ps2vnc_macro_region1a.inc ps2vnc_macro_region1b.inc ps2vnc_macro_region2a.inc ps2vnc_macro_region2b.inc ps2vnc_macro_region3a.inc ps2vnc_macro_region3b.inc
