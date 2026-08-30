@@ -114,7 +114,7 @@ static int ps2vnc_hires_requires_horizontal_mapping(void)
 }
 
 
- int ps2vnc_hires_requires_vertical_mapping(void)
+static int ps2vnc_hires_requires_vertical_mapping(void)
 {
     u64 full_frame_height;
 
@@ -463,10 +463,10 @@ extern unsigned int size_NETMAN_irx;
 
 /* Dedicated EE input thread. */
 #define CONTROLLER_STACK_SIZE 8192
- unsigned char controller_stack[CONTROLLER_STACK_SIZE]
+static unsigned char controller_stack[CONTROLLER_STACK_SIZE]
     __attribute__((aligned(16)));
 
- int controller_thread_id = -1;
+static int controller_thread_id = -1;
 /*
  * Test26 rule: after the controller thread starts, ONLY the main/render
  * thread is allowed to call send()/recv() on the VNC TCP socket.
@@ -485,9 +485,9 @@ typedef struct {
 } rfb_out_message_t;
 
 static rfb_out_message_t rfb_out_queue[RFB_OUT_QUEUE_CAPACITY];
- volatile unsigned int rfb_out_head = 0;
- volatile unsigned int rfb_out_tail = 0;
- volatile unsigned int rfb_out_count = 0;
+static volatile unsigned int rfb_out_head = 0;
+static volatile unsigned int rfb_out_tail = 0;
+static volatile unsigned int rfb_out_count = 0;
 int rfb_queue_sema = -1;
 
 /*
@@ -519,22 +519,22 @@ static unsigned char rfb_rx_buffer[RFB_RX_BUFFER_SIZE];
  volatile int rfb_last_recv_n = 0;
  volatile unsigned int rfb_last_recv_call = 0;
 
- volatile unsigned int live_hdr_start_pos = 0;
- volatile unsigned int live_hdr_start_end = 0;
+static volatile unsigned int live_hdr_start_pos = 0;
+static volatile unsigned int live_hdr_start_end = 0;
  volatile unsigned int live_hdr_start_avail = 0;
- volatile unsigned int live_hdr_end_pos = 0;
- volatile unsigned int live_hdr_end_end = 0;
+static volatile unsigned int live_hdr_end_pos = 0;
+static volatile unsigned int live_hdr_end_end = 0;
  volatile int live_hdr_recv_n = 0;
- volatile unsigned int live_hdr_recv_call = 0;
+static volatile unsigned int live_hdr_recv_call = 0;
  volatile unsigned char live_hdr_raw[12];
 
 /* Raw FramebufferUpdate header tracing: type + pad + rectangle count. */
  volatile unsigned char live_update_raw[4];
- volatile unsigned int live_update_start_pos = 0;
- volatile unsigned int live_update_start_end = 0;
- volatile unsigned int live_update_end_pos = 0;
- volatile unsigned int live_update_end_end = 0;
- volatile unsigned int live_update_recv_call = 0;
+static volatile unsigned int live_update_start_pos = 0;
+static volatile unsigned int live_update_start_end = 0;
+static volatile unsigned int live_update_end_pos = 0;
+static volatile unsigned int live_update_end_end = 0;
+static volatile unsigned int live_update_recv_call = 0;
 
 
 
@@ -550,7 +550,7 @@ static unsigned char rfb_rx_buffer[RFB_RX_BUFFER_SIZE];
  * upload.  If it survives, one of those operations is implicated.
  */
 #define TEST29_DISCARD_LIVE_PIXELS 0
- unsigned char test29_row_scratch[VNC_WIDTH * 2];
+static unsigned char test29_row_scratch[VNC_WIDTH * 2];
 
 /*
  * TEST13F:
@@ -558,10 +558,10 @@ static unsigned char rfb_rx_buffer[RFB_RX_BUFFER_SIZE];
  * RFB FramebufferUpdate. x1/y1 are exclusive.
  */
 static unsigned int rfb_dirty_x0 = 0;
- unsigned int rfb_dirty_y0 = 0;
+static unsigned int rfb_dirty_y0 = 0;
 static unsigned int rfb_dirty_x1 = 0;
- unsigned int rfb_dirty_y1 = 0;
- int rfb_dirty_valid = 0;
+static unsigned int rfb_dirty_y1 = 0;
+static int rfb_dirty_valid = 0;
 
 /*
  * TEST15D3-A3-A3:
@@ -569,11 +569,11 @@ static unsigned int rfb_dirty_x1 = 0;
  * historical whole-update bounding box.  Multiple RFB rectangles touching
  * the same row merge naturally.
  */
- unsigned int rfb_dirty_row_x0[VNC_HEIGHT];
- unsigned int rfb_dirty_row_x1[VNC_HEIGHT];
- unsigned char rfb_dirty_row_valid[VNC_HEIGHT];
+static unsigned int rfb_dirty_row_x0[VNC_HEIGHT];
+static unsigned int rfb_dirty_row_x1[VNC_HEIGHT];
+static unsigned char rfb_dirty_row_valid[VNC_HEIGHT];
 
- void rfb_dirty_reset(void)
+static void rfb_dirty_reset(void)
 {
     rfb_dirty_valid = 0;
     memset(
@@ -583,7 +583,7 @@ static unsigned int rfb_dirty_x1 = 0;
     );
 }
 
- void rfb_dirty_mark_rect(
+static void rfb_dirty_mark_rect(
     unsigned int x,
     unsigned int y,
     unsigned int w,
@@ -661,7 +661,7 @@ volatile int exit_requested = 0;
  */
 int force_screen_fit_calibration = 0;
 
- int controller_sock = -1;
+static int controller_sock = -1;
 
 /* Last live RFB failure context, displayed if the render loop exits. */
  volatile int live_error_code = 0;
@@ -702,18 +702,18 @@ volatile unsigned int debug_stage_id = 0;
  u64 profile_flip_ticks = 0;
  u64 profile_rfb_ticks = 0;
 static u64 profile_rx_wait_ticks = 0;
- u64 profile_hextile_ticks = 0;
+static u64 profile_hextile_ticks = 0;
 static u64 profile_hextile_rx_wait_ticks = 0;
- int profile_hextile_active = 0;
+static int profile_hextile_active = 0;
  u64 profile_dirty_wait_ticks = 0;
- u64 profile_dirty_work_ticks = 0;
+static u64 profile_dirty_work_ticks = 0;
  u64 profile_rfb_start_tick = 0;
- u64 profile_dirty_work_start_tick = 0;
+static u64 profile_dirty_work_start_tick = 0;
  unsigned int profile_rfb_updates = 0;
- unsigned int profile_dirty_updates = 0;
+static unsigned int profile_dirty_updates = 0;
  unsigned int profile_changed_bytes = 0;
- unsigned int profile_raw_rects = 0;
- unsigned int profile_hextile_rects = 0;
+static unsigned int profile_raw_rects = 0;
+static unsigned int profile_hextile_rects = 0;
  volatile unsigned int controller_loop_counter = 0;
 static unsigned int debug_idle_poll_counter = 0;
 
@@ -1201,13 +1201,13 @@ static void sanitize_text(char *s)
     }
 }
 
- unsigned int read_be16(const unsigned char *p)
+static unsigned int read_be16(const unsigned char *p)
 {
     return ((unsigned int)p[0] << 8) |
            ((unsigned int)p[1]);
 }
 
- unsigned int read_be32(const unsigned char *p)
+static unsigned int read_be32(const unsigned char *p)
 {
     return ((unsigned int)p[0] << 24) |
            ((unsigned int)p[1] << 16) |
@@ -1456,11 +1456,11 @@ static void debug_emit_idle_poll(void);
  */
 #define RFB_RECEIVE_LOCAL_REDRAW (-2)
 
- volatile int rfb_message_boundary_local_yield = 0;
+static volatile int rfb_message_boundary_local_yield = 0;
  volatile int rfb_confirm_live_yield_enabled = 0;
  volatile unsigned int rfb_confirm_wait_generation = 0;
 
- int recv_exact(int sock, void *data, int len)
+static int recv_exact(int sock, void *data, int len)
 {
     unsigned char *dst = (unsigned char *)data;
     int done = 0;
@@ -2490,19 +2490,19 @@ int set_gs555_pixel_format(int sock)
  * D1 only proves capability and records the current layout. It does not
  * request a new size yet.
  */
- int rfb_extended_desktop_seen = 0;
- unsigned int rfb_extended_desktop_reason = 0;
- unsigned int rfb_extended_desktop_result = 0;
- unsigned int rfb_extended_desktop_width = 0;
- unsigned int rfb_extended_desktop_height = 0;
- unsigned int rfb_extended_desktop_screen_count = 0;
+static int rfb_extended_desktop_seen = 0;
+static unsigned int rfb_extended_desktop_reason = 0;
+static unsigned int rfb_extended_desktop_result = 0;
+static unsigned int rfb_extended_desktop_width = 0;
+static unsigned int rfb_extended_desktop_height = 0;
+static unsigned int rfb_extended_desktop_screen_count = 0;
 
- unsigned int rfb_first_screen_id = 0;
- unsigned int rfb_first_screen_x = 0;
- unsigned int rfb_first_screen_y = 0;
- unsigned int rfb_first_screen_width = 0;
- unsigned int rfb_first_screen_height = 0;
- unsigned int rfb_first_screen_flags = 0;
+static unsigned int rfb_first_screen_id = 0;
+static unsigned int rfb_first_screen_x = 0;
+static unsigned int rfb_first_screen_y = 0;
+static unsigned int rfb_first_screen_width = 0;
+static unsigned int rfb_first_screen_height = 0;
+static unsigned int rfb_first_screen_flags = 0;
 
 /*
  * TEST13J-D2:
@@ -2510,9 +2510,9 @@ int set_gs555_pixel_format(int sock)
  * response to report the requested dimensions even though the Raw
  * framebuffer path is still fixed at 1280x720.
  */
- int rfb_resize_expected = 0;
- unsigned int rfb_resize_expected_width = 0;
- unsigned int rfb_resize_expected_height = 0;
+static int rfb_resize_expected = 0;
+static unsigned int rfb_resize_expected_width = 0;
+static unsigned int rfb_resize_expected_height = 0;
 
 
 int set_raw_encoding(int sock)

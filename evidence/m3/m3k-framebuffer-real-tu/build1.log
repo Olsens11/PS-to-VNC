@@ -1,0 +1,394 @@
+rm -f PS2VNC.ELF ps2ip.o ps2vnc_runtime.o ps2vnc_framebuffer.o ps2vnc_ui_display.o ps2vnc_services.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o DEV9_irx.c NETMAN_irx.c SMAP_irx.c
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2ip.c -o ps2ip.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_runtime.c -o ps2vnc_runtime.o
+In file included from ps2vnc_runtime.c:284:
+ps2vnc_runtime_support.inc:286:21: warning: 'hires_bg_storage_row' declared 'static' but never defined [-Wunused-function]
+  286 | static unsigned int hires_bg_storage_row(unsigned int raster_y);
+      |                     ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2504:21: warning: 'rfb_first_screen_height' defined but not used [-Wunused-variable]
+ 2504 | static unsigned int rfb_first_screen_height = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2503:21: warning: 'rfb_first_screen_width' defined but not used [-Wunused-variable]
+ 2503 | static unsigned int rfb_first_screen_width = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2502:21: warning: 'rfb_first_screen_y' defined but not used [-Wunused-variable]
+ 2502 | static unsigned int rfb_first_screen_y = 0;
+      |                     ^~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2501:21: warning: 'rfb_first_screen_x' defined but not used [-Wunused-variable]
+ 2501 | static unsigned int rfb_first_screen_x = 0;
+      |                     ^~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:711:12: warning: 'profile_dirty_work_start_tick' defined but not used [-Wunused-variable]
+  711 | static u64 profile_dirty_work_start_tick = 0;
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:664:12: warning: 'controller_sock' defined but not used [-Wunused-variable]
+  664 | static int controller_sock = -1;
+      |            ^~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:586:13: warning: 'rfb_dirty_mark_rect' defined but not used [-Wunused-function]
+  586 | static void rfb_dirty_mark_rect(
+      |             ^~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:576:13: warning: 'rfb_dirty_reset' defined but not used [-Wunused-function]
+  576 | static void rfb_dirty_reset(void)
+      |             ^~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:553:22: warning: 'test29_row_scratch' defined but not used [-Wunused-variable]
+  553 | static unsigned char test29_row_scratch[VNC_WIDTH * 2];
+      |                      ^~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:469:12: warning: 'controller_thread_id' defined but not used [-Wunused-variable]
+  469 | static int controller_thread_id = -1;
+      |            ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:466:22: warning: 'controller_stack' defined but not used [-Wunused-variable]
+  466 | static unsigned char controller_stack[CONTROLLER_STACK_SIZE]
+      |                      ^~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_framebuffer.c -o ps2vnc_framebuffer.o
+In file included from ps2vnc_framebuffer.c:18:
+ps2vnc_framebuffer_engine.inc: In function 'start_controller_thread':
+ps2vnc_framebuffer_engine.inc:16:5: error: 'rfb_out_head' undeclared (first use in this function)
+   16 |     rfb_out_head = 0;
+      |     ^~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:16:5: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_framebuffer_engine.inc:17:5: error: 'rfb_out_tail' undeclared (first use in this function)
+   17 |     rfb_out_tail = 0;
+      |     ^~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:18:5: error: 'rfb_out_count' undeclared (first use in this function)
+   18 |     rfb_out_count = 0;
+      |     ^~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:20:5: error: 'controller_sock' undeclared (first use in this function); did you mean 'controller_thread'?
+   20 |     controller_sock = sock;
+      |     ^~~~~~~~~~~~~~~
+      |     controller_thread
+ps2vnc_framebuffer_engine.inc:26:28: error: 'controller_stack' undeclared (first use in this function)
+   26 |     thread.stack = (void *)controller_stack;
+      |                            ^~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:27:25: error: 'CONTROLLER_STACK_SIZE' undeclared (first use in this function)
+   27 |     thread.stack_size = CONTROLLER_STACK_SIZE;
+      |                         ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:33:5: error: 'controller_thread_id' undeclared (first use in this function); did you mean 'controller_thread'?
+   33 |     controller_thread_id = CreateThread(&thread);
+      |     ^~~~~~~~~~~~~~~~~~~~
+      |     controller_thread
+ps2vnc_framebuffer_engine.inc: In function 'hextile_recv_pixel':
+ps2vnc_framebuffer_engine.inc:139:9: error: implicit declaration of function 'recv_exact'; did you mean 'send_exact'? [-Wimplicit-function-declaration]
+  139 |     if (recv_exact(sock, pixel, 2) != 2)
+      |         ^~~~~~~~~~
+      |         send_exact
+ps2vnc_framebuffer_engine.inc: In function 'hextile_recv_rect':
+ps2vnc_framebuffer_engine.inc:264:23: error: 'HEXTILE_RAW' undeclared (first use in this function)
+  264 |             if (sub & HEXTILE_RAW) {
+      |                       ^~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:276:23: error: 'HEXTILE_BACKGROUND_SPECIFIED' undeclared (first use in this function)
+  276 |             if (sub & HEXTILE_BACKGROUND_SPECIFIED) {
+      |                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:294:24: error: 'HEXTILE_FOREGROUND_SPECIFIED' undeclared (first use in this function)
+  294 |             if ((sub & HEXTILE_FOREGROUND_SPECIFIED) &&
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:295:24: error: 'HEXTILE_SUBRECTS_COLORED' undeclared (first use in this function)
+  295 |                 (sub & HEXTILE_SUBRECTS_COLORED))
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:304:23: error: 'HEXTILE_ANY_SUBRECTS' undeclared (first use in this function)
+  304 |             if (sub & HEXTILE_ANY_SUBRECTS) {
+      |                       ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc: In function 'receive_framebuffer_update':
+ps2vnc_framebuffer_engine.inc:408:13: error: 'rfb_message_boundary_local_yield' undeclared (first use in this function)
+  408 |             rfb_message_boundary_local_yield = 1;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:458:24: error: implicit declaration of function 'read_be32' [-Wimplicit-function-declaration]
+  458 |             text_len = read_be32(&cut_hdr[3]);
+      |                        ^~~~~~~~~
+ps2vnc_framebuffer_engine.inc:497:27: error: implicit declaration of function 'read_be16' [-Wimplicit-function-declaration]
+  497 |             color_count = read_be16(&cmap_hdr[3]);
+      |                           ^~~~~~~~~
+ps2vnc_framebuffer_engine.inc:525:13: error: implicit declaration of function 'rfb_dirty_reset' [-Wimplicit-function-declaration]
+  525 |             rfb_dirty_reset();
+      |             ^~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:536:13: error: 'live_update_start_pos' undeclared (first use in this function)
+  536 |             live_update_start_pos = rfb_rx_pos;
+      |             ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:537:13: error: 'live_update_start_end' undeclared (first use in this function)
+  537 |             live_update_start_end = rfb_rx_end;
+      |             ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:550:13: error: 'live_update_end_pos' undeclared (first use in this function); did you mean 'live_update_raw'?
+  550 |             live_update_end_pos = rfb_rx_pos;
+      |             ^~~~~~~~~~~~~~~~~~~
+      |             live_update_raw
+ps2vnc_framebuffer_engine.inc:551:13: error: 'live_update_end_end' undeclared (first use in this function); did you mean 'live_update_raw'?
+  551 |             live_update_end_end = rfb_rx_end;
+      |             ^~~~~~~~~~~~~~~~~~~
+      |             live_update_raw
+ps2vnc_framebuffer_engine.inc:552:13: error: 'live_update_recv_call' undeclared (first use in this function); did you mean 'live_update_raw'?
+  552 |             live_update_recv_call = rfb_last_recv_call;
+      |             ^~~~~~~~~~~~~~~~~~~~~
+      |             live_update_raw
+ps2vnc_framebuffer_engine.inc:582:21: error: 'TEST31_HDR_SENTINEL' undeclared (first use in this function)
+  582 |                     TEST31_HDR_SENTINEL,
+      |                     ^~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:586:17: error: 'live_hdr_start_pos' undeclared (first use in this function); did you mean 'live_hdr_start_avail'?
+  586 |                 live_hdr_start_pos = rfb_rx_pos;
+      |                 ^~~~~~~~~~~~~~~~~~
+      |                 live_hdr_start_avail
+ps2vnc_framebuffer_engine.inc:587:17: error: 'live_hdr_start_end' undeclared (first use in this function); did you mean 'live_hdr_start_avail'?
+  587 |                 live_hdr_start_end = rfb_rx_end;
+      |                 ^~~~~~~~~~~~~~~~~~
+      |                 live_hdr_start_avail
+ps2vnc_framebuffer_engine.inc:599:17: error: 'live_hdr_end_pos' undeclared (first use in this function)
+  599 |                 live_hdr_end_pos = rfb_rx_pos;
+      |                 ^~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:600:17: error: 'live_hdr_end_end' undeclared (first use in this function); did you mean 'live_hdr_recv_n'?
+  600 |                 live_hdr_end_end = rfb_rx_end;
+      |                 ^~~~~~~~~~~~~~~~
+      |                 live_hdr_recv_n
+ps2vnc_framebuffer_engine.inc:602:17: error: 'live_hdr_recv_call' undeclared (first use in this function); did you mean 'live_hdr_recv_n'?
+  602 |                 live_hdr_recv_call = rfb_last_recv_call;
+      |                 ^~~~~~~~~~~~~~~~~~
+      |                 live_hdr_recv_n
+ps2vnc_framebuffer_engine.inc:638:21: error: 'RFB_ENCODING_EXTENDED_DESKTOP_SIZE' undeclared (first use in this function)
+  638 |                     RFB_ENCODING_EXTENDED_DESKTOP_SIZE) {
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:662:21: error: 'rfb_extended_desktop_seen' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  662 |                     rfb_extended_desktop_seen = 1;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |                     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:663:21: error: 'rfb_extended_desktop_reason' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  663 |                     rfb_extended_desktop_reason = x;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:664:21: error: 'rfb_extended_desktop_result' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  664 |                     rfb_extended_desktop_result = y;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:665:21: error: 'rfb_extended_desktop_width' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  665 |                     rfb_extended_desktop_width = w;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:666:21: error: 'rfb_extended_desktop_height' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  666 |                     rfb_extended_desktop_height = h;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:667:21: error: 'rfb_extended_desktop_screen_count' undeclared (first use in this function)
+  667 |                     rfb_extended_desktop_screen_count =
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:674:21: error: 'rfb_first_screen_id' undeclared (first use in this function)
+  674 |                     rfb_first_screen_id = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:675:21: error: 'rfb_first_screen_x' undeclared (first use in this function)
+  675 |                     rfb_first_screen_x = 0;
+      |                     ^~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:676:21: error: 'rfb_first_screen_y' undeclared (first use in this function)
+  676 |                     rfb_first_screen_y = 0;
+      |                     ^~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:677:21: error: 'rfb_first_screen_width' undeclared (first use in this function)
+  677 |                     rfb_first_screen_width = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:678:21: error: 'rfb_first_screen_height' undeclared (first use in this function)
+  678 |                     rfb_first_screen_height = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:679:21: error: 'rfb_first_screen_flags' undeclared (first use in this function)
+  679 |                     rfb_first_screen_flags = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:760:25: error: 'rfb_resize_expected' undeclared (first use in this function)
+  760 |                     if (rfb_resize_expected) {
+      |                         ^~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:761:34: error: 'rfb_resize_expected_width' undeclared (first use in this function)
+  761 |                         if (w != rfb_resize_expected_width ||
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:762:34: error: 'rfb_resize_expected_height' undeclared (first use in this function)
+  762 |                             h != rfb_resize_expected_height) {
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:794:33: error: 'RFB_ENCODING_RAW' undeclared (first use in this function)
+  794 |                 if (encoding != RFB_ENCODING_RAW &&
+      |                                 ^~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:795:33: error: 'RFB_ENCODING_HEXTILE' undeclared (first use in this function)
+  795 |                     encoding != RFB_ENCODING_HEXTILE) {
+      |                                 ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:804:25: error: 'profile_raw_rects' undeclared (first use in this function); did you mean 'profile_rfb_ticks'?
+  804 |                         profile_raw_rects++;
+      |                         ^~~~~~~~~~~~~~~~~
+      |                         profile_rfb_ticks
+ps2vnc_framebuffer_engine.inc:806:25: error: 'profile_hextile_rects' undeclared (first use in this function)
+  806 |                         profile_hextile_rects++;
+      |                         ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:825:21: error: implicit declaration of function 'rfb_dirty_mark_rect' [-Wimplicit-function-declaration]
+  825 |                     rfb_dirty_mark_rect(x, y, w, h);
+      |                     ^~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:843:21: error: 'profile_hextile_active' undeclared (first use in this function)
+  843 |                     profile_hextile_active = 1;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:848:21: error: 'profile_hextile_ticks' undeclared (first use in this function); did you mean 'profile_flip_ticks'?
+  848 |                     profile_hextile_ticks +=
+      |                     ^~~~~~~~~~~~~~~~~~~~~
+      |                     profile_flip_ticks
+ps2vnc_framebuffer_engine.inc:880:48: error: 'test29_row_scratch' undeclared (first use in this function)
+  880 |                         if (row_bytes > sizeof(test29_row_scratch)) {
+      |                                                ^~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc: In function 'probe_extended_desktop_size':
+ps2vnc_framebuffer_engine.inc:975:5: error: 'rfb_extended_desktop_seen' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  975 |     rfb_extended_desktop_seen = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:976:5: error: 'rfb_extended_desktop_reason' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  976 |     rfb_extended_desktop_reason = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:977:5: error: 'rfb_extended_desktop_result' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  977 |     rfb_extended_desktop_result = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:978:5: error: 'rfb_extended_desktop_width' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  978 |     rfb_extended_desktop_width = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:979:5: error: 'rfb_extended_desktop_height' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+  979 |     rfb_extended_desktop_height = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     probe_extended_desktop_size
+ps2vnc_framebuffer_engine.inc:980:5: error: 'rfb_extended_desktop_screen_count' undeclared (first use in this function)
+  980 |     rfb_extended_desktop_screen_count = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:982:5: error: 'rfb_first_screen_id' undeclared (first use in this function)
+  982 |     rfb_first_screen_id = 0;
+      |     ^~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:983:5: error: 'rfb_first_screen_x' undeclared (first use in this function)
+  983 |     rfb_first_screen_x = 0;
+      |     ^~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:984:5: error: 'rfb_first_screen_y' undeclared (first use in this function)
+  984 |     rfb_first_screen_y = 0;
+      |     ^~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:985:5: error: 'rfb_first_screen_width' undeclared (first use in this function)
+  985 |     rfb_first_screen_width = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:986:5: error: 'rfb_first_screen_height' undeclared (first use in this function)
+  986 |     rfb_first_screen_height = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:987:5: error: 'rfb_first_screen_flags' undeclared (first use in this function)
+  987 |     rfb_first_screen_flags = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc: In function 'ps2vnc_hires_mapped_storage_row':
+ps2vnc_framebuffer_engine.inc:1084:9: error: implicit declaration of function 'ps2vnc_hires_requires_vertical_mapping'; did you mean 'ps2vnc_hires_requires_raster_mapping'? [-Wimplicit-function-declaration]
+ 1084 |     if (ps2vnc_hires_requires_vertical_mapping())
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |         ps2vnc_hires_requires_raster_mapping
+ps2vnc_framebuffer_engine.inc: In function 'sync_copy_hires_dirty_rows':
+ps2vnc_framebuffer_engine.inc:1202:10: error: 'rfb_dirty_valid' undeclared (first use in this function)
+ 1202 |         !rfb_dirty_valid ||
+      |          ^~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1204:9: error: 'rfb_dirty_y1' undeclared (first use in this function)
+ 1204 |         rfb_dirty_y1 > desktop_height)
+      |         ^~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1207:14: error: 'rfb_dirty_y0' undeclared (first use in this function)
+ 1207 |     for (y = rfb_dirty_y0; y < rfb_dirty_y1; y++) {
+      |              ^~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1213:14: error: 'rfb_dirty_row_valid' undeclared (first use in this function)
+ 1213 |         if (!rfb_dirty_row_valid[y])
+      |              ^~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1216:14: error: 'rfb_dirty_row_x0' undeclared (first use in this function)
+ 1216 |         x0 = rfb_dirty_row_x0[y];
+      |              ^~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1217:14: error: 'rfb_dirty_row_x1' undeclared (first use in this function)
+ 1217 |         x1 = rfb_dirty_row_x1[y];
+      |              ^~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc: In function 'ps2vnc_update_mapped_hires_dirty_buffer':
+ps2vnc_framebuffer_engine.inc:1425:10: error: 'rfb_dirty_valid' undeclared (first use in this function)
+ 1425 |         !rfb_dirty_valid ||
+      |          ^~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1434:9: error: 'rfb_dirty_y1' undeclared (first use in this function)
+ 1434 |         rfb_dirty_y1 > desktop_height ||
+      |         ^~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1435:9: error: 'rfb_dirty_y0' undeclared (first use in this function)
+ 1435 |         rfb_dirty_y0 >= rfb_dirty_y1 ||
+      |         ^~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1631:14: error: 'rfb_dirty_row_valid' undeclared (first use in this function)
+ 1631 |         if (!rfb_dirty_row_valid[src_y])
+      |              ^~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1634:18: error: 'rfb_dirty_row_x0' undeclared (first use in this function)
+ 1634 |         src_x0 = rfb_dirty_row_x0[src_y];
+      |                  ^~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1635:18: error: 'rfb_dirty_row_x1' undeclared (first use in this function)
+ 1635 |         src_x1 = rfb_dirty_row_x1[src_y];
+      |                  ^~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1404:25: warning: variable 'y_edge' set but not used [-Wunused-but-set-variable]
+ 1404 |     static unsigned int y_edge[VNC_HEIGHT + 1];
+      |                         ^~~~~~
+ps2vnc_framebuffer_engine.inc: In function 'ps2vnc_display_commit_update_hires':
+ps2vnc_framebuffer_engine.inc:1817:9: error: 'profile_dirty_work_start_tick' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ 1817 |         profile_dirty_work_start_tick =
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |         profile_dirty_wait_ticks
+ps2vnc_framebuffer_engine.inc:1820:9: error: 'profile_dirty_updates' undeclared (first use in this function); did you mean 'profile_rfb_updates'?
+ 1820 |         profile_dirty_updates++;
+      |         ^~~~~~~~~~~~~~~~~~~~~
+      |         profile_rfb_updates
+ps2vnc_framebuffer_engine.inc:1831:9: error: 'profile_dirty_work_ticks' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ 1831 |         profile_dirty_work_ticks +=
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~
+      |         profile_dirty_wait_ticks
+ps2vnc_framebuffer_engine.inc:1844:10: error: 'rfb_dirty_valid' undeclared (first use in this function)
+ 1844 |     if (!rfb_dirty_valid) {
+      |          ^~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc: In function 'ps2vnc_display_commit_update_standard':
+ps2vnc_framebuffer_engine.inc:1906:10: error: 'rfb_dirty_valid' undeclared (first use in this function)
+ 1906 |     if (!rfb_dirty_valid) {
+      |          ^~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1927:5: error: 'profile_dirty_work_start_tick' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ 1927 |     profile_dirty_work_start_tick = GetTimerSystemTime();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     profile_dirty_wait_ticks
+ps2vnc_framebuffer_engine.inc:1928:5: error: 'profile_dirty_updates' undeclared (first use in this function); did you mean 'profile_rfb_updates'?
+ 1928 |     profile_dirty_updates++;
+      |     ^~~~~~~~~~~~~~~~~~~~~
+      |     profile_rfb_updates
+ps2vnc_framebuffer_engine.inc:1937:5: error: 'profile_dirty_work_ticks' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ 1937 |     profile_dirty_work_ticks +=
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~
+      |     profile_dirty_wait_ticks
+ps2vnc_framebuffer_engine.inc: In function 'update_hires_background_region':
+ps2vnc_framebuffer_engine.inc:2366:5: error: 'profile_dirty_work_start_tick' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ 2366 |     profile_dirty_work_start_tick = GetTimerSystemTime();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     profile_dirty_wait_ticks
+ps2vnc_framebuffer_engine.inc:2367:5: error: 'profile_dirty_updates' undeclared (first use in this function); did you mean 'profile_rfb_updates'?
+ 2367 |     profile_dirty_updates++;
+      |     ^~~~~~~~~~~~~~~~~~~~~
+      |     profile_rfb_updates
+ps2vnc_framebuffer_engine.inc:2416:13: error: 'profile_dirty_work_ticks' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ 2416 |             profile_dirty_work_ticks +=
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~
+      |             profile_dirty_wait_ticks
+ps2vnc_framebuffer_engine.inc: At top level:
+ps2vnc_framebuffer_engine.inc:2318:12: warning: 'update_hires_background_region' defined but not used [-Wunused-function]
+ 2318 | static int update_hires_background_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1158:12: warning: 'sync_copy_hires_region' defined but not used [-Wunused-function]
+ 1158 | static int sync_copy_hires_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+make: *** [/usr/local/ps2dev/ps2sdk/samples/Makefile.eeglobal:65: ps2vnc_framebuffer.o] Error 1
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_ui_display.c -o ps2vnc_ui_display.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_services.c -o ps2vnc_services.o
+In file included from ps2vnc_services.c:10:
+ps2vnc_calibration_state.inc:687:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+  687 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_config_text.c -o ps2vnc_config_text.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_identity.c -o ps2vnc_identity.o
+mips64r5900el-ps2-elf-gcc \
+	-D_EE \
+	-DF_gsKit_hires_init_screen=1 \
+	-G0 \
+	-march=r5900 \
+	-mhard-float \
+	-msingle-float \
+	-mno-llsc \
+	-mno-shared \
+	-mplt \
+	-O2 \
+	-g \
+	-flto=auto \
+	-fno-fat-lto-objects \
+	-I/usr/local/ps2dev/gsKit/include \
+	-I/usr/local/ps2dev/ps2sdk/ee/include \
+	-I/usr/local/ps2dev/ps2sdk/common/include \
+	-c ps2vnc_gsHires.c -o ps2vnc_gsHires.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c DEV9_irx.c -o DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c NETMAN_irx.c -o NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c SMAP_irx.c -o SMAP_irx.o
+make: Target 'all' not remade because of errors.

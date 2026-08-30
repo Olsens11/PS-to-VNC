@@ -1,0 +1,10 @@
+00000018 B startup_authoritative_display_profile
+00000010 B startup_authoritative_display_profile_loaded
+00000040 B startup_confirmed_display_profile
+00000038 B startup_confirmed_display_profile_loaded
+0000000c B startup_display_commit_finish_required
+00000000 B startup_display_restore_ack_required
+00000004 B startup_display_restored_mark_required
+00000008 B startup_display_restore_required
+00000068 B startup_display_transaction
+00000060 B startup_display_transaction_loaded

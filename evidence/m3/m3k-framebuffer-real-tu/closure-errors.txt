@@ -1,0 +1,89 @@
+ps2vnc_framebuffer_engine.inc:16:5: error: 'rfb_out_head' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:16:5: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_framebuffer_engine.inc:17:5: error: 'rfb_out_tail' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:18:5: error: 'rfb_out_count' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:20:5: error: 'controller_sock' undeclared (first use in this function); did you mean 'controller_thread'?
+ps2vnc_framebuffer_engine.inc:26:28: error: 'controller_stack' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:27:25: error: 'CONTROLLER_STACK_SIZE' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:33:5: error: 'controller_thread_id' undeclared (first use in this function); did you mean 'controller_thread'?
+ps2vnc_framebuffer_engine.inc:139:9: error: implicit declaration of function 'recv_exact'; did you mean 'send_exact'? [-Wimplicit-function-declaration]
+ps2vnc_framebuffer_engine.inc:264:23: error: 'HEXTILE_RAW' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:276:23: error: 'HEXTILE_BACKGROUND_SPECIFIED' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:294:24: error: 'HEXTILE_FOREGROUND_SPECIFIED' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:295:24: error: 'HEXTILE_SUBRECTS_COLORED' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:304:23: error: 'HEXTILE_ANY_SUBRECTS' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:408:13: error: 'rfb_message_boundary_local_yield' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:458:24: error: implicit declaration of function 'read_be32' [-Wimplicit-function-declaration]
+ps2vnc_framebuffer_engine.inc:497:27: error: implicit declaration of function 'read_be16' [-Wimplicit-function-declaration]
+ps2vnc_framebuffer_engine.inc:525:13: error: implicit declaration of function 'rfb_dirty_reset' [-Wimplicit-function-declaration]
+ps2vnc_framebuffer_engine.inc:536:13: error: 'live_update_start_pos' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:537:13: error: 'live_update_start_end' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:550:13: error: 'live_update_end_pos' undeclared (first use in this function); did you mean 'live_update_raw'?
+ps2vnc_framebuffer_engine.inc:551:13: error: 'live_update_end_end' undeclared (first use in this function); did you mean 'live_update_raw'?
+ps2vnc_framebuffer_engine.inc:552:13: error: 'live_update_recv_call' undeclared (first use in this function); did you mean 'live_update_raw'?
+ps2vnc_framebuffer_engine.inc:582:21: error: 'TEST31_HDR_SENTINEL' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:586:17: error: 'live_hdr_start_pos' undeclared (first use in this function); did you mean 'live_hdr_start_avail'?
+ps2vnc_framebuffer_engine.inc:587:17: error: 'live_hdr_start_end' undeclared (first use in this function); did you mean 'live_hdr_start_avail'?
+ps2vnc_framebuffer_engine.inc:599:17: error: 'live_hdr_end_pos' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:600:17: error: 'live_hdr_end_end' undeclared (first use in this function); did you mean 'live_hdr_recv_n'?
+ps2vnc_framebuffer_engine.inc:602:17: error: 'live_hdr_recv_call' undeclared (first use in this function); did you mean 'live_hdr_recv_n'?
+ps2vnc_framebuffer_engine.inc:638:21: error: 'RFB_ENCODING_EXTENDED_DESKTOP_SIZE' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:662:21: error: 'rfb_extended_desktop_seen' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:663:21: error: 'rfb_extended_desktop_reason' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:664:21: error: 'rfb_extended_desktop_result' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:665:21: error: 'rfb_extended_desktop_width' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:666:21: error: 'rfb_extended_desktop_height' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:667:21: error: 'rfb_extended_desktop_screen_count' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:674:21: error: 'rfb_first_screen_id' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:675:21: error: 'rfb_first_screen_x' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:676:21: error: 'rfb_first_screen_y' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:677:21: error: 'rfb_first_screen_width' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:678:21: error: 'rfb_first_screen_height' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:679:21: error: 'rfb_first_screen_flags' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:760:25: error: 'rfb_resize_expected' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:761:34: error: 'rfb_resize_expected_width' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:762:34: error: 'rfb_resize_expected_height' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:794:33: error: 'RFB_ENCODING_RAW' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:795:33: error: 'RFB_ENCODING_HEXTILE' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:804:25: error: 'profile_raw_rects' undeclared (first use in this function); did you mean 'profile_rfb_ticks'?
+ps2vnc_framebuffer_engine.inc:806:25: error: 'profile_hextile_rects' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:825:21: error: implicit declaration of function 'rfb_dirty_mark_rect' [-Wimplicit-function-declaration]
+ps2vnc_framebuffer_engine.inc:843:21: error: 'profile_hextile_active' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:848:21: error: 'profile_hextile_ticks' undeclared (first use in this function); did you mean 'profile_flip_ticks'?
+ps2vnc_framebuffer_engine.inc:880:48: error: 'test29_row_scratch' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:975:5: error: 'rfb_extended_desktop_seen' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:976:5: error: 'rfb_extended_desktop_reason' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:977:5: error: 'rfb_extended_desktop_result' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:978:5: error: 'rfb_extended_desktop_width' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:979:5: error: 'rfb_extended_desktop_height' undeclared (first use in this function); did you mean 'probe_extended_desktop_size'?
+ps2vnc_framebuffer_engine.inc:980:5: error: 'rfb_extended_desktop_screen_count' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:982:5: error: 'rfb_first_screen_id' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:983:5: error: 'rfb_first_screen_x' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:984:5: error: 'rfb_first_screen_y' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:985:5: error: 'rfb_first_screen_width' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:986:5: error: 'rfb_first_screen_height' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:987:5: error: 'rfb_first_screen_flags' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1084:9: error: implicit declaration of function 'ps2vnc_hires_requires_vertical_mapping'; did you mean 'ps2vnc_hires_requires_raster_mapping'? [-Wimplicit-function-declaration]
+ps2vnc_framebuffer_engine.inc:1202:10: error: 'rfb_dirty_valid' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1204:9: error: 'rfb_dirty_y1' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1207:14: error: 'rfb_dirty_y0' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1213:14: error: 'rfb_dirty_row_valid' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1216:14: error: 'rfb_dirty_row_x0' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1217:14: error: 'rfb_dirty_row_x1' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1425:10: error: 'rfb_dirty_valid' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1434:9: error: 'rfb_dirty_y1' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1435:9: error: 'rfb_dirty_y0' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1631:14: error: 'rfb_dirty_row_valid' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1634:18: error: 'rfb_dirty_row_x0' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1635:18: error: 'rfb_dirty_row_x1' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1817:9: error: 'profile_dirty_work_start_tick' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ps2vnc_framebuffer_engine.inc:1820:9: error: 'profile_dirty_updates' undeclared (first use in this function); did you mean 'profile_rfb_updates'?
+ps2vnc_framebuffer_engine.inc:1831:9: error: 'profile_dirty_work_ticks' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ps2vnc_framebuffer_engine.inc:1844:10: error: 'rfb_dirty_valid' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1906:10: error: 'rfb_dirty_valid' undeclared (first use in this function)
+ps2vnc_framebuffer_engine.inc:1927:5: error: 'profile_dirty_work_start_tick' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ps2vnc_framebuffer_engine.inc:1928:5: error: 'profile_dirty_updates' undeclared (first use in this function); did you mean 'profile_rfb_updates'?
+ps2vnc_framebuffer_engine.inc:1937:5: error: 'profile_dirty_work_ticks' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ps2vnc_framebuffer_engine.inc:2366:5: error: 'profile_dirty_work_start_tick' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?
+ps2vnc_framebuffer_engine.inc:2367:5: error: 'profile_dirty_updates' undeclared (first use in this function); did you mean 'profile_rfb_updates'?
+ps2vnc_framebuffer_engine.inc:2416:13: error: 'profile_dirty_work_ticks' undeclared (first use in this function); did you mean 'profile_dirty_wait_ticks'?

@@ -282,4 +282,4 @@ int ps2vnc_video_mode_supports_backend(
  * this TU retains runtime_support + framebuffer_engine.
  */
 #include "ps2vnc_runtime_support.inc"
-/* M3K: framebuffer engine compiled in ps2vnc_framebuffer.c */
+#include "ps2vnc_framebuffer_engine.inc"
