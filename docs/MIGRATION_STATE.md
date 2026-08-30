@@ -177,13 +177,14 @@ resumes.
 The following exact indented tokens mirror the stable migration fields in the
 canonical machine-readable state.
 
-    LAST_COMPLETE_STAGE=M2
-    CURRENT_STAGE=M3
-    CURRENT_STAGE_STATUS=IN_PROGRESS
+    LAST_COMPLETE_STAGE=M3
+    CURRENT_STAGE=M4
+    CURRENT_STAGE_STATUS=ARCHITECTURAL_NORMALIZATION
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=c224b75e24d79fa7cbebd84236123e97c31ac9f1
-    LAST_HARDWARE_RESULT=M3V_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M4A_validate_twelve_object_management_split_on_hardware
+    CURRENT_SOURCE_HEAD=661f14576892e533475818704d6a1391ad950414
+    LAST_HARDWARE_RESULT=M4H_PASS_MACHINE_AND_PHYSICAL
+    NEXT_ACTION=M4H-B_video_geometry_residual_boundary_census
+    BLOCKED_BY=NONE
 
 The canonical machine-readable source remains:
 
@@ -1150,4 +1151,62 @@ incorrectly applied to raw captured evidence. Raw machine evidence was preserved
 byte-for-byte; its integrity is governed by the evidence SHA256 manifest.
 
 NEXT_ACTION=DOCS1_development_continuity_baseline
+BLOCKED_BY=NONE
+
+## DOCS1 development-continuity baseline
+
+The successor repository now has a conventional repository-centered
+development-continuity baseline.
+
+Canonical session bootstrap:
+
+    AGENTS.md
+
+Canonical contributor workflow:
+
+    CONTRIBUTING.md
+
+Canonical documentation router:
+
+    docs/README.md
+
+Canonical concise current state:
+
+    docs/status.md
+
+Development-system policy:
+
+    docs/development/
+
+Architecture Decision Records:
+
+    docs/adr/
+
+Machine-readable development-system contract:
+
+    runtime/DEVELOPMENT_SYSTEM.env
+
+Combined consistency command:
+
+    scripts/check.sh
+
+Migration-era bootstrap/router/current-state documents remain compatibility
+surfaces while existing tooling depends on them.
+
+The successor explicitly preserves the real-project agitation model:
+PS2VNC was the first proving ground and PS-to-VNC continues to pressure-test
+the reusable development-continuity rules.
+
+Routine saved build/deploy/test tooling must be discovered and reused rather
+than reconstructed in chat.
+
+The M4H-A hardware authority was already sealed before this documentation
+normalization:
+
+    M4H_HARDWARE_HEAD=b5c5f6c9a9262152553d4af477c03bae59c63f82
+    M4H_HARDWARE_MANIFEST_SHA256=3fc92b5f4405183838ea06c2b0772fbeeac2828e7b862f67adf4cfd049f035bb
+    VALIDATED_ELF_SHA256=42163c30b68ebf84b51b1c8c81d541017e64ffaa52e27bb0408f91edb25e2992
+    VALIDATED_PT_LOAD_SHA256=a33efdb0bee3f383d4828db8fb6a06f62ddb90fdc42a97308dc12777ed8197b9
+
+NEXT_ACTION=M4H-B_video_geometry_residual_boundary_census
 BLOCKED_BY=NONE

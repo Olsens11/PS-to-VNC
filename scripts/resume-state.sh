@@ -91,3 +91,14 @@ git -C "$ROOT" status --short
 
 echo
 echo '===== END PS-to-VNC RESUME STATE ====='
+
+# DEVELOPMENT_CONTINUITY_ROUTES_V1
+echo
+echo '===== DEVELOPMENT CONTINUITY ====='
+echo 'SESSION_BOOTSTRAP=AGENTS.md'
+echo 'CURRENT_HUMAN_STATE=docs/status.md'
+echo 'DOCS_ROUTER=docs/README.md'
+echo 'DEVELOPMENT_POLICY=docs/development/README.md'
+echo 'TESTING_POLICY=docs/development/testing.md'
+echo 'TOOLING_POLICY=docs/development/tooling.md'
+echo 'PROJECT_CHECK=scripts/check.sh'

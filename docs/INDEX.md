@@ -1,5 +1,14 @@
 # PS-to-VNC Documentation Index
 
+> **Compatibility index**
+>
+> Canonical documentation router: `docs/README.md`.
+>
+> This index remains for migration-era tooling and historical completeness.
+>
+> CANONICAL_DOCS_ROUTER=docs/README.md
+
+
 This is the canonical entry point for current PS-to-VNC documentation.
 
 ## Project
@@ -94,3 +103,50 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 - `docs/M2_COMPLETION.md` — authoritative M2 closure and accelerated-migration transition record.
 
 - `docs/M3_MACRO_MIGRATION.md` — coarse-first hierarchical migration authority for the M3 implementation scaffold.
+
+## Development continuity
+
+Canonical successor entry points:
+
+- `AGENTS.md`
+- `CONTRIBUTING.md`
+- `docs/README.md`
+- `docs/status.md`
+
+Development-system policy:
+
+- `docs/development/README.md`
+- `docs/development/documentation.md`
+- `docs/development/testing.md`
+- `docs/development/tooling.md`
+- `docs/development/lessons-learned.md`
+
+Decision records:
+
+- `docs/adr/README.md`
+- `docs/adr/0001-development-continuity-baseline.md`
+
+Machine-readable development-system state:
+
+- `runtime/DEVELOPMENT_SYSTEM.env`
+
+Checks:
+
+- `scripts/continuity-check.sh`
+- `scripts/check.sh`
+
+## Complete compatibility document inventory
+
+The canonical curated documentation router is `docs/README.md`.
+
+This section exists to preserve the migration-era invariant that every
+Markdown document remains mechanically discoverable from `docs/INDEX.md`.
+Its presence does not make every listed document a current authority.
+
+- `docs/ARCHITECTURAL_NORMALIZATION.md`
+- `docs/ARCHITECTURE.md`
+- `docs/DEPENDENCY_RULES.md`
+- `docs/NORMALIZATION_SEQUENCE.md`
+- `docs/STATE_OWNERSHIP.md`
+- `docs/TARGET_ARCHITECTURE.md`
+- `docs/VERSIONING.md`

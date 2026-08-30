@@ -63,6 +63,13 @@ case "$CURRENT_STAGE" in
         test -n "$NEXT_ACTION"
         ;;
 
+
+    M4)
+        test "$LAST_COMPLETE_STAGE" = 'M3'
+        test "$CURRENT_STAGE_STATUS" = \
+            'ARCHITECTURAL_NORMALIZATION'
+        test -n "$NEXT_ACTION"
+        ;;
     *)
         echo "ERROR=UNSUPPORTED_CURRENT_STAGE:$CURRENT_STAGE"
         exit 75
@@ -482,6 +489,52 @@ case "$CURRENT_STAGE" in
         fi
         ;;
 
+
+    M4)
+        test -f runtime/M4_SOURCE_AUTHORITY.env
+
+        (
+            # shellcheck disable=SC1091
+            source runtime/M4_SOURCE_AUTHORITY.env
+
+            test "$CURRENT_SOURCE_COMMIT" = \
+                "$CURRENT_SOURCE_HEAD"
+
+            test "$CURRENT_PERMANENT_SOURCE_ROOT" = 'src'
+            test "$CURRENT_BUILD_AUTHORITY" = \
+                'scripts/build.sh'
+
+            test -d "$CURRENT_PERMANENT_SOURCE_ROOT"
+            test -f "$CURRENT_BUILD_AUTHORITY"
+
+            test -n "$CURRENT_WORKING_ELF_STATUS"
+            test -n "$CURRENT_WORKING_ELF_SHA256"
+            test -n "$CURRENT_WORKING_PT_LOAD_SHA256"
+
+            if [ "$CURRENT_WORKING_ELF_STATUS" = \
+                 'HARDWARE_QUALIFIED' ]
+            then
+                test "$CURRENT_WORKING_ELF_SHA256" = \
+                    "$LAST_VALIDATED_WORKING_ELF_SHA256"
+
+                test "$CURRENT_WORKING_ELF_SHA256" = \
+                    "$LAST_VALIDATED_ELF_SHA256"
+
+                test "$CURRENT_WORKING_PT_LOAD_SHA256" = \
+                    "$LAST_VALIDATED_PT_LOAD_SHA256"
+
+                test "$CURRENT_HARDWARE_QUALIFICATION" = \
+                    'PASS_MACHINE_AND_PHYSICAL'
+            fi
+
+            echo "M4_CURRENT_NORMALIZATION_TRANCHE=$CURRENT_NORMALIZATION_TRANCHE"
+            echo "M4_CURRENT_SOURCE_COMMIT=$CURRENT_SOURCE_COMMIT"
+            echo "M4_CURRENT_WORKING_ELF_STATUS=$CURRENT_WORKING_ELF_STATUS"
+            echo 'M4_SOURCE_AUTHORITY=PASS'
+        )
+
+        echo 'WORKING_SOURCE_GENERATION=M4'
+        ;;
     *)
         echo "ERROR=UNSUPPORTED_WORKING_SOURCE_STAGE:$CURRENT_STAGE"
         exit 76

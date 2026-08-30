@@ -1,5 +1,18 @@
 # START HERE — PS-to-VNC
 
+> **Compatibility entry point**
+>
+> Canonical development-session bootstrap: `AGENTS.md`.
+>
+> Canonical current state: `docs/status.md`.
+>
+> This file remains because migration-era workflows reference its path.
+> Historical current-state material below is not the canonical current-state
+> authority.
+>
+> CANONICAL_SESSION_BOOTSTRAP=AGENTS.md
+
+
 This is the mandatory recovery entry point whenever conversational or
 developer context is missing.
 

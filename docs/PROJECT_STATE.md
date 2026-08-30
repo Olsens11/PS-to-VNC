@@ -1,5 +1,15 @@
 # PS-to-VNC Project State
 
+> **Compatibility current-state document**
+>
+> Canonical concise current state: `docs/status.md`.
+>
+> This migration-era document remains because existing tooling references it
+> and its historical checkpoints remain useful.
+>
+> CANONICAL_CURRENT_STATE=docs/status.md
+
+
 ## Current state
 
 Repository bootstrap is in progress.
