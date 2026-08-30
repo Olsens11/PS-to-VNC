@@ -1,0 +1,11 @@
+leaf	logical_lines	newline_characters	final_newline	gcc_function_definitions	consumer_tus	classification
+ps2vnc_calibration_state.inc	3254	3254	YES	48	ps2vnc_services.c	BLOCKING_COARSE_SPLIT
+ps2vnc_management_config.inc	3120	3120	YES	38	ps2vnc_services.c	BLOCKING_COARSE_SPLIT
+ps2vnc_runtime_tail.inc	1717	1717	YES	39	ps2vnc_runtime_tail.c	OPTIONAL_REFINEMENT
+ps2vnc_runtime_core.inc	1694	1694	YES	34	ps2vnc_runtime.c	OPTIONAL_REFINEMENT
+ps2vnc_display_tail.inc	1690	1689	NO	2	ps2vnc_display_tail.c	OPTIONAL_REFINEMENT
+ps2vnc_ui_core.inc	1548	1548	YES	28	ps2vnc_ui_display.c	OPTIONAL_REFINEMENT
+ps2vnc_ui_tail.inc	1546	1546	YES	1	ps2vnc_ui_tail.c	ACCEPT_SINGLE_FUNCTION_LEAF
+ps2vnc_framebuffer_core.inc	1266	1266	YES	22	ps2vnc_framebuffer.c	ACCEPT_FOR_MIGRATION
+ps2vnc_framebuffer_tail.inc	1234	1234	YES	11	ps2vnc_framebuffer_tail.c	ACCEPT_FOR_MIGRATION
+ps2vnc_display_core.inc	1232	1232	YES	13	ps2vnc_display.c	ACCEPT_FOR_MIGRATION
