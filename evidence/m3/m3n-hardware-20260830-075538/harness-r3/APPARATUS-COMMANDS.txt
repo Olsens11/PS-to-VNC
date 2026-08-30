@@ -1,0 +1,3 @@
+HARNESS_COMMAND=/home/ps2/ps2vnc/artifacts/test-tools/display-stress/v2/ps2vnc_display_stress.py --run-dir /home/ps2/PS-to-VNC/evidence/m3/m3n-hardware-20260830-075538/harness-r3 --displayctl /usr/local/bin/ps2vnc-displayctl --modes 480i,480p-hires,576i,720p,1080i --iterations 5 --strategy steady --lease 120 --dwell 0 --recovery-margin 0 --post-active-stabilize 1 --workload-seconds 10 --pre-restore-quiet 1 --post-restore-stabilize 1 --inter-iteration-baseline 1 --transition-timeout 120 --poll-interval 0.25 --mode-order round-robin
+DISPLAYCTL=/usr/local/bin/ps2vnc-displayctl
+COLLECTORS=none
