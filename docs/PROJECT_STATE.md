@@ -320,3 +320,24 @@ Target:
 Next:
 
     M2B_mechanically_extract_config_scalar_parsers
+
+## M2B source extraction complete
+
+The M2 scalar configuration parsers have been mechanically moved into the
+existing configuration-text translation unit.
+
+Source commit:
+
+    58d22cba30174f92ebc50418da30080cef68d7c1
+
+Moved:
+
+- ps2vnc_config_parse_int
+- ps2vnc_config_parse_bool
+
+No callers, behavior, Makefile linkage, build result, or hardware state were
+changed by M2B.
+
+Next:
+
+    M2C_build_and_characterize_scalar_parser_DUT

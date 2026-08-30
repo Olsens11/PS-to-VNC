@@ -58,8 +58,18 @@ case "$CURRENT_STAGE" in
         test "$LAST_COMPLETE_STAGE" = 'M1'
         test "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS'
 
-        test "$NEXT_ACTION" = \
-            'M2B_mechanically_extract_config_scalar_parsers'
+        case "$NEXT_ACTION" in
+            M2B_mechanically_extract_config_scalar_parsers)
+                ;;
+
+            M2C_build_and_characterize_scalar_parser_DUT)
+                ;;
+
+            *)
+                echo "ERROR=UNSUPPORTED_M2_NEXT_ACTION:$NEXT_ACTION"
+                exit 75
+                ;;
+        esac
         ;;
 
     *)
@@ -434,7 +444,7 @@ test "$CURRENT_WORKING_SOURCE" = 'working/b4a/ps2ip.c'
 test -f "$CURRENT_WORKING_SOURCE"
 
 case "$CURRENT_STAGE" in
-    M1|M2)
+    M1)
         test "$CURRENT_SOURCE_HEAD" = \
             '0f1b88ddf7821c935b68aabe6d65180bf02b074f'
 
@@ -449,12 +459,94 @@ case "$CURRENT_STAGE" in
         echo 'WORKING_SOURCE_GENERATION=M1B'
         echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
         echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
+        echo 'M1_WORKING_SOURCE_AUTHORITY=PASS'
+        ;;
 
-        if [ "$CURRENT_STAGE" = 'M2' ]; then
-            echo 'M1_WORKING_SOURCE_AUTHORITY=HISTORICAL_BASE_FOR_M2A'
-        else
-            echo 'M1_WORKING_SOURCE_AUTHORITY=PASS'
-        fi
+    M2)
+        case "$NEXT_ACTION" in
+            M2B_mechanically_extract_config_scalar_parsers)
+                test "$CURRENT_SOURCE_HEAD" = \
+                    '0f1b88ddf7821c935b68aabe6d65180bf02b074f'
+
+                test -f runtime/M2_BOUNDARY_AUTHORITY.env
+
+                # shellcheck disable=SC1091
+                source runtime/M2_BOUNDARY_AUTHORITY.env
+
+                test "$(
+                    sha256sum "$CURRENT_WORKING_SOURCE" |
+                    awk '{print $1}'
+                )" = "$M2_SELECTION_BASE_SOURCE_SHA256"
+
+                echo 'WORKING_SOURCE_GENERATION=M1B'
+                echo 'M1_WORKING_SOURCE_AUTHORITY=HISTORICAL_BASE_FOR_M2A'
+                ;;
+
+            M2C_build_and_characterize_scalar_parser_DUT)
+                test -f runtime/M2_SOURCE_AUTHORITY.env
+
+                # shellcheck disable=SC1091
+                source runtime/M2_SOURCE_AUTHORITY.env
+
+                test "$M2_SOURCE_STAGE" = 'M2B'
+                test "$M2_SOURCE_STATUS" = 'EXTRACTED'
+                test "$M2_SOURCE_AUTHORITY_ROLE" = 'SOURCE_ONLY'
+                test "$M2_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
+
+                test "$(
+                    sha256sum "$M2_MONOLITH_PATH" |
+                    awk '{print $1}'
+                )" = "$M2_POST_MONOLITH_SHA256"
+
+                test "$(
+                    sha256sum "$M2_CONFIG_TEXT_SOURCE_PATH" |
+                    awk '{print $1}'
+                )" = "$M2_POST_CONFIG_TEXT_SOURCE_SHA256"
+
+                test "$(
+                    sha256sum "$M2_CONFIG_TEXT_HEADER_PATH" |
+                    awk '{print $1}'
+                )" = "$M2_POST_CONFIG_TEXT_HEADER_SHA256"
+
+                test "$(
+                    sha256sum "$M2_MAKEFILE_PATH" |
+                    awk '{print $1}'
+                )" = "$M2_MAKEFILE_SHA256"
+
+                git cat-file -e "$M2_SOURCE_COMMIT^{commit}"
+
+                test "$(
+                    git show \
+                        "${M2_SOURCE_COMMIT}:${M2_MONOLITH_PATH}" |
+                    sha256sum |
+                    awk '{print $1}'
+                )" = "$M2_POST_MONOLITH_SHA256"
+
+                test "$(
+                    git show \
+                        "${M2_SOURCE_COMMIT}:${M2_CONFIG_TEXT_SOURCE_PATH}" |
+                    sha256sum |
+                    awk '{print $1}'
+                )" = "$M2_POST_CONFIG_TEXT_SOURCE_SHA256"
+
+                test "$(
+                    git show \
+                        "${M2_SOURCE_COMMIT}:${M2_CONFIG_TEXT_HEADER_PATH}" |
+                    sha256sum |
+                    awk '{print $1}'
+                )" = "$M2_POST_CONFIG_TEXT_HEADER_SHA256"
+
+                echo 'WORKING_SOURCE_GENERATION=M2B'
+                echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
+                echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
+                echo 'M2_WORKING_SOURCE_AUTHORITY=PASS'
+                ;;
+
+            *)
+                echo "ERROR=UNKNOWN_M2_WORKING_SOURCE_STATE:$NEXT_ACTION"
+                exit 76
+                ;;
+        esac
         ;;
 
     *)
@@ -992,11 +1084,7 @@ fi
 
 echo
 echo '===== U. M2A EXTRACTION BOUNDARY ====='
-
 if [ "$CURRENT_STAGE" = 'M2' ]; then
-    test "$NEXT_ACTION" = \
-        'M2B_mechanically_extract_config_scalar_parsers'
-
     test -f runtime/M2_BOUNDARY_AUTHORITY.env
     test -f docs/M2A_EXTRACTION_BOUNDARY.md
 
@@ -1008,7 +1096,7 @@ if [ "$CURRENT_STAGE" = 'M2' ]; then
     test "$M2_SOURCE_MUTATION" = 'NO'
 
     test "$M2_SELECTION_BASE_SOURCE_HEAD" = \
-        "$CURRENT_SOURCE_HEAD"
+        '0f1b88ddf7821c935b68aabe6d65180bf02b074f'
 
     test "$M2_TARGET_MODULE" = \
         'working/b4a/ps2vnc_config_text.c'
@@ -1024,14 +1112,79 @@ if [ "$CURRENT_STAGE" = 'M2' ]; then
     test "$M2_SELECTED_CROSS_MODULE_INCOMING_EDGES" = '1'
     test "$M2_SELECTED_TOTAL_CALL_SITES" = '7'
 
-    test "$(
-        sha256sum "$M2_SELECTION_BASE_SOURCE" |
-        awk '{print $1}'
-    )" = "$M2_SELECTION_BASE_SOURCE_SHA256"
-
     echo 'M2A_EXTRACTION_BOUNDARY=PASS'
 else
     echo 'M2A_EXTRACTION_BOUNDARY=NOT_CURRENT_STAGE'
+fi
+
+
+echo
+echo '===== V. M2B SOURCE AUTHORITY ====='
+
+if [ "$CURRENT_STAGE" = 'M2' ] &&
+   [ "$NEXT_ACTION" = \
+       'M2C_build_and_characterize_scalar_parser_DUT' ]
+then
+    test -f runtime/M2_SOURCE_AUTHORITY.env
+    test -f docs/M2B_EXTRACTION_RESULT.md
+
+    # shellcheck disable=SC1091
+    source runtime/M2_SOURCE_AUTHORITY.env
+
+    test "$M2_SOURCE_STAGE" = 'M2B'
+    test "$M2_SOURCE_STATUS" = 'EXTRACTED'
+    test "$M2_SOURCE_AUTHORITY_ROLE" = 'SOURCE_ONLY'
+
+    test "$M2_SELECTED_FUNCTION_1" = \
+        'ps2vnc_config_parse_int'
+
+    test "$M2_SELECTED_FUNCTION_2" = \
+        'ps2vnc_config_parse_bool'
+
+    test "$M2_CALLER_MUTATION" = 'NO'
+    test "$M2_BODY_MUTATION" = 'NO'
+    test "$M2_STATIC_LINKAGE_REMOVAL_ONLY" = 'YES'
+    test "$M2_MAKEFILE_MUTATION" = 'NO'
+    test "$M2_NEW_OBJECT" = 'NO'
+    test "$M2_EXISTING_OBJECT" = 'ps2vnc_config_text.o'
+
+    test "$M2_BUILD_STATUS" = 'NOT_RUN'
+    test "$M2_HARDWARE_STATUS" = 'NOT_RUN'
+
+    test "$M2_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
+
+    if grep -Eq \
+        '^[[:space:]]*static[[:space:]]+int[[:space:]]+ps2vnc_config_parse_(int|bool)[[:space:]]*\(' \
+        "$M2_MONOLITH_PATH"
+    then
+        echo 'ERROR=M2B_PRIVATE_DEFINITION_REMAINS'
+        exit 80
+    fi
+
+    test "$(
+        grep -Ec \
+            '^[[:space:]]*int[[:space:]]+ps2vnc_config_parse_int[[:space:]]*\(' \
+            "$M2_CONFIG_TEXT_SOURCE_PATH"
+    )" -eq 1
+
+    test "$(
+        grep -Ec \
+            '^[[:space:]]*int[[:space:]]+ps2vnc_config_parse_bool[[:space:]]*\(' \
+            "$M2_CONFIG_TEXT_SOURCE_PATH"
+    )" -eq 1
+
+    grep -Fq \
+        'int ps2vnc_config_parse_int(' \
+        "$M2_CONFIG_TEXT_HEADER_PATH"
+
+    grep -Fq \
+        'int ps2vnc_config_parse_bool(' \
+        "$M2_CONFIG_TEXT_HEADER_PATH"
+
+    echo "M2B_SOURCE_COMMIT=$M2_SOURCE_COMMIT"
+    echo 'M2B_SOURCE_AUTHORITY=PASS'
+else
+    echo 'M2B_SOURCE_AUTHORITY=NOT_ACTIVE'
 fi
 
 echo '===== FINAL ====='

@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M2
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=0f1b88ddf7821c935b68aabe6d65180bf02b074f
+    CURRENT_SOURCE_HEAD=58d22cba30174f92ebc50418da30080cef68d7c1
     LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M2B_mechanically_extract_config_scalar_parsers
+    NEXT_ACTION=M2C_build_and_characterize_scalar_parser_DUT
 
 The canonical machine-readable source remains:
 
@@ -550,3 +550,42 @@ Target module:
 Next:
 
     M2B_mechanically_extract_config_scalar_parsers
+
+## M2B mechanical extraction checkpoint
+
+M2B mechanically moved:
+
+- ps2vnc_config_parse_int
+- ps2vnc_config_parse_bool
+
+from the monolith into:
+
+    working/b4a/ps2vnc_config_text.c
+
+Source commit:
+
+    58d22cba30174f92ebc50418da30080cef68d7c1
+
+Caller mutation:
+
+    NO
+
+Behavior mutation:
+
+    NO
+
+Makefile mutation:
+
+    NO
+
+Build performed:
+
+    NO
+
+Hardware run performed:
+
+    NO
+
+Next:
+
+    M2C_build_and_characterize_scalar_parser_DUT

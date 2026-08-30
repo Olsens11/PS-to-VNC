@@ -84,3 +84,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 
 - `docs/M1_COMPLETION.md` — authoritative closure record for M1.
 - `docs/M2A_EXTRACTION_BOUNDARY.md` — exact committed M2A scalar-parser extraction boundary.
+
+## M2B mechanical extraction
+
+- `docs/M2B_EXTRACTION_RESULT.md` — exact result and source authority for the M2 scalar-parser mechanical extraction.

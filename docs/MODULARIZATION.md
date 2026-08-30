@@ -258,3 +258,23 @@ Both selected functions are free of global references and cross-module
 outgoing project calls.
 
 M2B will move the exact bodies without caller or behavior changes.
+
+## M2B mechanical extraction
+
+M2B moved the two selected scalar parsers into
+`working/b4a/ps2vnc_config_text.c`.
+
+The move changed linkage only as required to cross the translation-unit
+boundary.
+
+Callers remained unchanged.
+
+The existing `ps2vnc_config_text.o` build linkage remained unchanged.
+
+Source commit:
+
+    58d22cba30174f92ebc50418da30080cef68d7c1
+
+Next:
+
+    M2C_build_and_characterize_scalar_parser_DUT
