@@ -1,0 +1,5 @@
+address	size	type	symbol	source
+00000000	00000810	t	ps2vnc_update_mapped_hires_dirty_buffer	/work/ps2vnc_framebuffer_tail.inc:94
+00000810	000003f8	T	ps2vnc_display_commit_update	/work/ps2vnc_framebuffer_tail.inc:682
+00000c08	00000448	T	publish_hires_background	/work/ps2vnc_framebuffer_tail.inc:709
+00001050	00000308	T	ps2vnc_display_publish_full_desktop	/work/ps2vnc_framebuffer_tail.inc:1041

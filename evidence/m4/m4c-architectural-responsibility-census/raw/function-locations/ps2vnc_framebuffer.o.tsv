@@ -1,0 +1,14 @@
+address	size	type	symbol	source
+00000000	0000011c	t	ps2vnc_display_direct_write_row	/work/ps2vnc_framebuffer_core.inc:1109
+00000120	00000140	t	hextile_fill_rect	/work/ps2vnc_framebuffer_core.inc:116
+00000260	000000f0	T	start_controller_thread	/work/ps2vnc_framebuffer_core.inc:3
+00000350	000000b0	T	request_framebuffer	/work/ps2vnc_framebuffer_core.inc:45
+00000400	000012a4	T	receive_framebuffer_update	/work/ps2vnc_framebuffer_core.inc:398
+000016a8	000001d4	T	probe_extended_desktop_size	/work/ps2vnc_framebuffer_core.inc:976
+00001880	00000030	T	hires_bg_is_field_separated	/work/ps2vnc_framebuffer_core.inc:1058
+000018b0	00000054	T	hires_bg_storage_row	/work/ps2vnc_framebuffer_core.inc:1058
+00001908	00000084	T	ps2vnc_hires_mapped_storage_row	/work/ps2vnc_framebuffer_core.inc:1083
+00001990	0000000c	T	ps2vnc_display_direct_write_cancel	/work/ps2vnc_framebuffer_core.inc:1130
+000019a0	0000005c	T	ps2vnc_display_begin_update	/work/ps2vnc_framebuffer_core.inc:1137
+00001a00	00000010	T	ps2vnc_display_finish_update_decode	/work/ps2vnc_framebuffer_core.inc:1146
+00001a10	00000234	T	sync_copy_hires_dirty_rows	/work/ps2vnc_framebuffer_core.inc:1201

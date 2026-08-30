@@ -1,0 +1,12 @@
+address	size	type	symbol	source
+00000000	00000350	t	ps2vnc_switch_display_mode_core	/work/ps2vnc_display_core.inc:13
+00000350	00000094	t	ps2vnc_publish_restored_ack	/work/ps2vnc_display_core.inc:568
+000003e8	0000015c	t	ps2vnc_remote_control_get_value.part.0	/work/ps2vnc_display_core.inc:746
+00000548	00000098	t	ps2vnc_remote_control_get_u32	/work/ps2vnc_display_core.inc:787
+000005e0	000003c8	T	ps2vnc_switch_display_mode	/work/ps2vnc_display_core.inc:214
+000009a8	00000248	T	ps2vnc_startup_finalize_display_transaction	/work/ps2vnc_display_core.inc:603
+00000bf0	000000d0	T	ps2vnc_remote_result_post	/work/ps2vnc_display_core.inc:822
+00000cc0	00000070	T	ps2vnc_remote_display_fail	/work/ps2vnc_display_core.inc:879
+00000d30	000000d8	T	ps2vnc_remote_display_lease_expired	/work/ps2vnc_display_core.inc:895
+00000e08	00000428	T	ps2vnc_remote_control_poll_idle	/work/ps2vnc_display_core.inc:932
+00001230	00000554	T	ps2vnc_global_rollback_display_transaction	/work/ps2vnc_display_core.inc:1111

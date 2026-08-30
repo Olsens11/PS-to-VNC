@@ -1,0 +1,13 @@
+object	compiled_functions	mutable_data_symbols	readonly_data_symbols	cross_object_refs_out	cross_object_refs_in	external_undefined_symbols
+ps2ip.o	0	10	0	0	17	0
+ps2vnc_runtime.o	33	171	25	5	521	15
+ps2vnc_runtime_tail.o	36	15	11	108	72	19
+ps2vnc_framebuffer.o	13	0	0	85	19	7
+ps2vnc_framebuffer_tail.o	4	19	0	35	4	6
+ps2vnc_ui_display.o	22	0	2	41	21	2
+ps2vnc_ui_tail.o	1	0	0	77	1	5
+ps2vnc_display.o	11	0	0	103	9	10
+ps2vnc_display_tail.o	1	0	0	156	0	30
+ps2vnc_services.o	27	6	1	64	42	24
+ps2vnc_management_tail.o	20	0	0	23	23	26
+ps2vnc_calibration_tail.o	17	0	0	57	25	29
