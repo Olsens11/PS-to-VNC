@@ -1,0 +1,3 @@
+/usr/local/ps2dev/ee/bin/mips64r5900el-ps2-elf-gcc
+/usr/local/ps2dev/ee/bin/mips64r5900el-ps2-elf-nm
+mips64r5900el-ps2-elf-gcc (GCC) 15.2.0

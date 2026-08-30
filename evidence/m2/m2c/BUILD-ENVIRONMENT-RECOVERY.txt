@@ -1,0 +1,23 @@
+M2C build-environment recovery
+
+Initial pinned image state:
+- PS2DEV=/usr/local/ps2dev
+- EE compiler exists at /usr/local/ps2dev/ee/bin
+- default image PATH omitted the PS2DEV tool directories
+- make was not installed in the pristine image
+
+First failure:
+- make was available because build-base was installed
+- EE compiler was not on PATH
+
+Second failure:
+- EE compiler was added to PATH
+- build-base installation was accidentally omitted
+- fresh container therefore had no make
+
+Final M2C runner:
+- same pinned Docker image
+- same PS2DEV toolchain
+- no dependency version changes
+- installs Alpine build-base in each fresh build container
+- exports standard PS2DEV tool directories onto PATH

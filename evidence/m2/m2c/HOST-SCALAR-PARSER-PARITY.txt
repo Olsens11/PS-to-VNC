@@ -1,0 +1,27 @@
+PASS int zero
+PASS int one
+PASS int negative allowed
+PASS int negative rejected
+PASS int positive required
+PASS int zero not positive
+PASS int negative not positive
+PASS int plus rejected
+PASS int empty rejected
+PASS int alpha rejected
+PASS int leading space
+PASS int trailing space
+PASS int int max
+PASS int int min
+PASS int positive overflow
+PASS int negative overflow
+PASS bool true
+PASS bool one
+PASS bool false
+PASS bool zero
+PASS bool capital rejected
+PASS bool yes rejected
+PASS bool empty rejected
+PASS bool null rejected
+PASS_COUNT=24
+FAIL_COUNT=0
+HOST_SCALAR_PARSER_PARITY=PASS

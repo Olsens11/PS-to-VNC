@@ -1,0 +1,8 @@
+         U errno
+00000248 T ps2vnc_config_parse_bool
+000000a8 T ps2vnc_config_parse_int
+00000000 T ps2vnc_config_trim_left
+00000038 T ps2vnc_config_trim_right
+         U strcmp
+         U strlen
+         U strtol

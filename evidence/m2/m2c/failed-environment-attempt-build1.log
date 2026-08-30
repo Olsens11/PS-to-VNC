@@ -1,0 +1,3 @@
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2ip.c -o ps2ip.o
+make: mips64r5900el-ps2-elf-gcc: No such file or directory
+make: *** [/usr/local/ps2dev/ps2sdk/samples/Makefile.eeglobal:65: ps2ip.o] Error 127
