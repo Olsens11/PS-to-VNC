@@ -72,3 +72,30 @@ The PS2 load image remains byte-for-byte identical to M2:
 Next:
 
     M3C_recursive_split_macro_regions
+
+## M3C six-leaf recursive hierarchy
+
+All three M3B macro regions have been subdivided simultaneously.
+
+The implementation now has six source-ordered leaves:
+
+    region1a = 3414 lines
+    region1b = 3096 lines
+    region2a = 2500 lines
+    region2b = 3125 lines
+    region3a = 3254 lines
+    region3b = 2924 lines
+
+Each child pair reconstructs its M3B parent byte-for-byte.
+
+The resulting PS2 load image remains byte-for-byte identical to M2:
+
+    c8040ee6350e658d80f840d902dc9ab44e831f5907f484fa644e84fa1aaad05e
+
+A per-leaf module/function inventory is stored at:
+
+    evidence/m3/m3c-six-leaf-split/LEAF-INVENTORY.tsv
+
+Next:
+
+    M3D_classify_six_macro_leaves_and_promote_subsystems

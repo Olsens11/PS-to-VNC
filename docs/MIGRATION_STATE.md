@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M3
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=08dfca50eaa2256666156aeb78d1480ae8a34cc3
+    CURRENT_SOURCE_HEAD=ba632f037063fd78314701be7473e7c57055c2a3
     LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M3C_recursive_split_macro_regions
+    NEXT_ACTION=M3D_classify_six_macro_leaves_and_promote_subsystems
 
 The canonical machine-readable source remains:
 
@@ -657,3 +657,18 @@ PS2 load image:
 Next:
 
     M3C_recursive_split_macro_regions
+
+## M3C six-leaf hierarchy
+
+The three large M3B branches have now been recursively divided into six
+roughly subsystem-sized leaves.
+
+All parent reconstructions are byte-exact.
+
+PS2 load image:
+
+    BYTE_EXACT_TO_M2
+
+Next:
+
+    M3D_classify_six_macro_leaves_and_promote_subsystems

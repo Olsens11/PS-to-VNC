@@ -378,3 +378,12 @@ exact validated M2 PS2 load image.
 Next:
 
     M3C_recursive_split_macro_regions
+
+## M3C six-leaf hierarchy
+
+The coarse implementation tree now has six manageable leaves while retaining
+the exact validated PS2 load image.
+
+Next:
+
+    M3D_classify_six_macro_leaves_and_promote_subsystems

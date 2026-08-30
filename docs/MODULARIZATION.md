@@ -322,3 +322,15 @@ small one-function migrations.
 Next:
 
     M3C_recursive_split_macro_regions
+
+## M3C recursive hierarchy
+
+The M3 implementation tree now contains six leaves rather than three
+approximately 6,000-line regions.
+
+The next step classifies these leaves by actual function/module content and
+begins promoting coherent regions toward real subsystem boundaries.
+
+Next:
+
+    M3D_classify_six_macro_leaves_and_promote_subsystems
