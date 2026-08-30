@@ -1,3 +1,2 @@
-/* M3 semantic hierarchy: framebuffer engine + management/config. */
+/* M3E main-TU hierarchy: framebuffer engine. */
 #include "ps2vnc_framebuffer_engine.inc"
-#include "ps2vnc_management_config.inc"

@@ -1,4 +1,4 @@
-static ps2vnc_backend_t ps2vnc_video_mode_default_backend(
+ps2vnc_backend_t ps2vnc_video_mode_default_backend(
     const ps2vnc_video_mode_t *mode)
 {
     if (mode == NULL)
@@ -11,7 +11,7 @@ static ps2vnc_backend_t ps2vnc_video_mode_default_backend(
     return mode->recommended_backend;
 }
 
-static const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
+const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
     const char *name)
 {
     unsigned int i;
@@ -28,8 +28,8 @@ static const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
 }
 
 /* Built-in fallback when no valid persisted startup mode exists. */
-static const ps2vnc_video_mode_t *active_video_mode = &video_mode_1080i;
-static ps2vnc_backend_t active_display_backend = PS2VNC_BACKEND_NONE;
+const ps2vnc_video_mode_t *active_video_mode = &video_mode_1080i;
+ps2vnc_backend_t active_display_backend = PS2VNC_BACKEND_NONE;
 
 
 /*
@@ -46,7 +46,7 @@ static ps2vnc_backend_t active_display_backend = PS2VNC_BACKEND_NONE;
  * Narrowing that surface horizontally must not collapse its EE backing from
  * 576 field-separated raster rows to 288 rows.
  */
-static unsigned int ps2vnc_hires_effective_width(void)
+unsigned int ps2vnc_hires_effective_width(void)
 {
     unsigned int width;
 
@@ -136,7 +136,7 @@ static int ps2vnc_hires_requires_vertical_mapping(void)
 }
 
 
-static int ps2vnc_hires_requires_raster_mapping(void)
+int ps2vnc_hires_requires_raster_mapping(void)
 {
     return
         ps2vnc_hires_requires_horizontal_mapping() ||
@@ -152,13 +152,13 @@ static int ps2vnc_hires_requires_raster_mapping(void)
  *   - otherwise retain full physical-raster height, including the existing
  *     field-separated representation of interlaced GS_FRAME modes.
  */
-static unsigned int ps2vnc_hires_storage_width(void)
+unsigned int ps2vnc_hires_storage_width(void)
 {
     return ps2vnc_hires_effective_width();
 }
 
 
-static unsigned int ps2vnc_hires_storage_height(void)
+unsigned int ps2vnc_hires_storage_height(void)
 {
     if (active_video_mode == NULL)
         return 0;
@@ -170,7 +170,7 @@ static unsigned int ps2vnc_hires_storage_height(void)
 }
 
 
-static unsigned int ps2vnc_hires_storage_bytes(void)
+unsigned int ps2vnc_hires_storage_bytes(void)
 {
     return
         ps2vnc_hires_storage_width() *
@@ -216,7 +216,7 @@ static int ps2vnc_display_logical_desktop_size(
     return 0;
 }
 
-static float ps2vnc_display_output_x(float x)
+float ps2vnc_display_output_x(float x)
 {
     unsigned int draw_width;
 
@@ -233,7 +233,7 @@ static float ps2vnc_display_output_x(float x)
     return x * (float)draw_width / (float)OUTPUT_WIDTH;
 }
 
-static float ps2vnc_display_output_y(float y)
+float ps2vnc_display_output_y(float y)
 {
     unsigned int draw_height;
 
@@ -256,21 +256,21 @@ static float ps2vnc_display_output_y(float y)
  *
  * Physical GS output remains fixed at 1280x720.
  */
-static unsigned int desktop_width = VNC_WIDTH;
-static unsigned int desktop_height = VNC_HEIGHT;
+unsigned int desktop_width = VNC_WIDTH;
+unsigned int desktop_height = VNC_HEIGHT;
 
 /*
  * Position of the 1:1 remote desktop inside the fixed 1280x720
  * physical HIRES output.
  */
-static unsigned int desktop_output_x = 0;
-static unsigned int desktop_output_y = 0;
-static unsigned int desktop_output_width = VNC_WIDTH;
-static unsigned int desktop_output_height = VNC_HEIGHT;
+unsigned int desktop_output_x = 0;
+unsigned int desktop_output_y = 0;
+unsigned int desktop_output_width = VNC_WIDTH;
+unsigned int desktop_output_height = VNC_HEIGHT;
 
-static unsigned short *hires_bg_buffer = NULL;
-static unsigned short *hires_bg_back_buffer = NULL;
-static unsigned short *live_direct_present_buffer = NULL;
+unsigned short *hires_bg_buffer = NULL;
+unsigned short *hires_bg_back_buffer = NULL;
+unsigned short *live_direct_present_buffer = NULL;
 
 /*
  * D17AL-F7B:
@@ -279,10 +279,10 @@ static unsigned short *live_direct_present_buffer = NULL;
  * the ordinary authoritative CPU framebuffer. The presentation backend then
  * maps that complete image into 704x462.
  */
-static unsigned short *hires_mapped_source_framebuffer = NULL;
-static int hires_bg_configured = 0;
-static int live_direct_present_safe = 0;
-static int live_linear_framebuffer_stale = 0;
+unsigned short *hires_mapped_source_framebuffer = NULL;
+int hires_bg_configured = 0;
+int live_direct_present_safe = 0;
+int live_linear_framebuffer_stale = 0;
 static unsigned int hires_bg_storage_row(unsigned int raster_y);
 
 /*
@@ -290,7 +290,7 @@ static unsigned int hires_bg_storage_row(unsigned int raster_y);
  * currently has. Once the safe desktop is finalized, recovery sessions
  * will be required to return at exactly that geometry.
  */
-static int desktop_geometry_locked = 0;
+int desktop_geometry_locked = 0;
 /*
  * PS2VNC private-link bootstrap contract.
  *
@@ -488,7 +488,7 @@ static rfb_out_message_t rfb_out_queue[RFB_OUT_QUEUE_CAPACITY];
 static volatile unsigned int rfb_out_head = 0;
 static volatile unsigned int rfb_out_tail = 0;
 static volatile unsigned int rfb_out_count = 0;
-static int rfb_queue_sema = -1;
+int rfb_queue_sema = -1;
 
 /*
  * Buffered TCP receive layer.
@@ -636,10 +636,10 @@ static void rfb_dirty_mark_rect(
  * G2-C installs only the dormant ownership boundary. No current UI action
  * requests a handoff yet, so existing runtime behavior remains unchanged.
  */
-static volatile int controller_pad_pause_requested = 0;
-static volatile int controller_pad_pause_ack = 0;
+volatile int controller_pad_pause_requested = 0;
+volatile int controller_pad_pause_ack = 0;
 
-static volatile int controller_thread_error = 0;
+volatile int controller_thread_error = 0;
 
 /*
  * TEST12B CONNECTION RECOVERY
@@ -651,15 +651,15 @@ static volatile int controller_thread_error = 0;
 #define RECONNECT_TIMEOUT_SECONDS 10
 #define RECONNECT_MAX_ATTEMPTS    10
 
-static volatile int rfb_connected = 0;
-static volatile int exit_requested = 0;
+volatile int rfb_connected = 0;
+volatile int exit_requested = 0;
 
 /*
  * D4 startup override:
  * hold L1 + R1 while PS2VNC starts to force interactive display
  * calibration even when a valid stored display preset was loaded.
  */
-static int force_screen_fit_calibration = 0;
+int force_screen_fit_calibration = 0;
 
 static int controller_sock = -1;
 
@@ -688,10 +688,10 @@ static volatile unsigned int live_encoding = 0;
  * was contributing to the receive corruption seen in test26.
  */
 #define DEBUG_UDP_PORT 5999
-static int debug_udp_sock = -1;
-static struct sockaddr_in debug_udp_addr;
+int debug_udp_sock = -1;
+struct sockaddr_in debug_udp_addr;
 static volatile unsigned int debug_frame_counter = 0;
-static volatile unsigned int debug_stage_id = 0;
+volatile unsigned int debug_stage_id = 0;
 static volatile int debug_changed_bytes = 0;
 
 /* D17AL-F8J2-B4A hard-transition envelope phase, 0 = idle. */
@@ -765,7 +765,7 @@ static volatile int osk_shift = 0;
 static volatile int osk_ctrl = 0;
 static volatile int osk_alt = 0;
 static volatile int osk_page = 0;
-static volatile unsigned int osk_generation = 1;
+volatile unsigned int osk_generation = 1;
 
 /*
  * TEST15E2-D2A local display selector.
@@ -780,7 +780,7 @@ static volatile unsigned int osk_generation = 1;
  */
 #define DISPLAY_MODE_REQUEST_NONE 0
 
-static int display_menu_selection_for_mode(
+int display_menu_selection_for_mode(
     const ps2vnc_video_mode_t *mode)
 {
     unsigned int i;
@@ -793,7 +793,7 @@ static int display_menu_selection_for_mode(
     return 0;
 }
 
-static const ps2vnc_video_mode_t *display_menu_mode_at_selection(
+const ps2vnc_video_mode_t *display_menu_mode_at_selection(
     int selection)
 {
     if (selection < 0 ||
@@ -918,11 +918,10 @@ static volatile int display_menu_tab_selection[3] = {
  *
  * Missing config values mean false for backwards compatibility.
  */
-static volatile unsigned char
-    display_mode_locked[VIDEO_MODE_COUNT];
+volatile unsigned char display_mode_locked[VIDEO_MODE_COUNT];
 
-static volatile int display_hide_locked_modes = 0;
-static volatile int display_policy_loaded = 0;
+volatile int display_hide_locked_modes = 0;
+volatile int display_policy_loaded = 0;
 static volatile int display_policy_error = 0;
 
 /*
@@ -1146,12 +1145,12 @@ static int runtime_hotkey_has_hold_extension(
     return 0;
 }
 
-static volatile int system_menu_visible = 0;
-static volatile int system_menu_selection = SYSTEM_MENU_REFRESH;
-static volatile int system_menu_status = SYSTEM_MENU_STATUS_NONE;
-static volatile int system_menu_countdown_action = RUNTIME_ACTION_NONE;
-static volatile unsigned int system_menu_countdown_seconds = 0;
-static volatile int runtime_action_request = RUNTIME_ACTION_NONE;
+volatile int system_menu_visible = 0;
+volatile int system_menu_selection = SYSTEM_MENU_REFRESH;
+volatile int system_menu_status = SYSTEM_MENU_STATUS_NONE;
+volatile int system_menu_countdown_action = RUNTIME_ACTION_NONE;
+volatile unsigned int system_menu_countdown_seconds = 0;
+volatile int runtime_action_request = RUNTIME_ACTION_NONE;
 
 /*
  * D17AL-F8I1B:
@@ -1168,16 +1167,15 @@ enum {
 
 #define SYSTEM_REFRESH_COOLDOWN_SECONDS 3u
 
-static volatile int system_refresh_state = SYSTEM_REFRESH_READY;
-static volatile u64 system_refresh_cooldown_started_tick = 0;
+volatile int system_refresh_state = SYSTEM_REFRESH_READY;
+volatile u64 system_refresh_cooldown_started_tick = 0;
 
 /* Local GS-format keyboard texture buffer. */
-static unsigned short osk_pixels[OSK_WIDTH * OSK_HEIGHT]
-    __attribute__((aligned(128)));
+unsigned short osk_pixels[OSK_WIDTH * OSK_HEIGHT] __attribute__((aligned(128)));
 
 static int screen_row = 0;
 
-static void screenf(const char *fmt, ...)
+void screenf(const char *fmt, ...)
 {
     char buf[79];
     va_list ap;
@@ -1227,7 +1225,7 @@ static unsigned int read_be32(const unsigned char *p)
  * Subtraction is deliberate. Do not validate with x + w or y + h,
  * because hostile/corrupted values could overflow that addition.
  */
-static int region_fits_u32(
+int region_fits_u32(
     unsigned int x,
     unsigned int y,
     unsigned int w,
@@ -1252,7 +1250,7 @@ static int region_fits_u32(
 }
 
 
-static int send_exact(int sock, const void *data, int len)
+int send_exact(int sock, const void *data, int len)
 {
     const unsigned char *p = (const unsigned char *)data;
     int done = 0;
@@ -1355,7 +1353,7 @@ static int ps2vnc_discard_controller_rfb_queue(void)
 /*
  * Main-thread only: send every controller message currently queued.
  */
-static int flush_rfb_outgoing(int sock)
+int flush_rfb_outgoing(int sock)
 {
     for (;;) {
         unsigned char msg[RFB_OUT_MESSAGE_MAX];
@@ -1403,7 +1401,7 @@ static int flush_rfb_outgoing(int sock)
  * is cleared before this function is called, so new controller events
  * are discarded rather than entering this queue.
  */
-static void reset_rfb_transport_state(void)
+void reset_rfb_transport_state(void)
 {
     rfb_rx_pos = 0;
     rfb_rx_end = 0;
@@ -1443,7 +1441,7 @@ static int ps2vnc_remote_display_lease_expired(void);
  * TEST12B carrier-loss detection:
  * recv_exact() is defined before the Ethernet helper itself.
  */
-static int ethGetNetIFLinkStatus(void);
+ int ethGetNetIFLinkStatus(void);
 
 /*
  * D17AL-F4:
@@ -1781,7 +1779,7 @@ static void debug_emit_now(void)
 }
 
 
-static unsigned int profile_ticks_us(u64 ticks)
+unsigned int profile_ticks_us(u64 ticks)
 {
     u32 sec = 0;
     u32 usec = 0;
@@ -2165,7 +2163,7 @@ static int WaitValidNetState(int (*checkingFunction)(void))
     return 0;
 }
 
-static int ethGetNetIFLinkStatus(void)
+int ethGetNetIFLinkStatus(void)
 {
     return NetManIoctl(
         NETMAN_NETIF_IOCTL_GET_LINK_STATUS,
@@ -2177,7 +2175,7 @@ static int ethWaitValidNetIFLinkState(void)
     return WaitValidNetState(&ethGetNetIFLinkStatus);
 }
 
-static int rfb_connect_and_handshake_limited(
+int rfb_connect_and_handshake_limited(
     unsigned int max_width,
     unsigned int max_height)
 {
@@ -2452,7 +2450,7 @@ fail:
  * H4C reconciliation must opt into a wider acceptance envelope explicitly;
  * no existing startup/recovery path is silently weakened.
  */
-static int rfb_connect_and_handshake(void)
+int rfb_connect_and_handshake(void)
 {
     return rfb_connect_and_handshake_limited(
         OUTPUT_WIDTH,
@@ -2460,7 +2458,7 @@ static int rfb_connect_and_handshake(void)
 }
 
 
-static int set_gs555_pixel_format(int sock)
+int set_gs555_pixel_format(int sock)
 {
     static const unsigned char msg[20] = {
         0, 0, 0, 0,
@@ -2517,7 +2515,7 @@ static unsigned int rfb_resize_expected_width = 0;
 static unsigned int rfb_resize_expected_height = 0;
 
 
-static int set_raw_encoding(int sock)
+int set_raw_encoding(int sock)
 {
     static const unsigned char msg[8] = {
         2, 0,
@@ -2536,7 +2534,7 @@ static int set_raw_encoding(int sock)
  * as the mandatory fallback. Startup, resize and recovery full-frame
  * synchronization remain Raw until explicitly switched to this list.
  */
-static int set_live_encoding(int sock)
+int set_live_encoding(int sock)
 {
     static const unsigned char msg[12] = {
         2, 0,
@@ -2559,7 +2557,7 @@ static int set_live_encoding(int sock)
  * Raw remains first because it is still our preferred pixel encoding.
  * ExtendedDesktopSize is only a capability declaration.
  */
-static int set_raw_extended_desktop_encoding(int sock)
+int set_raw_extended_desktop_encoding(int sock)
 {
     static const unsigned char msg[12] = {
         2, 0,
@@ -2582,7 +2580,7 @@ static int set_raw_extended_desktop_encoding(int sock)
  * an ExtendedDesktopSize FramebufferUpdate before the receiver's full
  * implementation later in this file.
  */
-static int receive_framebuffer_update(
+ int receive_framebuffer_update(
     int sock,
     unsigned short *rfb_framebuffer,
     unsigned short *gs_framebuffer,
@@ -2683,7 +2681,7 @@ static int send_set_desktop_size_and_probe(
 }
 
 
-static int request_and_confirm_desktop_size(
+int request_and_confirm_desktop_size(
     int sock,
     unsigned short *rfb_framebuffer,
     unsigned short *gs_framebuffer,
@@ -3152,7 +3150,7 @@ static int osk_row_length(int row)
     return osk_page_row_lengths[page][row];
 }
 
-static unsigned short osk_color(
+unsigned short osk_color(
     unsigned int r5,
     unsigned int g5,
     unsigned int b5)
@@ -3165,7 +3163,7 @@ static unsigned short osk_color(
     );
 }
 
-static void osk_fill_rect(
+void osk_fill_rect(
     int x,
     int y,
     int w,
@@ -3203,7 +3201,7 @@ static void osk_fill_rect(
     }
 }
 
-static const unsigned char *osk_find_glyph(char c)
+const unsigned char *osk_find_glyph(char c)
 {
     unsigned int i;
 
@@ -3244,7 +3242,7 @@ static void osk_draw_char(
     }
 }
 
-static void osk_draw_text_centered(
+void osk_draw_text_centered(
     int x,
     int y,
     int w,

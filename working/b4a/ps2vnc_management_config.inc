@@ -1,5 +1,5 @@
 
-static int draw_recovery_status(
+int draw_recovery_status(
     GSGLOBAL *gsGlobal,
     GSTEXTURE *osk_tex,
     const char *line1,
@@ -214,7 +214,7 @@ static int initial_rfb_connect_with_retry(
  *   - selected Raw encoding
  *   - received a new complete framebuffer
  */
-static int recover_rfb_connection(
+int recover_rfb_connection(
     int old_sock,
     unsigned short *rfb_framebuffer,
     unsigned short *gs_framebuffer,
@@ -436,7 +436,7 @@ static int recover_rfb_connection(
  * This intentionally stops BEFORE publishing through a GS backend. The
  * caller will reconstruct the saved known-good display after this succeeds.
  */
-static int recover_rfb_transport_for_display_rollback(
+int recover_rfb_transport_for_display_rollback(
     int old_sock,
     unsigned short *rfb_framebuffer,
     unsigned short *gs_framebuffer,
@@ -560,7 +560,7 @@ static int recover_rfb_transport_for_display_rollback(
 }
 
 
-static int perform_manual_rfb_recovery(
+int perform_manual_rfb_recovery(
     int old_sock,
     unsigned short *rfb_framebuffer,
     unsigned short *gs_framebuffer,
@@ -649,11 +649,11 @@ static int perform_manual_rfb_recovery(
 
 #define SCREEN_FIT_ACTION_MOVE   0x10000u
 
-static int screen_fit_width = VNC_WIDTH;
-static int screen_fit_height = VNC_HEIGHT;
-static int screen_fit_offset_x = 0;
-static int screen_fit_offset_y = 0;
-static int screen_fit_full_bypass = 0;
+int screen_fit_width = VNC_WIDTH;
+int screen_fit_height = VNC_HEIGHT;
+int screen_fit_offset_x = 0;
+int screen_fit_offset_y = 0;
+int screen_fit_full_bypass = 0;
 
 
 /*
@@ -747,7 +747,7 @@ static int screen_fit_geometry_valid(
  * Future config-file parsing must feed through here rather than
  * assigning screen_fit_* variables directly.
  */
-static int screen_fit_apply_preset(
+int screen_fit_apply_preset(
     int width,
     int height,
     int offset_x,
@@ -856,12 +856,7 @@ enum {
     PS2VNC_CONFIG_INVALID_GEOMETRY = -2
 };
 
-typedef struct {
-    int safe_width;
-    int safe_height;
-    int safe_x;
-    int safe_y;
-} ps2vnc_display_config_t;
+
 
 
 
@@ -1400,7 +1395,7 @@ static int ps2vnc_config_parse_display_for_mode(
 
 
 
-static int ps2vnc_config_apply_display(
+int ps2vnc_config_apply_display(
     const ps2vnc_display_config_t *config)
 {
     if (config == NULL)
@@ -1446,7 +1441,7 @@ static int ps2vnc_config_apply_display(
  *     ps2vnc_config_apply_display() -> screen_fit_apply_preset()
  */
 
-static int ps2vnc_display_config_loaded = 0;
+int ps2vnc_display_config_loaded = 0;
 
 
 static int ps2vnc_http_find_header_end(
@@ -1599,7 +1594,7 @@ static int ps2vnc_display_profile_valid(
  * H4B2A:
  * Capture the complete coherent runtime profile that is active now.
  */
-static int ps2vnc_display_profile_capture_active(
+int ps2vnc_display_profile_capture_active(
     ps2vnc_display_profile_t *profile)
 {
     if (profile == NULL ||
@@ -1628,7 +1623,7 @@ static int ps2vnc_display_profile_capture_active(
  * HIRES logical geometry is the calibrated presentation rectangle.
  * Standard logical geometry is the mode's fixed gsKit framebuffer.
  */
-static int ps2vnc_display_profile_resolve_candidate(
+int ps2vnc_display_profile_resolve_candidate(
     const ps2vnc_video_mode_t *mode,
     unsigned int out_x,
     unsigned int out_y,
@@ -1784,7 +1779,7 @@ done:
 }
 
 
-static int ps2vnc_display_transaction_begin_to_pi(
+int ps2vnc_display_transaction_begin_to_pi(
     const ps2vnc_display_profile_t *previous,
     const ps2vnc_display_profile_t *candidate)
 {
@@ -1863,7 +1858,7 @@ static int ps2vnc_display_transaction_begin_to_pi(
 }
 
 
-static int ps2vnc_display_transaction_commit_to_pi(void)
+int ps2vnc_display_transaction_commit_to_pi(void)
 {
     return ps2vnc_management_post(
         PS2VNC_DISPLAY_TX_COMMIT_PATH,
@@ -1872,7 +1867,7 @@ static int ps2vnc_display_transaction_commit_to_pi(void)
 }
 
 
-static int ps2vnc_display_transaction_restore_to_pi(void)
+int ps2vnc_display_transaction_restore_to_pi(void)
 {
     return ps2vnc_management_post(
         PS2VNC_DISPLAY_TX_RESTORE_PATH,
@@ -1881,7 +1876,7 @@ static int ps2vnc_display_transaction_restore_to_pi(void)
 }
 
 
-static int ps2vnc_display_transaction_restored_to_pi(void)
+int ps2vnc_display_transaction_restored_to_pi(void)
 {
     return ps2vnc_management_post(
         PS2VNC_DISPLAY_TX_RESTORED_PATH,
@@ -1890,7 +1885,7 @@ static int ps2vnc_display_transaction_restored_to_pi(void)
 }
 
 
-static int ps2vnc_display_transaction_ack_to_pi(void)
+int ps2vnc_display_transaction_ack_to_pi(void)
 {
     return ps2vnc_management_post(
         PS2VNC_DISPLAY_TX_ACK_PATH,
@@ -2211,7 +2206,7 @@ static int ps2vnc_socket_wait_bounded(
 }
 
 
-static int ps2vnc_management_get_bounded_quiet(
+int ps2vnc_management_get_bounded_quiet(
     const char *path,
     unsigned char *out_body,
     unsigned int out_capacity,
@@ -2485,7 +2480,7 @@ done:
 }
 
 
-static int ps2vnc_management_post_text(
+int ps2vnc_management_post_text(
     const char *path,
     const char *body)
 {
@@ -2821,7 +2816,7 @@ static int ps2vnc_config_parse_display_policy(
 }
 
 
-static int ps2vnc_display_policy_refresh_from_pi(void)
+int ps2vnc_display_policy_refresh_from_pi(void)
 {
     unsigned char *text;
 
@@ -2883,7 +2878,7 @@ done:
 }
 
 
-static int ps2vnc_display_policy_lock_to_pi(
+int ps2vnc_display_policy_lock_to_pi(
     int selection,
     int locked)
 {
@@ -2918,7 +2913,7 @@ static int ps2vnc_display_policy_lock_to_pi(
 }
 
 
-static int ps2vnc_display_policy_hide_to_pi(
+int ps2vnc_display_policy_hide_to_pi(
     int hide_locked)
 {
     char body[96];
@@ -3108,7 +3103,7 @@ static int ps2vnc_display_tx_parse_profile(
 }
 
 
-static int ps2vnc_display_tx_profiles_equal(
+int ps2vnc_display_tx_profiles_equal(
     const ps2vnc_display_profile_t *a,
     const ps2vnc_display_profile_t *b)
 {

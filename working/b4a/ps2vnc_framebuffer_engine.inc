@@ -40,7 +40,7 @@ static int start_controller_thread(int sock)
     return 0;
 }
 
-static int request_framebuffer(int sock, int incremental)
+int request_framebuffer(int sock, int incremental)
 {
     unsigned char msg[10] = {
         3, 0,
@@ -100,7 +100,7 @@ static int ps2vnc_display_direct_write_active(void);
 static unsigned short *ps2vnc_display_direct_write_row(
     unsigned int x,
     unsigned int y);
-static void ps2vnc_display_direct_write_cancel(void);
+ void ps2vnc_display_direct_write_cancel(void);
 static int ps2vnc_display_begin_update(void);
 static int ps2vnc_display_finish_update_decode(void);
 
@@ -389,7 +389,7 @@ static int discard_exact(int sock, unsigned int len)
  *   -1  protocol / socket error
  *   -2  internal local-redraw yield before the next server-message byte
  */
-static int receive_framebuffer_update(
+int receive_framebuffer_update(
     int sock,
     unsigned short *rfb_framebuffer,
     unsigned short *gs_framebuffer,
@@ -967,7 +967,7 @@ static int receive_framebuffer_update(
  * Do NOT immediately send another non-incremental request after this
  * response; that would solicit another ExtendedDesktopSize response.
  */
-static int probe_extended_desktop_size(
+int probe_extended_desktop_size(
     int sock,
     unsigned short *rfb_framebuffer,
     unsigned short *gs_framebuffer)
@@ -1125,7 +1125,7 @@ static unsigned short *ps2vnc_display_direct_write_row(
         OUTPUT_WIDTH + desktop_output_x + x];
 }
 
-static void ps2vnc_display_direct_write_cancel(void)
+void ps2vnc_display_direct_write_cancel(void)
 {
     live_direct_present_safe = 0;
 }
@@ -1241,7 +1241,7 @@ static int sync_copy_hires_dirty_rows(
  * The generic session owns the RFB transaction. The presentation backend
  * owns how completed pixels become visible.
  */
-static int publish_hires_background(
+ int publish_hires_background(
     GSGLOBAL *gsGlobal,
     GSTEXTURE *bg_tex,
     const unsigned short *gs_framebuffer);
@@ -1709,7 +1709,7 @@ static int ps2vnc_update_mapped_hires_dirty_buffer(
  * Step 4 keeps both presentation buffers at the same completed-frame baseline,
  * so the next incremental update may safely start from either allocation.
  */
-static int ps2vnc_display_wait_presentation_memory_idle(
+ int ps2vnc_display_wait_presentation_memory_idle(
     GSGLOBAL *gsGlobal);
 
 
@@ -1963,12 +1963,12 @@ static int ps2vnc_display_commit_update(
 }
 
 
-static int ps2vnc_display_wait_presentation_memory_idle(
+ int ps2vnc_display_wait_presentation_memory_idle(
     GSGLOBAL *gsGlobal);
-static int ps2vnc_display_wait_texture_idle(
+ int ps2vnc_display_wait_texture_idle(
     GSGLOBAL *gsGlobal);
 
-static int publish_hires_background(
+int publish_hires_background(
     GSGLOBAL *gsGlobal,
     GSTEXTURE *bg_tex,
     const unsigned short *gs_framebuffer)
@@ -2299,7 +2299,7 @@ static int ps2vnc_display_publish_full_desktop_standard(
     return 0;
 }
 
-static int ps2vnc_display_publish_full_desktop(
+int ps2vnc_display_publish_full_desktop(
     GSGLOBAL *gsGlobal,
     GSTEXTURE *tex,
     unsigned short *gs_framebuffer)
@@ -2496,5 +2496,5 @@ static int update_hires_background_region(
 }
 
 
-static int ps2vnc_display_finish_draw(GSGLOBAL *gsGlobal);
-static int ps2vnc_display_flip(GSGLOBAL *gsGlobal);
+ int ps2vnc_display_finish_draw(GSGLOBAL *gsGlobal);
+ int ps2vnc_display_flip(GSGLOBAL *gsGlobal);

@@ -1,0 +1,71 @@
+rm -f PS2VNC.ELF ps2ip.o ps2vnc_services.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o DEV9_irx.c NETMAN_irx.c SMAP_irx.c
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2ip.c -o ps2ip.o
+In file included from ps2vnc_macro_region2.inc:2,
+                 from ps2vnc_macro_body.inc:8,
+                 from ps2ip.c:466:
+ps2vnc_framebuffer_engine.inc:2318:12: warning: 'update_hires_background_region' defined but not used [-Wunused-function]
+ 2318 | static int update_hires_background_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1158:12: warning: 'sync_copy_hires_region' defined but not used [-Wunused-function]
+ 1158 | static int sync_copy_hires_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_services.c -o ps2vnc_services.o
+In file included from ps2vnc_services.c:9:
+ps2vnc_management_config.inc: In function 'draw_recovery_status':
+ps2vnc_management_config.inc:69:9: error: implicit declaration of function 'ps2vnc_display_wait_texture_idle' [-Wimplicit-function-declaration]
+   69 |     if (ps2vnc_display_wait_texture_idle(gsGlobal) < 0)
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_config.inc:100:9: error: implicit declaration of function 'ps2vnc_display_finish_draw' [-Wimplicit-function-declaration]
+  100 |     if (ps2vnc_display_finish_draw(gsGlobal) < 0)
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_config.inc:103:9: error: implicit declaration of function 'ps2vnc_display_flip'; did you mean 'ps2vnc_display_output_y'? [-Wimplicit-function-declaration]
+  103 |     if (ps2vnc_display_flip(gsGlobal) < 0)
+      |         ^~~~~~~~~~~~~~~~~~~
+      |         ps2vnc_display_output_y
+ps2vnc_management_config.inc: In function 'perform_manual_rfb_recovery':
+ps2vnc_management_config.inc:577:30: error: 'RUNTIME_ACTION_NONE' undeclared (first use in this function)
+  577 |     runtime_action_request = RUNTIME_ACTION_NONE;
+      |                              ^~~~~~~~~~~~~~~~~~~
+ps2vnc_management_config.inc:577:30: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_management_config.inc:582:28: error: 'SYSTEM_REFRESH_REFRESHING' undeclared (first use in this function)
+  582 |     system_refresh_state = SYSTEM_REFRESH_REFRESHING;
+      |                            ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_config.inc:585:26: error: 'SYSTEM_MENU_STATUS_REFRESHING' undeclared (first use in this function)
+  585 |     system_menu_status = SYSTEM_MENU_STATUS_REFRESHING;
+      |                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_config.inc:586:29: error: 'SYSTEM_MENU_REFRESH' undeclared (first use in this function)
+  586 |     system_menu_selection = SYSTEM_MENU_REFRESH;
+      |                             ^~~~~~~~~~~~~~~~~~~
+ps2vnc_management_config.inc:607:28: error: 'SYSTEM_REFRESH_COOLDOWN' undeclared (first use in this function)
+  607 |     system_refresh_state = SYSTEM_REFRESH_COOLDOWN;
+      |                            ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_config.inc:611:26: error: 'SYSTEM_MENU_STATUS_REFRESH_COMPLETE' undeclared (first use in this function)
+  611 |     system_menu_status = SYSTEM_MENU_STATUS_REFRESH_COMPLETE;
+      |                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_management_config.inc: In function 'ps2vnc_display_profile_valid':
+ps2vnc_management_config.inc:1546:10: error: implicit declaration of function 'ps2vnc_video_mode_supports_backend'; did you mean 'ps2vnc_video_mode_default_backend'? [-Wimplicit-function-declaration]
+ 1546 |     if (!ps2vnc_video_mode_supports_backend(
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |          ps2vnc_video_mode_default_backend
+In file included from ps2vnc_services.c:10:
+ps2vnc_calibration_state.inc: In function 'ps2vnc_run_runtime_calibration':
+ps2vnc_calibration_state.inc:2672:9: error: implicit declaration of function 'ps2vnc_display_wait_presentation_memory_idle' [-Wimplicit-function-declaration]
+ 2672 |     if (ps2vnc_display_wait_presentation_memory_idle(
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_calibration_state.inc: In function 'ps2vnc_display_create_hires':
+ps2vnc_calibration_state.inc:2765:22: error: 'DBG_STAGE_GS_INIT' undeclared (first use in this function)
+ 2765 |     debug_stage_id = DBG_STAGE_GS_INIT;
+      |                      ^~~~~~~~~~~~~~~~~
+ps2vnc_calibration_state.inc: In function 'ps2vnc_display_create_standard':
+ps2vnc_calibration_state.inc:2814:22: error: 'DBG_STAGE_GS_INIT' undeclared (first use in this function)
+ 2814 |     debug_stage_id = DBG_STAGE_GS_INIT;
+      |                      ^~~~~~~~~~~~~~~~~
+ps2vnc_calibration_state.inc: In function 'ps2vnc_display_prepare_desktop_standard':
+ps2vnc_calibration_state.inc:3150:22: error: 'DBG_STAGE_INITIAL_TEXTURE' undeclared (first use in this function)
+ 3150 |     debug_stage_id = DBG_STAGE_INITIAL_TEXTURE;
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_calibration_state.inc: At top level:
+ps2vnc_calibration_state.inc:687:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+  687 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+make: *** [/usr/local/ps2dev/ps2sdk/samples/Makefile.eeglobal:65: ps2vnc_services.o] Error 1

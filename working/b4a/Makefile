@@ -1,7 +1,7 @@
 GSKIT ?= $(PS2DEV)/gsKit
 
 EE_BIN = PS2VNC.ELF
-EE_OBJS = ps2ip.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
+EE_OBJS = ps2ip.o ps2vnc_services.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
 
 EE_INCS = -I$(GSKIT)/include
 
@@ -73,4 +73,7 @@ include $(PS2SDK)/samples/Makefile.eeglobal
 # M3 recursive hierarchy dependencies.
 
 # M3 semantic hierarchy dependencies.
-ps2ip.o: ps2vnc_macro_body.inc ps2vnc_macro_region1.inc ps2vnc_macro_region2.inc ps2vnc_macro_region3.inc ps2vnc_runtime_support.inc ps2vnc_ui_controller.inc ps2vnc_framebuffer_engine.inc ps2vnc_management_config.inc ps2vnc_calibration_state.inc ps2vnc_display_orchestration.inc
+
+# M3E first real translation-unit split.
+ps2ip.o: ps2vnc_macro_body.inc ps2vnc_macro_region1.inc ps2vnc_macro_region2.inc ps2vnc_macro_region3.inc ps2vnc_runtime_support.inc ps2vnc_ui_controller.inc ps2vnc_framebuffer_engine.inc ps2vnc_cross_types.h ps2vnc_services_exports.h
+ps2vnc_services.o: ps2vnc_services.c ps2vnc_services_compat.h ps2vnc_cross_types.h ps2vnc_services_imports.h ps2vnc_display_orchestration.inc ps2vnc_management_config.inc ps2vnc_calibration_state.inc

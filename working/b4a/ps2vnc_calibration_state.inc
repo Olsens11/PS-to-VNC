@@ -291,7 +291,7 @@ static int ps2vnc_display_transaction_select_startup_authority(void)
 }
 
 
-static int ps2vnc_display_transaction_startup_preflight(void)
+int ps2vnc_display_transaction_startup_preflight(void)
 {
     startup_display_transaction_loaded = 0;
 
@@ -352,7 +352,7 @@ static int ps2vnc_display_transaction_startup_preflight(void)
  *
  * Other durable states already encode the correct authority decision.
  */
-static int ps2vnc_startup_prepare_display_transaction(void)
+int ps2vnc_startup_prepare_display_transaction(void)
 {
     if (!startup_display_transaction_loaded)
         return -1;
@@ -400,7 +400,7 @@ static int ps2vnc_startup_prepare_display_transaction(void)
  * authority: the complete startup_authoritative_display_profile remains the
  * target throughout the transaction.
  */
-static int ps2vnc_startup_connect_reconciled(
+int ps2vnc_startup_connect_reconciled(
     unsigned short *rfb_framebuffer,
     unsigned short *gs_framebuffer)
 {
@@ -990,7 +990,7 @@ done:
  * Read and validate one mode-specific preset without applying it to the
  * current screen-fit state.  This is safe to call before a runtime switch.
  */
-static int ps2vnc_config_get_display_for_mode(
+int ps2vnc_config_get_display_for_mode(
     const ps2vnc_video_mode_t *mode,
     ps2vnc_display_config_t *out_config)
 {
@@ -1027,7 +1027,7 @@ static int ps2vnc_config_get_display_for_mode(
  * global screen-fit state.
  */
 
-static int ps2vnc_config_presented_geometry_for_mode(
+int ps2vnc_config_presented_geometry_for_mode(
     const ps2vnc_video_mode_t *mode,
     const ps2vnc_display_config_t *config,
     unsigned int *out_x,
@@ -1095,7 +1095,7 @@ static int ps2vnc_config_presented_geometry_for_mode(
 
 
 
-static int calculate_presented_desktop_geometry(
+ int calculate_presented_desktop_geometry(
     unsigned int *out_x,
     unsigned int *out_y,
     unsigned int *out_w,
@@ -1113,7 +1113,7 @@ static int calculate_presented_desktop_geometry(
  * No individual mode/profile fields are allowed to come from unrelated
  * sources.
  */
-static int ps2vnc_startup_apply_authoritative_profile(void)
+int ps2vnc_startup_apply_authoritative_profile(void)
 {
     const ps2vnc_display_profile_t *target;
 
@@ -1289,7 +1289,7 @@ static int ps2vnc_startup_apply_authoritative_profile(void)
 
 
 
-static int ps2vnc_config_load_from_pi(void)
+int ps2vnc_config_load_from_pi(void)
 {
     unsigned char *config_text;
 
@@ -1486,7 +1486,7 @@ static int ps2vnc_config_load_from_pi(void)
  * Emit one concise snapshot after calibrated geometry has been converted
  * into the physical 1280x720 output position.
  */
-static void debug_emit_geometry_snapshot(void)
+void debug_emit_geometry_snapshot(void)
 {
     char msg[192];
     int len;
@@ -2025,7 +2025,7 @@ static int draw_screen_fit_calibration(
 }
 
 
-static int run_screen_fit_calibration(
+int run_screen_fit_calibration(
     GSGLOBAL *gsGlobal,
     u64 black,
     int save_on_accept,
@@ -2382,7 +2382,7 @@ static int calculate_safe_desktop_geometry(
  * smaller than the RFB capacity.  When it is larger, retain the maximum
  * supported RFB desktop and center it inside the physical safe region.
  */
-static int calculate_presented_desktop_geometry(
+int calculate_presented_desktop_geometry(
     unsigned int *out_x,
     unsigned int *out_y,
     unsigned int *out_w,
@@ -2418,7 +2418,7 @@ static int calculate_presented_desktop_geometry(
  * G2-D2A:
  * Temporarily transfer libpad ownership to the main/render thread.
  */
-static int ps2vnc_controller_pad_acquire(void)
+int ps2vnc_controller_pad_acquire(void)
 {
     const struct timespec delay = { 0, 10000000 };
     int i;
@@ -2466,7 +2466,7 @@ static int ps2vnc_controller_pad_wait_release(void)
 }
 
 
-static int ps2vnc_controller_pad_release(void)
+int ps2vnc_controller_pad_release(void)
 {
     const struct timespec delay = { 0, 10000000 };
     int i;
@@ -2634,7 +2634,7 @@ static int ps2vnc_reconfigure_current_desktop_standard(
  * D2A leaves this function unreachable; D2B will publish the semantic menu
  * request only after this transaction has built cleanly.
  */
-static int ps2vnc_run_runtime_calibration(
+int ps2vnc_run_runtime_calibration(
     int sock,
     unsigned short *rfb_framebuffer,
     unsigned short *gs_framebuffer,
@@ -2861,7 +2861,7 @@ static GSGLOBAL *ps2vnc_display_create_standard(void)
  * behavior-preserving. Future Standard-gsKit support enters here without
  * teaching callers about renderer-specific initialization.
  */
-static GSGLOBAL *ps2vnc_display_create(void)
+GSGLOBAL *ps2vnc_display_create(void)
 {
     ps2vnc_backend_t backend =
         ps2vnc_video_mode_default_backend(active_video_mode);
@@ -2930,7 +2930,7 @@ static void ps2vnc_display_destroy_standard(GSGLOBAL **display)
 /*
  * Wait until renderer-owned EE presentation memory may safely be written.
  */
-static int ps2vnc_display_wait_presentation_memory_idle(
+int ps2vnc_display_wait_presentation_memory_idle(
     GSGLOBAL *gsGlobal)
 {
     if (gsGlobal == NULL)
@@ -2956,7 +2956,7 @@ static int ps2vnc_display_wait_presentation_memory_idle(
 /*
  * Wait until a texture consumed by the previous frame may safely be replaced.
  */
-static int ps2vnc_display_wait_texture_idle(
+int ps2vnc_display_wait_texture_idle(
     GSGLOBAL *gsGlobal)
 {
     if (gsGlobal == NULL)
@@ -2984,7 +2984,7 @@ static int ps2vnc_display_wait_texture_idle(
  * HIRES consumes its queue through the scanline/pass engine.  A future
  * Standard backend maps this semantic operation to gsKit_queue_exec().
  */
-static int ps2vnc_display_finish_draw(GSGLOBAL *gsGlobal)
+int ps2vnc_display_finish_draw(GSGLOBAL *gsGlobal)
 {
     if (gsGlobal == NULL)
         return -1;
@@ -3008,7 +3008,7 @@ static int ps2vnc_display_finish_draw(GSGLOBAL *gsGlobal)
  * HIRES advances its scanline-managed presentation buffers.  A future
  * Standard backend maps this semantic operation to gsKit_sync_flip().
  */
-static int ps2vnc_display_flip(GSGLOBAL *gsGlobal)
+int ps2vnc_display_flip(GSGLOBAL *gsGlobal)
 {
     if (gsGlobal == NULL)
         return -1;
@@ -3026,7 +3026,7 @@ static int ps2vnc_display_flip(GSGLOBAL *gsGlobal)
     return -1;
 }
 
-static int ps2vnc_display_destroy(GSGLOBAL **display)
+int ps2vnc_display_destroy(GSGLOBAL **display)
 {
     if (display == NULL || *display == NULL) {
         active_display_backend = PS2VNC_BACKEND_NONE;
@@ -3157,7 +3157,7 @@ static int ps2vnc_display_prepare_desktop_standard(
 /*
  * Backend-neutral desktop preparation.
  */
-static int ps2vnc_display_prepare_desktop(
+int ps2vnc_display_prepare_desktop(
     GSGLOBAL *gsGlobal,
     GSTEXTURE *tex,
     unsigned short *gs_framebuffer)
@@ -3183,7 +3183,7 @@ static int ps2vnc_display_prepare_desktop(
  * gsKit frame ordering by clearing the back buffer and explicitly drawing
  * that texture before local overlays are queued.
  */
-static int ps2vnc_display_draw_desktop(
+int ps2vnc_display_draw_desktop(
     GSGLOBAL *gsGlobal,
     GSTEXTURE *tex,
     u64 clear_color,
@@ -3229,7 +3229,7 @@ static int ps2vnc_display_draw_desktop(
     return 0;
 }
 
-static void ps2vnc_display_prepare_osk(
+void ps2vnc_display_prepare_osk(
     GSGLOBAL *gsGlobal,
     GSTEXTURE *osk_tex)
 {

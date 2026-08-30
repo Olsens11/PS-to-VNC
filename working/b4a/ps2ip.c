@@ -162,25 +162,22 @@ typedef struct {
  * Later reconciliation stages consume this exact durable state rather than
  * re-querying authority after RFB startup has begun.
  */
-static ps2vnc_display_transaction_t
-    startup_display_transaction;
+ps2vnc_display_transaction_t startup_display_transaction;
 
-static int startup_display_transaction_loaded = 0;
+int startup_display_transaction_loaded = 0;
 
 /*
  * H4C3C1:
  * The confirmed profile is derived from the SAME configuration body that
  * startup applied. Do not re-fetch configuration later to reconstruct it.
  */
-static ps2vnc_display_profile_t
-    startup_confirmed_display_profile;
+ps2vnc_display_profile_t startup_confirmed_display_profile;
 
-static int startup_confirmed_display_profile_loaded = 0;
+int startup_confirmed_display_profile_loaded = 0;
 
-static ps2vnc_display_profile_t
-    startup_authoritative_display_profile;
+ps2vnc_display_profile_t startup_authoritative_display_profile;
 
-static int startup_authoritative_display_profile_loaded = 0;
+int startup_authoritative_display_profile_loaded = 0;
 
 /*
  * Durable-state obligations retained for the later reconciliation stage.
@@ -189,10 +186,10 @@ static int startup_authoritative_display_profile_loaded = 0;
  * restoring:              repair A -> RESTORED -> ACK
  * restored:                          verify A -> ACK
  */
-static int startup_display_commit_finish_required = 0;
-static int startup_display_restore_required = 0;
-static int startup_display_restored_mark_required = 0;
-static int startup_display_restore_ack_required = 0;
+int startup_display_commit_finish_required = 0;
+int startup_display_restore_required = 0;
+int startup_display_restored_mark_required = 0;
+int startup_display_restore_ack_required = 0;
 
 /*
  * D17AL large display-mode matrix.
@@ -448,7 +445,7 @@ static const ps2vnc_video_mode_t *const video_modes[] = {
 #define VIDEO_MODE_COUNT \
     (sizeof(video_modes) / sizeof(video_modes[0]))
 
-static int ps2vnc_video_mode_supports_backend(
+int ps2vnc_video_mode_supports_backend(
     const ps2vnc_video_mode_t *mode,
     ps2vnc_backend_t backend)
 {
@@ -464,4 +461,6 @@ static int ps2vnc_video_mode_supports_backend(
  * The complete implementation envelope remains in this exact
  * translation unit. Later M3 steps recursively subdivide it.
  */
+#include "ps2vnc_cross_types.h"
+#include "ps2vnc_services_exports.h"
 #include "ps2vnc_macro_body.inc"
