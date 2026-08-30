@@ -65,3 +65,6 @@ ps2vnc_gsHires.o: ps2vnc_gsHires.c
 		-c $< -o $@
 
 include $(PS2SDK)/samples/Makefile.eeglobal
+
+# M3 coarse migration scaffold.
+ps2ip.o: ps2vnc_macro_body.inc
