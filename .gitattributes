@@ -1,0 +1,13 @@
+/src/**/*.c text eol=lf
+/src/**/*.h text eol=lf
+/tests/**/*.c text eol=lf
+/tests/**/Makefile text eol=lf
+/docs/**/*.md text eol=lf
+/*.md text eol=lf
+/VERSION text eol=lf
+/.gitattributes text eol=lf
+/.editorconfig text eol=lf
+/scripts/**/*.sh text eol=lf
+/evidence/**/*.tsv text eol=lf
+/evidence/**/*.env text eol=lf
+/runtime/*.env text eol=lf

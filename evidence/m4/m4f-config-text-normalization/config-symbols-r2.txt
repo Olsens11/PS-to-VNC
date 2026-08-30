@@ -1,0 +1,13 @@
+--- CONFIG OBJECT DEFINITIONS ---
+00000248 T pstvnc_config_parse_bool
+000000a8 T pstvnc_config_parse_int
+00000000 T pstvnc_config_trim_left
+00000038 T pstvnc_config_trim_right
+
+--- OLD CONFIG TEXT SYMBOLS IN FINAL ELF ---
+
+--- NEW CONFIG TEXT SYMBOLS IN FINAL ELF ---
+0011dc28 T pstvnc_config_parse_bool
+0011da88 T pstvnc_config_parse_int
+0011d9e0 T pstvnc_config_trim_left
+0011da18 T pstvnc_config_trim_right

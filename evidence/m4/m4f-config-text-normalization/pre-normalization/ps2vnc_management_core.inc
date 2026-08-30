@@ -916,8 +916,8 @@ static int ps2vnc_config_parse_startup_mode(
         if (hash != NULL)
             *hash = '\0';
 
-        work = pstvnc_config_trim_left(line);
-        pstvnc_config_trim_right(work);
+        work = ps2vnc_config_trim_left(line);
+        ps2vnc_config_trim_right(work);
 
         if (*work == '\0')
             continue;
@@ -930,8 +930,8 @@ static int ps2vnc_config_parse_startup_mode(
 
             work[len - 1] = '\0';
             work++;
-            work = pstvnc_config_trim_left(work);
-            pstvnc_config_trim_right(work);
+            work = ps2vnc_config_trim_left(work);
+            ps2vnc_config_trim_right(work);
 
             if (strcmp(work, "display") == 0) {
                 if (display_seen)
@@ -953,8 +953,8 @@ static int ps2vnc_config_parse_startup_mode(
             return -1;
 
         *equals = '\0';
-        key = pstvnc_config_trim_left(work);
-        pstvnc_config_trim_right(key);
+        key = ps2vnc_config_trim_left(work);
+        ps2vnc_config_trim_right(key);
 
         if (strcmp(key, "startup_mode") != 0)
             continue;
@@ -962,8 +962,8 @@ static int ps2vnc_config_parse_startup_mode(
         if (startup_seen)
             return -1;
 
-        value = pstvnc_config_trim_left(equals + 1);
-        pstvnc_config_trim_right(value);
+        value = ps2vnc_config_trim_left(equals + 1);
+        ps2vnc_config_trim_right(value);
 
         if (*value == '\0' || strchr(value, '=') != NULL)
             return -1;
@@ -1095,8 +1095,8 @@ static int ps2vnc_config_parse_display_section(
             *hash = '\0';
 
 
-        work = pstvnc_config_trim_left(line);
-        pstvnc_config_trim_right(work);
+        work = ps2vnc_config_trim_left(line);
+        ps2vnc_config_trim_right(work);
 
         /*
          * Blank line or comment-only line.
@@ -1121,8 +1121,8 @@ static int ps2vnc_config_parse_display_section(
             work[len - 1] = '\0';
             work++;
 
-            work = pstvnc_config_trim_left(work);
-            pstvnc_config_trim_right(work);
+            work = ps2vnc_config_trim_left(work);
+            ps2vnc_config_trim_right(work);
 
             if (*work == '\0')
                 return PS2VNC_CONFIG_INVALID_TEXT;
@@ -1166,8 +1166,8 @@ static int ps2vnc_config_parse_display_section(
 
         *equals = '\0';
 
-        key = pstvnc_config_trim_left(work);
-        pstvnc_config_trim_right(key);
+        key = ps2vnc_config_trim_left(work);
+        ps2vnc_config_trim_right(key);
 
         if (*key == '\0')
             return PS2VNC_CONFIG_INVALID_TEXT;
@@ -1189,8 +1189,8 @@ static int ps2vnc_config_parse_display_section(
             continue;
         }
 
-        value = pstvnc_config_trim_left(equals + 1);
-        pstvnc_config_trim_right(value);
+        value = ps2vnc_config_trim_left(equals + 1);
+        ps2vnc_config_trim_right(value);
 
         /*
          * Recognized current settings remain deliberately strict.
@@ -1207,7 +1207,7 @@ static int ps2vnc_config_parse_display_section(
             if (seen & HAVE_SAFE_WIDTH)
                 return PS2VNC_CONFIG_INVALID_TEXT;
 
-            if (!pstvnc_config_parse_int(
+            if (!ps2vnc_config_parse_int(
                     value,
                     0,
                     1,
@@ -1224,7 +1224,7 @@ static int ps2vnc_config_parse_display_section(
             if (seen & HAVE_SAFE_HEIGHT)
                 return PS2VNC_CONFIG_INVALID_TEXT;
 
-            if (!pstvnc_config_parse_int(
+            if (!ps2vnc_config_parse_int(
                     value,
                     0,
                     1,
@@ -1241,7 +1241,7 @@ static int ps2vnc_config_parse_display_section(
             if (seen & HAVE_SAFE_X)
                 return PS2VNC_CONFIG_INVALID_TEXT;
 
-            if (!pstvnc_config_parse_int(
+            if (!ps2vnc_config_parse_int(
                     value,
                     1,
                     0,
@@ -1258,7 +1258,7 @@ static int ps2vnc_config_parse_display_section(
             if (seen & HAVE_SAFE_Y)
                 return PS2VNC_CONFIG_INVALID_TEXT;
 
-            if (!pstvnc_config_parse_int(
+            if (!ps2vnc_config_parse_int(
                     value,
                     1,
                     0,
@@ -1530,3 +1530,5 @@ ps2vnc_backend_t ps2vnc_backend_from_transaction_name(
 
     return PS2VNC_BACKEND_NONE;
 }
+
+

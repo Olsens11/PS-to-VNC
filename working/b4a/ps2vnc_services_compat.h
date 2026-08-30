@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "ps2vnc_config_text.h"
+#include "config/text.h"
 
 #include <kernel.h>
 #include <timer.h>

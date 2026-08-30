@@ -1176,9 +1176,9 @@ static int ps2vnc_config_parse_display_policy(
             *hash = '\0';
 
         work =
-            pstvnc_config_trim_left(line);
+            ps2vnc_config_trim_left(line);
 
-        pstvnc_config_trim_right(work);
+        ps2vnc_config_trim_right(work);
 
         if (*work == '\0')
             continue;
@@ -1196,9 +1196,9 @@ static int ps2vnc_config_parse_display_policy(
             work++;
 
             work =
-                pstvnc_config_trim_left(work);
+                ps2vnc_config_trim_left(work);
 
-            pstvnc_config_trim_right(work);
+            ps2vnc_config_trim_right(work);
 
             if (strcmp(work, "display") == 0) {
 
@@ -1234,15 +1234,15 @@ static int ps2vnc_config_parse_display_policy(
         *equals = '\0';
 
         key =
-            pstvnc_config_trim_left(work);
+            ps2vnc_config_trim_left(work);
 
-        pstvnc_config_trim_right(key);
+        ps2vnc_config_trim_right(key);
 
         value =
-            pstvnc_config_trim_left(
+            ps2vnc_config_trim_left(
                 equals + 1);
 
-        pstvnc_config_trim_right(value);
+        ps2vnc_config_trim_right(value);
 
         if (current_mode == -1 &&
             strcmp(
@@ -1252,7 +1252,7 @@ static int ps2vnc_config_parse_display_policy(
             int parsed;
 
             if (hide_seen ||
-                !pstvnc_config_parse_bool(
+                !ps2vnc_config_parse_bool(
                     value,
                     &parsed))
                 return -1;
@@ -1267,7 +1267,7 @@ static int ps2vnc_config_parse_display_policy(
             int parsed;
 
             if (locked_seen[current_mode] ||
-                !pstvnc_config_parse_bool(
+                !ps2vnc_config_parse_bool(
                     value,
                     &parsed))
                 return -1;
@@ -1468,7 +1468,7 @@ static int ps2vnc_display_tx_parse_uint(
     int value;
 
     if (out_value == NULL ||
-        !pstvnc_config_parse_int(
+        !ps2vnc_config_parse_int(
             text,
             0,
             require_positive,

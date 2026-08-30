@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "config/text.h"
+#include "ps2vnc_config_text.h"
 
 #include <kernel.h>
 #include <timer.h>

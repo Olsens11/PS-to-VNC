@@ -1,27 +1,11 @@
-#ifndef PS2VNC_RUNTIME_COMPAT_H
-#define PS2VNC_RUNTIME_COMPAT_H
+#ifndef PS2VNC_SERVICES_COMPAT_H
+#define PS2VNC_SERVICES_COMPAT_H
 
 /*
- * M3G shared declaration/type shell.
- * Extracted mechanically from ps2ip.c before runtime state.
- */
-
-/*
- * PS2VNC - test31 RX sentinel + raw rectangle-header trace
+ * M3E migration compatibility surface.
  *
- * Milestone 5:
- *   - PS2 Ethernet: 192.168.50.2/24
- *   - Connect to TigerVNC: 192.168.50.1:5900
- *   - Complete RFB 3.8 handshake using SecurityType None
- *   - Request RGB565 little-endian + Raw encoding
- *   - Receive the complete 640x480 framebuffer
- *   - Convert RGB565 -> PS2 GS A1B5G5R5
- *   - Upload as a gsKit texture
- *   - Continuously request complete 640x480 frames
- *   - Upload each frame as a gsKit texture
- *   - Display the Pi desktop live on the PS2
- *
- * Debug output deliberately avoids '\n' in scr_printf().
+ * This is deliberately broad and temporary. It allows the first
+ * genuine large translation-unit split without redesigning behavior.
  */
 
 #include <stdio.h>
@@ -33,7 +17,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "config/text.h"
+#include "ps2vnc_config_text.h"
 
 #include <kernel.h>
 #include <timer.h>
@@ -163,5 +147,100 @@ typedef struct {
     ps2vnc_display_profile_t previous;
     ps2vnc_display_profile_t candidate;
 } ps2vnc_display_transaction_t;
+
+#include "ps2vnc_cross_types.h"
+
+#ifndef VIDEO_MODE_COUNT
+#define VIDEO_MODE_COUNT 22u
+#endif
+
+/* Main-side macros referenced by services. */
+#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+#define VNC_WIDTH      RFB_CAPACITY_WIDTH
+#define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+#define PS2VNC_BOOTSTRAP_PI_IP      "192.168.50.1"
+#define PS2VNC_CONFIG_PORT          5959
+#define PS2VNC_CONFIG_PATH          "/ps2vnc.conf"
+#define PS2VNC_DISPLAY_PATH         "/display"
+#define PS2VNC_DISPLAY_MODE_PATH    "/display-mode"
+#define PS2VNC_DISPLAY_LOCK_PATH    "/display-lock"
+#define PS2VNC_DISPLAY_UI_PATH      "/display-ui"
+#define PS2VNC_DISPLAY_TX_PATH \
+    "/display-transaction"
+#define PS2VNC_DISPLAY_TX_BEGIN_PATH \
+    "/display-transaction/begin"
+#define PS2VNC_DISPLAY_TX_COMMIT_PATH \
+    "/display-transaction/commit"
+#define PS2VNC_DISPLAY_TX_RESTORE_PATH \
+    "/display-transaction/restore"
+#define PS2VNC_DISPLAY_TX_RESTORED_PATH \
+    "/display-transaction/restored"
+#define PS2VNC_DISPLAY_TX_ACK_PATH \
+    "/display-transaction/ack"
+#define PS2VNC_HTTP_MAX_HEADER      2048
+#define PS2VNC_DISPLAY_TX_MAX_BYTES 2048
+#define OSK_WIDTH    600
+#define OSK_HEIGHT   178
+#define RECONNECT_TIMEOUT_SECONDS 10
+#define RECONNECT_MAX_ATTEMPTS    10
+
+/* M3E BEGIN GENERATED ENUM COMPATIBILITY */
+/* Exact main-TU enum definitions required by detached services. */
+
+enum {
+    DBG_STAGE_STARTUP = 0,
+    DBG_STAGE_NET_READY,
+    DBG_STAGE_GS_INIT,
+    DBG_STAGE_INITIAL_TEXTURE,
+    DBG_STAGE_CONTROLLER_START,
+    DBG_STAGE_LOOP_BEGIN,
+    DBG_STAGE_PRE_DRAW,
+    DBG_STAGE_POST_DRAW,
+    DBG_STAGE_PRE_FLIP,
+    DBG_STAGE_POST_FLIP,
+    DBG_STAGE_PRE_QUEUE,
+    DBG_STAGE_POST_QUEUE,
+    DBG_STAGE_PRE_REQUEST,
+    DBG_STAGE_POST_REQUEST,
+    DBG_STAGE_WAIT_RFB,
+    DBG_STAGE_POST_RECEIVE,
+    DBG_STAGE_PRE_TEXTURE,
+    DBG_STAGE_POST_TEXTURE,
+    DBG_STAGE_CONTROLLER_ERROR,
+    DBG_STAGE_REQUEST_ERROR,
+    DBG_STAGE_RECEIVE_ERROR
+};
+
+typedef enum {
+    RUNTIME_ACTION_NONE = 0,
+    RUNTIME_ACTION_REFRESH_RFB,
+    RUNTIME_ACTION_DISPLAY_SETTINGS,
+    RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU,
+    RUNTIME_ACTION_SEND_TAB,
+    RUNTIME_ACTION_SEND_ENTER
+} ps2vnc_runtime_action_t;
+
+enum {
+    SYSTEM_MENU_REFRESH = 0,
+    SYSTEM_MENU_DISPLAY,
+    SYSTEM_MENU_EXIT,
+    SYSTEM_MENU_ITEM_COUNT
+};
+
+enum {
+    SYSTEM_MENU_STATUS_NONE = 0,
+    SYSTEM_MENU_STATUS_REFRESHING,
+    SYSTEM_MENU_STATUS_REFRESH_COMPLETE
+};
+
+enum {
+    SYSTEM_REFRESH_READY = 0,
+    SYSTEM_REFRESH_REFRESHING,
+    SYSTEM_REFRESH_COOLDOWN
+};
+/* M3E END GENERATED ENUM COMPATIBILITY */
+
+#include "ps2vnc_services_imports.h"
 
 #endif
