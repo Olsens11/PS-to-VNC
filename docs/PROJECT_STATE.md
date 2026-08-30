@@ -387,3 +387,35 @@ the exact validated PS2 load image.
 Next:
 
     M3D_classify_six_macro_leaves_and_promote_subsystems
+
+## M3E machine-validated real-TU milestone
+
+The first large real translation-unit migration is complete at the machine
+validation level.
+
+Migrated region:
+
+    6379 lines
+
+Independent object:
+
+    ps2vnc_services.o
+
+Two clean builds:
+
+    BYTE_EXACT
+
+M3E ELF:
+
+    ef0124605ebb2729ad0cf26eb9ba0e3d2ac0656eb72f4d8d82a2203a37088d4b
+
+PS2 load image:
+
+    e2389ad9ca0fa28d6f294bb75b209467c6d907ec18e01b16cbd011908d0026db
+
+The load image differs from the M2 reference by 1792 bytes, so real-hardware
+validation is required before further decomposition.
+
+Next:
+
+    M3F_hardware_validate_first_real_translation_unit_split

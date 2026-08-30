@@ -123,3 +123,52 @@ unit candidates is stored under:
 Next:
 
     M3E_promote_framebuffer_engine_and_management_config_to_real_translation_units
+
+## M3E first real translation-unit boundary
+
+M3E crossed the first genuinely independent multi-thousand-line C
+translation-unit boundary.
+
+Detached service-side region:
+
+    management/config + calibration/state
+    6379 migrated source lines
+
+Independent services object:
+
+    PASS
+    60 defined text symbols
+
+Two clean builds:
+
+    BYTE_EXACT
+
+ELF:
+
+    ef0124605ebb2729ad0cf26eb9ba0e3d2ac0656eb72f4d8d82a2203a37088d4b
+    2941156 bytes
+
+Previous PS2 load image:
+
+    c8040ee6350e658d80f840d902dc9ab44e831f5907f484fa644e84fa1aaad05e
+    446472 bytes
+
+M3E PS2 load image:
+
+    e2389ad9ca0fa28d6f294bb75b209467c6d907ec18e01b16cbd011908d0026db
+    448264 bytes
+
+Difference:
+
+    +1792 bytes
+
+This is therefore a new deterministic DUT rather than a load-image-identical
+structural rewrite.
+
+Hardware checkpoint:
+
+    REQUIRED
+
+Next:
+
+    M3F_hardware_validate_first_real_translation_unit_split

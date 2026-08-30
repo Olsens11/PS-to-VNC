@@ -334,3 +334,18 @@ begins promoting coherent regions toward real subsystem boundaries.
 Next:
 
     M3D_classify_six_macro_leaves_and_promote_subsystems
+
+## First independently compiled large subsystem region
+
+The migration scaffold has now crossed a genuine compiler/linker boundary.
+
+Management/configuration and calibration/state compile in
+ps2vnc_services.o independently of the main ps2ip.o runtime unit.
+
+The current compatibility headers are intentionally broad migration
+scaffolding. They preserve behavior while physical decomposition proceeds;
+interface reduction remains later work.
+
+Next:
+
+    M3F_hardware_validate_first_real_translation_unit_split

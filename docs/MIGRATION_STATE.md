@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M3
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=aa511e4e723566179cf5124d4d5f4fc03a07395c
+    CURRENT_SOURCE_HEAD=746ef1d9da6f55e246841dbd7569d17b90600678
     LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M3E_promote_framebuffer_engine_and_management_config_to_real_translation_units
+    NEXT_ACTION=M3F_hardware_validate_first_real_translation_unit_split
 
 The canonical machine-readable source remains:
 
@@ -672,3 +672,37 @@ PS2 load image:
 Next:
 
     M3D_classify_six_macro_leaves_and_promote_subsystems
+
+## M3E first real translation-unit checkpoint
+
+Machine validation:
+
+    PASS
+
+Independent service translation unit:
+
+    PASS
+
+Migrated source region:
+
+    6379 lines
+
+ELF:
+
+    ef0124605ebb2729ad0cf26eb9ba0e3d2ac0656eb72f4d8d82a2203a37088d4b
+
+Two-build reproduction:
+
+    BYTE_EXACT
+
+Load-image relation:
+
+    NEW_NONIDENTICAL_REAL_TU_DUT
+
+Hardware validation:
+
+    REQUIRED
+
+Next:
+
+    M3F_hardware_validate_first_real_translation_unit_split
