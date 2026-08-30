@@ -175,8 +175,27 @@ M1E — close M1 and define the next extraction.
 
 ## Current status
 
-    NOT STARTED
+M1A:
+
+    COMPLETE
+
+Selected first boundary:
+
+    ps2vnc_config_trim_left
+    ps2vnc_config_trim_right
+
+Selection authority:
+
+    docs/M1A_EXTRACTION_BOUNDARY.md
+
+Implementation source mutation:
+
+    NONE
+
+Publication gate:
+
+    REQUIRED BEFORE M1B
 
 Next:
 
-    M1A_select_first_low_coupling_leaf_extraction_boundary
+    PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository

@@ -347,10 +347,25 @@ else
         M0)
             ;;
         M1)
-            # M0G exposes the completed-M0 working authority to M1A.
-            # M1A is read-only. Source mutation is not permitted until the
-            # exact M1 extraction boundary has been committed.
-            test "$CURRENT_STAGE_STATUS" = 'NOT_STARTED'
+            case "$CURRENT_STAGE_STATUS" in
+                NOT_STARTED)
+                    ;;
+                IN_PROGRESS)
+                    case "$NEXT_ACTION" in
+                        PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository)
+                            test -f docs/M1A_EXTRACTION_BOUNDARY.md
+                            ;;
+                        *)
+                            echo "ERROR=M1_IN_PROGRESS_ACTION_NOT_YET_SUPPORTED:$NEXT_ACTION"
+                            exit 73
+                            ;;
+                    esac
+                    ;;
+                *)
+                    echo "ERROR=M1_STAGE_STATUS_NOT_SUPPORTED:$CURRENT_STAGE_STATUS"
+                    exit 74
+                    ;;
+            esac
             ;;
         *)
             echo "ERROR=WORKING_SOURCE_STAGE_NOT_YET_SUPPORTED:$CURRENT_STAGE"
@@ -560,6 +575,39 @@ human_mirror_require \
     "$NEXT_ACTION"
 
 echo 'HUMAN_MIGRATION_MIRROR=PASS'
+
+
+echo
+echo '===== O. M1A EXTRACTION BOUNDARY ====='
+
+if [ "$CURRENT_STAGE" = 'M1' ] &&
+   [ "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS' ] &&
+   [ "$NEXT_ACTION" = \
+       'PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository' ]
+then
+    test -f docs/M1A_EXTRACTION_BOUNDARY.md
+
+    grep -Fq \
+        'ps2vnc_config_trim_left' \
+        docs/M1A_EXTRACTION_BOUNDARY.md
+
+    grep -Fq \
+        'ps2vnc_config_trim_right' \
+        docs/M1A_EXTRACTION_BOUNDARY.md
+
+    test "$CURRENT_WORKING_SOURCE" = \
+        'working/b4a/ps2ip.c'
+
+    test "$CURRENT_SOURCE_HEAD" = \
+        'd1c0d6a4829c03f3a062095afd00859188e13dfe'
+
+    echo 'M1A_SELECTED_FUNCTION_1=ps2vnc_config_trim_left'
+    echo 'M1A_SELECTED_FUNCTION_2=ps2vnc_config_trim_right'
+    echo 'M1A_SOURCE_MUTATION=NO'
+    echo 'M1A_EXTRACTION_BOUNDARY=PASS'
+else
+    echo 'M1A_EXTRACTION_BOUNDARY=NOT_AT_PUBLICATION_GATE'
+fi
 
 echo '===== FINAL ====='
 echo 'PS_TO_VNC_MIGRATION_CHECK=PASS'

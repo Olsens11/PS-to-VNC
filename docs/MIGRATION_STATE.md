@@ -19,17 +19,18 @@ M0 completion authority is recorded in:
 
 ## Current stage
 
-M1 — NOT STARTED
+M1 — IN PROGRESS
 
-M1 is the first mechanical modular-extraction stage.
+M1A selection is complete.
 
-M1A is read-only with respect to implementation source and will select the
-first exact low-coupling extraction boundary from the committed dependency
-map before any M1 source mutation occurs.
+The first extraction boundary is the configuration-text trim pair documented
+at:
 
-Governing contract:
+    docs/M1A_EXTRACTION_BOUNDARY.md
 
-    docs/M1_EXTRACTION_CONTRACT.md
+No M1 implementation source mutation has occurred yet.
+
+M1B is blocked by the PS-to-VNC GitHub publication checkpoint.
 
 ## Current working source authority
 
@@ -129,15 +130,13 @@ subsequent modularization stage.
 
 ## Next action
 
-M1A:
+Publish the independent PS-to-VNC repository to its own new GitHub repository.
 
-Select and document the first exact low-coupling mechanical extraction
-boundary using the committed B4A dependency analysis.
+The publication checkpoint must verify that the new remote is not the legacy
+PS2VNC remote and that the visible remote `main` contains the committed M1A
+boundary.
 
-M1A must not modify implementation source.
-
-Do not begin M1B source extraction until the M1A boundary is documented,
-validated, and committed.
+Do not begin M1B source extraction before publication passes.
 
 ## Conversation-limit recovery
 
@@ -164,10 +163,10 @@ parsing prose.
 
     LAST_COMPLETE_STAGE=M0
     CURRENT_STAGE=M1
-    CURRENT_STAGE_STATUS=NOT_STARTED
+    CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=d1c0d6a4829c03f3a062095afd00859188e13dfe
-    NEXT_ACTION=M1A_select_first_low_coupling_leaf_extraction_boundary
+    NEXT_ACTION=PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository
 
 The canonical machine-readable source remains:
 
@@ -342,3 +341,29 @@ M1 governing contract:
 Next operation:
 
     M1A_select_first_low_coupling_leaf_extraction_boundary
+## M1A checkpoint
+
+M1A is COMPLETE.
+
+Selected functions:
+
+    ps2vnc_config_trim_left
+    ps2vnc_config_trim_right
+
+Selected responsibility:
+
+    configuration text whitespace trimming
+
+Selection authority:
+
+    docs/M1A_EXTRACTION_BOUNDARY.md
+
+Implementation source mutation:
+
+    NO
+
+Next operation:
+
+    PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository
+
+M1B remains blocked until publication passes.

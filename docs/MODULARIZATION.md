@@ -163,3 +163,27 @@ dependency-map pass before implementation mutation.
 Authority:
 
     docs/M1_EXTRACTION_CONTRACT.md
+
+## M1A selected boundary
+
+The first mechanical extraction will move the configuration-text whitespace
+helpers:
+
+    ps2vnc_config_trim_left
+    ps2vnc_config_trim_right
+
+into a separate translation unit.
+
+The selection is intentionally small:
+
+- 19 function lines;
+- contiguous historical source block;
+- no project globals;
+- no project callees;
+- only config-parser callers.
+
+Authority:
+
+    docs/M1A_EXTRACTION_BOUNDARY.md
+
+M1B may not begin until the PS-to-VNC GitHub publication gate passes.

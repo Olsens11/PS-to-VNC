@@ -139,3 +139,16 @@ reproduced final executable is byte-identical. It is not a new hardware PASS.
 
 The exact M1 module target is deliberately selected in M1A before source
 mutation.
+
+## M1A extraction boundary
+
+| Responsibility | Canonical location |
+|---|---|
+| Selected first extraction | `docs/M1A_EXTRACTION_BOUNDARY.md` |
+| M1 governing contract | `docs/M1_EXTRACTION_CONTRACT.md` |
+| M1 entry monolith | `working/b4a/ps2ip.c` |
+| Dependency evidence | `baseline/analysis/B4A-dependency-map/` |
+
+The selected implementation has not yet moved.
+
+M1B remains blocked by the GitHub publication checkpoint.

@@ -59,3 +59,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 ## First modular extraction
 
 - `docs/M1_EXTRACTION_CONTRACT.md` — governing contract for the first mechanical low-coupling module extraction after the byte-exact M0 baseline.
+
+## M1 first extraction boundary
+
+- `docs/M1A_EXTRACTION_BOUNDARY.md` — exact committed M1A selection of the first mechanical module-extraction boundary.

@@ -156,3 +156,22 @@ M1 is governed by:
 Next operation:
 
     M1A_select_first_low_coupling_leaf_extraction_boundary
+
+## M1A first extraction selected
+
+M1A is COMPLETE.
+
+The first mechanical extraction boundary is:
+
+    ps2vnc_config_trim_left
+    ps2vnc_config_trim_right
+
+Authority:
+
+    docs/M1A_EXTRACTION_BOUNDARY.md
+
+No implementation source has changed yet.
+
+Before M1B begins, PS-to-VNC must be published to its own new GitHub
+repository and the remote identity must be verified against the legacy
+repository.
