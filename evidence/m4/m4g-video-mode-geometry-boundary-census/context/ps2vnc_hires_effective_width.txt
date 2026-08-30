@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_hires_effective_width
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=53
+
+    45   * a 720x288 PAL gsHires drawing surface represents a 720x576 full frame.
+    46   * Narrowing that surface horizontally must not collapse its EE backing from
+    47   * 576 field-separated raster rows to 288 rows.
+    48   */
+    49  unsigned int ps2vnc_hires_effective_width(void)
+    50  {
+    51      unsigned int width;
+    52  
+    53      if (active_video_mode == NULL)
+    54          return 0;
+    55  
+    56      width = active_video_mode->hires_width;
+    57  
+    58      if (width == 0)
+    59          return 0;
+    60  
+    61      /*
+    62       * No current HIRES mode is narrower than one GS FBW unit. Preserve a
+    63       * defensive nonzero result if a future diagnostic ever introduces one.
+    64       */
+    65      if (width < 64u)
+    66          return width;
+    67  
+    68      return (width / 64u) * 64u;
+    69  }
+    70  
+    71  
+    72  static u64 ps2vnc_hires_full_frame_height(void)
+    73  {
+    74      u64 height;
+    75  
+    76      if (active_video_mode == NULL ||
+    77          active_video_mode->hires_height == 0) {

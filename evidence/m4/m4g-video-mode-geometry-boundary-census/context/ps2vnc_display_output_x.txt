@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_output_x
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=223
+
+   215  
+   216      return 0;
+   217  }
+   218  
+   219  float ps2vnc_display_output_x(float x)
+   220  {
+   221      unsigned int draw_width;
+   222  
+   223      if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+   224          draw_width = active_video_mode->standard_fb_width;
+   225      else if (active_display_backend == PS2VNC_BACKEND_HIRES)
+   226          draw_width = ps2vnc_hires_effective_width();
+   227      else
+   228          return x;
+   229  
+   230      if (draw_width == 0 || OUTPUT_WIDTH == 0)
+   231          return x;
+   232  
+   233      return x * (float)draw_width / (float)OUTPUT_WIDTH;
+   234  }
+   235  
+   236  float ps2vnc_display_output_y(float y)
+   237  {
+   238      unsigned int draw_height;
+   239  
+   240      if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+   241          draw_height = active_video_mode->standard_fb_height;
+   242      else if (active_display_backend == PS2VNC_BACKEND_HIRES)
+   243          draw_height = active_video_mode->hires_height;
+   244      else
+   245          return y;
+   246  
+   247      if (draw_height == 0 || OUTPUT_HEIGHT == 0)

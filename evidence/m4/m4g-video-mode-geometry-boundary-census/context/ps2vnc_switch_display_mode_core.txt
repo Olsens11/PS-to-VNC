@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_switch_display_mode_core
+SOURCE=working/b4a/ps2vnc_display_core.inc
+ANCHOR_LINE=13
+
+     5      GSGLOBAL **display,
+     6      GSTEXTURE *tex,
+     7      GSTEXTURE *osk_tex,
+     8      const ps2vnc_video_mode_t *mode,
+     9      unsigned int out_x,
+    10      unsigned int out_y,
+    11      unsigned int width,
+    12      unsigned int height)
+    13  {
+    14      unsigned int logical_width;
+    15  
+    16      display_switch_failure_stage = 0;
+    17      live_error_code = 0;
+    18      unsigned int logical_height;
+    19  
+    20      if (mode == NULL || display == NULL)
+    21  {
+    22              display_switch_failure_stage = 1u;
+    23              return -1;
+    24          }
+    25  
+    26      if (!region_fits_u32(
+    27              out_x, out_y, width, height,
+    28              mode->raster_width, mode->raster_height))
+    29  {
+    30              display_switch_failure_stage = 2u;
+    31              return -1;
+    32          }
+    33  
+    34      /*
+    35       * Main thread remains the sole RFB socket writer. Empty any controller
+    36       * traffic accumulated before entering the display transaction.
+    37       */

@@ -1,0 +1,37 @@
+SYMBOL=display_confirm_disarm_transaction
+SOURCE=working/b4a/ps2vnc_runtime_tail.inc
+ANCHOR_LINE=243
+
+   235      /* Publish pending last: controller may observe it immediately. */
+   236      display_confirm_pending = 1;
+   237  }
+   238  
+   239  
+   240   void display_confirm_disarm_transaction(void)
+   241  {
+   242      /* Withdraw ownership first; remaining fields are then private cleanup. */
+   243      display_confirm_pending = 0;
+   244      display_confirm_visible = 0;
+   245      display_confirm_seconds = 0;
+   246      display_confirm_action = DISPLAY_CONFIRM_ACTION_NONE;
+   247      display_confirm_previous_mode = NULL;
+   248      display_confirm_previous_backend = PS2VNC_BACKEND_NONE;
+   249      display_confirm_previous_x = 0;
+   250      display_confirm_previous_y = 0;
+   251      display_confirm_previous_w = 0;
+   252      display_confirm_previous_h = 0;
+   253      display_confirm_previous_desktop_w = 0;
+   254      display_confirm_previous_desktop_h = 0;
+   255  
+   256      display_confirm_previous_screen_fit_width = 0;
+   257      display_confirm_previous_screen_fit_height = 0;
+   258      display_confirm_previous_screen_fit_offset_x = 0;
+   259      display_confirm_previous_screen_fit_offset_y = 0;
+   260      display_confirm_previous_screen_fit_full_bypass = 0;
+   261  
+   262      display_confirm_started_tick = 0;
+   263  }
+   264  
+   265  
+   266  
+   267   void display_confirm_return_to_active_menu(void)

@@ -1,0 +1,27 @@
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_compat.h:73:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_compat.h:77:} ps2vnc_backend_t;
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_compat.h:79:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_compat.h:86:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_compat.h:127:} ps2vnc_video_mode_t;
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_compat.h:136:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_compat.h:153:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_compat.h:161:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core_to_tail.h:98:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:57:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:61:} ps2vnc_backend_t;
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:63:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:70:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:111:} ps2vnc_video_mode_t;
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:120:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:137:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:145:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:215:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_gsHires.c:89:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_gsHires.c:99:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.inc:1261:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:482:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:1016:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:1056:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_cross_types.h:6:typedef struct {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_to_ui_display.h:4:typedef enum {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_to_ui_display.h:18:typedef struct {

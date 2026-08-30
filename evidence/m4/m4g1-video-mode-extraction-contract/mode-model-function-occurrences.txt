@@ -1,0 +1,25 @@
+
+--- ps2vnc_video_mode_supports_backend ---
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_imports.h:100:int ps2vnc_video_mode_supports_backend( const ps2vnc_video_mode_t *mode, ps2vnc_backend_t backend);
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_calibration_tail.inc:1188:        !ps2vnc_video_mode_supports_backend(
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:269:int ps2vnc_video_mode_supports_backend(
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_tail.inc:12:    if (!ps2vnc_video_mode_supports_backend(
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:7:    if (!ps2vnc_video_mode_supports_backend(
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:241:extern int ps2vnc_video_mode_supports_backend(
+
+--- ps2vnc_video_mode_default_backend ---
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_calibration_core.inc:1163:        ps2vnc_video_mode_default_backend(target->mode);
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_imports.h:76:ps2vnc_backend_t ps2vnc_video_mode_default_backend( const ps2vnc_video_mode_t *mode);
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_calibration_tail.inc:1248:        ps2vnc_video_mode_default_backend(active_video_mode);
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_tail.inc:105:    backend = ps2vnc_video_mode_default_backend(mode);
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:1:ps2vnc_backend_t ps2vnc_video_mode_default_backend(
+
+--- ps2vnc_video_mode_by_name ---
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_calibration_core.inc:703:        ps2vnc_video_mode_by_name(mode->name) == NULL)
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_display_core.inc:1027:            ps2vnc_video_mode_by_name(mode_name);
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_imports.h:75:const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name( const char *name);
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_imports.h:96:const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name( const char *name);
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_tail.inc:1214:                    ps2vnc_video_mode_by_name(
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_tail.inc:1530:    profile->mode = ps2vnc_video_mode_by_name(value);
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:14:const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_core.inc:971:        *out_mode = ps2vnc_video_mode_by_name(value);

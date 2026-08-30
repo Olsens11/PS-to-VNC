@@ -1,0 +1,37 @@
+SYMBOL=hires_bg_storage_row
+SOURCE=working/b4a/ps2vnc_framebuffer_core.inc
+ANCHOR_LINE=1058
+
+  1050  
+  1051  /*
+  1052   * TEST13E-C / TEST13F:
+  1053   * HIRES pass queues reference one fixed EE-memory desktop buffer.
+  1054   * The address never changes after gsKit_hires_set_bg() configures it.
+  1055   */
+  1056  int hires_bg_is_field_separated(void)
+  1057  {
+  1058      return active_video_mode->interlace == GS_INTERLACED &&
+  1059             active_video_mode->field == GS_FRAME;
+  1060  }
+  1061  
+  1062  unsigned int hires_bg_storage_row(unsigned int raster_y)
+  1063  {
+  1064      if (!hires_bg_is_field_separated())
+  1065          return raster_y;
+  1066  
+  1067      return (raster_y >> 1) +
+  1068             ((raster_y & 1) ? (OUTPUT_HEIGHT / 2) : 0);
+  1069  }
+  1070  
+  1071  /*
+  1072   * D17AL-F8G11B:
+  1073   *
+  1074   * A mapped destination Y coordinate is already in presentation-storage
+  1075   * space when true vertical scaling is active.
+  1076   *
+  1077   * When only horizontal mapping is active, however, Y remains physical
+  1078   * full-frame raster space. Preserve the existing even/odd field-separated
+  1079   * backing layout for interlaced GS_FRAME modes.
+  1080   */
+  1081  unsigned int ps2vnc_hires_mapped_storage_row(
+  1082      unsigned int presentation_y)

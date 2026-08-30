@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_profile_resolve_candidate
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=102
+
+    94      unsigned int out_x,
+    95      unsigned int out_y,
+    96      unsigned int out_w,
+    97      unsigned int out_h,
+    98      ps2vnc_display_profile_t *profile)
+    99  {
+   100      ps2vnc_backend_t backend;
+   101  
+   102      if (mode == NULL || profile == NULL)
+   103          return -1;
+   104  
+   105      backend = ps2vnc_video_mode_default_backend(mode);
+   106  
+   107      if (backend == PS2VNC_BACKEND_NONE)
+   108          return -1;
+   109  
+   110      profile->mode = mode;
+   111      profile->backend = backend;
+   112  
+   113      if (backend == PS2VNC_BACKEND_HIRES) {
+   114          profile->logical_width = out_w;
+   115          profile->logical_height = out_h;
+   116  
+   117      } else if (backend == PS2VNC_BACKEND_STANDARD) {
+   118          profile->logical_width = mode->standard_logical_width;
+   119          profile->logical_height = mode->standard_logical_height;
+   120  
+   121      } else {
+   122          return -1;
+   123      }
+   124  
+   125      profile->output_x = out_x;
+   126      profile->output_y = out_y;

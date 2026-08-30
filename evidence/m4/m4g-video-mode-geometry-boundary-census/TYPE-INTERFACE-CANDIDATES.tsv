@@ -1,0 +1,278 @@
+header	line	kind	text
+ps2vnc_calibration_core_to_tail.h	12	MACRO	#define SCREEN_FIT_FINE_STEP            1
+ps2vnc_calibration_core_to_tail.h	13	MACRO	#define SCREEN_FIT_FAST_STEP            4
+ps2vnc_calibration_core_to_tail.h	14	MACRO	#define SCREEN_FIT_BORDER               4
+ps2vnc_calibration_core_to_tail.h	15	MACRO	#define SCREEN_FIT_CORNER_SIZE          56
+ps2vnc_calibration_core_to_tail.h	16	MACRO	#define SCREEN_FIT_REPEAT_DELAY_POLLS  18
+ps2vnc_calibration_core_to_tail.h	17	MACRO	#define SCREEN_FIT_REPEAT_POLLS         4
+ps2vnc_calibration_core_to_tail.h	18	MACRO	#define SCREEN_FIT_START_WIDTH   (OUTPUT_WIDTH)
+ps2vnc_calibration_core_to_tail.h	19	MACRO	#define SCREEN_FIT_START_HEIGHT  (OUTPUT_HEIGHT)
+ps2vnc_calibration_core_to_tail.h	20	MACRO	#define SCREEN_FIT_ACTION_MOVE   0x10000u
+ps2vnc_calibration_core_to_tail.h	22	EXTERN	extern int ps2vnc_display_save_to_pi (int width, int height, int offset_x, int offset_y);
+ps2vnc_calibration_core_to_tail.h	23	EXTERN	extern void screen_fit_clamp_interactive (int *width, int *height, int *offset_x, int *offset_y);
+ps2vnc_calibration_core_to_tail.h	24	EXTERN	extern int screen_fit_geometry_valid (int width, int height, int offset_x, int offset_y);
+ps2vnc_calibration_core_to_tail.h	25	EXTERN	extern void screen_fit_prim_sprite (GSGLOBAL *g, int x0, int y0, int x1, int y1, int z, u64 color);
+ps2vnc_display_core_to_tail.h	2	MACRO	#define PS2VNC_DISPLAY_CORE_TO_TAIL_H
+ps2vnc_display_core_to_tail.h	11	EXTERN	extern int ps2vnc_global_rollback_display_transaction (int old_sock, int transport_dirty, short unsigned int *rfb_framebuffer, short unsigned int *gs_framebuffer, GSGLOBAL **display, GSTEXTURE *tex, GSTEXTURE *osk_tex);
+ps2vnc_display_core_to_tail.h	13	EXTERN	extern void ps2vnc_remote_display_fail (unsigned int error_code);
+ps2vnc_display_core_to_tail.h	14	EXTERN	extern int ps2vnc_remote_display_lease_expired (void);
+ps2vnc_display_core_to_tail.h	16	EXTERN	extern int ps2vnc_startup_finalize_display_transaction (void);
+ps2vnc_display_core_to_tail.h	17	EXTERN	extern int ps2vnc_switch_display_mode (int sock, short unsigned int *rfb_framebuffer, short unsigned int *gs_framebuffer, GSGLOBAL **display, GSTEXTURE *tex, GSTEXTURE *osk_tex, const ps2vnc_video_mode_t *mode, unsigned int out_x, unsigned int out_y, unsigned int width, unsigned int height);
+ps2vnc_framebuffer_core_to_tail.h	11	EXTERN	extern int hires_bg_is_field_separated (void);
+ps2vnc_framebuffer_core_to_tail.h	12	EXTERN	extern unsigned int hires_bg_storage_row (unsigned int raster_y);
+ps2vnc_framebuffer_core_to_tail.h	13	EXTERN	extern unsigned int ps2vnc_hires_mapped_storage_row (unsigned int presentation_y);
+ps2vnc_framebuffer_core_to_tail.h	14	EXTERN	extern int sync_copy_hires_dirty_rows (short unsigned int *dst, const short unsigned int *src);
+ps2vnc_management_core_to_tail.h	23	EXTERN	extern const char *ps2vnc_backend_transaction_name(
+ps2vnc_management_core_to_tail.h	26	EXTERN	extern ps2vnc_backend_t ps2vnc_backend_from_transaction_name(
+ps2vnc_management_tail_to_services.h	11	EXTERN	extern int ps2vnc_display_profile_valid(
+ps2vnc_management_tail_to_services.h	20	EXTERN	extern int ps2vnc_display_tx_take_line(
+ps2vnc_management_tail_to_services.h	26	EXTERN	extern int ps2vnc_display_tx_parse_profile(
+ps2vnc_runtime_compat.h	70	MACRO	#define RFB_CAPACITY_WIDTH   1920
+ps2vnc_runtime_compat.h	71	MACRO	#define RFB_CAPACITY_HEIGHT  1080
+ps2vnc_runtime_core_to_tail.h	9	MACRO	#define DISPLAY_CONFIRM_TIMEOUT_SECONDS 30u
+ps2vnc_runtime_core_to_tail.h	11	MACRO	#define DISPLAY_MODE_REQUEST_NONE 0
+ps2vnc_runtime_core_to_tail.h	13	MACRO	#define OSK_HEIGHT   178
+ps2vnc_runtime_core_to_tail.h	17	MACRO	#define OSK_WIDTH    600
+ps2vnc_runtime_core_to_tail.h	19	MACRO	#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+ps2vnc_runtime_core_to_tail.h	21	MACRO	#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+ps2vnc_runtime_core_to_tail.h	27	MACRO	#define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+ps2vnc_runtime_core_to_tail.h	31	MACRO	#define VNC_WIDTH      RFB_CAPACITY_WIDTH
+ps2vnc_runtime_core_to_tail.h	139	EXTERN	extern volatile int display_calibration_request ;
+ps2vnc_runtime_core_to_tail.h	140	EXTERN	extern volatile int display_confirm_action ;
+ps2vnc_runtime_core_to_tail.h	141	EXTERN	extern volatile int display_confirm_pending ;
+ps2vnc_runtime_core_to_tail.h	142	EXTERN	extern ps2vnc_backend_t display_confirm_previous_backend ;
+ps2vnc_runtime_core_to_tail.h	143	EXTERN	extern unsigned int display_confirm_previous_desktop_h ;
+ps2vnc_runtime_core_to_tail.h	144	EXTERN	extern unsigned int display_confirm_previous_desktop_w ;
+ps2vnc_runtime_core_to_tail.h	145	EXTERN	extern unsigned int display_confirm_previous_h ;
+ps2vnc_runtime_core_to_tail.h	146	EXTERN	extern const ps2vnc_video_mode_t *display_confirm_previous_mode ;
+ps2vnc_runtime_core_to_tail.h	147	EXTERN	extern int display_confirm_previous_screen_fit_full_bypass ;
+ps2vnc_runtime_core_to_tail.h	148	EXTERN	extern int display_confirm_previous_screen_fit_height ;
+ps2vnc_runtime_core_to_tail.h	149	EXTERN	extern int display_confirm_previous_screen_fit_offset_x ;
+ps2vnc_runtime_core_to_tail.h	150	EXTERN	extern int display_confirm_previous_screen_fit_offset_y ;
+ps2vnc_runtime_core_to_tail.h	151	EXTERN	extern int display_confirm_previous_screen_fit_width ;
+ps2vnc_runtime_core_to_tail.h	152	EXTERN	extern unsigned int display_confirm_previous_w ;
+ps2vnc_runtime_core_to_tail.h	153	EXTERN	extern unsigned int display_confirm_previous_x ;
+ps2vnc_runtime_core_to_tail.h	154	EXTERN	extern unsigned int display_confirm_previous_y ;
+ps2vnc_runtime_core_to_tail.h	155	EXTERN	extern volatile unsigned int display_confirm_seconds ;
+ps2vnc_runtime_core_to_tail.h	156	EXTERN	extern volatile int display_confirm_selection ;
+ps2vnc_runtime_core_to_tail.h	157	EXTERN	extern volatile u64 display_confirm_started_tick ;
+ps2vnc_runtime_core_to_tail.h	158	EXTERN	extern volatile int display_confirm_visible ;
+ps2vnc_runtime_core_to_tail.h	159	EXTERN	extern volatile int display_menu_visible ;
+ps2vnc_runtime_core_to_tail.h	160	EXTERN	extern volatile int display_mode_request ;
+ps2vnc_runtime_core_to_tail.h	161	EXTERN	extern volatile int display_restore_ack_visible ;
+ps2vnc_runtime_core_to_tail.h	162	EXTERN	extern volatile int display_transition_switch_in_progress ;
+ps2vnc_runtime_core_to_tail.h	195	EXTERN	extern u64 profile_present_sync_ticks ;
+ps2vnc_runtime_core_to_tail.h	205	EXTERN	extern void display_menu_open_for_active (int);
+ps2vnc_runtime_to_framebuffer.h	19	MACRO	#define RFB_ENCODING_EXTENDED_DESKTOP_SIZE  0xFFFFFECCu
+ps2vnc_runtime_to_framebuffer.h	62	EXTERN	extern unsigned char test29_row_scratch[VNC_WIDTH * 2];
+ps2vnc_runtime_to_framebuffer.h	70	EXTERN	extern unsigned int rfb_dirty_row_x0[VNC_HEIGHT];
+ps2vnc_runtime_to_framebuffer.h	72	EXTERN	extern unsigned int rfb_dirty_row_x1[VNC_HEIGHT];
+ps2vnc_runtime_to_framebuffer.h	74	EXTERN	extern unsigned char rfb_dirty_row_valid[VNC_HEIGHT];
+ps2vnc_runtime_to_framebuffer.h	94	EXTERN	extern int rfb_extended_desktop_seen ;
+ps2vnc_runtime_to_framebuffer.h	96	EXTERN	extern unsigned int rfb_extended_desktop_reason ;
+ps2vnc_runtime_to_framebuffer.h	98	EXTERN	extern unsigned int rfb_extended_desktop_result ;
+ps2vnc_runtime_to_framebuffer.h	100	EXTERN	extern unsigned int rfb_extended_desktop_width ;
+ps2vnc_runtime_to_framebuffer.h	102	EXTERN	extern unsigned int rfb_extended_desktop_height ;
+ps2vnc_runtime_to_framebuffer.h	104	EXTERN	extern unsigned int rfb_extended_desktop_screen_count ;
+ps2vnc_runtime_to_framebuffer.h	106	EXTERN	extern unsigned int rfb_first_screen_id ;
+ps2vnc_runtime_to_framebuffer.h	108	EXTERN	extern unsigned int rfb_first_screen_x ;
+ps2vnc_runtime_to_framebuffer.h	110	EXTERN	extern unsigned int rfb_first_screen_y ;
+ps2vnc_runtime_to_framebuffer.h	112	EXTERN	extern unsigned int rfb_first_screen_width ;
+ps2vnc_runtime_to_framebuffer.h	114	EXTERN	extern unsigned int rfb_first_screen_height ;
+ps2vnc_runtime_to_framebuffer.h	116	EXTERN	extern unsigned int rfb_first_screen_flags ;
+ps2vnc_runtime_to_framebuffer.h	120	EXTERN	extern unsigned int rfb_resize_expected_width ;
+ps2vnc_runtime_to_framebuffer.h	122	EXTERN	extern unsigned int rfb_resize_expected_height ;
+ps2vnc_runtime_to_framebuffer.h	124	EXTERN	extern int ps2vnc_hires_requires_vertical_mapping (void);
+ps2vnc_runtime_to_ui_display.h	2	MACRO	#define PS2VNC_RUNTIME_TO_UI_DISPLAY_H
+ps2vnc_runtime_to_ui_display.h	85	MACRO	#define DISPLAY_MODE_REQUEST_NONE 0
+ps2vnc_runtime_to_ui_display.h	111	MACRO	#define OSK_HEIGHT   178
+ps2vnc_runtime_to_ui_display.h	120	MACRO	#define OSK_WIDTH    600
+ps2vnc_runtime_to_ui_display.h	122	MACRO	#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+ps2vnc_runtime_to_ui_display.h	124	MACRO	#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+ps2vnc_runtime_to_ui_display.h	126	MACRO	#define PS2VNC_DISPLAY_CONTROL_MAX_BYTES 768
+ps2vnc_runtime_to_ui_display.h	128	MACRO	#define PS2VNC_DISPLAY_CONTROL_PENDING_PATH \
+ps2vnc_runtime_to_ui_display.h	131	MACRO	#define PS2VNC_DISPLAY_CONTROL_RESULT_PATH \
+ps2vnc_runtime_to_ui_display.h	178	MACRO	#define VIDEO_MODE_COUNT 22u
+ps2vnc_runtime_to_ui_display.h	180	MACRO	#define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+ps2vnc_runtime_to_ui_display.h	182	MACRO	#define VNC_WIDTH      RFB_CAPACITY_WIDTH
+ps2vnc_runtime_to_ui_display.h	264	EXTERN	extern volatile int display_calibration_request ;
+ps2vnc_runtime_to_ui_display.h	266	EXTERN	extern volatile int display_confirm_action ;
+ps2vnc_runtime_to_ui_display.h	268	EXTERN	extern volatile int display_confirm_pending ;
+ps2vnc_runtime_to_ui_display.h	270	EXTERN	extern ps2vnc_backend_t display_confirm_previous_backend ;
+ps2vnc_runtime_to_ui_display.h	272	EXTERN	extern unsigned int display_confirm_previous_desktop_h ;
+ps2vnc_runtime_to_ui_display.h	274	EXTERN	extern unsigned int display_confirm_previous_desktop_w ;
+ps2vnc_runtime_to_ui_display.h	276	EXTERN	extern unsigned int display_confirm_previous_h ;
+ps2vnc_runtime_to_ui_display.h	278	EXTERN	extern const ps2vnc_video_mode_t *display_confirm_previous_mode ;
+ps2vnc_runtime_to_ui_display.h	280	EXTERN	extern int display_confirm_previous_screen_fit_full_bypass ;
+ps2vnc_runtime_to_ui_display.h	282	EXTERN	extern int display_confirm_previous_screen_fit_height ;
+ps2vnc_runtime_to_ui_display.h	284	EXTERN	extern int display_confirm_previous_screen_fit_offset_x ;
+ps2vnc_runtime_to_ui_display.h	286	EXTERN	extern int display_confirm_previous_screen_fit_offset_y ;
+ps2vnc_runtime_to_ui_display.h	288	EXTERN	extern int display_confirm_previous_screen_fit_width ;
+ps2vnc_runtime_to_ui_display.h	290	EXTERN	extern unsigned int display_confirm_previous_w ;
+ps2vnc_runtime_to_ui_display.h	292	EXTERN	extern unsigned int display_confirm_previous_x ;
+ps2vnc_runtime_to_ui_display.h	294	EXTERN	extern unsigned int display_confirm_previous_y ;
+ps2vnc_runtime_to_ui_display.h	296	EXTERN	extern volatile unsigned int display_confirm_seconds ;
+ps2vnc_runtime_to_ui_display.h	298	EXTERN	extern volatile int display_confirm_selection ;
+ps2vnc_runtime_to_ui_display.h	300	EXTERN	extern volatile int display_confirm_visible ;
+ps2vnc_runtime_to_ui_display.h	302	EXTERN	extern volatile int display_menu_error ;
+ps2vnc_runtime_to_ui_display.h	304	EXTERN	extern volatile int display_menu_parent_system ;
+ps2vnc_runtime_to_ui_display.h	306	EXTERN	extern volatile int display_menu_selection ;
+ps2vnc_runtime_to_ui_display.h	308	EXTERN	extern volatile int display_menu_tab ;
+ps2vnc_runtime_to_ui_display.h	310	EXTERN	extern volatile int display_menu_tab_selection[3] ;
+ps2vnc_runtime_to_ui_display.h	312	EXTERN	extern volatile int display_menu_visible ;
+ps2vnc_runtime_to_ui_display.h	314	EXTERN	extern volatile int display_mode_request ;
+ps2vnc_runtime_to_ui_display.h	316	EXTERN	extern volatile int display_mode_request_remote ;
+ps2vnc_runtime_to_ui_display.h	318	EXTERN	extern volatile int display_policy_error ;
+ps2vnc_runtime_to_ui_display.h	320	EXTERN	extern volatile int display_policy_request ;
+ps2vnc_runtime_to_ui_display.h	322	EXTERN	extern volatile int display_policy_request_selection ;
+ps2vnc_runtime_to_ui_display.h	324	EXTERN	extern volatile int display_policy_request_value ;
+ps2vnc_runtime_to_ui_display.h	326	EXTERN	extern const ps2vnc_video_mode_t *display_restore_ack_mode ;
+ps2vnc_runtime_to_ui_display.h	328	EXTERN	extern volatile int display_restore_ack_request ;
+ps2vnc_runtime_to_ui_display.h	330	EXTERN	extern volatile int display_restore_ack_visible ;
+ps2vnc_runtime_to_ui_display.h	332	EXTERN	extern volatile unsigned int display_switch_failure_stage ;
+ps2vnc_runtime_to_ui_display.h	334	EXTERN	extern volatile int display_transition_switch_in_progress ;
+ps2vnc_runtime_to_ui_display.h	386	EXTERN	extern u64 profile_present_sync_ticks ;
+ps2vnc_runtime_to_ui_display.h	395	EXTERN	extern const ps2vnc_video_mode_t *
+ps2vnc_runtime_to_ui_display.h	398	EXTERN	extern unsigned int remote_display_error_code ;
+ps2vnc_runtime_to_ui_display.h	400	EXTERN	extern u64 remote_display_last_poll_tick ;
+ps2vnc_runtime_to_ui_display.h	402	EXTERN	extern unsigned int remote_display_lease_seconds ;
+ps2vnc_runtime_to_ui_display.h	404	EXTERN	extern u64 remote_display_lease_started_tick ;
+ps2vnc_runtime_to_ui_display.h	406	EXTERN	extern const ps2vnc_video_mode_t *
+ps2vnc_runtime_to_ui_display.h	409	EXTERN	extern volatile int remote_display_state ;
+ps2vnc_runtime_to_ui_display.h	414	EXTERN	extern unsigned int remote_display_txid ;
+ps2vnc_runtime_to_ui_display.h	430	EXTERN	extern int screen_row ;
+ps2vnc_runtime_to_ui_display.h	432	EXTERN	extern const ps2vnc_video_mode_t *const video_modes[VIDEO_MODE_COUNT];
+ps2vnc_runtime_to_ui_display.h	438	EXTERN	extern void display_confirm_arm_transaction (const ps2vnc_video_mode_t *previous_mode, unsigned int previous_x, unsigned int previous_y, unsigned int previous_w, unsigned int previous_h, int previous_screen_fit_width, int previous_screen_fit_height, int previous_screen_fit_offset_x, int previous_screen_fit_offset_y, int previous_screen_fit_full_bypass);
+ps2vnc_runtime_to_ui_display.h	440	EXTERN	extern void display_confirm_disarm_transaction (void);
+ps2vnc_runtime_to_ui_display.h	442	EXTERN	extern unsigned int display_confirm_remaining_seconds (void);
+ps2vnc_runtime_to_ui_display.h	444	EXTERN	extern void display_confirm_return_to_active_menu (void);
+ps2vnc_runtime_to_ui_display.h	446	EXTERN	extern int display_mode_request_for_selection (int selection);
+ps2vnc_runtime_to_ui_display.h	448	EXTERN	extern const ps2vnc_video_mode_t *display_mode_request_target (int request);
+ps2vnc_runtime_to_ui_display.h	454	EXTERN	extern char osk_display_char (int row, int col);
+ps2vnc_runtime_to_ui_display.h	464	EXTERN	extern int ps2vnc_display_begin_update (void);
+ps2vnc_runtime_to_ui_display.h	466	EXTERN	extern int ps2vnc_display_commit_update (GSGLOBAL *gsGlobal, GSTEXTURE *tex, int direct_present_complete);
+ps2vnc_runtime_to_ui_display.h	468	EXTERN	extern int ps2vnc_display_finish_update_decode (void);
+ps2vnc_runtime_to_ui_display.h	470	EXTERN	extern int ps2vnc_display_logical_desktop_size (unsigned int output_width, unsigned int output_height, unsigned int *width, unsigned int *height);
+ps2vnc_runtime_to_ui_display.h	480	EXTERN	extern int runtime_hotkey_has_hold_extension (unsigned int mask, int desktop_context);
+ps2vnc_runtime_to_ui_display.h	482	EXTERN	extern const ps2vnc_hotkey_binding_t *runtime_hotkey_lookup (unsigned int mask, int desktop_context);
+ps2vnc_runtime_to_ui_display.h	496	EXTERN	extern int wait_pad_ready_after_mode_change (void);
+ps2vnc_services_compat.h	54	MACRO	#define RFB_CAPACITY_WIDTH   1920
+ps2vnc_services_compat.h	55	MACRO	#define RFB_CAPACITY_HEIGHT  1080
+ps2vnc_services_compat.h	154	MACRO	#define VIDEO_MODE_COUNT 22u
+ps2vnc_services_compat.h	158	MACRO	#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+ps2vnc_services_compat.h	159	MACRO	#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+ps2vnc_services_compat.h	160	MACRO	#define VNC_WIDTH      RFB_CAPACITY_WIDTH
+ps2vnc_services_compat.h	161	MACRO	#define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+ps2vnc_services_compat.h	165	MACRO	"#define PS2VNC_DISPLAY_PATH         ""/display"""
+ps2vnc_services_compat.h	166	MACRO	"#define PS2VNC_DISPLAY_MODE_PATH    ""/display-mode"""
+ps2vnc_services_compat.h	167	MACRO	"#define PS2VNC_DISPLAY_LOCK_PATH    ""/display-lock"""
+ps2vnc_services_compat.h	168	MACRO	"#define PS2VNC_DISPLAY_UI_PATH      ""/display-ui"""
+ps2vnc_services_compat.h	169	MACRO	#define PS2VNC_DISPLAY_TX_PATH \
+ps2vnc_services_compat.h	171	MACRO	#define PS2VNC_DISPLAY_TX_BEGIN_PATH \
+ps2vnc_services_compat.h	173	MACRO	#define PS2VNC_DISPLAY_TX_COMMIT_PATH \
+ps2vnc_services_compat.h	175	MACRO	#define PS2VNC_DISPLAY_TX_RESTORE_PATH \
+ps2vnc_services_compat.h	177	MACRO	#define PS2VNC_DISPLAY_TX_RESTORED_PATH \
+ps2vnc_services_compat.h	179	MACRO	#define PS2VNC_DISPLAY_TX_ACK_PATH \
+ps2vnc_services_compat.h	182	MACRO	#define PS2VNC_DISPLAY_TX_MAX_BYTES 2048
+ps2vnc_services_compat.h	183	MACRO	#define OSK_WIDTH    600
+ps2vnc_services_compat.h	184	MACRO	#define OSK_HEIGHT   178
+ps2vnc_services_exports.h	6	EXTERN	extern int ps2vnc_display_config_loaded;
+ps2vnc_services_exports.h	7	EXTERN	extern int screen_fit_full_bypass;
+ps2vnc_services_exports.h	8	EXTERN	extern int screen_fit_height;
+ps2vnc_services_exports.h	9	EXTERN	extern int screen_fit_offset_x;
+ps2vnc_services_exports.h	10	EXTERN	extern int screen_fit_offset_y;
+ps2vnc_services_exports.h	11	EXTERN	extern int screen_fit_width;
+ps2vnc_services_exports.h	13	PROTOTYPE	int calculate_presented_desktop_geometry( unsigned int *out_x, unsigned int *out_y, unsigned int *out_w, unsigned int *out_h);
+ps2vnc_services_exports.h	14	PROTOTYPE	void debug_emit_geometry_snapshot(void);
+ps2vnc_services_exports.h	17	PROTOTYPE	int ps2vnc_config_apply_display( const ps2vnc_display_config_t *config);
+ps2vnc_services_exports.h	18	PROTOTYPE	int ps2vnc_config_get_display_for_mode( const ps2vnc_video_mode_t *mode, ps2vnc_display_config_t *out_config);
+ps2vnc_services_exports.h	20	PROTOTYPE	int ps2vnc_config_presented_geometry_for_mode( const ps2vnc_video_mode_t *mode, const ps2vnc_display_config_t *config, unsigned int *out_x, unsigned int *out_y, unsigned int *out_w, unsigned int *out_h);
+ps2vnc_services_exports.h	23	PROTOTYPE	GSGLOBAL *ps2vnc_display_create(void);
+ps2vnc_services_exports.h	24	PROTOTYPE	int ps2vnc_display_destroy(GSGLOBAL **display);
+ps2vnc_services_exports.h	25	PROTOTYPE	int ps2vnc_display_draw_desktop( GSGLOBAL *gsGlobal, GSTEXTURE *tex, u64 clear_color, u64 tex_color);
+ps2vnc_services_exports.h	26	PROTOTYPE	int ps2vnc_display_finish_draw(GSGLOBAL *gsGlobal);
+ps2vnc_services_exports.h	27	PROTOTYPE	int ps2vnc_display_flip(GSGLOBAL *gsGlobal);
+ps2vnc_services_exports.h	28	PROTOTYPE	int ps2vnc_display_policy_hide_to_pi( int hide_locked);
+ps2vnc_services_exports.h	29	PROTOTYPE	int ps2vnc_display_policy_lock_to_pi( int selection, int locked);
+ps2vnc_services_exports.h	30	PROTOTYPE	int ps2vnc_display_policy_refresh_from_pi(void);
+ps2vnc_services_exports.h	31	PROTOTYPE	int ps2vnc_display_prepare_desktop( GSGLOBAL *gsGlobal, GSTEXTURE *tex, unsigned short *gs_framebuffer);
+ps2vnc_services_exports.h	32	PROTOTYPE	void ps2vnc_display_prepare_osk( GSGLOBAL *gsGlobal, GSTEXTURE *osk_tex);
+ps2vnc_services_exports.h	33	PROTOTYPE	int ps2vnc_display_profile_capture_active( ps2vnc_display_profile_t *profile);
+ps2vnc_services_exports.h	34	PROTOTYPE	int ps2vnc_display_profile_resolve_candidate( const ps2vnc_video_mode_t *mode, unsigned int out_x, unsigned int out_y, unsigned int out_w, unsigned int out_h, ps2vnc_display_profile_t *profile);
+ps2vnc_services_exports.h	35	PROTOTYPE	int ps2vnc_display_transaction_ack_to_pi(void);
+ps2vnc_services_exports.h	36	PROTOTYPE	int ps2vnc_display_transaction_begin_to_pi( const ps2vnc_display_profile_t *previous, const ps2vnc_display_profile_t *candidate);
+ps2vnc_services_exports.h	37	PROTOTYPE	int ps2vnc_display_transaction_commit_to_pi(void);
+ps2vnc_services_exports.h	38	PROTOTYPE	int ps2vnc_display_transaction_restore_to_pi(void);
+ps2vnc_services_exports.h	39	PROTOTYPE	int ps2vnc_display_transaction_restored_to_pi(void);
+ps2vnc_services_exports.h	40	PROTOTYPE	int ps2vnc_display_transaction_startup_preflight(void);
+ps2vnc_services_exports.h	41	PROTOTYPE	int ps2vnc_display_tx_profiles_equal( const ps2vnc_display_profile_t *a, const ps2vnc_display_profile_t *b);
+ps2vnc_services_exports.h	42	PROTOTYPE	int ps2vnc_display_wait_presentation_memory_idle( GSGLOBAL *gsGlobal);
+ps2vnc_services_exports.h	43	PROTOTYPE	int ps2vnc_display_wait_texture_idle( GSGLOBAL *gsGlobal);
+ps2vnc_services_exports.h	49	PROTOTYPE	int ps2vnc_startup_prepare_display_transaction(void);
+ps2vnc_services_exports.h	51	PROTOTYPE	int recover_rfb_transport_for_display_rollback( int old_sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, const ps2vnc_video_mode_t *handshake_mode);
+ps2vnc_services_exports.h	52	PROTOTYPE	int run_screen_fit_calibration( GSGLOBAL *gsGlobal, u64 black, int save_on_accept, int *accepted_out);
+ps2vnc_services_exports.h	53	PROTOTYPE	int screen_fit_apply_preset( int width, int height, int offset_x, int offset_y, int full_bypass);
+ps2vnc_services_exports.h	57	PROTOTYPE	GSGLOBAL *ps2vnc_display_create(void);
+ps2vnc_services_imports.h	6	EXTERN	extern ps2vnc_backend_t active_display_backend;
+ps2vnc_services_imports.h	7	EXTERN	extern const ps2vnc_video_mode_t *active_video_mode;
+ps2vnc_services_imports.h	14	EXTERN	extern int desktop_geometry_locked;
+ps2vnc_services_imports.h	15	EXTERN	extern unsigned int desktop_height;
+ps2vnc_services_imports.h	16	EXTERN	extern unsigned int desktop_output_height;
+ps2vnc_services_imports.h	17	EXTERN	extern unsigned int desktop_output_width;
+ps2vnc_services_imports.h	18	EXTERN	extern unsigned int desktop_output_x;
+ps2vnc_services_imports.h	19	EXTERN	extern unsigned int desktop_output_y;
+ps2vnc_services_imports.h	20	EXTERN	extern unsigned int desktop_width;
+ps2vnc_services_imports.h	21	EXTERN	extern volatile int display_hide_locked_modes;
+ps2vnc_services_imports.h	22	EXTERN	extern volatile unsigned char display_mode_locked[];
+ps2vnc_services_imports.h	23	EXTERN	extern volatile int display_policy_loaded;
+ps2vnc_services_imports.h	25	EXTERN	extern int force_screen_fit_calibration;
+ps2vnc_services_imports.h	26	EXTERN	extern unsigned short *hires_bg_back_buffer;
+ps2vnc_services_imports.h	27	EXTERN	extern unsigned short *hires_bg_buffer;
+ps2vnc_services_imports.h	28	EXTERN	extern int hires_bg_configured;
+ps2vnc_services_imports.h	29	EXTERN	extern unsigned short *hires_mapped_source_framebuffer;
+ps2vnc_services_imports.h	30	EXTERN	extern unsigned short *live_direct_present_buffer;
+ps2vnc_services_imports.h	31	EXTERN	extern int live_direct_present_safe;
+ps2vnc_services_imports.h	38	EXTERN	extern ps2vnc_display_profile_t startup_authoritative_display_profile;
+ps2vnc_services_imports.h	39	EXTERN	extern int startup_authoritative_display_profile_loaded;
+ps2vnc_services_imports.h	40	EXTERN	extern ps2vnc_display_profile_t startup_confirmed_display_profile;
+ps2vnc_services_imports.h	41	EXTERN	extern int startup_confirmed_display_profile_loaded;
+ps2vnc_services_imports.h	42	EXTERN	extern int startup_display_commit_finish_required;
+ps2vnc_services_imports.h	43	EXTERN	extern int startup_display_restore_ack_required;
+ps2vnc_services_imports.h	44	EXTERN	extern int startup_display_restore_required;
+ps2vnc_services_imports.h	45	EXTERN	extern int startup_display_restored_mark_required;
+ps2vnc_services_imports.h	46	EXTERN	extern ps2vnc_display_transaction_t startup_display_transaction;
+ps2vnc_services_imports.h	47	EXTERN	extern int startup_display_transaction_loaded;
+ps2vnc_services_imports.h	56	PROTOTYPE	const ps2vnc_video_mode_t *display_menu_mode_at_selection( int selection);
+ps2vnc_services_imports.h	57	PROTOTYPE	int display_menu_selection_for_mode( const ps2vnc_video_mode_t *mode);
+ps2vnc_services_imports.h	61	PROTOTYPE	void osk_draw_text_centered( int x, int y, int w, int h, const char *s, int scale, unsigned short color);
+ps2vnc_services_imports.h	64	PROTOTYPE	int probe_extended_desktop_size( int sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer);
+ps2vnc_services_imports.h	66	PROTOTYPE	void ps2vnc_display_direct_write_cancel(void);
+ps2vnc_services_imports.h	67	PROTOTYPE	float ps2vnc_display_output_x(float x);
+ps2vnc_services_imports.h	68	PROTOTYPE	float ps2vnc_display_output_y(float y);
+ps2vnc_services_imports.h	69	PROTOTYPE	int ps2vnc_display_publish_full_desktop( GSGLOBAL *gsGlobal, GSTEXTURE *tex, unsigned short *gs_framebuffer);
+ps2vnc_services_imports.h	70	PROTOTYPE	unsigned int ps2vnc_hires_effective_width(void);
+ps2vnc_services_imports.h	71	PROTOTYPE	int ps2vnc_hires_requires_raster_mapping(void);
+ps2vnc_services_imports.h	72	PROTOTYPE	unsigned int ps2vnc_hires_storage_bytes(void);
+ps2vnc_services_imports.h	73	PROTOTYPE	unsigned int ps2vnc_hires_storage_height(void);
+ps2vnc_services_imports.h	74	PROTOTYPE	unsigned int ps2vnc_hires_storage_width(void);
+ps2vnc_services_imports.h	75	PROTOTYPE	const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name( const char *name);
+ps2vnc_services_imports.h	76	PROTOTYPE	ps2vnc_backend_t ps2vnc_video_mode_default_backend( const ps2vnc_video_mode_t *mode);
+ps2vnc_services_imports.h	77	PROTOTYPE	int publish_hires_background( GSGLOBAL *gsGlobal, GSTEXTURE *bg_tex, const unsigned short *gs_framebuffer);
+ps2vnc_services_imports.h	79	PROTOTYPE	int region_fits_u32( unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int bounds_width, unsigned int bounds_height);
+ps2vnc_services_imports.h	80	PROTOTYPE	int request_and_confirm_desktop_size( int sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, unsigned int width, unsigned int height);
+ps2vnc_services_imports.h	84	PROTOTYPE	int rfb_connect_and_handshake_limited( unsigned int max_width, unsigned int max_height);
+ps2vnc_services_imports.h	85	PROTOTYPE	void screenf(const char *fmt, ...);
+ps2vnc_services_imports.h	90	PROTOTYPE	int set_raw_extended_desktop_encoding(int sock);
+ps2vnc_services_imports.h	94	PROTOTYPE	const ps2vnc_video_mode_t *display_menu_mode_at_selection( int selection);
+ps2vnc_services_imports.h	96	PROTOTYPE	const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name( const char *name);
+ps2vnc_services_imports.h	100	PROTOTYPE	int ps2vnc_video_mode_supports_backend( const ps2vnc_video_mode_t *mode, ps2vnc_backend_t backend);
+ps2vnc_ui_core_to_tail.h	16	EXTERN	extern int display_menu_move_horizontal_selection (int selection, int direction);
+ps2vnc_ui_core_to_tail.h	17	EXTERN	extern int display_menu_move_vertical_selection (int selection, int direction);
+ps2vnc_ui_core_to_tail.h	18	EXTERN	extern void display_menu_open_for_active (int parent_system);
+ps2vnc_ui_display_to_runtime.h	2	MACRO	#define PS2VNC_UI_DISPLAY_TO_RUNTIME_H
+ps2vnc_ui_to_display.h	2	MACRO	#define PS2VNC_UI_TO_DISPLAY_H
+ps2vnc_ui_to_display.h	9	EXTERN	extern void display_menu_normalize_selection (void);
+ps2vnc_ui_to_display.h	10	EXTERN	extern int display_menu_tab_for_mode (const ps2vnc_video_mode_t *mode);
+ps2vnc_ui_to_display.h	11	EXTERN	extern void display_restore_ack_render_bitmap (void);
+ps2vnc_ui_to_display.h	12	EXTERN	extern void display_confirm_render_bitmap (void);
+ps2vnc_ui_to_display.h	14	EXTERN	extern void display_menu_render_bitmap (void);

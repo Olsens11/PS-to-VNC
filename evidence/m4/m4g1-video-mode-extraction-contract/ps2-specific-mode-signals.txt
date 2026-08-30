@@ -1,0 +1,298 @@
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/runtime-mode-region.txt:71:    71	     * ordinary-gsKit 480p backend.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:20:    19   *   - Upload as a gsKit texture
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:22:    21   *   - Upload each frame as a gsKit texture
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:39:    38  #include <kernel.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:56:    55  #include <libpad.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:57:    56  #include <gsKit.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:59:    58  #include <dmaKit.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:98:    97       * Ordinary gsKit drawing/framebuffer geometry.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:113:   112       * preserve the complete streamed frame while gsKit draws at half height.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:118:   117      /* gsKit HIRES drawing geometry and pass count. */
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:327:   157  extern volatile u64 display_confirm_started_tick ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:359:   189  extern u64 profile_dirty_wait_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:360:   190  extern u64 profile_dirty_work_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:361:   191  extern u64 profile_flip_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:363:   193  extern u64 profile_hextile_rx_wait_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:364:   194  extern u64 profile_hextile_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:365:   195  extern u64 profile_present_sync_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:367:   197  extern u64 profile_rfb_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:369:   199  extern u64 profile_rx_wait_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:406:    22  #include <kernel.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:423:    39  #include <libpad.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:424:    40  #include <gsKit.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:426:    42  #include <dmaKit.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:465:    81       * Ordinary gsKit drawing/framebuffer geometry.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:480:    96       * preserve the complete streamed frame while gsKit draws at half height.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:485:   101      /* gsKit HIRES drawing geometry and pass count. */
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:635:     3  // |___| ___|    |    \ __|__   |     gsKit Open Source Project.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:640:     8  // Review gsKit README & LICENSE files for further details.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:645:    13  #include <gsKit.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:647:    15  #include <kernel.h>
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:722:    90  	u32 addr;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:724:    92  	u32 bufferline_begin;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:725:    93  	u32 bufferline_end;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:727:    95  	u32 scanline_begin;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:728:    96  	u32 scanline_end;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:746:   114  volatile u32 __iCurrentDrawQueue = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:747:   115  GSTEXTURE * __pTexture = NULL;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:749:   117  u32 __iYStart;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:751:   119  volatile u32 __vsync_count = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:752:   120  volatile u32 __hsync_count = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:754:   122  u32 __iPassCount;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:755:   123  u32 __iCurrentPass = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:756:   124  u32 __iCurrentRenderField = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:764:   132  u8 __ThreadStack[STACK_SIZE] __attribute__ ((aligned(16)));
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:770:   138  extern volatile u32 __iCurrentDrawQueue;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:771:   139  extern GSTEXTURE * __pTexture;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:773:   141  extern u32 __iYStart;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:775:   143  extern volatile u32 __vsync_count;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:776:   144  extern volatile u32 __hsync_count;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:778:   146  extern u32 __iPassCount;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:779:   147  extern u32 __iCurrentPass;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:780:   148  extern u32 __iCurrentRenderField;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:788:   156  extern u8 __ThreadStack[];
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:802:   170  static u32 ps2vnc_hires_pitch_pixels(const GSGLOBAL *gsGlobal)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:804:   172  	return ((u32)gsGlobal->Width + 63u) & ~63u;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:807:   175  #if F__gsKit_create_passes
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:812:   180  static void gsKit_setpass(GSGLOBAL *gsGlobal, const SPass * __pass, int yoff)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:814:   182  	u64 *p_data;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:815:   183  	u64 *p_store;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:818:   186  	p_data = p_store = (u64*)gsKit_heap_alloc(gsGlobal, qsize, (qsize * 16), GIF_AD);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:824:   192  	*p_data++ = GS_SETREG_SCISSOR_1(0, gsGlobal->Width - 1, 0, __pass->DrawBuffer->bufferline_end - __pass->DrawBuffer->bufferline_begin);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:826:   194  	*p_data++ = GS_SETREG_FRAME_1(__pass->DrawBuffer->addr / 8192, ps2vnc_hires_pitch_pixels(gsGlobal) / 64, gsGlobal->PSM, 0);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:828:   196  	*p_data++ = GS_SETREG_ZBUF_1(__pass->DepthBuffer->addr / 8192, gsGlobal->PSMZ, (gsGlobal->ZBuffering == GS_SETTING_ON) ? 0 : 1);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:830:   198  	*p_data++ = GS_SETREG_XYOFFSET_1(gsGlobal->OffsetX, yoff + gsGlobal->OffsetY + __pass->DrawBuffer->bufferline_begin*16);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:834:   202  	*p_data++ = GS_SETREG_SCISSOR_1(0, gsGlobal->Width - 1, 0, __pass->DrawBuffer->bufferline_end - __pass->DrawBuffer->bufferline_begin);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:836:   204  	*p_data++ = GS_SETREG_FRAME_1(__pass->DrawBuffer->addr / 8192, ps2vnc_hires_pitch_pixels(gsGlobal) / 64, gsGlobal->PSM, 0);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:838:   206  	*p_data++ = GS_SETREG_ZBUF_1(__pass->DepthBuffer->addr / 8192, gsGlobal->PSMZ, (gsGlobal->ZBuffering == GS_SETTING_ON) ? 0 : 1);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:840:   208  	*p_data++ = GS_SETREG_XYOFFSET_1(gsGlobal->OffsetX, yoff + gsGlobal->OffsetY + __pass->DrawBuffer->bufferline_begin*16);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:844:   212  static void gsKit_setpass_background(GSGLOBAL *gsGlobal, const SPass * __pass, GSTEXTURE * tex, u32 source_yoff)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:846:   214  	u16 width = gsGlobal->Width;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:847:   215  	u16 height = __pass->DrawBuffer->bufferline_end - __pass->DrawBuffer->bufferline_begin + 1;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:848:   216  	void * mem = &((u16*)tex->Mem)[(__pass->DrawBuffer->bufferline_begin + source_yoff)*width];
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:851:   219  	gsKit_texture_send_inline(
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:852:   220  		gsGlobal,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:858:   226  		ps2vnc_hires_pitch_pixels(gsGlobal) / 64,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:863:   231  static void gsKit_create_pass(GSGLOBAL *gsGlobal, const SPass * __pass, GSQUEUE * Queue, int yoff, u32 source_yoff)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:865:   233  	GSQUEUE * Queue_backup = gsGlobal->CurQueue;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:869:   237  		gsKit_queue_init(gsGlobal, Queue, GS_PERSISTENT, 8*1024);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:870:   238  	gsKit_queue_set(gsGlobal, Queue);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:871:   239  	gsKit_queue_reset(Queue);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:874:   242  	gsKit_setpass(gsGlobal, __pass, yoff);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:877:   245  	if ((gsGlobal->ZBuffering == GS_SETTING_ON) || (__pTexture == NULL))
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:878:   246  		gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:882:   250  		gsKit_setpass_background(gsGlobal, __pass, __pTexture, source_yoff);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:885:   253  	gsKit_queue_set(gsGlobal, Queue_backup);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:888:   256  void _gsKit_create_passes(GSGLOBAL *gsGlobal)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:890:   258  	u32 iPass;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:893:   261  	if ((gsGlobal->Interlace == GS_INTERLACED) && (gsGlobal->Field == GS_FRAME)) {
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:896:   264  			gsKit_create_pass(gsGlobal, &__pass[iPass], &__pass[iPass].Queue, 0, 0);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:898:   266  			gsKit_create_pass(gsGlobal, &__pass[iPass], &__pass[iPass].QueueIF, 8, gsGlobal->Height);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:903:   271  			gsKit_create_pass(gsGlobal, &__pass[iPass], &__pass[iPass].Queue, 0, 0);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:908:   276  void _gsKit_create_passes(GSGLOBAL *gsGlobal);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:911:   279  #if F_gsKit_hires_sync
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:912:   280  void gsKit_hires_sync(GSGLOBAL *gsGlobal)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:923:   291  #if F_gsKit_hires_flip
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:924:   292  void gsKit_hires_flip(GSGLOBAL *gsGlobal)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:926:   294  	gsKit_hires_flip_ext(gsGlobal, GSFLIP_DIRECT);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:935:   303  static u32 __last_flip_vsync_count = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:937:   305  #if F_gsKit_hires_flip_ext
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:940:   308  void gsKit_hires_flip_ext(GSGLOBAL *gsGlobal, GSFLIP_MODE mode)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:942:   310  	u32 iY;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:943:   311  	u32 vsync_end;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:964:   332  	iY = gsGlobal->StartY + gsGlobal->StartYOffset + 4;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:965:   333  	if (gsGlobal->Interlace == GS_INTERLACED)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:971:   339  	dmaKit_wait_fast();
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:975:   343  	gsKit_queue_reset(&__DrawQueue[__iCurrentDrawQueue]);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:976:   344  	gsKit_queue_set(gsGlobal, &__DrawQueue[__iCurrentDrawQueue]);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:980:   348  #if F_gsKit_hires_prepare_bg
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:981:   349  static void gsKit_texture_to_interlaced_frame(GSTEXTURE * tex)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:986:   354  	u16 *tex_new;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:987:   355  	u16 *tex_old;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:997:   365  	tex_new = (u16*)memalign(128, size);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:998:   366  	tex_old = (u16*)tex->Mem;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1011:   379  void gsKit_hires_prepare_bg(GSGLOBAL *gsGlobal, GSTEXTURE * tex)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1014:   382  	if (tex->PSM != gsGlobal->PSM) {
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1015:   383  		if (gsGlobal->PSM == GS_PSM_CT16S)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1016:   384  			gsKit_texture_to_psm16(tex);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1022:   390  	if ((gsGlobal->Interlace == GS_INTERLACED) && (gsGlobal->Field == GS_FRAME))
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1023:   391  		gsKit_texture_to_interlaced_frame(tex);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1027:   395  #if F_gsKit_hires_set_bg
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1028:   396  int gsKit_hires_set_bg(GSGLOBAL *gsGlobal, GSTEXTURE * tex)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1031:   399  	if (tex->Width != gsGlobal->Width)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1035:   403  	if ((gsGlobal->Interlace == GS_INTERLACED) && (gsGlobal->Field == GS_FRAME)) {
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1036:   404  		if (tex->Height != gsGlobal->Height*2)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1040:   408  		if (tex->Height != gsGlobal->Height)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1045:   413  	if (tex->PSM != gsGlobal->PSM)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1051:   419  	gsKit_hires_sync(gsGlobal);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1053:   421  	dmaKit_wait_fast();
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1054:   422  	_gsKit_create_passes(gsGlobal);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1061:   429  #if F_gsKit_hires_init_screen
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1064:   432  	u32 iPass;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1111:   479  static void gsKit_queue_send(GSGLOBAL *gsGlobal, GSQUEUE *Queue)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1116:   484  	*(u64 *)Queue->dma_tag = DMA_TAG(Queue->tag_size, 0, DMA_END, 0, 0, 0);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1120:   488  		*(u64 *)Queue->last_tag = ((u64)Queue->same_obj | *(u64 *)Queue->last_tag);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1123:   491  	dmaKit_wait_fast();
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1124:   492  	dmaKit_send_chain_ucab(DMA_CHANNEL_GIF, Queue->pool[Queue->dbuf]);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1129:   497  	GSGLOBAL *gsGlobal = (GSGLOBAL *)data;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1130:   498  	u32 iQueue;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1148:   516  		if ((gsGlobal->Interlace == GS_INTERLACED) && (gsGlobal->Field == GS_FRAME)) {
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1150:   518  				gsKit_queue_send(gsGlobal, &__pass[__iCurrentPass].Queue); // Odd
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1152:   520  				gsKit_queue_send(gsGlobal, &__pass[__iCurrentPass].QueueIF); // Even
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1155:   523  			gsKit_queue_send(gsGlobal, &__pass[__iCurrentPass].Queue);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1160:   528  		gsKit_queue_send(gsGlobal, &__DrawQueue[iQueue]);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1174:   542  void gsKit_hires_init_screen(GSGLOBAL *gsGlobal, int passCount)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1180:   548  	 * not inherit queue, field, texture, counter or kernel-object state
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1196:   564  	u8 ZBuffering_backup;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1198:   566  	u32 iPass;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1199:   567  	u32 iBufferline;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1200:   568  	u32 iPassHeight;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1201:   569  	u32 iBpp;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1202:   570  	u32 iHeightAlign;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1203:   571  	u32 iPitchPixels;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1216:   584  		switch (gsGlobal->PSM) {
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1217:   585  			case GS_PSM_CT32:  gsGlobal->PSMZ = GS_PSMZ_32;  break;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1218:   586  			case GS_PSM_CT24:  gsGlobal->PSMZ = GS_PSMZ_32;  break;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1219:   587  			case GS_PSM_CT16:  gsGlobal->PSMZ = GS_PSMZ_16;  break;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1220:   588  			case GS_PSM_CT16S: gsGlobal->PSMZ = GS_PSMZ_16S; break;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1222:   590  				printf("gsKit_hires: ERROR: invalid PSM\n");
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1228:   596  	if (gsGlobal->Width < 1024)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1229:   597  		gsGlobal->Width -=  64;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1231:   599  		gsGlobal->Width -= 128;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1235:   603  	if ((gsGlobal->PSM == GS_PSM_CT32) || (gsGlobal->PSM == GS_PSM_CT24)) {
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1246:   614  	 * textures/RFB rows continue to use gsGlobal->Width.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1248:   616  	iPitchPixels = ps2vnc_hires_pitch_pixels(gsGlobal);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1251:   619  	iPassHeight = (gsGlobal->Height + (__iPassCount-1)) / __iPassCount;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1256:   624  	gsGlobal->DoubleBuffering = GS_SETTING_OFF;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1258:   626  	// gsKit_init_screen must only allocate 1 front buffer
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1260:   628  	ZBuffering_backup = gsGlobal->ZBuffering;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1261:   629  	gsGlobal->ZBuffering = GS_SETTING_OFF;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1264:   632  	gsKit_init_screen(gsGlobal);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1267:   635  	 * Stock gsKit_init_screen() also truncates DISPFB width with Width / 64.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1273:   641  		gsGlobal->PSM,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1281:   649  		gsGlobal->PSM,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1291:   659  		u32 allocated_front_size =
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1292:   660  			gsKit_texture_size(
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1293:   661  				gsGlobal->Width,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1294:   662  				gsGlobal->Height,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1295:   663  				gsGlobal->PSM
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1298:   666  		u32 required_front_size =
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1299:   667  			gsKit_texture_size(
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1302:   670  				gsGlobal->PSM
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1310:   678  				"gsKit_hires: Padding pitched front buffer with %dKiB \n",
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1314:   682  			gsKit_vram_alloc(
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1315:   683  				gsGlobal,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1317:   685  				GSKIT_ALLOC_SYSBUFFER
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1323:   691  	gsGlobal->ZBuffering = ZBuffering_backup;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1324:   692  	if (gsGlobal->ZBuffering == GS_SETTING_ON)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1325:   693  		gsKit_set_test(gsGlobal, GS_ZTEST_ON);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1339:   707  		if (iBufferline > gsGlobal->Height)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1340:   708  			iBufferline = gsGlobal->Height;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1346:   714  		if (gsGlobal->MagV > 0)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1349:   717  			__buffer[iPass].scanline_begin *= (gsGlobal->MagV+1);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1350:   718  			__buffer[iPass].scanline_end   *= (gsGlobal->MagV+1);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1352:   720  		if ((gsGlobal->Interlace == GS_INTERLACED) && (gsGlobal->Field == GS_FIELD))
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1360:   728  	if ((gsGlobal->ZBuffering == GS_SETTING_ON) && (__iPassCount == 2)) {
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1363:   731  		gsGlobal->ZBuffer = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(gsGlobal->Width, gsGlobal->Height/2, gsGlobal->PSMZ), GSKIT_ALLOC_SYSBUFFER);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1366:   734  		__buffer[2].addr = gsGlobal->ZBuffer;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1370:   738  	gsGlobal->TexturePointer = gsGlobal->CurrentPointer;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1410:   778  	_gsKit_create_passes(gsGlobal);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1412:   780  	// Re-use the "per" queue from gsKit
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1413:   781  	__DrawQueue[0] = *gsGlobal->Per_Queue;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1415:   783  	gsKit_queue_init(gsGlobal, &__DrawQueue[1], GS_PERSISTENT, GS_RENDER_QUEUE_PER_POOLSIZE);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1417:   785  	gsKit_queue_set(gsGlobal, &__DrawQueue[__iCurrentDrawQueue]);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1424:   792  		printf("gsKit_hires: ERROR: creating __sema_hsync_id\n");
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1429:   797  		printf("gsKit_hires: ERROR: creating __sema_vsync_id\n");
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1435:   803  		printf("gsKit_hires: ERROR: creating __sema_queue_id\n");
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1447:   815  		printf("gsKit_hires: ERROR: creating thread\n");
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1448:   816  	StartThread(__ThreadId, gsGlobal);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1456:   824  	if ((__hsync_callback_id = gsKit_add_hsync_handler(hsync_callback)) < 0)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1457:   825  		printf("gsKit_hires: ERROR: registering hsync handler\n");
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1461:   829  #if F_gsKit_hires_init_global
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1462:   830  GSGLOBAL *gsKit_hires_init_global()
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1464:   832  	return gsKit_init_global();
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1468:   836  #if F_gsKit_hires_deinit_global
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1469:   837  void gsKit_hires_deinit_global(GSGLOBAL *gsGlobal)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1471:   839  	u32 iPass;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1474:   842  		gsKit_remove_hsync_handler(__hsync_callback_id);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1490:   858  	dmaKit_wait_fast();
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1491:   859  	gsKit_queue_free(gsGlobal, &__DrawQueue[1]);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1494:   862  		gsKit_queue_free(gsGlobal, &__pass[iPass].Queue);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1495:   863  		gsKit_queue_free(gsGlobal, &__pass[iPass].QueueIF);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1498:   866  	gsKit_deinit_global(gsGlobal);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1578:    65          controller_pad_pause_requested,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1579:    66          controller_pad_pause_ack,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1600:    87  unsigned int profile_ticks_us(u64 ticks)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1602:    89      u32 sec = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1603:    90      u32 usec = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1614:   101   * punch through a provisional display transaction or libpad calibration
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1627:   114          controller_pad_pause_requested)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1883:   370   * Wait for libpad to finish an asynchronous mode change.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1885:   372   * The PS2SDK pad sample waits for STABLE/FINDCTP1 after
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1886:   373   * padSetMainMode().  Give this controller up to ~2 seconds.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1888:   375   int wait_pad_ready_after_mode_change(void)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1894:   381          int state = padGetState(0, 0);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1896:   383          if (state == PAD_STATE_STABLE ||
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1897:   384              state == PAD_STATE_FINDCTP1)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1910:   397   * The normal libpad button bits are active-low, matching the controller
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1920:   407      struct padButtonStatus buttons;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1928:   415          if (padGetState(0, 0) == PAD_STATE_STABLE &&
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1929:   416              padRead(0, 0, &buttons) != 0) {
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1936:   423                  if ((pressed & (PAD_L1 | PAD_R1)) !=
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1937:   424                      (PAD_L1 | PAD_R1))
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1941:   428              if ((pressed & (PAD_L1 | PAD_R1)) ==
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1942:   429                  (PAD_L1 | PAD_R1)) {
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:1961:   448  static void EthStatusCheckCb(s32 alarm_id, u16 time, void *common)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:2660:  1147   *   bytes 2-3  = padding
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3304:    72  static u64 ps2vnc_hires_full_frame_height(void)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3306:    74      u64 height;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3315:    83          (u64)active_video_mode->hires_height;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3351:   119      u64 full_frame_height;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3367:   135              (u64)active_video_mode->raster_height;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3662:   430   *   Left stick / D-pad = mouse
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3670:   438   *   D-pad              = select key
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3693:   461  /* libpad DMA area: 256 bytes, 64-byte aligned. */
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3694:   462   unsigned char pad_area[256] __attribute__((aligned(64)));
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3732:   500   * Test28 receives larger chunks from PS2SDK/lwIP into this private buffer,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3763:   531  /* Raw FramebufferUpdate header tracing: type + pad + rectangle count. */
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3778:   546   * and no live gsKit texture uploads occur.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3862:   630   * Runtime calibration temporarily transfers libpad ownership from the
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3866:   634   * controller thread after it has stopped calling padGetState()/padRead().
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3871:   639  volatile int controller_pad_pause_requested = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3872:   640  volatile int controller_pad_pause_ack = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3933:   701   u64 profile_present_sync_ticks = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3934:   702   u64 profile_flip_ticks = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3935:   703   u64 profile_rfb_ticks = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3936:   704  u64 profile_rx_wait_ticks = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3937:   705   u64 profile_hextile_ticks = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3938:   706  u64 profile_hextile_rx_wait_ticks = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3940:   708   u64 profile_dirty_wait_ticks = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3941:   709   u64 profile_dirty_work_ticks = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3942:   710   u64 profile_rfb_start_tick = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:3943:   711   u64 profile_dirty_work_start_tick = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4101:   869   u64 remote_display_lease_started_tick = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4102:   870   u64 remote_display_last_poll_tick = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4225:   993  volatile u64 display_confirm_started_tick = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4275:  1043      (PAD_L1 | PAD_L2 | PAD_R1 | PAD_R2 | PAD_START)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4296:  1064      { PAD_R1, RUNTIME_ACTION_SEND_TAB,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4299:  1067      { PAD_L1 | PAD_START, RUNTIME_ACTION_SEND_ENTER,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4302:  1070      { PAD_L1 | PAD_R1, RUNTIME_ACTION_DISPLAY_SETTINGS,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4305:  1073      { PAD_L1 | PAD_L2 | PAD_R1 | PAD_R2,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4309:  1077      { PAD_L1 | PAD_L2 | PAD_R1 | PAD_R2 | PAD_START,
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4403:  1171  volatile u64 system_refresh_cooldown_started_tick = 0;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4460:  1228  int region_fits_u32(
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4562:  1330   * the controller thread has acknowledged the hard libpad pause.
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4632:  1400   * The controller thread may continue polling the pad, but rfb_connected
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4771:  1539              u64 refill_start_tick = GetTimerSystemTime();
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4835:  1603                  u64 elapsed = GetTimerSystemTime() - refill_start_tick;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:4970:    27      (PAD_L1 | PAD_L2 | PAD_R1 | PAD_R2 | PAD_START)
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5321:   378  extern unsigned char pad_area[256] __attribute__((aligned(64)));
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5325:   382  extern u64 profile_dirty_wait_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5327:   384  extern u64 profile_flip_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5329:   386  extern u64 profile_present_sync_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5331:   388  extern u64 profile_rfb_start_tick ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5333:   390  extern u64 profile_rfb_ticks ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5343:   400  extern u64 remote_display_last_poll_tick ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5347:   404  extern u64 remote_display_lease_started_tick ;
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5409:   466  extern int ps2vnc_display_commit_update (GSGLOBAL *gsGlobal, GSTEXTURE *tex, int direct_present_complete);
+/home/ps2/PS-to-VNC/evidence/m4/m4g1-video-mode-extraction-contract/type-definition-context.txt:5439:   496  extern int wait_pad_ready_after_mode_change (void);

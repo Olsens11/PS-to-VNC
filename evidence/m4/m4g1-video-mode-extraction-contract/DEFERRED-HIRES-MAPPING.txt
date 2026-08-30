@@ -1,0 +1,17 @@
+DEFERRED_FROM_VIDEO_MODE_MODEL_EXTRACTION:
+
+ps2vnc_hires_effective_width
+ps2vnc_hires_storage_width
+ps2vnc_hires_storage_height
+ps2vnc_hires_storage_bytes
+ps2vnc_hires_requires_raster_mapping
+ps2vnc_hires_requires_vertical_mapping
+
+and associated mapping/storage caches.
+
+RATIONALE:
+
+These belong to video/mapping and framebuffer representation rather than
+the immutable video-mode catalog itself.
+
+They remain transitional until their own normalization tranche.

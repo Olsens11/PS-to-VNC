@@ -1,6 +1,8 @@
 #ifndef PS2VNC_RUNTIME_TO_UI_DISPLAY_H
 #define PS2VNC_RUNTIME_TO_UI_DISPLAY_H
 
+#include "ps2vnc_video_mode_compat.h"
+
 typedef enum {
     RUNTIME_ACTION_NONE = 0,
     RUNTIME_ACTION_REFRESH_RFB,
@@ -175,7 +177,7 @@ enum {
 
 #define TEST29_DISCARD_LIVE_PIXELS 0
 
-#define VIDEO_MODE_COUNT 22u
+#define VIDEO_MODE_COUNT PSTVNC_VIDEO_MODE_COUNT
 
 #define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
 

@@ -1,0 +1,37 @@
+SYMBOL=display_mode_request_target
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=818
+
+   810          return DISPLAY_MODE_REQUEST_NONE;
+   811  
+   812      return selection + 1;
+   813  }
+   814  
+   815   const ps2vnc_video_mode_t *display_mode_request_target(
+   816      int request)
+   817  {
+   818      int selection = request - 1;
+   819  
+   820      return display_menu_mode_at_selection(selection);
+   821  }
+   822  
+   823   volatile int display_menu_visible = 0;
+   824   volatile int display_menu_selection = 0;
+   825   volatile int display_menu_error = 0;
+   826   volatile int display_mode_request = DISPLAY_MODE_REQUEST_NONE;
+   827  
+   828  /*
+   829   * A calibration request is semantically distinct from a mode switch even
+   830   * though both carry the registry selection as index+1.  Same-mode X publishes
+   831   * only this channel; it must never enter ps2vnc_switch_display_mode().
+   832   */
+   833  
+   834   volatile int display_calibration_request =
+   835      DISPLAY_MODE_REQUEST_NONE;
+   836  
+   837  
+   838  enum {
+   839      REMOTE_DISPLAY_IDLE = 0,
+   840      REMOTE_DISPLAY_SWITCH_REQUESTED,
+   841      REMOTE_DISPLAY_SWITCHING,
+   842      REMOTE_DISPLAY_ACTIVE_TEMP,

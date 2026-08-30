@@ -1,0 +1,37 @@
+SYMBOL=display_menu_normalize_selection
+SOURCE=working/b4a/ps2vnc_ui_core.inc
+ANCHOR_LINE=244
+
+   236              return candidate;
+   237      }
+   238  
+   239      return DISPLAY_TAB_ADVANCED;
+   240  }
+   241  
+   242  
+   243  void display_menu_normalize_selection(void)
+   244  {
+   245      int saved;
+   246  
+   247      if (!display_menu_tab_visible(display_menu_tab))
+   248          display_menu_tab =
+   249              display_menu_next_visible_tab(
+   250                  display_menu_tab,
+   251                  1);
+   252  
+   253      if (display_menu_tab == DISPLAY_TAB_ADVANCED) {
+   254          display_menu_selection = -1;
+   255          return;
+   256      }
+   257  
+   258      if (display_menu_mode_belongs_to_tab(
+   259              display_menu_selection,
+   260              display_menu_tab) &&
+   261          display_menu_mode_visible(display_menu_selection)) {
+   262  
+   263          display_menu_tab_selection[display_menu_tab] =
+   264              display_menu_selection;
+   265  
+   266          return;
+   267      }
+   268  

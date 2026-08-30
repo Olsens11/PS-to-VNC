@@ -1,0 +1,37 @@
+SYMBOL=display_confirm_return_to_active_menu
+SOURCE=working/b4a/ps2vnc_runtime_tail.inc
+ANCHOR_LINE=277
+
+   269      /*
+   270       * F8J1C:
+   271       * Remote test restoration is automatically acknowledged.  Do not
+   272       * synthesize a Display Modes UI that was never open before the test.
+   273       *
+   274       * All ordinary human KEEP/Go Back/recovery transactions retain their
+   275       * historical return-to-active-row behavior.
+   276       */
+   277      if (remote_display_suppress_next_active_menu_return) {
+   278          remote_display_suppress_next_active_menu_return = 0;
+   279          return;
+   280      }
+   281  
+   282      /*
+   283       * H4B2C:
+   284       * Never expose Display Settings until durable restore ACK ownership
+   285       * has completed.
+   286       */
+   287      if (display_restore_ack_visible)
+   288          return;
+   289  
+   290      display_menu_open_for_active(0);
+   291  }
+   292  
+   293  
+   294  
+   295   unsigned int display_confirm_remaining_seconds(void)
+   296  {
+   297      unsigned int elapsed_us;
+   298  
+   299      if (!display_confirm_pending)
+   300          return 0;
+   301  

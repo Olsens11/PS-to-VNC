@@ -1,0 +1,35 @@
+SYMBOL=ps2vnc_display_profile_valid
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=7
+
+     1  int ps2vnc_display_profile_valid(
+     2      const ps2vnc_display_profile_t *profile)
+     3  {
+     4      unsigned int expected_logical_w;
+     5      unsigned int expected_logical_h;
+     6  
+     7      if (profile == NULL ||
+     8          profile->mode == NULL ||
+     9          profile->mode->name == NULL)
+    10          return 0;
+    11  
+    12      if (!ps2vnc_video_mode_supports_backend(
+    13              profile->mode,
+    14              profile->backend))
+    15          return 0;
+    16  
+    17      if (ps2vnc_backend_transaction_name(
+    18              profile->backend) == NULL)
+    19          return 0;
+    20  
+    21      if (profile->logical_width == 0 ||
+    22          profile->logical_height == 0 ||
+    23          profile->logical_width > VNC_WIDTH ||
+    24          profile->logical_height > VNC_HEIGHT ||
+    25          profile->output_width == 0 ||
+    26          profile->output_height == 0)
+    27          return 0;
+    28  
+    29      if (profile->output_x > profile->mode->raster_width ||
+    30          profile->output_y > profile->mode->raster_height)
+    31          return 0;

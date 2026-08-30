@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_remote_display_lease_expired
+SOURCE=working/b4a/ps2vnc_display_core.inc
+ANCHOR_LINE=895
+
+   887  }
+   888  
+   889  
+   890   int ps2vnc_remote_display_lease_expired(void)
+   891  {
+   892      u32 sec = 0;
+   893      u32 usec = 0;
+   894  
+   895      if (remote_display_state !=
+   896              REMOTE_DISPLAY_ACTIVE_TEMP ||
+   897          !display_confirm_pending ||
+   898          display_confirm_action !=
+   899              DISPLAY_CONFIRM_ACTION_NONE)
+   900          return 0;
+   901  
+   902      TimerBusClock2USec(
+   903          GetTimerSystemTime() -
+   904              remote_display_lease_started_tick,
+   905          &sec,
+   906          &usec);
+   907  
+   908      if (sec < remote_display_lease_seconds)
+   909          return 0;
+   910  
+   911      screenf(
+   912          "REMOTE DISPLAY: lease expired tx=%u",
+   913          remote_display_txid);
+   914  
+   915      remote_display_state =
+   916          REMOTE_DISPLAY_RESTORING;
+   917  
+   918      remote_display_error_code = 0;
+   919  

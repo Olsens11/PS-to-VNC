@@ -1,28 +1,41 @@
 CC ?= cc
+CFLAGS ?=
 
-CPPFLAGS ?=
-CFLAGS ?= -O2 -std=c99 -Wall -Wextra -Werror -pedantic
+COMMON_CFLAGS = -O2 -std=c99 -Wall -Wextra -Werror -pedantic
+BUILD_DIR = .build
 
-BUILD_DIR := .build
-CONFIG_TEXT_TEST := $(BUILD_DIR)/config_text_test
+.PHONY: unit clean
 
-.PHONY: all unit clean
+unit: \
+	$(BUILD_DIR)/config_text_test \
+	$(BUILD_DIR)/video_mode_test
+	./$(BUILD_DIR)/config_text_test
+	./$(BUILD_DIR)/video_mode_test
 
-all: unit
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-unit: $(CONFIG_TEXT_TEST)
-	./$(CONFIG_TEXT_TEST)
-
-$(CONFIG_TEXT_TEST): \
+$(BUILD_DIR)/config_text_test: \
 	unit/config_text_test.c \
 	../src/config/text.c \
-	../src/config/text.h
-	mkdir -p $(BUILD_DIR)
-	$(CC) $(CPPFLAGS) $(CFLAGS) \
+	../src/config/text.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/config_text_test.c \
 		../src/config/text.c \
-		-o $(CONFIG_TEXT_TEST)
+		-o $@
+
+$(BUILD_DIR)/video_mode_test: \
+	unit/video_mode_test.c \
+	../src/video/mode.c \
+	../src/video/mode.h \
+	support/gsKit.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Isupport \
+		-I../src \
+		unit/video_mode_test.c \
+		../src/video/mode.c \
+		-o $@
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_video_mode_by_name
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=19
+
+    11      return mode->recommended_backend;
+    12  }
+    13  
+    14  const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
+    15      const char *name)
+    16  {
+    17      unsigned int i;
+    18  
+    19      if (name == NULL || name[0] == '\0')
+    20          return NULL;
+    21  
+    22      for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+    23          if (strcmp(name, video_modes[i]->name) == 0)
+    24              return video_modes[i];
+    25      }
+    26  
+    27      return NULL;
+    28  }
+    29  
+    30  /* Built-in fallback when no valid persisted startup mode exists. */
+    31  const ps2vnc_video_mode_t *active_video_mode = &video_mode_1080i;
+    32  ps2vnc_backend_t active_display_backend = PS2VNC_BACKEND_NONE;
+    33  
+    34  
+    35  /*
+    36   * D17AL-F8G11B:
+    37   *
+    38   * gsHires CT16S FRAME/DISPFB presentation width is a 64-pixel-unit
+    39   * hardware contract.  The mode registry records intended drawing geometry;
+    40   * the renderer derives the compatible width without changing physical
+    41   * raster timing or Standard-backend semantics.
+    42   *
+    43   * Keep horizontal width compatibility separate from vertical full-frame

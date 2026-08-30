@@ -1,0 +1,37 @@
+SYMBOL=display_restore_ack_render_bitmap
+SOURCE=working/b4a/ps2vnc_ui_core.inc
+ANCHOR_LINE=62
+
+    54  
+    55      osk_draw_text_centered(
+    56          0, 153, OSK_WIDTH, 16,
+    57          "X SELECT   O GO BACK", 1, text);
+    58  }
+    59  
+    60  
+    61  void display_restore_ack_render_bitmap(void)
+    62  {
+    63      const unsigned short panel = osk_color(3, 3, 4);
+    64      const unsigned short key = osk_color(8, 18, 31);
+    65      const unsigned short text = osk_color(31, 31, 31);
+    66      const unsigned short good = osk_color(8, 31, 10);
+    67      char line[80];
+    68  
+    69      osk_fill_rect(0, 0, OSK_WIDTH, OSK_HEIGHT, panel);
+    70  
+    71      osk_draw_text_centered(
+    72          0, 14, OSK_WIDTH, 24,
+    73          "ORIGINAL DISPLAY MODE RESTORED",
+    74          2, good);
+    75  
+    76      snprintf(
+    77          line,
+    78          sizeof(line),
+    79          "%s HAS BEEN RESTORED SUCCESSFULLY.",
+    80          display_restore_ack_mode ?
+    81              display_restore_ack_mode->name : "DISPLAY");
+    82  
+    83      osk_draw_text_centered(
+    84          0, 54, OSK_WIDTH, 18,
+    85          line, 1, text);
+    86  

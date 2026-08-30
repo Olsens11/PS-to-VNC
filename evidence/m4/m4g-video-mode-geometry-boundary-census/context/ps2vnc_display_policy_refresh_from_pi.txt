@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_policy_refresh_from_pi
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=1286
+
+  1278          }
+  1279      }
+  1280  
+  1281      return 0;
+  1282  }
+  1283  
+  1284  
+  1285  int ps2vnc_display_policy_refresh_from_pi(void)
+  1286  {
+  1287      unsigned char *text;
+  1288  
+  1289      unsigned char new_locked[
+  1290          VIDEO_MODE_COUNT
+  1291      ];
+  1292  
+  1293      unsigned int len = 0;
+  1294      unsigned int i;
+  1295      int new_hide = 0;
+  1296      int result = -1;
+  1297  
+  1298      text = (unsigned char *)malloc(
+  1299          PS2VNC_CONFIG_MAX_BYTES + 1
+  1300      );
+  1301  
+  1302      if (text == NULL)
+  1303          return -1;
+  1304  
+  1305      if (ps2vnc_management_get(
+  1306              PS2VNC_CONFIG_PATH,
+  1307              text,
+  1308              PS2VNC_CONFIG_MAX_BYTES,
+  1309              &len) < 0)
+  1310          goto done;

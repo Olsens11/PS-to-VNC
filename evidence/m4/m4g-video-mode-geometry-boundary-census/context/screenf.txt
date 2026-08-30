@@ -1,0 +1,37 @@
+SYMBOL=screenf
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=1179
+
+  1171  volatile u64 system_refresh_cooldown_started_tick = 0;
+  1172  
+  1173  /* Local GS-format keyboard texture buffer. */
+  1174  unsigned short osk_pixels[OSK_WIDTH * OSK_HEIGHT] __attribute__((aligned(128)));
+  1175  
+  1176   int screen_row = 0;
+  1177  
+  1178  void screenf(const char *fmt, ...)
+  1179  {
+  1180      char buf[79];
+  1181      va_list ap;
+  1182  
+  1183      va_start(ap, fmt);
+  1184      vsnprintf(buf, sizeof(buf), fmt, ap);
+  1185      va_end(ap);
+  1186  
+  1187      buf[sizeof(buf) - 1] = '\0';
+  1188  
+  1189      scr_setXY(0, screen_row++);
+  1190      scr_printf("%s", buf);
+  1191  }
+  1192  
+  1193   void sanitize_text(char *s)
+  1194  {
+  1195      int i;
+  1196  
+  1197      for (i = 0; s[i] != '\0'; i++) {
+  1198          unsigned char c = (unsigned char)s[i];
+  1199          if (c < 32 || c > 126)
+  1200              s[i] = '.';
+  1201      }
+  1202  }
+  1203  

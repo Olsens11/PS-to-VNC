@@ -1,0 +1,37 @@
+SYMBOL=screen_fit_prim_sprite
+SOURCE=working/b4a/ps2vnc_calibration_core.inc
+ANCHOR_LINE=1593
+
+  1585  
+  1586  /*
+  1587   * Draw text directly with the existing 5x7 OSK font.
+  1588   * Calibration is temporary, so a few tiny GS sprites per glyph are
+  1589   * preferable to allocating another texture or consuming more VRAM.
+  1590   */
+  1591  static float screen_fit_draw_x(int x)
+  1592  {
+  1593      return ps2vnc_display_output_x((float)x);
+  1594  }
+  1595  
+  1596  static float screen_fit_draw_y(int y)
+  1597  {
+  1598      return ps2vnc_display_output_y((float)y);
+  1599  }
+  1600  
+  1601  void screen_fit_prim_sprite(
+  1602      GSGLOBAL *g, int x0, int y0, int x1, int y1, int z, u64 color)
+  1603  {
+  1604      gsKit_prim_sprite(g,
+  1605          screen_fit_draw_x(x0), screen_fit_draw_y(y0),
+  1606          screen_fit_draw_x(x1), screen_fit_draw_y(y1), z, color);
+  1607  }
+  1608  
+  1609  
+  1610  /*
+  1611   * D17AL-F5:
+  1612   *
+  1613   * Calibration decoration may intentionally extend beyond the physical
+  1614   * raster while the selected SAFE DESKTOP remains fully in-bounds.
+  1615   *
+  1616   * Clip that decoration here before applying the backend coordinate
+  1617   * transform. Negative/out-of-range visualization coordinates therefore

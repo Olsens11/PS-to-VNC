@@ -1,0 +1,37 @@
+SYMBOL=screen_fit_geometry_valid
+SOURCE=working/b4a/ps2vnc_management_core.inc
+ANCHOR_LINE=734
+
+   726   * screen_fit_geometry_valid_for_mode() without changing GS state.
+   727   */
+   728  int screen_fit_geometry_valid(
+   729      int width,
+   730      int height,
+   731      int offset_x,
+   732      int offset_y)
+   733  {
+   734      return screen_fit_geometry_valid_for_mode(
+   735          active_video_mode,
+   736          width,
+   737          height,
+   738          offset_x,
+   739          offset_y
+   740      );
+   741  }
+   742  
+   743  
+   744  /*
+   745   * Single acceptance gate for screen-fit presets.
+   746   *
+   747   * Future config-file parsing must feed through here rather than
+   748   * assigning screen_fit_* variables directly.
+   749   */
+   750  int screen_fit_apply_preset(
+   751      int width,
+   752      int height,
+   753      int offset_x,
+   754      int offset_y,
+   755      int full_bypass)
+   756  {
+   757      if (full_bypass) {
+   758  

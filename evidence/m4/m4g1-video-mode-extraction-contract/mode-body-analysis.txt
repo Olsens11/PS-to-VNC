@@ -1,0 +1,51 @@
+===== ps2vnc_video_mode_supports_backend =====
+SOURCE=ps2vnc_runtime.c
+int ps2vnc_video_mode_supports_backend(
+    const ps2vnc_video_mode_t *mode,
+    ps2vnc_backend_t backend)
+{
+    if (mode == NULL || backend == PS2VNC_BACKEND_NONE)
+        return 0;
+
+    return (mode->allowed_backends & (unsigned int)backend) != 0;
+}
+
+REFERENCED_PROJECT_IDENTIFIERS=PS2VNC_BACKEND_NONE,ps2vnc_backend_t,ps2vnc_video_mode_t
+
+===== ps2vnc_video_mode_default_backend =====
+SOURCE=ps2vnc_runtime_core.inc
+ps2vnc_backend_t ps2vnc_video_mode_default_backend(
+    const ps2vnc_video_mode_t *mode)
+{
+    if (mode == NULL)
+        return PS2VNC_BACKEND_NONE;
+
+    if (!ps2vnc_video_mode_supports_backend(
+            mode, mode->recommended_backend))
+        return PS2VNC_BACKEND_NONE;
+
+    return mode->recommended_backend;
+}
+
+REFERENCED_PROJECT_IDENTIFIERS=PS2VNC_BACKEND_NONE,ps2vnc_backend_t,ps2vnc_video_mode_supports_backend,ps2vnc_video_mode_t
+
+===== ps2vnc_video_mode_by_name =====
+SOURCE=ps2vnc_runtime_core.inc
+const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
+    const char *name)
+{
+    unsigned int i;
+
+    if (name == NULL || name[0] == '\0')
+        return NULL;
+
+    for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+        if (strcmp(name, video_modes[i]->name) == 0)
+            return video_modes[i];
+    }
+
+    return NULL;
+}
+
+REFERENCED_PROJECT_IDENTIFIERS=VIDEO_MODE_COUNT,ps2vnc_video_mode_t
+

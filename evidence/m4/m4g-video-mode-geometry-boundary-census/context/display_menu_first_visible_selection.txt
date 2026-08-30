@@ -1,0 +1,37 @@
+SYMBOL=display_menu_first_visible_selection
+SOURCE=working/b4a/ps2vnc_ui_core.inc
+ANCHOR_LINE=184
+
+   176      if (!display_hide_locked_modes)
+   177          return 1;
+   178  
+   179      return display_mode_locked[selection] ? 0 : 1;
+   180  }
+   181  
+   182  
+   183  static int display_menu_first_visible_selection(int tab)
+   184  {
+   185      unsigned int i;
+   186  
+   187      if (tab < DISPLAY_TAB_TV_DTV ||
+   188          tab > DISPLAY_TAB_VGA_OTHER)
+   189          return -1;
+   190  
+   191      for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+   192          if (display_menu_mode_belongs_to_tab((int)i, tab) &&
+   193              display_menu_mode_visible((int)i))
+   194              return (int)i;
+   195      }
+   196  
+   197      return -1;
+   198  }
+   199  
+   200  
+   201  static int display_menu_tab_visible(int tab)
+   202  {
+   203      if (tab == DISPLAY_TAB_ADVANCED)
+   204          return 1;
+   205  
+   206      if (tab < DISPLAY_TAB_TV_DTV ||
+   207          tab > DISPLAY_TAB_VGA_OTHER)
+   208          return 0;

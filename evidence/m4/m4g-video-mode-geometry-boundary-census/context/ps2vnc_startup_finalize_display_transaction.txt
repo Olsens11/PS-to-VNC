@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_startup_finalize_display_transaction
+SOURCE=working/b4a/ps2vnc_display_core.inc
+ANCHOR_LINE=603
+
+   595   * Capture the live profile and compare it byte-for-field semantically with
+   596   * the selected authority before changing durable transaction state.
+   597   */
+   598  int ps2vnc_startup_finalize_display_transaction(void)
+   599  {
+   600      ps2vnc_display_profile_t live_profile;
+   601      const ps2vnc_display_profile_t *target;
+   602  
+   603      if (!startup_display_transaction_loaded)
+   604          return -1;
+   605  
+   606      if (!startup_authoritative_display_profile_loaded) {
+   607  
+   608          return startup_display_transaction.state ==
+   609              PS2VNC_DISPLAY_TX_NONE ? 0 : -1;
+   610      }
+   611  
+   612      target = &startup_authoritative_display_profile;
+   613  
+   614      if (ps2vnc_display_profile_capture_active(
+   615              &live_profile) < 0 ||
+   616          !ps2vnc_display_tx_profiles_equal(
+   617              &live_profile,
+   618              target)) {
+   619  
+   620          screenf("DISPLAY TX: runtime profile mismatch");
+   621          return -1;
+   622      }
+   623  
+   624      switch (startup_display_transaction.state) {
+   625  
+   626          case PS2VNC_DISPLAY_TX_NONE:
+   627  

@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_config_parse_startup_mode.constprop.0
+SOURCE=working/b4a/ps2vnc_management_core.inc
+ANCHOR_LINE=869
+
+   861  
+   862  
+   863  
+   864  /*
+   865   * Parse the global [display] startup_mode selector independently from
+   866   * per-mode calibration. Return 1 when present and valid, 0 when absent,
+   867   * and -1 when the recognized setting is malformed or unsupported.
+   868   */
+   869  static int ps2vnc_config_parse_startup_mode(
+   870      const char *text,
+   871      unsigned int text_len,
+   872      const ps2vnc_video_mode_t **out_mode)
+   873  {
+   874      unsigned int pos = 0;
+   875      unsigned int i;
+   876      int in_display = 0;
+   877      int display_seen = 0;
+   878      int startup_seen = 0;
+   879  
+   880      if (text == NULL || out_mode == NULL)
+   881          return -1;
+   882  
+   883      if (text_len > PS2VNC_CONFIG_MAX_BYTES)
+   884          return -1;
+   885  
+   886      for (i = 0; i < text_len; i++) {
+   887          if (text[i] == '\0')
+   888              return -1;
+   889      }
+   890  
+   891      while (pos < text_len) {
+   892          char line[PS2VNC_CONFIG_MAX_LINE];
+   893          char *work, *hash, *equals, *key, *value;

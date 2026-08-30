@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_hires_requires_raster_mapping
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=99
+
+    91      return height;
+    92  }
+    93  
+    94  
+    95  static int ps2vnc_hires_requires_horizontal_mapping(void)
+    96  {
+    97      unsigned int effective_width;
+    98  
+    99      if (active_video_mode == NULL ||
+   100          active_video_mode->raster_width == 0) {
+   101  
+   102          return 0;
+   103      }
+   104  
+   105      effective_width =
+   106          ps2vnc_hires_effective_width();
+   107  
+   108      if (effective_width == 0)
+   109          return 0;
+   110  
+   111      return
+   112          effective_width !=
+   113              active_video_mode->raster_width;
+   114  }
+   115  
+   116  
+   117   int ps2vnc_hires_requires_vertical_mapping(void)
+   118  {
+   119      u64 full_frame_height;
+   120  
+   121      if (active_video_mode == NULL ||
+   122          active_video_mode->raster_height == 0) {
+   123  

@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_global_rollback_display_transaction
+SOURCE=working/b4a/ps2vnc_display_core.inc
+ANCHOR_LINE=1111
+
+  1103  int ps2vnc_global_rollback_display_transaction(
+  1104      int old_sock,
+  1105      int transport_dirty,
+  1106      unsigned short *rfb_framebuffer,
+  1107      unsigned short *gs_framebuffer,
+  1108      GSGLOBAL **display,
+  1109      GSTEXTURE *tex,
+  1110      GSTEXTURE *osk_tex)
+  1111  {
+  1112      int restore_marked;
+  1113      int new_sock;
+  1114  
+  1115      const int remote_restore =
+  1116          remote_display_state != REMOTE_DISPLAY_IDLE;
+  1117  
+  1118      if (remote_restore) {
+  1119          remote_display_suppress_next_active_menu_return = 1;
+  1120  
+  1121          remote_display_state =
+  1122              REMOTE_DISPLAY_RESTORING;
+  1123  
+  1124          (void)ps2vnc_remote_result_post(
+  1125              "RESTORING",
+  1126              remote_display_error_code);
+  1127      }
+  1128  
+  1129      restore_marked =
+  1130          ps2vnc_display_transaction_restore_to_pi() == 0;
+  1131  
+  1132      if (!restore_marked)
+  1133          screenf("DISPLAY TX: restore marker failed");
+  1134  
+  1135      new_sock = ps2vnc_rollback_display_transaction(

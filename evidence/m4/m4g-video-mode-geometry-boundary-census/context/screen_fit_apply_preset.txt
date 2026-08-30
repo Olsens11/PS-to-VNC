@@ -1,0 +1,37 @@
+SYMBOL=screen_fit_apply_preset
+SOURCE=working/b4a/ps2vnc_management_core.inc
+ANCHOR_LINE=762
+
+   754      int offset_y,
+   755      int full_bypass)
+   756  {
+   757      if (full_bypass) {
+   758  
+   759          /*
+   760           * FULL is one exact intentional preset.
+   761           */
+   762          if (width == OUTPUT_WIDTH &&
+   763              height == OUTPUT_HEIGHT &&
+   764              offset_x == 0 &&
+   765              offset_y == 0) {
+   766  
+   767              screen_fit_width = OUTPUT_WIDTH;
+   768              screen_fit_height = OUTPUT_HEIGHT;
+   769              screen_fit_offset_x = 0;
+   770              screen_fit_offset_y = 0;
+   771              screen_fit_full_bypass = 1;
+   772  
+   773              return 1;
+   774          }
+   775  
+   776      } else if (screen_fit_geometry_valid(
+   777                     width,
+   778                     height,
+   779                     offset_x,
+   780                     offset_y)) {
+   781  
+   782          screen_fit_width = width;
+   783          screen_fit_height = height;
+   784          screen_fit_offset_x = offset_x;
+   785          screen_fit_offset_y = offset_y;
+   786          screen_fit_full_bypass = 0;

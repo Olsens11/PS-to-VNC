@@ -1,0 +1,37 @@
+SYMBOL=sync_copy_hires_dirty_rows
+SOURCE=working/b4a/ps2vnc_framebuffer_core.inc
+ANCHOR_LINE=1201
+
+  1193   */
+  1194  int sync_copy_hires_dirty_rows(
+  1195      unsigned short *dst,
+  1196      const unsigned short *src)
+  1197  {
+  1198      unsigned int y;
+  1199      int saw_row = 0;
+  1200  
+  1201      if (dst == NULL ||
+  1202          !rfb_dirty_valid ||
+  1203          desktop_height > VNC_HEIGHT ||
+  1204          rfb_dirty_y1 > desktop_height)
+  1205          return -1;
+  1206  
+  1207      for (y = rfb_dirty_y0; y < rfb_dirty_y1; y++) {
+  1208          unsigned int x0;
+  1209          unsigned int x1;
+  1210          unsigned int i;
+  1211          unsigned int row_bytes;
+  1212  
+  1213          if (!rfb_dirty_row_valid[y])
+  1214              continue;
+  1215  
+  1216          x0 = rfb_dirty_row_x0[y];
+  1217          x1 = rfb_dirty_row_x1[y];
+  1218  
+  1219          if (x1 <= x0 || x1 > desktop_width)
+  1220              return -1;
+  1221  
+  1222          i =
+  1223              hires_bg_storage_row(desktop_output_y + y) *
+  1224              OUTPUT_WIDTH + desktop_output_x + x0;
+  1225  

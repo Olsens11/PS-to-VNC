@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_transaction_begin_to_pi
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=251
+
+   243  
+   244      return result;
+   245  }
+   246  
+   247  
+   248  int ps2vnc_display_transaction_begin_to_pi(
+   249      const ps2vnc_display_profile_t *previous,
+   250      const ps2vnc_display_profile_t *candidate)
+   251  {
+   252      const char *previous_backend;
+   253      const char *candidate_backend;
+   254      char body[1024];
+   255      int body_len;
+   256  
+   257      if (!ps2vnc_display_profile_valid(previous) ||
+   258          !ps2vnc_display_profile_valid(candidate))
+   259          return -1;
+   260  
+   261      if (previous->mode == candidate->mode &&
+   262          previous->backend == candidate->backend &&
+   263          previous->logical_width == candidate->logical_width &&
+   264          previous->logical_height == candidate->logical_height &&
+   265          previous->output_x == candidate->output_x &&
+   266          previous->output_y == candidate->output_y &&
+   267          previous->output_width == candidate->output_width &&
+   268          previous->output_height == candidate->output_height)
+   269          return -1;
+   270  
+   271      previous_backend =
+   272          ps2vnc_backend_transaction_name(previous->backend);
+   273      candidate_backend =
+   274          ps2vnc_backend_transaction_name(candidate->backend);
+   275  

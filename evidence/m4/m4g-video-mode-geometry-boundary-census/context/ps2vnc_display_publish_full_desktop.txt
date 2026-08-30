@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_publish_full_desktop
+SOURCE=working/b4a/ps2vnc_framebuffer_tail.inc
+ANCHOR_LINE=1041
+
+  1033      return 0;
+  1034  }
+  1035  
+  1036  int ps2vnc_display_publish_full_desktop(
+  1037      GSGLOBAL *gsGlobal,
+  1038      GSTEXTURE *tex,
+  1039      unsigned short *gs_framebuffer)
+  1040  {
+  1041      if (active_display_backend == PS2VNC_BACKEND_HIRES)
+  1042          return ps2vnc_display_publish_full_desktop_hires(
+  1043              gsGlobal, tex, gs_framebuffer);
+  1044  
+  1045      if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+  1046          return ps2vnc_display_publish_full_desktop_standard(
+  1047              gsGlobal, tex, gs_framebuffer);
+  1048  
+  1049      return -1;
+  1050  }
+  1051  
+  1052  static int update_hires_background_region(
+  1053      GSGLOBAL *gsGlobal,
+  1054      const unsigned short *gs_framebuffer,
+  1055      unsigned int x,
+  1056      unsigned int y,
+  1057      unsigned int w,
+  1058      unsigned int h,
+  1059      int copy_pixels)
+  1060  {
+  1061      unsigned int row;
+  1062      unsigned int row_bytes;
+  1063  
+  1064      if (hires_bg_buffer == NULL ||
+  1065          !hires_bg_configured)

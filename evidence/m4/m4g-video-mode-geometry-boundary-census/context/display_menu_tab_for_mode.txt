@@ -1,0 +1,37 @@
+SYMBOL=display_menu_tab_for_mode
+SOURCE=working/b4a/ps2vnc_ui_core.inc
+ANCHOR_LINE=105
+
+    97          "X OK", 1, text);
+    98  }
+    99  
+   100  
+   101  
+   102  int display_menu_tab_for_mode(
+   103      const ps2vnc_video_mode_t *mode)
+   104  {
+   105      if (mode == NULL)
+   106          return DISPLAY_TAB_TV_DTV;
+   107  
+   108      switch (mode->menu_group) {
+   109          case PS2VNC_DISPLAY_GROUP_TV_DTV:
+   110              return DISPLAY_TAB_TV_DTV;
+   111  
+   112          case PS2VNC_DISPLAY_GROUP_VGA_60:
+   113              return DISPLAY_TAB_VGA_60;
+   114  
+   115          case PS2VNC_DISPLAY_GROUP_VGA_OTHER:
+   116              return DISPLAY_TAB_VGA_OTHER;
+   117  
+   118          default:
+   119              return DISPLAY_TAB_TV_DTV;
+   120      }
+   121  }
+   122  
+   123  
+   124  static const char *display_menu_tab_label(int tab)
+   125  {
+   126      switch (tab) {
+   127          case DISPLAY_TAB_TV_DTV:
+   128              return "TV / DTV";
+   129  

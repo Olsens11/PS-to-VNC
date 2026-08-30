@@ -1,0 +1,37 @@
+SYMBOL=screen_fit_draw_corner_marker.constprop.0
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=142
+
+   134       *
+   135       *   TL  +1,+1
+   136       *   TR  -1,+1
+   137       *   BL  +1,-1
+   138       *   BR  -1,-1
+   139       */
+   140  
+   141      x_far = corner_x + sx * size;
+   142      y_far = corner_y + sy * size;
+   143  
+   144      x_min = (corner_x < x_far) ? corner_x : x_far;
+   145      x_max = (corner_x > x_far) ? corner_x : x_far;
+   146  
+   147      y_min = (corner_y < y_far) ? corner_y : y_far;
+   148      y_max = (corner_y > y_far) ? corner_y : y_far;
+   149  
+   150      /*
+   151       * First draw the complete inward square in cyan.
+   152       */
+   153      screen_fit_prim_sprite(
+   154          gsGlobal,
+   155          (float)x_min,
+   156          (float)y_min,
+   157          (float)x_max,
+   158          (float)y_max,
+   159          3,
+   160          inner_color
+   161      );
+   162  
+   163      /*
+   164       * Then construct the amber corner triangle from one-pixel strips.
+   165       *
+   166       * This avoids gsKit triangle winding/culling entirely.

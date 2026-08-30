@@ -1,31 +1,4 @@
-ps2vnc_backend_t ps2vnc_video_mode_default_backend(
-    const ps2vnc_video_mode_t *mode)
-{
-    if (mode == NULL)
-        return PS2VNC_BACKEND_NONE;
-
-    if (!ps2vnc_video_mode_supports_backend(
-            mode, mode->recommended_backend))
-        return PS2VNC_BACKEND_NONE;
-
-    return mode->recommended_backend;
-}
-
-const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
-    const char *name)
-{
-    unsigned int i;
-
-    if (name == NULL || name[0] == '\0')
-        return NULL;
-
-    for (i = 0; i < VIDEO_MODE_COUNT; i++) {
-        if (strcmp(name, video_modes[i]->name) == 0)
-            return video_modes[i];
-    }
-
-    return NULL;
-}
+/* M4G2: video-mode lookup/default logic lives in src/video/mode.c. */
 
 /* Built-in fallback when no valid persisted startup mode exists. */
 const ps2vnc_video_mode_t *active_video_mode = &video_mode_1080i;

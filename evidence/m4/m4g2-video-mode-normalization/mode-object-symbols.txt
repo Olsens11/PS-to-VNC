@@ -1,0 +1,5 @@
+00000490 R pstvnc_video_mode_1080i
+00000060 T pstvnc_video_mode_by_name
+00000028 T pstvnc_video_mode_default_backend
+00000000 T pstvnc_video_mode_supports_backend
+00000000 R pstvnc_video_modes

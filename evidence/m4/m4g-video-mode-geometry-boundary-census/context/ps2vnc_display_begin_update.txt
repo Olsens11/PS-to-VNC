@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_begin_update
+SOURCE=working/b4a/ps2vnc_framebuffer_core.inc
+ANCHOR_LINE=1137
+
+  1129  {
+  1130      live_direct_present_safe = 0;
+  1131  }
+  1132  
+  1133   int ps2vnc_display_begin_update(void)
+  1134  {
+  1135      ps2vnc_display_direct_write_cancel();
+  1136  
+  1137      if (active_display_backend == PS2VNC_BACKEND_HIRES &&
+  1138          !ps2vnc_hires_requires_raster_mapping())
+  1139          live_direct_present_safe = 1;
+  1140  
+  1141      return 0;
+  1142  }
+  1143  
+  1144   int ps2vnc_display_finish_update_decode(void)
+  1145  {
+  1146      int direct_complete = live_direct_present_safe;
+  1147  
+  1148      ps2vnc_display_direct_write_cancel();
+  1149      return direct_complete;
+  1150  }
+  1151  
+  1152  
+  1153  /*
+  1154   * TEST15D3-A3:
+  1155   * Synchronize a presentation-buffer region, optionally copying the same
+  1156   * already-complete pixels from another presentation buffer first.
+  1157   */
+  1158  static int sync_copy_hires_region(
+  1159      unsigned short *dst,
+  1160      const unsigned short *src,
+  1161      unsigned int x,

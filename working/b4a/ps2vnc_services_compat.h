@@ -54,61 +54,7 @@
 #define RFB_CAPACITY_WIDTH   1920
 #define RFB_CAPACITY_HEIGHT  1080
 
-typedef enum {
-    PS2VNC_BACKEND_NONE     = 0,
-    PS2VNC_BACKEND_STANDARD = 1u << 0,
-    PS2VNC_BACKEND_HIRES    = 1u << 1
-} ps2vnc_backend_t;
-
-typedef enum {
-    PS2VNC_DISPLAY_GROUP_TV_DTV = 0,
-    PS2VNC_DISPLAY_GROUP_VGA_60,
-    PS2VNC_DISPLAY_GROUP_VGA_OTHER,
-    PS2VNC_DISPLAY_GROUP_COUNT
-} ps2vnc_display_group_t;
-
-typedef struct {
-    const char *name;
-    int gs_mode;
-    int interlace;
-    int field;
-
-    /* Electrical/physical video raster. */
-    unsigned int raster_width;
-    unsigned int raster_height;
-
-    /*
-     * Ordinary gsKit drawing/framebuffer geometry.
-     *
-     * Interlaced FRAME modes may have a half-height GS drawing buffer while
-     * still carrying a full-frame RFB desktop. Zero means Standard is not
-     * available for this mode.
-     */
-    unsigned int standard_fb_width;
-    unsigned int standard_fb_height;
-    int standard_offset_x;
-    int standard_offset_y;
-
-    /*
-     * Fixed RFB/logical desktop for Standard.
-     *
-     * Keep this separate from standard_fb_* so interlaced FRAME modes can
-     * preserve the complete streamed frame while gsKit draws at half height.
-     */
-    unsigned int standard_logical_width;
-    unsigned int standard_logical_height;
-
-    /* gsKit HIRES drawing geometry and pass count. */
-    unsigned int hires_width;
-    unsigned int hires_height;
-    unsigned int hires_passes;
-
-    unsigned int allowed_backends;
-    ps2vnc_backend_t recommended_backend;
-
-    /* Presentation-only grouping used by the Display Modes page. */
-    ps2vnc_display_group_t menu_group;
-} ps2vnc_video_mode_t;
+#include "ps2vnc_video_mode_compat.h"
 
 /*
  * H4B1:
@@ -151,7 +97,7 @@ typedef struct {
 #include "ps2vnc_cross_types.h"
 
 #ifndef VIDEO_MODE_COUNT
-#define VIDEO_MODE_COUNT 22u
+#define VIDEO_MODE_COUNT PSTVNC_VIDEO_MODE_COUNT
 #endif
 
 /* Main-side macros referenced by services. */

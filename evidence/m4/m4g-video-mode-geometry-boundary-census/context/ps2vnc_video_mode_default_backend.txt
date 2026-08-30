@@ -1,0 +1,32 @@
+SYMBOL=ps2vnc_video_mode_default_backend
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=4
+
+     1  ps2vnc_backend_t ps2vnc_video_mode_default_backend(
+     2      const ps2vnc_video_mode_t *mode)
+     3  {
+     4      if (mode == NULL)
+     5          return PS2VNC_BACKEND_NONE;
+     6  
+     7      if (!ps2vnc_video_mode_supports_backend(
+     8              mode, mode->recommended_backend))
+     9          return PS2VNC_BACKEND_NONE;
+    10  
+    11      return mode->recommended_backend;
+    12  }
+    13  
+    14  const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
+    15      const char *name)
+    16  {
+    17      unsigned int i;
+    18  
+    19      if (name == NULL || name[0] == '\0')
+    20          return NULL;
+    21  
+    22      for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+    23          if (strcmp(name, video_modes[i]->name) == 0)
+    24              return video_modes[i];
+    25      }
+    26  
+    27      return NULL;
+    28  }

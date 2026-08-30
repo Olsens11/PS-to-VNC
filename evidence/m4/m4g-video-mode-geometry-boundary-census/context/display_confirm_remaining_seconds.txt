@@ -1,0 +1,37 @@
+SYMBOL=display_confirm_remaining_seconds
+SOURCE=working/b4a/ps2vnc_runtime_tail.inc
+ANCHOR_LINE=299
+
+   291  }
+   292  
+   293  
+   294  
+   295   unsigned int display_confirm_remaining_seconds(void)
+   296  {
+   297      unsigned int elapsed_us;
+   298  
+   299      if (!display_confirm_pending)
+   300          return 0;
+   301  
+   302      elapsed_us = profile_ticks_us(
+   303          GetTimerSystemTime() - display_confirm_started_tick);
+   304  
+   305      if (elapsed_us >=
+   306          DISPLAY_CONFIRM_TIMEOUT_SECONDS * 1000000u)
+   307          return 0;
+   308  
+   309      return DISPLAY_CONFIRM_TIMEOUT_SECONDS -
+   310          (elapsed_us / 1000000u);
+   311  }
+   312  
+   313   void profile_emit_now(void)
+   314  {
+   315      char msg[256];
+   316      int len;
+   317  
+   318      if (debug_udp_sock >= 0) {
+   319          len = snprintf(
+   320              msg, sizeof(msg),
+   321              "PRF frame=%u rn=%u dn=%u bytes=%u raw=%u hx=%u "
+   322              "ps=%u fl=%u rfb=%u rx=%u hd=%u hr=%u dw=%u cp=%u",
+   323              debug_frame_counter,

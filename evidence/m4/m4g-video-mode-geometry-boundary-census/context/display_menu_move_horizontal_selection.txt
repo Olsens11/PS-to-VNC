@@ -1,0 +1,37 @@
+SYMBOL=display_menu_move_horizontal_selection
+SOURCE=working/b4a/ps2vnc_ui_core.inc
+ANCHOR_LINE=377
+
+   369  
+   370      return selection;
+   371  }
+   372  
+   373  
+   374  int display_menu_move_horizontal_selection(
+   375      int selection,
+   376      int direction)
+   377  {
+   378      int old_tab = display_menu_tab;
+   379  
+   380      (void)selection;
+   381  
+   382      if (direction == 0)
+   383          return display_menu_selection;
+   384  
+   385      if (old_tab >= DISPLAY_TAB_TV_DTV &&
+   386          old_tab <= DISPLAY_TAB_VGA_OTHER &&
+   387          display_menu_mode_belongs_to_tab(
+   388              display_menu_selection,
+   389              old_tab)) {
+   390  
+   391          display_menu_tab_selection[old_tab] =
+   392              display_menu_selection;
+   393      }
+   394  
+   395      display_menu_tab =
+   396          display_menu_next_visible_tab(
+   397              display_menu_tab,
+   398              direction);
+   399  
+   400      display_menu_normalize_selection();
+   401  

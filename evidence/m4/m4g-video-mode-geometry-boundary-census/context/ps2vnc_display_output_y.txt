@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_output_y
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=240
+
+   232  
+   233      return x * (float)draw_width / (float)OUTPUT_WIDTH;
+   234  }
+   235  
+   236  float ps2vnc_display_output_y(float y)
+   237  {
+   238      unsigned int draw_height;
+   239  
+   240      if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+   241          draw_height = active_video_mode->standard_fb_height;
+   242      else if (active_display_backend == PS2VNC_BACKEND_HIRES)
+   243          draw_height = active_video_mode->hires_height;
+   244      else
+   245          return y;
+   246  
+   247      if (draw_height == 0 || OUTPUT_HEIGHT == 0)
+   248          return y;
+   249  
+   250      return y * (float)draw_height / (float)OUTPUT_HEIGHT;
+   251  }
+   252  
+   253  /*
+   254   * TEST13J-D3-A1:
+   255   * Runtime RFB framebuffer geometry.
+   256   *
+   257   * Physical GS output remains fixed at 1280x720.
+   258   */
+   259  unsigned int desktop_width = VNC_WIDTH;
+   260  unsigned int desktop_height = VNC_HEIGHT;
+   261  
+   262  /*
+   263   * Position of the 1:1 remote desktop inside the fixed 1280x720
+   264   * physical HIRES output.

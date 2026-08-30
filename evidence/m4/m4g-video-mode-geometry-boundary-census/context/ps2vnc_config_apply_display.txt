@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_config_apply_display
+SOURCE=working/b4a/ps2vnc_management_core.inc
+ANCHOR_LINE=1401
+
+  1393      return PS2VNC_CONFIG_NO_DISPLAY;
+  1394  }
+  1395  
+  1396  
+  1397  
+  1398  int ps2vnc_config_apply_display(
+  1399      const ps2vnc_display_config_t *config)
+  1400  {
+  1401      if (config == NULL)
+  1402          return 0;
+  1403  
+  1404      return screen_fit_apply_preset(
+  1405          config->safe_width,
+  1406          config->safe_height,
+  1407          config->safe_x,
+  1408          config->safe_y,
+  1409          0
+  1410      );
+  1411  }
+  1412  
+  1413  
+  1414  
+  1415  
+  1416  
+  1417  /*
+  1418   * TEST13J-D4-A3:
+  1419   * Read-only configuration retrieval from the Pi.
+  1420   *
+  1421   * This is intentionally a separate TCP connection from VNC/RFB.
+  1422   *
+  1423   * Bootstrap:
+  1424   *
+  1425   *     PS2 -> PS2VNC_BOOTSTRAP_PI_IP:PS2VNC_CONFIG_PORT

@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_tx_parse_profile
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=1519
+
+  1511  int ps2vnc_display_tx_parse_profile(
+  1512      char **cursor,
+  1513      char *end,
+  1514      const char *prefix,
+  1515      ps2vnc_display_profile_t *profile)
+  1516  {
+  1517      char *value;
+  1518  
+  1519      if (cursor == NULL ||
+  1520          prefix == NULL ||
+  1521          profile == NULL)
+  1522          return -1;
+  1523  
+  1524      memset(profile, 0, sizeof(*profile));
+  1525  
+  1526      if (!ps2vnc_display_tx_take_profile_value(
+  1527              cursor, end, prefix, "mode", &value))
+  1528          return -1;
+  1529  
+  1530      profile->mode = ps2vnc_video_mode_by_name(value);
+  1531  
+  1532      if (profile->mode == NULL)
+  1533          return -1;
+  1534  
+  1535      if (!ps2vnc_display_tx_take_profile_value(
+  1536              cursor, end, prefix, "backend", &value))
+  1537          return -1;
+  1538  
+  1539      profile->backend =
+  1540          ps2vnc_backend_from_transaction_name(value);
+  1541  
+  1542      if (profile->backend == PS2VNC_BACKEND_NONE)
+  1543          return -1;

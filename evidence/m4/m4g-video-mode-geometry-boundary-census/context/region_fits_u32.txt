@@ -1,0 +1,37 @@
+SYMBOL=region_fits_u32
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=1236
+
+  1228  int region_fits_u32(
+  1229      unsigned int x,
+  1230      unsigned int y,
+  1231      unsigned int w,
+  1232      unsigned int h,
+  1233      unsigned int bounds_width,
+  1234      unsigned int bounds_height)
+  1235  {
+  1236      if (w == 0 || h == 0)
+  1237          return 0;
+  1238  
+  1239      if (x >= bounds_width ||
+  1240          y >= bounds_height)
+  1241          return 0;
+  1242  
+  1243      if (w > bounds_width - x)
+  1244          return 0;
+  1245  
+  1246      if (h > bounds_height - y)
+  1247          return 0;
+  1248  
+  1249      return 1;
+  1250  }
+  1251  
+  1252  
+  1253  int send_exact(int sock, const void *data, int len)
+  1254  {
+  1255      const unsigned char *p = (const unsigned char *)data;
+  1256      int done = 0;
+  1257  
+  1258      while (done < len) {
+  1259          int n = send(sock, p + done, len - done, 0);
+  1260  

@@ -1,0 +1,37 @@
+SYMBOL=set_raw_extended_desktop_encoding
+SOURCE=working/b4a/ps2vnc_runtime_tail.inc
+ANCHOR_LINE=878
+
+   870  
+   871          /* Raw = 0 */
+   872          0x00, 0x00, 0x00, 0x00,
+   873  
+   874          /* ExtendedDesktopSize = -308 = 0xFFFFFECC */
+   875          0xFF, 0xFF, 0xFE, 0xCC
+   876      };
+   877  
+   878      return send_exact(sock, msg, sizeof(msg)) == sizeof(msg) ? 0 : -1;
+   879  }
+   880  
+   881  
+   882  
+   883  /*
+   884   * Forward declaration: TEST13J-D2 resize confirmation needs to consume
+   885   * an ExtendedDesktopSize FramebufferUpdate before the receiver's full
+   886   * implementation later in this file.
+   887   */
+   888   int receive_framebuffer_update(
+   889      int sock,
+   890      unsigned short *rfb_framebuffer,
+   891      unsigned short *gs_framebuffer,
+   892      int verbose,
+   893      int require_full);
+   894  
+   895  
+   896  /*
+   897   * TEST13J-D2:
+   898   * Send RFB SetDesktopSize (client message type 251).
+   899   *
+   900   * This client uses a single-screen layout. The screen ID and flags are
+   901   * preserved from the server's ExtendedDesktopSize capability response.
+   902   */

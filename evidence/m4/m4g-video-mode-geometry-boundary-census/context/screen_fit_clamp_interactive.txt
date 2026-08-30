@@ -1,0 +1,37 @@
+SYMBOL=screen_fit_clamp_interactive
+SOURCE=working/b4a/ps2vnc_calibration_core.inc
+ANCHOR_LINE=1551
+
+  1543  {
+  1544      int remaining_x;
+  1545      int remaining_y;
+  1546      int centered_x;
+  1547      int centered_y;
+  1548      int max_positive_x;
+  1549      int max_positive_y;
+  1550  
+  1551      if (*width < SCREEN_FIT_MIN_WIDTH)
+  1552          *width = SCREEN_FIT_MIN_WIDTH;
+  1553  
+  1554      if (*width > OUTPUT_WIDTH)
+  1555          *width = OUTPUT_WIDTH;
+  1556  
+  1557      if (*height < SCREEN_FIT_MIN_HEIGHT)
+  1558          *height = SCREEN_FIT_MIN_HEIGHT;
+  1559  
+  1560      if (*height > OUTPUT_HEIGHT)
+  1561          *height = OUTPUT_HEIGHT;
+  1562  
+  1563      remaining_x = OUTPUT_WIDTH - *width;
+  1564      remaining_y = OUTPUT_HEIGHT - *height;
+  1565  
+  1566      centered_x = remaining_x / 2;
+  1567      centered_y = remaining_y / 2;
+  1568  
+  1569      max_positive_x = remaining_x - centered_x;
+  1570      max_positive_y = remaining_y - centered_y;
+  1571  
+  1572      if (*offset_x < -centered_x)
+  1573          *offset_x = -centered_x;
+  1574  
+  1575      if (*offset_x > max_positive_x)

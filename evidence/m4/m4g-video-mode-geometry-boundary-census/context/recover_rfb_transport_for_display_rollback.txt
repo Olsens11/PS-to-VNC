@@ -1,0 +1,37 @@
+SYMBOL=recover_rfb_transport_for_display_rollback
+SOURCE=working/b4a/ps2vnc_management_core.inc
+ANCHOR_LINE=444
+
+   436   * This intentionally stops BEFORE publishing through a GS backend. The
+   437   * caller will reconstruct the saved known-good display after this succeeds.
+   438   */
+   439  int recover_rfb_transport_for_display_rollback(
+   440      int old_sock,
+   441      unsigned short *rfb_framebuffer,
+   442      unsigned short *gs_framebuffer,
+   443      const ps2vnc_video_mode_t *handshake_mode)
+   444  {
+   445      const struct timespec retry_delay = {
+   446          1,
+   447          0
+   448      };
+   449  
+   450      const ps2vnc_video_mode_t *saved_active_mode =
+   451          active_video_mode;
+   452  
+   453      const int saved_geometry_locked =
+   454          desktop_geometry_locked;
+   455  
+   456      int attempt;
+   457  
+   458      if (handshake_mode == NULL)
+   459          return -1;
+   460  
+   461      /*
+   462       * Controller-generated RFB events are discarded until the rollback
+   463       * display and replacement stream are both completely ready.
+   464       */
+   465      rfb_connected = 0;
+   466  
+   467      reset_rfb_transport_state();
+   468  

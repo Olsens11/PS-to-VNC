@@ -968,7 +968,7 @@ static int ps2vnc_config_parse_startup_mode(
         if (*value == '\0' || strchr(value, '=') != NULL)
             return -1;
 
-        *out_mode = ps2vnc_video_mode_by_name(value);
+        *out_mode = pstvnc_video_mode_by_name(value);
 
         if (*out_mode == NULL)
             return -1;

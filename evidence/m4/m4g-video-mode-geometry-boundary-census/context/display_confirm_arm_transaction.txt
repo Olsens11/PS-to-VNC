@@ -1,0 +1,37 @@
+SYMBOL=display_confirm_arm_transaction
+SOURCE=working/b4a/ps2vnc_runtime_tail.inc
+ANCHOR_LINE=210
+
+   202      unsigned int previous_h,
+   203      int previous_screen_fit_width,
+   204      int previous_screen_fit_height,
+   205      int previous_screen_fit_offset_x,
+   206      int previous_screen_fit_offset_y,
+   207      int previous_screen_fit_full_bypass)
+   208  {
+   209      display_confirm_previous_mode = previous_mode;
+   210      display_confirm_previous_backend = active_display_backend;
+   211      display_confirm_previous_x = previous_x;
+   212      display_confirm_previous_y = previous_y;
+   213      display_confirm_previous_w = previous_w;
+   214      display_confirm_previous_h = previous_h;
+   215      display_confirm_previous_desktop_w = desktop_width;
+   216      display_confirm_previous_desktop_h = desktop_height;
+   217  
+   218      display_confirm_previous_screen_fit_width =
+   219          previous_screen_fit_width;
+   220      display_confirm_previous_screen_fit_height =
+   221          previous_screen_fit_height;
+   222      display_confirm_previous_screen_fit_offset_x =
+   223          previous_screen_fit_offset_x;
+   224      display_confirm_previous_screen_fit_offset_y =
+   225          previous_screen_fit_offset_y;
+   226      display_confirm_previous_screen_fit_full_bypass =
+   227          previous_screen_fit_full_bypass;
+   228  
+   229      display_confirm_selection = DISPLAY_CONFIRM_GO_BACK;
+   230      display_confirm_seconds = DISPLAY_CONFIRM_TIMEOUT_SECONDS;
+   231      display_confirm_action = DISPLAY_CONFIRM_ACTION_NONE;
+   232      display_confirm_visible = 0;
+   233      display_confirm_started_tick = GetTimerSystemTime();
+   234  

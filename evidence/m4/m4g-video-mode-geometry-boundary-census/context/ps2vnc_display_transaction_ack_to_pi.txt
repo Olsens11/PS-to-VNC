@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_transaction_ack_to_pi
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=356
+
+   348          PS2VNC_DISPLAY_TX_RESTORED_PATH,
+   349          NULL,
+   350          0);
+   351  }
+   352  
+   353  
+   354  int ps2vnc_display_transaction_ack_to_pi(void)
+   355  {
+   356      return ps2vnc_management_post(
+   357          PS2VNC_DISPLAY_TX_ACK_PATH,
+   358          NULL,
+   359          0);
+   360  }
+   361  
+   362  
+   363  int ps2vnc_management_get(
+   364      const char *path,
+   365      unsigned char *out_body,
+   366      unsigned int out_capacity,
+   367      unsigned int *out_len)
+   368  {
+   369      char request[256];
+   370      int request_len;
+   371  
+   372      struct sockaddr_in server;
+   373  
+   374      unsigned char *response;
+   375  
+   376      unsigned int response_capacity;
+   377      unsigned int response_len = 0;
+   378  
+   379      int header_end;
+   380      unsigned int body_len;

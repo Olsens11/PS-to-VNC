@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_commit_update
+SOURCE=working/b4a/ps2vnc_framebuffer_tail.inc
+ANCHOR_LINE=682
+
+   674      return 0;
+   675  }
+   676  
+   677   int ps2vnc_display_commit_update(
+   678      GSGLOBAL *gsGlobal,
+   679      GSTEXTURE *tex,
+   680      int direct_present_complete)
+   681  {
+   682      if (gsGlobal == NULL || tex == NULL)
+   683          return -1;
+   684  
+   685      if (active_display_backend == PS2VNC_BACKEND_HIRES)
+   686          return ps2vnc_display_commit_update_hires(
+   687              gsGlobal,
+   688              tex,
+   689              direct_present_complete);
+   690  
+   691      if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+   692          return ps2vnc_display_commit_update_standard(
+   693              gsGlobal,
+   694              tex);
+   695  
+   696      return -1;
+   697  }
+   698  
+   699  
+   700   int ps2vnc_display_wait_presentation_memory_idle(
+   701      GSGLOBAL *gsGlobal);
+   702   int ps2vnc_display_wait_texture_idle(
+   703      GSGLOBAL *gsGlobal);
+   704  
+   705  int publish_hires_background(
+   706      GSGLOBAL *gsGlobal,

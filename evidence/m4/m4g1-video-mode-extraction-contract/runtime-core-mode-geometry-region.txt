@@ -1,0 +1,330 @@
+     1	ps2vnc_backend_t ps2vnc_video_mode_default_backend(
+     2	    const ps2vnc_video_mode_t *mode)
+     3	{
+     4	    if (mode == NULL)
+     5	        return PS2VNC_BACKEND_NONE;
+     6	
+     7	    if (!ps2vnc_video_mode_supports_backend(
+     8	            mode, mode->recommended_backend))
+     9	        return PS2VNC_BACKEND_NONE;
+    10	
+    11	    return mode->recommended_backend;
+    12	}
+    13	
+    14	const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
+    15	    const char *name)
+    16	{
+    17	    unsigned int i;
+    18	
+    19	    if (name == NULL || name[0] == '\0')
+    20	        return NULL;
+    21	
+    22	    for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+    23	        if (strcmp(name, video_modes[i]->name) == 0)
+    24	            return video_modes[i];
+    25	    }
+    26	
+    27	    return NULL;
+    28	}
+    29	
+    30	/* Built-in fallback when no valid persisted startup mode exists. */
+    31	const ps2vnc_video_mode_t *active_video_mode = &video_mode_1080i;
+    32	ps2vnc_backend_t active_display_backend = PS2VNC_BACKEND_NONE;
+    33	
+    34	
+    35	/*
+    36	 * D17AL-F8G11B:
+    37	 *
+    38	 * gsHires CT16S FRAME/DISPFB presentation width is a 64-pixel-unit
+    39	 * hardware contract.  The mode registry records intended drawing geometry;
+    40	 * the renderer derives the compatible width without changing physical
+    41	 * raster timing or Standard-backend semantics.
+    42	 *
+    43	 * Keep horizontal width compatibility separate from vertical full-frame
+    44	 * geometry.  This distinction is essential for interlaced GS_FRAME modes:
+    45	 * a 720x288 PAL gsHires drawing surface represents a 720x576 full frame.
+    46	 * Narrowing that surface horizontally must not collapse its EE backing from
+    47	 * 576 field-separated raster rows to 288 rows.
+    48	 */
+    49	unsigned int ps2vnc_hires_effective_width(void)
+    50	{
+    51	    unsigned int width;
+    52	
+    53	    if (active_video_mode == NULL)
+    54	        return 0;
+    55	
+    56	    width = active_video_mode->hires_width;
+    57	
+    58	    if (width == 0)
+    59	        return 0;
+    60	
+    61	    /*
+    62	     * No current HIRES mode is narrower than one GS FBW unit. Preserve a
+    63	     * defensive nonzero result if a future diagnostic ever introduces one.
+    64	     */
+    65	    if (width < 64u)
+    66	        return width;
+    67	
+    68	    return (width / 64u) * 64u;
+    69	}
+    70	
+    71	
+    72	static u64 ps2vnc_hires_full_frame_height(void)
+    73	{
+    74	    u64 height;
+    75	
+    76	    if (active_video_mode == NULL ||
+    77	        active_video_mode->hires_height == 0) {
+    78	
+    79	        return 0;
+    80	    }
+    81	
+    82	    height =
+    83	        (u64)active_video_mode->hires_height;
+    84	
+    85	    if (active_video_mode->interlace == GS_INTERLACED &&
+    86	        active_video_mode->field == GS_FRAME) {
+    87	
+    88	        height *= 2u;
+    89	    }
+    90	
+    91	    return height;
+    92	}
+    93	
+    94	
+    95	static int ps2vnc_hires_requires_horizontal_mapping(void)
+    96	{
+    97	    unsigned int effective_width;
+    98	
+    99	    if (active_video_mode == NULL ||
+   100	        active_video_mode->raster_width == 0) {
+   101	
+   102	        return 0;
+   103	    }
+   104	
+   105	    effective_width =
+   106	        ps2vnc_hires_effective_width();
+   107	
+   108	    if (effective_width == 0)
+   109	        return 0;
+   110	
+   111	    return
+   112	        effective_width !=
+   113	            active_video_mode->raster_width;
+   114	}
+   115	
+   116	
+   117	 int ps2vnc_hires_requires_vertical_mapping(void)
+   118	{
+   119	    u64 full_frame_height;
+   120	
+   121	    if (active_video_mode == NULL ||
+   122	        active_video_mode->raster_height == 0) {
+   123	
+   124	        return 0;
+   125	    }
+   126	
+   127	    full_frame_height =
+   128	        ps2vnc_hires_full_frame_height();
+   129	
+   130	    if (full_frame_height == 0)
+   131	        return 0;
+   132	
+   133	    return
+   134	        full_frame_height !=
+   135	            (u64)active_video_mode->raster_height;
+   136	}
+   137	
+   138	
+   139	int ps2vnc_hires_requires_raster_mapping(void)
+   140	{
+   141	    return
+   142	        ps2vnc_hires_requires_horizontal_mapping() ||
+   143	        ps2vnc_hires_requires_vertical_mapping();
+   144	}
+   145	
+   146	
+   147	/*
+   148	 * EE presentation backing follows the effective horizontal renderer width.
+   149	 * Vertical storage remains a separate property:
+   150	 *
+   151	 *   - true vertical presentation scaling uses the explicit HIRES height;
+   152	 *   - otherwise retain full physical-raster height, including the existing
+   153	 *     field-separated representation of interlaced GS_FRAME modes.
+   154	 */
+   155	unsigned int ps2vnc_hires_storage_width(void)
+   156	{
+   157	    return ps2vnc_hires_effective_width();
+   158	}
+   159	
+   160	
+   161	unsigned int ps2vnc_hires_storage_height(void)
+   162	{
+   163	    if (active_video_mode == NULL)
+   164	        return 0;
+   165	
+   166	    if (ps2vnc_hires_requires_vertical_mapping())
+   167	        return active_video_mode->hires_height;
+   168	
+   169	    return active_video_mode->raster_height;
+   170	}
+   171	
+   172	
+   173	unsigned int ps2vnc_hires_storage_bytes(void)
+   174	{
+   175	    return
+   176	        ps2vnc_hires_storage_width() *
+   177	        ps2vnc_hires_storage_height() *
+   178	        sizeof(unsigned short);
+   179	}
+   180	
+   181	#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+   182	#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+   183	#define VNC_WIDTH      RFB_CAPACITY_WIDTH
+   184	#define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+   185	
+   186	/*
+   187	 * Convert physical output-raster coordinates into the active renderer's
+   188	 * drawing space.
+   189	 *
+   190	 * Physical raster, renderer framebuffer, and RFB desktop geometry are
+   191	 * separate coordinate spaces. Each backend supplies its own draw dimensions.
+   192	 */
+   193	 int ps2vnc_display_logical_desktop_size(
+   194	    unsigned int output_width,
+   195	    unsigned int output_height,
+   196	    unsigned int *width,
+   197	    unsigned int *height)
+   198	{
+   199	    if (active_video_mode == NULL || width == NULL || height == NULL)
+   200	        return -1;
+   201	
+   202	    if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+   203	        *width = output_width;
+   204	        *height = output_height;
+   205	    } else if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+   206	        *width = active_video_mode->standard_logical_width;
+   207	        *height = active_video_mode->standard_logical_height;
+   208	    } else {
+   209	        return -1;
+   210	    }
+   211	
+   212	    if (*width == 0 || *height == 0 ||
+   213	        *width > VNC_WIDTH || *height > VNC_HEIGHT)
+   214	        return -1;
+   215	
+   216	    return 0;
+   217	}
+   218	
+   219	float ps2vnc_display_output_x(float x)
+   220	{
+   221	    unsigned int draw_width;
+   222	
+   223	    if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+   224	        draw_width = active_video_mode->standard_fb_width;
+   225	    else if (active_display_backend == PS2VNC_BACKEND_HIRES)
+   226	        draw_width = ps2vnc_hires_effective_width();
+   227	    else
+   228	        return x;
+   229	
+   230	    if (draw_width == 0 || OUTPUT_WIDTH == 0)
+   231	        return x;
+   232	
+   233	    return x * (float)draw_width / (float)OUTPUT_WIDTH;
+   234	}
+   235	
+   236	float ps2vnc_display_output_y(float y)
+   237	{
+   238	    unsigned int draw_height;
+   239	
+   240	    if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+   241	        draw_height = active_video_mode->standard_fb_height;
+   242	    else if (active_display_backend == PS2VNC_BACKEND_HIRES)
+   243	        draw_height = active_video_mode->hires_height;
+   244	    else
+   245	        return y;
+   246	
+   247	    if (draw_height == 0 || OUTPUT_HEIGHT == 0)
+   248	        return y;
+   249	
+   250	    return y * (float)draw_height / (float)OUTPUT_HEIGHT;
+   251	}
+   252	
+   253	/*
+   254	 * TEST13J-D3-A1:
+   255	 * Runtime RFB framebuffer geometry.
+   256	 *
+   257	 * Physical GS output remains fixed at 1280x720.
+   258	 */
+   259	unsigned int desktop_width = VNC_WIDTH;
+   260	unsigned int desktop_height = VNC_HEIGHT;
+   261	
+   262	/*
+   263	 * Position of the 1:1 remote desktop inside the fixed 1280x720
+   264	 * physical HIRES output.
+   265	 */
+   266	unsigned int desktop_output_x = 0;
+   267	unsigned int desktop_output_y = 0;
+   268	unsigned int desktop_output_width = VNC_WIDTH;
+   269	unsigned int desktop_output_height = VNC_HEIGHT;
+   270	
+   271	unsigned short *hires_bg_buffer = NULL;
+   272	unsigned short *hires_bg_back_buffer = NULL;
+   273	unsigned short *live_direct_present_buffer = NULL;
+   274	
+   275	/*
+   276	 * D17AL-F7B:
+   277	 *
+   278	 * For the isolated 480p native-surface path, Hextile continues decoding into
+   279	 * the ordinary authoritative CPU framebuffer. The presentation backend then
+   280	 * maps that complete image into 704x462.
+   281	 */
+   282	unsigned short *hires_mapped_source_framebuffer = NULL;
+   283	int hires_bg_configured = 0;
+   284	int live_direct_present_safe = 0;
+   285	int live_linear_framebuffer_stale = 0;
+   286	static unsigned int hires_bg_storage_row(unsigned int raster_y);
+   287	
+   288	/*
+   289	 * Before calibration we accept whatever <=1280x720 geometry TigerVNC
+   290	 * currently has. Once the safe desktop is finalized, recovery sessions
+   291	 * will be required to return at exactly that geometry.
+   292	 */
+   293	int desktop_geometry_locked = 0;
+   294	/*
+   295	 * PS2VNC private-link bootstrap contract.
+   296	 *
+   297	 * The installer will provide the same dedicated Ethernet topology on every
+   298	 * supported installation.  The PS2 must know this address before it can
+   299	 * retrieve the general configuration file, so it cannot itself live inside
+   300	 * that remotely hosted configuration.
+   301	 *
+   302	 * Variable post-bootstrap settings can be added to ps2vnc.conf later.
+   303	 */
+   304	#define PS2VNC_BOOTSTRAP_PI_IP      "192.168.50.1"
+   305	#define PS2VNC_CONFIG_PORT          5959
+   306	#define PS2VNC_CONFIG_PATH          "/ps2vnc.conf"
+   307	#define PS2VNC_DISPLAY_PATH         "/display"
+   308	#define PS2VNC_DISPLAY_MODE_PATH    "/display-mode"
+   309	#define PS2VNC_DISPLAY_LOCK_PATH    "/display-lock"
+   310	#define PS2VNC_DISPLAY_UI_PATH      "/display-ui"
+   311	
+   312	#define PS2VNC_DISPLAY_TX_PATH \
+   313	    "/display-transaction"
+   314	#define PS2VNC_DISPLAY_TX_BEGIN_PATH \
+   315	    "/display-transaction/begin"
+   316	#define PS2VNC_DISPLAY_TX_COMMIT_PATH \
+   317	    "/display-transaction/commit"
+   318	#define PS2VNC_DISPLAY_TX_RESTORE_PATH \
+   319	    "/display-transaction/restore"
+   320	#define PS2VNC_DISPLAY_TX_RESTORED_PATH \
+   321	    "/display-transaction/restored"
+   322	#define PS2VNC_DISPLAY_TX_ACK_PATH \
+   323	    "/display-transaction/ack"
+   324	
+   325	#define PS2VNC_DISPLAY_CONTROL_PENDING_PATH \
+   326	    "/display-control/pending"
+   327	#define PS2VNC_DISPLAY_CONTROL_RESULT_PATH \
+   328	    "/display-control/result"
+   329	
+   330	#define PS2VNC_DISPLAY_CONTROL_MAX_BYTES 768

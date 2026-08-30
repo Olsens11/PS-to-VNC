@@ -1,0 +1,37 @@
+SYMBOL=request_and_confirm_desktop_size
+SOURCE=working/b4a/ps2vnc_runtime_tail.inc
+ANCHOR_LINE=995
+
+   987  
+   988  
+   989  int request_and_confirm_desktop_size(
+   990      int sock,
+   991      unsigned short *rfb_framebuffer,
+   992      unsigned short *gs_framebuffer,
+   993      unsigned int width,
+   994      unsigned int height)
+   995  {
+   996      unsigned int response_count;
+   997  
+   998      /*
+   999       * F8J2-B2:
+  1000       *
+  1001       * SetDesktopSize completion is not necessarily the first EDS
+  1002       * notification TigerVNC emits at the new geometry.
+  1003       *
+  1004       * Hardware packet evidence showed:
+  1005       *
+  1006       *   reason=0 result=0 requested-size
+  1007       *   reason=0 result=0 requested-size
+  1008       *   reason=0 result=0 requested-size
+  1009       *   reason=1 result=0 requested-size
+  1010       *
+  1011       * reason=0 is an informational server-side layout notification.
+  1012       * reason=1 is the acknowledgement for THIS client's SetDesktopSize.
+  1013       *
+  1014       * Keep consuming complete FramebufferUpdate messages until the
+  1015       * matching client acknowledgement arrives.  Geometry validation
+  1016       * remains owned by receive_framebuffer_update() while
+  1017       * rfb_resize_expected is set.
+  1018       *
+  1019       * Bound the number of complete server updates accepted while waiting.

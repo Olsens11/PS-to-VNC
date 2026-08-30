@@ -1,0 +1,37 @@
+SYMBOL=wait_pad_ready_after_mode_change
+SOURCE=working/b4a/ps2vnc_runtime_tail.inc
+ANCHOR_LINE=377
+
+   369  /*
+   370   * Wait for libpad to finish an asynchronous mode change.
+   371   *
+   372   * The PS2SDK pad sample waits for STABLE/FINDCTP1 after
+   373   * padSetMainMode().  Give this controller up to ~2 seconds.
+   374   */
+   375   int wait_pad_ready_after_mode_change(void)
+   376  {
+   377      const struct timespec delay = { 0, 10000000 }; /* 10 ms */
+   378      int i;
+   379  
+   380      for (i = 0; i < 200; i++) {
+   381          int state = padGetState(0, 0);
+   382  
+   383          if (state == PAD_STATE_STABLE ||
+   384              state == PAD_STATE_FINDCTP1)
+   385              return 0;
+   386  
+   387          nanosleep(&delay, NULL);
+   388      }
+   389  
+   390      return -1;
+   391  }
+   392  
+   393  
+   394  /*
+   395   * Startup-only display recalibration chord.
+   396   *
+   397   * The normal libpad button bits are active-low, matching the controller
+   398   * thread's existing 0xFFFF ^ buttons.btns decoding.
+   399   *
+   400   * Normal startup returns immediately when L1+R1 are not held.  If both
+   401   * buttons are already down, require about 300 ms of continuous hold before

@@ -1,0 +1,37 @@
+SYMBOL=display_menu_mode_at_selection
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=799
+
+   791      }
+   792  
+   793      return 0;
+   794  }
+   795  
+   796  const ps2vnc_video_mode_t *display_menu_mode_at_selection(
+   797      int selection)
+   798  {
+   799      if (selection < 0 ||
+   800          (unsigned int)selection >= VIDEO_MODE_COUNT)
+   801          return NULL;
+   802  
+   803      return video_modes[selection];
+   804  }
+   805  
+   806   int display_mode_request_for_selection(int selection)
+   807  {
+   808      if (selection < 0 ||
+   809          (unsigned int)selection >= VIDEO_MODE_COUNT)
+   810          return DISPLAY_MODE_REQUEST_NONE;
+   811  
+   812      return selection + 1;
+   813  }
+   814  
+   815   const ps2vnc_video_mode_t *display_mode_request_target(
+   816      int request)
+   817  {
+   818      int selection = request - 1;
+   819  
+   820      return display_menu_mode_at_selection(selection);
+   821  }
+   822  
+   823   volatile int display_menu_visible = 0;

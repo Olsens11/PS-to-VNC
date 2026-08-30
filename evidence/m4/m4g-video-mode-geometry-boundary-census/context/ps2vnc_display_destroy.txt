@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_destroy
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=1412
+
+  1404          return 0;
+  1405      }
+  1406  
+  1407      return -1;
+  1408  }
+  1409  
+  1410  int ps2vnc_display_destroy(GSGLOBAL **display)
+  1411  {
+  1412      if (display == NULL || *display == NULL) {
+  1413          active_display_backend = PS2VNC_BACKEND_NONE;
+  1414          return 0;
+  1415      }
+  1416  
+  1417      if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+  1418          ps2vnc_display_destroy_hires(display);
+  1419          active_display_backend = PS2VNC_BACKEND_NONE;
+  1420          return 0;
+  1421      }
+  1422  
+  1423      if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+  1424          ps2vnc_display_destroy_standard(display);
+  1425          active_display_backend = PS2VNC_BACKEND_NONE;
+  1426          return 0;
+  1427      }
+  1428  
+  1429      return -1;
+  1430  }
+  1431  
+  1432  
+  1433  static int ps2vnc_display_prepare_desktop_hires(
+  1434      GSGLOBAL *gsGlobal,
+  1435      GSTEXTURE *tex,
+  1436      unsigned short *gs_framebuffer)

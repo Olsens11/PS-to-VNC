@@ -1,0 +1,37 @@
+SYMBOL=display_menu_move_vertical_selection
+SOURCE=working/b4a/ps2vnc_ui_core.inc
+ANCHOR_LINE=332
+
+   324  
+   325      osk_generation++;
+   326  }
+   327  
+   328  
+   329  int display_menu_move_vertical_selection(
+   330      int selection,
+   331      int direction)
+   332  {
+   333      int step;
+   334  
+   335      if (display_menu_tab == DISPLAY_TAB_ADVANCED ||
+   336          direction == 0)
+   337          return selection;
+   338  
+   339      if (!display_menu_mode_belongs_to_tab(
+   340              selection,
+   341              display_menu_tab) ||
+   342          !display_menu_mode_visible(selection)) {
+   343  
+   344          return display_menu_first_visible_selection(
+   345              display_menu_tab);
+   346      }
+   347  
+   348      for (step = 1;
+   349           step <= (int)VIDEO_MODE_COUNT;
+   350           step++) {
+   351  
+   352          int candidate =
+   353              (selection +
+   354               direction * step +
+   355               (int)VIDEO_MODE_COUNT * 4) %
+   356              (int)VIDEO_MODE_COUNT;

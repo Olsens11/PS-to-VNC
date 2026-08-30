@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_transaction_startup_preflight
+SOURCE=working/b4a/ps2vnc_calibration_core.inc
+ANCHOR_LINE=295
+
+   287      startup_authoritative_display_profile = *source;
+   288      startup_authoritative_display_profile_loaded = 1;
+   289  
+   290      return 0;
+   291  }
+   292  
+   293  
+   294  int ps2vnc_display_transaction_startup_preflight(void)
+   295  {
+   296      startup_display_transaction_loaded = 0;
+   297  
+   298      memset(
+   299          &startup_display_transaction,
+   300          0,
+   301          sizeof(startup_display_transaction));
+   302  
+   303      if (ps2vnc_display_transaction_fetch_from_pi(
+   304              &startup_display_transaction) < 0) {
+   305  
+   306          screenf("DISPLAY TX: startup read failed");
+   307          return -1;
+   308      }
+   309  
+   310      startup_display_transaction_loaded = 1;
+   311  
+   312      screenf(
+   313          "DISPLAY TX: startup state %s",
+   314          ps2vnc_display_tx_state_name(
+   315              startup_display_transaction.state));
+   316  
+   317      if (ps2vnc_display_transaction_select_startup_authority() < 0) {
+   318          screenf("DISPLAY TX: authority invalid");
+   319          return -1;

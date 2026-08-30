@@ -1,0 +1,199 @@
+working/b4a/ps2vnc_ui_tail.inc:871:                    const ps2vnc_video_mode_t *selected_mode =
+working/b4a/ps2vnc_ui_tail.inc:929:                        const ps2vnc_video_mode_t *selected_mode =
+working/b4a/ps2vnc_framebuffer_core.inc:99:static int ps2vnc_display_direct_write_active(void);
+working/b4a/ps2vnc_framebuffer_core.inc:100:static unsigned short *ps2vnc_display_direct_write_row(
+working/b4a/ps2vnc_framebuffer_core.inc:1098:static int ps2vnc_display_direct_write_active(void)
+working/b4a/ps2vnc_framebuffer_core.inc:1113:static unsigned short *ps2vnc_display_direct_write_row(
+working/b4a/ps2vnc_framebuffer_core.inc:1158:static int sync_copy_hires_region(
+working/b4a/ps2vnc_display_core_to_tail.h:17:extern int ps2vnc_switch_display_mode (int sock, short unsigned int *rfb_framebuffer, short unsigned int *gs_framebuffer, GSGLOBAL **display, GSTEXTURE *tex, GSTEXTURE *osk_tex, const ps2vnc_video_mode_t *mode, unsigned int out_x, unsigned int out_y, unsigned int width, unsigned int height);
+working/b4a/ps2vnc_calibration_core.inc:3:static int ps2vnc_display_tx_parse(
+working/b4a/ps2vnc_calibration_core.inc:85:static int ps2vnc_display_transaction_fetch_from_pi(
+working/b4a/ps2vnc_calibration_core.inc:128:static const char *ps2vnc_display_tx_state_name(
+working/b4a/ps2vnc_calibration_core.inc:161:static int ps2vnc_display_transaction_select_startup_authority(void)
+working/b4a/ps2vnc_calibration_core.inc:163:    const ps2vnc_display_profile_t *source = NULL;
+working/b4a/ps2vnc_calibration_core.inc:412:    const ps2vnc_display_profile_t *target;
+working/b4a/ps2vnc_calibration_core.inc:687:static int ps2vnc_startup_mode_save_to_pi(
+working/b4a/ps2vnc_calibration_core.inc:688:    const ps2vnc_video_mode_t *mode)
+working/b4a/ps2vnc_calibration_core.inc:994:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_calibration_core.inc:1016:        (const char *)text, len, mode, out_config
+working/b4a/ps2vnc_calibration_core.inc:1031:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_calibration_core.inc:1032:    const ps2vnc_display_config_t *config,
+working/b4a/ps2vnc_calibration_core.inc:1118:    const ps2vnc_display_profile_t *target;
+working/b4a/ps2vnc_calibration_core.inc:1299:    const ps2vnc_video_mode_t *startup_mode = NULL;
+working/b4a/ps2vnc_calibration_core.inc:1591:static float screen_fit_draw_x(int x)
+working/b4a/ps2vnc_calibration_core.inc:1596:static float screen_fit_draw_y(int y)
+working/b4a/ps2vnc_display_core.inc:1:static int ps2vnc_switch_display_mode_core(
+working/b4a/ps2vnc_display_core.inc:8:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_display_core.inc:186:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_display_core.inc:394:static int ps2vnc_rollback_display_transaction(
+working/b4a/ps2vnc_display_core.inc:403:    const ps2vnc_video_mode_t *previous_mode =
+working/b4a/ps2vnc_display_core.inc:406:    const ps2vnc_backend_t previous_backend =
+working/b4a/ps2vnc_display_core.inc:418:    const unsigned int previous_desktop_w =
+working/b4a/ps2vnc_display_core.inc:420:    const unsigned int previous_desktop_h =
+working/b4a/ps2vnc_display_core.inc:423:    const int previous_screen_fit_width =
+working/b4a/ps2vnc_display_core.inc:425:    const int previous_screen_fit_height =
+working/b4a/ps2vnc_display_core.inc:427:    const int previous_screen_fit_offset_x =
+working/b4a/ps2vnc_display_core.inc:429:    const int previous_screen_fit_offset_y =
+working/b4a/ps2vnc_display_core.inc:431:    const int previous_screen_fit_full_bypass =
+working/b4a/ps2vnc_display_core.inc:563:    const ps2vnc_video_mode_t *mode)
+working/b4a/ps2vnc_display_core.inc:601:    const ps2vnc_display_profile_t *target;
+working/b4a/ps2vnc_display_core.inc:861:static void ps2vnc_remote_display_reset(void)
+working/b4a/ps2vnc_display_core.inc:944:    const ps2vnc_video_mode_t *target;
+working/b4a/ps2vnc_framebuffer_tail.inc:1:static int ps2vnc_publish_mapped_hires_hidden_frame(
+working/b4a/ps2vnc_framebuffer_tail.inc:91:static int ps2vnc_update_mapped_hires_dirty_buffer(
+working/b4a/ps2vnc_framebuffer_tail.inc:119:    static unsigned int cached_desktop_width;
+working/b4a/ps2vnc_framebuffer_tail.inc:120:    static unsigned int cached_desktop_height;
+working/b4a/ps2vnc_framebuffer_tail.inc:451:static int ps2vnc_publish_mapped_hires_dirty_frame(
+working/b4a/ps2vnc_framebuffer_tail.inc:531:static int ps2vnc_display_commit_update_hires(
+working/b4a/ps2vnc_framebuffer_tail.inc:633:static int ps2vnc_display_commit_update_standard(
+working/b4a/ps2vnc_framebuffer_tail.inc:908:static int ps2vnc_display_publish_full_desktop_hires(
+working/b4a/ps2vnc_framebuffer_tail.inc:1010:static int ps2vnc_display_publish_full_desktop_standard(
+working/b4a/ps2vnc_framebuffer_tail.inc:1052:static int update_hires_background_region(
+working/b4a/ps2vnc_services_imports.h:7:extern const ps2vnc_video_mode_t *active_video_mode;
+working/b4a/ps2vnc_services_imports.h:56:const ps2vnc_video_mode_t *display_menu_mode_at_selection( int selection);
+working/b4a/ps2vnc_services_imports.h:57:int display_menu_selection_for_mode( const ps2vnc_video_mode_t *mode);
+working/b4a/ps2vnc_services_imports.h:75:const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name( const char *name);
+working/b4a/ps2vnc_services_imports.h:76:ps2vnc_backend_t ps2vnc_video_mode_default_backend( const ps2vnc_video_mode_t *mode);
+working/b4a/ps2vnc_services_imports.h:94:const ps2vnc_video_mode_t *display_menu_mode_at_selection( int selection);
+working/b4a/ps2vnc_services_imports.h:96:const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name( const char *name);
+working/b4a/ps2vnc_services_imports.h:100:int ps2vnc_video_mode_supports_backend( const ps2vnc_video_mode_t *mode, ps2vnc_backend_t backend);
+working/b4a/ps2vnc_runtime_compat.h:137:    const ps2vnc_video_mode_t *mode;
+working/b4a/ps2vnc_runtime_core_to_tail.h:19:#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+working/b4a/ps2vnc_runtime_core_to_tail.h:21:#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+working/b4a/ps2vnc_runtime_core_to_tail.h:146:extern const ps2vnc_video_mode_t *display_confirm_previous_mode ;
+working/b4a/ps2vnc_management_core_to_tail.h:23:extern const char *ps2vnc_backend_transaction_name(
+working/b4a/ps2vnc_calibration_tail.inc:1:static void screen_fit_prim_sprite_clipped(
+working/b4a/ps2vnc_calibration_tail.inc:36:static void screen_fit_draw_char(
+working/b4a/ps2vnc_calibration_tail.inc:69:static void screen_fit_draw_text_centered(
+working/b4a/ps2vnc_calibration_tail.inc:108:static void screen_fit_draw_corner_marker(
+working/b4a/ps2vnc_calibration_tail.inc:209:static int draw_screen_fit_calibration(
+working/b4a/ps2vnc_calibration_tail.inc:705:static int calculate_safe_desktop_geometry(
+working/b4a/ps2vnc_calibration_tail.inc:878:static int ps2vnc_reconfigure_current_desktop_hires(
+working/b4a/ps2vnc_calibration_tail.inc:967:static int ps2vnc_reconfigure_current_desktop_standard(
+working/b4a/ps2vnc_calibration_tail.inc:1142:static GSGLOBAL *ps2vnc_display_create_hires(void)
+working/b4a/ps2vnc_calibration_tail.inc:1183:static GSGLOBAL *ps2vnc_display_create_standard(void)
+working/b4a/ps2vnc_calibration_tail.inc:1268:static void ps2vnc_display_release_ee_buffers(void)
+working/b4a/ps2vnc_calibration_tail.inc:1287:static void ps2vnc_display_destroy_hires(GSGLOBAL **display)
+working/b4a/ps2vnc_calibration_tail.inc:1299:static void ps2vnc_display_destroy_standard(GSGLOBAL **display)
+working/b4a/ps2vnc_calibration_tail.inc:1433:static int ps2vnc_display_prepare_desktop_hires(
+working/b4a/ps2vnc_calibration_tail.inc:1502:static int ps2vnc_display_prepare_desktop_standard(
+working/b4a/ps2vnc_services_compat.h:121:    const ps2vnc_video_mode_t *mode;
+working/b4a/ps2vnc_services_compat.h:158:#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+working/b4a/ps2vnc_services_compat.h:159:#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+working/b4a/ps2vnc_services_compat.h:165:#define PS2VNC_DISPLAY_PATH         "/display"
+working/b4a/ps2vnc_services_compat.h:166:#define PS2VNC_DISPLAY_MODE_PATH    "/display-mode"
+working/b4a/ps2vnc_services_compat.h:167:#define PS2VNC_DISPLAY_LOCK_PATH    "/display-lock"
+working/b4a/ps2vnc_services_compat.h:168:#define PS2VNC_DISPLAY_UI_PATH      "/display-ui"
+working/b4a/ps2vnc_gsHires.c:170:static u32 ps2vnc_hires_pitch_pixels(const GSGLOBAL *gsGlobal)
+working/b4a/ps2vnc_gsHires.c:301: * reset it when constructing a new HIRES display instance.
+working/b4a/ps2vnc_runtime_tail.inc:198:    const ps2vnc_video_mode_t *previous_mode,
+working/b4a/ps2vnc_runtime_tail.inc:903:static int send_set_desktop_size_and_probe(
+working/b4a/ps2vnc_runtime.c:38:static const ps2vnc_video_mode_t video_mode_480i = {
+working/b4a/ps2vnc_runtime.c:49:static const ps2vnc_video_mode_t video_mode_480p = {
+working/b4a/ps2vnc_runtime.c:60:static const ps2vnc_video_mode_t video_mode_480p_hires = {
+working/b4a/ps2vnc_runtime.c:83:static const ps2vnc_video_mode_t video_mode_576i = {
+working/b4a/ps2vnc_runtime.c:94:static const ps2vnc_video_mode_t video_mode_576p = {
+working/b4a/ps2vnc_runtime.c:105:static const ps2vnc_video_mode_t video_mode_720p = {
+working/b4a/ps2vnc_runtime.c:116:static const ps2vnc_video_mode_t video_mode_1080i = {
+working/b4a/ps2vnc_runtime.c:130:static const ps2vnc_video_mode_t video_mode_vga_640_60 = {
+working/b4a/ps2vnc_runtime.c:140:static const ps2vnc_video_mode_t video_mode_vga_800_60 = {
+working/b4a/ps2vnc_runtime.c:150:static const ps2vnc_video_mode_t video_mode_vga_1024_60 = {
+working/b4a/ps2vnc_runtime.c:160:static const ps2vnc_video_mode_t video_mode_vga_1280_60 = {
+working/b4a/ps2vnc_runtime.c:174:static const ps2vnc_video_mode_t var = { \
+working/b4a/ps2vnc_runtime.c:236: const ps2vnc_video_mode_t *const video_modes[] = {
+working/b4a/ps2vnc_runtime.c:270:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_management_tail.inc:2:    const ps2vnc_display_profile_t *profile)
+working/b4a/ps2vnc_management_tail.inc:93:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_management_tail.inc:249:    const ps2vnc_display_profile_t *previous,
+working/b4a/ps2vnc_management_tail.inc:250:    const ps2vnc_display_profile_t *candidate)
+working/b4a/ps2vnc_management_tail.inc:252:    const char *previous_backend;
+working/b4a/ps2vnc_management_tail.inc:253:    const char *candidate_backend;
+working/b4a/ps2vnc_management_tail.inc:1094:static int ps2vnc_config_parse_display_policy(
+working/b4a/ps2vnc_management_tail.inc:1213:                const ps2vnc_video_mode_t *mode =
+working/b4a/ps2vnc_management_tail.inc:1351:    const ps2vnc_video_mode_t *mode =
+working/b4a/ps2vnc_management_tail.inc:1463:static int ps2vnc_display_tx_parse_uint(
+working/b4a/ps2vnc_management_tail.inc:1483:static int ps2vnc_display_tx_take_profile_value(
+working/b4a/ps2vnc_management_tail.inc:1573:    const ps2vnc_display_profile_t *a,
+working/b4a/ps2vnc_management_tail.inc:1574:    const ps2vnc_display_profile_t *b)
+working/b4a/ps2vnc_runtime_core.inc:2:    const ps2vnc_video_mode_t *mode)
+working/b4a/ps2vnc_runtime_core.inc:14:const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name(
+working/b4a/ps2vnc_runtime_core.inc:31:const ps2vnc_video_mode_t *active_video_mode = &video_mode_1080i;
+working/b4a/ps2vnc_runtime_core.inc:72:static u64 ps2vnc_hires_full_frame_height(void)
+working/b4a/ps2vnc_runtime_core.inc:95:static int ps2vnc_hires_requires_horizontal_mapping(void)
+working/b4a/ps2vnc_runtime_core.inc:181:#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+working/b4a/ps2vnc_runtime_core.inc:182:#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+working/b4a/ps2vnc_runtime_core.inc:286:static unsigned int hires_bg_storage_row(unsigned int raster_y);
+working/b4a/ps2vnc_runtime_core.inc:307:#define PS2VNC_DISPLAY_PATH         "/display"
+working/b4a/ps2vnc_runtime_core.inc:308:#define PS2VNC_DISPLAY_MODE_PATH    "/display-mode"
+working/b4a/ps2vnc_runtime_core.inc:309:#define PS2VNC_DISPLAY_LOCK_PATH    "/display-lock"
+working/b4a/ps2vnc_runtime_core.inc:310:#define PS2VNC_DISPLAY_UI_PATH      "/display-ui"
+working/b4a/ps2vnc_runtime_core.inc:784:    const ps2vnc_video_mode_t *mode)
+working/b4a/ps2vnc_runtime_core.inc:796:const ps2vnc_video_mode_t *display_menu_mode_at_selection(
+working/b4a/ps2vnc_runtime_core.inc:815: const ps2vnc_video_mode_t *display_mode_request_target(
+working/b4a/ps2vnc_runtime_core.inc:872: const ps2vnc_video_mode_t *
+working/b4a/ps2vnc_runtime_core.inc:875: const ps2vnc_video_mode_t *
+working/b4a/ps2vnc_runtime_core.inc:970: const ps2vnc_video_mode_t *display_confirm_previous_mode = NULL;
+working/b4a/ps2vnc_runtime_core.inc:1005: const ps2vnc_video_mode_t *display_restore_ack_mode = NULL;
+working/b4a/ps2vnc_management_core.inc:236:    const unsigned int recovery_target_width = desktop_width;
+working/b4a/ps2vnc_management_core.inc:237:    const unsigned int recovery_target_height = desktop_height;
+working/b4a/ps2vnc_management_core.inc:443:    const ps2vnc_video_mode_t *handshake_mode)
+working/b4a/ps2vnc_management_core.inc:450:    const ps2vnc_video_mode_t *saved_active_mode =
+working/b4a/ps2vnc_management_core.inc:453:    const int saved_geometry_locked =
+working/b4a/ps2vnc_management_core.inc:666:static int screen_fit_geometry_valid_for_mode(
+working/b4a/ps2vnc_management_core.inc:667:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_management_core.inc:869:static int ps2vnc_config_parse_startup_mode(
+working/b4a/ps2vnc_management_core.inc:872:    const ps2vnc_video_mode_t **out_mode)
+working/b4a/ps2vnc_management_core.inc:985:static int ps2vnc_config_parse_display_section(
+working/b4a/ps2vnc_management_core.inc:989:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_management_core.inc:999:    const unsigned int all_display_keys =
+working/b4a/ps2vnc_management_core.inc:1342:static int ps2vnc_config_parse_display_for_mode(
+working/b4a/ps2vnc_management_core.inc:1345:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_management_core.inc:1399:    const ps2vnc_display_config_t *config)
+working/b4a/ps2vnc_management_core.inc:1506:const char *ps2vnc_backend_transaction_name(
+working/b4a/ps2vnc_services_exports.h:17:int ps2vnc_config_apply_display( const ps2vnc_display_config_t *config);
+working/b4a/ps2vnc_services_exports.h:18:int ps2vnc_config_get_display_for_mode( const ps2vnc_video_mode_t *mode, ps2vnc_display_config_t *out_config);
+working/b4a/ps2vnc_services_exports.h:20:int ps2vnc_config_presented_geometry_for_mode( const ps2vnc_video_mode_t *mode, const ps2vnc_display_config_t *config, unsigned int *out_x, unsigned int *out_y, unsigned int *out_w, unsigned int *out_h);
+working/b4a/ps2vnc_services_exports.h:34:int ps2vnc_display_profile_resolve_candidate( const ps2vnc_video_mode_t *mode, unsigned int out_x, unsigned int out_y, unsigned int out_w, unsigned int out_h, ps2vnc_display_profile_t *profile);
+working/b4a/ps2vnc_services_exports.h:36:int ps2vnc_display_transaction_begin_to_pi( const ps2vnc_display_profile_t *previous, const ps2vnc_display_profile_t *candidate);
+working/b4a/ps2vnc_services_exports.h:41:int ps2vnc_display_tx_profiles_equal( const ps2vnc_display_profile_t *a, const ps2vnc_display_profile_t *b);
+working/b4a/ps2vnc_services_exports.h:51:int recover_rfb_transport_for_display_rollback( int old_sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, const ps2vnc_video_mode_t *handshake_mode);
+working/b4a/ps2vnc_management_tail_to_services.h:12:    const ps2vnc_display_profile_t *profile);
+working/b4a/ps2vnc_display_tail.inc:1:static int display_live_desktop(int sock,
+working/b4a/ps2vnc_display_tail.inc:373:            const ps2vnc_video_mode_t *target_mode;
+working/b4a/ps2vnc_display_tail.inc:518:            const ps2vnc_video_mode_t *target_mode = NULL;
+working/b4a/ps2vnc_runtime_tail.c:38:static const ps2vnc_video_mode_t video_mode_480i = {
+working/b4a/ps2vnc_runtime_tail.c:49:static const ps2vnc_video_mode_t video_mode_480p = {
+working/b4a/ps2vnc_runtime_tail.c:60:static const ps2vnc_video_mode_t video_mode_480p_hires = {
+working/b4a/ps2vnc_runtime_tail.c:83:static const ps2vnc_video_mode_t video_mode_576i = {
+working/b4a/ps2vnc_runtime_tail.c:94:static const ps2vnc_video_mode_t video_mode_576p = {
+working/b4a/ps2vnc_runtime_tail.c:105:static const ps2vnc_video_mode_t video_mode_720p = {
+working/b4a/ps2vnc_runtime_tail.c:116:static const ps2vnc_video_mode_t video_mode_1080i = {
+working/b4a/ps2vnc_runtime_tail.c:130:static const ps2vnc_video_mode_t video_mode_vga_640_60 = {
+working/b4a/ps2vnc_runtime_tail.c:140:static const ps2vnc_video_mode_t video_mode_vga_800_60 = {
+working/b4a/ps2vnc_runtime_tail.c:150:static const ps2vnc_video_mode_t video_mode_vga_1024_60 = {
+working/b4a/ps2vnc_runtime_tail.c:160:static const ps2vnc_video_mode_t video_mode_vga_1280_60 = {
+working/b4a/ps2vnc_runtime_tail.c:174:static const ps2vnc_video_mode_t var = { \
+working/b4a/ps2vnc_runtime_tail.c:236:extern const ps2vnc_video_mode_t *const video_modes[];
+working/b4a/ps2vnc_runtime_tail.c:242:    const ps2vnc_video_mode_t *mode,
+working/b4a/ps2vnc_ui_core.inc:103:    const ps2vnc_video_mode_t *mode)
+working/b4a/ps2vnc_ui_core.inc:124:static const char *display_menu_tab_label(int tab)
+working/b4a/ps2vnc_ui_core.inc:145:static int display_menu_mode_belongs_to_tab(
+working/b4a/ps2vnc_ui_core.inc:149:    const ps2vnc_video_mode_t *mode =
+working/b4a/ps2vnc_ui_core.inc:161:static int display_menu_mode_visible(int selection)
+working/b4a/ps2vnc_ui_core.inc:163:    const ps2vnc_video_mode_t *mode =
+working/b4a/ps2vnc_ui_core.inc:183:static int display_menu_first_visible_selection(int tab)
+working/b4a/ps2vnc_ui_core.inc:201:static int display_menu_tab_visible(int tab)
+working/b4a/ps2vnc_ui_core.inc:214:static int display_menu_next_visible_tab(
+working/b4a/ps2vnc_ui_core.inc:584:            const ps2vnc_video_mode_t *mode =
+working/b4a/ps2vnc_ui_core.inc:750:        const ps2vnc_video_mode_t *selected_mode =
+working/b4a/ps2vnc_ui_to_display.h:10:extern int display_menu_tab_for_mode (const ps2vnc_video_mode_t *mode);
+working/b4a/ps2vnc_runtime_to_ui_display.h:122:#define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+working/b4a/ps2vnc_runtime_to_ui_display.h:124:#define OUTPUT_WIDTH   (active_video_mode->raster_width)
+working/b4a/ps2vnc_runtime_to_ui_display.h:278:extern const ps2vnc_video_mode_t *display_confirm_previous_mode ;
+working/b4a/ps2vnc_runtime_to_ui_display.h:326:extern const ps2vnc_video_mode_t *display_restore_ack_mode ;
+working/b4a/ps2vnc_runtime_to_ui_display.h:395:extern const ps2vnc_video_mode_t *
+working/b4a/ps2vnc_runtime_to_ui_display.h:406:extern const ps2vnc_video_mode_t *
+working/b4a/ps2vnc_runtime_to_ui_display.h:432:extern const ps2vnc_video_mode_t *const video_modes[VIDEO_MODE_COUNT];
+working/b4a/ps2vnc_runtime_to_ui_display.h:438:extern void display_confirm_arm_transaction (const ps2vnc_video_mode_t *previous_mode, unsigned int previous_x, unsigned int previous_y, unsigned int previous_w, unsigned int previous_h, int previous_screen_fit_width, int previous_screen_fit_height, int previous_screen_fit_offset_x, int previous_screen_fit_offset_y, int previous_screen_fit_full_bypass);
+working/b4a/ps2vnc_runtime_to_ui_display.h:448:extern const ps2vnc_video_mode_t *display_mode_request_target (int request);
+working/b4a/ps2vnc_runtime_to_ui_display.h:482:extern const ps2vnc_hotkey_binding_t *runtime_hotkey_lookup (unsigned int mask, int desktop_context);

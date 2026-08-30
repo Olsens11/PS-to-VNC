@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_direct_write_row
+SOURCE=working/b4a/ps2vnc_framebuffer_core.inc
+ANCHOR_LINE=1109
+
+  1101       * D17AL-F8E:
+  1102       *
+  1103       * A raster-mapped HIRES presentation cannot expose its transformed
+  1104       * presentation storage as a 1:1 decoder-direct target. Decode into the
+  1105       * authoritative source framebuffer and publish through the mapper instead.
+  1106       */
+  1107      return active_display_backend == PS2VNC_BACKEND_HIRES &&
+  1108             !ps2vnc_hires_requires_raster_mapping() &&
+  1109             live_direct_present_safe &&
+  1110             live_direct_present_buffer != NULL;
+  1111  }
+  1112  
+  1113  static unsigned short *ps2vnc_display_direct_write_row(
+  1114      unsigned int x,
+  1115      unsigned int y)
+  1116  {
+  1117      if (!ps2vnc_display_direct_write_active())
+  1118          return NULL;
+  1119  
+  1120      if (x >= desktop_width || y >= desktop_height)
+  1121          return NULL;
+  1122  
+  1123      return &live_direct_present_buffer[
+  1124          hires_bg_storage_row(desktop_output_y + y) *
+  1125          OUTPUT_WIDTH + desktop_output_x + x];
+  1126  }
+  1127  
+  1128  void ps2vnc_display_direct_write_cancel(void)
+  1129  {
+  1130      live_direct_present_safe = 0;
+  1131  }
+  1132  
+  1133   int ps2vnc_display_begin_update(void)

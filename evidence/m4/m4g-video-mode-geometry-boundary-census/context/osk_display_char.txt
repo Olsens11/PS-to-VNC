@@ -1,0 +1,37 @@
+SYMBOL=osk_display_char
+SOURCE=working/b4a/ps2vnc_runtime_tail.inc
+ANCHOR_LINE=1582
+
+  1574   * definition later in the file.
+  1575   */
+  1576   unsigned int osk_shifted_ascii(unsigned int c);
+  1577  
+  1578   char osk_display_char(int row, int col)
+  1579  {
+  1580      unsigned int c;
+  1581  
+  1582      if (row < 0 || row >= 4)
+  1583          return ' ';
+  1584  
+  1585      c = (unsigned int)(unsigned char)
+  1586          osk_abc_rows[row][col];
+  1587  
+  1588      /*
+  1589       * Alphabet rows are stored uppercase for convenient layout.
+  1590       * With Shift off, send lowercase.
+  1591       */
+  1592      if (c >= 'A' && c <= 'Z')
+  1593          c = c - 'A' + 'a';
+  1594  
+  1595      if (osk_shift)
+  1596          c = osk_shifted_ascii(c);
+  1597  
+  1598      return (char)c;
+  1599  }
+  1600  
+  1601   void osk_render_bitmap(void)
+  1602  {
+  1603      const unsigned short panel = osk_color(3, 3, 4);
+  1604      const unsigned short key = osk_color(10, 10, 11);
+  1605      const unsigned short selected = osk_color(31, 24, 3);
+  1606      const unsigned short active = osk_color(6, 20, 8);

@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_draw_desktop
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=1575
+
+  1567  int ps2vnc_display_draw_desktop(
+  1568      GSGLOBAL *gsGlobal,
+  1569      GSTEXTURE *tex,
+  1570      u64 clear_color,
+  1571      u64 tex_color)
+  1572  {
+  1573      float x0, y0, x1, y1;
+  1574  
+  1575      if (gsGlobal == NULL || tex == NULL)
+  1576          return -1;
+  1577  
+  1578      if (active_display_backend == PS2VNC_BACKEND_HIRES)
+  1579          return 0;
+  1580  
+  1581      if (active_display_backend != PS2VNC_BACKEND_STANDARD)
+  1582          return -1;
+  1583  
+  1584      if (tex->Width != desktop_width ||
+  1585          tex->Height != desktop_height ||
+  1586          tex->Mem == NULL)
+  1587          return -1;
+  1588  
+  1589      x0 = ps2vnc_display_output_x((float)desktop_output_x);
+  1590      y0 = ps2vnc_display_output_y((float)desktop_output_y);
+  1591  
+  1592      x1 = ps2vnc_display_output_x(
+  1593          (float)(desktop_output_x + desktop_output_width));
+  1594      y1 = ps2vnc_display_output_y(
+  1595          (float)(desktop_output_y + desktop_output_height));
+  1596  
+  1597      gsKit_clear(gsGlobal, clear_color);
+  1598  
+  1599      gsKit_prim_sprite_texture(

@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_wait_texture_idle
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=1343
+
+  1335  }
+  1336  
+  1337  /*
+  1338   * Wait until a texture consumed by the previous frame may safely be replaced.
+  1339   */
+  1340  int ps2vnc_display_wait_texture_idle(
+  1341      GSGLOBAL *gsGlobal)
+  1342  {
+  1343      if (gsGlobal == NULL)
+  1344          return -1;
+  1345  
+  1346      if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+  1347          gsKit_hires_sync(gsGlobal);
+  1348          return 0;
+  1349      }
+  1350  
+  1351      if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+  1352          /*
+  1353           * Proven Standard renderers upload/update textures only after the
+  1354           * preceding DRAW -> sync_flip cycle has completed.
+  1355           */
+  1356          return 0;
+  1357      }
+  1358  
+  1359      return -1;
+  1360  }
+  1361  
+  1362  /*
+  1363   * Complete construction of the current draw queue.
+  1364   *
+  1365   * HIRES consumes its queue through the scanline/pass engine.  A future
+  1366   * Standard backend maps this semantic operation to gsKit_queue_exec().
+  1367   */

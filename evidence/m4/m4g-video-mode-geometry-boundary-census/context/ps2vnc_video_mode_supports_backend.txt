@@ -1,0 +1,27 @@
+SYMBOL=ps2vnc_video_mode_supports_backend
+SOURCE=working/b4a/ps2vnc_runtime.c
+ANCHOR_LINE=273
+
+   265  
+   266  #define VIDEO_MODE_COUNT \
+   267      (sizeof(video_modes) / sizeof(video_modes[0]))
+   268  
+   269  int ps2vnc_video_mode_supports_backend(
+   270      const ps2vnc_video_mode_t *mode,
+   271      ps2vnc_backend_t backend)
+   272  {
+   273      if (mode == NULL || backend == PS2VNC_BACKEND_NONE)
+   274          return 0;
+   275  
+   276      return (mode->allowed_backends & (unsigned int)backend) != 0;
+   277  }
+   278  
+   279  /* Recursive M3 subdivision scaffold remains intact. */
+   280  /*
+   281   * M3I recursive coarse split:
+   282   * this TU retains runtime_support + framebuffer_engine.
+   283   */
+   284  #include "ps2vnc_runtime_tail_to_core.h"
+   285  
+   286  #include "ps2vnc_runtime_core.inc"
+   287  /* M3K: framebuffer engine compiled in ps2vnc_framebuffer.c */

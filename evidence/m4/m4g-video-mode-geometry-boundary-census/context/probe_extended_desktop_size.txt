@@ -1,0 +1,37 @@
+SYMBOL=probe_extended_desktop_size
+SOURCE=working/b4a/ps2vnc_framebuffer_core.inc
+ANCHOR_LINE=976
+
+   968   * response; that would solicit another ExtendedDesktopSize response.
+   969   */
+   970  int probe_extended_desktop_size(
+   971      int sock,
+   972      unsigned short *rfb_framebuffer,
+   973      unsigned short *gs_framebuffer)
+   974  {
+   975      rfb_extended_desktop_seen = 0;
+   976      rfb_extended_desktop_reason = 0;
+   977      rfb_extended_desktop_result = 0;
+   978      rfb_extended_desktop_width = 0;
+   979      rfb_extended_desktop_height = 0;
+   980      rfb_extended_desktop_screen_count = 0;
+   981  
+   982      rfb_first_screen_id = 0;
+   983      rfb_first_screen_x = 0;
+   984      rfb_first_screen_y = 0;
+   985      rfb_first_screen_width = 0;
+   986      rfb_first_screen_height = 0;
+   987      rfb_first_screen_flags = 0;
+   988  
+   989      if (set_raw_extended_desktop_encoding(sock) < 0) {
+   990          screenf("ERROR: EDS SetEncodings failed");
+   991          return -1;
+   992      }
+   993  
+   994      if (request_framebuffer(sock, 0) < 0) {
+   995          screenf("ERROR: EDS probe request failed");
+   996          return -1;
+   997      }
+   998  
+   999      if (receive_framebuffer_update(
+  1000              sock,

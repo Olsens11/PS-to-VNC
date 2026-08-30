@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_transaction_commit_to_pi
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=329
+
+   321          PS2VNC_DISPLAY_TX_BEGIN_PATH,
+   322          body,
+   323          (unsigned int)body_len);
+   324  }
+   325  
+   326  
+   327  int ps2vnc_display_transaction_commit_to_pi(void)
+   328  {
+   329      return ps2vnc_management_post(
+   330          PS2VNC_DISPLAY_TX_COMMIT_PATH,
+   331          NULL,
+   332          0);
+   333  }
+   334  
+   335  
+   336  int ps2vnc_display_transaction_restore_to_pi(void)
+   337  {
+   338      return ps2vnc_management_post(
+   339          PS2VNC_DISPLAY_TX_RESTORE_PATH,
+   340          NULL,
+   341          0);
+   342  }
+   343  
+   344  
+   345  int ps2vnc_display_transaction_restored_to_pi(void)
+   346  {
+   347      return ps2vnc_management_post(
+   348          PS2VNC_DISPLAY_TX_RESTORED_PATH,
+   349          NULL,
+   350          0);
+   351  }
+   352  
+   353  

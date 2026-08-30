@@ -1,0 +1,9 @@
+file	catalog_occurrences
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c	47
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c	25
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc	10
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_ui_core.inc	6
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_tail.inc	4
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_display_tail.inc	2
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_to_ui_display.h	2
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h	2

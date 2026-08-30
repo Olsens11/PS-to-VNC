@@ -1,0 +1,37 @@
+SYMBOL=display_menu_open_for_active
+SOURCE=working/b4a/ps2vnc_ui_core.inc
+ANCHOR_LINE=291
+
+   283  
+   284      if (display_menu_selection >= 0)
+   285          display_menu_tab_selection[display_menu_tab] =
+   286              display_menu_selection;
+   287  }
+   288  
+   289  
+   290   void display_menu_open_for_active(int parent_system)
+   291  {
+   292      int active_selection =
+   293          display_menu_selection_for_mode(active_video_mode);
+   294  
+   295      display_menu_tab =
+   296          display_menu_tab_for_mode(active_video_mode);
+   297  
+   298      display_menu_selection = active_selection;
+   299  
+   300      if (display_menu_tab >= DISPLAY_TAB_TV_DTV &&
+   301          display_menu_tab <= DISPLAY_TAB_VGA_OTHER) {
+   302  
+   303          display_menu_tab_selection[display_menu_tab] =
+   304              active_selection;
+   305      }
+   306  
+   307      display_menu_error = 0;
+   308      display_policy_error = 0;
+   309      display_menu_parent_system = parent_system;
+   310      display_menu_visible = 1;
+   311  
+   312      /*
+   313       * Re-read authoritative policy every time the selector is opened.
+   314       * Until the main thread completes that GET, switching into inactive
+   315       * modes remains disabled.

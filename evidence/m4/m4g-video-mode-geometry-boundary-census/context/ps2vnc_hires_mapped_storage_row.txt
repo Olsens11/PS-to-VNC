@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_hires_mapped_storage_row
+SOURCE=working/b4a/ps2vnc_framebuffer_core.inc
+ANCHOR_LINE=1083
+
+  1075   * space when true vertical scaling is active.
+  1076   *
+  1077   * When only horizontal mapping is active, however, Y remains physical
+  1078   * full-frame raster space. Preserve the existing even/odd field-separated
+  1079   * backing layout for interlaced GS_FRAME modes.
+  1080   */
+  1081  unsigned int ps2vnc_hires_mapped_storage_row(
+  1082      unsigned int presentation_y)
+  1083  {
+  1084      if (ps2vnc_hires_requires_vertical_mapping())
+  1085          return presentation_y;
+  1086  
+  1087      return hires_bg_storage_row(presentation_y);
+  1088  }
+  1089  
+  1090  
+  1091  /*
+  1092   * Decoder-facing direct-update facade.
+  1093   *
+  1094   * RFB/Hextile knows only whether the active presentation backend offers a
+  1095   * writable hidden target and, if so, asks for a raster row.  HIRES storage
+  1096   * layout remains entirely on the presentation side of this boundary.
+  1097   */
+  1098  static int ps2vnc_display_direct_write_active(void)
+  1099  {
+  1100      /*
+  1101       * D17AL-F8E:
+  1102       *
+  1103       * A raster-mapped HIRES presentation cannot expose its transformed
+  1104       * presentation storage as a 1:1 decoder-direct target. Decode into the
+  1105       * authoritative source framebuffer and publish through the mapper instead.
+  1106       */
+  1107      return active_display_backend == PS2VNC_BACKEND_HIRES &&

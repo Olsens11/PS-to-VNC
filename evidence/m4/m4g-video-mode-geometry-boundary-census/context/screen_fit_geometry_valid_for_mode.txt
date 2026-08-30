@@ -1,0 +1,37 @@
+SYMBOL=screen_fit_geometry_valid_for_mode
+SOURCE=working/b4a/ps2vnc_management_core.inc
+ANCHOR_LINE=682
+
+   674      int output_height;
+   675      int remaining_x;
+   676      int remaining_y;
+   677      int centered_x;
+   678      int centered_y;
+   679      int max_positive_x;
+   680      int max_positive_y;
+   681  
+   682      if (mode == NULL)
+   683          return 0;
+   684  
+   685      output_width = (int)mode->raster_width;
+   686      output_height = (int)mode->raster_height;
+   687  
+   688      /*
+   689       * D17AL-F1:
+   690       *
+   691       * width/height are the exact selected safe desktop rectangle.
+   692       * SCREEN_FIT_BORDER is visualization only and consumes no pixels.
+   693       */
+   694      if (width <= 0 || height <= 0)
+   695          return 0;
+   696  
+   697      if (width > output_width ||
+   698          height > output_height)
+   699          return 0;
+   700  
+   701      remaining_x = output_width - width;
+   702      remaining_y = output_height - height;
+   703  
+   704      centered_x = remaining_x / 2;
+   705      centered_y = remaining_y / 2;
+   706  

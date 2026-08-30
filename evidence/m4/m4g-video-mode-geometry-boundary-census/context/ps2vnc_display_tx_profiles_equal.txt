@@ -1,0 +1,15 @@
+SYMBOL=ps2vnc_display_tx_profiles_equal
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=1584
+
+  1576      return a != NULL &&
+  1577             b != NULL &&
+  1578             a->mode == b->mode &&
+  1579             a->backend == b->backend &&
+  1580             a->logical_width == b->logical_width &&
+  1581             a->logical_height == b->logical_height &&
+  1582             a->output_x == b->output_x &&
+  1583             a->output_y == b->output_y &&
+  1584             a->output_width == b->output_width &&
+  1585             a->output_height == b->output_height;
+  1586  }

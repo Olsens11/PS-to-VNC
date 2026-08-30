@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_transaction_restored_to_pi
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=347
+
+   339          PS2VNC_DISPLAY_TX_RESTORE_PATH,
+   340          NULL,
+   341          0);
+   342  }
+   343  
+   344  
+   345  int ps2vnc_display_transaction_restored_to_pi(void)
+   346  {
+   347      return ps2vnc_management_post(
+   348          PS2VNC_DISPLAY_TX_RESTORED_PATH,
+   349          NULL,
+   350          0);
+   351  }
+   352  
+   353  
+   354  int ps2vnc_display_transaction_ack_to_pi(void)
+   355  {
+   356      return ps2vnc_management_post(
+   357          PS2VNC_DISPLAY_TX_ACK_PATH,
+   358          NULL,
+   359          0);
+   360  }
+   361  
+   362  
+   363  int ps2vnc_management_get(
+   364      const char *path,
+   365      unsigned char *out_body,
+   366      unsigned int out_capacity,
+   367      unsigned int *out_len)
+   368  {
+   369      char request[256];
+   370      int request_len;
+   371  

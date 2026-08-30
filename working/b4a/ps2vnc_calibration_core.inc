@@ -700,7 +700,7 @@ static int ps2vnc_startup_mode_save_to_pi(
 
     if (mode == NULL ||
         mode->name == NULL ||
-        ps2vnc_video_mode_by_name(mode->name) == NULL)
+        pstvnc_video_mode_by_name(mode->name) == NULL)
         return -1;
 
     body_len = snprintf(
@@ -1160,7 +1160,7 @@ int ps2vnc_startup_apply_authoritative_profile(void)
      * before active_video_mode is changed.
      */
     expected_backend =
-        ps2vnc_video_mode_default_backend(target->mode);
+        pstvnc_video_mode_default_backend(target->mode);
 
     if (expected_backend == PS2VNC_BACKEND_NONE ||
         target->backend != expected_backend) {

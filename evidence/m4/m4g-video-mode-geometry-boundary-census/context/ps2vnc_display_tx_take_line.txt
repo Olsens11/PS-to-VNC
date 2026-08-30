@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_tx_take_line
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=1425
+
+  1417      char *end,
+  1418      const char *key,
+  1419      char **out_value)
+  1420  {
+  1421      char *line;
+  1422      char *newline;
+  1423      unsigned int key_len;
+  1424  
+  1425      if (cursor == NULL ||
+  1426          *cursor == NULL ||
+  1427          end == NULL ||
+  1428          key == NULL ||
+  1429          out_value == NULL ||
+  1430          *cursor >= end)
+  1431          return 0;
+  1432  
+  1433      line = *cursor;
+  1434  
+  1435      newline = (char *)memchr(
+  1436          line,
+  1437          '\n',
+  1438          (size_t)(end - line));
+  1439  
+  1440      if (newline == NULL)
+  1441          return 0;
+  1442  
+  1443      *newline = '\0';
+  1444  
+  1445      key_len = (unsigned int)strlen(key);
+  1446  
+  1447      if ((unsigned int)(newline - line) <= key_len ||
+  1448          memcmp(line, key, key_len) != 0 ||
+  1449          line[key_len] != '=')

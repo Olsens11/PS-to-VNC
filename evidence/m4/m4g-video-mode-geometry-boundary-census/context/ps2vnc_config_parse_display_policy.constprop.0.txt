@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_config_parse_display_policy.constprop.0
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=1094
+
+  1086  
+  1087  
+  1088  
+  1089  /*
+  1090   * Parse only menu policy from the human-readable config.
+  1091   *
+  1092   * Missing lock/hide keys are false. Unknown/future keys remain opaque.
+  1093   */
+  1094  static int ps2vnc_config_parse_display_policy(
+  1095      const char *text,
+  1096      unsigned int text_len,
+  1097      unsigned char *out_locked,
+  1098      int *out_hide_locked)
+  1099  {
+  1100      unsigned int pos = 0;
+  1101      unsigned int i;
+  1102  
+  1103      unsigned char locked_seen[
+  1104          VIDEO_MODE_COUNT
+  1105      ];
+  1106  
+  1107      int hide_seen = 0;
+  1108      int current_mode = -2;
+  1109  
+  1110      if (text == NULL ||
+  1111          out_locked == NULL ||
+  1112          out_hide_locked == NULL)
+  1113          return -1;
+  1114  
+  1115      if (text_len > PS2VNC_CONFIG_MAX_BYTES)
+  1116          return -1;
+  1117  
+  1118      for (i = 0; i < text_len; i++) {

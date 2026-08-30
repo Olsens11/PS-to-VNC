@@ -1024,7 +1024,7 @@ void ps2vnc_remote_display_fail(
             return 0;
 
         target =
-            ps2vnc_video_mode_by_name(mode_name);
+            pstvnc_video_mode_by_name(mode_name);
 
         remote_display_txid = txid;
         remote_display_lease_seconds =

@@ -1,0 +1,287 @@
+     1	/*
+     2	 * PS-to-VNC M3G coarse runtime translation unit.
+     3	 *
+     4	 * Owns the complete remaining implementation envelope:
+     5	 * runtime_support + ui_controller + framebuffer_engine +
+     6	 * display_orchestration.
+     7	 */
+     8	
+     9	#include "ps2vnc_runtime_compat.h"
+    10	#include "ps2vnc_cross_types.h"
+    11	#include "ps2vnc_services_imports.h"
+    12	#include "ps2vnc_services_exports.h"
+    13	#include "ps2vnc_ui_display_to_runtime.h"
+    14	
+    15	/*
+    16	 * D17AL large display-mode matrix.
+    17	 *
+    18	 * Raster geometry, renderer drawing geometry, and RFB logical geometry are
+    19	 * deliberately independent concepts.
+    20	 *
+    21	 * TV/DTV
+    22	 * -------
+    23	 * 480i Standard reconstructs the hardware-proven Test13C contract:
+    24	 *     physical timing : NTSC 480i
+    25	 *     GS drawing      : 704x232 FRAME
+    26	 *     RFB desktop     : 704x464
+    27	 *
+    28	 * 576i begins as HIRES so its full-frame logical geometry can be exercised
+    29	 * without inventing an unproven Standard PAL safe-area contract.
+    30	 *
+    31	 * VGA
+    32	 * ---
+    33	 * The initial VGA matrix is HIRES-only. It intentionally covers both widths
+    34	 * divisible by the GS 64-pixel FBW unit and widths that are not, giving the
+    35	 * mode survey useful presentation-path controls.
+    36	 */
+    37	
+    38	static const ps2vnc_video_mode_t video_mode_480i = {
+    39	    "480i", GS_MODE_NTSC, GS_INTERLACED, GS_FRAME,
+    40	    720, 480,
+    41	    704, 232, -32, 8,
+    42	    704, 464,
+    43	    0, 0, 0,
+    44	    PS2VNC_BACKEND_STANDARD,
+    45	    PS2VNC_BACKEND_STANDARD,
+    46	    PS2VNC_DISPLAY_GROUP_TV_DTV
+    47	};
+    48	
+    49	static const ps2vnc_video_mode_t video_mode_480p = {
+    50	    "480p", GS_MODE_DTV_480P, GS_NONINTERLACED, GS_FRAME,
+    51	    720, 480,
+    52	    704, 462, -4, 3,
+    53	    704, 462,
+    54	    0, 0, 0,
+    55	    PS2VNC_BACKEND_STANDARD,
+    56	    PS2VNC_BACKEND_STANDARD,
+    57	    PS2VNC_DISPLAY_GROUP_TV_DTV
+    58	};
+    59	
+    60	static const ps2vnc_video_mode_t video_mode_480p_hires = {
+    61	    "480p-hires", GS_MODE_DTV_480P, GS_NONINTERLACED, GS_FRAME,
+    62	    720, 480,
+    63	    0, 0, 0, 0,
+    64	    0, 0,
+    65	
+    66	    /*
+    67	     * D17AL-F7A:
+    68	     *
+    69	     * Keep the DTV 480p physical timing at 720x480, but give gsHires
+    70	     * the same native 704x462 drawing geometry already proven by the
+    71	     * ordinary-gsKit 480p backend.
+    72	     *
+    73	     * F7A is a local-primitive geometry probe only. RFB/background
+    74	     * publication is deliberately disabled for this one exact mode below.
+    75	     */
+    76	    704, 462, 3,
+    77	
+    78	    PS2VNC_BACKEND_HIRES,
+    79	    PS2VNC_BACKEND_HIRES,
+    80	    PS2VNC_DISPLAY_GROUP_TV_DTV
+    81	};
+    82	
+    83	static const ps2vnc_video_mode_t video_mode_576i = {
+    84	    "576i", GS_MODE_PAL, GS_INTERLACED, GS_FRAME,
+    85	    720, 576,
+    86	    0, 0, 0, 0,
+    87	    0, 0,
+    88	    720, 288, 3,
+    89	    PS2VNC_BACKEND_HIRES,
+    90	    PS2VNC_BACKEND_HIRES,
+    91	    PS2VNC_DISPLAY_GROUP_TV_DTV
+    92	};
+    93	
+    94	static const ps2vnc_video_mode_t video_mode_576p = {
+    95	    "576p", GS_MODE_DTV_576P, GS_NONINTERLACED, GS_FRAME,
+    96	    720, 576,
+    97	    0, 0, 0, 0,
+    98	    0, 0,
+    99	    720, 576, 3,
+   100	    PS2VNC_BACKEND_HIRES,
+   101	    PS2VNC_BACKEND_HIRES,
+   102	    PS2VNC_DISPLAY_GROUP_TV_DTV
+   103	};
+   104	
+   105	static const ps2vnc_video_mode_t video_mode_720p = {
+   106	    "720p", GS_MODE_DTV_720P, GS_NONINTERLACED, GS_FRAME,
+   107	    1280, 720,
+   108	    0, 0, 0, 0,
+   109	    0, 0,
+   110	    1280, 720, 3,
+   111	    PS2VNC_BACKEND_HIRES,
+   112	    PS2VNC_BACKEND_HIRES,
+   113	    PS2VNC_DISPLAY_GROUP_TV_DTV
+   114	};
+   115	
+   116	static const ps2vnc_video_mode_t video_mode_1080i = {
+   117	    "1080i", GS_MODE_DTV_1080I, GS_INTERLACED, GS_FRAME,
+   118	    1920, 1080,
+   119	    0, 0, 0, 0,
+   120	    0, 0,
+   121	    1920, 540, 3,
+   122	    PS2VNC_BACKEND_HIRES,
+   123	    PS2VNC_BACKEND_HIRES,
+   124	    PS2VNC_DISPLAY_GROUP_TV_DTV
+   125	};
+   126	
+   127	
+   128	/* VGA 60 Hz family. */
+   129	
+   130	static const ps2vnc_video_mode_t video_mode_vga_640_60 = {
+   131	    "640x480-60", GS_MODE_VGA_640_60, GS_NONINTERLACED, GS_FRAME,
+   132	    640, 480,
+   133	    0, 0, 0, 0,
+   134	    0, 0,
+   135	    640, 480, 3,
+   136	    PS2VNC_BACKEND_HIRES, PS2VNC_BACKEND_HIRES,
+   137	    PS2VNC_DISPLAY_GROUP_VGA_60
+   138	};
+   139	
+   140	static const ps2vnc_video_mode_t video_mode_vga_800_60 = {
+   141	    "800x600-60", GS_MODE_VGA_800_60, GS_NONINTERLACED, GS_FRAME,
+   142	    800, 600,
+   143	    0, 0, 0, 0,
+   144	    0, 0,
+   145	    800, 600, 3,
+   146	    PS2VNC_BACKEND_HIRES, PS2VNC_BACKEND_HIRES,
+   147	    PS2VNC_DISPLAY_GROUP_VGA_60
+   148	};
+   149	
+   150	static const ps2vnc_video_mode_t video_mode_vga_1024_60 = {
+   151	    "1024x768-60", GS_MODE_VGA_1024_60, GS_NONINTERLACED, GS_FRAME,
+   152	    1024, 768,
+   153	    0, 0, 0, 0,
+   154	    0, 0,
+   155	    1024, 768, 3,
+   156	    PS2VNC_BACKEND_HIRES, PS2VNC_BACKEND_HIRES,
+   157	    PS2VNC_DISPLAY_GROUP_VGA_60
+   158	};
+   159	
+   160	static const ps2vnc_video_mode_t video_mode_vga_1280_60 = {
+   161	    "1280x1024-60", GS_MODE_VGA_1280_60, GS_NONINTERLACED, GS_FRAME,
+   162	    1280, 1024,
+   163	    0, 0, 0, 0,
+   164	    0, 0,
+   165	    1280, 1024, 3,
+   166	    PS2VNC_BACKEND_HIRES, PS2VNC_BACKEND_HIRES,
+   167	    PS2VNC_DISPLAY_GROUP_VGA_60
+   168	};
+   169	
+   170	
+   171	/* VGA alternate-refresh family. */
+   172	
+   173	#define D17AL_VGA_OTHER(var, label, gsconst, w, h) \
+   174	static const ps2vnc_video_mode_t var = { \
+   175	    label, gsconst, GS_NONINTERLACED, GS_FRAME, \
+   176	    w, h, \
+   177	    0, 0, 0, 0, \
+   178	    0, 0, \
+   179	    w, h, 3, \
+   180	    PS2VNC_BACKEND_HIRES, PS2VNC_BACKEND_HIRES, \
+   181	    PS2VNC_DISPLAY_GROUP_VGA_OTHER \
+   182	}
+   183	
+   184	D17AL_VGA_OTHER(
+   185	    video_mode_vga_640_72,
+   186	    "640x480-72", GS_MODE_VGA_640_72, 640, 480);
+   187	
+   188	D17AL_VGA_OTHER(
+   189	    video_mode_vga_640_75,
+   190	    "640x480-75", GS_MODE_VGA_640_75, 640, 480);
+   191	
+   192	D17AL_VGA_OTHER(
+   193	    video_mode_vga_640_85,
+   194	    "640x480-85", GS_MODE_VGA_640_85, 640, 480);
+   195	
+   196	D17AL_VGA_OTHER(
+   197	    video_mode_vga_800_56,
+   198	    "800x600-56", GS_MODE_VGA_800_56, 800, 600);
+   199	
+   200	D17AL_VGA_OTHER(
+   201	    video_mode_vga_800_72,
+   202	    "800x600-72", GS_MODE_VGA_800_72, 800, 600);
+   203	
+   204	D17AL_VGA_OTHER(
+   205	    video_mode_vga_800_75,
+   206	    "800x600-75", GS_MODE_VGA_800_75, 800, 600);
+   207	
+   208	D17AL_VGA_OTHER(
+   209	    video_mode_vga_800_85,
+   210	    "800x600-85", GS_MODE_VGA_800_85, 800, 600);
+   211	
+   212	D17AL_VGA_OTHER(
+   213	    video_mode_vga_1024_70,
+   214	    "1024x768-70", GS_MODE_VGA_1024_70, 1024, 768);
+   215	
+   216	D17AL_VGA_OTHER(
+   217	    video_mode_vga_1024_75,
+   218	    "1024x768-75", GS_MODE_VGA_1024_75, 1024, 768);
+   219	
+   220	D17AL_VGA_OTHER(
+   221	    video_mode_vga_1024_85,
+   222	    "1024x768-85", GS_MODE_VGA_1024_85, 1024, 768);
+   223	
+   224	D17AL_VGA_OTHER(
+   225	    video_mode_vga_1280_75,
+   226	    "1280x1024-75", GS_MODE_VGA_1280_75, 1280, 1024);
+   227	
+   228	#undef D17AL_VGA_OTHER
+   229	
+   230	
+   231	/*
+   232	 * Registry order is also the stable transaction/request identity.
+   233	 * Keep entries grouped and sorted for human inspection; the UI derives its
+   234	 * columns from menu_group rather than assuming a particular row count.
+   235	 */
+   236	 const ps2vnc_video_mode_t *const video_modes[] = {
+   237	    /* TV / DTV */
+   238	    &video_mode_480i,
+   239	    &video_mode_480p,
+   240	    &video_mode_480p_hires,
+   241	    &video_mode_576i,
+   242	    &video_mode_576p,
+   243	    &video_mode_720p,
+   244	    &video_mode_1080i,
+   245	
+   246	    /* VGA 60 Hz */
+   247	    &video_mode_vga_640_60,
+   248	    &video_mode_vga_800_60,
+   249	    &video_mode_vga_1024_60,
+   250	    &video_mode_vga_1280_60,
+   251	
+   252	    /* VGA alternate refresh */
+   253	    &video_mode_vga_640_72,
+   254	    &video_mode_vga_640_75,
+   255	    &video_mode_vga_640_85,
+   256	    &video_mode_vga_800_56,
+   257	    &video_mode_vga_800_72,
+   258	    &video_mode_vga_800_75,
+   259	    &video_mode_vga_800_85,
+   260	    &video_mode_vga_1024_70,
+   261	    &video_mode_vga_1024_75,
+   262	    &video_mode_vga_1024_85,
+   263	    &video_mode_vga_1280_75
+   264	};
+   265	
+   266	#define VIDEO_MODE_COUNT \
+   267	    (sizeof(video_modes) / sizeof(video_modes[0]))
+   268	
+   269	int ps2vnc_video_mode_supports_backend(
+   270	    const ps2vnc_video_mode_t *mode,
+   271	    ps2vnc_backend_t backend)
+   272	{
+   273	    if (mode == NULL || backend == PS2VNC_BACKEND_NONE)
+   274	        return 0;
+   275	
+   276	    return (mode->allowed_backends & (unsigned int)backend) != 0;
+   277	}
+   278	
+   279	/* Recursive M3 subdivision scaffold remains intact. */
+   280	/*
+   281	 * M3I recursive coarse split:
+   282	 * this TU retains runtime_support + framebuffer_engine.
+   283	 */
+   284	#include "ps2vnc_runtime_tail_to_core.h"
+   285	
+   286	#include "ps2vnc_runtime_core.inc"
+   287	/* M3K: framebuffer engine compiled in ps2vnc_framebuffer.c */

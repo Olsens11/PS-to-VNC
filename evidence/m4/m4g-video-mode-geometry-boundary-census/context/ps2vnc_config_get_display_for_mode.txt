@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_config_get_display_for_mode
+SOURCE=working/b4a/ps2vnc_calibration_core.inc
+ANCHOR_LINE=996
+
+   988  /*
+   989   * TEST15E2-D1:
+   990   * Read and validate one mode-specific preset without applying it to the
+   991   * current screen-fit state.  This is safe to call before a runtime switch.
+   992   */
+   993  int ps2vnc_config_get_display_for_mode(
+   994      const ps2vnc_video_mode_t *mode,
+   995      ps2vnc_display_config_t *out_config)
+   996  {
+   997      unsigned char *text;
+   998      unsigned int len = 0;
+   999      int result;
+  1000  
+  1001      if (mode == NULL || out_config == NULL)
+  1002          return 0;
+  1003  
+  1004      text = (unsigned char *)malloc(PS2VNC_CONFIG_MAX_BYTES);
+  1005      if (text == NULL)
+  1006          return 0;
+  1007  
+  1008      if (ps2vnc_management_get(
+  1009              PS2VNC_CONFIG_PATH,
+  1010              text, PS2VNC_CONFIG_MAX_BYTES, &len) < 0) {
+  1011          free(text);
+  1012          return 0;
+  1013      }
+  1014  
+  1015      result = ps2vnc_config_parse_display_for_mode(
+  1016          (const char *)text, len, mode, out_config
+  1017      );
+  1018  
+  1019      free(text);
+  1020      return result == PS2VNC_CONFIG_OK;

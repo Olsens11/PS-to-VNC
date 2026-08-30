@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_config_presented_geometry_for_mode
+SOURCE=working/b4a/ps2vnc_calibration_core.inc
+ANCHOR_LINE=1043
+
+  1035      unsigned int *out_w,
+  1036      unsigned int *out_h)
+  1037  {
+  1038      int safe_x;
+  1039      int safe_y;
+  1040      unsigned int width;
+  1041      unsigned int height;
+  1042  
+  1043      if (mode == NULL || config == NULL ||
+  1044          out_x == NULL || out_y == NULL ||
+  1045          out_w == NULL || out_h == NULL)
+  1046          return -1;
+  1047  
+  1048      if (!screen_fit_geometry_valid_for_mode(
+  1049              mode,
+  1050              config->safe_width,
+  1051              config->safe_height,
+  1052              config->safe_x,
+  1053              config->safe_y))
+  1054          return -1;
+  1055  
+  1056      safe_x =
+  1057          ((int)mode->raster_width - config->safe_width) / 2 +
+  1058          config->safe_x;
+  1059  
+  1060      safe_y =
+  1061          ((int)mode->raster_height - config->safe_height) / 2 +
+  1062          config->safe_y;
+  1063  
+  1064      if (safe_x < 0 || safe_y < 0)
+  1065          return -1;
+  1066  
+  1067      width =

@@ -1185,7 +1185,7 @@ static GSGLOBAL *ps2vnc_display_create_standard(void)
     GSGLOBAL *gsGlobal;
 
     if (active_video_mode == NULL ||
-        !ps2vnc_video_mode_supports_backend(
+        !pstvnc_video_mode_supports_backend(
             active_video_mode,
             PS2VNC_BACKEND_STANDARD) ||
         active_video_mode->standard_fb_width == 0 ||
@@ -1245,7 +1245,7 @@ static GSGLOBAL *ps2vnc_display_create_standard(void)
 GSGLOBAL *ps2vnc_display_create(void)
 {
     ps2vnc_backend_t backend =
-        ps2vnc_video_mode_default_backend(active_video_mode);
+        pstvnc_video_mode_default_backend(active_video_mode);
     GSGLOBAL *display = NULL;
 
     if (backend == PS2VNC_BACKEND_HIRES)

@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_policy_lock_to_pi
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=1350
+
+  1342      free(text);
+  1343      return result;
+  1344  }
+  1345  
+  1346  
+  1347  int ps2vnc_display_policy_lock_to_pi(
+  1348      int selection,
+  1349      int locked)
+  1350  {
+  1351      const ps2vnc_video_mode_t *mode =
+  1352          display_menu_mode_at_selection(
+  1353              selection);
+  1354  
+  1355      char body[160];
+  1356      int body_len;
+  1357  
+  1358      if (mode == NULL ||
+  1359          mode == active_video_mode)
+  1360          return -1;
+  1361  
+  1362      body_len = snprintf(
+  1363          body,
+  1364          sizeof(body),
+  1365          "mode = %s\n"
+  1366          "locked = %s\n",
+  1367          mode->name,
+  1368          locked ? "true" : "false"
+  1369      );
+  1370  
+  1371      if (body_len <= 0 ||
+  1372          body_len >= (int)sizeof(body))
+  1373          return -1;
+  1374  

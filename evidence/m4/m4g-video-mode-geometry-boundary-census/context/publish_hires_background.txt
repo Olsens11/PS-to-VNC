@@ -1,0 +1,37 @@
+SYMBOL=publish_hires_background
+SOURCE=working/b4a/ps2vnc_framebuffer_tail.inc
+ANCHOR_LINE=709
+
+   701      GSGLOBAL *gsGlobal);
+   702   int ps2vnc_display_wait_texture_idle(
+   703      GSGLOBAL *gsGlobal);
+   704  
+   705  int publish_hires_background(
+   706      GSGLOBAL *gsGlobal,
+   707      GSTEXTURE *bg_tex,
+   708      const unsigned short *gs_framebuffer)
+   709  {
+   710      const unsigned int storage_width =
+   711          ps2vnc_hires_storage_width();
+   712  
+   713      const unsigned int storage_height =
+   714          ps2vnc_hires_storage_height();
+   715  
+   716      const unsigned int output_pixels =
+   717          storage_width * storage_height;
+   718  
+   719      const unsigned int output_bytes =
+   720          output_pixels * sizeof(unsigned short);
+   721  
+   722      unsigned int row;
+   723      unsigned int i;
+   724  
+   725      if (hires_bg_buffer == NULL)
+   726          return -1;
+   727  
+   728      if (desktop_width == 0 ||
+   729          desktop_height == 0 ||
+   730          !region_fits_u32(
+   731              desktop_output_x,
+   732              desktop_output_y,
+   733              desktop_width,

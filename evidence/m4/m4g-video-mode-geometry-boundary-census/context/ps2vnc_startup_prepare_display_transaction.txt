@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_startup_prepare_display_transaction
+SOURCE=working/b4a/ps2vnc_calibration_core.inc
+ANCHOR_LINE=357
+
+   349   * A provisional candidate was never accepted.  On fresh startup this is
+   350   * semantically identical to GO BACK / timeout, so publish RESTORING before
+   351   * beginning to reconstruct complete previous A.
+   352   *
+   353   * Other durable states already encode the correct authority decision.
+   354   */
+   355  int ps2vnc_startup_prepare_display_transaction(void)
+   356  {
+   357      if (!startup_display_transaction_loaded)
+   358          return -1;
+   359  
+   360      if (!startup_display_restore_required)
+   361          return 0;
+   362  
+   363      if (startup_display_transaction.state !=
+   364              PS2VNC_DISPLAY_TX_PROVISIONAL) {
+   365  
+   366          screenf("DISPLAY TX: restore preparation mismatch");
+   367          return -1;
+   368      }
+   369  
+   370      if (ps2vnc_display_transaction_restore_to_pi() < 0) {
+   371          screenf("DISPLAY TX: startup RESTORE failed");
+   372          return -1;
+   373      }
+   374  
+   375      startup_display_transaction.state =
+   376          PS2VNC_DISPLAY_TX_RESTORING;
+   377  
+   378      startup_display_restore_required = 0;
+   379  
+   380      screenf("DISPLAY TX: startup RESTORING");
+   381  

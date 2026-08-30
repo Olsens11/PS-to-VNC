@@ -9,7 +9,7 @@ int ps2vnc_display_profile_valid(
         profile->mode->name == NULL)
         return 0;
 
-    if (!ps2vnc_video_mode_supports_backend(
+    if (!pstvnc_video_mode_supports_backend(
             profile->mode,
             profile->backend))
         return 0;
@@ -102,7 +102,7 @@ int ps2vnc_display_profile_resolve_candidate(
     if (mode == NULL || profile == NULL)
         return -1;
 
-    backend = ps2vnc_video_mode_default_backend(mode);
+    backend = pstvnc_video_mode_default_backend(mode);
 
     if (backend == PS2VNC_BACKEND_NONE)
         return -1;
@@ -1211,7 +1211,7 @@ static int ps2vnc_config_parse_display_policy(
                     8) == 0) {
 
                 const ps2vnc_video_mode_t *mode =
-                    ps2vnc_video_mode_by_name(
+                    pstvnc_video_mode_by_name(
                         work + 8);
 
                 if (mode != NULL)
@@ -1527,7 +1527,7 @@ int ps2vnc_display_tx_parse_profile(
             cursor, end, prefix, "mode", &value))
         return -1;
 
-    profile->mode = ps2vnc_video_mode_by_name(value);
+    profile->mode = pstvnc_video_mode_by_name(value);
 
     if (profile->mode == NULL)
         return -1;

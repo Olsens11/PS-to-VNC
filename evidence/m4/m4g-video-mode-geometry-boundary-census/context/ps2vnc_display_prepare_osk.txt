@@ -1,0 +1,32 @@
+SYMBOL=ps2vnc_display_prepare_osk
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=1616
+
+  1608          tex_color);
+  1609  
+  1610      return 0;
+  1611  }
+  1612  
+  1613  void ps2vnc_display_prepare_osk(
+  1614      GSGLOBAL *gsGlobal,
+  1615      GSTEXTURE *osk_tex)
+  1616  {
+  1617      memset(osk_tex, 0, sizeof(*osk_tex));
+  1618      osk_tex->Width = OSK_WIDTH;
+  1619      osk_tex->Height = OSK_HEIGHT;
+  1620      osk_tex->PSM = GS_PSM_CT16;
+  1621      osk_tex->Mem = (u32 *)osk_pixels;
+  1622      osk_tex->Filter = GS_FILTER_NEAREST;
+  1623      osk_tex->VramClut = 0;
+  1624      osk_tex->Vram = gsKit_vram_alloc(
+  1625          gsGlobal,
+  1626          gsKit_texture_size(OSK_WIDTH, OSK_HEIGHT, GS_PSM_CT16),
+  1627          GSKIT_ALLOC_USERBUFFER);
+  1628  }
+  1629  
+  1630  
+  1631  /*
+  1632   * TEST15E1-D1:
+  1633   * Reconstruct the complete mode-dependent display while preserving the
+  1634   * RFB connection and controller thread.
+  1635   */

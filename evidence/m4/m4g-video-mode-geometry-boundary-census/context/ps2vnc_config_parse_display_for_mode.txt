@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_config_parse_display_for_mode
+SOURCE=working/b4a/ps2vnc_management_core.inc
+ANCHOR_LINE=1352
+
+  1344      unsigned int text_len,
+  1345      const ps2vnc_video_mode_t *mode,
+  1346      ps2vnc_display_config_t *out_config)
+  1347  {
+  1348      char section_name[64];
+  1349      int name_len;
+  1350      int result;
+  1351  
+  1352      if (mode == NULL ||
+  1353          mode->name == NULL ||
+  1354          mode->name[0] == '\0')
+  1355          return PS2VNC_CONFIG_INVALID_TEXT;
+  1356  
+  1357      name_len = snprintf(
+  1358          section_name,
+  1359          sizeof(section_name),
+  1360          "display.%s",
+  1361          mode->name
+  1362      );
+  1363  
+  1364      if (name_len <= 0 ||
+  1365          name_len >= (int)sizeof(section_name))
+  1366          return PS2VNC_CONFIG_INVALID_TEXT;
+  1367  
+  1368      result = ps2vnc_config_parse_display_section(
+  1369          text,
+  1370          text_len,
+  1371          section_name,
+  1372          mode,
+  1373          out_config
+  1374      );
+  1375  
+  1376      if (result != PS2VNC_CONFIG_NO_DISPLAY)

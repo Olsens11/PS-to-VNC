@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_flip
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=1394
+
+  1386  /*
+  1387   * Expose the completed frame.
+  1388   *
+  1389   * HIRES advances its scanline-managed presentation buffers.  A future
+  1390   * Standard backend maps this semantic operation to gsKit_sync_flip().
+  1391   */
+  1392  int ps2vnc_display_flip(GSGLOBAL *gsGlobal)
+  1393  {
+  1394      if (gsGlobal == NULL)
+  1395          return -1;
+  1396  
+  1397      if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+  1398          gsKit_hires_flip(gsGlobal);
+  1399          return 0;
+  1400      }
+  1401  
+  1402      if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+  1403          gsKit_sync_flip(gsGlobal);
+  1404          return 0;
+  1405      }
+  1406  
+  1407      return -1;
+  1408  }
+  1409  
+  1410  int ps2vnc_display_destroy(GSGLOBAL **display)
+  1411  {
+  1412      if (display == NULL || *display == NULL) {
+  1413          active_display_backend = PS2VNC_BACKEND_NONE;
+  1414          return 0;
+  1415      }
+  1416  
+  1417      if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+  1418          ps2vnc_display_destroy_hires(display);

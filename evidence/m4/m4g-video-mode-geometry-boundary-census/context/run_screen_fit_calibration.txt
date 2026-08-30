@@ -1,0 +1,37 @@
+SYMBOL=run_screen_fit_calibration
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=414
+
+   406  }
+   407  
+   408  
+   409  int run_screen_fit_calibration(
+   410      GSGLOBAL *gsGlobal,
+   411      u64 black,
+   412      int save_on_accept,
+   413      int *accepted_out)
+   414  {
+   415      struct padButtonStatus buttons;
+   416  
+   417      unsigned int pressed = 0;
+   418      unsigned int last_pressed = 0;
+   419      unsigned int changed = 0;
+   420  
+   421      unsigned int hold_action = 0;
+   422      unsigned int hold_ticks = 0;
+   423  
+   424      /*
+   425       * Start forced recalibration from the exact persistent geometry when
+   426       * one was loaded.  screen_fit_* already describes the validated OUTER
+   427       * disappearing-border rectangle and its center-relative position.
+   428       *
+   429       * With no stored display preset, preserve the original first-run
+   430       * behavior by reconstructing the OUTER rectangle from the current
+   431       * TigerVNC safe-interior dimensions and starting centered.
+   432       */
+   433      int width;
+   434      int height;
+   435      int offset_x;
+   436      int offset_y;
+   437  
+   438      int input_armed = 0;

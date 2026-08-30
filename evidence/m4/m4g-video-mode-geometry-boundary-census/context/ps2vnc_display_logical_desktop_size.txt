@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_logical_desktop_size
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=199
+
+   191   * separate coordinate spaces. Each backend supplies its own draw dimensions.
+   192   */
+   193   int ps2vnc_display_logical_desktop_size(
+   194      unsigned int output_width,
+   195      unsigned int output_height,
+   196      unsigned int *width,
+   197      unsigned int *height)
+   198  {
+   199      if (active_video_mode == NULL || width == NULL || height == NULL)
+   200          return -1;
+   201  
+   202      if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+   203          *width = output_width;
+   204          *height = output_height;
+   205      } else if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+   206          *width = active_video_mode->standard_logical_width;
+   207          *height = active_video_mode->standard_logical_height;
+   208      } else {
+   209          return -1;
+   210      }
+   211  
+   212      if (*width == 0 || *height == 0 ||
+   213          *width > VNC_WIDTH || *height > VNC_HEIGHT)
+   214          return -1;
+   215  
+   216      return 0;
+   217  }
+   218  
+   219  float ps2vnc_display_output_x(float x)
+   220  {
+   221      unsigned int draw_width;
+   222  
+   223      if (active_display_backend == PS2VNC_BACKEND_STANDARD)

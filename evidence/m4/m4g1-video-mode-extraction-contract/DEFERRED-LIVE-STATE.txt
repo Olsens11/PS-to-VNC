@@ -1,0 +1,22 @@
+DEFERRED_FROM_VIDEO_MODE_MODEL_EXTRACTION:
+
+active_video_mode
+active_display_backend
+
+desktop_width
+desktop_height
+desktop_geometry_locked
+
+desktop_output_x
+desktop_output_y
+desktop_output_width
+desktop_output_height
+
+RATIONALE:
+
+These are live mutable runtime/display state with writers distributed
+across display switching, startup/recovery, calibration, RFB desktop
+handling, framebuffer presentation, and management recovery.
+
+M4G-A will establish the immutable mode model/catalog API first.
+State ownership will move only after permanent APIs exist around it.

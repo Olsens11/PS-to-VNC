@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_update_mapped_hires_dirty_buffer
+SOURCE=working/b4a/ps2vnc_framebuffer_tail.inc
+ANCHOR_LINE=94
+
+    86   *
+    87   * The leading destination edge uses ceil(source * dst / src). This is the
+    88   * exact inverse boundary for F7B's floor(dst * src / dst) nearest-neighbor
+    89   * sampling rule.
+    90   */
+    91  static int ps2vnc_update_mapped_hires_dirty_buffer(
+    92      unsigned short *dst,
+    93      const unsigned short *gs_framebuffer)
+    94  {
+    95      /*
+    96       * D17AL-F7C4:
+    97       *
+    98       * The active raster/presentation relationship changes only when display,
+    99       * desktop geometry, or calibration changes. Cache both forward nearest-
+   100       * neighbor sampling and inverse dirty-boundary mappings instead of doing
+   101       * 64-bit multiply/divide for every presentation pixel on every update.
+   102       *
+   103       * Normal incremental updates therefore perform table lookups only:
+   104       *
+   105       *     destination x/y -> source x/y
+   106       *     source dirty edge -> destination dirty edge
+   107       *
+   108       * Division remains exclusively in the rare geometry-cache rebuild path.
+   109       */
+   110  
+   111      static int map_valid = 0;
+   112  
+   113      static unsigned int cached_storage_width;
+   114      static unsigned int cached_storage_height;
+   115  
+   116      static unsigned int cached_output_width;
+   117      static unsigned int cached_output_height;
+   118  

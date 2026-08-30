@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_prepare_desktop
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=1546
+
+  1538  /*
+  1539   * Backend-neutral desktop preparation.
+  1540   */
+  1541  int ps2vnc_display_prepare_desktop(
+  1542      GSGLOBAL *gsGlobal,
+  1543      GSTEXTURE *tex,
+  1544      unsigned short *gs_framebuffer)
+  1545  {
+  1546      if (active_display_backend == PS2VNC_BACKEND_HIRES)
+  1547          return ps2vnc_display_prepare_desktop_hires(
+  1548              gsGlobal, tex, gs_framebuffer);
+  1549  
+  1550      if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+  1551          return ps2vnc_display_prepare_desktop_standard(
+  1552              gsGlobal, tex, gs_framebuffer);
+  1553  
+  1554      return -1;
+  1555  }
+  1556  
+  1557  /*
+  1558   * Draw the current desktop through the active presentation backend.
+  1559   *
+  1560   * HIRES supplies the desktop through its background/pass engine, so this
+  1561   * operation is intentionally a no-op there.
+  1562   *
+  1563   * Standard owns a conventional VRAM texture. Reproduce the proven ordinary
+  1564   * gsKit frame ordering by clearing the back buffer and explicitly drawing
+  1565   * that texture before local overlays are queued.
+  1566   */
+  1567  int ps2vnc_display_draw_desktop(
+  1568      GSGLOBAL *gsGlobal,
+  1569      GSTEXTURE *tex,
+  1570      u64 clear_color,

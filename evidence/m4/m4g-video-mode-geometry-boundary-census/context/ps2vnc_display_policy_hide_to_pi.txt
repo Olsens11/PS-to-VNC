@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_policy_hide_to_pi
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=1384
+
+  1376          PS2VNC_DISPLAY_LOCK_PATH,
+  1377          body
+  1378      );
+  1379  }
+  1380  
+  1381  
+  1382  int ps2vnc_display_policy_hide_to_pi(
+  1383      int hide_locked)
+  1384  {
+  1385      char body[96];
+  1386      int body_len;
+  1387  
+  1388      body_len = snprintf(
+  1389          body,
+  1390          sizeof(body),
+  1391          "hide_locked_modes = %s\n",
+  1392          hide_locked ? "true" : "false"
+  1393      );
+  1394  
+  1395      if (body_len <= 0 ||
+  1396          body_len >= (int)sizeof(body))
+  1397          return -1;
+  1398  
+  1399      return ps2vnc_management_post_text(
+  1400          PS2VNC_DISPLAY_UI_PATH,
+  1401          body
+  1402      );
+  1403  }
+  1404  
+  1405  
+  1406  
+  1407  /*
+  1408   * H4C3B2A:

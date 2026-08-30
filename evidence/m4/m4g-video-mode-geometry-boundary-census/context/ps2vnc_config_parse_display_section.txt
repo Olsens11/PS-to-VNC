@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_config_parse_display_section
+SOURCE=working/b4a/ps2vnc_management_core.inc
+ANCHOR_LINE=1015
+
+  1007      unsigned int seen = 0;
+  1008      unsigned int pos = 0;
+  1009      unsigned int i;
+  1010  
+  1011      int in_display_section = 0;
+  1012      int display_section_seen = 0;
+  1013  
+  1014      if (text == NULL ||
+  1015          section_name == NULL ||
+  1016          section_name[0] == '\0' ||
+  1017          mode == NULL ||
+  1018          out_config == NULL)
+  1019          return PS2VNC_CONFIG_INVALID_TEXT;
+  1020  
+  1021      if (text_len == 0)
+  1022          return PS2VNC_CONFIG_NO_DISPLAY;
+  1023  
+  1024      if (text_len > PS2VNC_CONFIG_MAX_BYTES)
+  1025          return PS2VNC_CONFIG_INVALID_TEXT;
+  1026  
+  1027      /*
+  1028       * text_len is authoritative.  Reject embedded NUL bytes so C string
+  1029       * operations cannot see a different document from the file loader.
+  1030       */
+  1031      for (i = 0; i < text_len; i++) {
+  1032  
+  1033          if (text[i] == '\0')
+  1034              return PS2VNC_CONFIG_INVALID_TEXT;
+  1035      }
+  1036  
+  1037      memset(
+  1038          &candidate,
+  1039          0,

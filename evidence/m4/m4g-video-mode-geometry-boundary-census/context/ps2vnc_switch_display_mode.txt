@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_switch_display_mode
+SOURCE=working/b4a/ps2vnc_display_core.inc
+ANCHOR_LINE=214
+
+   206  
+   207      int controller_acquired = 0;
+   208      int result = -1;
+   209  
+   210      /*
+   211       * B4A is deliberately restricted to the backdoor remote display
+   212       * transaction path. Preserve ordinary local UI behavior exactly.
+   213       */
+   214      if (remote_display_state == REMOTE_DISPLAY_IDLE) {
+   215          return ps2vnc_switch_display_mode_core(
+   216              sock,
+   217              rfb_framebuffer,
+   218              gs_framebuffer,
+   219              display,
+   220              tex,
+   221              osk_tex,
+   222              mode,
+   223              out_x,
+   224              out_y,
+   225              width,
+   226              height);
+   227      }
+   228  
+   229      display_switch_failure_stage = 0;
+   230      live_error_code = 0;
+   231  
+   232      if (display == NULL ||
+   233          *display == NULL ||
+   234          tex == NULL ||
+   235          osk_tex == NULL ||
+   236          mode == NULL) {
+   237          display_switch_failure_stage = 14u;
+   238          return -1;

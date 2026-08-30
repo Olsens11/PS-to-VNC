@@ -1,0 +1,23 @@
+SYMBOL=ps2vnc_backend_from_transaction_name
+SOURCE=working/b4a/ps2vnc_management_core.inc
+ANCHOR_LINE=1522
+
+  1514  
+  1515      return NULL;
+  1516  }
+  1517  
+  1518  
+  1519  ps2vnc_backend_t ps2vnc_backend_from_transaction_name(
+  1520      const char *name)
+  1521  {
+  1522      if (name == NULL)
+  1523          return PS2VNC_BACKEND_NONE;
+  1524  
+  1525      if (strcmp(name, "standard") == 0)
+  1526          return PS2VNC_BACKEND_STANDARD;
+  1527  
+  1528      if (strcmp(name, "hires") == 0)
+  1529          return PS2VNC_BACKEND_HIRES;
+  1530  
+  1531      return PS2VNC_BACKEND_NONE;
+  1532  }

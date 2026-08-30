@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_profile_capture_active
+SOURCE=working/b4a/ps2vnc_management_tail.inc
+ANCHOR_LINE=66
+
+    58  
+    59  /*
+    60   * H4B2A:
+    61   * Capture the complete coherent runtime profile that is active now.
+    62   */
+    63  int ps2vnc_display_profile_capture_active(
+    64      ps2vnc_display_profile_t *profile)
+    65  {
+    66      if (profile == NULL ||
+    67          active_video_mode == NULL ||
+    68          active_display_backend == PS2VNC_BACKEND_NONE)
+    69          return -1;
+    70  
+    71      profile->mode = active_video_mode;
+    72      profile->backend = active_display_backend;
+    73  
+    74      profile->logical_width = desktop_width;
+    75      profile->logical_height = desktop_height;
+    76  
+    77      profile->output_x = desktop_output_x;
+    78      profile->output_y = desktop_output_y;
+    79      profile->output_width = desktop_output_width;
+    80      profile->output_height = desktop_output_height;
+    81  
+    82      return ps2vnc_display_profile_valid(profile) ? 0 : -1;
+    83  }
+    84  
+    85  
+    86  /*
+    87   * Resolve a complete candidate profile without changing any live state.
+    88   *
+    89   * HIRES logical geometry is the calibrated presentation rectangle.
+    90   * Standard logical geometry is the mode's fixed gsKit framebuffer.

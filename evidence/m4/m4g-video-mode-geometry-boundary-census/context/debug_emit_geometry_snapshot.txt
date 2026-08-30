@@ -1,0 +1,37 @@
+SYMBOL=debug_emit_geometry_snapshot
+SOURCE=working/b4a/ps2vnc_calibration_core.inc
+ANCHOR_LINE=1494
+
+  1486   * Emit one concise snapshot after calibrated geometry has been converted
+  1487   * into the physical 1280x720 output position.
+  1488   */
+  1489  void debug_emit_geometry_snapshot(void)
+  1490  {
+  1491      char msg[192];
+  1492      int len;
+  1493  
+  1494      if (debug_udp_sock < 0)
+  1495          return;
+  1496  
+  1497      len = snprintf(
+  1498          msg,
+  1499          sizeof(msg),
+  1500          "GEOM fit=%dx%d@%d,%d full=%d "
+  1501          "desk=%ux%u out=%u,%u cfg=%d force=%d",
+  1502          screen_fit_width,
+  1503          screen_fit_height,
+  1504          screen_fit_offset_x,
+  1505          screen_fit_offset_y,
+  1506          screen_fit_full_bypass,
+  1507          desktop_width,
+  1508          desktop_height,
+  1509          desktop_output_x,
+  1510          desktop_output_y,
+  1511          ps2vnc_display_config_loaded,
+  1512          force_screen_fit_calibration
+  1513      );
+  1514  
+  1515      if (len <= 0)
+  1516          return;
+  1517  
+  1518      if (len >= (int)sizeof(msg))

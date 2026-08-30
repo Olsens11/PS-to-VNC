@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_hires_storage_height
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=163
+
+   155  unsigned int ps2vnc_hires_storage_width(void)
+   156  {
+   157      return ps2vnc_hires_effective_width();
+   158  }
+   159  
+   160  
+   161  unsigned int ps2vnc_hires_storage_height(void)
+   162  {
+   163      if (active_video_mode == NULL)
+   164          return 0;
+   165  
+   166      if (ps2vnc_hires_requires_vertical_mapping())
+   167          return active_video_mode->hires_height;
+   168  
+   169      return active_video_mode->raster_height;
+   170  }
+   171  
+   172  
+   173  unsigned int ps2vnc_hires_storage_bytes(void)
+   174  {
+   175      return
+   176          ps2vnc_hires_storage_width() *
+   177          ps2vnc_hires_storage_height() *
+   178          sizeof(unsigned short);
+   179  }
+   180  
+   181  #define OUTPUT_WIDTH   (active_video_mode->raster_width)
+   182  #define OUTPUT_HEIGHT  (active_video_mode->raster_height)
+   183  #define VNC_WIDTH      RFB_CAPACITY_WIDTH
+   184  #define VNC_HEIGHT     RFB_CAPACITY_HEIGHT
+   185  
+   186  /*
+   187   * Convert physical output-raster coordinates into the active renderer's

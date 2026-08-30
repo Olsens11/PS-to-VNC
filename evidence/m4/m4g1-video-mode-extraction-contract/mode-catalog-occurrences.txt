@@ -1,0 +1,98 @@
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:153:#ifndef VIDEO_MODE_COUNT
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_services_compat.h:154:#define VIDEO_MODE_COUNT 22u
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:38:static const ps2vnc_video_mode_t video_mode_480i = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:49:static const ps2vnc_video_mode_t video_mode_480p = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:60:static const ps2vnc_video_mode_t video_mode_480p_hires = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:83:static const ps2vnc_video_mode_t video_mode_576i = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:94:static const ps2vnc_video_mode_t video_mode_576p = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:105:static const ps2vnc_video_mode_t video_mode_720p = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:116:static const ps2vnc_video_mode_t video_mode_1080i = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:130:static const ps2vnc_video_mode_t video_mode_vga_640_60 = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:140:static const ps2vnc_video_mode_t video_mode_vga_800_60 = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:150:static const ps2vnc_video_mode_t video_mode_vga_1024_60 = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:160:static const ps2vnc_video_mode_t video_mode_vga_1280_60 = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:185:    video_mode_vga_640_72,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:189:    video_mode_vga_640_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:193:    video_mode_vga_640_85,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:197:    video_mode_vga_800_56,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:201:    video_mode_vga_800_72,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:205:    video_mode_vga_800_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:209:    video_mode_vga_800_85,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:213:    video_mode_vga_1024_70,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:217:    video_mode_vga_1024_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:221:    video_mode_vga_1024_85,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:225:    video_mode_vga_1280_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:236: const ps2vnc_video_mode_t *const video_modes[] = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:238:    &video_mode_480i,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:239:    &video_mode_480p,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:240:    &video_mode_480p_hires,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:241:    &video_mode_576i,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:242:    &video_mode_576p,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:243:    &video_mode_720p,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:244:    &video_mode_1080i,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:247:    &video_mode_vga_640_60,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:248:    &video_mode_vga_800_60,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:249:    &video_mode_vga_1024_60,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:250:    &video_mode_vga_1280_60,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:253:    &video_mode_vga_640_72,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:254:    &video_mode_vga_640_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:255:    &video_mode_vga_640_85,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:256:    &video_mode_vga_800_56,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:257:    &video_mode_vga_800_72,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:258:    &video_mode_vga_800_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:259:    &video_mode_vga_800_85,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:260:    &video_mode_vga_1024_70,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:261:    &video_mode_vga_1024_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:262:    &video_mode_vga_1024_85,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:263:    &video_mode_vga_1280_75
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:266:#define VIDEO_MODE_COUNT \
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime.c:267:    (sizeof(video_modes) / sizeof(video_modes[0]))
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_tail.inc:1104:        VIDEO_MODE_COUNT
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_tail.inc:1126:        VIDEO_MODE_COUNT
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_tail.inc:1290:        VIDEO_MODE_COUNT
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_management_tail.inc:1328:         i < VIDEO_MODE_COUNT;
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:22:    for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:23:        if (strcmp(name, video_modes[i]->name) == 0)
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:24:            return video_modes[i];
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:31:const ps2vnc_video_mode_t *active_video_mode = &video_mode_1080i;
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:788:    for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:789:        if (video_modes[i] == mode)
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:800:        (unsigned int)selection >= VIDEO_MODE_COUNT)
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:803:    return video_modes[selection];
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:809:        (unsigned int)selection >= VIDEO_MODE_COUNT)
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_core.inc:921:volatile unsigned char display_mode_locked[VIDEO_MODE_COUNT];
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_display_tail.inc:320:                        VIDEO_MODE_COUNT &&
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_display_tail.inc:321:                    video_modes[selection] !=
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:38:static const ps2vnc_video_mode_t video_mode_480i = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:49:static const ps2vnc_video_mode_t video_mode_480p = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:60:static const ps2vnc_video_mode_t video_mode_480p_hires = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:83:static const ps2vnc_video_mode_t video_mode_576i = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:94:static const ps2vnc_video_mode_t video_mode_576p = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:105:static const ps2vnc_video_mode_t video_mode_720p = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:116:static const ps2vnc_video_mode_t video_mode_1080i = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:130:static const ps2vnc_video_mode_t video_mode_vga_640_60 = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:140:static const ps2vnc_video_mode_t video_mode_vga_800_60 = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:150:static const ps2vnc_video_mode_t video_mode_vga_1024_60 = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:160:static const ps2vnc_video_mode_t video_mode_vga_1280_60 = {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:185:    video_mode_vga_640_72,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:189:    video_mode_vga_640_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:193:    video_mode_vga_640_85,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:197:    video_mode_vga_800_56,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:201:    video_mode_vga_800_72,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:205:    video_mode_vga_800_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:209:    video_mode_vga_800_85,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:213:    video_mode_vga_1024_70,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:217:    video_mode_vga_1024_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:221:    video_mode_vga_1024_85,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:225:    video_mode_vga_1280_75,
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:236:extern const ps2vnc_video_mode_t *const video_modes[];
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:238:#define VIDEO_MODE_COUNT \
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_tail.c:239:    (sizeof(video_modes) / sizeof(video_modes[0]))
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_ui_core.inc:191:    for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_ui_core.inc:349:         step <= (int)VIDEO_MODE_COUNT;
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_ui_core.inc:355:             (int)VIDEO_MODE_COUNT * 4) %
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_ui_core.inc:356:            (int)VIDEO_MODE_COUNT;
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_ui_core.inc:581:             i < VIDEO_MODE_COUNT;
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_ui_core.inc:585:                video_modes[i];
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_to_ui_display.h:178:#define VIDEO_MODE_COUNT 22u
+/home/ps2/PS-to-VNC/working/b4a/ps2vnc_runtime_to_ui_display.h:432:extern const ps2vnc_video_mode_t *const video_modes[VIDEO_MODE_COUNT];

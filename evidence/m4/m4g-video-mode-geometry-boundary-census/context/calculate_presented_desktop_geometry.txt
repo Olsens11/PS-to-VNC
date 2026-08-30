@@ -1,0 +1,37 @@
+SYMBOL=calculate_presented_desktop_geometry
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=714
+
+   706      unsigned int *out_x,
+   707      unsigned int *out_y,
+   708      unsigned int *out_w,
+   709      unsigned int *out_h)
+   710  {
+   711      int safe_x;
+   712      int safe_y;
+   713  
+   714      if (screen_fit_full_bypass) {
+   715          *out_x = 0;
+   716          *out_y = 0;
+   717          *out_w = OUTPUT_WIDTH;
+   718          *out_h = OUTPUT_HEIGHT;
+   719          return 0;
+   720      }
+   721  
+   722      if (!screen_fit_geometry_valid(
+   723              screen_fit_width,
+   724              screen_fit_height,
+   725              screen_fit_offset_x,
+   726              screen_fit_offset_y))
+   727          return -1;
+   728  
+   729      safe_x =
+   730          (OUTPUT_WIDTH - screen_fit_width) / 2 +
+   731          screen_fit_offset_x;
+   732  
+   733      safe_y =
+   734          (OUTPUT_HEIGHT - screen_fit_height) / 2 +
+   735          screen_fit_offset_y;
+   736  
+   737      if (safe_x < 0 || safe_y < 0)
+   738          return -1;

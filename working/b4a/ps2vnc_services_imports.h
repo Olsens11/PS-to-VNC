@@ -72,8 +72,8 @@ int ps2vnc_hires_requires_raster_mapping(void);
 unsigned int ps2vnc_hires_storage_bytes(void);
 unsigned int ps2vnc_hires_storage_height(void);
 unsigned int ps2vnc_hires_storage_width(void);
-const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name( const char *name);
-ps2vnc_backend_t ps2vnc_video_mode_default_backend( const ps2vnc_video_mode_t *mode);
+const ps2vnc_video_mode_t *pstvnc_video_mode_by_name( const char *name);
+ps2vnc_backend_t pstvnc_video_mode_default_backend( const ps2vnc_video_mode_t *mode);
 int publish_hires_background( GSGLOBAL *gsGlobal, GSTEXTURE *bg_tex, const unsigned short *gs_framebuffer);
 int receive_framebuffer_update( int sock, unsigned short *rfb_framebuffer, unsigned short *gs_framebuffer, int verbose, int require_full);
 int region_fits_u32( unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int bounds_width, unsigned int bounds_height);
@@ -93,10 +93,10 @@ int set_raw_extended_desktop_encoding(int sock);
 /* M3E actual-source call closure. */
 const ps2vnc_video_mode_t *display_menu_mode_at_selection( int selection);
 const unsigned char *osk_find_glyph(char c);
-const ps2vnc_video_mode_t *ps2vnc_video_mode_by_name( const char *name);
+const ps2vnc_video_mode_t *pstvnc_video_mode_by_name( const char *name);
 
 
 /* M3E R3 direct source-resolution repair. */
-int ps2vnc_video_mode_supports_backend( const ps2vnc_video_mode_t *mode, ps2vnc_backend_t backend);
+int pstvnc_video_mode_supports_backend( const ps2vnc_video_mode_t *mode, ps2vnc_backend_t backend);
 
 #endif

@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_release_ee_buffers
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=1273
+
+  1265   * this yet; E1-C will introduce an explicit lifecycle boundary rather than
+  1266   * silently changing every existing display_live_desktop() return path.
+  1267   */
+  1268  static void ps2vnc_display_release_ee_buffers(void)
+  1269  {
+  1270      unsigned short *front = hires_bg_buffer;
+  1271      unsigned short *back = hires_bg_back_buffer;
+  1272  
+  1273      live_direct_present_safe = 0;
+  1274      live_direct_present_buffer = NULL;
+  1275      hires_mapped_source_framebuffer = NULL;
+  1276      live_linear_framebuffer_stale = 0;
+  1277      hires_bg_configured = 0;
+  1278      hires_bg_buffer = NULL;
+  1279      hires_bg_back_buffer = NULL;
+  1280  
+  1281      if (back != NULL && back != front)
+  1282          free(back);
+  1283      if (front != NULL)
+  1284          free(front);
+  1285  }
+  1286  
+  1287  static void ps2vnc_display_destroy_hires(GSGLOBAL **display)
+  1288  {
+  1289      GSGLOBAL *gsGlobal = *display;
+  1290  
+  1291      gsKit_hires_sync(gsGlobal);
+  1292      dmaKit_wait_fast();
+  1293      gsKit_hires_deinit_global(gsGlobal);
+  1294      ps2vnc_display_release_ee_buffers();
+  1295  
+  1296      *display = NULL;
+  1297  }

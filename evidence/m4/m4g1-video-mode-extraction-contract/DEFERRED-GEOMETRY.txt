@@ -1,0 +1,17 @@
+DEFERRED_FROM_VIDEO_MODE_MODEL EXTRACTION:
+
+ps2vnc_display_logical_desktop_size
+ps2vnc_display_output_x
+ps2vnc_display_output_y
+calculate_presented_desktop_geometry
+calculate_safe_desktop_geometry
+
+screen_fit_* state and helpers
+
+RATIONALE:
+
+M4G-A is limited to immutable video-mode descriptions and their direct
+catalog/model operations.
+
+Geometry will be reviewed separately for parameterization and host testing
+instead of importing mutable global state into the new mode module.

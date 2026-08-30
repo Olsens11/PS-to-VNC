@@ -1,0 +1,577 @@
+symbol	file	line	text
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1071	if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1257	active_display_backend = backend;
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1320	if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1326	if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1346	if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1351	if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1373	if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1378	if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1397	if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1402	if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1413	active_display_backend = PS2VNC_BACKEND_NONE;
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1417	if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1419	active_display_backend = PS2VNC_BACKEND_NONE;
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1423	if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1425	active_display_backend = PS2VNC_BACKEND_NONE;
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1546	if (active_display_backend == PS2VNC_BACKEND_HIRES)
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1550	if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+active_display_backend	working/b4a/ps2vnc_calibration_tail.inc	1578	if (active_display_backend == PS2VNC_BACKEND_HIRES)
+active_display_backend	working/b4a/ps2vnc_framebuffer_core.inc	1107	return active_display_backend == PS2VNC_BACKEND_HIRES &&
+active_display_backend	working/b4a/ps2vnc_framebuffer_core.inc	1137	if (active_display_backend == PS2VNC_BACKEND_HIRES &&
+active_display_backend	working/b4a/ps2vnc_framebuffer_tail.inc	685	if (active_display_backend == PS2VNC_BACKEND_HIRES)
+active_display_backend	working/b4a/ps2vnc_framebuffer_tail.inc	691	if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+active_display_backend	working/b4a/ps2vnc_framebuffer_tail.inc	1041	if (active_display_backend == PS2VNC_BACKEND_HIRES)
+active_display_backend	working/b4a/ps2vnc_framebuffer_tail.inc	1045	if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+active_display_backend	working/b4a/ps2vnc_management_tail.inc	68	active_display_backend == PS2VNC_BACKEND_NONE)
+active_display_backend	working/b4a/ps2vnc_runtime_core.inc	32	ps2vnc_backend_t active_display_backend = PS2VNC_BACKEND_NONE;
+active_display_backend	working/b4a/ps2vnc_runtime_core.inc	202	if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+active_display_backend	working/b4a/ps2vnc_runtime_core.inc	205	} else if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+active_display_backend	working/b4a/ps2vnc_runtime_core.inc	223	if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+active_display_backend	working/b4a/ps2vnc_runtime_core.inc	225	else if (active_display_backend == PS2VNC_BACKEND_HIRES)
+active_display_backend	working/b4a/ps2vnc_runtime_core.inc	240	if (active_display_backend == PS2VNC_BACKEND_STANDARD)
+active_display_backend	working/b4a/ps2vnc_runtime_core.inc	242	else if (active_display_backend == PS2VNC_BACKEND_HIRES)
+active_video_mode	working/b4a/ps2vnc_calibration_core.inc	839	if (active_video_mode == NULL ||
+active_video_mode	working/b4a/ps2vnc_calibration_core.inc	1245	active_video_mode = target->mode;
+active_video_mode	working/b4a/ps2vnc_calibration_core.inc	1259	active_video_mode = target->mode;
+active_video_mode	working/b4a/ps2vnc_calibration_core.inc	1359	active_video_mode = startup_mode;
+active_video_mode	working/b4a/ps2vnc_calibration_tail.inc	975	active_video_mode == NULL ||
+active_video_mode	working/b4a/ps2vnc_calibration_tail.inc	1187	if (active_video_mode == NULL ||
+active_video_mode	working/b4a/ps2vnc_display_core.inc	53	active_video_mode = mode;
+active_video_mode	working/b4a/ps2vnc_management_core.inc	505	active_video_mode = handshake_mode;
+active_video_mode	working/b4a/ps2vnc_management_core.inc	513	active_video_mode = saved_active_mode;
+active_video_mode	working/b4a/ps2vnc_management_core.inc	556	active_video_mode = saved_active_mode;
+active_video_mode	working/b4a/ps2vnc_management_tail.inc	67	active_video_mode == NULL ||
+active_video_mode	working/b4a/ps2vnc_runtime_core.inc	31	const ps2vnc_video_mode_t *active_video_mode = &video_mode_1080i;
+active_video_mode	working/b4a/ps2vnc_runtime_core.inc	53	if (active_video_mode == NULL)
+active_video_mode	working/b4a/ps2vnc_runtime_core.inc	76	if (active_video_mode == NULL ||
+active_video_mode	working/b4a/ps2vnc_runtime_core.inc	99	if (active_video_mode == NULL ||
+active_video_mode	working/b4a/ps2vnc_runtime_core.inc	121	if (active_video_mode == NULL ||
+active_video_mode	working/b4a/ps2vnc_runtime_core.inc	163	if (active_video_mode == NULL)
+active_video_mode	working/b4a/ps2vnc_runtime_core.inc	199	if (active_video_mode == NULL || width == NULL || height == NULL)
+cached_desktop_height	working/b4a/ps2vnc_framebuffer_tail.inc	307	cached_desktop_height = desktop_height;
+cached_desktop_width	working/b4a/ps2vnc_framebuffer_tail.inc	306	cached_desktop_width = desktop_width;
+cached_output_height	working/b4a/ps2vnc_framebuffer_tail.inc	304	cached_output_height = OUTPUT_HEIGHT;
+cached_output_width	working/b4a/ps2vnc_framebuffer_tail.inc	303	cached_output_width = OUTPUT_WIDTH;
+cached_storage_height	working/b4a/ps2vnc_framebuffer_tail.inc	301	cached_storage_height = storage_height;
+cached_storage_width	working/b4a/ps2vnc_framebuffer_tail.inc	300	cached_storage_width = storage_width;
+desktop_geometry_locked	working/b4a/ps2vnc_calibration_core.inc	499	desktop_geometry_locked = 0;
+desktop_geometry_locked	working/b4a/ps2vnc_calibration_core.inc	517	desktop_geometry_locked = 0;
+desktop_geometry_locked	working/b4a/ps2vnc_calibration_core.inc	599	desktop_geometry_locked = 1;
+desktop_geometry_locked	working/b4a/ps2vnc_calibration_core.inc	626	desktop_geometry_locked = 1;
+desktop_geometry_locked	working/b4a/ps2vnc_calibration_core.inc	661	desktop_geometry_locked = 0;
+desktop_geometry_locked	working/b4a/ps2vnc_calibration_core.inc	670	desktop_geometry_locked = 0;
+desktop_geometry_locked	working/b4a/ps2vnc_calibration_tail.inc	926	desktop_geometry_locked = 1;
+desktop_geometry_locked	working/b4a/ps2vnc_calibration_tail.inc	1001	desktop_geometry_locked = 1;
+desktop_geometry_locked	working/b4a/ps2vnc_display_core.inc	100	desktop_geometry_locked = 1;
+desktop_geometry_locked	working/b4a/ps2vnc_display_tail.inc	128	desktop_geometry_locked = 1;
+desktop_geometry_locked	working/b4a/ps2vnc_management_core.inc	294	desktop_geometry_locked = 0;
+desktop_geometry_locked	working/b4a/ps2vnc_management_core.inc	296	desktop_geometry_locked = 1;
+desktop_geometry_locked	working/b4a/ps2vnc_management_core.inc	506	desktop_geometry_locked = 0;
+desktop_geometry_locked	working/b4a/ps2vnc_management_core.inc	512	desktop_geometry_locked = saved_geometry_locked;
+desktop_geometry_locked	working/b4a/ps2vnc_management_core.inc	557	desktop_geometry_locked = saved_geometry_locked;
+desktop_geometry_locked	working/b4a/ps2vnc_runtime_core.inc	293	int desktop_geometry_locked = 0;
+desktop_height	working/b4a/ps2vnc_calibration_core.inc	516	desktop_height = target_height;
+desktop_height	working/b4a/ps2vnc_calibration_core.inc	598	desktop_height = target_height;
+desktop_height	working/b4a/ps2vnc_calibration_core.inc	625	desktop_height = target_height;
+desktop_height	working/b4a/ps2vnc_calibration_core.inc	660	desktop_height = target_height;
+desktop_height	working/b4a/ps2vnc_calibration_core.inc	669	desktop_height = target_height;
+desktop_height	working/b4a/ps2vnc_calibration_tail.inc	921	desktop_height = height;
+desktop_height	working/b4a/ps2vnc_calibration_tail.inc	1511	desktop_height == 0)
+desktop_height	working/b4a/ps2vnc_display_core.inc	95	desktop_height = logical_height;
+desktop_height	working/b4a/ps2vnc_display_tail.inc	119	desktop_height = logical_h;
+desktop_height	working/b4a/ps2vnc_framebuffer_tail.inc	161	desktop_height == 0 ||
+desktop_height	working/b4a/ps2vnc_framebuffer_tail.inc	729	desktop_height == 0 ||
+desktop_height	working/b4a/ps2vnc_management_core.inc	300	desktop_height = recovery_target_height;
+desktop_height	working/b4a/ps2vnc_management_core.inc	355	desktop_height = recovery_target_height;
+desktop_height	working/b4a/ps2vnc_management_core.inc	396	desktop_height = recovery_target_height;
+desktop_height	working/b4a/ps2vnc_runtime_core.inc	260	unsigned int desktop_height = VNC_HEIGHT;
+desktop_height	working/b4a/ps2vnc_runtime_tail.inc	706	desktop_height = height;
+desktop_output_height	working/b4a/ps2vnc_calibration_tail.inc	925	desktop_output_height = height;
+desktop_output_height	working/b4a/ps2vnc_calibration_tail.inc	1000	desktop_output_height = height;
+desktop_output_height	working/b4a/ps2vnc_display_core.inc	99	desktop_output_height = height;
+desktop_output_height	working/b4a/ps2vnc_display_tail.inc	124	desktop_output_height = target_h;
+desktop_output_height	working/b4a/ps2vnc_framebuffer_tail.inc	163	desktop_output_height == 0 ||
+desktop_output_height	working/b4a/ps2vnc_runtime_core.inc	269	unsigned int desktop_output_height = VNC_HEIGHT;
+desktop_output_width	working/b4a/ps2vnc_calibration_tail.inc	924	desktop_output_width = width;
+desktop_output_width	working/b4a/ps2vnc_calibration_tail.inc	999	desktop_output_width = width;
+desktop_output_width	working/b4a/ps2vnc_display_core.inc	98	desktop_output_width = width;
+desktop_output_width	working/b4a/ps2vnc_display_tail.inc	123	desktop_output_width = target_w;
+desktop_output_width	working/b4a/ps2vnc_framebuffer_tail.inc	162	desktop_output_width == 0 ||
+desktop_output_width	working/b4a/ps2vnc_runtime_core.inc	268	unsigned int desktop_output_width = VNC_WIDTH;
+desktop_output_x	working/b4a/ps2vnc_calibration_tail.inc	922	desktop_output_x = out_x;
+desktop_output_x	working/b4a/ps2vnc_calibration_tail.inc	997	desktop_output_x = out_x;
+desktop_output_x	working/b4a/ps2vnc_display_core.inc	96	desktop_output_x = out_x;
+desktop_output_x	working/b4a/ps2vnc_display_tail.inc	121	desktop_output_x = target_x;
+desktop_output_x	working/b4a/ps2vnc_runtime_core.inc	266	unsigned int desktop_output_x = 0;
+desktop_output_y	working/b4a/ps2vnc_calibration_tail.inc	923	desktop_output_y = out_y;
+desktop_output_y	working/b4a/ps2vnc_calibration_tail.inc	998	desktop_output_y = out_y;
+desktop_output_y	working/b4a/ps2vnc_display_core.inc	97	desktop_output_y = out_y;
+desktop_output_y	working/b4a/ps2vnc_display_tail.inc	122	desktop_output_y = target_y;
+desktop_output_y	working/b4a/ps2vnc_runtime_core.inc	267	unsigned int desktop_output_y = 0;
+desktop_width	working/b4a/ps2vnc_calibration_core.inc	515	desktop_width = target_width;
+desktop_width	working/b4a/ps2vnc_calibration_core.inc	597	desktop_width = target_width;
+desktop_width	working/b4a/ps2vnc_calibration_core.inc	624	desktop_width = target_width;
+desktop_width	working/b4a/ps2vnc_calibration_core.inc	659	desktop_width = target_width;
+desktop_width	working/b4a/ps2vnc_calibration_core.inc	668	desktop_width = target_width;
+desktop_width	working/b4a/ps2vnc_calibration_tail.inc	920	desktop_width = width;
+desktop_width	working/b4a/ps2vnc_calibration_tail.inc	1510	desktop_width == 0 ||
+desktop_width	working/b4a/ps2vnc_display_core.inc	94	desktop_width = logical_width;
+desktop_width	working/b4a/ps2vnc_display_tail.inc	118	desktop_width = logical_w;
+desktop_width	working/b4a/ps2vnc_framebuffer_tail.inc	160	desktop_width == 0 ||
+desktop_width	working/b4a/ps2vnc_framebuffer_tail.inc	728	if (desktop_width == 0 ||
+desktop_width	working/b4a/ps2vnc_management_core.inc	299	desktop_width = recovery_target_width;
+desktop_width	working/b4a/ps2vnc_management_core.inc	354	desktop_width = recovery_target_width;
+desktop_width	working/b4a/ps2vnc_management_core.inc	395	desktop_width = recovery_target_width;
+desktop_width	working/b4a/ps2vnc_runtime_core.inc	259	unsigned int desktop_width = VNC_WIDTH;
+desktop_width	working/b4a/ps2vnc_runtime_tail.inc	705	desktop_width = width;
+display_calibration_request	working/b4a/ps2vnc_display_tail.inc	375	display_calibration_request = DISPLAY_MODE_REQUEST_NONE;
+display_calibration_request	working/b4a/ps2vnc_runtime_core.inc	834	volatile int display_calibration_request =
+display_calibration_request	working/b4a/ps2vnc_ui_tail.inc	946	display_calibration_request =
+display_confirm_action	working/b4a/ps2vnc_display_core.inc	449	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_display_core.inc	924	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_display_core.inc	1089	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_display_tail.inc	425	display_confirm_action == DISPLAY_CONFIRM_ACTION_KEEP) {
+display_confirm_action	working/b4a/ps2vnc_display_tail.inc	442	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_display_tail.inc	465	display_confirm_action == DISPLAY_CONFIRM_ACTION_ROLLBACK) {
+display_confirm_action	working/b4a/ps2vnc_display_tail.inc	766	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_display_tail.inc	824	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_display_tail.inc	885	display_confirm_action ==
+display_confirm_action	working/b4a/ps2vnc_display_tail.inc	890	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_display_tail.inc	1174	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_display_tail.inc	1312	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_runtime_core.inc	959	volatile int display_confirm_action = DISPLAY_CONFIRM_ACTION_NONE;
+display_confirm_action	working/b4a/ps2vnc_runtime_core.inc	1479	display_confirm_action == DISPLAY_CONFIRM_ACTION_ROLLBACK)
+display_confirm_action	working/b4a/ps2vnc_runtime_core.inc	1549	display_confirm_action == DISPLAY_CONFIRM_ACTION_ROLLBACK)
+display_confirm_action	working/b4a/ps2vnc_runtime_tail.inc	231	display_confirm_action = DISPLAY_CONFIRM_ACTION_NONE;
+display_confirm_action	working/b4a/ps2vnc_runtime_tail.inc	246	display_confirm_action = DISPLAY_CONFIRM_ACTION_NONE;
+display_confirm_action	working/b4a/ps2vnc_ui_tail.inc	500	display_confirm_action == DISPLAY_CONFIRM_ACTION_NONE &&
+display_confirm_action	working/b4a/ps2vnc_ui_tail.inc	519	display_confirm_action ==
+display_confirm_action	working/b4a/ps2vnc_ui_tail.inc	522	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_ui_tail.inc	601	display_confirm_action ==
+display_confirm_action	working/b4a/ps2vnc_ui_tail.inc	620	display_confirm_action ==
+display_confirm_action	working/b4a/ps2vnc_ui_tail.inc	625	display_confirm_action =
+display_confirm_action	working/b4a/ps2vnc_ui_tail.inc	633	display_confirm_action ==
+display_confirm_action	working/b4a/ps2vnc_ui_tail.inc	638	display_confirm_action =
+display_confirm_pending	working/b4a/ps2vnc_runtime_core.inc	955	volatile int display_confirm_pending = 0;
+display_confirm_pending	working/b4a/ps2vnc_runtime_tail.inc	236	display_confirm_pending = 1;
+display_confirm_pending	working/b4a/ps2vnc_runtime_tail.inc	243	display_confirm_pending = 0;
+display_confirm_previous_backend	working/b4a/ps2vnc_runtime_core.inc	977	ps2vnc_backend_t display_confirm_previous_backend =
+display_confirm_previous_backend	working/b4a/ps2vnc_runtime_tail.inc	210	display_confirm_previous_backend = active_display_backend;
+display_confirm_previous_backend	working/b4a/ps2vnc_runtime_tail.inc	248	display_confirm_previous_backend = PS2VNC_BACKEND_NONE;
+display_confirm_previous_desktop_h	working/b4a/ps2vnc_runtime_core.inc	976	unsigned int display_confirm_previous_desktop_h = 0;
+display_confirm_previous_desktop_h	working/b4a/ps2vnc_runtime_tail.inc	216	display_confirm_previous_desktop_h = desktop_height;
+display_confirm_previous_desktop_h	working/b4a/ps2vnc_runtime_tail.inc	254	display_confirm_previous_desktop_h = 0;
+display_confirm_previous_desktop_w	working/b4a/ps2vnc_runtime_core.inc	975	unsigned int display_confirm_previous_desktop_w = 0;
+display_confirm_previous_desktop_w	working/b4a/ps2vnc_runtime_tail.inc	215	display_confirm_previous_desktop_w = desktop_width;
+display_confirm_previous_desktop_w	working/b4a/ps2vnc_runtime_tail.inc	253	display_confirm_previous_desktop_w = 0;
+display_confirm_previous_h	working/b4a/ps2vnc_runtime_core.inc	974	unsigned int display_confirm_previous_h = 0;
+display_confirm_previous_h	working/b4a/ps2vnc_runtime_tail.inc	214	display_confirm_previous_h = previous_h;
+display_confirm_previous_h	working/b4a/ps2vnc_runtime_tail.inc	252	display_confirm_previous_h = 0;
+display_confirm_previous_mode	working/b4a/ps2vnc_runtime_core.inc	970	const ps2vnc_video_mode_t *display_confirm_previous_mode = NULL;
+display_confirm_previous_mode	working/b4a/ps2vnc_runtime_tail.inc	209	display_confirm_previous_mode = previous_mode;
+display_confirm_previous_mode	working/b4a/ps2vnc_runtime_tail.inc	247	display_confirm_previous_mode = NULL;
+display_confirm_previous_screen_fit_full_bypass	working/b4a/ps2vnc_runtime_core.inc	991	int display_confirm_previous_screen_fit_full_bypass = 0;
+display_confirm_previous_screen_fit_full_bypass	working/b4a/ps2vnc_runtime_tail.inc	226	display_confirm_previous_screen_fit_full_bypass =
+display_confirm_previous_screen_fit_full_bypass	working/b4a/ps2vnc_runtime_tail.inc	260	display_confirm_previous_screen_fit_full_bypass = 0;
+display_confirm_previous_screen_fit_height	working/b4a/ps2vnc_runtime_core.inc	988	int display_confirm_previous_screen_fit_height = 0;
+display_confirm_previous_screen_fit_height	working/b4a/ps2vnc_runtime_tail.inc	220	display_confirm_previous_screen_fit_height =
+display_confirm_previous_screen_fit_height	working/b4a/ps2vnc_runtime_tail.inc	257	display_confirm_previous_screen_fit_height = 0;
+display_confirm_previous_screen_fit_offset_x	working/b4a/ps2vnc_runtime_core.inc	989	int display_confirm_previous_screen_fit_offset_x = 0;
+display_confirm_previous_screen_fit_offset_x	working/b4a/ps2vnc_runtime_tail.inc	222	display_confirm_previous_screen_fit_offset_x =
+display_confirm_previous_screen_fit_offset_x	working/b4a/ps2vnc_runtime_tail.inc	258	display_confirm_previous_screen_fit_offset_x = 0;
+display_confirm_previous_screen_fit_offset_y	working/b4a/ps2vnc_runtime_core.inc	990	int display_confirm_previous_screen_fit_offset_y = 0;
+display_confirm_previous_screen_fit_offset_y	working/b4a/ps2vnc_runtime_tail.inc	224	display_confirm_previous_screen_fit_offset_y =
+display_confirm_previous_screen_fit_offset_y	working/b4a/ps2vnc_runtime_tail.inc	259	display_confirm_previous_screen_fit_offset_y = 0;
+display_confirm_previous_screen_fit_width	working/b4a/ps2vnc_runtime_core.inc	987	int display_confirm_previous_screen_fit_width = 0;
+display_confirm_previous_screen_fit_width	working/b4a/ps2vnc_runtime_tail.inc	218	display_confirm_previous_screen_fit_width =
+display_confirm_previous_screen_fit_width	working/b4a/ps2vnc_runtime_tail.inc	256	display_confirm_previous_screen_fit_width = 0;
+display_confirm_previous_w	working/b4a/ps2vnc_runtime_core.inc	973	unsigned int display_confirm_previous_w = 0;
+display_confirm_previous_w	working/b4a/ps2vnc_runtime_tail.inc	213	display_confirm_previous_w = previous_w;
+display_confirm_previous_w	working/b4a/ps2vnc_runtime_tail.inc	251	display_confirm_previous_w = 0;
+display_confirm_previous_x	working/b4a/ps2vnc_runtime_core.inc	971	unsigned int display_confirm_previous_x = 0;
+display_confirm_previous_x	working/b4a/ps2vnc_runtime_tail.inc	211	display_confirm_previous_x = previous_x;
+display_confirm_previous_x	working/b4a/ps2vnc_runtime_tail.inc	249	display_confirm_previous_x = 0;
+display_confirm_previous_y	working/b4a/ps2vnc_runtime_core.inc	972	unsigned int display_confirm_previous_y = 0;
+display_confirm_previous_y	working/b4a/ps2vnc_runtime_tail.inc	212	display_confirm_previous_y = previous_y;
+display_confirm_previous_y	working/b4a/ps2vnc_runtime_tail.inc	250	display_confirm_previous_y = 0;
+display_confirm_seconds	working/b4a/ps2vnc_display_tail.inc	861	display_confirm_seconds = 0;
+display_confirm_seconds	working/b4a/ps2vnc_display_tail.inc	881	display_confirm_seconds =
+display_confirm_seconds	working/b4a/ps2vnc_display_tail.inc	884	if (display_confirm_seconds == 0 ||
+display_confirm_seconds	working/b4a/ps2vnc_runtime_core.inc	958	volatile unsigned int display_confirm_seconds = 0;
+display_confirm_seconds	working/b4a/ps2vnc_runtime_tail.inc	230	display_confirm_seconds = DISPLAY_CONFIRM_TIMEOUT_SECONDS;
+display_confirm_seconds	working/b4a/ps2vnc_runtime_tail.inc	245	display_confirm_seconds = 0;
+display_confirm_seconds	working/b4a/ps2vnc_ui_tail.inc	508	display_confirm_seconds = remaining;
+display_confirm_selection	working/b4a/ps2vnc_display_tail.inc	444	display_confirm_selection =
+display_confirm_selection	working/b4a/ps2vnc_display_tail.inc	913	display_confirm_selection =
+display_confirm_selection	working/b4a/ps2vnc_runtime_core.inc	957	volatile int display_confirm_selection = DISPLAY_CONFIRM_GO_BACK;
+display_confirm_selection	working/b4a/ps2vnc_runtime_tail.inc	229	display_confirm_selection = DISPLAY_CONFIRM_GO_BACK;
+display_confirm_selection	working/b4a/ps2vnc_ui_core.inc	30	display_confirm_selection == DISPLAY_CONFIRM_GO_BACK ?
+display_confirm_selection	working/b4a/ps2vnc_ui_core.inc	39	display_confirm_selection == DISPLAY_CONFIRM_KEEP ?
+display_confirm_selection	working/b4a/ps2vnc_ui_tail.inc	609	display_confirm_selection =
+display_confirm_selection	working/b4a/ps2vnc_ui_tail.inc	610	(display_confirm_selection ==
+display_confirm_selection	working/b4a/ps2vnc_ui_tail.inc	639	(display_confirm_selection ==
+display_confirm_started_tick	working/b4a/ps2vnc_runtime_core.inc	993	volatile u64 display_confirm_started_tick = 0;
+display_confirm_started_tick	working/b4a/ps2vnc_runtime_tail.inc	233	display_confirm_started_tick = GetTimerSystemTime();
+display_confirm_started_tick	working/b4a/ps2vnc_runtime_tail.inc	262	display_confirm_started_tick = 0;
+display_confirm_visible	working/b4a/ps2vnc_display_core.inc	451	display_confirm_visible = 0;
+display_confirm_visible	working/b4a/ps2vnc_display_tail.inc	446	display_confirm_visible = 1;
+display_confirm_visible	working/b4a/ps2vnc_display_tail.inc	860	display_confirm_visible = 0;
+display_confirm_visible	working/b4a/ps2vnc_display_tail.inc	915	display_confirm_visible = 1;
+display_confirm_visible	working/b4a/ps2vnc_runtime_core.inc	956	volatile int display_confirm_visible = 0;
+display_confirm_visible	working/b4a/ps2vnc_runtime_tail.inc	232	display_confirm_visible = 0;
+display_confirm_visible	working/b4a/ps2vnc_runtime_tail.inc	244	display_confirm_visible = 0;
+display_confirm_visible	working/b4a/ps2vnc_ui_tail.inc	524	display_confirm_visible = 0;
+display_confirm_visible	working/b4a/ps2vnc_ui_tail.inc	627	display_confirm_visible = 0;
+display_confirm_visible	working/b4a/ps2vnc_ui_tail.inc	644	display_confirm_visible = 0;
+display_hide_locked_modes	working/b4a/ps2vnc_display_tail.inc	344	display_hide_locked_modes =
+display_hide_locked_modes	working/b4a/ps2vnc_management_tail.inc	1335	display_hide_locked_modes =
+display_hide_locked_modes	working/b4a/ps2vnc_runtime_core.inc	923	volatile int display_hide_locked_modes = 0;
+display_menu_error	working/b4a/ps2vnc_display_tail.inc	387	display_menu_error = 1;
+display_menu_error	working/b4a/ps2vnc_display_tail.inc	412	display_menu_error = 0;
+display_menu_error	working/b4a/ps2vnc_display_tail.inc	575	display_menu_error = 1;
+display_menu_error	working/b4a/ps2vnc_display_tail.inc	604	display_menu_error = 1;
+display_menu_error	working/b4a/ps2vnc_display_tail.inc	636	display_menu_error = 1;
+display_menu_error	working/b4a/ps2vnc_display_tail.inc	677	display_menu_error = 1;
+display_menu_error	working/b4a/ps2vnc_runtime_core.inc	825	volatile int display_menu_error = 0;
+display_menu_error	working/b4a/ps2vnc_ui_core.inc	307	display_menu_error = 0;
+display_menu_error	working/b4a/ps2vnc_ui_tail.inc	794	display_menu_error = 0;
+display_menu_error	working/b4a/ps2vnc_ui_tail.inc	808	display_menu_error = 0;
+display_menu_error	working/b4a/ps2vnc_ui_tail.inc	822	display_menu_error = 0;
+display_menu_error	working/b4a/ps2vnc_ui_tail.inc	836	display_menu_error = 0;
+display_menu_error	working/b4a/ps2vnc_ui_tail.inc	846	display_menu_error = 0;
+display_menu_error	working/b4a/ps2vnc_ui_tail.inc	942	display_menu_error = 0;
+display_menu_error	working/b4a/ps2vnc_ui_tail.inc	978	display_menu_error = 0;
+display_menu_parent_system	working/b4a/ps2vnc_display_tail.inc	389	display_menu_parent_system = 0;
+display_menu_parent_system	working/b4a/ps2vnc_display_tail.inc	414	display_menu_parent_system = 0;
+display_menu_parent_system	working/b4a/ps2vnc_display_tail.inc	577	display_menu_parent_system = 0;
+display_menu_parent_system	working/b4a/ps2vnc_runtime_core.inc	1007	volatile int display_menu_parent_system = 0;
+display_menu_parent_system	working/b4a/ps2vnc_ui_core.inc	309	display_menu_parent_system = parent_system;
+display_menu_parent_system	working/b4a/ps2vnc_ui_tail.inc	850	display_menu_parent_system = 0;
+display_menu_parent_system	working/b4a/ps2vnc_ui_tail.inc	944	display_menu_parent_system = 0;
+display_menu_parent_system	working/b4a/ps2vnc_ui_tail.inc	980	display_menu_parent_system = 0;
+display_menu_selection	working/b4a/ps2vnc_display_tail.inc	385	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_display_tail.inc	410	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_display_tail.inc	563	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_display_tail.inc	602	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_display_tail.inc	633	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_display_tail.inc	674	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_runtime_core.inc	824	volatile int display_menu_selection = 0;
+display_menu_selection	working/b4a/ps2vnc_ui_core.inc	254	display_menu_selection = -1;
+display_menu_selection	working/b4a/ps2vnc_ui_core.inc	276	display_menu_selection = saved;
+display_menu_selection	working/b4a/ps2vnc_ui_core.inc	280	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_ui_core.inc	298	display_menu_selection = active_selection;
+display_menu_selection	working/b4a/ps2vnc_ui_tail.inc	789	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_ui_tail.inc	803	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_ui_tail.inc	817	display_menu_selection =
+display_menu_selection	working/b4a/ps2vnc_ui_tail.inc	831	display_menu_selection =
+display_menu_tab	working/b4a/ps2vnc_display_tail.inc	569	display_menu_tab =
+display_menu_tab	working/b4a/ps2vnc_runtime_core.inc	900	volatile int display_menu_tab = DISPLAY_TAB_TV_DTV;
+display_menu_tab	working/b4a/ps2vnc_ui_core.inc	248	display_menu_tab =
+display_menu_tab	working/b4a/ps2vnc_ui_core.inc	253	if (display_menu_tab == DISPLAY_TAB_ADVANCED) {
+display_menu_tab	working/b4a/ps2vnc_ui_core.inc	295	display_menu_tab =
+display_menu_tab	working/b4a/ps2vnc_ui_core.inc	335	if (display_menu_tab == DISPLAY_TAB_ADVANCED ||
+display_menu_tab	working/b4a/ps2vnc_ui_core.inc	395	display_menu_tab =
+display_menu_tab	working/b4a/ps2vnc_ui_core.inc	538	if (display_menu_tab == DISPLAY_TAB_ADVANCED) {
+display_menu_tab	working/b4a/ps2vnc_ui_core.inc	738	} else if (display_menu_tab ==
+display_menu_tab	working/b4a/ps2vnc_ui_tail.inc	906	if (display_menu_tab ==
+display_menu_visible	working/b4a/ps2vnc_display_core.inc	571	display_menu_visible = 0;
+display_menu_visible	working/b4a/ps2vnc_display_tail.inc	388	display_menu_visible = 1;
+display_menu_visible	working/b4a/ps2vnc_display_tail.inc	413	display_menu_visible = 1;
+display_menu_visible	working/b4a/ps2vnc_display_tail.inc	576	display_menu_visible = 1;
+display_menu_visible	working/b4a/ps2vnc_display_tail.inc	605	display_menu_visible = 1;
+display_menu_visible	working/b4a/ps2vnc_display_tail.inc	637	display_menu_visible = 1;
+display_menu_visible	working/b4a/ps2vnc_display_tail.inc	678	display_menu_visible = 1;
+display_menu_visible	working/b4a/ps2vnc_display_tail.inc	918	display_menu_visible = 0;
+display_menu_visible	working/b4a/ps2vnc_runtime_core.inc	823	volatile int display_menu_visible = 0;
+display_menu_visible	working/b4a/ps2vnc_ui_core.inc	310	display_menu_visible = 1;
+display_menu_visible	working/b4a/ps2vnc_ui_tail.inc	845	display_menu_visible = 0;
+display_menu_visible	working/b4a/ps2vnc_ui_tail.inc	941	display_menu_visible = 0;
+display_menu_visible	working/b4a/ps2vnc_ui_tail.inc	977	display_menu_visible = 0;
+display_mode_request	working/b4a/ps2vnc_display_core.inc	1052	display_mode_request =
+display_mode_request	working/b4a/ps2vnc_display_core.inc	1057	if (display_mode_request ==
+display_mode_request	working/b4a/ps2vnc_display_tail.inc	533	display_mode_request = DISPLAY_MODE_REQUEST_NONE;
+display_mode_request	working/b4a/ps2vnc_runtime_core.inc	826	volatile int display_mode_request = DISPLAY_MODE_REQUEST_NONE;
+display_mode_request	working/b4a/ps2vnc_ui_tail.inc	983	display_mode_request =
+display_mode_request_remote	working/b4a/ps2vnc_display_core.inc	864	display_mode_request_remote = 0;
+display_mode_request_remote	working/b4a/ps2vnc_display_core.inc	1051	display_mode_request_remote = 1;
+display_mode_request_remote	working/b4a/ps2vnc_display_tail.inc	534	display_mode_request_remote = 0;
+display_mode_request_remote	working/b4a/ps2vnc_runtime_core.inc	859	volatile int display_mode_request_remote = 0;
+display_mode_request_remote	working/b4a/ps2vnc_ui_tail.inc	982	display_mode_request_remote = 0;
+display_policy_error	working/b4a/ps2vnc_display_tail.inc	350	display_policy_error = 1;
+display_policy_error	working/b4a/ps2vnc_display_tail.inc	353	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_runtime_core.inc	925	volatile int display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_core.inc	308	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	795	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	809	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	823	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	837	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	847	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	881	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	913	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	943	display_policy_error = 0;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	959	display_policy_error = 1;
+display_policy_error	working/b4a/ps2vnc_ui_tail.inc	979	display_policy_error = 0;
+display_policy_loaded	working/b4a/ps2vnc_management_tail.inc	1338	display_policy_loaded = 1;
+display_policy_loaded	working/b4a/ps2vnc_runtime_core.inc	924	volatile int display_policy_loaded = 0;
+display_policy_loaded	working/b4a/ps2vnc_ui_core.inc	320	display_policy_loaded = 0;
+display_policy_request	working/b4a/ps2vnc_display_tail.inc	358	display_policy_request =
+display_policy_request	working/b4a/ps2vnc_runtime_core.inc	932	volatile int display_policy_request =
+display_policy_request	working/b4a/ps2vnc_ui_core.inc	317	if (display_policy_request ==
+display_policy_request	working/b4a/ps2vnc_ui_core.inc	321	display_policy_request =
+display_policy_request	working/b4a/ps2vnc_ui_core.inc	710	display_policy_request ==
+display_policy_request	working/b4a/ps2vnc_ui_tail.inc	878	display_policy_request ==
+display_policy_request	working/b4a/ps2vnc_ui_tail.inc	892	display_policy_request =
+display_policy_request	working/b4a/ps2vnc_ui_tail.inc	910	display_policy_request ==
+display_policy_request	working/b4a/ps2vnc_ui_tail.inc	920	display_policy_request =
+display_policy_request_selection	working/b4a/ps2vnc_display_tail.inc	356	display_policy_request_selection = -1;
+display_policy_request_selection	working/b4a/ps2vnc_runtime_core.inc	935	volatile int display_policy_request_selection = -1;
+display_policy_request_selection	working/b4a/ps2vnc_ui_tail.inc	883	display_policy_request_selection =
+display_policy_request_value	working/b4a/ps2vnc_display_tail.inc	357	display_policy_request_value = 0;
+display_policy_request_value	working/b4a/ps2vnc_runtime_core.inc	936	volatile int display_policy_request_value = 0;
+display_policy_request_value	working/b4a/ps2vnc_ui_tail.inc	886	display_policy_request_value =
+display_policy_request_value	working/b4a/ps2vnc_ui_tail.inc	915	display_policy_request_value =
+display_restore_ack_mode	working/b4a/ps2vnc_display_core.inc	565	display_restore_ack_mode =
+display_restore_ack_mode	working/b4a/ps2vnc_display_tail.inc	271	display_restore_ack_mode = NULL;
+display_restore_ack_mode	working/b4a/ps2vnc_runtime_core.inc	1005	const ps2vnc_video_mode_t *display_restore_ack_mode = NULL;
+display_restore_ack_request	working/b4a/ps2vnc_display_core.inc	568	display_restore_ack_request = 0;
+display_restore_ack_request	working/b4a/ps2vnc_display_tail.inc	251	display_restore_ack_request = 0;
+display_restore_ack_request	working/b4a/ps2vnc_runtime_core.inc	1004	volatile int display_restore_ack_request = 0;
+display_restore_ack_request	working/b4a/ps2vnc_ui_tail.inc	562	display_restore_ack_request = 1;
+display_restore_ack_visible	working/b4a/ps2vnc_display_core.inc	574	display_restore_ack_visible = 1;
+display_restore_ack_visible	working/b4a/ps2vnc_display_tail.inc	270	display_restore_ack_visible = 0;
+display_restore_ack_visible	working/b4a/ps2vnc_runtime_core.inc	1003	volatile int display_restore_ack_visible = 0;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	16	display_switch_failure_stage = 0;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	22	display_switch_failure_stage = 1u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	30	display_switch_failure_stage = 2u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	41	display_switch_failure_stage = 3u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	49	display_switch_failure_stage = 4u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	58	display_switch_failure_stage = 5u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	68	display_switch_failure_stage = 6u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	76	display_switch_failure_stage = 7u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	89	display_switch_failure_stage = 8u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	110	display_switch_failure_stage = 9u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	116	display_switch_failure_stage = 10u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	127	display_switch_failure_stage = 11u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	136	display_switch_failure_stage = 12u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	144	display_switch_failure_stage = 13u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	229	display_switch_failure_stage = 0;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	237	display_switch_failure_stage = 14u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	247	display_switch_failure_stage = 14u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	258	display_switch_failure_stage = 15u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	274	display_switch_failure_stage = 16u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	319	display_switch_failure_stage = 17u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	338	display_switch_failure_stage = 18u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	344	display_switch_failure_stage = 19u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	350	display_switch_failure_stage = 20u;
+display_switch_failure_stage	working/b4a/ps2vnc_display_core.inc	370	display_switch_failure_stage = 21u;
+display_switch_failure_stage	working/b4a/ps2vnc_runtime_core.inc	867	volatile unsigned int display_switch_failure_stage = 0;
+display_transition_switch_in_progress	working/b4a/ps2vnc_display_tail.inc	703	display_transition_switch_in_progress = 1;
+display_transition_switch_in_progress	working/b4a/ps2vnc_display_tail.inc	744	display_transition_switch_in_progress = 0;
+display_transition_switch_in_progress	working/b4a/ps2vnc_runtime_core.inc	968	volatile int display_transition_switch_in_progress = 0;
+force_screen_fit_calibration	working/b4a/ps2vnc_display_tail.inc	63	force_screen_fit_calibration = 0;
+force_screen_fit_calibration	working/b4a/ps2vnc_display_tail.inc	1561	force_screen_fit_calibration =
+force_screen_fit_calibration	working/b4a/ps2vnc_runtime_core.inc	662	int force_screen_fit_calibration = 0;
+hires_bg_back_buffer	working/b4a/ps2vnc_calibration_tail.inc	1279	hires_bg_back_buffer = NULL;
+hires_bg_back_buffer	working/b4a/ps2vnc_calibration_tail.inc	1458	hires_bg_back_buffer = memalign(
+hires_bg_back_buffer	working/b4a/ps2vnc_calibration_tail.inc	1460	if (hires_bg_back_buffer == NULL) {
+hires_bg_back_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	14	hires_bg_back_buffer == NULL ||
+hires_bg_back_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	57	hires_bg_back_buffer = old_front;
+hires_bg_back_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	464	hires_bg_back_buffer == NULL ||
+hires_bg_back_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	509	hires_bg_back_buffer = old_front;
+hires_bg_back_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	606	hires_bg_back_buffer = old_front;
+hires_bg_back_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	946	hires_bg_back_buffer == NULL) {
+hires_bg_back_buffer	working/b4a/ps2vnc_runtime_core.inc	272	unsigned short *hires_bg_back_buffer = NULL;
+hires_bg_buffer	working/b4a/ps2vnc_calibration_tail.inc	1278	hires_bg_buffer = NULL;
+hires_bg_buffer	working/b4a/ps2vnc_calibration_tail.inc	1453	hires_bg_buffer = memalign(
+hires_bg_buffer	working/b4a/ps2vnc_calibration_tail.inc	1455	if (hires_bg_buffer == NULL)
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	13	hires_bg_buffer == NULL ||
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	32	hires_bg_buffer = hidden;
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	39	hires_bg_buffer = old_front;
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	47	hires_bg_buffer = old_front;
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	56	hires_bg_buffer = hidden;
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	463	hires_bg_buffer == NULL ||
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	508	hires_bg_buffer = hidden;
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	605	hires_bg_buffer = live_direct_present_buffer;
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	725	if (hires_bg_buffer == NULL)
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	945	if (hires_bg_buffer == NULL ||
+hires_bg_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	1064	if (hires_bg_buffer == NULL ||
+hires_bg_buffer	working/b4a/ps2vnc_runtime_core.inc	271	unsigned short *hires_bg_buffer = NULL;
+hires_bg_configured	working/b4a/ps2vnc_calibration_tail.inc	1277	hires_bg_configured = 0;
+hires_bg_configured	working/b4a/ps2vnc_calibration_tail.inc	1465	hires_bg_configured = 0;
+hires_bg_configured	working/b4a/ps2vnc_framebuffer_tail.inc	893	hires_bg_configured = 1;
+hires_bg_configured	working/b4a/ps2vnc_runtime_core.inc	283	int hires_bg_configured = 0;
+hires_mapped_source_framebuffer	working/b4a/ps2vnc_calibration_tail.inc	1275	hires_mapped_source_framebuffer = NULL;
+hires_mapped_source_framebuffer	working/b4a/ps2vnc_calibration_tail.inc	1467	hires_mapped_source_framebuffer =
+hires_mapped_source_framebuffer	working/b4a/ps2vnc_framebuffer_tail.inc	546	if (hires_mapped_source_framebuffer == NULL) {
+hires_mapped_source_framebuffer	working/b4a/ps2vnc_runtime_core.inc	282	unsigned short *hires_mapped_source_framebuffer = NULL;
+live_direct_present_buffer	working/b4a/ps2vnc_calibration_tail.inc	1274	live_direct_present_buffer = NULL;
+live_direct_present_buffer	working/b4a/ps2vnc_calibration_tail.inc	1479	live_direct_present_buffer = NULL;
+live_direct_present_buffer	working/b4a/ps2vnc_calibration_tail.inc	1481	live_direct_present_buffer = hires_bg_back_buffer;
+live_direct_present_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	64	live_direct_present_buffer = NULL;
+live_direct_present_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	523	live_direct_present_buffer = NULL;
+live_direct_present_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	607	live_direct_present_buffer = hires_bg_back_buffer;
+live_direct_present_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	970	live_direct_present_buffer = NULL;
+live_direct_present_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	1001	live_direct_present_buffer = NULL;
+live_direct_present_buffer	working/b4a/ps2vnc_framebuffer_tail.inc	1003	live_direct_present_buffer = hires_bg_back_buffer;
+live_direct_present_buffer	working/b4a/ps2vnc_runtime_core.inc	273	unsigned short *live_direct_present_buffer = NULL;
+live_direct_present_safe	working/b4a/ps2vnc_calibration_tail.inc	1273	live_direct_present_safe = 0;
+live_direct_present_safe	working/b4a/ps2vnc_calibration_tail.inc	1478	live_direct_present_safe = 0;
+live_direct_present_safe	working/b4a/ps2vnc_framebuffer_core.inc	1130	live_direct_present_safe = 0;
+live_direct_present_safe	working/b4a/ps2vnc_framebuffer_core.inc	1139	live_direct_present_safe = 1;
+live_direct_present_safe	working/b4a/ps2vnc_framebuffer_tail.inc	63	live_direct_present_safe = 0;
+live_direct_present_safe	working/b4a/ps2vnc_framebuffer_tail.inc	522	live_direct_present_safe = 0;
+live_direct_present_safe	working/b4a/ps2vnc_framebuffer_tail.inc	969	live_direct_present_safe = 0;
+live_direct_present_safe	working/b4a/ps2vnc_runtime_core.inc	284	int live_direct_present_safe = 0;
+profile_present_sync_ticks	working/b4a/ps2vnc_display_tail.inc	1117	profile_present_sync_ticks += GetTimerSystemTime() - t0;
+profile_present_sync_ticks	working/b4a/ps2vnc_runtime_core.inc	701	u64 profile_present_sync_ticks = 0;
+profile_present_sync_ticks	working/b4a/ps2vnc_runtime_tail.inc	345	profile_present_sync_ticks = 0;
+ps2vnc_display_config_loaded	working/b4a/ps2vnc_calibration_core.inc	1309	ps2vnc_display_config_loaded = 0;
+ps2vnc_display_config_loaded	working/b4a/ps2vnc_calibration_core.inc	1467	ps2vnc_display_config_loaded = 1;
+ps2vnc_display_config_loaded	working/b4a/ps2vnc_management_core.inc	1444	int ps2vnc_display_config_loaded = 0;
+remote_display_baseline_mode	working/b4a/ps2vnc_display_core.inc	873	remote_display_baseline_mode = NULL;
+remote_display_baseline_mode	working/b4a/ps2vnc_display_core.inc	1035	remote_display_baseline_mode =
+remote_display_baseline_mode	working/b4a/ps2vnc_runtime_core.inc	876	remote_display_baseline_mode = NULL;
+remote_display_error_code	working/b4a/ps2vnc_display_core.inc	868	remote_display_error_code = 0;
+remote_display_error_code	working/b4a/ps2vnc_display_core.inc	880	remote_display_error_code = error_code;
+remote_display_error_code	working/b4a/ps2vnc_display_core.inc	918	remote_display_error_code = 0;
+remote_display_error_code	working/b4a/ps2vnc_display_core.inc	1032	remote_display_error_code = 0;
+remote_display_error_code	working/b4a/ps2vnc_display_core.inc	1083	remote_display_error_code = 0;
+remote_display_error_code	working/b4a/ps2vnc_display_tail.inc	656	remote_display_error_code = 0;
+remote_display_error_code	working/b4a/ps2vnc_display_tail.inc	756	remote_display_error_code =
+remote_display_error_code	working/b4a/ps2vnc_display_tail.inc	819	remote_display_error_code = 9;
+remote_display_error_code	working/b4a/ps2vnc_runtime_core.inc	863	unsigned int remote_display_error_code = 0;
+remote_display_last_poll_tick	working/b4a/ps2vnc_display_core.inc	954	remote_display_last_poll_tick = now;
+remote_display_last_poll_tick	working/b4a/ps2vnc_runtime_core.inc	870	u64 remote_display_last_poll_tick = 0;
+remote_display_lease_seconds	working/b4a/ps2vnc_display_core.inc	867	remote_display_lease_seconds = 0;
+remote_display_lease_seconds	working/b4a/ps2vnc_display_core.inc	1030	remote_display_lease_seconds =
+remote_display_lease_seconds	working/b4a/ps2vnc_runtime_core.inc	862	unsigned int remote_display_lease_seconds = 0;
+remote_display_lease_started_tick	working/b4a/ps2vnc_display_core.inc	870	remote_display_lease_started_tick = 0;
+remote_display_lease_started_tick	working/b4a/ps2vnc_display_tail.inc	853	remote_display_lease_started_tick =
+remote_display_lease_started_tick	working/b4a/ps2vnc_runtime_core.inc	869	u64 remote_display_lease_started_tick = 0;
+remote_display_requested_mode	working/b4a/ps2vnc_display_core.inc	872	remote_display_requested_mode = NULL;
+remote_display_requested_mode	working/b4a/ps2vnc_display_core.inc	1034	remote_display_requested_mode = target;
+remote_display_requested_mode	working/b4a/ps2vnc_runtime_core.inc	873	remote_display_requested_mode = NULL;
+remote_display_state	working/b4a/ps2vnc_display_core.inc	214	if (remote_display_state == REMOTE_DISPLAY_IDLE) {
+remote_display_state	working/b4a/ps2vnc_display_core.inc	863	remote_display_state = REMOTE_DISPLAY_IDLE;
+remote_display_state	working/b4a/ps2vnc_display_core.inc	915	remote_display_state =
+remote_display_state	working/b4a/ps2vnc_display_core.inc	1048	remote_display_state =
+remote_display_state	working/b4a/ps2vnc_display_core.inc	1080	remote_display_state =
+remote_display_state	working/b4a/ps2vnc_display_core.inc	1121	remote_display_state =
+remote_display_state	working/b4a/ps2vnc_display_tail.inc	653	remote_display_state =
+remote_display_state	working/b4a/ps2vnc_display_tail.inc	850	remote_display_state =
+remote_display_state	working/b4a/ps2vnc_runtime_core.inc	846	volatile int remote_display_state =
+remote_display_state	working/b4a/ps2vnc_ui_tail.inc	600	if (remote_display_state == REMOTE_DISPLAY_IDLE &&
+remote_display_state	working/b4a/ps2vnc_ui_tail.inc	619	if (remote_display_state == REMOTE_DISPLAY_IDLE &&
+remote_display_state	working/b4a/ps2vnc_ui_tail.inc	632	if (remote_display_state == REMOTE_DISPLAY_IDLE &&
+remote_display_suppress_next_active_menu_return	working/b4a/ps2vnc_display_core.inc	1119	remote_display_suppress_next_active_menu_return = 1;
+remote_display_suppress_next_active_menu_return	working/b4a/ps2vnc_runtime_core.inc	857	remote_display_suppress_next_active_menu_return = 0;
+remote_display_suppress_next_active_menu_return	working/b4a/ps2vnc_runtime_tail.inc	278	remote_display_suppress_next_active_menu_return = 0;
+remote_display_txid	working/b4a/ps2vnc_display_core.inc	833	if (remote_display_txid == 0 ||
+remote_display_txid	working/b4a/ps2vnc_display_core.inc	866	remote_display_txid = 0;
+remote_display_txid	working/b4a/ps2vnc_display_core.inc	1029	remote_display_txid = txid;
+remote_display_txid	working/b4a/ps2vnc_runtime_core.inc	861	unsigned int remote_display_txid = 0;
+rfb_extended_desktop_height	working/b4a/ps2vnc_framebuffer_core.inc	666	rfb_extended_desktop_height = h;
+rfb_extended_desktop_height	working/b4a/ps2vnc_framebuffer_core.inc	979	rfb_extended_desktop_height = 0;
+rfb_extended_desktop_height	working/b4a/ps2vnc_runtime_tail.inc	802	unsigned int rfb_extended_desktop_height = 0;
+rfb_extended_desktop_height	working/b4a/ps2vnc_runtime_tail.inc	1055	rfb_extended_desktop_height = 0;
+rfb_extended_desktop_reason	working/b4a/ps2vnc_framebuffer_core.inc	663	rfb_extended_desktop_reason = x;
+rfb_extended_desktop_reason	working/b4a/ps2vnc_framebuffer_core.inc	976	rfb_extended_desktop_reason = 0;
+rfb_extended_desktop_reason	working/b4a/ps2vnc_runtime_tail.inc	799	unsigned int rfb_extended_desktop_reason = 0;
+rfb_extended_desktop_reason	working/b4a/ps2vnc_runtime_tail.inc	1052	rfb_extended_desktop_reason = 0;
+rfb_extended_desktop_result	working/b4a/ps2vnc_framebuffer_core.inc	664	rfb_extended_desktop_result = y;
+rfb_extended_desktop_result	working/b4a/ps2vnc_framebuffer_core.inc	977	rfb_extended_desktop_result = 0;
+rfb_extended_desktop_result	working/b4a/ps2vnc_runtime_tail.inc	800	unsigned int rfb_extended_desktop_result = 0;
+rfb_extended_desktop_result	working/b4a/ps2vnc_runtime_tail.inc	1053	rfb_extended_desktop_result = 0;
+rfb_extended_desktop_screen_count	working/b4a/ps2vnc_framebuffer_core.inc	667	rfb_extended_desktop_screen_count =
+rfb_extended_desktop_screen_count	working/b4a/ps2vnc_framebuffer_core.inc	980	rfb_extended_desktop_screen_count = 0;
+rfb_extended_desktop_screen_count	working/b4a/ps2vnc_framebuffer_core.inc	1015	if (rfb_extended_desktop_screen_count == 0) {
+rfb_extended_desktop_screen_count	working/b4a/ps2vnc_runtime_tail.inc	803	unsigned int rfb_extended_desktop_screen_count = 0;
+rfb_extended_desktop_screen_count	working/b4a/ps2vnc_runtime_tail.inc	1056	rfb_extended_desktop_screen_count = 0;
+rfb_extended_desktop_seen	working/b4a/ps2vnc_framebuffer_core.inc	662	rfb_extended_desktop_seen = 1;
+rfb_extended_desktop_seen	working/b4a/ps2vnc_framebuffer_core.inc	975	rfb_extended_desktop_seen = 0;
+rfb_extended_desktop_seen	working/b4a/ps2vnc_runtime_tail.inc	798	int rfb_extended_desktop_seen = 0;
+rfb_extended_desktop_seen	working/b4a/ps2vnc_runtime_tail.inc	1051	rfb_extended_desktop_seen = 0;
+rfb_extended_desktop_width	working/b4a/ps2vnc_framebuffer_core.inc	665	rfb_extended_desktop_width = w;
+rfb_extended_desktop_width	working/b4a/ps2vnc_framebuffer_core.inc	978	rfb_extended_desktop_width = 0;
+rfb_extended_desktop_width	working/b4a/ps2vnc_runtime_tail.inc	801	unsigned int rfb_extended_desktop_width = 0;
+rfb_extended_desktop_width	working/b4a/ps2vnc_runtime_tail.inc	1054	rfb_extended_desktop_width = 0;
+rfb_first_screen_flags	working/b4a/ps2vnc_framebuffer_core.inc	679	rfb_first_screen_flags = 0;
+rfb_first_screen_flags	working/b4a/ps2vnc_framebuffer_core.inc	719	rfb_first_screen_flags =
+rfb_first_screen_flags	working/b4a/ps2vnc_framebuffer_core.inc	987	rfb_first_screen_flags = 0;
+rfb_first_screen_flags	working/b4a/ps2vnc_runtime_tail.inc	810	unsigned int rfb_first_screen_flags = 0;
+rfb_first_screen_height	working/b4a/ps2vnc_framebuffer_core.inc	678	rfb_first_screen_height = 0;
+rfb_first_screen_height	working/b4a/ps2vnc_framebuffer_core.inc	716	rfb_first_screen_height =
+rfb_first_screen_height	working/b4a/ps2vnc_framebuffer_core.inc	986	rfb_first_screen_height = 0;
+rfb_first_screen_height	working/b4a/ps2vnc_runtime_tail.inc	809	unsigned int rfb_first_screen_height = 0;
+rfb_first_screen_id	working/b4a/ps2vnc_framebuffer_core.inc	674	rfb_first_screen_id = 0;
+rfb_first_screen_id	working/b4a/ps2vnc_framebuffer_core.inc	704	rfb_first_screen_id =
+rfb_first_screen_id	working/b4a/ps2vnc_framebuffer_core.inc	982	rfb_first_screen_id = 0;
+rfb_first_screen_id	working/b4a/ps2vnc_runtime_tail.inc	805	unsigned int rfb_first_screen_id = 0;
+rfb_first_screen_width	working/b4a/ps2vnc_framebuffer_core.inc	677	rfb_first_screen_width = 0;
+rfb_first_screen_width	working/b4a/ps2vnc_framebuffer_core.inc	713	rfb_first_screen_width =
+rfb_first_screen_width	working/b4a/ps2vnc_framebuffer_core.inc	985	rfb_first_screen_width = 0;
+rfb_first_screen_width	working/b4a/ps2vnc_runtime_tail.inc	808	unsigned int rfb_first_screen_width = 0;
+rfb_first_screen_x	working/b4a/ps2vnc_framebuffer_core.inc	675	rfb_first_screen_x = 0;
+rfb_first_screen_x	working/b4a/ps2vnc_framebuffer_core.inc	707	rfb_first_screen_x =
+rfb_first_screen_x	working/b4a/ps2vnc_framebuffer_core.inc	983	rfb_first_screen_x = 0;
+rfb_first_screen_x	working/b4a/ps2vnc_runtime_tail.inc	806	unsigned int rfb_first_screen_x = 0;
+rfb_first_screen_y	working/b4a/ps2vnc_framebuffer_core.inc	676	rfb_first_screen_y = 0;
+rfb_first_screen_y	working/b4a/ps2vnc_framebuffer_core.inc	710	rfb_first_screen_y =
+rfb_first_screen_y	working/b4a/ps2vnc_framebuffer_core.inc	984	rfb_first_screen_y = 0;
+rfb_first_screen_y	working/b4a/ps2vnc_runtime_tail.inc	807	unsigned int rfb_first_screen_y = 0;
+rfb_resize_expected_height	working/b4a/ps2vnc_runtime_tail.inc	820	unsigned int rfb_resize_expected_height = 0;
+rfb_resize_expected_height	working/b4a/ps2vnc_runtime_tail.inc	1027	rfb_resize_expected_height = height;
+rfb_resize_expected_width	working/b4a/ps2vnc_runtime_tail.inc	819	unsigned int rfb_resize_expected_width = 0;
+rfb_resize_expected_width	working/b4a/ps2vnc_runtime_tail.inc	1026	rfb_resize_expected_width = width;
+screen_fit_full_bypass	working/b4a/ps2vnc_management_core.inc	656	int screen_fit_full_bypass = 0;
+screen_fit_full_bypass	working/b4a/ps2vnc_management_core.inc	771	screen_fit_full_bypass = 1;
+screen_fit_full_bypass	working/b4a/ps2vnc_management_core.inc	786	screen_fit_full_bypass = 0;
+screen_fit_full_bypass	working/b4a/ps2vnc_management_core.inc	799	screen_fit_full_bypass = 0;
+screen_fit_height	working/b4a/ps2vnc_management_core.inc	653	int screen_fit_height = VNC_HEIGHT;
+screen_fit_height	working/b4a/ps2vnc_management_core.inc	768	screen_fit_height = OUTPUT_HEIGHT;
+screen_fit_height	working/b4a/ps2vnc_management_core.inc	783	screen_fit_height = height;
+screen_fit_height	working/b4a/ps2vnc_management_core.inc	796	screen_fit_height = SCREEN_FIT_START_HEIGHT;
+screen_fit_offset_x	working/b4a/ps2vnc_management_core.inc	654	int screen_fit_offset_x = 0;
+screen_fit_offset_x	working/b4a/ps2vnc_management_core.inc	769	screen_fit_offset_x = 0;
+screen_fit_offset_x	working/b4a/ps2vnc_management_core.inc	784	screen_fit_offset_x = offset_x;
+screen_fit_offset_x	working/b4a/ps2vnc_management_core.inc	797	screen_fit_offset_x = 0;
+screen_fit_offset_y	working/b4a/ps2vnc_management_core.inc	655	int screen_fit_offset_y = 0;
+screen_fit_offset_y	working/b4a/ps2vnc_management_core.inc	770	screen_fit_offset_y = 0;
+screen_fit_offset_y	working/b4a/ps2vnc_management_core.inc	785	screen_fit_offset_y = offset_y;
+screen_fit_offset_y	working/b4a/ps2vnc_management_core.inc	798	screen_fit_offset_y = 0;
+screen_fit_width	working/b4a/ps2vnc_management_core.inc	652	int screen_fit_width = VNC_WIDTH;
+screen_fit_width	working/b4a/ps2vnc_management_core.inc	767	screen_fit_width = OUTPUT_WIDTH;
+screen_fit_width	working/b4a/ps2vnc_management_core.inc	782	screen_fit_width = width;
+screen_fit_width	working/b4a/ps2vnc_management_core.inc	795	screen_fit_width = SCREEN_FIT_START_WIDTH;
+screen_row	working/b4a/ps2vnc_display_tail.inc	1501	screen_row = 0;
+screen_row	working/b4a/ps2vnc_runtime_core.inc	1176	int screen_row = 0;
+screen_row	working/b4a/ps2vnc_runtime_core.inc	1189	scr_setXY(0, screen_row++);
+startup_authoritative_display_profile	working/b4a/ps2vnc_calibration_core.inc	287	startup_authoritative_display_profile = *source;
+startup_authoritative_display_profile_loaded	working/b4a/ps2ip.c	31	int startup_authoritative_display_profile_loaded = 0;
+startup_authoritative_display_profile_loaded	working/b4a/ps2vnc_calibration_core.inc	165	startup_authoritative_display_profile_loaded = 0;
+startup_authoritative_display_profile_loaded	working/b4a/ps2vnc_calibration_core.inc	288	startup_authoritative_display_profile_loaded = 1;
+startup_confirmed_display_profile_loaded	working/b4a/ps2ip.c	27	int startup_confirmed_display_profile_loaded = 0;
+startup_confirmed_display_profile_loaded	working/b4a/ps2vnc_calibration_core.inc	1310	startup_confirmed_display_profile_loaded = 0;
+startup_confirmed_display_profile_loaded	working/b4a/ps2vnc_calibration_core.inc	1466	startup_confirmed_display_profile_loaded = 1;
+startup_display_commit_finish_required	working/b4a/ps2ip.c	40	int startup_display_commit_finish_required = 0;
+startup_display_commit_finish_required	working/b4a/ps2vnc_calibration_core.inc	167	startup_display_commit_finish_required = 0;
+startup_display_commit_finish_required	working/b4a/ps2vnc_calibration_core.inc	221	startup_display_commit_finish_required = 1;
+startup_display_commit_finish_required	working/b4a/ps2vnc_display_core.inc	656	startup_display_commit_finish_required = 0;
+startup_display_restore_ack_required	working/b4a/ps2ip.c	43	int startup_display_restore_ack_required = 0;
+startup_display_restore_ack_required	working/b4a/ps2vnc_calibration_core.inc	170	startup_display_restore_ack_required = 0;
+startup_display_restore_ack_required	working/b4a/ps2vnc_calibration_core.inc	245	startup_display_restore_ack_required = 1;
+startup_display_restore_ack_required	working/b4a/ps2vnc_calibration_core.inc	261	startup_display_restore_ack_required = 1;
+startup_display_restore_ack_required	working/b4a/ps2vnc_calibration_core.inc	276	startup_display_restore_ack_required = 1;
+startup_display_restore_required	working/b4a/ps2ip.c	41	int startup_display_restore_required = 0;
+startup_display_restore_required	working/b4a/ps2vnc_calibration_core.inc	168	startup_display_restore_required = 0;
+startup_display_restore_required	working/b4a/ps2vnc_calibration_core.inc	243	startup_display_restore_required = 1;
+startup_display_restore_required	working/b4a/ps2vnc_calibration_core.inc	378	startup_display_restore_required = 0;
+startup_display_restored_mark_required	working/b4a/ps2ip.c	42	int startup_display_restored_mark_required = 0;
+startup_display_restored_mark_required	working/b4a/ps2vnc_calibration_core.inc	169	startup_display_restored_mark_required = 0;
+startup_display_restored_mark_required	working/b4a/ps2vnc_calibration_core.inc	244	startup_display_restored_mark_required = 1;
+startup_display_restored_mark_required	working/b4a/ps2vnc_calibration_core.inc	260	startup_display_restored_mark_required = 1;
+startup_display_restored_mark_required	working/b4a/ps2vnc_display_core.inc	695	startup_display_restored_mark_required = 0;
+startup_display_transaction_loaded	working/b4a/ps2ip.c	18	int startup_display_transaction_loaded = 0;
+startup_display_transaction_loaded	working/b4a/ps2vnc_calibration_core.inc	296	startup_display_transaction_loaded = 0;
+startup_display_transaction_loaded	working/b4a/ps2vnc_calibration_core.inc	310	startup_display_transaction_loaded = 1;

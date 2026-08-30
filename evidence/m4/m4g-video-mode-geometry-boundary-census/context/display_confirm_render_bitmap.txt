@@ -1,0 +1,31 @@
+SYMBOL=display_confirm_render_bitmap
+SOURCE=working/b4a/ps2vnc_ui_core.inc
+ANCHOR_LINE=3
+
+     1  
+     2  void display_confirm_render_bitmap(void)
+     3  {
+     4      const unsigned short panel = osk_color(3, 3, 4);
+     5      const unsigned short key = osk_color(8, 8, 10);
+     6      const unsigned short selected = osk_color(8, 18, 31);
+     7      const unsigned short text = osk_color(31, 31, 31);
+     8      const unsigned short warn = osk_color(31, 24, 3);
+     9      char line[80];
+    10  
+    11      osk_fill_rect(0, 0, OSK_WIDTH, OSK_HEIGHT, panel);
+    12  
+    13      osk_draw_text_centered(
+    14          0, 10, OSK_WIDTH, 24,
+    15          "KEEP THIS DISPLAY MODE?", 2, warn);
+    16  
+    17      snprintf(
+    18          line, sizeof(line),
+    19          "%s -> %s",
+    20          display_confirm_previous_mode ?
+    21              display_confirm_previous_mode->name : "?",
+    22          active_video_mode ? active_video_mode->name : "?");
+    23  
+    24      osk_draw_text_centered(
+    25          0, 37, OSK_WIDTH, 18,
+    26          line, 1, text);
+    27  

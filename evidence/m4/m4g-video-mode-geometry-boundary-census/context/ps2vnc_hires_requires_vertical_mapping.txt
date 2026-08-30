@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_hires_requires_vertical_mapping
+SOURCE=working/b4a/ps2vnc_runtime_core.inc
+ANCHOR_LINE=121
+
+   113              active_video_mode->raster_width;
+   114  }
+   115  
+   116  
+   117   int ps2vnc_hires_requires_vertical_mapping(void)
+   118  {
+   119      u64 full_frame_height;
+   120  
+   121      if (active_video_mode == NULL ||
+   122          active_video_mode->raster_height == 0) {
+   123  
+   124          return 0;
+   125      }
+   126  
+   127      full_frame_height =
+   128          ps2vnc_hires_full_frame_height();
+   129  
+   130      if (full_frame_height == 0)
+   131          return 0;
+   132  
+   133      return
+   134          full_frame_height !=
+   135              (u64)active_video_mode->raster_height;
+   136  }
+   137  
+   138  
+   139  int ps2vnc_hires_requires_raster_mapping(void)
+   140  {
+   141      return
+   142          ps2vnc_hires_requires_horizontal_mapping() ||
+   143          ps2vnc_hires_requires_vertical_mapping();
+   144  }
+   145  

@@ -1,0 +1,37 @@
+SYMBOL=ps2vnc_display_wait_presentation_memory_idle
+SOURCE=working/b4a/ps2vnc_calibration_tail.inc
+ANCHOR_LINE=1317
+
+  1309  }
+  1310  
+  1311  /*
+  1312   * Wait until renderer-owned EE presentation memory may safely be written.
+  1313   */
+  1314  int ps2vnc_display_wait_presentation_memory_idle(
+  1315      GSGLOBAL *gsGlobal)
+  1316  {
+  1317      if (gsGlobal == NULL)
+  1318          return -1;
+  1319  
+  1320      if (active_display_backend == PS2VNC_BACKEND_HIRES) {
+  1321          gsKit_hires_sync(gsGlobal);
+  1322          dmaKit_wait_fast();
+  1323          return 0;
+  1324      }
+  1325  
+  1326      if (active_display_backend == PS2VNC_BACKEND_STANDARD) {
+  1327          /*
+  1328           * Standard decoding never writes renderer-owned EE presentation
+  1329           * memory, so there is no ownership barrier to wait for here.
+  1330           */
+  1331          return 0;
+  1332      }
+  1333  
+  1334      return -1;
+  1335  }
+  1336  
+  1337  /*
+  1338   * Wait until a texture consumed by the previous frame may safely be replaced.
+  1339   */
+  1340  int ps2vnc_display_wait_texture_idle(
+  1341      GSGLOBAL *gsGlobal)

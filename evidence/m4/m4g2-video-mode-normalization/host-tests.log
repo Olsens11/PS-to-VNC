@@ -1,0 +1,18 @@
+make: Entering directory '/home/ps2/PS-to-VNC/tests'
+mkdir -p .build
+cc  -O2 -std=c99 -Wall -Wextra -Werror -pedantic \
+	-I../src \
+	unit/config_text_test.c \
+	../src/config/text.c \
+	-o .build/config_text_test
+cc  -O2 -std=c99 -Wall -Wextra -Werror -pedantic \
+	-Isupport \
+	-I../src \
+	unit/video_mode_test.c \
+	../src/video/mode.c \
+	-o .build/video_mode_test
+./.build/config_text_test
+config_text_test: PASS
+./.build/video_mode_test
+video_mode_test: PASS
+make: Leaving directory '/home/ps2/PS-to-VNC/tests'
