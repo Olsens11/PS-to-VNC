@@ -291,6 +291,22 @@ Authority:
 
 M0G — close M0, record the resulting source/build authority, and define M1.
 
+Status:
+
+    COMPLETE
+
+M0 completion result:
+
+    PASS
+
+Next stage:
+
+    M1
+
+M1 governing contract:
+
+    docs/M1_EXTRACTION_CONTRACT.md
+
 ## Completion requirement
 
 M0 is COMPLETE only when a fresh conversation can determine from the

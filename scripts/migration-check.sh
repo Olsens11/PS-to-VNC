@@ -343,7 +343,21 @@ echo '===== K. M0 WRITABLE SOURCE AUTHORITY ====='
 if [ "$CURRENT_WORKING_SOURCE" = 'NONE' ]; then
     echo 'M0_WRITABLE_SOURCE_AUTHORITY=NOT_YET_ACTIVE'
 else
-    test "$CURRENT_STAGE" = 'M0'
+    case "$CURRENT_STAGE" in
+        M0)
+            ;;
+        M1)
+            # M0G exposes the completed-M0 working authority to M1A.
+            # M1A is read-only. Source mutation is not permitted until the
+            # exact M1 extraction boundary has been committed.
+            test "$CURRENT_STAGE_STATUS" = 'NOT_STARTED'
+            ;;
+        *)
+            echo "ERROR=WORKING_SOURCE_STAGE_NOT_YET_SUPPORTED:$CURRENT_STAGE"
+            exit 71
+            ;;
+    esac
+
     test "$CURRENT_WORKING_SOURCE" = 'working/b4a/ps2ip.c'
 
     test -f "$CURRENT_WORKING_SOURCE"
@@ -394,8 +408,9 @@ fi
 echo
 echo '===== L. M0 HARDWARE RESOLUTION ====='
 
-if [ "$CURRENT_STAGE" = 'M0' ] &&
-   [ "$NEXT_ACTION" = 'M0G_close_M0_and_define_M1' ]
+if { [ "$CURRENT_STAGE" = 'M0' ] &&
+       [ "$NEXT_ACTION" = 'M0G_close_M0_and_define_M1' ]; } ||
+   [ "${M0_STAGE_STATUS:-}" = 'COMPLETE' ]
 then
     test "$M0_REPRODUCTION_CLASSIFICATION" = \
         'OUTCOME_A_BYTE_EXACT_ELF'
@@ -426,6 +441,126 @@ else
 fi
 
 echo
+
+echo
+echo '===== M. M0 COMPLETION AUTHORITY ====='
+
+if [ "${M0_STAGE_STATUS:-}" = 'COMPLETE' ]; then
+    test "$M0_COMPLETION_RESULT" = 'PASS'
+
+    test "$M0_COMPLETION_WORKING_SOURCE" = \
+        'working/b4a/ps2ip.c'
+
+    test "$M0_COMPLETION_SOURCE_HEAD" = \
+        'd1c0d6a4829c03f3a062095afd00859188e13dfe'
+
+    test "$M0_COMPLETION_ELF_SHA256" = \
+        "$M0_REFERENCE_ELF_SHA256"
+
+    test "$M0_COMPLETION_ELF_IDENTITY" = \
+        'BYTE_EXACT_B4A'
+
+    test "$M0_COMPLETION_HARDWARE_REQUIREMENT" = \
+        'NOT_REQUIRED_BYTE_EXACT_DUT'
+
+    test "$M0_COMPLETION_NEW_HARDWARE_RUN" = 'NO'
+    test "$M0_COMPLETION_NEXT_STAGE" = 'M1'
+
+    test -f docs/M1_EXTRACTION_CONTRACT.md
+
+    git cat-file -e \
+        "$M0_COMPLETION_SOURCE_HEAD^{commit}"
+
+    COMMITTED_M0_SOURCE_SHA="$(
+        git show \
+            "$M0_COMPLETION_SOURCE_HEAD:$M0_COMPLETION_WORKING_SOURCE" |
+        sha256sum |
+        awk '{print $1}'
+    )"
+
+    test "$COMMITTED_M0_SOURCE_SHA" = \
+        "$M0_SOURCE_SHA256"
+
+    echo 'M0_STAGE_STATUS=COMPLETE'
+    echo "M0_COMPLETION_SOURCE_HEAD=$M0_COMPLETION_SOURCE_HEAD"
+    echo 'M0_COMPLETION_AUTHORITY=PASS'
+else
+    echo 'M0_COMPLETION_AUTHORITY=NOT_YET_COMPLETE'
+fi
+
+
+echo
+echo '===== N. HUMAN MIGRATION MIRROR ====='
+
+HUMAN_MIRROR_FILE="$(
+    mktemp /tmp/pstvnc-human-mirror.XXXXXX
+)"
+
+trap 'rm -f "$HUMAN_MIRROR_FILE"' EXIT
+
+awk '
+    $0 == "## Machine-state mirror" {
+        inside = 1
+        next
+    }
+
+    inside && /^## / {
+        exit
+    }
+
+    inside {
+        print
+    }
+' docs/MIGRATION_STATE.md > "$HUMAN_MIRROR_FILE"
+
+human_mirror_require()
+{
+    local key="$1"
+    local value="$2"
+    local expected="    ${key}=${value}"
+    local count
+
+    count="$(
+        {
+            grep -Fxc \
+                "$expected" \
+                "$HUMAN_MIRROR_FILE" \
+                || true
+        }
+    )"
+
+    if [ "$count" -ne 1 ]; then
+        echo "ERROR=HUMAN_MIRROR_FIELD_COUNT:${key}:${count}"
+        exit 72
+    fi
+}
+
+human_mirror_require \
+    LAST_COMPLETE_STAGE \
+    "$LAST_COMPLETE_STAGE"
+
+human_mirror_require \
+    CURRENT_STAGE \
+    "$CURRENT_STAGE"
+
+human_mirror_require \
+    CURRENT_STAGE_STATUS \
+    "$CURRENT_STAGE_STATUS"
+
+human_mirror_require \
+    CURRENT_WORKING_SOURCE \
+    "$CURRENT_WORKING_SOURCE"
+
+human_mirror_require \
+    CURRENT_SOURCE_HEAD \
+    "$CURRENT_SOURCE_HEAD"
+
+human_mirror_require \
+    NEXT_ACTION \
+    "$NEXT_ACTION"
+
+echo 'HUMAN_MIGRATION_MIRROR=PASS'
+
 echo '===== FINAL ====='
 echo 'PS_TO_VNC_MIGRATION_CHECK=PASS'
 echo "LAST_COMPLETE_STAGE=$LAST_COMPLETE_STAGE"

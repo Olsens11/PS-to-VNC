@@ -127,3 +127,15 @@ because the M0D2 result proved the generated ELF byte-identical to it.
 
 The M0 hardware decision inherits historical B4A evidence only because the
 reproduced final executable is byte-identical. It is not a new hardware PASS.
+
+## M1 extraction contract
+
+| Responsibility | Canonical location |
+|---|---|
+| M1 governing contract | `docs/M1_EXTRACTION_CONTRACT.md` |
+| M1 selection evidence | `baseline/analysis/B4A-dependency-map/` |
+| M1 entry working source | `working/b4a/ps2ip.c` |
+| M0 completed build authority | `runtime/M0_BUILD_AUTHORITY.env` |
+
+The exact M1 module target is deliberately selected in M1A before source
+mutation.

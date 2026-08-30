@@ -6,29 +6,48 @@ This document is the human-readable companion to:
 
 ## Last completed stage
 
-IMPORT
+M0
 
-The independent PS-to-VNC repository has been created.
+M0 is the last completed migration stage.
 
-The exact D17AL-F8J2-B4A implementation and its dependency analysis are
-preserved inside the successor repository as immutable reference material.
+It established the first writable PS-to-VNC source/build authority and
+independently reproduced the exact historical B4A executable bytes.
+
+M0 completion authority is recorded in:
+
+    runtime/M0_BUILD_AUTHORITY.env
 
 ## Current stage
 
-M0 — IN PROGRESS
+M1 — NOT STARTED
 
-M0 will establish the first writable, reproducible B4A-equivalent PS-to-VNC
-working source and build authority.
+M1 is the first mechanical modular-extraction stage.
+
+M1A is read-only with respect to implementation source and will select the
+first exact low-coupling extraction boundary from the committed dependency
+map before any M1 source mutation occurs.
+
+Governing contract:
+
+    docs/M1_EXTRACTION_CONTRACT.md
 
 ## Current working source authority
 
-NONE
+working/b4a/ps2ip.c
 
-The following location is historical reference material only:
+This is the completed M0 writable source authority.
+
+M0 source-authority commit:
+
+    d1c0d6a4829c03f3a062095afd00859188e13dfe
+
+At M1 entry no M1 implementation mutation has occurred.
+
+The historical frozen reference remains:
 
     baseline/frozen-b4a/
 
-It must not be edited as the working implementation.
+The frozen reference must not be edited.
 
 ## Frozen behavioral authority
 
@@ -85,26 +104,40 @@ Archive SHA256:
 
 ## Current build state
 
-No PS-to-VNC working build exists yet.
+M0 build result:
 
-The tested B4A ELF is historical baseline evidence, not yet a successor build.
+    OUTCOME_A_BYTE_EXACT_ELF
+
+Validated working ELF SHA256:
+
+    2deb9f4c3dab34eebdccc31a53fe7158ebce625aec4e9cf03cda902abf2611e8
+
+The M0-generated executable is byte-identical to the historically validated
+B4A ELF.
+
+No M1 build exists yet because M1 source mutation has not begun.
 
 ## Current documentation state
 
-The successor documentation system is being completed before the first Git
-commit.
+The successor documentation and recovery system are committed and active.
 
-Migration recoverability is a required part of every future stage closeout.
+M0 source, build, dependency, reproduction, evidence, and hardware-resolution
+authority are recorded inside PS-to-VNC.
+
+Migration recoverability remains a definition-of-done requirement for every
+subsequent modularization stage.
 
 ## Next action
 
-M0:
+M1A:
 
-Reproduce exact B4A as the first writable PS-to-VNC working build authority.
+Select and document the first exact low-coupling mechanical extraction
+boundary using the committed B4A dependency analysis.
 
-Do not begin M1 modular extraction until M0 has been completed, validated,
-documented, and recorded in both human-readable and machine-readable migration
-state.
+M1A must not modify implementation source.
+
+Do not begin M1B source extraction until the M1A boundary is documented,
+validated, and committed.
 
 ## Conversation-limit recovery
 
@@ -123,15 +156,18 @@ resumes.
 
 ## Machine-state mirror
 
-The following exact tokens mirror the canonical machine-readable migration
-state and exist so consistency tooling does not have to infer status from
-human prose.
+The following exact indented tokens mirror the stable migration fields in the
+canonical machine-readable state.
 
-    LAST_COMPLETE_STAGE=IMPORT
-    CURRENT_STAGE=M0
-    CURRENT_STAGE_STATUS=IN_PROGRESS
+They exist so consistency tooling can verify the human document without
+parsing prose.
+
+    LAST_COMPLETE_STAGE=M0
+    CURRENT_STAGE=M1
+    CURRENT_STAGE_STATUS=NOT_STARTED
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    NEXT_ACTION=M0F_resolve_hardware_validation_requirement_for_byte_exact_DUT
+    CURRENT_SOURCE_HEAD=d1c0d6a4829c03f3a062095afd00859188e13dfe
+    NEXT_ACTION=M1A_select_first_low_coupling_leaf_extraction_boundary
 
 The canonical machine-readable source remains:
 
@@ -267,3 +303,42 @@ Canonical resolution:
 Next operation:
 
     M0G_close_M0_and_define_M1
+## M0G checkpoint
+
+M0 is COMPLETE.
+
+Completed M0 source authority:
+
+    working/b4a/ps2ip.c
+
+Completed M0 source commit:
+
+    d1c0d6a4829c03f3a062095afd00859188e13dfe
+
+Completed M0 build result:
+
+    OUTCOME_A_BYTE_EXACT_ELF
+
+Completed M0 executable SHA256:
+
+    2deb9f4c3dab34eebdccc31a53fe7158ebce625aec4e9cf03cda902abf2611e8
+
+Completed M0 hardware resolution:
+
+    no new M0 hardware run was required because the reproduced executable is
+    byte-identical to the historically validated B4A DUT.
+
+This is inherited validation for identical DUT bytes, not a new physical
+hardware PASS.
+
+Current stage:
+
+    M1 — NOT STARTED
+
+M1 governing contract:
+
+    docs/M1_EXTRACTION_CONTRACT.md
+
+Next operation:
+
+    M1A_select_first_low_coupling_leaf_extraction_boundary

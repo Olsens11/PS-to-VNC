@@ -145,3 +145,21 @@ other maintainability concerns.
 Frozen historical evidence remains provenance. Cleanup should target the
 working project or explicitly derived copies rather than silently changing the
 bytes used to identify the historical baseline.
+
+
+## M0 completion / M1 entry
+
+M0 is COMPLETE.
+
+The successor independently reproduced the exact historical B4A ELF bytes and
+resolved the M0 hardware requirement without claiming a new physical hardware
+PASS.
+
+M1 is the first mechanical module-extraction stage.
+
+Its exact extraction candidate is intentionally selected in a read-only M1A
+dependency-map pass before implementation mutation.
+
+Authority:
+
+    docs/M1_EXTRACTION_CONTRACT.md

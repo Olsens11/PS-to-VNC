@@ -127,3 +127,32 @@ This is an inherited-evidence determination, not a new hardware PASS.
 Next:
 
     M0G — close M0 and define the first modularization stage.
+
+
+## M0 complete — M1 entry
+
+M0 is COMPLETE.
+
+Established authority:
+
+    working/b4a/ps2ip.c
+
+M0 source authority commit:
+
+    d1c0d6a4829c03f3a062095afd00859188e13dfe
+
+M0 result:
+
+    OUTCOME_A_BYTE_EXACT_ELF
+
+M1 status:
+
+    NOT STARTED
+
+M1 is governed by:
+
+    docs/M1_EXTRACTION_CONTRACT.md
+
+Next operation:
+
+    M1A_select_first_low_coupling_leaf_extraction_boundary
