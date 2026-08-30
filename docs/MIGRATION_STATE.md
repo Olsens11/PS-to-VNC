@@ -130,8 +130,8 @@ human prose.
     LAST_COMPLETE_STAGE=IMPORT
     CURRENT_STAGE=M0
     CURRENT_STAGE_STATUS=IN_PROGRESS
-    CURRENT_WORKING_SOURCE=NONE
-    NEXT_ACTION=M0D_create_writable_B4A_authority_and_controlled_rebuild
+    CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
+    NEXT_ACTION=M0D2_run_controlled_B4A_reproduction_build
 
 The canonical machine-readable source remains:
 
@@ -199,3 +199,15 @@ M0D1 does not execute the compiler.
 
 The next operation after this checkpoint is committed is the first controlled
 M0 reproduction build.
+
+## M0D1 committed authority
+
+Writable-source commit:
+
+    d1c0d6a4829c03f3a062095afd00859188e13dfe
+
+Machine state now recognizes:
+
+    CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
+    CURRENT_SOURCE_HEAD=d1c0d6a4829c03f3a062095afd00859188e13dfe
+    NEXT_ACTION=M0D2_run_controlled_B4A_reproduction_build
