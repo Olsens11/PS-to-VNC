@@ -172,3 +172,30 @@ Hardware checkpoint:
 Next:
 
     M3F_hardware_validate_first_real_translation_unit_split
+
+## M3F — first real translation-unit hardware qualification
+
+The M3E `management_config + calibration_state` translation-unit split has
+now passed its required first-real-TU hardware checkpoint.
+
+The exact uninstrumented M3E DUT passed the five-mode physical matrix:
+
+- 480i
+- 480p-hires
+- 576i
+- 720p
+- 1080i
+
+Machine result: 5/5 PASS.
+Physical operator result: PASS.
+Startup mode remained 480p.
+The PS2 VNC session remained live after the sweep.
+
+An earlier startup attempt exposed a separate stalled Pi management-service
+condition. The PS2-side diagnostic reached the management HTTP receive
+boundary after a successful TCP connect and request send, while a Pi-local
+management self-probe also timed out. Restarting only the management service
+restored health. The unchanged uninstrumented M3E DUT then booted and passed
+the hardware matrix.
+
+M3 therefore continues with coarse real translation-unit decomposition.

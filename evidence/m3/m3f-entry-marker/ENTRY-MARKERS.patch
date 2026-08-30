@@ -1,0 +1,110 @@
+diff --git a/working/b4a/ps2vnc_display_orchestration.inc b/working/b4a/ps2vnc_display_orchestration.inc
+index 0c0995f..5ac3890 100644
+--- a/working/b4a/ps2vnc_display_orchestration.inc
++++ b/working/b4a/ps2vnc_display_orchestration.inc
+@@ -2827,7 +2827,9 @@ int main(int argc, char *argv[])
+      * Failure is intentionally non-fatal.  Without a valid stored display
+      * preset, the existing interactive calibration path remains authoritative.
+      */
++    screenf("M3F S0 before config");
+     ps2vnc_config_load_from_pi();
++    screenf("M3F S1 config returned");
+ 
+     /*
+      * H4C3B2B:
+@@ -2835,18 +2837,21 @@ int main(int argc, char *argv[])
+      * A pending transaction may imply that TigerVNC is still at a geometry
+      * incompatible with the confirmed startup profile.
+      */
++    screenf("M3F S2 before tx preflight");
+     if (ps2vnc_display_transaction_startup_preflight() < 0) {
+         screenf("DISPLAY TX: unsafe startup blocked");
+         screenf("Returning to system menu...");
+         goto exit_to_osdsys;
+     }
+ 
++    screenf("M3F S3 before tx prepare");
+     if (ps2vnc_startup_prepare_display_transaction() < 0) {
+         screenf("DISPLAY TX: startup recovery preparation failed");
+         screenf("Returning to system menu...");
+         goto exit_to_osdsys;
+     }
+ 
++    screenf("M3F S4 before profile apply");
+     if (ps2vnc_startup_apply_authoritative_profile() < 0) {
+         screenf("DISPLAY TX: startup profile apply failed");
+         screenf("Returning to system menu...");
+@@ -2869,6 +2874,7 @@ int main(int argc, char *argv[])
+ 
+     screenf("Establishing VNC session...");
+ 
++    screenf("M3F S5 before VNC connect");
+     sock = ps2vnc_startup_connect_reconciled(
+         rfb_framebuffer,
+         gs_framebuffer
+diff --git a/working/b4a/ps2vnc_management_config.inc b/working/b4a/ps2vnc_management_config.inc
+index 202a082..d4b4238 100644
+--- a/working/b4a/ps2vnc_management_config.inc
++++ b/working/b4a/ps2vnc_management_config.inc
+@@ -1900,6 +1900,7 @@ static int ps2vnc_management_get(
+     unsigned int out_capacity,
+     unsigned int *out_len)
+ {
++    screenf("M3F G0 GET ENTER");
+     char request[256];
+     int request_len;
+ 
+@@ -1925,6 +1926,8 @@ static int ps2vnc_management_get(
+ 
+     *out_len = 0;
+ 
++
++    screenf("M3F G1 snprintf");
+     request_len = snprintf(
+         request,
+         sizeof(request),
+@@ -1946,6 +1949,8 @@ static int ps2vnc_management_get(
+         PS2VNC_HTTP_MAX_HEADER +
+         out_capacity;
+ 
++
++    screenf("M3F G2 response malloc");
+     response = (unsigned char *)malloc(
+         response_capacity
+     );
+@@ -1955,6 +1960,8 @@ static int ps2vnc_management_get(
+         return -1;
+     }
+ 
++
++    screenf("M3F G3 socket");
+     sock = socket(
+         AF_INET,
+         SOCK_STREAM,
+@@ -1980,6 +1987,8 @@ static int ps2vnc_management_get(
+     server.sin_addr.s_addr =
+         inet_addr(PS2VNC_BOOTSTRAP_PI_IP);
+ 
++
++    screenf("M3F G4 connect");
+     if (connect(
+             sock,
+             (struct sockaddr *)&server,
+@@ -1989,6 +1998,8 @@ static int ps2vnc_management_get(
+         goto done;
+     }
+ 
++
++    screenf("M3F G5 send");
+     if (send_exact(
+             sock,
+             request,
+@@ -2012,6 +2023,8 @@ static int ps2vnc_management_get(
+             goto done;
+         }
+ 
++
++    screenf("M3F G6 recv");
+         n = recv(
+             sock,
+             response + response_len,

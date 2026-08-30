@@ -1,0 +1,28 @@
+2821	screenf	screenf("Ethernet link is UP");
+2830	ps2vnc_config_load_from_pi	ps2vnc_config_load_from_pi();
+2838	ps2vnc_display_transaction_startup_preflight	if (ps2vnc_display_transaction_startup_preflight() < 0) {
+2839	screenf	screenf("DISPLAY TX: unsafe startup blocked");
+2840	screenf	screenf("Returning to system menu...");
+2844	ps2vnc_startup_prepare_display_transaction	if (ps2vnc_startup_prepare_display_transaction() < 0) {
+2845	screenf	screenf("DISPLAY TX: startup recovery preparation failed");
+2846	screenf	screenf("Returning to system menu...");
+2850	ps2vnc_startup_apply_authoritative_profile	if (ps2vnc_startup_apply_authoritative_profile() < 0) {
+2851	screenf	screenf("DISPLAY TX: startup profile apply failed");
+2852	screenf	screenf("Returning to system menu...");
+2857	debug_udp_init	if (debug_udp_init() < 0)
+2858	screenf	screenf("WARN: debug UDP did not initialize");
+2860	debug_emit_now	debug_emit_now();
+2867	memset	memset((void *)live_hdr_raw, 0, sizeof(live_hdr_raw));
+2868	memset	memset((void *)live_update_raw, 0, sizeof(live_update_raw));
+2870	screenf	screenf("Establishing VNC session...");
+2872	ps2vnc_startup_connect_reconciled	sock = ps2vnc_startup_connect_reconciled(
+2878	screenf	screenf("Unable to establish VNC session");
+2879	screenf	screenf("Returning to system menu...");
+2883	screenf	screenf("FULL FRAMEBUFFER RECEIVED");
+2884	screenf	screenf("Starting incremental gsKit display...");
+2897	display_live_desktop	int live_result = display_live_desktop(
+2910	screenf	screenf("Returning to system menu...");
+2911	LoadExecPS2	LoadExecPS2("rom0:OSDSYS", 0, NULL);
+2918	screenf	screenf("ERROR: OSDSYS return failed");
+2921	screenf	screenf("Stopped - reset PS2 when done");
+2922	SleepThread	SleepThread();

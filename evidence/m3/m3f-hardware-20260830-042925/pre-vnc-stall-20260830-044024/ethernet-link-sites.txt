@@ -1,0 +1,1 @@
+working/b4a/ps2vnc_display_orchestration.inc:2821:    screenf("Ethernet link is UP");

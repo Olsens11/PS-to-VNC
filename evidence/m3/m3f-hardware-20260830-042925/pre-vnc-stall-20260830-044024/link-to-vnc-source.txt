@@ -1,0 +1,185 @@
+  2741	    screenf("PAD MOD 1");
+  2742	    if (SifLoadModule("rom0:XSIO2MAN", 0, NULL) < 0) {
+  2743	        screenf("ERR XSIO2");
+  2744	        goto wait;
+  2745	    }
+  2746	
+  2747	    screenf("PAD MOD 2");
+  2748	    if (SifLoadModule("rom0:XPADMAN", 0, NULL) < 0) {
+  2749	        screenf("ERR XPAD");
+  2750	        goto wait;
+  2751	    }
+  2752	
+  2753	    screenf("PAD INIT");
+  2754	    if (padInit(0) != 1) {
+  2755	        screenf("ERR PADINIT");
+  2756	        goto wait;
+  2757	    }
+  2758	
+  2759	    screenf("PAD OPEN");
+  2760	    if (padPortOpen(0, 0, pad_area) == 0) {
+  2761	        screenf("ERR PADOPEN");
+  2762	        goto wait;
+  2763	    }
+  2764	
+  2765	    /*
+  2766	     * Test11K-B:
+  2767	     * Force DualShock analog mode so L3/R3 and true analog coordinates
+  2768	     * are available without requiring the user to press the controller's
+  2769	     * ANALOG button manually.
+  2770	     *
+  2771	     * MMODE_LOCK asks the pad to remain in this mode.
+  2772	     */
+  2773	    screenf("PAD ANALOG");
+  2774	
+  2775	    if (wait_pad_ready_after_mode_change() < 0) {
+  2776	        screenf("ERR PAD READY");
+  2777	        goto wait;
+  2778	    }
+  2779	
+  2780	    if (padSetMainMode(
+  2781	            0,
+  2782	            0,
+  2783	            PAD_MMODE_DUALSHOCK,
+  2784	            PAD_MMODE_LOCK) == 0) {
+  2785	        screenf("ERR PAD MODE");
+  2786	        goto wait;
+  2787	    }
+  2788	
+  2789	    if (wait_pad_ready_after_mode_change() < 0) {
+  2790	        screenf("ERR PAD ANALOG WAIT");
+  2791	        goto wait;
+  2792	    }
+  2793	
+  2794	    screenf("PAD OK");
+  2795	
+  2796	    force_screen_fit_calibration =
+  2797	        startup_force_calibration_requested();
+  2798	
+  2799	    if (force_screen_fit_calibration)
+  2800	        screenf("L1+R1: FORCE CALIBRATION");
+  2801	
+  2802	    IP4_ADDR(&IP, 192, 168, 50, 2);
+  2803	    IP4_ADDR(&NM, 255, 255, 255, 0);
+  2804	    IP4_ADDR(&GW, 192, 168, 50, 1);
+  2805	
+  2806	    screenf("TCP INIT");
+  2807	
+  2808	    if (ps2ipInit(&IP, &NM, &GW) < 0) {
+  2809	        screenf("ERROR: ps2ipInit() failed");
+  2810	        goto wait;
+  2811	    }
+  2812	
+  2813	    screenf("Waiting for Ethernet link...");
+  2814	
+  2815	    if (ethWaitValidNetIFLinkState() != 0) {
+  2816	        screenf("Unable to establish Ethernet connection");
+  2817	        screenf("Returning to system menu...");
+  2818	        goto exit_to_osdsys;
+  2819	    }
+  2820	
+  2821	    screenf("Ethernet link is UP");
+  2822	
+  2823	    /*
+  2824	     * TEST13J-D4-A3:
+  2825	     * Retrieve the general PS2VNC configuration before opening RFB.
+  2826	     *
+  2827	     * Failure is intentionally non-fatal.  Without a valid stored display
+  2828	     * preset, the existing interactive calibration path remains authoritative.
+  2829	     */
+  2830	    ps2vnc_config_load_from_pi();
+  2831	
+  2832	    /*
+  2833	     * H4C3B2B:
+  2834	     * Durable display authority must be known before ordinary RFB startup.
+  2835	     * A pending transaction may imply that TigerVNC is still at a geometry
+  2836	     * incompatible with the confirmed startup profile.
+  2837	     */
+  2838	    if (ps2vnc_display_transaction_startup_preflight() < 0) {
+  2839	        screenf("DISPLAY TX: unsafe startup blocked");
+  2840	        screenf("Returning to system menu...");
+  2841	        goto exit_to_osdsys;
+  2842	    }
+  2843	
+  2844	    if (ps2vnc_startup_prepare_display_transaction() < 0) {
+  2845	        screenf("DISPLAY TX: startup recovery preparation failed");
+  2846	        screenf("Returning to system menu...");
+  2847	        goto exit_to_osdsys;
+  2848	    }
+  2849	
+  2850	    if (ps2vnc_startup_apply_authoritative_profile() < 0) {
+  2851	        screenf("DISPLAY TX: startup profile apply failed");
+  2852	        screenf("Returning to system menu...");
+  2853	        goto exit_to_osdsys;
+  2854	    }
+  2855	
+  2856	    debug_stage_id = DBG_STAGE_NET_READY;
+  2857	    if (debug_udp_init() < 0)
+  2858	        screenf("WARN: debug UDP did not initialize");
+  2859	    else
+  2860	        debug_emit_now();
+  2861	
+  2862	    rfb_rx_pos = 0;
+  2863	    rfb_rx_end = 0;
+  2864	    rfb_rx_syscalls = 0;
+  2865	    rfb_last_recv_n = 0;
+  2866	    rfb_last_recv_call = 0;
+  2867	    memset((void *)live_hdr_raw, 0, sizeof(live_hdr_raw));
+  2868	    memset((void *)live_update_raw, 0, sizeof(live_update_raw));
+  2869	
+  2870	    screenf("Establishing VNC session...");
+  2871	
+  2872	    sock = ps2vnc_startup_connect_reconciled(
+  2873	        rfb_framebuffer,
+  2874	        gs_framebuffer
+  2875	    );
+  2876	
+  2877	    if (sock < 0) {
+  2878	        screenf("Unable to establish VNC session");
+  2879	        screenf("Returning to system menu...");
+  2880	        goto exit_to_osdsys;
+  2881	    }
+  2882	
+  2883	    screenf("FULL FRAMEBUFFER RECEIVED");
+  2884	    screenf("Starting incremental gsKit display...");
+  2885	
+  2886	    live_error_code = 0;
+  2887	    live_message_type = 0;
+  2888	    live_rect_count = 0;
+  2889	    live_rect_index = 0;
+  2890	    live_rect_x = 0;
+  2891	    live_rect_y = 0;
+  2892	    live_rect_w = 0;
+  2893	    live_rect_h = 0;
+  2894	    live_encoding = 0;
+  2895	
+  2896	    {
+  2897	        int live_result = display_live_desktop(
+  2898	            sock,
+  2899	            rfb_framebuffer,
+  2900	            gs_framebuffer);
+  2901	
+  2902	        if (live_result > 0)
+  2903	            goto exit_to_osdsys;
+  2904	
+  2905	        if (live_result < 0)
+  2906	            goto exit_to_osdsys;
+  2907	    }
+  2908	
+  2909	exit_to_osdsys:
+  2910	    screenf("Returning to system menu...");
+  2911	    LoadExecPS2("rom0:OSDSYS", 0, NULL);
+  2912	
+  2913	    /*
+  2914	     * LoadExecPS2 normally never returns.  If it does, fall back to the
+  2915	     * existing stopped state so we get visible evidence instead of hanging
+  2916	     * somewhere unknown.
+  2917	     */
+  2918	    screenf("ERROR: OSDSYS return failed");
+  2919	
+  2920	wait:
+  2921	    screenf("Stopped - reset PS2 when done");
+  2922	    SleepThread();
+  2923	
+  2924	    return 0;
+  2925	}

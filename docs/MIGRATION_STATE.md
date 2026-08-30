@@ -183,7 +183,7 @@ canonical machine-readable state.
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=746ef1d9da6f55e246841dbd7569d17b90600678
     LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M3F_hardware_validate_first_real_translation_unit_split
+    NEXT_ACTION=M3G_continue_real_translation_unit_decomposition
 
 The canonical machine-readable source remains:
 
@@ -705,4 +705,16 @@ Hardware validation:
 
 Next:
 
-    M3F_hardware_validate_first_real_translation_unit_split
+    M3G_continue_real_translation_unit_decomposition
+
+## M3F first-real-TU hardware checkpoint
+
+M3E's `management_config + calibration_state` real translation unit is now
+hardware-qualified.
+
+- machine matrix: 5/5 PASS
+- physical result: PASS
+- startup mode invariant: 480p
+- live VNC session after sweep: PASS
+- source repair required for M3E: NO
+- next migration action: continue real translation-unit decomposition

@@ -349,3 +349,21 @@ interface reduction remains later work.
 Next:
 
     M3F_hardware_validate_first_real_translation_unit_split
+
+## First real translation-unit boundary qualified on hardware
+
+The first compiler/linker ownership boundary is now hardware-qualified.
+
+Detached TU:
+
+`management_config + calibration_state`
+
+Original migrated-region authority:
+
+`6379` source lines
+
+This checkpoint proves that the successor can cross a substantial real
+translation-unit boundary on the physical PS2 while preserving the validated
+display-mode matrix. Continued M3 work should keep decomposing the remaining
+large implementation regions rather than reverting to same-TU fragment-only
+organization.

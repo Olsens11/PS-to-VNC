@@ -419,3 +419,19 @@ validation is required before further decomposition.
 Next:
 
     M3F_hardware_validate_first_real_translation_unit_split
+
+## M3F hardware result
+
+The first real translation-unit split is hardware-qualified.
+
+M3F machine matrix: 5/5 PASS.
+M3F physical observation: PASS.
+Validated modes: 480i, 480p-hires, 576i, 720p, 1080i.
+Startup mode remained 480p.
+
+A separate Pi management-service stall was diagnosed during the checkpoint.
+It was not attributed to the M3E source split: after restarting only the
+management service, the unchanged uninstrumented M3E DUT booted and passed
+the complete checkpoint.
+
+Current trajectory: continue coarse real translation-unit decomposition.

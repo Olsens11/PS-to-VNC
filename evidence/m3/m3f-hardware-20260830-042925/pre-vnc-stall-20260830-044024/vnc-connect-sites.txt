@@ -1,0 +1,21 @@
+working/b4a/ps2vnc_services_imports.h:83:int rfb_connect_and_handshake(void);
+working/b4a/ps2vnc_services_imports.h:84:int rfb_connect_and_handshake_limited( unsigned int max_width, unsigned int max_height);
+working/b4a/ps2vnc_calibration_state.inc:506:        sock = rfb_connect_and_handshake_limited(
+working/b4a/ps2vnc_calibration_state.inc:742:    if (connect(
+working/b4a/ps2vnc_calibration_state.inc:906:    if (connect(
+working/b4a/ps2vnc_runtime_support.inc:337:#define VNC_PORT                    5900
+working/b4a/ps2vnc_runtime_support.inc:2178:int rfb_connect_and_handshake_limited(
+working/b4a/ps2vnc_runtime_support.inc:2209:        VNC_PORT
+working/b4a/ps2vnc_runtime_support.inc:2222:    server.sin_port = htons(VNC_PORT);
+working/b4a/ps2vnc_runtime_support.inc:2226:    if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
+working/b4a/ps2vnc_runtime_support.inc:2227:        screenf("ERROR: connect() failed");
+working/b4a/ps2vnc_runtime_support.inc:2453:int rfb_connect_and_handshake(void)
+working/b4a/ps2vnc_runtime_support.inc:2455:    return rfb_connect_and_handshake_limited(
+working/b4a/ps2vnc_management_config.inc:154:        sock = rfb_connect_and_handshake();
+working/b4a/ps2vnc_management_config.inc:295:        new_sock = rfb_connect_and_handshake();
+working/b4a/ps2vnc_management_config.inc:508:        new_sock = rfb_connect_and_handshake_limited(
+working/b4a/ps2vnc_management_config.inc:1723:    if (connect(
+working/b4a/ps2vnc_management_config.inc:1983:    if (connect(
+working/b4a/ps2vnc_management_config.inc:2320:    if (connect(
+working/b4a/ps2vnc_management_config.inc:2555:    if (connect(
+working/b4a/ps2ip.c:6: *   - Connect to TigerVNC: 192.168.50.1:5900

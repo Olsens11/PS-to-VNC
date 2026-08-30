@@ -1,0 +1,1 @@
+192.168.50.2 dev eth0 lladdr 00:04:1f:b1:4c:ea STALE 

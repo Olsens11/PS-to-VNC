@@ -1,0 +1,1 @@
+14061 /usr/bin/python3 /usr/local/lib/ps2vnc/management-server.py

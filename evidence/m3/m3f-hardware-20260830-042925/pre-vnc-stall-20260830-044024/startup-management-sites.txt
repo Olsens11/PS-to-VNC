@@ -1,0 +1,126 @@
+working/b4a/ps2ip.c:28:#include "ps2vnc_config_text.h"
+working/b4a/ps2ip.c:60: * calibration-driven and may be smaller than this capacity.
+working/b4a/ps2ip.c:171: * The confirmed profile is derived from the SAME configuration body that
+working/b4a/ps2ip.c:172: * startup applied. Do not re-fetch configuration later to reconstruct it.
+working/b4a/ps2vnc_display_orchestration.inc:392: * session exists do we reconstruct the saved display configuration.
+working/b4a/ps2vnc_display_orchestration.inc:423:    const int previous_screen_fit_width =
+working/b4a/ps2vnc_display_orchestration.inc:424:        display_confirm_previous_screen_fit_width;
+working/b4a/ps2vnc_display_orchestration.inc:425:    const int previous_screen_fit_height =
+working/b4a/ps2vnc_display_orchestration.inc:426:        display_confirm_previous_screen_fit_height;
+working/b4a/ps2vnc_display_orchestration.inc:427:    const int previous_screen_fit_offset_x =
+working/b4a/ps2vnc_display_orchestration.inc:428:        display_confirm_previous_screen_fit_offset_x;
+working/b4a/ps2vnc_display_orchestration.inc:429:    const int previous_screen_fit_offset_y =
+working/b4a/ps2vnc_display_orchestration.inc:430:        display_confirm_previous_screen_fit_offset_y;
+working/b4a/ps2vnc_display_orchestration.inc:431:    const int previous_screen_fit_full_bypass =
+working/b4a/ps2vnc_display_orchestration.inc:432:        display_confirm_previous_screen_fit_full_bypass;
+working/b4a/ps2vnc_display_orchestration.inc:441:        previous_screen_fit_width <= 0 ||
+working/b4a/ps2vnc_display_orchestration.inc:442:        previous_screen_fit_height <= 0)
+working/b4a/ps2vnc_display_orchestration.inc:503:    if (!screen_fit_apply_preset(
+working/b4a/ps2vnc_display_orchestration.inc:504:            previous_screen_fit_width,
+working/b4a/ps2vnc_display_orchestration.inc:505:            previous_screen_fit_height,
+working/b4a/ps2vnc_display_orchestration.inc:506:            previous_screen_fit_offset_x,
+working/b4a/ps2vnc_display_orchestration.inc:507:            previous_screen_fit_offset_y,
+working/b4a/ps2vnc_display_orchestration.inc:508:            previous_screen_fit_full_bypass)) {
+working/b4a/ps2vnc_display_orchestration.inc:516:     * Verify that the exact saved known-good configuration came back.
+working/b4a/ps2vnc_display_orchestration.inc:526:        screen_fit_width != previous_screen_fit_width ||
+working/b4a/ps2vnc_display_orchestration.inc:527:        screen_fit_height != previous_screen_fit_height ||
+working/b4a/ps2vnc_display_orchestration.inc:528:        screen_fit_offset_x != previous_screen_fit_offset_x ||
+working/b4a/ps2vnc_display_orchestration.inc:529:        screen_fit_offset_y != previous_screen_fit_offset_y ||
+working/b4a/ps2vnc_display_orchestration.inc:530:        screen_fit_full_bypass !=
+working/b4a/ps2vnc_display_orchestration.inc:531:            previous_screen_fit_full_bypass) {
+working/b4a/ps2vnc_display_orchestration.inc:552: * If either management transition fails, the best-effort local restore
+working/b4a/ps2vnc_display_orchestration.inc:855:    return ps2vnc_management_post_text(
+working/b4a/ps2vnc_display_orchestration.inc:956:    if (ps2vnc_management_get_bounded_quiet(
+working/b4a/ps2vnc_display_orchestration.inc:965:         * A missing Pi management service must never damage VNC.
+working/b4a/ps2vnc_display_orchestration.inc:1007:            display_calibration_request !=
+working/b4a/ps2vnc_display_orchestration.inc:1284:    if (!ps2vnc_display_config_loaded ||
+working/b4a/ps2vnc_display_orchestration.inc:1285:        force_screen_fit_calibration) {
+working/b4a/ps2vnc_display_orchestration.inc:1287:        if (run_screen_fit_calibration(
+working/b4a/ps2vnc_display_orchestration.inc:1296:         * session must not unexpectedly reopen calibration.
+working/b4a/ps2vnc_display_orchestration.inc:1298:        force_screen_fit_calibration = 0;
+working/b4a/ps2vnc_display_orchestration.inc:1480:         * RFB/render thread owns the management socket and releases this UI
+working/b4a/ps2vnc_display_orchestration.inc:1517:         * Same-mode calibration is a main-thread transaction.  Consume it at
+working/b4a/ps2vnc_display_orchestration.inc:1525:         * Display admission/UI policy uses the same main-thread management
+working/b4a/ps2vnc_display_orchestration.inc:1526:         * ownership boundary as calibration and mode transactions.
+working/b4a/ps2vnc_display_orchestration.inc:1606:        if (display_calibration_request != DISPLAY_MODE_REQUEST_NONE) {
+working/b4a/ps2vnc_display_orchestration.inc:1607:            int request = display_calibration_request;
+working/b4a/ps2vnc_display_orchestration.inc:1610:            display_calibration_request = DISPLAY_MODE_REQUEST_NONE;
+working/b4a/ps2vnc_display_orchestration.inc:1615:             * Never reinterpret a stale calibration request as a mode switch.
+working/b4a/ps2vnc_display_orchestration.inc:1630:            if (ps2vnc_run_runtime_calibration(
+working/b4a/ps2vnc_display_orchestration.inc:1744:         * Target configuration and geometry are resolved before entering
+working/b4a/ps2vnc_display_orchestration.inc:1754:            ps2vnc_display_config_t target_config;
+working/b4a/ps2vnc_display_orchestration.inc:1822:                !ps2vnc_config_get_display_for_mode(
+working/b4a/ps2vnc_display_orchestration.inc:1823:                    target_mode, &target_config) ||
+working/b4a/ps2vnc_display_orchestration.inc:1824:                ps2vnc_config_presented_geometry_for_mode(
+working/b4a/ps2vnc_display_orchestration.inc:1826:                    &target_config,
+working/b4a/ps2vnc_display_orchestration.inc:1883:             * If BEGIN is refused or the management service is unavailable,
+working/b4a/ps2vnc_display_orchestration.inc:1932:                screen_fit_width,
+working/b4a/ps2vnc_display_orchestration.inc:1933:                screen_fit_height,
+working/b4a/ps2vnc_display_orchestration.inc:1934:                screen_fit_offset_x,
+working/b4a/ps2vnc_display_orchestration.inc:1935:                screen_fit_offset_y,
+working/b4a/ps2vnc_display_orchestration.inc:1936:                screen_fit_full_bypass);
+working/b4a/ps2vnc_display_orchestration.inc:1999:                 * Never leave the partially applied configuration active.
+working/b4a/ps2vnc_display_orchestration.inc:2027:             * validated mode-specific calibration into local screen-fit
+working/b4a/ps2vnc_display_orchestration.inc:2030:             * target_config was fetched and validated while A was still
+working/b4a/ps2vnc_display_orchestration.inc:2040:                if (!ps2vnc_config_apply_display(&target_config) ||
+working/b4a/ps2vnc_display_orchestration.inc:2057:                        "DISPLAY TX: candidate calibration apply failed");
+working/b4a/ps2vnc_display_orchestration.inc:2169:         * HIRES already has its desktop background configured. Standard
+working/b4a/ps2vnc_display_orchestration.inc:2242:                     * safe desktop. Calibration itself is intentionally drawn
+working/b4a/ps2vnc_display_orchestration.inc:2401:             * recovering into an unapproved display configuration.
+working/b4a/ps2vnc_display_orchestration.inc:2739:    screenf("Hold L1 + R1 to force display calibration");
+working/b4a/ps2vnc_display_orchestration.inc:2796:    force_screen_fit_calibration =
+working/b4a/ps2vnc_display_orchestration.inc:2797:        startup_force_calibration_requested();
+working/b4a/ps2vnc_display_orchestration.inc:2799:    if (force_screen_fit_calibration)
+working/b4a/ps2vnc_display_orchestration.inc:2800:        screenf("L1+R1: FORCE CALIBRATION");
+working/b4a/ps2vnc_display_orchestration.inc:2825:     * Retrieve the general PS2VNC configuration before opening RFB.
+working/b4a/ps2vnc_display_orchestration.inc:2828:     * preset, the existing interactive calibration path remains authoritative.
+working/b4a/ps2vnc_display_orchestration.inc:2830:    ps2vnc_config_load_from_pi();
+working/b4a/ps2vnc_runtime_support.inc:283:int hires_bg_configured = 0;
+working/b4a/ps2vnc_runtime_support.inc:289: * Before calibration we accept whatever <=1280x720 geometry TigerVNC
+working/b4a/ps2vnc_runtime_support.inc:299: * retrieve the general configuration file, so it cannot itself live inside
+working/b4a/ps2vnc_runtime_support.inc:300: * that remotely hosted configuration.
+working/b4a/ps2vnc_runtime_support.inc:305:#define PS2VNC_CONFIG_PORT          5959
+working/b4a/ps2vnc_runtime_support.inc:306:#define PS2VNC_CONFIG_PATH          "/ps2vnc.conf"
+working/b4a/ps2vnc_runtime_support.inc:630: * Runtime calibration temporarily transfers libpad ownership from the
+working/b4a/ps2vnc_runtime_support.inc:660: * calibration even when a valid stored display preset was loaded.
+working/b4a/ps2vnc_runtime_support.inc:662:int force_screen_fit_calibration = 0;
+working/b4a/ps2vnc_runtime_support.inc:773: * thread remains the sole owner of configuration fetches and mode changes.
+working/b4a/ps2vnc_runtime_support.inc:829: * A calibration request is semantically distinct from a mode switch even
+working/b4a/ps2vnc_runtime_support.inc:834:static volatile int display_calibration_request =
+working/b4a/ps2vnc_runtime_support.inc:919: * Missing config values mean false for backwards compatibility.
+working/b4a/ps2vnc_runtime_support.inc:930: * The controller never performs management HTTP.
+working/b4a/ps2vnc_runtime_support.inc:982: * screen_fit_* is part of the complete local display profile.
+working/b4a/ps2vnc_runtime_support.inc:984: * A provisional mode switch must not allow candidate B's calibration state
+working/b4a/ps2vnc_runtime_support.inc:987:static int display_confirm_previous_screen_fit_width = 0;
+working/b4a/ps2vnc_runtime_support.inc:988:static int display_confirm_previous_screen_fit_height = 0;
+working/b4a/ps2vnc_runtime_support.inc:989:static int display_confirm_previous_screen_fit_offset_x = 0;
+working/b4a/ps2vnc_runtime_support.inc:990:static int display_confirm_previous_screen_fit_offset_y = 0;
+working/b4a/ps2vnc_runtime_support.inc:991:static int display_confirm_previous_screen_fit_full_bypass = 0;
+working/b4a/ps2vnc_runtime_support.inc:1001: * ACK successfully.  The controller never performs management HTTP.
+working/b4a/ps2vnc_runtime_support.inc:1014: * config-backed binding layer can target.
+working/b4a/ps2vnc_runtime_support.inc:1796: * punch through a provisional display transaction or libpad calibration
+working/b4a/ps2vnc_runtime_support.inc:1799: * Pending mode/calibration requests are included so there is no race
+working/b4a/ps2vnc_runtime_support.inc:1808:        display_calibration_request != DISPLAY_MODE_REQUEST_NONE ||
+working/b4a/ps2vnc_runtime_support.inc:1898:    int previous_screen_fit_width,
+working/b4a/ps2vnc_runtime_support.inc:1899:    int previous_screen_fit_height,
+working/b4a/ps2vnc_runtime_support.inc:1900:    int previous_screen_fit_offset_x,
+working/b4a/ps2vnc_runtime_support.inc:1901:    int previous_screen_fit_offset_y,
+working/b4a/ps2vnc_runtime_support.inc:1902:    int previous_screen_fit_full_bypass)
+working/b4a/ps2vnc_runtime_support.inc:1913:    display_confirm_previous_screen_fit_width =
+working/b4a/ps2vnc_runtime_support.inc:1914:        previous_screen_fit_width;
+working/b4a/ps2vnc_runtime_support.inc:1915:    display_confirm_previous_screen_fit_height =
+working/b4a/ps2vnc_runtime_support.inc:1916:        previous_screen_fit_height;
+working/b4a/ps2vnc_runtime_support.inc:1917:    display_confirm_previous_screen_fit_offset_x =
+working/b4a/ps2vnc_runtime_support.inc:1918:        previous_screen_fit_offset_x;
+working/b4a/ps2vnc_runtime_support.inc:1919:    display_confirm_previous_screen_fit_offset_y =
+working/b4a/ps2vnc_runtime_support.inc:1920:        previous_screen_fit_offset_y;
+working/b4a/ps2vnc_runtime_support.inc:1921:    display_confirm_previous_screen_fit_full_bypass =
+working/b4a/ps2vnc_runtime_support.inc:1922:        previous_screen_fit_full_bypass;
+working/b4a/ps2vnc_runtime_support.inc:1951:    display_confirm_previous_screen_fit_width = 0;
+working/b4a/ps2vnc_runtime_support.inc:1952:    display_confirm_previous_screen_fit_height = 0;
+working/b4a/ps2vnc_runtime_support.inc:1953:    display_confirm_previous_screen_fit_offset_x = 0;
+working/b4a/ps2vnc_runtime_support.inc:1954:    display_confirm_previous_screen_fit_offset_y = 0;
+working/b4a/ps2vnc_runtime_support.inc:1955:    display_confirm_previous_screen_fit_full_bypass = 0;
+working/b4a/ps2vnc_runtime_support.inc:2090: * Startup-only display recalibration chord.
+working/b4a/ps2vnc_runtime_support.inc:2099:static int startup_force_calibration_requested(void)
+working/b4a/ps2vnc_runtime_support.inc:2398:         * until calibration locks the final safe desktop.
