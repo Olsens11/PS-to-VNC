@@ -8,6 +8,5 @@
 /.gitattributes text eol=lf
 /.editorconfig text eol=lf
 /scripts/**/*.sh text eol=lf
-/evidence/**/*.tsv text eol=lf
-/evidence/**/*.env text eol=lf
+/evidence/** -text
 /runtime/*.env text eol=lf

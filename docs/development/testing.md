@@ -77,3 +77,19 @@ replaying the whole experiment.
 
 A PT_LOAD change requires hardware qualification unless an explicit recorded
 project rule permits inherited qualification.
+
+
+## Raw evidence byte preservation
+
+Files captured under `evidence/` are empirical records and must be preserved
+byte-for-byte.
+
+Git must not normalize their line endings or other textual representation merely
+because a captured file has a text-like extension such as `.env` or `.tsv`.
+
+Evidence integrity is established by its recorded hashes/manifests. Source-style
+whitespace checks apply to authored source, configuration, scripts, and
+documentation as appropriate; they must not require rewriting raw evidence.
+
+If a generic repository check conflicts with valid sealed/captured evidence,
+repair or scope the check/policy rather than cosmetically changing the evidence.
