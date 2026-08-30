@@ -792,3 +792,40 @@ regression.
 After M4A passes, rerun the semantic-leaf census. Under the established M3W
 policy, optional 1500-2000-line leaves do not block completion of the coarse
 migration; the expected blocking-coarse-split count is zero.
+
+## M4A twelve-object hardware qualification
+
+The M3Z twelve-real-translation-unit management split is hardware-qualified.
+
+    SOURCE_COMMIT=c224b75e24d79fa7cbebd84236123e97c31ac9f1
+    HARDWARE_AUTHORITY_COMMIT=60413bc86ad008f5449a47a28f06b2b3429d9565
+    DUT_ELF_SHA256=d9ddbcb14cf1007236bdf77d9a8bb48ce99390e2144cfab81c75cee6513f18f1
+    MACHINE_RESULT=PASS
+    MACHINE_PASS_COUNT=5
+    MACHINE_FAIL_COUNT=0
+    PHYSICAL_RESULT=FULL_PASS
+    STARTUP_MODE_INVARIANT=480p
+    FINAL_DISPLAY_STATE=IDLE
+    NEXT_ACTION=M4B_post_split_semantic_leaf_census
+
+The exact five-mode sequence was:
+
+    480i
+    480p-hires
+    576i
+    720p
+    1080i
+
+Each temporary mode restored successfully to the 480p baseline, including
+the 1080i-to-480p transition that had intermittently failed during M3Y.
+The RFB connection remained established after the harness.
+
+Two setup/apparatus errors occurred before the real harness run: an
+evidence-directory cleanliness check and a pre-created harness run
+directory. Neither started a display transition. A malformed shell test in
+the post-run wrapper also printed a false failure classification after the
+authoritative harness had already returned PASS 5/5. None is classified as
+a DUT failure.
+
+M4A therefore closes the hardware requirement created by M3Z's new real
+compiler boundary. The next action is the post-split semantic-leaf census.
