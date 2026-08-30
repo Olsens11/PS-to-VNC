@@ -99,3 +99,27 @@ A per-leaf module/function inventory is stored at:
 Next:
 
     M3D_classify_six_macro_leaves_and_promote_subsystems
+
+## M3D semantic subsystem promotion
+
+The six generic recursive leaves now have semantic subsystem identities:
+
+- runtime support
+- UI/controller
+- framebuffer engine
+- management/config
+- calibration/state
+- display orchestration
+
+No implementation bytes were reordered within any parent region.
+
+The resulting PS2 load image remains byte-for-byte identical to M2.
+
+Exact cross-boundary promotion evidence for the first two real translation
+unit candidates is stored under:
+
+    evidence/m3/m3d-semantic-leaves
+
+Next:
+
+    M3E_promote_framebuffer_engine_and_management_config_to_real_translation_units
