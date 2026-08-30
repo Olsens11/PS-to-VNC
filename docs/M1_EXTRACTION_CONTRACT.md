@@ -179,35 +179,26 @@ M1A:
 
     COMPLETE
 
-Selected first boundary:
-
-    ps2vnc_config_trim_left
-    ps2vnc_config_trim_right
-
-Selection authority:
-
-    docs/M1A_EXTRACTION_BOUNDARY.md
-
-Implementation source mutation:
-
-    NONE
-
-Publication gate:
+GitHub publication gate:
 
     COMPLETE
 
-GitHub repository:
+M1B:
 
-    Olsens11/PS-to-VNC
+    COMPLETE
 
-Visibility:
+Mechanical source commit:
 
-    PRIVATE
+    0f1b88ddf7821c935b68aabe6d65180bf02b074f
 
-Publication authority:
+Implementation source mutation:
 
-    docs/GITHUB_PUBLICATION.md
+    CONFIG_TEXT_EXTRACTION_ONLY
+
+M1 DUT build status:
+
+    NOT BUILT
 
 Next:
 
-    M1B_mechanically_extract_config_text_module
+    M1C_build_and_characterize_first_modularized_DUT

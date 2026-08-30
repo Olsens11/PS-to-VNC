@@ -67,3 +67,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 ## GitHub publication
 
 - `docs/GITHUB_PUBLICATION.md` — authority for the independent private PS-to-VNC GitHub repository and its publication checkpoint.
+
+## M1B mechanical extraction
+
+- `docs/M1B_EXTRACTION_RESULT.md` — exact result and source authority for the first mechanical module extraction.

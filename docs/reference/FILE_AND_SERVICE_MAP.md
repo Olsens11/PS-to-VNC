@@ -164,3 +164,16 @@ M1B remains blocked by the GitHub publication checkpoint.
 | Default branch | `main` |
 
 The successor remote is distinct from legacy `Olsens11/PS2VNC`.
+
+## M1B config-text module
+
+| Responsibility | Canonical location |
+|---|---|
+| Configuration text whitespace implementation | `working/b4a/ps2vnc_config_text.c` |
+| Configuration text whitespace public API | `working/b4a/ps2vnc_config_text.h` |
+| Remaining transitional monolith | `working/b4a/ps2ip.c` |
+| M1B result | `docs/M1B_EXTRACTION_RESULT.md` |
+| Machine M1 source authority | `runtime/M1_SOURCE_AUTHORITY.env` |
+
+The `working/b4a/` directory name remains transitional lineage naming. It no
+longer means every writable source file is byte-identical to B4A.

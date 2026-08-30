@@ -342,63 +342,17 @@ fi
 
 
 echo
-echo '===== K. M0 WRITABLE SOURCE AUTHORITY ====='
+echo '===== K. WORKING SOURCE AUTHORITY ====='
 
 if [ "$CURRENT_WORKING_SOURCE" = 'NONE' ]; then
-    echo 'M0_WRITABLE_SOURCE_AUTHORITY=NOT_YET_ACTIVE'
+    echo 'WORKING_SOURCE_AUTHORITY=NOT_YET_ACTIVE'
 else
-    case "$CURRENT_STAGE" in
-        M0)
-            ;;
-        M1)
-            case "$CURRENT_STAGE_STATUS" in
-                NOT_STARTED)
-                    ;;
-                IN_PROGRESS)
-                    case "$NEXT_ACTION" in
-                        PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository)
-                            test -f docs/M1A_EXTRACTION_BOUNDARY.md
-                            ;;
-                        M1B_mechanically_extract_config_text_module)
-                            test "${GITHUB_PUBLICATION_STATUS:-}" =                                 'PRIVATE_PUBLISHED'
-                            test -f docs/M1A_EXTRACTION_BOUNDARY.md
-                            test -f docs/GITHUB_PUBLICATION.md
-                            ;;
-                        *)
-                            echo "ERROR=M1_IN_PROGRESS_ACTION_NOT_YET_SUPPORTED:$NEXT_ACTION"
-                            exit 73
-                            ;;
-                    esac
-                    ;;
-                *)
-                    echo "ERROR=M1_STAGE_STATUS_NOT_SUPPORTED:$CURRENT_STAGE_STATUS"
-                    exit 74
-                    ;;
-            esac
-            ;;
-        *)
-            echo "ERROR=WORKING_SOURCE_STAGE_NOT_YET_SUPPORTED:$CURRENT_STAGE"
-            exit 71
-            ;;
-    esac
-
     test "$CURRENT_WORKING_SOURCE" = 'working/b4a/ps2ip.c'
 
     test -f "$CURRENT_WORKING_SOURCE"
     test -f working/b4a/Makefile
     test -f working/b4a/ps2vnc_identity.c
     test -f working/b4a/ps2vnc_gsHires.c
-    test -x scripts/build-m0-b4a.sh
-
-    test "$(
-        sha256sum "$CURRENT_WORKING_SOURCE" |
-        awk '{print $1}'
-    )" = "$M0_SOURCE_SHA256"
-
-    test "$(
-        sha256sum working/b4a/Makefile |
-        awk '{print $1}'
-    )" = "$M0_MAKEFILE_SHA256"
 
     test "$(
         sha256sum working/b4a/ps2vnc_identity.c |
@@ -410,26 +364,141 @@ else
         awk '{print $1}'
     )" = "$M0_GSHIRES_SOURCE_SHA256"
 
-    if [ "$CURRENT_SOURCE_HEAD" != 'NONE' ]; then
-        git cat-file -e "$CURRENT_SOURCE_HEAD^{commit}"
-        git merge-base --is-ancestor "$CURRENT_SOURCE_HEAD" HEAD
+    if [ "$CURRENT_SOURCE_HEAD" = "$M0_COMPLETION_SOURCE_HEAD" ]; then
+        test "$(
+            sha256sum "$CURRENT_WORKING_SOURCE" |
+            awk '{print $1}'
+        )" = "$M0_SOURCE_SHA256"
 
-        COMMITTED_WORKING_SHA="$(
-            git show "$CURRENT_SOURCE_HEAD:$CURRENT_WORKING_SOURCE" |
+        test "$(
+            sha256sum working/b4a/Makefile |
+            awk '{print $1}'
+        )" = "$M0_MAKEFILE_SHA256"
+
+        git cat-file -e "$CURRENT_SOURCE_HEAD^{commit}"
+
+        test "$(
+            git show \
+                "${CURRENT_SOURCE_HEAD}:${CURRENT_WORKING_SOURCE}" |
             sha256sum |
             awk '{print $1}'
-        )"
+        )" = "$M0_SOURCE_SHA256"
 
-        test "$COMMITTED_WORKING_SHA" = "$M0_SOURCE_SHA256"
+        echo 'WORKING_SOURCE_GENERATION=M0'
+        echo 'M0_WRITABLE_SOURCE_AUTHORITY=PASS'
+
+    elif [ "$CURRENT_STAGE" = 'M1' ]; then
+        test -f runtime/M1_SOURCE_AUTHORITY.env
+
+        # shellcheck disable=SC1091
+        source runtime/M1_SOURCE_AUTHORITY.env
+
+        test "$M1_SOURCE_STAGE" = 'M1B'
+        test "$M1_SOURCE_STATUS" = 'EXTRACTED_NOT_BUILT'
+        test "$M1_SOURCE_COMMIT" = "$CURRENT_SOURCE_HEAD"
+
+        test "$M1_MONOLITH_PATH" = \
+            'working/b4a/ps2ip.c'
+
+        test "$M1_CONFIG_TEXT_SOURCE_PATH" = \
+            'working/b4a/ps2vnc_config_text.c'
+
+        test "$M1_CONFIG_TEXT_HEADER_PATH" = \
+            'working/b4a/ps2vnc_config_text.h'
+
+        test -f "$M1_CONFIG_TEXT_SOURCE_PATH"
+        test -f "$M1_CONFIG_TEXT_HEADER_PATH"
+
+        test "$(
+            sha256sum "$M1_MONOLITH_PATH" |
+            awk '{print $1}'
+        )" = "$M1_MONOLITH_SHA256"
+
+        test "$(
+            sha256sum "$M1_CONFIG_TEXT_SOURCE_PATH" |
+            awk '{print $1}'
+        )" = "$M1_CONFIG_TEXT_SOURCE_SHA256"
+
+        test "$(
+            sha256sum "$M1_CONFIG_TEXT_HEADER_PATH" |
+            awk '{print $1}'
+        )" = "$M1_CONFIG_TEXT_HEADER_SHA256"
+
+        test "$(
+            sha256sum working/b4a/Makefile |
+            awk '{print $1}'
+        )" = "$M1_MAKEFILE_SHA256"
+
+        test "$M1_MONOLITH_SHA256" != "$M0_SOURCE_SHA256"
+        test "$M1_MAKEFILE_SHA256" != "$M0_MAKEFILE_SHA256"
+
+        git cat-file -e "$M1_SOURCE_COMMIT^{commit}"
+        git merge-base --is-ancestor "$M1_SOURCE_COMMIT" HEAD
+
+        test "$(
+            git show \
+                "${M1_SOURCE_COMMIT}:${M1_MONOLITH_PATH}" |
+            sha256sum |
+            awk '{print $1}'
+        )" = "$M1_MONOLITH_SHA256"
+
+        test "$(
+            git show \
+                "${M1_SOURCE_COMMIT}:${M1_CONFIG_TEXT_SOURCE_PATH}" |
+            sha256sum |
+            awk '{print $1}'
+        )" = "$M1_CONFIG_TEXT_SOURCE_SHA256"
+
+        test "$(
+            git show \
+                "${M1_SOURCE_COMMIT}:${M1_CONFIG_TEXT_HEADER_PATH}" |
+            sha256sum |
+            awk '{print $1}'
+        )" = "$M1_CONFIG_TEXT_HEADER_SHA256"
+
+        test "$(
+            git show \
+                "${M1_SOURCE_COMMIT}:working/b4a/Makefile" |
+            sha256sum |
+            awk '{print $1}'
+        )" = "$M1_MAKEFILE_SHA256"
+
+        test "$(
+            grep -Fxc \
+                '#include "ps2vnc_config_text.h"' \
+                "$M1_MONOLITH_PATH"
+        )" -eq 1
+
+        if grep -Fq \
+            'static char *ps2vnc_config_trim_left' \
+            "$M1_MONOLITH_PATH"
+        then
+            echo 'ERROR=M1B_TRIM_LEFT_STILL_PRIVATE_IN_MONOLITH'
+            exit 75
+        fi
+
+        if grep -Fq \
+            'static void ps2vnc_config_trim_right' \
+            "$M1_MONOLITH_PATH"
+        then
+            echo 'ERROR=M1B_TRIM_RIGHT_STILL_PRIVATE_IN_MONOLITH'
+            exit 76
+        fi
+
+        grep -Fq \
+            'ps2vnc_config_text.o' \
+            working/b4a/Makefile
+
+        echo 'WORKING_SOURCE_GENERATION=M1B'
+        echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
+        echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
+        echo 'M1_WORKING_SOURCE_AUTHORITY=PASS'
+    else
+        echo "ERROR=UNKNOWN_WORKING_SOURCE_GENERATION:$CURRENT_STAGE"
+        exit 77
     fi
-
-    echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"
-    echo "CURRENT_SOURCE_HEAD=$CURRENT_SOURCE_HEAD"
-    echo 'M0_WRITABLE_SOURCE_AUTHORITY=PASS'
 fi
 
-
-echo
 echo '===== L. M0 HARDWARE RESOLUTION ====='
 
 if { [ "$CURRENT_STAGE" = 'M0' ] &&
@@ -589,11 +658,7 @@ echo 'HUMAN_MIGRATION_MIRROR=PASS'
 echo
 echo '===== O. M1A EXTRACTION BOUNDARY ====='
 
-if [ "$CURRENT_STAGE" = 'M1' ] &&
-   [ "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS' ] &&
-   [ "$NEXT_ACTION" = \
-       'PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository' ]
-then
+if [ "$CURRENT_STAGE" = 'M1' ]; then
     test -f docs/M1A_EXTRACTION_BOUNDARY.md
 
     grep -Fq \
@@ -604,22 +669,14 @@ then
         'ps2vnc_config_trim_right' \
         docs/M1A_EXTRACTION_BOUNDARY.md
 
-    test "$CURRENT_WORKING_SOURCE" = \
-        'working/b4a/ps2ip.c'
-
-    test "$CURRENT_SOURCE_HEAD" = \
-        'd1c0d6a4829c03f3a062095afd00859188e13dfe'
-
     echo 'M1A_SELECTED_FUNCTION_1=ps2vnc_config_trim_left'
     echo 'M1A_SELECTED_FUNCTION_2=ps2vnc_config_trim_right'
-    echo 'M1A_SOURCE_MUTATION=NO'
     echo 'M1A_EXTRACTION_BOUNDARY=PASS'
 else
-    echo 'M1A_EXTRACTION_BOUNDARY=NOT_AT_PUBLICATION_GATE'
+    echo 'M1A_EXTRACTION_BOUNDARY=NOT_CURRENT_STAGE'
 fi
 
 
-echo
 echo '===== P. GITHUB PUBLICATION AUTHORITY ====='
 
 if [ "${GITHUB_PUBLICATION_STATUS:-}" = 'PRIVATE_PUBLISHED' ]; then
@@ -643,6 +700,107 @@ if [ "${GITHUB_PUBLICATION_STATUS:-}" = 'PRIVATE_PUBLISHED' ]; then
 else
     echo 'GITHUB_PUBLICATION_AUTHORITY=NOT_YET_PUBLISHED'
 fi
+
+echo
+echo '===== Q. M1 LIFECYCLE ACTION AUTHORITY ====='
+
+if [ "$CURRENT_STAGE" = 'M1' ]; then
+    test "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS'
+
+    case "$NEXT_ACTION" in
+        PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository)
+            test "$CURRENT_SOURCE_HEAD" = \
+                "$M0_COMPLETION_SOURCE_HEAD"
+
+            test -f docs/M1A_EXTRACTION_BOUNDARY.md
+
+            echo 'M1_ACTION=PUBLICATION_GATE'
+            ;;
+
+        M1B_mechanically_extract_config_text_module)
+            test "${GITHUB_PUBLICATION_STATUS:-}" = \
+                'PRIVATE_PUBLISHED'
+
+            test "$CURRENT_SOURCE_HEAD" = \
+                "$M0_COMPLETION_SOURCE_HEAD"
+
+            test -f docs/M1A_EXTRACTION_BOUNDARY.md
+            test -f docs/GITHUB_PUBLICATION.md
+
+            echo 'M1_ACTION=M1B_EXTRACTION'
+            ;;
+
+        M1C_build_and_characterize_first_modularized_DUT)
+            test "${GITHUB_PUBLICATION_STATUS:-}" = \
+                'PRIVATE_PUBLISHED'
+
+            test -f docs/M1A_EXTRACTION_BOUNDARY.md
+            test -f docs/M1B_EXTRACTION_RESULT.md
+            test -f runtime/M1_SOURCE_AUTHORITY.env
+
+            # shellcheck disable=SC1091
+            source runtime/M1_SOURCE_AUTHORITY.env
+
+            test "$CURRENT_SOURCE_HEAD" = \
+                "$M1_SOURCE_COMMIT"
+
+            test "$M1_SOURCE_STAGE" = 'M1B'
+            test "$M1_SOURCE_STATUS" = 'EXTRACTED_NOT_BUILT'
+
+            echo 'M1_ACTION=M1C_BUILD_CHARACTERIZATION'
+            ;;
+
+        *)
+            echo "ERROR=UNSUPPORTED_M1_NEXT_ACTION:$NEXT_ACTION"
+            exit 78
+            ;;
+    esac
+
+    echo 'M1_LIFECYCLE_ACTION_AUTHORITY=PASS'
+else
+    echo 'M1_LIFECYCLE_ACTION_AUTHORITY=NOT_CURRENT_STAGE'
+fi
+
+
+echo
+echo '===== R. M1B SOURCE AUTHORITY ====='
+
+if [ "$CURRENT_STAGE" = 'M1' ] &&
+   [ "$NEXT_ACTION" = \
+       'M1C_build_and_characterize_first_modularized_DUT' ]
+then
+    test -f runtime/M1_SOURCE_AUTHORITY.env
+
+    # shellcheck disable=SC1091
+    source runtime/M1_SOURCE_AUTHORITY.env
+
+    test "$M1_SOURCE_STAGE" = 'M1B'
+    test "$M1_SOURCE_STATUS" = 'EXTRACTED_NOT_BUILT'
+
+    test "$M1_SELECTED_FUNCTION_1" = \
+        'ps2vnc_config_trim_left'
+
+    test "$M1_SELECTED_FUNCTION_2" = \
+        'ps2vnc_config_trim_right'
+
+    test "$M1_SELECTED_GLOBAL_REFS" = '0'
+    test "$M1_SELECTED_EXTERNAL_CALLEES" = '0'
+    test "$M1_SELECTED_EXTERNAL_CALLERS" = '3'
+
+    test "$M1_DUT_BUILD_STATUS" = 'NOT_BUILT'
+    test "$M1_DUT_ELF_SHA256" = 'NONE'
+    test "$M1_HARDWARE_STATUS" = 'NOT_RUN'
+
+    test -f docs/M1B_EXTRACTION_RESULT.md
+    test ! -e working/b4a/PS2VNC.ELF
+
+    echo "M1B_SOURCE_COMMIT=$M1_SOURCE_COMMIT"
+    echo 'M1_DUT_BUILD_STATUS=NOT_BUILT'
+    echo 'M1B_SOURCE_AUTHORITY=PASS'
+else
+    echo 'M1B_SOURCE_AUTHORITY=NOT_AT_M1C_GATE'
+fi
+
 
 echo '===== FINAL ====='
 echo 'PS_TO_VNC_MIGRATION_CHECK=PASS'

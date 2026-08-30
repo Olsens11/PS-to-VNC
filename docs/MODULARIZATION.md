@@ -201,3 +201,17 @@ Visibility:
     PRIVATE
 
 M1B may now begin the committed config-text mechanical extraction.
+
+## M1B first source extraction complete
+
+The configuration-text trim pair is now a separate translation unit.
+
+Source commit:
+
+    0f1b88ddf7821c935b68aabe6d65180bf02b074f
+
+The extraction remained mechanical and did not move any additional
+configuration parser logic or state.
+
+M1C must now perform the first clean modularized build and establish the new
+DUT identity.

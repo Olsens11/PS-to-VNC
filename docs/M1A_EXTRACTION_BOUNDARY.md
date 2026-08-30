@@ -268,3 +268,19 @@ M1B is blocked until that publication checkpoint passes.
 ## Next action
 
     PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository
+
+## M1B execution checkpoint
+
+The boundary selected by M1A was mechanically extracted in M1B.
+
+Mechanical source commit:
+
+    0f1b88ddf7821c935b68aabe6d65180bf02b074f
+
+Result authority:
+
+    docs/M1B_EXTRACTION_RESULT.md
+
+No additional function was included in the extraction.
+
+M1B did not build or run a DUT.

@@ -192,3 +192,30 @@ development.
 Next:
 
     M1B_mechanically_extract_config_text_module
+
+## M1B first mechanical extraction
+
+M1B is COMPLETE.
+
+The first implementation boundary has moved out of the monolith:
+
+    ps2vnc_config_trim_left
+    ps2vnc_config_trim_right
+
+New module:
+
+    working/b4a/ps2vnc_config_text.c
+
+New header:
+
+    working/b4a/ps2vnc_config_text.h
+
+Mechanical source commit:
+
+    0f1b88ddf7821c935b68aabe6d65180bf02b074f
+
+No M1 ELF has been built yet.
+
+Next:
+
+    M1C_build_and_characterize_first_modularized_DUT

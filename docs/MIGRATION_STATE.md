@@ -23,33 +23,38 @@ M1 — IN PROGRESS
 
 M1A is complete.
 
-The required GitHub publication checkpoint is also complete.
+The private GitHub publication gate is complete.
 
-PS-to-VNC is published to its own PRIVATE repository:
+M1B is complete.
 
-    Olsens11/PS-to-VNC
+The first mechanical implementation extraction has moved the configuration
+text whitespace helpers into their own translation unit.
 
-No M1 implementation source mutation has occurred yet.
-
-M1B is now permitted to perform the committed config-text extraction.
+No M1 executable has been built yet.
 
 ## Current working source authority
 
 working/b4a/ps2ip.c
 
-This is the completed M0 writable source authority.
+This remains the transitional monolith path, but its contents are now M1B
+source rather than byte-identical B4A source.
 
-M0 source-authority commit:
+Current M1B source commit:
 
-    d1c0d6a4829c03f3a062095afd00859188e13dfe
+    0f1b88ddf7821c935b68aabe6d65180bf02b074f
 
-At M1 entry no M1 implementation mutation has occurred.
+Current monolith SHA256:
 
-The historical frozen reference remains:
+    7bafa7b58daa086cf10ce2e7ae467889873f9b282adc8101da966dc8d65ff653
+
+First extracted module:
+
+    working/b4a/ps2vnc_config_text.c
+    working/b4a/ps2vnc_config_text.h
+
+Frozen B4A remains unchanged under:
 
     baseline/frozen-b4a/
-
-The frozen reference must not be edited.
 
 ## Frozen behavioral authority
 
@@ -106,18 +111,20 @@ Archive SHA256:
 
 ## Current build state
 
-M0 build result:
+M1B source extraction is complete.
 
-    OUTCOME_A_BYTE_EXACT_ELF
+No M1 executable has been built.
 
-Validated working ELF SHA256:
+The prior M0-generated ELF was removed from the writable working directory
+after source mutation so it cannot be confused with a binary produced from
+the new M1 source.
 
-    2deb9f4c3dab34eebdccc31a53fe7158ebce625aec4e9cf03cda902abf2611e8
+The most recent validated binary evidence remains the completed M0 B4A
+reproduction, but it is not an M1 DUT.
 
-The M0-generated executable is byte-identical to the historically validated
-B4A ELF.
+Next build stage:
 
-No M1 build exists yet because M1 source mutation has not begun.
+    M1C
 
 ## Current documentation state
 
@@ -131,19 +138,13 @@ subsequent modularization stage.
 
 ## Next action
 
-Begin M1B.
+Perform M1C.
 
-Mechanically extract:
+Run a controlled clean build of the M1B modular source, record the resulting
+ELF identity, and characterize the expected translation-unit/linkage changes.
 
-    ps2vnc_config_trim_left
-    ps2vnc_config_trim_right
-
-into:
-
-    working/b4a/ps2vnc_config_text.c
-    working/b4a/ps2vnc_config_text.h
-
-The operation remains governed by the exact M1A boundary document.
+Do not call the resulting executable hardware-validated until the required M1
+hardware regression is actually performed.
 
 ## Conversation-limit recovery
 
@@ -169,8 +170,8 @@ canonical machine-readable state.
     CURRENT_STAGE=M1
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=d1c0d6a4829c03f3a062095afd00859188e13dfe
-    NEXT_ACTION=M1B_mechanically_extract_config_text_module
+    CURRENT_SOURCE_HEAD=0f1b88ddf7821c935b68aabe6d65180bf02b074f
+    NEXT_ACTION=M1C_build_and_characterize_first_modularized_DUT
 
 The canonical machine-readable source remains:
 
@@ -397,3 +398,31 @@ Authority:
 Next operation:
 
     M1B_mechanically_extract_config_text_module
+## M1B checkpoint
+
+M1B is COMPLETE.
+
+Mechanical source commit:
+
+    0f1b88ddf7821c935b68aabe6d65180bf02b074f
+
+Extracted module:
+
+    working/b4a/ps2vnc_config_text.c
+    working/b4a/ps2vnc_config_text.h
+
+M1 implementation source mutation:
+
+    YES — CONFIG_TEXT_EXTRACTION_ONLY
+
+M1 build performed:
+
+    NO
+
+M1 DUT binary:
+
+    NONE
+
+Next operation:
+
+    M1C_build_and_characterize_first_modularized_DUT
