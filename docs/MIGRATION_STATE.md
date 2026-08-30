@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M3
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=69368356959dfb6e0bcf2d79ba150c473027af53
+    CURRENT_SOURCE_HEAD=08dfca50eaa2256666156aeb78d1480ae8a34cc3
     LAST_HARDWARE_RESULT=M1D_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M3B_recursive_macro_split
+    NEXT_ACTION=M3C_recursive_split_macro_regions
 
 The canonical machine-readable source remains:
 
@@ -637,3 +637,23 @@ PS2 load image:
 Next:
 
     M3B_recursive_macro_split
+
+## M3B three-region hierarchy
+
+The M3 implementation body is now represented by three large child regions:
+
+    6510
+    5625
+    6178
+
+Parent reconstruction:
+
+    BYTE_EXACT
+
+PS2 load image:
+
+    BYTE_EXACT_TO_M2
+
+Next:
+
+    M3C_recursive_split_macro_regions

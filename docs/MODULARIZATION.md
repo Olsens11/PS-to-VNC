@@ -310,3 +310,15 @@ The current macro body is:
 Next:
 
     M3B_recursive_macro_split
+
+## M3B top-level hierarchy
+
+The 18,313-line macro implementation has been divided into three large
+branches while remaining in the same translation unit.
+
+The next pass recursively subdivides those branches rather than returning to
+small one-function migrations.
+
+Next:
+
+    M3C_recursive_split_macro_regions

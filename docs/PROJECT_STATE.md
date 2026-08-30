@@ -369,3 +369,12 @@ The PS2 load image remains byte-exact to the validated M2 DUT.
 Next:
 
     M3B_recursive_macro_split
+
+## M3B complete
+
+The implementation now has three coarse top-level branches and retains the
+exact validated M2 PS2 load image.
+
+Next:
+
+    M3C_recursive_split_macro_regions

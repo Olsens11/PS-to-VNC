@@ -53,3 +53,22 @@ SHA256:
 
 This changes no M2 result or artifact. It corrects only the historical
 authority pointer.
+
+## M3B top-level recursive split
+
+The 18,313-line implementation body is now divided into three large
+source-ordered regions:
+
+    region1 = 6510 lines
+    region2 = 5625 lines
+    region3 = 6178 lines
+
+The children concatenate byte-for-byte to the original M3A parent body.
+
+The PS2 load image remains byte-for-byte identical to M2:
+
+    c8040ee6350e658d80f840d902dc9ab44e831f5907f484fa644e84fa1aaad05e
+
+Next:
+
+    M3C_recursive_split_macro_regions
