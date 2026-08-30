@@ -1118,3 +1118,36 @@ M4H_SOURCE_AUTHORITY_MANIFEST_SHA256=4ec8f03c217b71cfd9ee08621dcfc233cde0514ab8e
 
 NEXT_ACTION=M4H4_safe_area_presentation_hardware_checkpoint
 BLOCKED_BY=M4H3B_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
+
+## M4H-A hardware qualification — COMPLETE
+
+Validated candidate:
+
+    ELF_SHA256=42163c30b68ebf84b51b1c8c81d541017e64ffaa52e27bb0408f91edb25e2992
+    PT_LOAD_SHA256=a33efdb0bee3f383d4828db8fb6a06f62ddb90fdc42a97308dc12777ed8197b9
+
+Qualification:
+
+    controlled nontrivial safe-area geometry = PASS
+    signed center-relative offsets = PASS
+    normal configuration restoration = PASS
+    five-mode machine regression = PASS 5/5
+    five-mode physical result = FULL PASS
+    final state = IDLE / 480p
+    final RFB established sessions = 1
+
+Hardware authority:
+
+    /home/ps2/PS-to-VNC/evidence/m4/m4h-hardware-20260830-161605
+
+M4H_HARDWARE_HEAD=b5c5f6c9a9262152553d4af477c03bae59c63f82
+M4H_HARDWARE_MANIFEST_SHA256=3fc92b5f4405183838ea06c2b0772fbeeac2828e7b862f67adf4cfd049f035bb
+
+M4H_A_HARDWARE_QUALIFICATION=PASS_MACHINE_AND_PHYSICAL
+
+The first sealing attempt stopped because a source-style whitespace gate was
+incorrectly applied to raw captured evidence. Raw machine evidence was preserved
+byte-for-byte; its integrity is governed by the evidence SHA256 manifest.
+
+NEXT_ACTION=DOCS1_development_continuity_baseline
+BLOCKED_BY=NONE
