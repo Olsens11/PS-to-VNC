@@ -829,3 +829,53 @@ a DUT failure.
 
 M4A therefore closes the hardware requirement created by M3Z's new real
 compiler boundary. The next action is the post-split semantic-leaf census.
+
+## M4B coarse-migration closure and versioned architecture baseline
+
+The coarse structural migration is complete.
+
+M4B established:
+
+    REAL_TRANSLATION_UNITS=12
+    ACTIVE_SEMANTIC_LEAVES=12
+    LARGEST_ACTIVE_LEAF_LOGICAL_LINES=1717
+    BLOCKING_COARSE_SPLITS=0
+    OPTIONAL_SIZE_CANDIDATES=9
+    OPTIONAL_SIZE_LEAVES_GATE_COMPLETION=NO
+
+The project therefore stops using source-file size as the primary reason
+for further decomposition.
+
+The first standard product version is:
+
+    PRODUCT_VERSION=0.1.0-alpha.1
+    PRODUCT_TAG=v0.1.0-alpha.1
+
+The exact qualified PS2 executable remains:
+
+    ELF_SHA256=d9ddbcb14cf1007236bdf77d9a8bb48ce99390e2144cfab81c75cee6513f18f1
+    HARDWARE_RESULT=M4A_PASS_MACHINE_AND_PHYSICAL
+
+No binary change was made merely to introduce the version number.
+
+The permanent development rules are now defined by:
+
+    docs/ARCHITECTURE.md
+    docs/VERSIONING.md
+    docs/ARCHITECTURAL_NORMALIZATION.md
+
+The repository state transitions from:
+
+    LAST_COMPLETE_STAGE=M3
+    CURRENT_STAGE=M4
+    CURRENT_STAGE_STATUS=ARCHITECTURAL_NORMALIZATION
+
+The next action is:
+
+    NEXT_ACTION=M4C_architectural_responsibility_census
+
+M4 begins with a responsibility and ownership census before any further
+implementation movement. Remaining migration-era core/tail and .inc
+partitions are treated as qualified transitional scaffolding and will be
+retired according to semantic module boundaries rather than geometric
+line-count cuts.
