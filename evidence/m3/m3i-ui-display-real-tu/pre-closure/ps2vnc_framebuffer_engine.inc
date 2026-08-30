@@ -1,5 +1,5 @@
 
- int start_controller_thread(int sock)
+static int start_controller_thread(int sock)
 {
     ee_sema_t sema;
     ee_thread_t thread;
@@ -101,8 +101,8 @@ static unsigned short *ps2vnc_display_direct_write_row(
     unsigned int x,
     unsigned int y);
  void ps2vnc_display_direct_write_cancel(void);
- int ps2vnc_display_begin_update(void);
- int ps2vnc_display_finish_update_decode(void);
+static int ps2vnc_display_begin_update(void);
+static int ps2vnc_display_finish_update_decode(void);
 
 
 static void hextile_fill_rect(
@@ -1130,7 +1130,7 @@ void ps2vnc_display_direct_write_cancel(void)
     live_direct_present_safe = 0;
 }
 
- int ps2vnc_display_begin_update(void)
+static int ps2vnc_display_begin_update(void)
 {
     ps2vnc_display_direct_write_cancel();
 
@@ -1141,7 +1141,7 @@ void ps2vnc_display_direct_write_cancel(void)
     return 0;
 }
 
- int ps2vnc_display_finish_update_decode(void)
+static int ps2vnc_display_finish_update_decode(void)
 {
     int direct_complete = live_direct_present_safe;
 
@@ -1940,7 +1940,7 @@ static int ps2vnc_display_commit_update_standard(
     return 0;
 }
 
- int ps2vnc_display_commit_update(
+static int ps2vnc_display_commit_update(
     GSGLOBAL *gsGlobal,
     GSTEXTURE *tex,
     int direct_present_complete)

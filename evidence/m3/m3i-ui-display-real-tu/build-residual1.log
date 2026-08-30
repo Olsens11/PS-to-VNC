@@ -1,0 +1,92 @@
+rm -f PS2VNC.ELF ps2ip.o ps2vnc_runtime.o ps2vnc_ui_display.o ps2vnc_services.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o DEV9_irx.c NETMAN_irx.c SMAP_irx.c
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2ip.c -o ps2ip.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_runtime.c -o ps2vnc_runtime.o
+In file included from ps2vnc_runtime.c:284:
+ps2vnc_runtime_support.inc:938:13: warning: 'display_menu_open_for_active' used but never defined
+  938 | static void display_menu_open_for_active(int parent_system);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1437:12: warning: 'ps2vnc_remote_control_poll_idle' used but never defined
+ 1437 | static int ps2vnc_remote_control_poll_idle(void);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1438:12: warning: 'ps2vnc_remote_display_lease_expired' used but never defined
+ 1438 | static int ps2vnc_remote_display_lease_expired(void);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:3271:21: warning: 'osk_shifted_ascii' used but never defined
+ 3271 | static unsigned int osk_shifted_ascii(unsigned int c);
+      |                     ^~~~~~~~~~~~~~~~~
+In file included from ps2vnc_runtime.c:285:
+ps2vnc_framebuffer_engine.inc:2318:12: warning: 'update_hires_background_region' defined but not used [-Wunused-function]
+ 2318 | static int update_hires_background_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1158:12: warning: 'sync_copy_hires_region' defined but not used [-Wunused-function]
+ 1158 | static int sync_copy_hires_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_ui_display.c -o ps2vnc_ui_display.o
+In file included from ps2vnc_ui_display.c:24:
+ps2vnc_ui_controller.inc:957:21: warning: 'osk_shifted_ascii' defined but not used [-Wunused-function]
+  957 | static unsigned int osk_shifted_ascii(unsigned int c)
+      |                     ^~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_services.c -o ps2vnc_services.o
+In file included from ps2vnc_services.c:10:
+ps2vnc_calibration_state.inc:687:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+  687 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_config_text.c -o ps2vnc_config_text.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_identity.c -o ps2vnc_identity.o
+mips64r5900el-ps2-elf-gcc \
+	-D_EE \
+	-DF_gsKit_hires_init_screen=1 \
+	-G0 \
+	-march=r5900 \
+	-mhard-float \
+	-msingle-float \
+	-mno-llsc \
+	-mno-shared \
+	-mplt \
+	-O2 \
+	-g \
+	-flto=auto \
+	-fno-fat-lto-objects \
+	-I/usr/local/ps2dev/gsKit/include \
+	-I/usr/local/ps2dev/ps2sdk/ee/include \
+	-I/usr/local/ps2dev/ps2sdk/common/include \
+	-c ps2vnc_gsHires.c -o ps2vnc_gsHires.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c DEV9_irx.c -o DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c NETMAN_irx.c -o NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c SMAP_irx.c -o SMAP_irx.o
+mips64r5900el-ps2-elf-gcc -T/usr/local/ps2dev/ps2sdk/ee/startup/linkfile -O2 -o PS2VNC.ELF ps2ip.o ps2vnc_runtime.o ps2vnc_ui_display.o ps2vnc_services.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o -L/usr/local/ps2dev/ps2sdk/ee/lib -Wl,-zmax-page-size=128   -L/usr/local/ps2dev/gsKit/lib -lgskit -ldmakit -lpad -lnetman /work/build/deps/libps2ip_mtu1458_wscale128.a -ldebug -lpatches -Wl,--wrap=sendto
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_runtime.o: in function `recv_exact':
+/work/working/b4a/ps2vnc_runtime_support.inc:1632:(.text+0x20d4): undefined reference to `ps2vnc_remote_display_lease_expired'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: /work/working/b4a/ps2vnc_runtime_support.inc:1637:(.text+0x21e0): undefined reference to `ps2vnc_remote_control_poll_idle'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_runtime.o: in function `display_confirm_return_to_active_menu':
+/work/working/b4a/ps2vnc_runtime_support.inc:1985:(.text+0x2778): undefined reference to `display_menu_open_for_active'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_runtime.o: in function `osk_display_char':
+/work/working/b4a/ps2vnc_runtime_support.inc:3291:(.text+0x412c): undefined reference to `osk_shifted_ascii'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: /work/working/b4a/ps2vnc_runtime_support.inc:3291:(.text+0x43e0): undefined reference to `osk_shifted_ascii'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_ui_display.o: in function `display_menu_open_for_active':
+/work/working/b4a/ps2vnc_ui_controller.inc:303:(.text+0x16c): undefined reference to `display_menu_tab_selection'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: /work/working/b4a/ps2vnc_ui_controller.inc:303:(.text+0x174): undefined reference to `display_menu_tab_selection'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_ui_display.o: in function `display_menu_normalize_selection':
+/work/working/b4a/ps2vnc_ui_controller.inc:269:(.text+0x180c): undefined reference to `display_menu_tab_selection'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: /work/working/b4a/ps2vnc_ui_controller.inc:269:(.text+0x1810): undefined reference to `display_menu_tab_selection'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: /work/working/b4a/ps2vnc_ui_controller.inc:263:(.text+0x196c): undefined reference to `display_menu_tab_selection'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_ui_display.o:/work/working/b4a/ps2vnc_ui_controller.inc:263: more undefined references to `display_menu_tab_selection' follow
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_ui_display.o: in function `display_live_desktop':
+/work/working/b4a/ps2vnc_display_orchestration.inc:1556:(.text+0x2ff4): undefined reference to `video_modes'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: /work/working/b4a/ps2vnc_display_orchestration.inc:1556:(.text+0x2ffc): undefined reference to `video_modes'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_ui_display.o: in function `display_menu_mode_visible':
+/work/working/b4a/ps2vnc_ui_controller.inc:173:(.text+0x3988): undefined reference to `video_modes'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_ui_display.o: in function `display_menu_render_bitmap':
+/work/working/b4a/ps2vnc_ui_controller.inc:634:(.text+0x39a0): undefined reference to `video_modes'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_ui_display.o: in function `display_menu_move_vertical_selection':
+/work/working/b4a/ps2vnc_ui_controller.inc:363:(.text+0x4a14): undefined reference to `display_menu_tab_selection'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: /work/working/b4a/ps2vnc_ui_controller.inc:363:(.text+0x4a1c): undefined reference to `display_menu_tab_selection'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: ps2vnc_ui_display.o: in function `osk_activate_selected':
+/work/working/b4a/ps2vnc_ui_controller.inc:1078:(.text+0x63fc): undefined reference to `osk_func_keysyms'
+/usr/local/ps2dev/ee/lib/gcc/mips64r5900el-ps2-elf/15.2.0/../../../../mips64r5900el-ps2-elf/bin/ld: /work/working/b4a/ps2vnc_ui_controller.inc:1078:(.text+0x6404): undefined reference to `osk_func_keysyms'
+collect2: error: ld returned 1 exit status
+make: *** [/usr/local/ps2dev/ps2sdk/samples/Makefile.eeglobal:85: PS2VNC.ELF] Error 1
+make: Target 'all' not remade because of errors.

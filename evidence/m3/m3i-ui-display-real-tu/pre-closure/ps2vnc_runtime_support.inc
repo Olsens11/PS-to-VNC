@@ -190,7 +190,7 @@ unsigned int ps2vnc_hires_storage_bytes(void)
  * Physical raster, renderer framebuffer, and RFB desktop geometry are
  * separate coordinate spaces. Each backend supplies its own draw dimensions.
  */
- int ps2vnc_display_logical_desktop_size(
+static int ps2vnc_display_logical_desktop_size(
     unsigned int output_width,
     unsigned int output_height,
     unsigned int *width,
@@ -459,7 +459,7 @@ extern unsigned char NETMAN_irx[];
 extern unsigned int size_NETMAN_irx;
 
 /* libpad DMA area: 256 bytes, 64-byte aligned. */
- unsigned char pad_area[256] __attribute__((aligned(64)));
+static unsigned char pad_area[256] __attribute__((aligned(64)));
 
 /* Dedicated EE input thread. */
 #define CONTROLLER_STACK_SIZE 8192
@@ -504,9 +504,9 @@ int rfb_queue_sema = -1;
  */
 #define RFB_RX_BUFFER_SIZE 32768
 static unsigned char rfb_rx_buffer[RFB_RX_BUFFER_SIZE];
- unsigned int rfb_rx_pos = 0;
- unsigned int rfb_rx_end = 0;
- volatile unsigned int rfb_rx_syscalls = 0;
+static unsigned int rfb_rx_pos = 0;
+static unsigned int rfb_rx_end = 0;
+static volatile unsigned int rfb_rx_syscalls = 0;
 
 /*
  * Test31 receive/header sentinels retained for lightweight diagnostics.
@@ -516,20 +516,20 @@ static unsigned char rfb_rx_buffer[RFB_RX_BUFFER_SIZE];
 #define TEST31_RX_SENTINEL 0xA5
 #define TEST31_HDR_SENTINEL 0x5A
 
- volatile int rfb_last_recv_n = 0;
- volatile unsigned int rfb_last_recv_call = 0;
+static volatile int rfb_last_recv_n = 0;
+static volatile unsigned int rfb_last_recv_call = 0;
 
 static volatile unsigned int live_hdr_start_pos = 0;
 static volatile unsigned int live_hdr_start_end = 0;
- volatile unsigned int live_hdr_start_avail = 0;
+static volatile unsigned int live_hdr_start_avail = 0;
 static volatile unsigned int live_hdr_end_pos = 0;
 static volatile unsigned int live_hdr_end_end = 0;
- volatile int live_hdr_recv_n = 0;
+static volatile int live_hdr_recv_n = 0;
 static volatile unsigned int live_hdr_recv_call = 0;
- volatile unsigned char live_hdr_raw[12];
+static volatile unsigned char live_hdr_raw[12];
 
 /* Raw FramebufferUpdate header tracing: type + pad + rectangle count. */
- volatile unsigned char live_update_raw[4];
+static volatile unsigned char live_update_raw[4];
 static volatile unsigned int live_update_start_pos = 0;
 static volatile unsigned int live_update_start_end = 0;
 static volatile unsigned int live_update_end_pos = 0;
@@ -664,15 +664,15 @@ int force_screen_fit_calibration = 0;
 static int controller_sock = -1;
 
 /* Last live RFB failure context, displayed if the render loop exits. */
- volatile int live_error_code = 0;
- volatile unsigned int live_message_type = 0;
- volatile unsigned int live_rect_count = 0;
- volatile unsigned int live_rect_index = 0;
- volatile unsigned int live_rect_x = 0;
- volatile unsigned int live_rect_y = 0;
- volatile unsigned int live_rect_w = 0;
- volatile unsigned int live_rect_h = 0;
- volatile unsigned int live_encoding = 0;
+static volatile int live_error_code = 0;
+static volatile unsigned int live_message_type = 0;
+static volatile unsigned int live_rect_count = 0;
+static volatile unsigned int live_rect_index = 0;
+static volatile unsigned int live_rect_x = 0;
+static volatile unsigned int live_rect_y = 0;
+static volatile unsigned int live_rect_w = 0;
+static volatile unsigned int live_rect_h = 0;
+static volatile unsigned int live_encoding = 0;
 
 /*
  * Test27 diagnostic transport.
@@ -690,31 +690,31 @@ static int controller_sock = -1;
 #define DEBUG_UDP_PORT 5999
 int debug_udp_sock = -1;
 struct sockaddr_in debug_udp_addr;
- volatile unsigned int debug_frame_counter = 0;
+static volatile unsigned int debug_frame_counter = 0;
 volatile unsigned int debug_stage_id = 0;
- volatile int debug_changed_bytes = 0;
+static volatile int debug_changed_bytes = 0;
 
 /* D17AL-F8J2-B4A hard-transition envelope phase, 0 = idle. */
- volatile unsigned int debug_transition_phase = 0;
+static volatile unsigned int debug_transition_phase = 0;
 
 /* TEST15C1 measurement-only live-pipeline profiler. */
- u64 profile_present_sync_ticks = 0;
- u64 profile_flip_ticks = 0;
- u64 profile_rfb_ticks = 0;
+static u64 profile_present_sync_ticks = 0;
+static u64 profile_flip_ticks = 0;
+static u64 profile_rfb_ticks = 0;
 static u64 profile_rx_wait_ticks = 0;
 static u64 profile_hextile_ticks = 0;
 static u64 profile_hextile_rx_wait_ticks = 0;
 static int profile_hextile_active = 0;
- u64 profile_dirty_wait_ticks = 0;
+static u64 profile_dirty_wait_ticks = 0;
 static u64 profile_dirty_work_ticks = 0;
- u64 profile_rfb_start_tick = 0;
+static u64 profile_rfb_start_tick = 0;
 static u64 profile_dirty_work_start_tick = 0;
- unsigned int profile_rfb_updates = 0;
+static unsigned int profile_rfb_updates = 0;
 static unsigned int profile_dirty_updates = 0;
- unsigned int profile_changed_bytes = 0;
+static unsigned int profile_changed_bytes = 0;
 static unsigned int profile_raw_rects = 0;
 static unsigned int profile_hextile_rects = 0;
- volatile unsigned int controller_loop_counter = 0;
+static volatile unsigned int controller_loop_counter = 0;
 static unsigned int debug_idle_poll_counter = 0;
 
 /*
@@ -723,15 +723,15 @@ static unsigned int debug_idle_poll_counter = 0;
  * The controller thread writes only these scalar diagnostics.  UDP remains
  * owned exclusively by the main/RFB thread through debug_emit_now().
  */
- volatile unsigned int debug_hotkey_mask = 0;
- volatile unsigned int debug_hotkey_stable_polls = 0;
- volatile unsigned int debug_hotkey_settle_target = 0;
+static volatile unsigned int debug_hotkey_mask = 0;
+static volatile unsigned int debug_hotkey_stable_polls = 0;
+static volatile unsigned int debug_hotkey_settle_target = 0;
 /* Runtime action NONE is numerically zero; avoid enum declaration order. */
- volatile int debug_hotkey_action = 0;
- volatile int debug_hotkey_trigger = 0;
- volatile unsigned int debug_hotkey_hold_polls = 0;
- volatile int debug_hotkey_latched = 0;
- volatile unsigned int debug_hotkey_quarantine = 0;
+static volatile int debug_hotkey_action = 0;
+static volatile int debug_hotkey_trigger = 0;
+static volatile unsigned int debug_hotkey_hold_polls = 0;
+static volatile int debug_hotkey_latched = 0;
+static volatile unsigned int debug_hotkey_quarantine = 0;
 
 enum {
     DBG_STAGE_STARTUP = 0,
@@ -758,13 +758,13 @@ enum {
 };
 
 /* On-screen keyboard state shared between controller and renderer. */
- volatile int osk_visible = 0;
- volatile int osk_row = 1;
- volatile int osk_col = 0;
- volatile int osk_shift = 0;
- volatile int osk_ctrl = 0;
- volatile int osk_alt = 0;
- volatile int osk_page = 0;
+static volatile int osk_visible = 0;
+static volatile int osk_row = 1;
+static volatile int osk_col = 0;
+static volatile int osk_shift = 0;
+static volatile int osk_ctrl = 0;
+static volatile int osk_alt = 0;
+static volatile int osk_page = 0;
 volatile unsigned int osk_generation = 1;
 
 /*
@@ -803,7 +803,7 @@ const ps2vnc_video_mode_t *display_menu_mode_at_selection(
     return video_modes[selection];
 }
 
- int display_mode_request_for_selection(int selection)
+static int display_mode_request_for_selection(int selection)
 {
     if (selection < 0 ||
         (unsigned int)selection >= VIDEO_MODE_COUNT)
@@ -812,7 +812,7 @@ const ps2vnc_video_mode_t *display_menu_mode_at_selection(
     return selection + 1;
 }
 
- const ps2vnc_video_mode_t *display_mode_request_target(
+static const ps2vnc_video_mode_t *display_mode_request_target(
     int request)
 {
     int selection = request - 1;
@@ -820,10 +820,10 @@ const ps2vnc_video_mode_t *display_menu_mode_at_selection(
     return display_menu_mode_at_selection(selection);
 }
 
- volatile int display_menu_visible = 0;
- volatile int display_menu_selection = 0;
- volatile int display_menu_error = 0;
- volatile int display_mode_request = DISPLAY_MODE_REQUEST_NONE;
+static volatile int display_menu_visible = 0;
+static volatile int display_menu_selection = 0;
+static volatile int display_menu_error = 0;
+static volatile int display_mode_request = DISPLAY_MODE_REQUEST_NONE;
 
 /*
  * A calibration request is semantically distinct from a mode switch even
@@ -831,7 +831,7 @@ const ps2vnc_video_mode_t *display_menu_mode_at_selection(
  * only this channel; it must never enter ps2vnc_switch_display_mode().
  */
 
- volatile int display_calibration_request =
+static volatile int display_calibration_request =
     DISPLAY_MODE_REQUEST_NONE;
 
 
@@ -843,7 +843,7 @@ enum {
     REMOTE_DISPLAY_RESTORING
 };
 
- volatile int remote_display_state =
+static volatile int remote_display_state =
     REMOTE_DISPLAY_IDLE;
 
 /*
@@ -853,26 +853,26 @@ enum {
  * display_confirm_return_to_active_menu(); consume that call once instead
  * of duplicating remote special-cases at every rollback exit.
  */
- volatile int
+static volatile int
     remote_display_suppress_next_active_menu_return = 0;
 
- volatile int display_mode_request_remote = 0;
+static volatile int display_mode_request_remote = 0;
 
- unsigned int remote_display_txid = 0;
- unsigned int remote_display_lease_seconds = 0;
- unsigned int remote_display_error_code = 0;
+static unsigned int remote_display_txid = 0;
+static unsigned int remote_display_lease_seconds = 0;
+static unsigned int remote_display_error_code = 0;
 
 /* F8J2-B2 diagnostic: exact failure-return ordinal inside
  * ps2vnc_switch_display_mode(). */
- volatile unsigned int display_switch_failure_stage = 0;
+static volatile unsigned int display_switch_failure_stage = 0;
 
- u64 remote_display_lease_started_tick = 0;
- u64 remote_display_last_poll_tick = 0;
+static u64 remote_display_lease_started_tick = 0;
+static u64 remote_display_last_poll_tick = 0;
 
- const ps2vnc_video_mode_t *
+static const ps2vnc_video_mode_t *
     remote_display_requested_mode = NULL;
 
- const ps2vnc_video_mode_t *
+static const ps2vnc_video_mode_t *
     remote_display_baseline_mode = NULL;
 
 
@@ -897,13 +897,13 @@ enum {
     DISPLAY_POLICY_REQUEST_HIDE_LOCKED
 };
 
- volatile int display_menu_tab = DISPLAY_TAB_TV_DTV;
+static volatile int display_menu_tab = DISPLAY_TAB_TV_DTV;
 
 /*
  * Remember the most recent registry selection in each mode tab.
  * ADVANCED has settings rows rather than a mode selection.
  */
- volatile int display_menu_tab_selection[3] = {
+static volatile int display_menu_tab_selection[3] = {
     -1, -1, -1
 };
 
@@ -922,20 +922,20 @@ volatile unsigned char display_mode_locked[VIDEO_MODE_COUNT];
 
 volatile int display_hide_locked_modes = 0;
 volatile int display_policy_loaded = 0;
- volatile int display_policy_error = 0;
+static volatile int display_policy_error = 0;
 
 /*
  * Controller -> main-thread semantic policy request.
  *
  * The controller never performs management HTTP.
  */
- volatile int display_policy_request =
+static volatile int display_policy_request =
     DISPLAY_POLICY_REQUEST_NONE;
 
- volatile int display_policy_request_selection = -1;
- volatile int display_policy_request_value = 0;
+static volatile int display_policy_request_selection = -1;
+static volatile int display_policy_request_value = 0;
 
- void display_menu_open_for_active(int parent_system);
+static void display_menu_open_for_active(int parent_system);
 
 #define DISPLAY_CONFIRM_TIMEOUT_SECONDS 30u
 
@@ -952,11 +952,11 @@ enum {
     DISPLAY_CONFIRM_ACTION_ROLLBACK_IN_PROGRESS
 };
 
- volatile int display_confirm_pending = 0;
- volatile int display_confirm_visible = 0;
- volatile int display_confirm_selection = DISPLAY_CONFIRM_GO_BACK;
- volatile unsigned int display_confirm_seconds = 0;
- volatile int display_confirm_action = DISPLAY_CONFIRM_ACTION_NONE;
+static volatile int display_confirm_pending = 0;
+static volatile int display_confirm_visible = 0;
+static volatile int display_confirm_selection = DISPLAY_CONFIRM_GO_BACK;
+static volatile unsigned int display_confirm_seconds = 0;
+static volatile int display_confirm_action = DISPLAY_CONFIRM_ACTION_NONE;
 
 /*
  * H4C3D16:
@@ -965,16 +965,16 @@ enum {
  * wall-clock confirmation countdown; this flag lets it distinguish an ordinary
  * confirmation timeout from a main-thread transition stall.
  */
- volatile int display_transition_switch_in_progress = 0;
+static volatile int display_transition_switch_in_progress = 0;
 
- const ps2vnc_video_mode_t *display_confirm_previous_mode = NULL;
- unsigned int display_confirm_previous_x = 0;
- unsigned int display_confirm_previous_y = 0;
- unsigned int display_confirm_previous_w = 0;
- unsigned int display_confirm_previous_h = 0;
- unsigned int display_confirm_previous_desktop_w = 0;
- unsigned int display_confirm_previous_desktop_h = 0;
- ps2vnc_backend_t display_confirm_previous_backend =
+static const ps2vnc_video_mode_t *display_confirm_previous_mode = NULL;
+static unsigned int display_confirm_previous_x = 0;
+static unsigned int display_confirm_previous_y = 0;
+static unsigned int display_confirm_previous_w = 0;
+static unsigned int display_confirm_previous_h = 0;
+static unsigned int display_confirm_previous_desktop_w = 0;
+static unsigned int display_confirm_previous_desktop_h = 0;
+static ps2vnc_backend_t display_confirm_previous_backend =
     PS2VNC_BACKEND_NONE;
 
 /*
@@ -984,11 +984,11 @@ enum {
  * A provisional mode switch must not allow candidate B's calibration state
  * to survive a Go Back/timeout reconstruction of confirmed profile A.
  */
- int display_confirm_previous_screen_fit_width = 0;
- int display_confirm_previous_screen_fit_height = 0;
- int display_confirm_previous_screen_fit_offset_x = 0;
- int display_confirm_previous_screen_fit_offset_y = 0;
- int display_confirm_previous_screen_fit_full_bypass = 0;
+static int display_confirm_previous_screen_fit_width = 0;
+static int display_confirm_previous_screen_fit_height = 0;
+static int display_confirm_previous_screen_fit_offset_x = 0;
+static int display_confirm_previous_screen_fit_offset_y = 0;
+static int display_confirm_previous_screen_fit_full_bypass = 0;
 
 static volatile u64 display_confirm_started_tick = 0;
 
@@ -1000,11 +1000,11 @@ static volatile u64 display_confirm_started_tick = 0;
  * RESTORED, this acknowledgement owns local UI until the main thread sends
  * ACK successfully.  The controller never performs management HTTP.
  */
- volatile int display_restore_ack_visible = 0;
- volatile int display_restore_ack_request = 0;
- const ps2vnc_video_mode_t *display_restore_ack_mode = NULL;
+static volatile int display_restore_ack_visible = 0;
+static volatile int display_restore_ack_request = 0;
+static const ps2vnc_video_mode_t *display_restore_ack_mode = NULL;
 
- volatile int display_menu_parent_system = 0;
+static volatile int display_menu_parent_system = 0;
 
 /*
  * TEST15E3-E:
@@ -1082,7 +1082,7 @@ static const ps2vnc_hotkey_binding_t runtime_hotkeys[] = {
 #define RUNTIME_HOTKEY_COUNT \
     (sizeof(runtime_hotkeys) / sizeof(runtime_hotkeys[0]))
 
- const ps2vnc_hotkey_binding_t *
+static const ps2vnc_hotkey_binding_t *
 runtime_hotkey_lookup(unsigned int mask, int desktop_context)
 {
     unsigned int i;
@@ -1119,7 +1119,7 @@ runtime_hotkey_lookup(unsigned int mask, int desktop_context)
  * have resolved to pending Refresh, adding Start changes the exact mask and
  * naturally restarts collection for Exit.
  */
- int runtime_hotkey_has_hold_extension(
+static int runtime_hotkey_has_hold_extension(
     unsigned int mask,
     int desktop_context)
 {
@@ -1173,7 +1173,7 @@ volatile u64 system_refresh_cooldown_started_tick = 0;
 /* Local GS-format keyboard texture buffer. */
 unsigned short osk_pixels[OSK_WIDTH * OSK_HEIGHT] __attribute__((aligned(128)));
 
- int screen_row = 0;
+static int screen_row = 0;
 
 void screenf(const char *fmt, ...)
 {
@@ -1332,7 +1332,7 @@ static int send_rfb_message(int sock, const void *data, int len)
  * This intentionally does NOT touch the RFB receive stream and does
  * NOT transmit any queued controller history into the transition.
  */
- int ps2vnc_discard_controller_rfb_queue(void)
+static int ps2vnc_discard_controller_rfb_queue(void)
 {
     if (rfb_queue_sema < 0)
         return 0;
@@ -1432,10 +1432,10 @@ void reset_rfb_transport_state(void)
  * send()/recv() on the VNC socket is executed by THIS SAME EE thread.
  */
 static void debug_emit_idle_poll(void);
- void debug_emit_now(void);
+static void debug_emit_now(void);
 
- int ps2vnc_remote_control_poll_idle(void);
- int ps2vnc_remote_display_lease_expired(void);
+static int ps2vnc_remote_control_poll_idle(void);
+static int ps2vnc_remote_display_lease_expired(void);
 
 /*
  * TEST12B carrier-loss detection:
@@ -1457,8 +1457,8 @@ static void debug_emit_idle_poll(void);
 #define RFB_RECEIVE_LOCAL_REDRAW (-2)
 
 static volatile int rfb_message_boundary_local_yield = 0;
- volatile int rfb_confirm_live_yield_enabled = 0;
- volatile unsigned int rfb_confirm_wait_generation = 0;
+static volatile int rfb_confirm_live_yield_enabled = 0;
+static volatile unsigned int rfb_confirm_wait_generation = 0;
 
 static int recv_exact(int sock, void *data, int len)
 {
@@ -1677,7 +1677,7 @@ static const char *debug_stage_name(unsigned int stage)
     }
 }
 
- int debug_udp_init(void)
+static int debug_udp_init(void)
 {
     debug_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (debug_udp_sock < 0)
@@ -1693,7 +1693,7 @@ static const char *debug_stage_name(unsigned int stage)
     return 0;
 }
 
- void debug_emit_now(void)
+static void debug_emit_now(void)
 {
     char msg[640];
     int len;
@@ -1799,7 +1799,7 @@ unsigned int profile_ticks_us(u64 ticks)
  * Pending mode/calibration requests are included so there is no race
  * between controller publication and main-thread transaction ownership.
  */
- int ps2vnc_system_overlay_allowed(void)
+static int ps2vnc_system_overlay_allowed(void)
 {
     if (display_restore_ack_visible ||
         display_confirm_pending ||
@@ -1816,7 +1816,7 @@ unsigned int profile_ticks_us(u64 ticks)
 /*
  * Return nonzero only when COOLDOWN actually expires.
  */
- int ps2vnc_system_refresh_update_state(void)
+static int ps2vnc_system_refresh_update_state(void)
 {
     unsigned int elapsed_us;
 
@@ -1846,7 +1846,7 @@ unsigned int profile_ticks_us(u64 ticks)
 /*
  * Sole publication gate for an explicit manual Refresh request.
  */
- int ps2vnc_system_refresh_accept_request(void)
+static int ps2vnc_system_refresh_accept_request(void)
 {
     (void)ps2vnc_system_refresh_update_state();
 
@@ -1876,7 +1876,7 @@ unsigned int profile_ticks_us(u64 ticks)
  * Exit remains available during ordinary Refresh/recovery, but never cuts
  * across a provisional display transaction.
  */
- int ps2vnc_system_exit_accept_request(void)
+static int ps2vnc_system_exit_accept_request(void)
 {
     if (!ps2vnc_system_overlay_allowed())
         return 0;
@@ -1889,7 +1889,7 @@ unsigned int profile_ticks_us(u64 ticks)
 }
 
 
- void display_confirm_arm_transaction(
+static void display_confirm_arm_transaction(
     const ps2vnc_video_mode_t *previous_mode,
     unsigned int previous_x,
     unsigned int previous_y,
@@ -1932,7 +1932,7 @@ unsigned int profile_ticks_us(u64 ticks)
 }
 
 
- void display_confirm_disarm_transaction(void)
+static void display_confirm_disarm_transaction(void)
 {
     /* Withdraw ownership first; remaining fields are then private cleanup. */
     display_confirm_pending = 0;
@@ -1959,7 +1959,7 @@ unsigned int profile_ticks_us(u64 ticks)
 
 
 
- void display_confirm_return_to_active_menu(void)
+static void display_confirm_return_to_active_menu(void)
 {
     /*
      * F8J1C:
@@ -1987,7 +1987,7 @@ unsigned int profile_ticks_us(u64 ticks)
 
 
 
- unsigned int display_confirm_remaining_seconds(void)
+static unsigned int display_confirm_remaining_seconds(void)
 {
     unsigned int elapsed_us;
 
@@ -2005,7 +2005,7 @@ unsigned int profile_ticks_us(u64 ticks)
         (elapsed_us / 1000000u);
 }
 
- void profile_emit_now(void)
+static void profile_emit_now(void)
 {
     char msg[256];
     int len;
@@ -2067,7 +2067,7 @@ static void debug_emit_idle_poll(void)
  * The PS2SDK pad sample waits for STABLE/FINDCTP1 after
  * padSetMainMode().  Give this controller up to ~2 seconds.
  */
- int wait_pad_ready_after_mode_change(void)
+static int wait_pad_ready_after_mode_change(void)
 {
     const struct timespec delay = { 0, 10000000 }; /* 10 ms */
     int i;
@@ -2096,7 +2096,7 @@ static void debug_emit_idle_poll(void)
  * buttons are already down, require about 300 ms of continuous hold before
  * accepting the override.
  */
- int startup_force_calibration_requested(void)
+static int startup_force_calibration_requested(void)
 {
     const struct timespec delay = { 0, 10000000 }; /* 10 ms */
     struct padButtonStatus buttons;
@@ -2170,7 +2170,7 @@ int ethGetNetIFLinkStatus(void)
         NULL, 0, NULL, 0) == NETMAN_NETIF_ETH_LINK_STATE_UP;
 }
 
- int ethWaitValidNetIFLinkState(void)
+static int ethWaitValidNetIFLinkState(void)
 {
     return WaitValidNetState(&ethGetNetIFLinkStatus);
 }
@@ -2816,7 +2816,7 @@ int request_and_confirm_desktop_size(
     return -1;
 }
 
- int send_pointer_event(
+static int send_pointer_event(
     int sock,
     unsigned char button_mask,
     unsigned int x,
@@ -2846,7 +2846,7 @@ int request_and_confirm_desktop_size(
  * FramebufferUpdateRequest, so keyboard traffic cannot interleave with
  * either of them on the TCP byte stream.
  */
- int send_key_event(
+static int send_key_event(
     int sock,
     unsigned char down,
     unsigned int keysym)
@@ -2866,7 +2866,7 @@ int request_and_confirm_desktop_size(
 }
 
 
- int send_key_tap(int sock, unsigned int keysym)
+static int send_key_tap(int sock, unsigned int keysym)
 {
     unsigned char msg[16];
 
@@ -2901,7 +2901,7 @@ int request_and_confirm_desktop_size(
  *
  * Shift remains a local OSK layer; it changes the final printable keysym.
  */
- int send_modified_key_tap(
+static int send_modified_key_tap(
     int sock,
     unsigned int keysym,
     int use_ctrl,
@@ -2943,7 +2943,7 @@ int request_and_confirm_desktop_size(
     return send_rfb_message(sock, msg, pos) == pos ? 0 : -1;
 }
 
- void osk_clear_one_shot_modifiers(void)
+static void osk_clear_one_shot_modifiers(void)
 {
     if (osk_shift || osk_ctrl || osk_alt) {
         osk_shift = 0;
@@ -3099,7 +3099,7 @@ static const char *osk_func_labels[4][12] = {
     }
 };
 
- const unsigned int osk_func_keysyms[4][12] = {
+static const unsigned int osk_func_keysyms[4][12] = {
     {
         XK_F1, XK_F2, XK_F3, XK_F4,
         XK_F5, XK_F6, XK_F7, XK_F8,
@@ -3135,7 +3135,7 @@ static const char *osk_special_labels[11] = {
     "SPACE", "TAB", "BKSP", "DEL", "ENTER", "ESC"
 };
 
- int osk_row_length(int row)
+static int osk_row_length(int row)
 {
     int page;
 
@@ -3268,9 +3268,9 @@ void osk_draw_text_centered(
  * Forward declaration: osk_display_char() uses this before its full
  * definition later in the file.
  */
- unsigned int osk_shifted_ascii(unsigned int c);
+static unsigned int osk_shifted_ascii(unsigned int c);
 
- char osk_display_char(int row, int col)
+static char osk_display_char(int row, int col)
 {
     unsigned int c;
 
@@ -3293,7 +3293,7 @@ void osk_draw_text_centered(
     return (char)c;
 }
 
- void osk_render_bitmap(void)
+static void osk_render_bitmap(void)
 {
     const unsigned short panel = osk_color(3, 3, 4);
     const unsigned short key = osk_color(10, 10, 11);

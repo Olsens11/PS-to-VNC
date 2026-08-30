@@ -1,0 +1,30 @@
+/usr/local/ps2dev/ps2sdk/ee/include/libpad.h:36:23: error: expected identifier or '(' before numeric constant
+ps2vnc_runtime_to_ui_display.h:177:8: error: expected identifier or '(' before string constant
+ps2vnc_runtime_to_ui_display.h:212:14: error: unknown type name 'ps2vnc_hotkey_binding_t'
+ps2vnc_runtime_to_ui_display.h:370:8: error: type defaults to 'int' in declaration of 'ps2vnc_hotkey_binding_t' [-Wimplicit-int]
+ps2vnc_runtime_to_ui_display.h:459:38: error: expected '=', ',', ';', 'asm' or '__attribute__' before '*' token
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+ps2vnc_ui_controller.inc:860:13: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:860:13: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_ui_controller.inc:870:20: error: 'RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1588:32: error: 'RUNTIME_ACTION_NONE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1747:51: error: expected '=', ',', ';', 'asm' or '__attribute__' before '*' token
+ps2vnc_ui_controller.inc:1747:52: error: 'new_release' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1811:29: error: implicit declaration of function 'runtime_hotkey_lookup' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1818:33: error: 'HOTKEY_TRIGGER_RELEASE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1829:33: error: 'RUNTIME_ACTION_SEND_TAB' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1832:34: error: 'RUNTIME_ACTION_SEND_ENTER' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1850:51: error: expected '=', ',', ';', 'asm' or '__attribute__' before '*' token
+ps2vnc_ui_controller.inc:1850:52: error: 'binding' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1868:45: error: 'HOTKEY_TRIGGER_SETTLE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1905:40: error: 'RUNTIME_ACTION_DISPLAY_SETTINGS' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1928:36: error: 'HOTKEY_TRIGGER_HOLD' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1954:38: error: 'RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2001:37: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:1446:13: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+ps2vnc_display_orchestration.inc:2728:25: error: 'DEV9_irx' undeclared (first use in this function)

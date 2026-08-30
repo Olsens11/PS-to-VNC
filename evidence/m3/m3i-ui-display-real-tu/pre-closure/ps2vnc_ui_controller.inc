@@ -287,7 +287,7 @@ static void display_menu_normalize_selection(void)
 }
 
 
- void display_menu_open_for_active(int parent_system)
+static void display_menu_open_for_active(int parent_system)
 {
     int active_selection =
         display_menu_selection_for_mode(active_video_mode);
@@ -954,7 +954,7 @@ static void osk_move_vertical(int direction)
     osk_generation++;
 }
 
- unsigned int osk_shifted_ascii(unsigned int c)
+static unsigned int osk_shifted_ascii(unsigned int c)
 {
     if (c >= 'a' && c <= 'z')
         return c - 'a' + 'A';
@@ -1548,7 +1548,7 @@ static int dpad_hold_velocity_q8(unsigned int hold_ticks)
 }
 
 
- void controller_thread(void *arg)
+static void controller_thread(void *arg)
 {
     int sock = *(int *)arg;
     int cursor_x = desktop_width / 2;

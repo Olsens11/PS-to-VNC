@@ -1,0 +1,1567 @@
+rm -f PS2VNC.ELF ps2ip.o ps2vnc_runtime.o ps2vnc_ui_display.o ps2vnc_services.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o DEV9_irx.c NETMAN_irx.c SMAP_irx.c
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2ip.c -o ps2ip.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_runtime.c -o ps2vnc_runtime.o
+In file included from ps2vnc_runtime.c:284:
+ps2vnc_framebuffer_engine.inc: In function 'start_controller_thread':
+ps2vnc_framebuffer_engine.inc:25:27: error: 'controller_thread' undeclared (first use in this function); did you mean 'controller_thread_id'?
+   25 |     thread.func = (void *)controller_thread;
+      |                           ^~~~~~~~~~~~~~~~~
+      |                           controller_thread_id
+ps2vnc_framebuffer_engine.inc:25:27: note: each undeclared identifier is reported only once for each function it appears in
+In file included from ps2vnc_runtime.c:283:
+ps2vnc_runtime_support.inc: At top level:
+ps2vnc_runtime_support.inc:938:13: warning: 'display_menu_open_for_active' used but never defined
+  938 | static void display_menu_open_for_active(int parent_system);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1437:12: warning: 'ps2vnc_remote_control_poll_idle' used but never defined
+ 1437 | static int ps2vnc_remote_control_poll_idle(void);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1438:12: warning: 'ps2vnc_remote_display_lease_expired' used but never defined
+ 1438 | static int ps2vnc_remote_display_lease_expired(void);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:3271:21: warning: 'osk_shifted_ascii' used but never defined
+ 3271 | static unsigned int osk_shifted_ascii(unsigned int c);
+      |                     ^~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:2318:12: warning: 'update_hires_background_region' defined but not used [-Wunused-function]
+ 2318 | static int update_hires_background_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1943:12: warning: 'ps2vnc_display_commit_update' defined but not used [-Wunused-function]
+ 1943 | static int ps2vnc_display_commit_update(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1158:12: warning: 'sync_copy_hires_region' defined but not used [-Wunused-function]
+ 1158 | static int sync_copy_hires_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1144:12: warning: 'ps2vnc_display_finish_update_decode' defined but not used [-Wunused-function]
+ 1144 | static int ps2vnc_display_finish_update_decode(void)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1133:12: warning: 'ps2vnc_display_begin_update' defined but not used [-Wunused-function]
+ 1133 | static int ps2vnc_display_begin_update(void)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:2:12: warning: 'start_controller_thread' defined but not used [-Wunused-function]
+    2 | static int start_controller_thread(int sock)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:3296:13: warning: 'osk_render_bitmap' defined but not used [-Wunused-function]
+ 3296 | static void osk_render_bitmap(void)
+      |             ^~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2946:13: warning: 'osk_clear_one_shot_modifiers' defined but not used [-Wunused-function]
+ 2946 | static void osk_clear_one_shot_modifiers(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2904:12: warning: 'send_modified_key_tap' defined but not used [-Wunused-function]
+ 2904 | static int send_modified_key_tap(
+      |            ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2869:12: warning: 'send_key_tap' defined but not used [-Wunused-function]
+ 2869 | static int send_key_tap(int sock, unsigned int keysym)
+      |            ^~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2849:12: warning: 'send_key_event' defined but not used [-Wunused-function]
+ 2849 | static int send_key_event(
+      |            ^~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2819:12: warning: 'send_pointer_event' defined but not used [-Wunused-function]
+ 2819 | static int send_pointer_event(
+      |            ^~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2173:12: warning: 'ethWaitValidNetIFLinkState' defined but not used [-Wunused-function]
+ 2173 | static int ethWaitValidNetIFLinkState(void)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2099:12: warning: 'startup_force_calibration_requested' defined but not used [-Wunused-function]
+ 2099 | static int startup_force_calibration_requested(void)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2070:12: warning: 'wait_pad_ready_after_mode_change' defined but not used [-Wunused-function]
+ 2070 | static int wait_pad_ready_after_mode_change(void)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:2008:13: warning: 'profile_emit_now' defined but not used [-Wunused-function]
+ 2008 | static void profile_emit_now(void)
+      |             ^~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1990:21: warning: 'display_confirm_remaining_seconds' defined but not used [-Wunused-function]
+ 1990 | static unsigned int display_confirm_remaining_seconds(void)
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1962:13: warning: 'display_confirm_return_to_active_menu' defined but not used [-Wunused-function]
+ 1962 | static void display_confirm_return_to_active_menu(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1935:13: warning: 'display_confirm_disarm_transaction' defined but not used [-Wunused-function]
+ 1935 | static void display_confirm_disarm_transaction(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1892:13: warning: 'display_confirm_arm_transaction' defined but not used [-Wunused-function]
+ 1892 | static void display_confirm_arm_transaction(
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1879:12: warning: 'ps2vnc_system_exit_accept_request' defined but not used [-Wunused-function]
+ 1879 | static int ps2vnc_system_exit_accept_request(void)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1849:12: warning: 'ps2vnc_system_refresh_accept_request' defined but not used [-Wunused-function]
+ 1849 | static int ps2vnc_system_refresh_accept_request(void)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1680:12: warning: 'debug_udp_init' defined but not used [-Wunused-function]
+ 1680 | static int debug_udp_init(void)
+      |            ^~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1335:12: warning: 'ps2vnc_discard_controller_rfb_queue' defined but not used [-Wunused-function]
+ 1335 | static int ps2vnc_discard_controller_rfb_queue(void)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1122:12: warning: 'runtime_hotkey_has_hold_extension' defined but not used [-Wunused-function]
+ 1122 | static int runtime_hotkey_has_hold_extension(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1086:1: warning: 'runtime_hotkey_lookup' defined but not used [-Wunused-function]
+ 1086 | runtime_hotkey_lookup(unsigned int mask, int desktop_context)
+      | ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1005:35: warning: 'display_restore_ack_mode' defined but not used [-Wunused-variable]
+ 1005 | static const ps2vnc_video_mode_t *display_restore_ack_mode = NULL;
+      |                                   ^~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:876:5: warning: 'remote_display_baseline_mode' defined but not used [-Wunused-variable]
+  876 |     remote_display_baseline_mode = NULL;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:873:5: warning: 'remote_display_requested_mode' defined but not used [-Wunused-variable]
+  873 |     remote_display_requested_mode = NULL;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:870:12: warning: 'remote_display_last_poll_tick' defined but not used [-Wunused-variable]
+  870 | static u64 remote_display_last_poll_tick = 0;
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:869:12: warning: 'remote_display_lease_started_tick' defined but not used [-Wunused-variable]
+  869 | static u64 remote_display_lease_started_tick = 0;
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:863:21: warning: 'remote_display_error_code' defined but not used [-Wunused-variable]
+  863 | static unsigned int remote_display_error_code = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:862:21: warning: 'remote_display_lease_seconds' defined but not used [-Wunused-variable]
+  862 | static unsigned int remote_display_lease_seconds = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:861:21: warning: 'remote_display_txid' defined but not used [-Wunused-variable]
+  861 | static unsigned int remote_display_txid = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:815:35: warning: 'display_mode_request_target' defined but not used [-Wunused-function]
+  815 | static const ps2vnc_video_mode_t *display_mode_request_target(
+      |                                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:806:12: warning: 'display_mode_request_for_selection' defined but not used [-Wunused-function]
+  806 | static int display_mode_request_for_selection(int selection)
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:710:12: warning: 'profile_rfb_start_tick' defined but not used [-Wunused-variable]
+  710 | static u64 profile_rfb_start_tick = 0;
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:462:22: warning: 'pad_area' defined but not used [-Wunused-variable]
+  462 | static unsigned char pad_area[256] __attribute__((aligned(64)));
+      |                      ^~~~~~~~
+ps2vnc_runtime_support.inc:193:12: warning: 'ps2vnc_display_logical_desktop_size' defined but not used [-Wunused-function]
+  193 | static int ps2vnc_display_logical_desktop_size(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+make: *** [/usr/local/ps2dev/ps2sdk/samples/Makefile.eeglobal:65: ps2vnc_runtime.o] Error 1
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_ui_display.c -o ps2vnc_ui_display.o
+In file included from ps2vnc_ui_display.c:23:
+ps2vnc_ui_controller.inc: In function 'display_confirm_render_bitmap':
+ps2vnc_ui_controller.inc:11:25: error: 'OSK_WIDTH' undeclared (first use in this function); did you mean 'LONG_WIDTH'?
+   11 |     osk_fill_rect(0, 0, OSK_WIDTH, OSK_HEIGHT, panel);
+      |                         ^~~~~~~~~
+      |                         LONG_WIDTH
+ps2vnc_ui_controller.inc:11:25: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_ui_controller.inc:11:36: error: 'OSK_HEIGHT' undeclared (first use in this function)
+   11 |     osk_fill_rect(0, 0, OSK_WIDTH, OSK_HEIGHT, panel);
+      |                                    ^~~~~~~~~~
+ps2vnc_ui_controller.inc:20:9: error: 'display_confirm_previous_mode' undeclared (first use in this function)
+   20 |         display_confirm_previous_mode ?
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:30:9: error: 'display_confirm_selection' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+   30 |         display_confirm_selection == DISPLAY_CONFIRM_GO_BACK ?
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |         display_confirm_render_bitmap
+ps2vnc_ui_controller.inc:30:38: error: 'DISPLAY_CONFIRM_GO_BACK' undeclared (first use in this function)
+   30 |         display_confirm_selection == DISPLAY_CONFIRM_GO_BACK ?
+      |                                      ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:39:38: error: 'DISPLAY_CONFIRM_KEEP' undeclared (first use in this function)
+   39 |         display_confirm_selection == DISPLAY_CONFIRM_KEEP ?
+      |                                      ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:49:9: error: 'display_confirm_seconds' undeclared (first use in this function)
+   49 |         display_confirm_seconds);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_restore_ack_render_bitmap':
+ps2vnc_ui_controller.inc:69:25: error: 'OSK_WIDTH' undeclared (first use in this function); did you mean 'LONG_WIDTH'?
+   69 |     osk_fill_rect(0, 0, OSK_WIDTH, OSK_HEIGHT, panel);
+      |                         ^~~~~~~~~
+      |                         LONG_WIDTH
+ps2vnc_ui_controller.inc:69:36: error: 'OSK_HEIGHT' undeclared (first use in this function)
+   69 |     osk_fill_rect(0, 0, OSK_WIDTH, OSK_HEIGHT, panel);
+      |                                    ^~~~~~~~~~
+ps2vnc_ui_controller.inc:80:9: error: 'display_restore_ack_mode' undeclared (first use in this function); did you mean 'display_restore_ack_render_bitmap'?
+   80 |         display_restore_ack_mode ?
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~
+      |         display_restore_ack_render_bitmap
+ps2vnc_ui_controller.inc: In function 'display_menu_tab_for_mode':
+ps2vnc_ui_controller.inc:106:16: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+  106 |         return DISPLAY_TAB_TV_DTV;
+      |                ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:113:20: error: 'DISPLAY_TAB_VGA_60' undeclared (first use in this function)
+  113 |             return DISPLAY_TAB_VGA_60;
+      |                    ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:116:20: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+  116 |             return DISPLAY_TAB_VGA_OTHER;
+      |                    ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_menu_tab_label':
+ps2vnc_ui_controller.inc:127:14: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+  127 |         case DISPLAY_TAB_TV_DTV:
+      |              ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:130:14: error: 'DISPLAY_TAB_VGA_60' undeclared (first use in this function)
+  130 |         case DISPLAY_TAB_VGA_60:
+      |              ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:133:14: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+  133 |         case DISPLAY_TAB_VGA_OTHER:
+      |              ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:136:14: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+  136 |         case DISPLAY_TAB_ADVANCED:
+      |              ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_menu_mode_belongs_to_tab':
+ps2vnc_ui_controller.inc:153:15: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+  153 |         tab < DISPLAY_TAB_TV_DTV ||
+      |               ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:154:15: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+  154 |         tab > DISPLAY_TAB_VGA_OTHER)
+      |               ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_menu_first_visible_selection':
+ps2vnc_ui_controller.inc:187:15: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+  187 |     if (tab < DISPLAY_TAB_TV_DTV ||
+      |               ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:188:15: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+  188 |         tab > DISPLAY_TAB_VGA_OTHER)
+      |               ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:191:21: error: 'VIDEO_MODE_COUNT' undeclared (first use in this function)
+  191 |     for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+      |                     ^~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_menu_tab_visible':
+ps2vnc_ui_controller.inc:203:16: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+  203 |     if (tab == DISPLAY_TAB_ADVANCED)
+      |                ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:206:15: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+  206 |     if (tab < DISPLAY_TAB_TV_DTV ||
+      |               ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:207:15: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+  207 |         tab > DISPLAY_TAB_VGA_OTHER)
+      |               ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_menu_next_visible_tab':
+ps2vnc_ui_controller.inc:223:15: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+  223 |             : DISPLAY_TAB_ADVANCED;
+      |               ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:226:18: error: 'DISPLAY_TAB_COUNT' undeclared (first use in this function)
+  226 |          step <= DISPLAY_TAB_COUNT;
+      |                  ^~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_menu_normalize_selection':
+ps2vnc_ui_controller.inc:247:35: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+  247 |     if (!display_menu_tab_visible(display_menu_tab))
+      |                                   ^~~~~~~~~~~~~~~~
+      |                                   display_menu_tab_label
+ps2vnc_ui_controller.inc:253:29: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+  253 |     if (display_menu_tab == DISPLAY_TAB_ADVANCED) {
+      |                             ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:254:9: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+  254 |         display_menu_selection = -1;
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+      |         system_menu_selection
+ps2vnc_ui_controller.inc:263:9: error: 'display_menu_tab_selection' undeclared (first use in this function); did you mean 'display_menu_mode_at_selection'?
+  263 |         display_menu_tab_selection[display_menu_tab] =
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+      |         display_menu_mode_at_selection
+ps2vnc_ui_controller.inc: In function 'display_menu_open_for_active':
+ps2vnc_ui_controller.inc:295:5: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+  295 |     display_menu_tab =
+      |     ^~~~~~~~~~~~~~~~
+      |     display_menu_tab_label
+ps2vnc_ui_controller.inc:298:5: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+  298 |     display_menu_selection = active_selection;
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+      |     system_menu_selection
+ps2vnc_ui_controller.inc:300:29: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+  300 |     if (display_menu_tab >= DISPLAY_TAB_TV_DTV &&
+      |                             ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:301:29: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+  301 |         display_menu_tab <= DISPLAY_TAB_VGA_OTHER) {
+      |                             ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:303:9: error: 'display_menu_tab_selection' undeclared (first use in this function); did you mean 'display_menu_mode_at_selection'?
+  303 |         display_menu_tab_selection[display_menu_tab] =
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+      |         display_menu_mode_at_selection
+ps2vnc_ui_controller.inc:307:5: error: 'display_menu_error' undeclared (first use in this function)
+  307 |     display_menu_error = 0;
+      |     ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:308:5: error: 'display_policy_error' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+  308 |     display_policy_error = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~
+      |     display_policy_loaded
+ps2vnc_ui_controller.inc:309:5: error: 'display_menu_parent_system' undeclared (first use in this function)
+  309 |     display_menu_parent_system = parent_system;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:310:5: error: 'display_menu_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+  310 |     display_menu_visible = 1;
+      |     ^~~~~~~~~~~~~~~~~~~~
+      |     display_menu_tab_visible
+ps2vnc_ui_controller.inc:317:9: error: 'display_policy_request' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+  317 |     if (display_policy_request ==
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+      |         display_policy_loaded
+ps2vnc_ui_controller.inc:318:13: error: 'DISPLAY_POLICY_REQUEST_NONE' undeclared (first use in this function)
+  318 |             DISPLAY_POLICY_REQUEST_NONE) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:322:13: error: 'DISPLAY_POLICY_REQUEST_REFRESH' undeclared (first use in this function)
+  322 |             DISPLAY_POLICY_REQUEST_REFRESH;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_menu_move_vertical_selection':
+ps2vnc_ui_controller.inc:335:9: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+  335 |     if (display_menu_tab == DISPLAY_TAB_ADVANCED ||
+      |         ^~~~~~~~~~~~~~~~
+      |         display_menu_tab_label
+ps2vnc_ui_controller.inc:335:29: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+  335 |     if (display_menu_tab == DISPLAY_TAB_ADVANCED ||
+      |                             ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:349:23: error: 'VIDEO_MODE_COUNT' undeclared (first use in this function)
+  349 |          step <= (int)VIDEO_MODE_COUNT;
+      |                       ^~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:363:13: error: 'display_menu_tab_selection' undeclared (first use in this function); did you mean 'display_menu_mode_at_selection'?
+  363 |             display_menu_tab_selection[display_menu_tab] =
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+      |             display_menu_mode_at_selection
+ps2vnc_ui_controller.inc: In function 'display_menu_move_horizontal_selection':
+ps2vnc_ui_controller.inc:378:19: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+  378 |     int old_tab = display_menu_tab;
+      |                   ^~~~~~~~~~~~~~~~
+      |                   display_menu_tab_label
+ps2vnc_ui_controller.inc:383:16: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+  383 |         return display_menu_selection;
+      |                ^~~~~~~~~~~~~~~~~~~~~~
+      |                system_menu_selection
+ps2vnc_ui_controller.inc:385:20: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+  385 |     if (old_tab >= DISPLAY_TAB_TV_DTV &&
+      |                    ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:386:20: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+  386 |         old_tab <= DISPLAY_TAB_VGA_OTHER &&
+      |                    ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:391:9: error: 'display_menu_tab_selection' undeclared (first use in this function); did you mean 'display_menu_mode_at_selection'?
+  391 |         display_menu_tab_selection[old_tab] =
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+      |         display_menu_mode_at_selection
+ps2vnc_ui_controller.inc: In function 'display_menu_render_bitmap':
+ps2vnc_ui_controller.inc:442:24: error: 'OSK_WIDTH' undeclared (first use in this function); did you mean 'LONG_WIDTH'?
+  442 |     const int list_w = OSK_WIDTH - 110;
+      |                        ^~~~~~~~~
+      |                        LONG_WIDTH
+ps2vnc_ui_controller.inc:455:16: error: 'DISPLAY_TAB_COUNT' undeclared (first use in this function)
+  455 |          tab < DISPLAY_TAB_COUNT;
+      |                ^~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:476:20: error: 'OSK_HEIGHT' undeclared (first use in this function)
+  476 |         OSK_WIDTH, OSK_HEIGHT,
+      |                    ^~~~~~~~~~
+ps2vnc_ui_controller.inc:508:21: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+  508 |             (tab == display_menu_tab)
+      |                     ^~~~~~~~~~~~~~~~
+      |                     display_menu_tab_label
+ps2vnc_ui_controller.inc:538:29: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+  538 |     if (display_menu_tab == DISPLAY_TAB_ADVANCED) {
+      |                             ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:581:18: error: 'VIDEO_MODE_COUNT' undeclared (first use in this function)
+  581 |              i < VIDEO_MODE_COUNT;
+      |                  ^~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:585:17: error: 'video_modes' undeclared (first use in this function)
+  585 |                 video_modes[i];
+      |                 ^~~~~~~~~~~
+ps2vnc_ui_controller.inc:616:21: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+  616 |                     display_menu_selection) {
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+      |                     system_menu_selection
+ps2vnc_ui_controller.inc:704:9: error: 'display_policy_request' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+  704 |     if (display_policy_request !=
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+      |         display_policy_loaded
+ps2vnc_ui_controller.inc:705:13: error: 'DISPLAY_POLICY_REQUEST_NONE' undeclared (first use in this function)
+  705 |             DISPLAY_POLICY_REQUEST_NONE) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:711:17: error: 'DISPLAY_POLICY_REQUEST_REFRESH' undeclared (first use in this function)
+  711 |                 DISPLAY_POLICY_REQUEST_REFRESH
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:718:16: error: 'display_policy_error' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+  718 |     } else if (display_policy_error) {
+      |                ^~~~~~~~~~~~~~~~~~~~
+      |                display_policy_loaded
+ps2vnc_ui_controller.inc:728:16: error: 'display_menu_error' undeclared (first use in this function)
+  728 |     } else if (display_menu_error) {
+      |                ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'system_menu_render_bitmap':
+ps2vnc_ui_controller.inc:815:31: error: 'SYSTEM_MENU_ITEM_COUNT' undeclared (first use in this function)
+  815 |     static const char *labels[SYSTEM_MENU_ITEM_COUNT] = {
+      |                               ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:824:25: error: 'OSK_WIDTH' undeclared (first use in this function); did you mean 'LONG_WIDTH'?
+  824 |     osk_fill_rect(0, 0, OSK_WIDTH, OSK_HEIGHT, panel);
+      |                         ^~~~~~~~~
+      |                         LONG_WIDTH
+ps2vnc_ui_controller.inc:824:36: error: 'OSK_HEIGHT' undeclared (first use in this function)
+  824 |     osk_fill_rect(0, 0, OSK_WIDTH, OSK_HEIGHT, panel);
+      |                                    ^~~~~~~~~~
+ps2vnc_ui_controller.inc:860:13: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+  860 |             RUNTIME_ACTION_REFRESH_RFB &&
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:870:20: error: 'RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU' undeclared (first use in this function)
+  870 |                    RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU &&
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:880:20: error: 'SYSTEM_REFRESH_REFRESHING' undeclared (first use in this function)
+  880 |                    SYSTEM_REFRESH_REFRESHING) {
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:890:20: error: 'SYSTEM_REFRESH_COOLDOWN' undeclared (first use in this function)
+  890 |                    SYSTEM_REFRESH_COOLDOWN) {
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:815:24: warning: unused variable 'labels' [-Wunused-variable]
+  815 |     static const char *labels[SYSTEM_MENU_ITEM_COUNT] = {
+      |                        ^~~~~~
+ps2vnc_ui_controller.inc: In function 'osk_move_horizontal':
+ps2vnc_ui_controller.inc:917:17: error: implicit declaration of function 'osk_row_length' [-Wimplicit-function-declaration]
+  917 |     int count = osk_row_length(osk_row);
+      |                 ^~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:917:32: error: 'osk_row' undeclared (first use in this function)
+  917 |     int count = osk_row_length(osk_row);
+      |                                ^~~~~~~
+ps2vnc_ui_controller.inc:919:5: error: 'osk_col' undeclared (first use in this function); did you mean 'osk_color'?
+  919 |     osk_col += direction;
+      |     ^~~~~~~
+      |     osk_color
+ps2vnc_ui_controller.inc: In function 'osk_move_vertical':
+ps2vnc_ui_controller.inc:931:36: error: 'osk_row' undeclared (first use in this function)
+  931 |     int old_count = osk_row_length(osk_row);
+      |                                    ^~~~~~~
+ps2vnc_ui_controller.inc:932:19: error: 'osk_col' undeclared (first use in this function); did you mean 'old_col'?
+  932 |     int old_col = osk_col;
+      |                   ^~~~~~~
+      |                   old_col
+ps2vnc_ui_controller.inc:937:19: error: 'OSK_ROWS' undeclared (first use in this function)
+  937 |         new_row = OSK_ROWS - 1;
+      |                   ^~~~~~~~
+ps2vnc_ui_controller.inc: In function 'osk_send_key_with_modifiers':
+ps2vnc_ui_controller.inc:995:9: error: implicit declaration of function 'send_modified_key_tap' [-Wimplicit-function-declaration]
+  995 |     if (send_modified_key_tap(
+      |         ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:998:13: error: 'osk_ctrl' undeclared (first use in this function)
+  998 |             osk_ctrl,
+      |             ^~~~~~~~
+ps2vnc_ui_controller.inc:999:13: error: 'osk_alt' undeclared (first use in this function)
+  999 |             osk_alt) < 0)
+      |             ^~~~~~~
+ps2vnc_ui_controller.inc:1006:5: error: implicit declaration of function 'osk_clear_one_shot_modifiers' [-Wimplicit-function-declaration]
+ 1006 |     osk_clear_one_shot_modifiers();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'osk_send_extended_key_with_modifiers':
+ps2vnc_ui_controller.inc:1014:21: error: 'osk_shift' undeclared (first use in this function); did you mean 'use_shift'?
+ 1014 |     int use_shift = osk_shift;
+      |                     ^~~~~~~~~
+      |                     use_shift
+ps2vnc_ui_controller.inc:1018:13: error: implicit declaration of function 'send_key_event' [-Wimplicit-function-declaration]
+ 1018 |         if (send_key_event(
+      |             ^~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1021:17: error: 'XK_SHIFT_L' undeclared (first use in this function)
+ 1021 |                 XK_SHIFT_L) < 0)
+      |                 ^~~~~~~~~~
+ps2vnc_ui_controller.inc:1029:13: error: 'osk_ctrl' undeclared (first use in this function)
+ 1029 |             osk_ctrl,
+      |             ^~~~~~~~
+ps2vnc_ui_controller.inc:1030:13: error: 'osk_alt' undeclared (first use in this function)
+ 1030 |             osk_alt
+      |             ^~~~~~~
+ps2vnc_ui_controller.inc: In function 'osk_activate_selected':
+ps2vnc_ui_controller.inc:1056:9: error: 'osk_row' undeclared (first use in this function)
+ 1056 |     if (osk_row < 4) {
+      |         ^~~~~~~
+ps2vnc_ui_controller.inc:1057:13: error: 'osk_page' undeclared (first use in this function); did you mean 'osk_pixels'?
+ 1057 |         if (osk_page == OSK_PAGE_ABC) {
+      |             ^~~~~~~~
+      |             osk_pixels
+ps2vnc_ui_controller.inc:1057:25: error: 'OSK_PAGE_ABC' undeclared (first use in this function)
+ 1057 |         if (osk_page == OSK_PAGE_ABC) {
+      |                         ^~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1063:17: error: implicit declaration of function 'osk_display_char' [-Wimplicit-function-declaration]
+ 1063 |                 osk_display_char(
+      |                 ^~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1065:21: error: 'osk_col' undeclared (first use in this function); did you mean 'osk_color'?
+ 1065 |                     osk_col
+      |                     ^~~~~~~
+      |                     osk_color
+ps2vnc_ui_controller.inc:1079:13: error: 'osk_func_keysyms' undeclared (first use in this function)
+ 1079 |             osk_func_keysyms
+      |             ^~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1107:29: error: 'OSK_PAGE_FUNC' undeclared (first use in this function)
+ 1107 |             if (osk_page != OSK_PAGE_FUNC) {
+      |                             ^~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1114:13: error: 'osk_shift' undeclared (first use in this function)
+ 1114 |             osk_shift = !osk_shift;
+      |             ^~~~~~~~~
+ps2vnc_ui_controller.inc:1119:13: error: 'osk_ctrl' undeclared (first use in this function)
+ 1119 |             osk_ctrl = !osk_ctrl;
+      |             ^~~~~~~~
+ps2vnc_ui_controller.inc:1124:13: error: 'osk_alt' undeclared (first use in this function)
+ 1124 |             osk_alt = !osk_alt;
+      |             ^~~~~~~
+ps2vnc_ui_controller.inc:1133:22: error: 'XK_TAB' undeclared (first use in this function)
+ 1133 |             keysym = XK_TAB;
+      |                      ^~~~~~
+ps2vnc_ui_controller.inc:1137:22: error: 'XK_BACKSPACE' undeclared (first use in this function)
+ 1137 |             keysym = XK_BACKSPACE;
+      |                      ^~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1141:22: error: 'XK_DELETE' undeclared (first use in this function)
+ 1141 |             keysym = XK_DELETE;
+      |                      ^~~~~~~~~
+ps2vnc_ui_controller.inc:1145:22: error: 'XK_RETURN' undeclared (first use in this function)
+ 1145 |             keysym = XK_RETURN;
+      |                      ^~~~~~~~~
+ps2vnc_ui_controller.inc:1149:22: error: 'XK_ESCAPE' undeclared (first use in this function)
+ 1149 |             keysym = XK_ESCAPE;
+      |                      ^~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'wake_renderer_with_pointer_jiggle':
+ps2vnc_ui_controller.inc:1186:9: error: implicit declaration of function 'send_pointer_event' [-Wimplicit-function-declaration]
+ 1186 |     if (send_pointer_event(sock, 0,
+      |         ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'controller_thread':
+ps2vnc_ui_controller.inc:1588:32: error: 'RUNTIME_ACTION_NONE' undeclared (first use in this function)
+ 1588 |     int hotkey_active_action = RUNTIME_ACTION_NONE;
+      |                                ^~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1684:9: error: 'controller_loop_counter' undeclared (first use in this function)
+ 1684 |         controller_loop_counter++;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1686:13: error: implicit declaration of function 'ps2vnc_system_refresh_update_state' [-Wimplicit-function-declaration]
+ 1686 |         if (ps2vnc_system_refresh_update_state() &&
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1722:31: error: 'RUNTIME_HOTKEY_BUTTON_MASK' undeclared (first use in this function)
+ 1722 |                     pressed & RUNTIME_HOTKEY_BUTTON_MASK;
+      |                               ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1726:22: error: 'display_menu_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ 1726 |                     !display_menu_visible &&
+      |                      ^~~~~~~~~~~~~~~~~~~~
+      |                      display_menu_tab_visible
+ps2vnc_ui_controller.inc:1727:22: error: 'osk_visible' undeclared (first use in this function)
+ 1727 |                     !osk_visible;
+      |                      ^~~~~~~~~~~
+ps2vnc_ui_controller.inc:1742:25: error: 'debug_hotkey_settle_target' undeclared (first use in this function)
+ 1742 |                         debug_hotkey_settle_target = 0;
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1747:27: error: unknown type name 'ps2vnc_hotkey_binding_t'
+ 1747 |                     const ps2vnc_hotkey_binding_t *new_release = NULL;
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1811:29: error: implicit declaration of function 'runtime_hotkey_lookup' [-Wimplicit-function-declaration]
+ 1811 |                             runtime_hotkey_lookup(
+      |                             ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1810:37: error: assignment to 'const int *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
+ 1810 |                         new_release =
+      |                                     ^
+ps2vnc_ui_controller.inc:1817:40: error: request for member 'trigger' in something not a structure or union
+ 1817 |                             new_release->trigger ==
+      |                                        ^~
+ps2vnc_ui_controller.inc:1818:33: error: 'HOTKEY_TRIGGER_RELEASE' undeclared (first use in this function)
+ 1818 |                                 HOTKEY_TRIGGER_RELEASE) {
+      |                                 ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1821:44: error: request for member 'action' in something not a structure or union
+ 1821 |                                 new_release->action;
+      |                                            ^~
+ps2vnc_ui_controller.inc:1829:33: error: 'RUNTIME_ACTION_SEND_TAB' undeclared (first use in this function)
+ 1829 |                                 RUNTIME_ACTION_SEND_TAB)
+      |                                 ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1830:38: error: 'XK_TAB' undeclared (first use in this function)
+ 1830 |                             keysym = XK_TAB;
+      |                                      ^~~~~~
+ps2vnc_ui_controller.inc:1832:34: error: 'RUNTIME_ACTION_SEND_ENTER' undeclared (first use in this function)
+ 1832 |                                  RUNTIME_ACTION_SEND_ENTER)
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1833:38: error: 'XK_RETURN' undeclared (first use in this function)
+ 1833 |                             keysym = XK_RETURN;
+      |                                      ^~~~~~~~~
+ps2vnc_ui_controller.inc:1836:29: error: implicit declaration of function 'send_key_tap' [-Wimplicit-function-declaration]
+ 1836 |                             send_key_tap(sock, keysym) < 0) {
+      |                             ^~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1850:27: error: unknown type name 'ps2vnc_hotkey_binding_t'
+ 1850 |                     const ps2vnc_hotkey_binding_t *binding;
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1852:25: error: 'RUNTIME_HOTKEY_SETTLE_POLLS' undeclared (first use in this function)
+ 1852 |                         RUNTIME_HOTKEY_SETTLE_POLLS;
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1856:29: error: assignment to 'const int *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
+ 1856 |                     binding =
+      |                             ^
+ps2vnc_ui_controller.inc:1868:32: error: request for member 'trigger' in something not a structure or union
+ 1868 |                         binding->trigger == HOTKEY_TRIGGER_SETTLE &&
+      |                                ^~
+ps2vnc_ui_controller.inc:1868:45: error: 'HOTKEY_TRIGGER_SETTLE' undeclared (first use in this function)
+ 1868 |                         binding->trigger == HOTKEY_TRIGGER_SETTLE &&
+      |                                             ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1869:25: error: implicit declaration of function 'runtime_hotkey_has_hold_extension' [-Wimplicit-function-declaration]
+ 1869 |                         runtime_hotkey_has_hold_extension(
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1875:29: error: 'RUNTIME_HOTKEY_EXTENDABLE_SETTLE_POLLS' undeclared (first use in this function)
+ 1875 |                             RUNTIME_HOTKEY_EXTENDABLE_SETTLE_POLLS;
+      |                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1883:32: error: request for member 'trigger' in something not a structure or union
+ 1883 |                         binding->trigger != HOTKEY_TRIGGER_RELEASE &&
+      |                                ^~
+ps2vnc_ui_controller.inc:1886:55: error: request for member 'action' in something not a structure or union
+ 1886 |                         hotkey_active_action = binding->action;
+      |                                                       ^~
+ps2vnc_ui_controller.inc:1887:56: error: request for member 'trigger' in something not a structure or union
+ 1887 |                         hotkey_active_trigger = binding->trigger;
+      |                                                        ^~
+ps2vnc_ui_controller.inc:1889:36: error: request for member 'trigger' in something not a structure or union
+ 1889 |                         if (binding->trigger ==
+      |                                    ^~
+ps2vnc_ui_controller.inc:1892:40: error: request for member 'action' in something not a structure or union
+ 1892 |                             if (binding->action ==
+      |                                        ^~
+ps2vnc_ui_controller.inc:1904:47: error: request for member 'action' in something not a structure or union
+ 1904 |                             } else if (binding->action ==
+      |                                               ^~
+ps2vnc_ui_controller.inc:1905:40: error: 'RUNTIME_ACTION_DISPLAY_SETTINGS' undeclared (first use in this function)
+ 1905 |                                        RUNTIME_ACTION_DISPLAY_SETTINGS) {
+      |                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1909:37: error: 'SYSTEM_MENU_STATUS_NONE' undeclared (first use in this function)
+ 1909 |                                     SYSTEM_MENU_STATUS_NONE;
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1927:43: error: request for member 'trigger' in something not a structure or union
+ 1927 |                         } else if (binding->trigger ==
+      |                                           ^~
+ps2vnc_ui_controller.inc:1928:36: error: 'HOTKEY_TRIGGER_HOLD' undeclared (first use in this function)
+ 1928 |                                    HOTKEY_TRIGGER_HOLD) {
+      |                                    ^~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1930:34: error: implicit declaration of function 'ps2vnc_system_overlay_allowed' [-Wimplicit-function-declaration]
+ 1930 |                             if (!ps2vnc_system_overlay_allowed()) {
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1953:45: error: request for member 'action' in something not a structure or union
+ 1953 |                                     (binding->action ==
+      |                                             ^~
+ps2vnc_ui_controller.inc:1954:38: error: 'RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU' undeclared (first use in this function)
+ 1954 |                                      RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU)
+      |                                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1955:39: error: 'SYSTEM_MENU_EXIT' undeclared (first use in this function)
+ 1955 |                                     ? SYSTEM_MENU_EXIT
+      |                                       ^~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1956:39: error: 'SYSTEM_MENU_REFRESH' undeclared (first use in this function)
+ 1956 |                                     : SYSTEM_MENU_REFRESH;
+      |                                       ^~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1959:44: error: request for member 'action' in something not a structure or union
+ 1959 |                                     binding->action;
+      |                                            ^~
+ps2vnc_ui_controller.inc:1978:30: error: 'SYSTEM_CHORD_HOLD_POLLS' undeclared (first use in this function)
+ 1978 |                             (SYSTEM_CHORD_HOLD_POLLS >
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2001:37: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+ 2001 |                                     RUNTIME_ACTION_REFRESH_RFB) {
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2004:37: error: implicit declaration of function 'ps2vnc_system_refresh_accept_request' [-Wimplicit-function-declaration]
+ 2004 |                                     ps2vnc_system_refresh_accept_request();
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2009:37: error: implicit declaration of function 'ps2vnc_system_exit_accept_request' [-Wimplicit-function-declaration]
+ 2009 |                                 if (ps2vnc_system_exit_accept_request()) {
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2011:37: error: 'debug_hotkey_mask' undeclared (first use in this function)
+ 2011 |                                     debug_hotkey_mask =
+      |                                     ^~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2013:37: error: 'debug_hotkey_stable_polls' undeclared (first use in this function); did you mean 'hotkey_stable_polls'?
+ 2013 |                                     debug_hotkey_stable_polls =
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                     hotkey_stable_polls
+ps2vnc_ui_controller.inc:2015:37: error: 'debug_hotkey_action' undeclared (first use in this function)
+ 2015 |                                     debug_hotkey_action =
+      |                                     ^~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2017:37: error: 'debug_hotkey_trigger' undeclared (first use in this function)
+ 2017 |                                     debug_hotkey_trigger =
+      |                                     ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2019:37: error: 'debug_hotkey_hold_polls' undeclared (first use in this function); did you mean 'hotkey_hold_polls'?
+ 2019 |                                     debug_hotkey_hold_polls =
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~
+      |                                     hotkey_hold_polls
+ps2vnc_ui_controller.inc:2021:37: error: 'debug_hotkey_latched' undeclared (first use in this function); did you mean 'hotkey_latched'?
+ 2021 |                                     debug_hotkey_latched =
+      |                                     ^~~~~~~~~~~~~~~~~~~~
+      |                                     hotkey_latched
+ps2vnc_ui_controller.inc:2023:37: error: 'debug_hotkey_quarantine' undeclared (first use in this function)
+ 2023 |                                     debug_hotkey_quarantine =
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2049:17: error: 'display_confirm_pending' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ 2049 |             if (display_confirm_pending &&
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~
+      |                 display_confirm_render_bitmap
+ps2vnc_ui_controller.inc:2050:17: error: 'display_confirm_action' undeclared (first use in this function)
+ 2050 |                 display_confirm_action == DISPLAY_CONFIRM_ACTION_NONE &&
+      |                 ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2050:43: error: 'DISPLAY_CONFIRM_ACTION_NONE' undeclared (first use in this function)
+ 2050 |                 display_confirm_action == DISPLAY_CONFIRM_ACTION_NONE &&
+      |                                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2051:18: error: 'remote_display_state' undeclared (first use in this function)
+ 2051 |                 (remote_display_state != REMOTE_DISPLAY_ACTIVE_TEMP ||
+      |                  ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2051:42: error: 'REMOTE_DISPLAY_ACTIVE_TEMP' undeclared (first use in this function)
+ 2051 |                 (remote_display_state != REMOTE_DISPLAY_ACTIVE_TEMP ||
+      |                                          ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2052:18: error: 'display_transition_switch_in_progress' undeclared (first use in this function)
+ 2052 |                  display_transition_switch_in_progress)) {
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2055:21: error: implicit declaration of function 'display_confirm_remaining_seconds' [-Wimplicit-function-declaration]
+ 2055 |                     display_confirm_remaining_seconds();
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2057:34: error: 'display_confirm_seconds' undeclared (first use in this function)
+ 2057 |                 if (remaining != display_confirm_seconds) {
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2060:25: error: 'display_confirm_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ 2060 |                     if (display_confirm_visible) {
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~
+      |                         display_menu_tab_visible
+ps2vnc_ui_controller.inc:2073:25: error: 'DISPLAY_CONFIRM_ACTION_ROLLBACK' undeclared (first use in this function)
+ 2073 |                         DISPLAY_CONFIRM_ACTION_ROLLBACK;
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2096:17: error: 'display_restore_ack_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ 2096 |             if (display_restore_ack_visible) {
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                 display_menu_tab_visible
+ps2vnc_ui_controller.inc:2108:22: error: 'display_restore_ack_request' undeclared (first use in this function); did you mean 'display_restore_ack_render_bitmap'?
+ 2108 |                 if (!display_restore_ack_request &&
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                      display_restore_ack_render_bitmap
+ps2vnc_ui_controller.inc:2150:45: error: 'REMOTE_DISPLAY_IDLE' undeclared (first use in this function)
+ 2150 |                 if (remote_display_state == REMOTE_DISPLAY_IDLE &&
+      |                                             ^~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2159:21: error: 'display_confirm_selection' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ 2159 |                     display_confirm_selection =
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |                     display_confirm_render_bitmap
+ps2vnc_ui_controller.inc:2161:26: error: 'DISPLAY_CONFIRM_GO_BACK' undeclared (first use in this function)
+ 2161 |                          DISPLAY_CONFIRM_GO_BACK)
+      |                          ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2162:27: error: 'DISPLAY_CONFIRM_KEEP' undeclared (first use in this function)
+ 2162 |                         ? DISPLAY_CONFIRM_KEEP
+      |                           ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2191:27: error: 'DISPLAY_CONFIRM_ACTION_KEEP' undeclared (first use in this function)
+ 2191 |                         ? DISPLAY_CONFIRM_ACTION_KEEP
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2217:26: error: 'SYSTEM_MENU_ITEM_COUNT' undeclared (first use in this function)
+ 2217 |                          SYSTEM_MENU_ITEM_COUNT - 1) %
+      |                          ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2272:32: error: 'SYSTEM_MENU_DISPLAY' undeclared (first use in this function)
+ 2272 |                                SYSTEM_MENU_DISPLAY) {
+      |                                ^~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2339:21: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+ 2339 |                     display_menu_selection =
+      |                     ^~~~~~~~~~~~~~~~~~~~~~
+      |                     system_menu_selection
+ps2vnc_ui_controller.inc:2344:21: error: 'display_menu_error' undeclared (first use in this function)
+ 2344 |                     display_menu_error = 0;
+      |                     ^~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2345:21: error: 'display_policy_error' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ 2345 |                     display_policy_error = 0;
+      |                     ^~~~~~~~~~~~~~~~~~~~
+      |                     display_policy_loaded
+ps2vnc_ui_controller.inc:2399:25: error: 'display_menu_parent_system' undeclared (first use in this function)
+ 2399 |                     if (display_menu_parent_system) {
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2418:21: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+ 2418 |                     display_menu_tab !=
+      |                     ^~~~~~~~~~~~~~~~
+      |                     display_menu_tab_label
+ps2vnc_ui_controller.inc:2419:25: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+ 2419 |                         DISPLAY_TAB_ADVANCED) {
+      |                         ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2428:25: error: 'display_policy_request' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ 2428 |                         display_policy_request ==
+      |                         ^~~~~~~~~~~~~~~~~~~~~~
+      |                         display_policy_loaded
+ps2vnc_ui_controller.inc:2429:29: error: 'DISPLAY_POLICY_REQUEST_NONE' undeclared (first use in this function)
+ 2429 |                             DISPLAY_POLICY_REQUEST_NONE) {
+      |                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2433:25: error: 'display_policy_request_selection' undeclared (first use in this function)
+ 2433 |                         display_policy_request_selection =
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2436:25: error: 'display_policy_request_value' undeclared (first use in this function)
+ 2436 |                         display_policy_request_value =
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2443:29: error: 'DISPLAY_POLICY_REQUEST_LOCK' undeclared (first use in this function)
+ 2443 |                             DISPLAY_POLICY_REQUEST_LOCK;
+      |                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2471:33: error: 'DISPLAY_POLICY_REQUEST_HIDE_LOCKED' undeclared (first use in this function)
+ 2471 |                                 DISPLAY_POLICY_REQUEST_HIDE_LOCKED;
+      |                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2496:29: error: 'display_calibration_request' undeclared (first use in this function)
+ 2496 |                             display_calibration_request =
+      |                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2497:33: error: implicit declaration of function 'display_mode_request_for_selection'; did you mean 'display_menu_mode_at_selection'? [-Wimplicit-function-declaration]
+ 2497 |                                 display_mode_request_for_selection(
+      |                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                 display_menu_mode_at_selection
+ps2vnc_ui_controller.inc:2532:29: error: 'display_mode_request_remote' undeclared (first use in this function)
+ 2532 |                             display_mode_request_remote = 0;
+      |                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2533:29: error: 'display_mode_request' undeclared (first use in this function); did you mean 'display_mode_locked'?
+ 2533 |                             display_mode_request =
+      |                             ^~~~~~~~~~~~~~~~~~~~
+      |                             display_mode_locked
+ps2vnc_ui_controller.inc:2570:21: error: 'osk_page' undeclared (first use in this function); did you mean 'osk_pixels'?
+ 2570 |                     osk_page = OSK_PAGE_ABC;
+      |                     ^~~~~~~~
+      |                     osk_pixels
+ps2vnc_ui_controller.inc:2570:32: error: 'OSK_PAGE_ABC' undeclared (first use in this function)
+ 2570 |                     osk_page = OSK_PAGE_ABC;
+      |                                ^~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2571:21: error: 'osk_row' undeclared (first use in this function)
+ 2571 |                     osk_row = 1;
+      |                     ^~~~~~~
+ps2vnc_ui_controller.inc:2572:21: error: 'osk_col' undeclared (first use in this function); did you mean 'osk_color'?
+ 2572 |                     osk_col = 0;
+      |                     ^~~~~~~
+      |                     osk_color
+ps2vnc_ui_controller.inc:2573:21: error: 'osk_shift' undeclared (first use in this function)
+ 2573 |                     osk_shift = 0;
+      |                     ^~~~~~~~~
+ps2vnc_ui_controller.inc:2574:21: error: 'osk_ctrl' undeclared (first use in this function)
+ 2574 |                     osk_ctrl = 0;
+      |                     ^~~~~~~~
+ps2vnc_ui_controller.inc:2575:21: error: 'osk_alt' undeclared (first use in this function)
+ 2575 |                     osk_alt = 0;
+      |                     ^~~~~~~
+ps2vnc_ui_controller.inc:2610:44: error: 'XK_BACKSPACE' undeclared (first use in this function)
+ 2610 |                     if (send_key_tap(sock, XK_BACKSPACE) < 0) {
+      |                                            ^~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2676:48: error: 'XK_UP' undeclared (first use in this function)
+ 2676 |                         if (send_key_tap(sock, XK_UP) < 0) {
+      |                                                ^~~~~
+ps2vnc_ui_controller.inc:2689:48: error: 'XK_DOWN' undeclared (first use in this function)
+ 2689 |                         if (send_key_tap(sock, XK_DOWN) < 0) {
+      |                                                ^~~~~~~
+ps2vnc_ui_controller.inc:2702:48: error: 'XK_LEFT' undeclared (first use in this function)
+ 2702 |                         if (send_key_tap(sock, XK_LEFT) < 0) {
+      |                                                ^~~~~~~
+ps2vnc_ui_controller.inc:2715:48: error: 'XK_RIGHT' undeclared (first use in this function); did you mean 'PAD_RIGHT'?
+ 2715 |                         if (send_key_tap(sock, XK_RIGHT) < 0) {
+      |                                                ^~~~~~~~
+      |                                                PAD_RIGHT
+In file included from ps2vnc_ui_display.c:24:
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_switch_display_mode_core':
+ps2vnc_display_orchestration.inc:16:5: error: 'display_switch_failure_stage' undeclared (first use in this function)
+   16 |     display_switch_failure_stage = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:17:5: error: 'live_error_code' undeclared (first use in this function)
+   17 |     live_error_code = 0;
+      |     ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:72:9: error: implicit declaration of function 'ps2vnc_display_logical_desktop_size'; did you mean 'ps2vnc_display_draw_desktop'? [-Wimplicit-function-declaration]
+   72 |     if (ps2vnc_display_logical_desktop_size(
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |         ps2vnc_display_draw_desktop
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_switch_display_mode':
+ps2vnc_display_orchestration.inc:214:9: error: 'remote_display_state' undeclared (first use in this function)
+  214 |     if (remote_display_state == REMOTE_DISPLAY_IDLE) {
+      |         ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:214:33: error: 'REMOTE_DISPLAY_IDLE' undeclared (first use in this function)
+  214 |     if (remote_display_state == REMOTE_DISPLAY_IDLE) {
+      |                                 ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:229:5: error: 'display_switch_failure_stage' undeclared (first use in this function)
+  229 |     display_switch_failure_stage = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:230:5: error: 'live_error_code' undeclared (first use in this function)
+  230 |     live_error_code = 0;
+      |     ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:257:9: error: implicit declaration of function 'ps2vnc_discard_controller_rfb_queue' [-Wimplicit-function-declaration]
+  257 |     if (ps2vnc_discard_controller_rfb_queue() < 0) {
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:262:5: error: 'debug_transition_phase' undeclared (first use in this function)
+  262 |     debug_transition_phase = 1u;
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:263:5: error: implicit declaration of function 'debug_emit_now' [-Wimplicit-function-declaration]
+  263 |     debug_emit_now();
+      |     ^~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_rollback_display_transaction':
+ps2vnc_display_orchestration.inc:404:9: error: 'display_confirm_previous_mode' undeclared (first use in this function)
+  404 |         display_confirm_previous_mode;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:407:9: error: 'display_confirm_previous_backend' undeclared (first use in this function)
+  407 |         display_confirm_previous_backend;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:410:9: error: 'display_confirm_previous_x' undeclared (first use in this function)
+  410 |         display_confirm_previous_x;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:412:9: error: 'display_confirm_previous_y' undeclared (first use in this function)
+  412 |         display_confirm_previous_y;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:414:9: error: 'display_confirm_previous_w' undeclared (first use in this function)
+  414 |         display_confirm_previous_w;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:416:9: error: 'display_confirm_previous_h' undeclared (first use in this function)
+  416 |         display_confirm_previous_h;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:419:9: error: 'display_confirm_previous_desktop_w' undeclared (first use in this function)
+  419 |         display_confirm_previous_desktop_w;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:421:9: error: 'display_confirm_previous_desktop_h' undeclared (first use in this function)
+  421 |         display_confirm_previous_desktop_h;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:424:9: error: 'display_confirm_previous_screen_fit_width' undeclared (first use in this function)
+  424 |         display_confirm_previous_screen_fit_width;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:426:9: error: 'display_confirm_previous_screen_fit_height' undeclared (first use in this function)
+  426 |         display_confirm_previous_screen_fit_height;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:428:9: error: 'display_confirm_previous_screen_fit_offset_x' undeclared (first use in this function)
+  428 |         display_confirm_previous_screen_fit_offset_x;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:430:9: error: 'display_confirm_previous_screen_fit_offset_y' undeclared (first use in this function)
+  430 |         display_confirm_previous_screen_fit_offset_y;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:432:9: error: 'display_confirm_previous_screen_fit_full_bypass' undeclared (first use in this function); did you mean 'previous_screen_fit_full_bypass'?
+  432 |         display_confirm_previous_screen_fit_full_bypass;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |         previous_screen_fit_full_bypass
+ps2vnc_display_orchestration.inc:436:10: error: 'display_confirm_pending' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+  436 |     if (!display_confirm_pending ||
+      |          ^~~~~~~~~~~~~~~~~~~~~~~
+      |          display_confirm_render_bitmap
+ps2vnc_display_orchestration.inc:449:5: error: 'display_confirm_action' undeclared (first use in this function)
+  449 |     display_confirm_action =
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:450:9: error: 'DISPLAY_CONFIRM_ACTION_ROLLBACK_IN_PROGRESS' undeclared (first use in this function)
+  450 |         DISPLAY_CONFIRM_ACTION_ROLLBACK_IN_PROGRESS;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:451:5: error: 'display_confirm_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+  451 |     display_confirm_visible = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     display_menu_tab_visible
+ps2vnc_display_orchestration.inc:539:5: error: implicit declaration of function 'display_confirm_disarm_transaction' [-Wimplicit-function-declaration]
+  539 |     display_confirm_disarm_transaction();
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_publish_restored_ack':
+ps2vnc_display_orchestration.inc:565:5: error: 'display_restore_ack_mode' undeclared (first use in this function)
+  565 |     display_restore_ack_mode =
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:568:5: error: 'display_restore_ack_request' undeclared (first use in this function); did you mean 'display_restore_ack_render_bitmap'?
+  568 |     display_restore_ack_request = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     display_restore_ack_render_bitmap
+ps2vnc_display_orchestration.inc:571:5: error: 'display_menu_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+  571 |     display_menu_visible = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~
+      |     display_menu_tab_visible
+ps2vnc_display_orchestration.inc:572:5: error: 'osk_visible' undeclared (first use in this function)
+  572 |     osk_visible = 0;
+      |     ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:574:5: error: 'display_restore_ack_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+  574 |     display_restore_ack_visible = 1;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |     display_menu_tab_visible
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_remote_result_post':
+ps2vnc_display_orchestration.inc:828:10: error: 'remote_display_baseline_mode' undeclared (first use in this function)
+  828 |         (remote_display_baseline_mode != NULL &&
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:833:9: error: 'remote_display_txid' undeclared (first use in this function)
+  833 |     if (remote_display_txid == 0 ||
+      |         ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:856:9: error: 'PS2VNC_DISPLAY_CONTROL_RESULT_PATH' undeclared (first use in this function)
+  856 |         PS2VNC_DISPLAY_CONTROL_RESULT_PATH,
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_remote_display_reset':
+ps2vnc_display_orchestration.inc:863:5: error: 'remote_display_state' undeclared (first use in this function)
+  863 |     remote_display_state = REMOTE_DISPLAY_IDLE;
+      |     ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:863:28: error: 'REMOTE_DISPLAY_IDLE' undeclared (first use in this function)
+  863 |     remote_display_state = REMOTE_DISPLAY_IDLE;
+      |                            ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:864:5: error: 'display_mode_request_remote' undeclared (first use in this function)
+  864 |     display_mode_request_remote = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:866:5: error: 'remote_display_txid' undeclared (first use in this function)
+  866 |     remote_display_txid = 0;
+      |     ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:867:5: error: 'remote_display_lease_seconds' undeclared (first use in this function)
+  867 |     remote_display_lease_seconds = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:868:5: error: 'remote_display_error_code' undeclared (first use in this function)
+  868 |     remote_display_error_code = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:870:5: error: 'remote_display_lease_started_tick' undeclared (first use in this function)
+  870 |     remote_display_lease_started_tick = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:872:5: error: 'remote_display_requested_mode' undeclared (first use in this function)
+  872 |     remote_display_requested_mode = NULL;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:873:5: error: 'remote_display_baseline_mode' undeclared (first use in this function)
+  873 |     remote_display_baseline_mode = NULL;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_remote_display_fail':
+ps2vnc_display_orchestration.inc:880:5: error: 'remote_display_error_code' undeclared (first use in this function)
+  880 |     remote_display_error_code = error_code;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_remote_display_lease_expired':
+ps2vnc_display_orchestration.inc:895:9: error: 'remote_display_state' undeclared (first use in this function)
+  895 |     if (remote_display_state !=
+      |         ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:896:13: error: 'REMOTE_DISPLAY_ACTIVE_TEMP' undeclared (first use in this function)
+  896 |             REMOTE_DISPLAY_ACTIVE_TEMP ||
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:897:10: error: 'display_confirm_pending' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+  897 |         !display_confirm_pending ||
+      |          ^~~~~~~~~~~~~~~~~~~~~~~
+      |          display_confirm_render_bitmap
+ps2vnc_display_orchestration.inc:898:9: error: 'display_confirm_action' undeclared (first use in this function)
+  898 |         display_confirm_action !=
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:899:13: error: 'DISPLAY_CONFIRM_ACTION_NONE' undeclared (first use in this function)
+  899 |             DISPLAY_CONFIRM_ACTION_NONE)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:904:13: error: 'remote_display_lease_started_tick' undeclared (first use in this function)
+  904 |             remote_display_lease_started_tick,
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:908:15: error: 'remote_display_lease_seconds' undeclared (first use in this function)
+  908 |     if (sec < remote_display_lease_seconds)
+      |               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:913:9: error: 'remote_display_txid' undeclared (first use in this function)
+  913 |         remote_display_txid);
+      |         ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:916:9: error: 'REMOTE_DISPLAY_RESTORING' undeclared (first use in this function); did you mean 'PS2VNC_DISPLAY_TX_RESTORING'?
+  916 |         REMOTE_DISPLAY_RESTORING;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~
+      |         PS2VNC_DISPLAY_TX_RESTORING
+ps2vnc_display_orchestration.inc:918:5: error: 'remote_display_error_code' undeclared (first use in this function)
+  918 |     remote_display_error_code = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:925:9: error: 'DISPLAY_CONFIRM_ACTION_ROLLBACK' undeclared (first use in this function)
+  925 |         DISPLAY_CONFIRM_ACTION_ROLLBACK;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_remote_control_poll_idle':
+ps2vnc_display_orchestration.inc:934:9: error: 'PS2VNC_DISPLAY_CONTROL_MAX_BYTES' undeclared (first use in this function)
+  934 |         PS2VNC_DISPLAY_CONTROL_MAX_BYTES + 1];
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:947:9: error: 'remote_display_last_poll_tick' undeclared (first use in this function)
+  947 |     if (remote_display_last_poll_tick != 0 &&
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:951:13: error: 'PS2VNC_REMOTE_CONTROL_POLL_US' undeclared (first use in this function)
+  951 |             PS2VNC_REMOTE_CONTROL_POLL_US)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:957:13: error: 'PS2VNC_DISPLAY_CONTROL_PENDING_PATH' undeclared (first use in this function)
+  957 |             PS2VNC_DISPLAY_CONTROL_PENDING_PATH,
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:961:13: error: 'PS2VNC_REMOTE_CONTROL_GET_BUDGET_US' undeclared (first use in this function)
+  961 |             PS2VNC_REMOTE_CONTROL_GET_BUDGET_US) < 0) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1003:13: error: 'display_confirm_pending' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ 1003 |         if (display_confirm_pending ||
+      |             ^~~~~~~~~~~~~~~~~~~~~~~
+      |             display_confirm_render_bitmap
+ps2vnc_display_orchestration.inc:1004:13: error: 'display_transition_switch_in_progress' undeclared (first use in this function)
+ 1004 |             display_transition_switch_in_progress ||
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1005:13: error: 'display_mode_request' undeclared (first use in this function); did you mean 'display_mode_locked'?
+ 1005 |             display_mode_request !=
+      |             ^~~~~~~~~~~~~~~~~~~~
+      |             display_mode_locked
+ps2vnc_display_orchestration.inc:1006:17: error: 'DISPLAY_MODE_REQUEST_NONE' undeclared (first use in this function)
+ 1006 |                 DISPLAY_MODE_REQUEST_NONE ||
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1007:13: error: 'display_calibration_request' undeclared (first use in this function)
+ 1007 |             display_calibration_request !=
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1010:13: error: 'remote_display_state' undeclared (first use in this function)
+ 1010 |             remote_display_state !=
+      |             ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1011:17: error: 'REMOTE_DISPLAY_IDLE' undeclared (first use in this function)
+ 1011 |                 REMOTE_DISPLAY_IDLE)
+      |                 ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1029:9: error: 'remote_display_txid' undeclared (first use in this function)
+ 1029 |         remote_display_txid = txid;
+      |         ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1030:9: error: 'remote_display_lease_seconds' undeclared (first use in this function)
+ 1030 |         remote_display_lease_seconds =
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1032:9: error: 'remote_display_error_code' undeclared (first use in this function)
+ 1032 |         remote_display_error_code = 0;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1034:9: error: 'remote_display_requested_mode' undeclared (first use in this function)
+ 1034 |         remote_display_requested_mode = target;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1035:9: error: 'remote_display_baseline_mode' undeclared (first use in this function)
+ 1035 |         remote_display_baseline_mode =
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1049:13: error: 'REMOTE_DISPLAY_SWITCH_REQUESTED' undeclared (first use in this function)
+ 1049 |             REMOTE_DISPLAY_SWITCH_REQUESTED;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1051:9: error: 'display_mode_request_remote' undeclared (first use in this function)
+ 1051 |         display_mode_request_remote = 1;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1076:17: error: 'REMOTE_DISPLAY_ACTIVE_TEMP' undeclared (first use in this function)
+ 1076 |                 REMOTE_DISPLAY_ACTIVE_TEMP ||
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1081:13: error: 'REMOTE_DISPLAY_RESTORING' undeclared (first use in this function); did you mean 'PS2VNC_DISPLAY_TX_RESTORING'?
+ 1081 |             REMOTE_DISPLAY_RESTORING;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~
+      |             PS2VNC_DISPLAY_TX_RESTORING
+ps2vnc_display_orchestration.inc:1089:9: error: 'display_confirm_action' undeclared (first use in this function)
+ 1089 |         display_confirm_action =
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1090:13: error: 'DISPLAY_CONFIRM_ACTION_ROLLBACK' undeclared (first use in this function)
+ 1090 |             DISPLAY_CONFIRM_ACTION_ROLLBACK;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:933:19: warning: unused variable 'body' [-Wunused-variable]
+  933 |     unsigned char body[
+      |                   ^~~~
+ps2vnc_display_orchestration.inc: In function 'ps2vnc_global_rollback_display_transaction':
+ps2vnc_display_orchestration.inc:1116:9: error: 'remote_display_state' undeclared (first use in this function)
+ 1116 |         remote_display_state != REMOTE_DISPLAY_IDLE;
+      |         ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1116:33: error: 'REMOTE_DISPLAY_IDLE' undeclared (first use in this function)
+ 1116 |         remote_display_state != REMOTE_DISPLAY_IDLE;
+      |                                 ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1119:9: error: 'remote_display_suppress_next_active_menu_return' undeclared (first use in this function)
+ 1119 |         remote_display_suppress_next_active_menu_return = 1;
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1122:13: error: 'REMOTE_DISPLAY_RESTORING' undeclared (first use in this function); did you mean 'PS2VNC_DISPLAY_TX_RESTORING'?
+ 1122 |             REMOTE_DISPLAY_RESTORING;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~
+      |             PS2VNC_DISPLAY_TX_RESTORING
+ps2vnc_display_orchestration.inc:1126:13: error: 'remote_display_error_code' undeclared (first use in this function)
+ 1126 |             remote_display_error_code);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1227:10: error: 'display_confirm_previous_mode' undeclared (first use in this function)
+ 1227 |         (display_confirm_previous_mode != NULL)
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc: In function 'display_live_desktop':
+ps2vnc_display_orchestration.inc:1415:22: error: 'DBG_STAGE_CONTROLLER_START' undeclared (first use in this function)
+ 1415 |     debug_stage_id = DBG_STAGE_CONTROLLER_START;
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1419:9: error: implicit declaration of function 'start_controller_thread'; did you mean 'controller_thread'? [-Wimplicit-function-declaration]
+ 1419 |     if (start_controller_thread(sock) < 0) {
+      |         ^~~~~~~~~~~~~~~~~~~~~~~
+      |         controller_thread
+ps2vnc_display_orchestration.inc:1428:9: error: 'debug_frame_counter' undeclared (first use in this function)
+ 1428 |         debug_frame_counter++;
+      |         ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1429:26: error: 'DBG_STAGE_LOOP_BEGIN' undeclared (first use in this function)
+ 1429 |         debug_stage_id = DBG_STAGE_LOOP_BEGIN;
+      |                          ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1430:9: error: 'debug_changed_bytes' undeclared (first use in this function)
+ 1430 |         debug_changed_bytes = 0;
+      |         ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1446:13: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+ 1446 |             RUNTIME_ACTION_REFRESH_RFB) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1483:13: error: 'display_restore_ack_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ 1483 |         if (display_restore_ack_visible &&
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |             display_menu_tab_visible
+ps2vnc_display_orchestration.inc:1484:13: error: 'display_restore_ack_request' undeclared (first use in this function); did you mean 'display_restore_ack_render_bitmap'?
+ 1484 |             display_restore_ack_request) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |             display_restore_ack_render_bitmap
+ps2vnc_display_orchestration.inc:1499:17: error: 'display_restore_ack_mode' undeclared (first use in this function)
+ 1499 |                 display_restore_ack_mode ?
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1508:13: error: implicit declaration of function 'display_confirm_return_to_active_menu' [-Wimplicit-function-declaration]
+ 1508 |             display_confirm_return_to_active_menu();
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1528:13: error: 'display_policy_request' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ 1528 |         if (display_policy_request !=
+      |             ^~~~~~~~~~~~~~~~~~~~~~
+      |             display_policy_loaded
+ps2vnc_display_orchestration.inc:1529:17: error: 'DISPLAY_POLICY_REQUEST_NONE' undeclared (first use in this function)
+ 1529 |                 DISPLAY_POLICY_REQUEST_NONE) {
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1535:17: error: 'display_policy_request_selection' undeclared (first use in this function)
+ 1535 |                 display_policy_request_selection;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1538:17: error: 'display_policy_request_value' undeclared (first use in this function)
+ 1538 |                 display_policy_request_value;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1543:21: error: 'DISPLAY_POLICY_REQUEST_REFRESH' undeclared (first use in this function)
+ 1543 |                     DISPLAY_POLICY_REQUEST_REFRESH) {
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1550:21: error: 'DISPLAY_POLICY_REQUEST_LOCK' undeclared (first use in this function)
+ 1550 |                     DISPLAY_POLICY_REQUEST_LOCK) {
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1555:25: error: 'VIDEO_MODE_COUNT' undeclared (first use in this function)
+ 1555 |                         VIDEO_MODE_COUNT &&
+      |                         ^~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1556:21: error: 'video_modes' undeclared (first use in this function)
+ 1556 |                     video_modes[selection] !=
+      |                     ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1571:21: error: 'DISPLAY_POLICY_REQUEST_HIDE_LOCKED' undeclared (first use in this function)
+ 1571 |                     DISPLAY_POLICY_REQUEST_HIDE_LOCKED) {
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1585:17: error: 'display_policy_error' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ 1585 |                 display_policy_error = 1;
+      |                 ^~~~~~~~~~~~~~~~~~~~
+      |                 display_policy_loaded
+ps2vnc_display_orchestration.inc:1606:13: error: 'display_calibration_request' undeclared (first use in this function)
+ 1606 |         if (display_calibration_request != DISPLAY_MODE_REQUEST_NONE) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1606:44: error: 'DISPLAY_MODE_REQUEST_NONE' undeclared (first use in this function)
+ 1606 |         if (display_calibration_request != DISPLAY_MODE_REQUEST_NONE) {
+      |                                            ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1611:27: error: implicit declaration of function 'display_mode_request_target' [-Wimplicit-function-declaration]
+ 1611 |             target_mode = display_mode_request_target(request);
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1611:25: error: assignment to 'const ps2vnc_video_mode_t *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
+ 1611 |             target_mode = display_mode_request_target(request);
+      |                         ^
+ps2vnc_display_orchestration.inc:1620:17: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+ 1620 |                 display_menu_selection =
+      |                 ^~~~~~~~~~~~~~~~~~~~~~
+      |                 system_menu_selection
+ps2vnc_display_orchestration.inc:1622:17: error: 'display_menu_error' undeclared (first use in this function)
+ 1622 |                 display_menu_error = 1;
+      |                 ^~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1623:17: error: 'display_menu_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ 1623 |                 display_menu_visible = 1;
+      |                 ^~~~~~~~~~~~~~~~~~~~
+      |                 display_menu_tab_visible
+ps2vnc_display_orchestration.inc:1624:17: error: 'display_menu_parent_system' undeclared (first use in this function)
+ 1624 |                 display_menu_parent_system = 0;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1659:13: error: 'display_confirm_pending' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ 1659 |         if (display_confirm_pending &&
+      |             ^~~~~~~~~~~~~~~~~~~~~~~
+      |             display_confirm_render_bitmap
+ps2vnc_display_orchestration.inc:1660:13: error: 'display_confirm_action' undeclared (first use in this function)
+ 1660 |             display_confirm_action == DISPLAY_CONFIRM_ACTION_KEEP) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1660:39: error: 'DISPLAY_CONFIRM_ACTION_KEEP' undeclared (first use in this function)
+ 1660 |             display_confirm_action == DISPLAY_CONFIRM_ACTION_KEEP) {
+      |                                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1678:21: error: 'DISPLAY_CONFIRM_ACTION_NONE' undeclared (first use in this function)
+ 1678 |                     DISPLAY_CONFIRM_ACTION_NONE;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1679:17: error: 'display_confirm_selection' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ 1679 |                 display_confirm_selection =
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |                 display_confirm_render_bitmap
+ps2vnc_display_orchestration.inc:1680:21: error: 'DISPLAY_CONFIRM_KEEP' undeclared (first use in this function)
+ 1680 |                     DISPLAY_CONFIRM_KEEP;
+      |                     ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1681:17: error: 'display_confirm_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ 1681 |                 display_confirm_visible = 1;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~
+      |                 display_menu_tab_visible
+ps2vnc_display_orchestration.inc:1700:39: error: 'DISPLAY_CONFIRM_ACTION_ROLLBACK' undeclared (first use in this function)
+ 1700 |             display_confirm_action == DISPLAY_CONFIRM_ACTION_ROLLBACK) {
+      |                                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1748:13: error: 'display_mode_request' undeclared (first use in this function); did you mean 'display_mode_locked'?
+ 1748 |         if (display_mode_request != DISPLAY_MODE_REQUEST_NONE) {
+      |             ^~~~~~~~~~~~~~~~~~~~
+      |             display_mode_locked
+ps2vnc_display_orchestration.inc:1751:17: error: 'display_mode_request_remote' undeclared (first use in this function)
+ 1751 |                 display_mode_request_remote;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1771:25: error: assignment to 'const ps2vnc_video_mode_t *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
+ 1771 |             target_mode =
+      |                         ^
+ps2vnc_display_orchestration.inc:1804:17: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+ 1804 |                 display_menu_tab =
+      |                 ^~~~~~~~~~~~~~~~
+      |                 display_menu_tab_label
+ps2vnc_display_orchestration.inc:1888:17: error: 'remote_display_state' undeclared (first use in this function)
+ 1888 |                 remote_display_state =
+      |                 ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1889:21: error: 'REMOTE_DISPLAY_SWITCHING' undeclared (first use in this function)
+ 1889 |                     REMOTE_DISPLAY_SWITCHING;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1891:17: error: 'remote_display_error_code' undeclared (first use in this function)
+ 1891 |                 remote_display_error_code = 0;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1926:13: error: implicit declaration of function 'display_confirm_arm_transaction' [-Wimplicit-function-declaration]
+ 1926 |             display_confirm_arm_transaction(
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1938:13: error: 'display_transition_switch_in_progress' undeclared (first use in this function)
+ 1938 |             display_transition_switch_in_progress = 1;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1987:25: error: 'live_error_code' undeclared (first use in this function)
+ 1987 |                         live_error_code > 999
+      |                         ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:1993:25: error: 'display_switch_failure_stage' undeclared (first use in this function); did you mean 'display_switch_result'?
+ 1993 |                         display_switch_failure_stage * 1000u +
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                         display_switch_result
+ps2vnc_display_orchestration.inc:2086:21: error: 'REMOTE_DISPLAY_ACTIVE_TEMP' undeclared (first use in this function)
+ 2086 |                     REMOTE_DISPLAY_ACTIVE_TEMP;
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2088:17: error: 'remote_display_lease_started_tick' undeclared (first use in this function)
+ 2088 |                 remote_display_lease_started_tick =
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2096:17: error: 'display_confirm_seconds' undeclared (first use in this function)
+ 2096 |                 display_confirm_seconds = 0;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2105:21: error: 'remote_display_txid' undeclared (first use in this function)
+ 2105 |                     remote_display_txid,
+      |                     ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2106:21: error: 'remote_display_lease_seconds' undeclared (first use in this function)
+ 2106 |                     remote_display_lease_seconds);
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2149:17: error: 'DISPLAY_CONFIRM_GO_BACK' undeclared (first use in this function)
+ 2149 |                 DISPLAY_CONFIRM_GO_BACK;
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2154:13: error: 'osk_visible' undeclared (first use in this function)
+ 2154 |             osk_visible = 0;
+      |             ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2163:13: error: implicit declaration of function 'profile_emit_now' [-Wimplicit-function-declaration]
+ 2163 |             profile_emit_now();
+      |             ^~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2166:26: error: 'DBG_STAGE_PRE_DRAW' undeclared (first use in this function)
+ 2166 |         debug_stage_id = DBG_STAGE_PRE_DRAW;
+      |                          ^~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2206:21: error: implicit declaration of function 'osk_render_bitmap' [-Wimplicit-function-declaration]
+ 2206 |                     osk_render_bitmap();
+      |                     ^~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2229:43: error: 'OUTPUT_WIDTH' undeclared (first use in this function); did you mean 'USHRT_WIDTH'?
+ 2229 |                     float safe_w = (float)OUTPUT_WIDTH;
+      |                                           ^~~~~~~~~~~~
+      |                                           USHRT_WIDTH
+ps2vnc_display_orchestration.inc:2230:43: error: 'OUTPUT_HEIGHT' undeclared (first use in this function)
+ 2230 |                     float safe_h = (float)OUTPUT_HEIGHT;
+      |                                           ^~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2262:32: error: 'OSK_WIDTH' undeclared (first use in this function); did you mean 'LONG_WIDTH'?
+ 2262 |                         (float)OSK_WIDTH;
+      |                                ^~~~~~~~~
+      |                                LONG_WIDTH
+ps2vnc_display_orchestration.inc:2266:32: error: 'OSK_HEIGHT' undeclared (first use in this function)
+ 2266 |                         (float)OSK_HEIGHT;
+      |                                ^~~~~~~~~~
+ps2vnc_display_orchestration.inc:2335:26: error: 'DBG_STAGE_POST_DRAW' undeclared (first use in this function)
+ 2335 |         debug_stage_id = DBG_STAGE_POST_DRAW;
+      |                          ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2345:26: error: 'DBG_STAGE_PRE_QUEUE' undeclared (first use in this function)
+ 2345 |         debug_stage_id = DBG_STAGE_PRE_QUEUE;
+      |                          ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2352:13: error: 'profile_present_sync_ticks' undeclared (first use in this function)
+ 2352 |             profile_present_sync_ticks += GetTimerSystemTime() - t0;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2354:26: error: 'DBG_STAGE_POST_QUEUE' undeclared (first use in this function)
+ 2354 |         debug_stage_id = DBG_STAGE_POST_QUEUE;
+      |                          ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2356:26: error: 'DBG_STAGE_PRE_FLIP' undeclared (first use in this function)
+ 2356 |         debug_stage_id = DBG_STAGE_PRE_FLIP;
+      |                          ^~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2363:13: error: 'profile_flip_ticks' undeclared (first use in this function)
+ 2363 |             profile_flip_ticks += GetTimerSystemTime() - t0;
+      |             ^~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2365:26: error: 'DBG_STAGE_POST_FLIP' undeclared (first use in this function)
+ 2365 |         debug_stage_id = DBG_STAGE_POST_FLIP;
+      |                          ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2372:30: error: 'DBG_STAGE_CONTROLLER_ERROR' undeclared (first use in this function)
+ 2372 |             debug_stage_id = DBG_STAGE_CONTROLLER_ERROR;
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2385:13: error: 'profile_dirty_wait_ticks' undeclared (first use in this function)
+ 2385 |             profile_dirty_wait_ticks += GetTimerSystemTime() - t0;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2388:26: error: 'DBG_STAGE_PRE_REQUEST' undeclared (first use in this function)
+ 2388 |         debug_stage_id = DBG_STAGE_PRE_REQUEST;
+      |                          ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2389:9: error: 'profile_rfb_start_tick' undeclared (first use in this function)
+ 2389 |         profile_rfb_start_tick = GetTimerSystemTime();
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2432:30: error: 'DBG_STAGE_REQUEST_ERROR' undeclared (first use in this function)
+ 2432 |             debug_stage_id = DBG_STAGE_REQUEST_ERROR;
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2470:13: error: implicit declaration of function 'ps2vnc_display_begin_update'; did you mean 'ps2vnc_display_create'? [-Wimplicit-function-declaration]
+ 2470 |         if (ps2vnc_display_begin_update() < 0)
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |             ps2vnc_display_create
+ps2vnc_display_orchestration.inc:2473:26: error: 'DBG_STAGE_POST_REQUEST' undeclared (first use in this function)
+ 2473 |         debug_stage_id = DBG_STAGE_POST_REQUEST;
+      |                          ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2479:30: error: 'DBG_STAGE_WAIT_RFB' undeclared (first use in this function)
+ 2479 |             debug_stage_id = DBG_STAGE_WAIT_RFB;
+      |                              ^~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2486:13: error: 'rfb_confirm_wait_generation' undeclared (first use in this function)
+ 2486 |             rfb_confirm_wait_generation =
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2489:13: error: 'rfb_confirm_live_yield_enabled' undeclared (first use in this function)
+ 2489 |             rfb_confirm_live_yield_enabled =
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2503:34: error: 'RFB_RECEIVE_LOCAL_REDRAW' undeclared (first use in this function)
+ 2503 |             if (changed_bytes == RFB_RECEIVE_LOCAL_REDRAW) {
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2521:17: error: implicit declaration of function 'ps2vnc_display_finish_update_decode'; did you mean 'ps2vnc_display_finish_draw'? [-Wimplicit-function-declaration]
+ 2521 |                 ps2vnc_display_finish_update_decode();
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                 ps2vnc_display_finish_draw
+ps2vnc_display_orchestration.inc:2524:17: error: 'profile_rfb_ticks' undeclared (first use in this function)
+ 2524 |                 profile_rfb_ticks +=
+      |                 ^~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2526:17: error: 'profile_rfb_updates' undeclared (first use in this function)
+ 2526 |                 profile_rfb_updates++;
+      |                 ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2528:21: error: 'profile_changed_bytes' undeclared (first use in this function)
+ 2528 |                     profile_changed_bytes += (unsigned int)changed_bytes;
+      |                     ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2532:30: error: 'DBG_STAGE_POST_RECEIVE' undeclared (first use in this function)
+ 2532 |             debug_stage_id = DBG_STAGE_POST_RECEIVE;
+      |                              ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2601:34: error: 'DBG_STAGE_RECEIVE_ERROR' undeclared (first use in this function)
+ 2601 |                 debug_stage_id = DBG_STAGE_RECEIVE_ERROR;
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2605:25: error: 'live_message_type' undeclared (first use in this function)
+ 2605 |                         live_message_type);
+      |                         ^~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2607:25: error: 'live_rect_index' undeclared (first use in this function)
+ 2607 |                         live_rect_index,
+      |                         ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2608:25: error: 'live_rect_count' undeclared (first use in this function)
+ 2608 |                         live_rect_count,
+      |                         ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2609:25: error: 'live_encoding' undeclared (first use in this function); did you mean 'set_live_encoding'?
+ 2609 |                         live_encoding);
+      |                         ^~~~~~~~~~~~~
+      |                         set_live_encoding
+ps2vnc_display_orchestration.inc:2611:25: error: 'live_rect_x' undeclared (first use in this function)
+ 2611 |                         live_rect_x,
+      |                         ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2612:25: error: 'live_rect_y' undeclared (first use in this function)
+ 2612 |                         live_rect_y,
+      |                         ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2613:25: error: 'live_rect_w' undeclared (first use in this function)
+ 2613 |                         live_rect_w,
+      |                         ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2614:25: error: 'live_rect_h' undeclared (first use in this function)
+ 2614 |                         live_rect_h);
+      |                         ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2616:25: error: 'live_hdr_raw' undeclared (first use in this function)
+ 2616 |                         live_hdr_raw[0],
+      |                         ^~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2629:25: error: 'live_hdr_start_avail' undeclared (first use in this function)
+ 2629 |                         live_hdr_start_avail,
+      |                         ^~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2630:25: error: 'live_hdr_recv_n' undeclared (first use in this function)
+ 2630 |                         live_hdr_recv_n);
+      |                         ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2632:25: error: 'live_update_raw' undeclared (first use in this function)
+ 2632 |                         live_update_raw[0],
+      |                         ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2670:39: error: 'TEST29_DISCARD_LIVE_PIXELS' undeclared (first use in this function)
+ 2670 |             if (changed_bytes > 0 && !TEST29_DISCARD_LIVE_PIXELS) {
+      |                                       ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2671:34: error: 'DBG_STAGE_PRE_TEXTURE' undeclared (first use in this function)
+ 2671 |                 debug_stage_id = DBG_STAGE_PRE_TEXTURE;
+      |                                  ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2673:21: error: implicit declaration of function 'ps2vnc_display_commit_update'; did you mean 'ps2vnc_display_create'? [-Wimplicit-function-declaration]
+ 2673 |                 if (ps2vnc_display_commit_update(
+      |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                     ps2vnc_display_create
+ps2vnc_display_orchestration.inc:2679:34: error: 'DBG_STAGE_POST_TEXTURE' undeclared (first use in this function)
+ 2679 |                 debug_stage_id = DBG_STAGE_POST_TEXTURE;
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc: In function 'main':
+ps2vnc_display_orchestration.inc:2704:9: error: 'VNC_WIDTH' undeclared (first use in this function); did you mean 'INT_WIDTH'?
+ 2704 |         VNC_WIDTH * VNC_HEIGHT * sizeof(unsigned short)
+      |         ^~~~~~~~~
+      |         INT_WIDTH
+ps2vnc_display_orchestration.inc:2704:21: error: 'VNC_HEIGHT' undeclared (first use in this function)
+ 2704 |         VNC_WIDTH * VNC_HEIGHT * sizeof(unsigned short)
+      |                     ^~~~~~~~~~
+ps2vnc_display_orchestration.inc:2728:25: error: 'DEV9_irx' undeclared (first use in this function)
+ 2728 |     SifExecModuleBuffer(DEV9_irx, size_DEV9_irx, 0, NULL, NULL);
+      |                         ^~~~~~~~
+ps2vnc_display_orchestration.inc:2728:35: error: 'size_DEV9_irx' undeclared (first use in this function)
+ 2728 |     SifExecModuleBuffer(DEV9_irx, size_DEV9_irx, 0, NULL, NULL);
+      |                                   ^~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2729:25: error: 'NETMAN_irx' undeclared (first use in this function)
+ 2729 |     SifExecModuleBuffer(NETMAN_irx, size_NETMAN_irx, 0, NULL, NULL);
+      |                         ^~~~~~~~~~
+ps2vnc_display_orchestration.inc:2729:37: error: 'size_NETMAN_irx' undeclared (first use in this function)
+ 2729 |     SifExecModuleBuffer(NETMAN_irx, size_NETMAN_irx, 0, NULL, NULL);
+      |                                     ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2730:25: error: 'SMAP_irx' undeclared (first use in this function)
+ 2730 |     SifExecModuleBuffer(SMAP_irx, size_SMAP_irx, 0, NULL, NULL);
+      |                         ^~~~~~~~
+ps2vnc_display_orchestration.inc:2730:35: error: 'size_SMAP_irx' undeclared (first use in this function)
+ 2730 |     SifExecModuleBuffer(SMAP_irx, size_SMAP_irx, 0, NULL, NULL);
+      |                                   ^~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2736:5: error: 'screen_row' undeclared (first use in this function); did you mean 'screenf'?
+ 2736 |     screen_row = 0;
+      |     ^~~~~~~~~~
+      |     screenf
+ps2vnc_display_orchestration.inc:2760:27: error: 'pad_area' undeclared (first use in this function)
+ 2760 |     if (padPortOpen(0, 0, pad_area) == 0) {
+      |                           ^~~~~~~~
+ps2vnc_display_orchestration.inc:2775:9: error: implicit declaration of function 'wait_pad_ready_after_mode_change' [-Wimplicit-function-declaration]
+ 2775 |     if (wait_pad_ready_after_mode_change() < 0) {
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2797:9: error: implicit declaration of function 'startup_force_calibration_requested' [-Wimplicit-function-declaration]
+ 2797 |         startup_force_calibration_requested();
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2815:9: error: implicit declaration of function 'ethWaitValidNetIFLinkState' [-Wimplicit-function-declaration]
+ 2815 |     if (ethWaitValidNetIFLinkState() != 0) {
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2856:22: error: 'DBG_STAGE_NET_READY' undeclared (first use in this function)
+ 2856 |     debug_stage_id = DBG_STAGE_NET_READY;
+      |                      ^~~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2857:9: error: implicit declaration of function 'debug_udp_init' [-Wimplicit-function-declaration]
+ 2857 |     if (debug_udp_init() < 0)
+      |         ^~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2862:5: error: 'rfb_rx_pos' undeclared (first use in this function)
+ 2862 |     rfb_rx_pos = 0;
+      |     ^~~~~~~~~~
+ps2vnc_display_orchestration.inc:2863:5: error: 'rfb_rx_end' undeclared (first use in this function)
+ 2863 |     rfb_rx_end = 0;
+      |     ^~~~~~~~~~
+ps2vnc_display_orchestration.inc:2864:5: error: 'rfb_rx_syscalls' undeclared (first use in this function)
+ 2864 |     rfb_rx_syscalls = 0;
+      |     ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2865:5: error: 'rfb_last_recv_n' undeclared (first use in this function)
+ 2865 |     rfb_last_recv_n = 0;
+      |     ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2866:5: error: 'rfb_last_recv_call' undeclared (first use in this function)
+ 2866 |     rfb_last_recv_call = 0;
+      |     ^~~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2867:20: error: 'live_hdr_raw' undeclared (first use in this function)
+ 2867 |     memset((void *)live_hdr_raw, 0, sizeof(live_hdr_raw));
+      |                    ^~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2868:20: error: 'live_update_raw' undeclared (first use in this function)
+ 2868 |     memset((void *)live_update_raw, 0, sizeof(live_update_raw));
+      |                    ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2886:5: error: 'live_error_code' undeclared (first use in this function)
+ 2886 |     live_error_code = 0;
+      |     ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2887:5: error: 'live_message_type' undeclared (first use in this function)
+ 2887 |     live_message_type = 0;
+      |     ^~~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2888:5: error: 'live_rect_count' undeclared (first use in this function)
+ 2888 |     live_rect_count = 0;
+      |     ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2889:5: error: 'live_rect_index' undeclared (first use in this function)
+ 2889 |     live_rect_index = 0;
+      |     ^~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2890:5: error: 'live_rect_x' undeclared (first use in this function)
+ 2890 |     live_rect_x = 0;
+      |     ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2891:5: error: 'live_rect_y' undeclared (first use in this function)
+ 2891 |     live_rect_y = 0;
+      |     ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2892:5: error: 'live_rect_w' undeclared (first use in this function)
+ 2892 |     live_rect_w = 0;
+      |     ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2893:5: error: 'live_rect_h' undeclared (first use in this function)
+ 2893 |     live_rect_h = 0;
+      |     ^~~~~~~~~~~
+ps2vnc_display_orchestration.inc:2894:5: error: 'live_encoding' undeclared (first use in this function); did you mean 'set_live_encoding'?
+ 2894 |     live_encoding = 0;
+      |     ^~~~~~~~~~~~~
+      |     set_live_encoding
+ps2vnc_ui_controller.inc: At top level:
+ps2vnc_ui_controller.inc:1551:13: warning: 'controller_thread' defined but not used [-Wunused-function]
+ 1551 | static void controller_thread(void *arg)
+      |             ^~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:957:21: warning: 'osk_shifted_ascii' defined but not used [-Wunused-function]
+  957 | static unsigned int osk_shifted_ascii(unsigned int c)
+      |                     ^~~~~~~~~~~~~~~~~
+make: *** [/usr/local/ps2dev/ps2sdk/samples/Makefile.eeglobal:65: ps2vnc_ui_display.o] Error 1
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_services.c -o ps2vnc_services.o
+In file included from ps2vnc_services.c:10:
+ps2vnc_calibration_state.inc:687:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+  687 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_config_text.c -o ps2vnc_config_text.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_identity.c -o ps2vnc_identity.o
+mips64r5900el-ps2-elf-gcc \
+	-D_EE \
+	-DF_gsKit_hires_init_screen=1 \
+	-G0 \
+	-march=r5900 \
+	-mhard-float \
+	-msingle-float \
+	-mno-llsc \
+	-mno-shared \
+	-mplt \
+	-O2 \
+	-g \
+	-flto=auto \
+	-fno-fat-lto-objects \
+	-I/usr/local/ps2dev/gsKit/include \
+	-I/usr/local/ps2dev/ps2sdk/ee/include \
+	-I/usr/local/ps2dev/ps2sdk/common/include \
+	-c ps2vnc_gsHires.c -o ps2vnc_gsHires.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c DEV9_irx.c -o DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c NETMAN_irx.c -o NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c SMAP_irx.c -o SMAP_irx.o
+make: Target 'all' not remade because of errors.

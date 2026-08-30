@@ -10,7 +10,6 @@
 #include "ps2vnc_cross_types.h"
 #include "ps2vnc_services_imports.h"
 #include "ps2vnc_services_exports.h"
-#include "ps2vnc_ui_display_to_runtime.h"
 
 /*
  * D17AL large display-mode matrix.
@@ -233,7 +232,7 @@ D17AL_VGA_OTHER(
  * Keep entries grouped and sorted for human inspection; the UI derives its
  * columns from menu_group rather than assuming a particular row count.
  */
- const ps2vnc_video_mode_t *const video_modes[] = {
+static const ps2vnc_video_mode_t *const video_modes[] = {
     /* TV / DTV */
     &video_mode_480i,
     &video_mode_480p,
@@ -277,9 +276,4 @@ int ps2vnc_video_mode_supports_backend(
 }
 
 /* Recursive M3 subdivision scaffold remains intact. */
-/*
- * M3I recursive coarse split:
- * this TU retains runtime_support + framebuffer_engine.
- */
-#include "ps2vnc_runtime_support.inc"
-#include "ps2vnc_framebuffer_engine.inc"
+#include "ps2vnc_macro_body.inc"

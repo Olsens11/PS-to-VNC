@@ -1,0 +1,11 @@
+ M working/b4a/Makefile
+ M working/b4a/PS2VNC.ELF
+ M working/b4a/ps2vnc_display_orchestration.inc
+ M working/b4a/ps2vnc_framebuffer_engine.inc
+ M working/b4a/ps2vnc_runtime.c
+ M working/b4a/ps2vnc_runtime_support.inc
+ M working/b4a/ps2vnc_ui_controller.inc
+?? evidence/m3/m3i-ui-display-real-tu/
+?? working/b4a/ps2vnc_runtime_to_ui_display.h
+?? working/b4a/ps2vnc_ui_display.c
+?? working/b4a/ps2vnc_ui_display_to_runtime.h

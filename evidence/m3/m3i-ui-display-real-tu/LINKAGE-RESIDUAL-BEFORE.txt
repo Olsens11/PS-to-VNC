@@ -1,0 +1,40 @@
+----- ps2vnc_remote_display_lease_expired -----
+working/b4a/ps2vnc_runtime_support.inc:1438:static int ps2vnc_remote_display_lease_expired(void);
+working/b4a/ps2vnc_runtime_support.inc:1632:            if (ps2vnc_remote_display_lease_expired())
+working/b4a/ps2vnc_display_orchestration.inc:890:static int ps2vnc_remote_display_lease_expired(void)
+working/b4a/ps2vnc_display_orchestration.inc:1436:        (void)ps2vnc_remote_display_lease_expired();
+----- ps2vnc_remote_control_poll_idle -----
+working/b4a/ps2vnc_runtime_support.inc:1437:static int ps2vnc_remote_control_poll_idle(void);
+working/b4a/ps2vnc_runtime_support.inc:1637:                ps2vnc_remote_control_poll_idle() > 0) {
+working/b4a/ps2vnc_display_orchestration.inc:931:static int ps2vnc_remote_control_poll_idle(void)
+working/b4a/ps2vnc_display_orchestration.inc:1437:        (void)ps2vnc_remote_control_poll_idle();
+----- display_menu_open_for_active -----
+working/b4a/ps2vnc_ui_controller.inc:290:static void display_menu_open_for_active(int parent_system)
+working/b4a/ps2vnc_ui_controller.inc:1911:                                display_menu_open_for_active(0);
+working/b4a/ps2vnc_ui_controller.inc:2295:                            display_menu_open_for_active(1);
+working/b4a/ps2vnc_runtime_support.inc:938:static void display_menu_open_for_active(int parent_system);
+working/b4a/ps2vnc_runtime_support.inc:1985:    display_menu_open_for_active(0);
+----- osk_shifted_ascii -----
+working/b4a/ps2vnc_ui_controller.inc:957:static unsigned int osk_shifted_ascii(unsigned int c)
+working/b4a/ps2vnc_runtime_support.inc:3271:static unsigned int osk_shifted_ascii(unsigned int c);
+working/b4a/ps2vnc_runtime_support.inc:3291:        c = osk_shifted_ascii(c);
+----- display_menu_tab_selection -----
+working/b4a/ps2vnc_ui_controller.inc:263:        display_menu_tab_selection[display_menu_tab] =
+working/b4a/ps2vnc_ui_controller.inc:269:    saved = display_menu_tab_selection[display_menu_tab];
+working/b4a/ps2vnc_ui_controller.inc:285:        display_menu_tab_selection[display_menu_tab] =
+working/b4a/ps2vnc_ui_controller.inc:303:        display_menu_tab_selection[display_menu_tab] =
+working/b4a/ps2vnc_ui_controller.inc:363:            display_menu_tab_selection[display_menu_tab] =
+working/b4a/ps2vnc_ui_controller.inc:391:        display_menu_tab_selection[old_tab] =
+working/b4a/ps2vnc_runtime_support.inc:906:static volatile int display_menu_tab_selection[3] = {
+----- video_modes -----
+working/b4a/ps2vnc_ui_controller.inc:585:                video_modes[i];
+working/b4a/ps2vnc_runtime_support.inc:23:        if (strcmp(name, video_modes[i]->name) == 0)
+working/b4a/ps2vnc_runtime_support.inc:24:            return video_modes[i];
+working/b4a/ps2vnc_runtime_support.inc:789:        if (video_modes[i] == mode)
+working/b4a/ps2vnc_runtime_support.inc:803:    return video_modes[selection];
+working/b4a/ps2vnc_runtime.c:236:static const ps2vnc_video_mode_t *const video_modes[] = {
+working/b4a/ps2vnc_runtime.c:267:    (sizeof(video_modes) / sizeof(video_modes[0]))
+working/b4a/ps2vnc_display_orchestration.inc:1556:                    video_modes[selection] !=
+----- osk_func_keysyms -----
+working/b4a/ps2vnc_ui_controller.inc:1079:            osk_func_keysyms
+working/b4a/ps2vnc_runtime_support.inc:3102:static const unsigned int osk_func_keysyms[4][12] = {

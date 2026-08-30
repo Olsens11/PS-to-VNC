@@ -887,7 +887,7 @@ static void ps2vnc_remote_display_fail(
 }
 
 
- int ps2vnc_remote_display_lease_expired(void)
+static int ps2vnc_remote_display_lease_expired(void)
 {
     u32 sec = 0;
     u32 usec = 0;
@@ -928,7 +928,7 @@ static void ps2vnc_remote_display_fail(
 }
 
 
- int ps2vnc_remote_control_poll_idle(void)
+static int ps2vnc_remote_control_poll_idle(void)
 {
     unsigned char body[
         PS2VNC_DISPLAY_CONTROL_MAX_BYTES + 1];

@@ -1,0 +1,40 @@
+diff --git a/working/b4a/ps2vnc_framebuffer_engine.inc b/working/b4a/ps2vnc_framebuffer_engine.inc
+index f98a8b2..d1dae89 100644
+--- a/working/b4a/ps2vnc_framebuffer_engine.inc
++++ b/working/b4a/ps2vnc_framebuffer_engine.inc
+@@ -1,4 +1,4 @@
+ 
+-static int start_controller_thread(int sock)
++ int start_controller_thread(int sock)
+ {
+     ee_sema_t sema;
+@@ -102,6 +102,6 @@ static unsigned short *ps2vnc_display_direct_write_row(
+     unsigned int y);
+  void ps2vnc_display_direct_write_cancel(void);
+-static int ps2vnc_display_begin_update(void);
+-static int ps2vnc_display_finish_update_decode(void);
++ int ps2vnc_display_begin_update(void);
++ int ps2vnc_display_finish_update_decode(void);
+ 
+ 
+@@ -1131,5 +1131,5 @@ void ps2vnc_display_direct_write_cancel(void)
+ }
+ 
+-static int ps2vnc_display_begin_update(void)
++ int ps2vnc_display_begin_update(void)
+ {
+     ps2vnc_display_direct_write_cancel();
+@@ -1142,5 +1142,5 @@ static int ps2vnc_display_begin_update(void)
+ }
+ 
+-static int ps2vnc_display_finish_update_decode(void)
++ int ps2vnc_display_finish_update_decode(void)
+ {
+     int direct_complete = live_direct_present_safe;
+@@ -1941,5 +1941,5 @@ static int ps2vnc_display_commit_update_standard(
+ }
+ 
+-static int ps2vnc_display_commit_update(
++ int ps2vnc_display_commit_update(
+     GSGLOBAL *gsGlobal,
+     GSTEXTURE *tex,

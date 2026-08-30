@@ -1,0 +1,182 @@
+rm -f PS2VNC.ELF ps2ip.o ps2vnc_runtime.o ps2vnc_ui_display.o ps2vnc_services.o ps2vnc_config_text.o ps2vnc_identity.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o DEV9_irx.c NETMAN_irx.c SMAP_irx.c
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2ip.c -o ps2ip.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_runtime.c -o ps2vnc_runtime.o
+In file included from ps2vnc_runtime.c:284:
+ps2vnc_runtime_support.inc:938:13: warning: 'display_menu_open_for_active' used but never defined
+  938 | static void display_menu_open_for_active(int parent_system);
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1437:12: warning: 'ps2vnc_remote_control_poll_idle' used but never defined
+ 1437 | static int ps2vnc_remote_control_poll_idle(void);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:1438:12: warning: 'ps2vnc_remote_display_lease_expired' used but never defined
+ 1438 | static int ps2vnc_remote_display_lease_expired(void);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_support.inc:3271:21: warning: 'osk_shifted_ascii' used but never defined
+ 3271 | static unsigned int osk_shifted_ascii(unsigned int c);
+      |                     ^~~~~~~~~~~~~~~~~
+In file included from ps2vnc_runtime.c:285:
+ps2vnc_framebuffer_engine.inc:2318:12: warning: 'update_hires_background_region' defined but not used [-Wunused-function]
+ 2318 | static int update_hires_background_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_framebuffer_engine.inc:1158:12: warning: 'sync_copy_hires_region' defined but not used [-Wunused-function]
+ 1158 | static int sync_copy_hires_region(
+      |            ^~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_ui_display.c -o ps2vnc_ui_display.o
+In file included from ps2vnc_runtime_compat.h:55,
+                 from ps2vnc_ui_display.c:18:
+/usr/local/ps2dev/ps2sdk/ee/include/libpad.h:36:23: error: expected identifier or '(' before numeric constant
+   36 | #define PAD_L1        0x0400
+      |                       ^~~~~~
+ps2vnc_runtime_to_ui_display.h:65:2: note: in expansion of macro 'PAD_L1'
+   65 | (PAD_L1 | PAD_L2 | PAD_R1 | PAD_R2 | PAD_START)
+      |  ^~~~~~
+In file included from ps2vnc_ui_display.c:22:
+ps2vnc_runtime_to_ui_display.h:177:8: error: expected identifier or '(' before string constant
+  177 | extern "/display-transaction"
+      |        ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_to_ui_display.h:212:14: error: unknown type name 'ps2vnc_hotkey_binding_t'
+  212 | extern const ps2vnc_hotkey_binding_t runtime_hotkeys[] ;
+      |              ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_to_ui_display.h:370:8: error: type defaults to 'int' in declaration of 'ps2vnc_hotkey_binding_t' [-Wimplicit-int]
+  370 | extern ps2vnc_hotkey_binding_t;
+      |        ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_to_ui_display.h:459:38: error: expected '=', ',', ';', 'asm' or '__attribute__' before '*' token
+  459 | extern const ps2vnc_hotkey_binding_t *runtime_hotkey_lookup (unsigned int mask, int desktop_context);
+      |                                      ^
+ps2vnc_ui_controller.inc: In function 'display_menu_first_visible_selection':
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+  145 |     (sizeof(video_modes) / sizeof(video_modes[0]))
+      |            ^
+ps2vnc_ui_controller.inc:191:21: note: in expansion of macro 'VIDEO_MODE_COUNT'
+  191 |     for (i = 0; i < VIDEO_MODE_COUNT; i++) {
+      |                     ^~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_menu_move_vertical_selection':
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+  145 |     (sizeof(video_modes) / sizeof(video_modes[0]))
+      |            ^
+ps2vnc_ui_controller.inc:349:23: note: in expansion of macro 'VIDEO_MODE_COUNT'
+  349 |          step <= (int)VIDEO_MODE_COUNT;
+      |                       ^~~~~~~~~~~~~~~~
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+  145 |     (sizeof(video_modes) / sizeof(video_modes[0]))
+      |            ^
+ps2vnc_ui_controller.inc:355:19: note: in expansion of macro 'VIDEO_MODE_COUNT'
+  355 |              (int)VIDEO_MODE_COUNT * 4) %
+      |                   ^~~~~~~~~~~~~~~~
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+  145 |     (sizeof(video_modes) / sizeof(video_modes[0]))
+      |            ^
+ps2vnc_ui_controller.inc:356:18: note: in expansion of macro 'VIDEO_MODE_COUNT'
+  356 |             (int)VIDEO_MODE_COUNT;
+      |                  ^~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'display_menu_render_bitmap':
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+  145 |     (sizeof(video_modes) / sizeof(video_modes[0]))
+      |            ^
+ps2vnc_ui_controller.inc:581:18: note: in expansion of macro 'VIDEO_MODE_COUNT'
+  581 |              i < VIDEO_MODE_COUNT;
+      |                  ^~~~~~~~~~~~~~~~
+In file included from ps2vnc_ui_display.c:24:
+ps2vnc_ui_controller.inc: In function 'system_menu_render_bitmap':
+ps2vnc_ui_controller.inc:860:13: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+  860 |             RUNTIME_ACTION_REFRESH_RFB &&
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:860:13: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_ui_controller.inc:870:20: error: 'RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU' undeclared (first use in this function)
+  870 |                    RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU &&
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc: In function 'controller_thread':
+ps2vnc_ui_controller.inc:1588:32: error: 'RUNTIME_ACTION_NONE' undeclared (first use in this function)
+ 1588 |     int hotkey_active_action = RUNTIME_ACTION_NONE;
+      |                                ^~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1747:51: error: expected '=', ',', ';', 'asm' or '__attribute__' before '*' token
+ 1747 |                     const ps2vnc_hotkey_binding_t *new_release = NULL;
+      |                                                   ^
+ps2vnc_ui_controller.inc:1747:52: error: 'new_release' undeclared (first use in this function)
+ 1747 |                     const ps2vnc_hotkey_binding_t *new_release = NULL;
+      |                                                    ^~~~~~~~~~~
+ps2vnc_ui_controller.inc:1811:29: error: implicit declaration of function 'runtime_hotkey_lookup' [-Wimplicit-function-declaration]
+ 1811 |                             runtime_hotkey_lookup(
+      |                             ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1818:33: error: 'HOTKEY_TRIGGER_RELEASE' undeclared (first use in this function)
+ 1818 |                                 HOTKEY_TRIGGER_RELEASE) {
+      |                                 ^~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1829:33: error: 'RUNTIME_ACTION_SEND_TAB' undeclared (first use in this function)
+ 1829 |                                 RUNTIME_ACTION_SEND_TAB)
+      |                                 ^~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1832:34: error: 'RUNTIME_ACTION_SEND_ENTER' undeclared (first use in this function)
+ 1832 |                                  RUNTIME_ACTION_SEND_ENTER)
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1850:51: error: expected '=', ',', ';', 'asm' or '__attribute__' before '*' token
+ 1850 |                     const ps2vnc_hotkey_binding_t *binding;
+      |                                                   ^
+ps2vnc_ui_controller.inc:1850:52: error: 'binding' undeclared (first use in this function)
+ 1850 |                     const ps2vnc_hotkey_binding_t *binding;
+      |                                                    ^~~~~~~
+ps2vnc_ui_controller.inc:1868:45: error: 'HOTKEY_TRIGGER_SETTLE' undeclared (first use in this function)
+ 1868 |                         binding->trigger == HOTKEY_TRIGGER_SETTLE &&
+      |                                             ^~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1905:40: error: 'RUNTIME_ACTION_DISPLAY_SETTINGS' undeclared (first use in this function)
+ 1905 |                                        RUNTIME_ACTION_DISPLAY_SETTINGS) {
+      |                                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1928:36: error: 'HOTKEY_TRIGGER_HOLD' undeclared (first use in this function)
+ 1928 |                                    HOTKEY_TRIGGER_HOLD) {
+      |                                    ^~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:1954:38: error: 'RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU' undeclared (first use in this function)
+ 1954 |                                      RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU)
+      |                                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_ui_controller.inc:2001:37: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+ 2001 |                                     RUNTIME_ACTION_REFRESH_RFB) {
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from ps2vnc_ui_display.c:25:
+ps2vnc_display_orchestration.inc: In function 'display_live_desktop':
+ps2vnc_display_orchestration.inc:1446:13: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+ 1446 |             RUNTIME_ACTION_REFRESH_RFB) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+ps2vnc_runtime_to_ui_display.h:145:12: error: invalid application of 'sizeof' to incomplete type 'const ps2vnc_video_mode_t * const[]'
+  145 |     (sizeof(video_modes) / sizeof(video_modes[0]))
+      |            ^
+ps2vnc_display_orchestration.inc:1555:25: note: in expansion of macro 'VIDEO_MODE_COUNT'
+ 1555 |                         VIDEO_MODE_COUNT &&
+      |                         ^~~~~~~~~~~~~~~~
+ps2vnc_display_orchestration.inc: In function 'main':
+ps2vnc_display_orchestration.inc:2728:25: error: 'DEV9_irx' undeclared (first use in this function)
+ 2728 |     SifExecModuleBuffer(DEV9_irx, size_DEV9_irx, 0, NULL, NULL);
+      |                         ^~~~~~~~
+ps2vnc_ui_controller.inc: At top level:
+ps2vnc_ui_controller.inc:957:21: warning: 'osk_shifted_ascii' defined but not used [-Wunused-function]
+  957 | static unsigned int osk_shifted_ascii(unsigned int c)
+      |                     ^~~~~~~~~~~~~~~~~
+make: *** [/usr/local/ps2dev/ps2sdk/samples/Makefile.eeglobal:65: ps2vnc_ui_display.o] Error 1
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_services.c -o ps2vnc_services.o
+In file included from ps2vnc_services.c:10:
+ps2vnc_calibration_state.inc:687:12: warning: 'ps2vnc_startup_mode_save_to_pi' defined but not used [-Wunused-function]
+  687 | static int ps2vnc_startup_mode_save_to_pi(
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_config_text.c -o ps2vnc_config_text.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c ps2vnc_identity.c -o ps2vnc_identity.o
+mips64r5900el-ps2-elf-gcc \
+	-D_EE \
+	-DF_gsKit_hires_init_screen=1 \
+	-G0 \
+	-march=r5900 \
+	-mhard-float \
+	-msingle-float \
+	-mno-llsc \
+	-mno-shared \
+	-mplt \
+	-O2 \
+	-g \
+	-flto=auto \
+	-fno-fat-lto-objects \
+	-I/usr/local/ps2dev/gsKit/include \
+	-I/usr/local/ps2dev/ps2sdk/ee/include \
+	-I/usr/local/ps2dev/ps2sdk/common/include \
+	-c ps2vnc_gsHires.c -o ps2vnc_gsHires.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c DEV9_irx.c -o DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c NETMAN_irx.c -o NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -I/usr/local/ps2dev/gsKit/include -c SMAP_irx.c -o SMAP_irx.o
+make: Target 'all' not remade because of errors.

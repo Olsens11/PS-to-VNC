@@ -1,0 +1,260 @@
+ps2vnc_framebuffer_engine.inc:25:27: error: 'controller_thread' undeclared (first use in this function); did you mean 'controller_thread_id'?
+ps2vnc_framebuffer_engine.inc:25:27: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_ui_controller.inc:11:25: error: 'OSK_WIDTH' undeclared (first use in this function); did you mean 'LONG_WIDTH'?
+ps2vnc_ui_controller.inc:11:25: note: each undeclared identifier is reported only once for each function it appears in
+ps2vnc_ui_controller.inc:11:36: error: 'OSK_HEIGHT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:20:9: error: 'display_confirm_previous_mode' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:30:9: error: 'display_confirm_selection' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ps2vnc_ui_controller.inc:30:38: error: 'DISPLAY_CONFIRM_GO_BACK' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:39:38: error: 'DISPLAY_CONFIRM_KEEP' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:49:9: error: 'display_confirm_seconds' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:69:25: error: 'OSK_WIDTH' undeclared (first use in this function); did you mean 'LONG_WIDTH'?
+ps2vnc_ui_controller.inc:69:36: error: 'OSK_HEIGHT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:80:9: error: 'display_restore_ack_mode' undeclared (first use in this function); did you mean 'display_restore_ack_render_bitmap'?
+ps2vnc_ui_controller.inc:106:16: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:113:20: error: 'DISPLAY_TAB_VGA_60' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:116:20: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:127:14: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:130:14: error: 'DISPLAY_TAB_VGA_60' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:133:14: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:136:14: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:153:15: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:154:15: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:187:15: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:188:15: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:191:21: error: 'VIDEO_MODE_COUNT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:203:16: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:206:15: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:207:15: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:223:15: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:226:18: error: 'DISPLAY_TAB_COUNT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:247:35: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+ps2vnc_ui_controller.inc:253:29: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:254:9: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+ps2vnc_ui_controller.inc:263:9: error: 'display_menu_tab_selection' undeclared (first use in this function); did you mean 'display_menu_mode_at_selection'?
+ps2vnc_ui_controller.inc:295:5: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+ps2vnc_ui_controller.inc:298:5: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+ps2vnc_ui_controller.inc:300:29: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:301:29: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:303:9: error: 'display_menu_tab_selection' undeclared (first use in this function); did you mean 'display_menu_mode_at_selection'?
+ps2vnc_ui_controller.inc:307:5: error: 'display_menu_error' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:308:5: error: 'display_policy_error' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ps2vnc_ui_controller.inc:309:5: error: 'display_menu_parent_system' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:310:5: error: 'display_menu_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ps2vnc_ui_controller.inc:317:9: error: 'display_policy_request' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ps2vnc_ui_controller.inc:318:13: error: 'DISPLAY_POLICY_REQUEST_NONE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:322:13: error: 'DISPLAY_POLICY_REQUEST_REFRESH' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:335:9: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+ps2vnc_ui_controller.inc:335:29: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:349:23: error: 'VIDEO_MODE_COUNT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:363:13: error: 'display_menu_tab_selection' undeclared (first use in this function); did you mean 'display_menu_mode_at_selection'?
+ps2vnc_ui_controller.inc:378:19: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+ps2vnc_ui_controller.inc:383:16: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+ps2vnc_ui_controller.inc:385:20: error: 'DISPLAY_TAB_TV_DTV' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:386:20: error: 'DISPLAY_TAB_VGA_OTHER' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:391:9: error: 'display_menu_tab_selection' undeclared (first use in this function); did you mean 'display_menu_mode_at_selection'?
+ps2vnc_ui_controller.inc:442:24: error: 'OSK_WIDTH' undeclared (first use in this function); did you mean 'LONG_WIDTH'?
+ps2vnc_ui_controller.inc:455:16: error: 'DISPLAY_TAB_COUNT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:476:20: error: 'OSK_HEIGHT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:508:21: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+ps2vnc_ui_controller.inc:538:29: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:581:18: error: 'VIDEO_MODE_COUNT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:585:17: error: 'video_modes' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:616:21: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+ps2vnc_ui_controller.inc:704:9: error: 'display_policy_request' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ps2vnc_ui_controller.inc:705:13: error: 'DISPLAY_POLICY_REQUEST_NONE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:711:17: error: 'DISPLAY_POLICY_REQUEST_REFRESH' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:718:16: error: 'display_policy_error' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ps2vnc_ui_controller.inc:728:16: error: 'display_menu_error' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:815:31: error: 'SYSTEM_MENU_ITEM_COUNT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:824:25: error: 'OSK_WIDTH' undeclared (first use in this function); did you mean 'LONG_WIDTH'?
+ps2vnc_ui_controller.inc:824:36: error: 'OSK_HEIGHT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:860:13: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:870:20: error: 'RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:880:20: error: 'SYSTEM_REFRESH_REFRESHING' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:890:20: error: 'SYSTEM_REFRESH_COOLDOWN' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:917:17: error: implicit declaration of function 'osk_row_length' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:917:32: error: 'osk_row' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:919:5: error: 'osk_col' undeclared (first use in this function); did you mean 'osk_color'?
+ps2vnc_ui_controller.inc:931:36: error: 'osk_row' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:932:19: error: 'osk_col' undeclared (first use in this function); did you mean 'old_col'?
+ps2vnc_ui_controller.inc:937:19: error: 'OSK_ROWS' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:995:9: error: implicit declaration of function 'send_modified_key_tap' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:998:13: error: 'osk_ctrl' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:999:13: error: 'osk_alt' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1006:5: error: implicit declaration of function 'osk_clear_one_shot_modifiers' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1014:21: error: 'osk_shift' undeclared (first use in this function); did you mean 'use_shift'?
+ps2vnc_ui_controller.inc:1018:13: error: implicit declaration of function 'send_key_event' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1021:17: error: 'XK_SHIFT_L' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1029:13: error: 'osk_ctrl' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1030:13: error: 'osk_alt' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1056:9: error: 'osk_row' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1057:13: error: 'osk_page' undeclared (first use in this function); did you mean 'osk_pixels'?
+ps2vnc_ui_controller.inc:1057:25: error: 'OSK_PAGE_ABC' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1063:17: error: implicit declaration of function 'osk_display_char' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1065:21: error: 'osk_col' undeclared (first use in this function); did you mean 'osk_color'?
+ps2vnc_ui_controller.inc:1079:13: error: 'osk_func_keysyms' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1107:29: error: 'OSK_PAGE_FUNC' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1114:13: error: 'osk_shift' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1119:13: error: 'osk_ctrl' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1124:13: error: 'osk_alt' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1133:22: error: 'XK_TAB' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1137:22: error: 'XK_BACKSPACE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1141:22: error: 'XK_DELETE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1145:22: error: 'XK_RETURN' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1149:22: error: 'XK_ESCAPE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1186:9: error: implicit declaration of function 'send_pointer_event' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1588:32: error: 'RUNTIME_ACTION_NONE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1684:9: error: 'controller_loop_counter' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1686:13: error: implicit declaration of function 'ps2vnc_system_refresh_update_state' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1722:31: error: 'RUNTIME_HOTKEY_BUTTON_MASK' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1726:22: error: 'display_menu_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ps2vnc_ui_controller.inc:1727:22: error: 'osk_visible' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1742:25: error: 'debug_hotkey_settle_target' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1747:27: error: unknown type name 'ps2vnc_hotkey_binding_t'
+ps2vnc_ui_controller.inc:1811:29: error: implicit declaration of function 'runtime_hotkey_lookup' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1810:37: error: assignment to 'const int *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
+ps2vnc_ui_controller.inc:1817:40: error: request for member 'trigger' in something not a structure or union
+ps2vnc_ui_controller.inc:1818:33: error: 'HOTKEY_TRIGGER_RELEASE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1821:44: error: request for member 'action' in something not a structure or union
+ps2vnc_ui_controller.inc:1829:33: error: 'RUNTIME_ACTION_SEND_TAB' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1830:38: error: 'XK_TAB' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1832:34: error: 'RUNTIME_ACTION_SEND_ENTER' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1833:38: error: 'XK_RETURN' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1836:29: error: implicit declaration of function 'send_key_tap' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1850:27: error: unknown type name 'ps2vnc_hotkey_binding_t'
+ps2vnc_ui_controller.inc:1852:25: error: 'RUNTIME_HOTKEY_SETTLE_POLLS' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1856:29: error: assignment to 'const int *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
+ps2vnc_ui_controller.inc:1868:32: error: request for member 'trigger' in something not a structure or union
+ps2vnc_ui_controller.inc:1868:45: error: 'HOTKEY_TRIGGER_SETTLE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1869:25: error: implicit declaration of function 'runtime_hotkey_has_hold_extension' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1875:29: error: 'RUNTIME_HOTKEY_EXTENDABLE_SETTLE_POLLS' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1883:32: error: request for member 'trigger' in something not a structure or union
+ps2vnc_ui_controller.inc:1886:55: error: request for member 'action' in something not a structure or union
+ps2vnc_ui_controller.inc:1887:56: error: request for member 'trigger' in something not a structure or union
+ps2vnc_ui_controller.inc:1889:36: error: request for member 'trigger' in something not a structure or union
+ps2vnc_ui_controller.inc:1892:40: error: request for member 'action' in something not a structure or union
+ps2vnc_ui_controller.inc:1904:47: error: request for member 'action' in something not a structure or union
+ps2vnc_ui_controller.inc:1905:40: error: 'RUNTIME_ACTION_DISPLAY_SETTINGS' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1909:37: error: 'SYSTEM_MENU_STATUS_NONE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1927:43: error: request for member 'trigger' in something not a structure or union
+ps2vnc_ui_controller.inc:1928:36: error: 'HOTKEY_TRIGGER_HOLD' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1930:34: error: implicit declaration of function 'ps2vnc_system_overlay_allowed' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:1953:45: error: request for member 'action' in something not a structure or union
+ps2vnc_ui_controller.inc:1954:38: error: 'RUNTIME_ACTION_EXIT_TO_SYSTEM_MENU' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1955:39: error: 'SYSTEM_MENU_EXIT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1956:39: error: 'SYSTEM_MENU_REFRESH' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:1959:44: error: request for member 'action' in something not a structure or union
+ps2vnc_ui_controller.inc:1978:30: error: 'SYSTEM_CHORD_HOLD_POLLS' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2001:37: error: 'RUNTIME_ACTION_REFRESH_RFB' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2004:37: error: implicit declaration of function 'ps2vnc_system_refresh_accept_request' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:2009:37: error: implicit declaration of function 'ps2vnc_system_exit_accept_request' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:2011:37: error: 'debug_hotkey_mask' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2013:37: error: 'debug_hotkey_stable_polls' undeclared (first use in this function); did you mean 'hotkey_stable_polls'?
+ps2vnc_ui_controller.inc:2015:37: error: 'debug_hotkey_action' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2017:37: error: 'debug_hotkey_trigger' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2019:37: error: 'debug_hotkey_hold_polls' undeclared (first use in this function); did you mean 'hotkey_hold_polls'?
+ps2vnc_ui_controller.inc:2021:37: error: 'debug_hotkey_latched' undeclared (first use in this function); did you mean 'hotkey_latched'?
+ps2vnc_ui_controller.inc:2023:37: error: 'debug_hotkey_quarantine' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2049:17: error: 'display_confirm_pending' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ps2vnc_ui_controller.inc:2050:17: error: 'display_confirm_action' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2050:43: error: 'DISPLAY_CONFIRM_ACTION_NONE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2051:18: error: 'remote_display_state' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2051:42: error: 'REMOTE_DISPLAY_ACTIVE_TEMP' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2052:18: error: 'display_transition_switch_in_progress' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2055:21: error: implicit declaration of function 'display_confirm_remaining_seconds' [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:2057:34: error: 'display_confirm_seconds' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2060:25: error: 'display_confirm_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ps2vnc_ui_controller.inc:2073:25: error: 'DISPLAY_CONFIRM_ACTION_ROLLBACK' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2096:17: error: 'display_restore_ack_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ps2vnc_ui_controller.inc:2108:22: error: 'display_restore_ack_request' undeclared (first use in this function); did you mean 'display_restore_ack_render_bitmap'?
+ps2vnc_ui_controller.inc:2150:45: error: 'REMOTE_DISPLAY_IDLE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2159:21: error: 'display_confirm_selection' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ps2vnc_ui_controller.inc:2161:26: error: 'DISPLAY_CONFIRM_GO_BACK' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2162:27: error: 'DISPLAY_CONFIRM_KEEP' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2191:27: error: 'DISPLAY_CONFIRM_ACTION_KEEP' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2217:26: error: 'SYSTEM_MENU_ITEM_COUNT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2272:32: error: 'SYSTEM_MENU_DISPLAY' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2339:21: error: 'display_menu_selection' undeclared (first use in this function); did you mean 'system_menu_selection'?
+ps2vnc_ui_controller.inc:2344:21: error: 'display_menu_error' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2345:21: error: 'display_policy_error' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ps2vnc_ui_controller.inc:2399:25: error: 'display_menu_parent_system' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2418:21: error: 'display_menu_tab' undeclared (first use in this function); did you mean 'display_menu_tab_label'?
+ps2vnc_ui_controller.inc:2419:25: error: 'DISPLAY_TAB_ADVANCED' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2428:25: error: 'display_policy_request' undeclared (first use in this function); did you mean 'display_policy_loaded'?
+ps2vnc_ui_controller.inc:2429:29: error: 'DISPLAY_POLICY_REQUEST_NONE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2433:25: error: 'display_policy_request_selection' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2436:25: error: 'display_policy_request_value' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2443:29: error: 'DISPLAY_POLICY_REQUEST_LOCK' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2471:33: error: 'DISPLAY_POLICY_REQUEST_HIDE_LOCKED' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2496:29: error: 'display_calibration_request' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2497:33: error: implicit declaration of function 'display_mode_request_for_selection'; did you mean 'display_menu_mode_at_selection'? [-Wimplicit-function-declaration]
+ps2vnc_ui_controller.inc:2532:29: error: 'display_mode_request_remote' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2533:29: error: 'display_mode_request' undeclared (first use in this function); did you mean 'display_mode_locked'?
+ps2vnc_ui_controller.inc:2570:21: error: 'osk_page' undeclared (first use in this function); did you mean 'osk_pixels'?
+ps2vnc_ui_controller.inc:2570:32: error: 'OSK_PAGE_ABC' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2571:21: error: 'osk_row' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2572:21: error: 'osk_col' undeclared (first use in this function); did you mean 'osk_color'?
+ps2vnc_ui_controller.inc:2573:21: error: 'osk_shift' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2574:21: error: 'osk_ctrl' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2575:21: error: 'osk_alt' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2610:44: error: 'XK_BACKSPACE' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2676:48: error: 'XK_UP' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2689:48: error: 'XK_DOWN' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2702:48: error: 'XK_LEFT' undeclared (first use in this function)
+ps2vnc_ui_controller.inc:2715:48: error: 'XK_RIGHT' undeclared (first use in this function); did you mean 'PAD_RIGHT'?
+ps2vnc_display_orchestration.inc:16:5: error: 'display_switch_failure_stage' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:17:5: error: 'live_error_code' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:72:9: error: implicit declaration of function 'ps2vnc_display_logical_desktop_size'; did you mean 'ps2vnc_display_draw_desktop'? [-Wimplicit-function-declaration]
+ps2vnc_display_orchestration.inc:214:9: error: 'remote_display_state' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:214:33: error: 'REMOTE_DISPLAY_IDLE' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:229:5: error: 'display_switch_failure_stage' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:230:5: error: 'live_error_code' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:257:9: error: implicit declaration of function 'ps2vnc_discard_controller_rfb_queue' [-Wimplicit-function-declaration]
+ps2vnc_display_orchestration.inc:262:5: error: 'debug_transition_phase' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:263:5: error: implicit declaration of function 'debug_emit_now' [-Wimplicit-function-declaration]
+ps2vnc_display_orchestration.inc:404:9: error: 'display_confirm_previous_mode' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:407:9: error: 'display_confirm_previous_backend' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:410:9: error: 'display_confirm_previous_x' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:412:9: error: 'display_confirm_previous_y' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:414:9: error: 'display_confirm_previous_w' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:416:9: error: 'display_confirm_previous_h' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:419:9: error: 'display_confirm_previous_desktop_w' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:421:9: error: 'display_confirm_previous_desktop_h' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:424:9: error: 'display_confirm_previous_screen_fit_width' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:426:9: error: 'display_confirm_previous_screen_fit_height' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:428:9: error: 'display_confirm_previous_screen_fit_offset_x' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:430:9: error: 'display_confirm_previous_screen_fit_offset_y' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:432:9: error: 'display_confirm_previous_screen_fit_full_bypass' undeclared (first use in this function); did you mean 'previous_screen_fit_full_bypass'?
+ps2vnc_display_orchestration.inc:436:10: error: 'display_confirm_pending' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ps2vnc_display_orchestration.inc:449:5: error: 'display_confirm_action' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:450:9: error: 'DISPLAY_CONFIRM_ACTION_ROLLBACK_IN_PROGRESS' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:451:5: error: 'display_confirm_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ps2vnc_display_orchestration.inc:539:5: error: implicit declaration of function 'display_confirm_disarm_transaction' [-Wimplicit-function-declaration]
+ps2vnc_display_orchestration.inc:565:5: error: 'display_restore_ack_mode' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:568:5: error: 'display_restore_ack_request' undeclared (first use in this function); did you mean 'display_restore_ack_render_bitmap'?
+ps2vnc_display_orchestration.inc:571:5: error: 'display_menu_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ps2vnc_display_orchestration.inc:572:5: error: 'osk_visible' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:574:5: error: 'display_restore_ack_visible' undeclared (first use in this function); did you mean 'display_menu_tab_visible'?
+ps2vnc_display_orchestration.inc:828:10: error: 'remote_display_baseline_mode' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:833:9: error: 'remote_display_txid' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:856:9: error: 'PS2VNC_DISPLAY_CONTROL_RESULT_PATH' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:863:5: error: 'remote_display_state' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:863:28: error: 'REMOTE_DISPLAY_IDLE' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:864:5: error: 'display_mode_request_remote' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:866:5: error: 'remote_display_txid' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:867:5: error: 'remote_display_lease_seconds' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:868:5: error: 'remote_display_error_code' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:870:5: error: 'remote_display_lease_started_tick' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:872:5: error: 'remote_display_requested_mode' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:873:5: error: 'remote_display_baseline_mode' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:880:5: error: 'remote_display_error_code' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:895:9: error: 'remote_display_state' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:896:13: error: 'REMOTE_DISPLAY_ACTIVE_TEMP' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:897:10: error: 'display_confirm_pending' undeclared (first use in this function); did you mean 'display_confirm_render_bitmap'?
+ps2vnc_display_orchestration.inc:898:9: error: 'display_confirm_action' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:899:13: error: 'DISPLAY_CONFIRM_ACTION_NONE' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:904:13: error: 'remote_display_lease_started_tick' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:908:15: error: 'remote_display_lease_seconds' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:913:9: error: 'remote_display_txid' undeclared (first use in this function)
+ps2vnc_display_orchestration.inc:916:9: error: 'REMOTE_DISPLAY_RESTORING' undeclared (first use in this function); did you mean 'PS2VNC_DISPLAY_TX_RESTORING'?

@@ -1,0 +1,7 @@
+line	before	after
+2	static int start_controller_thread(int sock)	 int start_controller_thread(int sock)
+104	static int ps2vnc_display_begin_update(void);	 int ps2vnc_display_begin_update(void);
+105	static int ps2vnc_display_finish_update_decode(void);	 int ps2vnc_display_finish_update_decode(void);
+1133	static int ps2vnc_display_begin_update(void)	 int ps2vnc_display_begin_update(void)
+1144	static int ps2vnc_display_finish_update_decode(void)	 int ps2vnc_display_finish_update_decode(void)
+1943	static int ps2vnc_display_commit_update(	 int ps2vnc_display_commit_update(

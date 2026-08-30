@@ -1,0 +1,8 @@
+ working/b4a/Makefile                         |   2 +-
+ working/b4a/PS2VNC.ELF                       | Bin 2942756 -> 2946584 bytes
+ working/b4a/ps2vnc_display_orchestration.inc |   4 +-
+ working/b4a/ps2vnc_framebuffer_engine.inc    |  12 +-
+ working/b4a/ps2vnc_runtime.c                 |  10 +-
+ working/b4a/ps2vnc_runtime_support.inc       | 256 +++++++++++++--------------
+ working/b4a/ps2vnc_ui_controller.inc         |   6 +-
+ 7 files changed, 148 insertions(+), 142 deletions(-)
