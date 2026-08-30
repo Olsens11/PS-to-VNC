@@ -152,3 +152,15 @@ mutation.
 The selected implementation has not yet moved.
 
 M1B remains blocked by the GitHub publication checkpoint.
+
+## GitHub publication authority
+
+| Responsibility | Canonical location |
+|---|---|
+| GitHub publication record | `docs/GITHUB_PUBLICATION.md` |
+| Git remote | `origin` |
+| GitHub repository | `Olsens11/PS-to-VNC` |
+| Visibility | `PRIVATE` |
+| Default branch | `main` |
+
+The successor remote is distinct from legacy `Olsens11/PS2VNC`.

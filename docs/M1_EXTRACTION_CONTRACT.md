@@ -194,8 +194,20 @@ Implementation source mutation:
 
 Publication gate:
 
-    REQUIRED BEFORE M1B
+    COMPLETE
+
+GitHub repository:
+
+    Olsens11/PS-to-VNC
+
+Visibility:
+
+    PRIVATE
+
+Publication authority:
+
+    docs/GITHUB_PUBLICATION.md
 
 Next:
 
-    PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository
+    M1B_mechanically_extract_config_text_module

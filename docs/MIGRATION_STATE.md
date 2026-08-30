@@ -21,16 +21,17 @@ M0 completion authority is recorded in:
 
 M1 — IN PROGRESS
 
-M1A selection is complete.
+M1A is complete.
 
-The first extraction boundary is the configuration-text trim pair documented
-at:
+The required GitHub publication checkpoint is also complete.
 
-    docs/M1A_EXTRACTION_BOUNDARY.md
+PS-to-VNC is published to its own PRIVATE repository:
+
+    Olsens11/PS-to-VNC
 
 No M1 implementation source mutation has occurred yet.
 
-M1B is blocked by the PS-to-VNC GitHub publication checkpoint.
+M1B is now permitted to perform the committed config-text extraction.
 
 ## Current working source authority
 
@@ -130,13 +131,19 @@ subsequent modularization stage.
 
 ## Next action
 
-Publish the independent PS-to-VNC repository to its own new GitHub repository.
+Begin M1B.
 
-The publication checkpoint must verify that the new remote is not the legacy
-PS2VNC remote and that the visible remote `main` contains the committed M1A
-boundary.
+Mechanically extract:
 
-Do not begin M1B source extraction before publication passes.
+    ps2vnc_config_trim_left
+    ps2vnc_config_trim_right
+
+into:
+
+    working/b4a/ps2vnc_config_text.c
+    working/b4a/ps2vnc_config_text.h
+
+The operation remains governed by the exact M1A boundary document.
 
 ## Conversation-limit recovery
 
@@ -158,15 +165,12 @@ resumes.
 The following exact indented tokens mirror the stable migration fields in the
 canonical machine-readable state.
 
-They exist so consistency tooling can verify the human document without
-parsing prose.
-
     LAST_COMPLETE_STAGE=M0
     CURRENT_STAGE=M1
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=d1c0d6a4829c03f3a062095afd00859188e13dfe
-    NEXT_ACTION=PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository
+    NEXT_ACTION=M1B_mechanically_extract_config_text_module
 
 The canonical machine-readable source remains:
 
@@ -367,3 +371,29 @@ Next operation:
     PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository
 
 M1B remains blocked until publication passes.
+## GitHub publication checkpoint
+
+Publication is COMPLETE.
+
+Repository:
+
+    Olsens11/PS-to-VNC
+
+Visibility:
+
+    PRIVATE
+
+Default branch:
+
+    main
+
+Publication occurred after M1A and before any M1 implementation source
+mutation.
+
+Authority:
+
+    docs/GITHUB_PUBLICATION.md
+
+Next operation:
+
+    M1B_mechanically_extract_config_text_module

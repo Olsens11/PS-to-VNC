@@ -182,35 +182,39 @@ echo 'HUMAN_MACHINE_DOCUMENTATION_COHERENCE=PASS'
 echo
 echo '===== G. GIT AUTHORITY ====='
 
-echo "GIT_BRANCH=$(git branch --show-current)"
-test "$(git branch --show-current)" = 'main'
+GIT_BRANCH="$(git branch --show-current)"
+GIT_HEAD="$(git rev-parse HEAD)"
+GIT_REMOTE_COUNT="$(git remote | wc -l)"
 
-if git rev-parse --verify HEAD >/dev/null 2>&1; then
-    HEAD_NOW="$(
-        git rev-parse HEAD
-    )"
+echo "GIT_BRANCH=$GIT_BRANCH"
+echo "GIT_HEAD=$GIT_HEAD"
+echo "GIT_REMOTE_COUNT=$GIT_REMOTE_COUNT"
 
-    echo "GIT_HEAD=$HEAD_NOW"
+test "$GIT_BRANCH" = 'main'
 
-    test "$CURRENT_DOC_HEAD" != 'PENDING_INITIAL_BOOTSTRAP_COMMIT'
+if [ "${GITHUB_PUBLICATION_STATUS:-}" = 'PRIVATE_PUBLISHED' ]; then
+    test "$GIT_REMOTE_COUNT" -eq 1
+    test "${GITHUB_OWNER:-}" = 'Olsens11'
+    test "${GITHUB_REPOSITORY:-}" = 'Olsens11/PS-to-VNC'
+    test "${GITHUB_REMOTE_NAME:-}" = 'origin'
+    test "${GITHUB_REMOTE_URL:-}" = \
+        'https://github.com/Olsens11/PS-to-VNC.git'
+    test "${GITHUB_VISIBILITY:-}" = 'PRIVATE'
+    test "${GITHUB_DEFAULT_BRANCH:-}" = 'main'
 
-    git cat-file -e "$CURRENT_DOC_HEAD^{commit}"
+    test "$(git remote get-url origin)" = \
+        "$GITHUB_REMOTE_URL"
 
-    if [ "$CURRENT_SOURCE_HEAD" != 'NONE' ]; then
-        git cat-file -e "$CURRENT_SOURCE_HEAD^{commit}"
-    fi
+    test "$(git remote get-url --push origin)" = \
+        "$GITHUB_REMOTE_URL"
+
+    echo 'GITHUB_PUBLICATION_STATUS=PRIVATE_PUBLISHED'
+    echo 'GIT_AUTHORITY=PASS'
 else
-    echo 'GIT_HEAD=UNBORN'
-
-    test "$CURRENT_DOC_HEAD" = 'PENDING_INITIAL_BOOTSTRAP_COMMIT'
-    test "$CURRENT_SOURCE_HEAD" = 'NONE'
+    test "$GIT_REMOTE_COUNT" -eq 0
+    echo 'GIT_AUTHORITY=PASS'
 fi
 
-echo "GIT_REMOTE_COUNT=$(git remote | wc -l)"
-
-echo 'GIT_AUTHORITY=PASS'
-
-echo
 echo '===== H. LEGACY SAFETY BOUNDARY ====='
 
 LEGACY_HEAD_NOW="$(
@@ -354,6 +358,11 @@ else
                     case "$NEXT_ACTION" in
                         PUBLISH_create_verify_and_push_new_PS-to-VNC_GitHub_repository)
                             test -f docs/M1A_EXTRACTION_BOUNDARY.md
+                            ;;
+                        M1B_mechanically_extract_config_text_module)
+                            test "${GITHUB_PUBLICATION_STATUS:-}" =                                 'PRIVATE_PUBLISHED'
+                            test -f docs/M1A_EXTRACTION_BOUNDARY.md
+                            test -f docs/GITHUB_PUBLICATION.md
                             ;;
                         *)
                             echo "ERROR=M1_IN_PROGRESS_ACTION_NOT_YET_SUPPORTED:$NEXT_ACTION"
@@ -607,6 +616,32 @@ then
     echo 'M1A_EXTRACTION_BOUNDARY=PASS'
 else
     echo 'M1A_EXTRACTION_BOUNDARY=NOT_AT_PUBLICATION_GATE'
+fi
+
+
+echo
+echo '===== P. GITHUB PUBLICATION AUTHORITY ====='
+
+if [ "${GITHUB_PUBLICATION_STATUS:-}" = 'PRIVATE_PUBLISHED' ]; then
+    test "$CURRENT_STAGE" = 'M1'
+    test "$CURRENT_STAGE_STATUS" = 'IN_PROGRESS'
+
+    test "$GITHUB_REPOSITORY" = \
+        'Olsens11/PS-to-VNC'
+
+    test "$GITHUB_VISIBILITY" = 'PRIVATE'
+
+    test "$GITHUB_REMOTE_URL" = \
+        'https://github.com/Olsens11/PS-to-VNC.git'
+
+    test -f docs/GITHUB_PUBLICATION.md
+    test -f docs/M1A_EXTRACTION_BOUNDARY.md
+
+    echo 'GITHUB_REPOSITORY=Olsens11/PS-to-VNC'
+    echo 'GITHUB_VISIBILITY=PRIVATE'
+    echo 'GITHUB_PUBLICATION_AUTHORITY=PASS'
+else
+    echo 'GITHUB_PUBLICATION_AUTHORITY=NOT_YET_PUBLISHED'
 fi
 
 echo '===== FINAL ====='

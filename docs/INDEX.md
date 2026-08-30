@@ -63,3 +63,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 ## M1 first extraction boundary
 
 - `docs/M1A_EXTRACTION_BOUNDARY.md` — exact committed M1A selection of the first mechanical module-extraction boundary.
+
+## GitHub publication
+
+- `docs/GITHUB_PUBLICATION.md` — authority for the independent private PS-to-VNC GitHub repository and its publication checkpoint.

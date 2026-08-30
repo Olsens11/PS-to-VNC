@@ -187,3 +187,17 @@ Authority:
     docs/M1A_EXTRACTION_BOUNDARY.md
 
 M1B may not begin until the PS-to-VNC GitHub publication gate passes.
+
+## M1 publication gate
+
+The M1A publication gate is COMPLETE.
+
+The independent PS-to-VNC GitHub repository is:
+
+    Olsens11/PS-to-VNC
+
+Visibility:
+
+    PRIVATE
+
+M1B may now begin the committed config-text mechanical extraction.

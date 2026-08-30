@@ -175,3 +175,20 @@ No implementation source has changed yet.
 Before M1B begins, PS-to-VNC must be published to its own new GitHub
 repository and the remote identity must be verified against the legacy
 repository.
+
+## Private GitHub publication checkpoint
+
+PS-to-VNC is now published to its own private GitHub repository:
+
+    Olsens11/PS-to-VNC
+
+The first remote publication occurred after M1A and before M1B.
+
+No M1 implementation source mutation had occurred at the publication point.
+
+The repository is deliberately PRIVATE while the project remains under active
+development.
+
+Next:
+
+    M1B_mechanically_extract_config_text_module
