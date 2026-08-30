@@ -77,3 +77,16 @@ Consistency gate:
 
 The next source-changing operation must establish the expected migration state
 before mutation.
+
+## M0 reproduction contract
+
+M0 is now in progress.
+
+The governing build/reproduction contract is:
+
+`docs/M0_BASELINE_CONTRACT.md`
+
+No writable source authority has been created yet.
+
+The next operation is read-only reconstruction and fingerprinting of the
+historical build environment before `working/b4a/` is populated.

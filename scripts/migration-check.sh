@@ -232,7 +232,15 @@ echo '===== I. CURRENT WORKING AUTHORITY ====='
 
 if [ "$CURRENT_WORKING_SOURCE" = 'NONE' ]; then
     test "$CURRENT_STAGE" = 'M0'
-    test "$CURRENT_STAGE_STATUS" = 'NOT_STARTED'
+
+    case "$CURRENT_STAGE_STATUS" in
+        NOT_STARTED|IN_PROGRESS)
+            ;;
+        *)
+            echo "ERROR=NO_WORKING_SOURCE_INVALID_STAGE_STATUS:$CURRENT_STAGE_STATUS"
+            exit 70
+            ;;
+    esac
 fi
 
 echo "CURRENT_WORKING_SOURCE=$CURRENT_WORKING_SOURCE"

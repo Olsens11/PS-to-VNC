@@ -39,3 +39,7 @@ documentation checker passes.
 - `scripts/migration-check.sh` — prove migration/source/document coherence.
 
 A fresh conversation begins with `START_HERE.md`, not conversational memory.
+
+## Baseline reproduction
+
+- `docs/M0_BASELINE_CONTRACT.md` — M0 build-reproduction and acceptance contract.

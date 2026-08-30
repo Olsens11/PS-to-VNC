@@ -15,7 +15,7 @@ preserved inside the successor repository as immutable reference material.
 
 ## Current stage
 
-M0 — NOT STARTED
+M0 — IN PROGRESS
 
 M0 will establish the first writable, reproducible B4A-equivalent PS-to-VNC
 working source and build authority.
@@ -129,10 +129,24 @@ human prose.
 
     LAST_COMPLETE_STAGE=IMPORT
     CURRENT_STAGE=M0
-    CURRENT_STAGE_STATUS=NOT_STARTED
+    CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=NONE
-    NEXT_ACTION=M0_reproduce_exact_B4A_as_working_PS-to-VNC_build_authority
+    NEXT_ACTION=M0C_reconstruct_and_fingerprint_historical_build_environment
 
 The canonical machine-readable source remains:
 
     runtime/MIGRATION_STATE.env
+
+## M0B checkpoint
+
+The M0 reproduction contract is now defined at:
+
+    docs/M0_BASELINE_CONTRACT.md
+
+M0 has formally entered IN_PROGRESS state.
+
+No writable source has been created yet.
+
+Next operation:
+
+    M0C_reconstruct_and_fingerprint_historical_build_environment
