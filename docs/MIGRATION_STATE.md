@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M4
     CURRENT_STAGE_STATUS=ARCHITECTURAL_NORMALIZATION
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=661f14576892e533475818704d6a1391ad950414
+    CURRENT_SOURCE_HEAD=9eeee8e9ba65f8cead561e27aab42103573f1a37
     LAST_HARDWARE_RESULT=M4H_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M4I_diagnostics_boundary_census
+    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
     BLOCKED_BY=NONE
 
 The canonical machine-readable source remains:
@@ -1256,3 +1256,63 @@ Normalization Tranche 2 — video mode and pure geometry — is complete.
 
 NEXT_ACTION=M4I_diagnostics_boundary_census
 BLOCKED_BY=NONE
+
+## M4I-B1 diagnostics identity normalization — COMPLETE
+
+Permanent active ownership:
+
+    src/diagnostics/identity.c
+    src/diagnostics/identity.h
+
+Source commit:
+
+    9eeee8e9ba65f8cead561e27aab42103573f1a37
+
+Source evidence:
+
+    evidence/m4/m4i-b1-diagnostics-identity-normalization
+
+Source evidence manifest:
+
+    776cbc57ecf7994732eda69b201e3b67a110757d1e6be65dd20ddb437f740ac1
+
+Source-authority commit:
+
+    a2c44f178883d127cf4d0ad8f73c1791ed75758a
+
+Source-authority evidence:
+
+    evidence/m4/m4i-b1-diagnostics-identity-source-authority
+
+Source-authority manifest:
+
+    6c8042d519a0dfde4cd8622b700f75debd30125d9f1ef5f09c4b6379403bb800
+
+Build result:
+
+    ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
+    PT_LOAD_SHA256=a33efdb0bee3f383d4828db8fb6a06f62ddb90fdc42a97308dc12777ed8197b9
+    PT_LOAD_BYTES=449800
+    ELF_REPRODUCIBLE=YES
+    PT_LOAD_REPRODUCIBLE=YES
+
+The whole ELF identity changed because the identity translation unit moved into
+the permanent diagnostics source tree. The complete runtime-loaded PT_LOAD
+image remained byte-for-byte identical to the hardware-qualified M4H image.
+
+Therefore:
+
+    RUNTIME_LOAD_IMAGE_CHANGED=NO
+    HARDWARE_QUALIFICATION_REQUIRED=NO
+    DIRECT_HARDWARE_RUN=NO
+    HARDWARE_AUTHORITY_INHERITED_FROM=M4H
+
+The historical `working/b4a/ps2vnc_identity.c` remains preserved for the M0
+byte-exact reproduction contract but is no longer part of the current
+canonical build.
+
+Tranche 3 diagnostics remains active. Identity ownership is complete; debug and
+profiling ownership remain.
+
+    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
+    BLOCKED_BY=NONE

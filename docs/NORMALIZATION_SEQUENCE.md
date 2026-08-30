@@ -52,12 +52,24 @@ These are relatively pure and strongly host-testable.
 
 ## Tranche 3: diagnostics
 
-Status: **NEXT — M4I**
+Status: **ACTIVE — M4I**
 
-Assign debug/profiling state to diagnostics modules.
+M4I-B1 permanent build/runtime identity ownership is complete:
 
-This reduces unrelated mutable state from runtime without changing product
-behavior.
+    src/diagnostics/identity.c
+    src/diagnostics/identity.h
+
+The identity extraction is reproducible and its PT_LOAD image is byte-exact to
+the hardware-qualified M4H image, so qualification is inherited without a new
+hardware run.
+
+Remaining diagnostics work assigns debug/profiling state and reporting
+mechanisms to permanent diagnostics boundaries without transferring ownership
+of the application-domain facts they observe.
+
+Next:
+
+    M4I-C_debug_reporting_boundary_census
 
 ## Tranche 4: management
 

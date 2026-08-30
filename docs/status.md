@@ -50,10 +50,21 @@ Qualification included:
 
 ## Current development focus
 
-    NEXT_ACTION=M4I_diagnostics_boundary_census
+Tranche 3 diagnostics is active.
+
+M4I-B1 identity normalization is complete. The active build/runtime identity
+transport now lives under:
+
+    src/diagnostics/identity.c
+    src/diagnostics/identity.h
+
+Its reproducible PT_LOAD image is byte-for-byte identical to M4H, so the
+existing M4H hardware qualification remains applicable to the runtime image.
+
+    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
     BLOCKED_BY=NONE
 
-Next product work is the Tranche 3 diagnostics boundary census.
+Next product work is the permanent debug-reporting ownership boundary.
 
 ## Development continuity
 
@@ -67,17 +78,21 @@ Routine procedures must reuse canonical saved tooling when available.
 
 ## Planning estimate
 
-    OVERALL_ARCHITECTURAL_NORMALIZATION=approximately_24_percent
+    OVERALL_ARCHITECTURAL_NORMALIZATION=approximately_31_percent
+    DIAGNOSTICS_TRANCHE=approximately_40_percent
     VIDEO_GEOMETRY=complete
+    DIAGNOSTICS_IDENTITY=complete
 
 These percentages are planning estimates, not machine authority.
 
 ## Machine-state mirror
 
     LAST_HARDWARE_RESULT=M4H_PASS_MACHINE_AND_PHYSICAL
-    LAST_VALIDATED_WORKING_ELF_SHA256=42163c30b68ebf84b51b1c8c81d541017e64ffaa52e27bb0408f91edb25e2992
+    LAST_VALIDATED_WORKING_ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
     LAST_VALIDATED_PT_LOAD_SHA256=a33efdb0bee3f383d4828db8fb6a06f62ddb90fdc42a97308dc12777ed8197b9
-    NEXT_ACTION=M4I_diagnostics_boundary_census
+    CURRENT_WORKING_ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
+    CURRENT_WORKING_VALIDATION_BASIS=INHERITED_M4H_PT_LOAD_BYTE_EXACT
+    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
     BLOCKED_BY=NONE
 
 Machine-readable authority remains under `runtime/`.
