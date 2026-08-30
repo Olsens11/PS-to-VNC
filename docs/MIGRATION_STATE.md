@@ -1019,3 +1019,54 @@ M4G_SOURCE_AUTHORITY_COMMIT=1dba6c3d68f5275795e20be3ffd7c7d2263729a5
 M4G_SOURCE_AUTHORITY_MANIFEST_SHA256=844a43e10a320486c109bd6e16df24f8dedc97d9781b25e73ce38e307a392ad4
 
 NEXT_ACTION=M4G4_video_mode_hardware_checkpoint
+
+## M4G-A video-mode normalization — hardware qualified
+
+The permanent video-mode model is now directly hardware qualified.
+
+Permanent ownership:
+
+    src/video/mode.c
+    src/video/mode.h
+
+Qualified machine image:
+
+    ELF_SHA256=6ef11851ae3965fa24504eb805a6b42cf95eaebaa7948ba99f067bed60c991f2
+    PT_LOAD_SHA256=5e6a0fe12d7562e0bd88d47b0ca1929f8565fccfd9bbb0b00b498f178ff354b3
+    PT_LOAD_BYTES=449416
+
+The established five-mode machine contract passed 5/5:
+
+    480i       -> 480p
+    480p-hires -> 480p
+    576i       -> 480p
+    720p       -> 480p
+    1080i      -> 480p
+
+Machine result:
+
+    PASS_COUNT=5
+    FAIL_COUNT=0
+    STARTUP_MODE_INVARIANT=480p
+    FINAL_STATE=IDLE
+    FINAL_MODE=480p
+    FINAL_RFB_ESTABLISHED_COUNT=1
+
+Independent physical observation:
+
+    FULL PASS
+
+An earlier launch stalled while the last visible startup message was
+"Ethernet link is UP". Network reachability remained alive and stale
+Pi-side management connections were observed. Restarting the management
+service terminated that attempt; a fresh launch of the same rolling ELF
+then reached the 480p desktop and passed the complete hardware contract.
+
+That incident is preserved as a nonblocking management-service robustness
+issue. Its exact root cause remains unproven and is not attributed to the
+video-mode model.
+
+M4G_HARDWARE_AUTHORITY_COMMIT=f19a2fd317dc440e403acef3d55de7ac0bace69f
+M4G_HARDWARE_MANIFEST_SHA256=afbfd1636dbed4d88307431fe1cfa4c588a2960bfaec209e6117c9f20f2b04d7
+
+NEXT_ACTION=M4H_video_geometry_boundary_census
