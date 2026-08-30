@@ -215,3 +215,18 @@ configuration parser logic or state.
 
 M1C must now perform the first clean modularized build and establish the new
 DUT identity.
+
+## M1C first modular build complete
+
+The M1B config-text extraction builds successfully as a separate translation
+unit.
+
+The resulting ELF is a new executable identity:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+A second clean build reproduced that identity exactly.
+
+The moved trim behavior passed a deterministic M0-vs-M1 host parity test.
+
+M1D hardware regression remains mandatory before M1 may close.

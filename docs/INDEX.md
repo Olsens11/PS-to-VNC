@@ -71,3 +71,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 ## M1B mechanical extraction
 
 - `docs/M1B_EXTRACTION_RESULT.md` — exact result and source authority for the first mechanical module extraction.
+
+## M1C first modular DUT
+
+- `docs/M1C_DUT_CHARACTERIZATION.md` — build, reproducibility, linkage, host parity, and ELF characterization for the first modular PS-to-VNC executable.

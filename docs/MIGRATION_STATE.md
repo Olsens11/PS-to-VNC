@@ -21,16 +21,12 @@ M0 completion authority is recorded in:
 
 M1 — IN PROGRESS
 
-M1A is complete.
+M1A, the publication gate, M1B, and M1C are complete.
 
-The private GitHub publication gate is complete.
+The first modularized executable has been built, independently reproduced,
+and characterized.
 
-M1B is complete.
-
-The first mechanical implementation extraction has moved the configuration
-text whitespace helpers into their own translation unit.
-
-No M1 executable has been built yet.
+It is a new DUT identity and has not yet been hardware validated.
 
 ## Current working source authority
 
@@ -111,20 +107,33 @@ Archive SHA256:
 
 ## Current build state
 
-M1B source extraction is complete.
+M1C build result:
 
-No M1 executable has been built.
+    PASS — NEW MODULAR DUT
 
-The prior M0-generated ELF was removed from the writable working directory
-after source mutation so it cannot be confused with a binary produced from
-the new M1 source.
+Current M1 ELF SHA256:
 
-The most recent validated binary evidence remains the completed M0 B4A
-reproduction, but it is not an M1 DUT.
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
 
-Next build stage:
+Current M1 ELF size:
 
-    M1C
+    2927748 bytes
+
+Second clean build reproduction:
+
+    BYTE EXACT
+
+Host config-text parity:
+
+    PASS
+
+Hardware validation:
+
+    NOT RUN
+
+Durable characterization:
+
+    docs/M1C_DUT_CHARACTERIZATION.md
 
 ## Current documentation state
 
@@ -138,13 +147,15 @@ subsequent modularization stage.
 
 ## Next action
 
-Perform M1C.
+Perform the required M1D hardware regression on the characterized modular
+DUT.
 
-Run a controlled clean build of the M1B modular source, record the resulting
-ELF identity, and characterize the expected translation-unit/linkage changes.
+The exact executable under test must be:
 
-Do not call the resulting executable hardware-validated until the required M1
-hardware regression is actually performed.
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+Machine observations and physical observations must remain separately
+recorded.
 
 ## Conversation-limit recovery
 
@@ -171,7 +182,7 @@ canonical machine-readable state.
     CURRENT_STAGE_STATUS=IN_PROGRESS
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=0f1b88ddf7821c935b68aabe6d65180bf02b074f
-    NEXT_ACTION=M1C_build_and_characterize_first_modularized_DUT
+    NEXT_ACTION=M1D_run_required_hardware_regression
 
 The canonical machine-readable source remains:
 
@@ -426,3 +437,31 @@ M1 DUT binary:
 Next operation:
 
     M1C_build_and_characterize_first_modularized_DUT
+## M1C checkpoint
+
+M1C is COMPLETE.
+
+M1 executable SHA256:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+Second clean reproduction:
+
+    PASS — BYTE EXACT
+
+Extracted-function host parity:
+
+    PASS
+
+Hardware validation:
+
+    NOT RUN
+
+Authority:
+
+    runtime/M1_DUT_AUTHORITY.env
+    docs/M1C_DUT_CHARACTERIZATION.md
+
+Next operation:
+
+    M1D_run_required_hardware_regression

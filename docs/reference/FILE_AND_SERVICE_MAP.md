@@ -177,3 +177,18 @@ The successor remote is distinct from legacy `Olsens11/PS2VNC`.
 
 The `working/b4a/` directory name remains transitional lineage naming. It no
 longer means every writable source file is byte-identical to B4A.
+
+## M1C modular DUT authority
+
+| Responsibility | Canonical location |
+|---|---|
+| M1 executable machine authority | `runtime/M1_DUT_AUTHORITY.env` |
+| M1 source machine authority | `runtime/M1_SOURCE_AUTHORITY.env` |
+| M1C characterization | `docs/M1C_DUT_CHARACTERIZATION.md` |
+| Durable first modular ELF | `evidence/m1/m1c1/PS2VNC-M1C1.ELF` |
+| M1C1 build evidence | `evidence/m1/m1c1/` |
+| M1C2 characterization evidence | `evidence/m1/m1c2/` |
+| Current operational build product | `working/b4a/PS2VNC.ELF` |
+
+The operational ELF is generated/ignored. The committed evidence ELF is the
+durable binary authority.

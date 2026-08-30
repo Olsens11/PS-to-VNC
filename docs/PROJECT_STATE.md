@@ -219,3 +219,24 @@ No M1 ELF has been built yet.
 Next:
 
     M1C_build_and_characterize_first_modularized_DUT
+
+## M1C first modular DUT
+
+M1C is COMPLETE.
+
+The first modular PS-to-VNC executable is:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+It is a new DUT identity.
+
+A second clean build reproduced the ELF byte-for-byte.
+
+The extracted config-text responsibility also passed deterministic host parity
+against the historical B4A implementations.
+
+Hardware validation has not yet been performed.
+
+Next:
+
+    M1D_run_required_hardware_regression

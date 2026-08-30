@@ -128,3 +128,15 @@ It is a new DUT identity and must be characterized and later hardware-tested.
 ## Next
 
     M1C_build_and_characterize_first_modularized_DUT
+
+## M1C follow-up
+
+The M1B source was successfully built and characterized in M1C.
+
+M1 ELF SHA256:
+
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
+
+M1C authority:
+
+    docs/M1C_DUT_CHARACTERIZATION.md

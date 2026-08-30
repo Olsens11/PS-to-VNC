@@ -1,0 +1,18 @@
+===== M0 B4A SELECTED / CALLER SYMBOLS =====
+   283: 0010a4e0   108 FUNC    LOCAL  DEFAULT    1 ps2vnc_config_trim_right
+   437: 0010faa0  1104 FUNC    LOCAL  DEFAULT    1 ps2vnc_config_parse_startup_mode.constprop.0
+   528: 00115d10  1760 FUNC    LOCAL  DEFAULT    1 ps2vnc_config_parse_display_section
+
+===== M1 SELECTED / CALLER SYMBOLS =====
+   288: 0010a9d0  1304 FUNC    LOCAL  DEFAULT    1 ps2vnc_config_parse_display_section
+   375: 0010c6d0   784 FUNC    LOCAL  DEFAULT    1 ps2vnc_config_parse_startup_mode.constprop.0
+  4111: 0011d680   108 FUNC    GLOBAL DEFAULT    1 ps2vnc_config_trim_right
+  4429: 0011d648    56 FUNC    GLOBAL DEFAULT    1 ps2vnc_config_trim_left
+
+===== M1 CONFIG OBJECT =====
+    18: 00000000    56 FUNC    GLOBAL DEFAULT    1 ps2vnc_config_trim_left
+    19: 00000038   108 FUNC    GLOBAL DEFAULT    1 ps2vnc_config_trim_right
+
+===== M1 PS2IP OBJECT UNDEFINED REFERENCES =====
+   102: 00000000     0 NOTYPE  GLOBAL DEFAULT  UND ps2vnc_config_trim_left
+   103: 00000000     0 NOTYPE  GLOBAL DEFAULT  UND ps2vnc_config_trim_right

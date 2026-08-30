@@ -187,18 +187,30 @@ M1B:
 
     COMPLETE
 
-Mechanical source commit:
+M1C:
 
-    0f1b88ddf7821c935b68aabe6d65180bf02b074f
+    COMPLETE
 
-Implementation source mutation:
+M1 DUT SHA256:
 
-    CONFIG_TEXT_EXTRACTION_ONLY
+    26ae06ff72226b0542e26865b195132c7c6eefba2e5beabc2cdd343ae5c8105b
 
-M1 DUT build status:
+M1 DUT identity:
 
-    NOT BUILT
+    NEW NON-IDENTICAL DUT
+
+Second-build reproduction:
+
+    BYTE EXACT
+
+Host extracted-function parity:
+
+    PASS
+
+Hardware validation:
+
+    NOT RUN
 
 Next:
 
-    M1C_build_and_characterize_first_modularized_DUT
+    M1D_run_required_hardware_regression
