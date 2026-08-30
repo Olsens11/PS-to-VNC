@@ -1,3 +1,3 @@
-/* M3 recursive hierarchy: region 1. */
-#include "ps2vnc_macro_region1a.inc"
-#include "ps2vnc_macro_region1b.inc"
+/* M3 semantic hierarchy: runtime support + UI/controller. */
+#include "ps2vnc_runtime_support.inc"
+#include "ps2vnc_ui_controller.inc"

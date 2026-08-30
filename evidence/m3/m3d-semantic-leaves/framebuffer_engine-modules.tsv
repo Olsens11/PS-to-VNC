@@ -1,0 +1,5 @@
+module	functions	lines
+display_backend	20	1305
+rfb_decode	7	802
+other	8	200
+rfb_transport	2	30

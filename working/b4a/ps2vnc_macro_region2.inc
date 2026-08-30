@@ -1,3 +1,3 @@
-/* M3 recursive hierarchy: region 2. */
-#include "ps2vnc_macro_region2a.inc"
-#include "ps2vnc_macro_region2b.inc"
+/* M3 semantic hierarchy: framebuffer engine + management/config. */
+#include "ps2vnc_framebuffer_engine.inc"
+#include "ps2vnc_management_config.inc"
