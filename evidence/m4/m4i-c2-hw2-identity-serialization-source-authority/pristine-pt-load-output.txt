@@ -1,0 +1,7 @@
+TESTKIT_PT_LOAD_FINGERPRINT_VERSION=1
+ELF=evidence/m4/m4i-c2-hw2-identity-serialization-source/PS2VNC-M4I-C2-HW2-build1.ELF
+PT_LOAD_SEGMENTS=1
+PT_LOAD_SHA256=c0030d28dea593b056bc604f94a9bd68576ccfc0f79e688c694193045378e701
+PT_LOAD_BYTES=450440
+PT_LOAD_OUTPUT=evidence/m4/m4i-c2-hw2-identity-serialization-source-authority/PS2VNC-M4I-C2-HW2-pristine.ptload.bin
+TESTKIT_PT_LOAD_FINGERPRINT=PASS

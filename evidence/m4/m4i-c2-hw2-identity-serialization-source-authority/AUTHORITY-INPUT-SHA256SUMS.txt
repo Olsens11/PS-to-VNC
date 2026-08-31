@@ -1,0 +1,6 @@
+0ee4886274380023b84f852ff3b42136821c58f7615d861fb3d501083708f845  src/diagnostics/identity.c
+7344f7b32d0da3f8a283c76327bb2bb7aa53873e70cb6708e758e995e7a2448b  src/diagnostics/identity.h
+92288da56c8336f8c921e6261337718efc10aa8906cc876e158022003f390be7  scripts/testkit/identity-runtime-message-self-test.sh
+189512c72de6f4a9a5de60921b41059d621ae550f110f3026242cfcc68a5bf39  evidence/m4/m4i-c2-hw2-identity-serialization-source/SHA256SUMS.txt
+144f668da0a3756ba4bd8f2fbfc3826983a1df6f5ea4ed0c44d2a1b0f45b2d93  evidence/m4/m4i-c2-hw2-identity-serialization-source/PS2VNC-M4I-C2-HW2-build1.ELF
+c0030d28dea593b056bc604f94a9bd68576ccfc0f79e688c694193045378e701  evidence/m4/m4i-c2-hw2-identity-serialization-source-authority/PS2VNC-M4I-C2-HW2-pristine.ptload.bin
