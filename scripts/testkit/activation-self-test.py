@@ -12,6 +12,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / "scripts/testkit/activate-m4-hardware-checkpoint.py"
+STATE_CHECK = ROOT / "scripts/testkit/m4-authority-state-check.py"
 
 
 def get_last(path: Path, key: str) -> str:
@@ -371,6 +372,46 @@ def main() -> int:
                 "activation changed last validated authority"
             )
 
+        state_contract = subprocess.run(
+            [
+                sys.executable,
+                str(STATE_CHECK),
+                str(
+                    temp
+                    / "runtime/MIGRATION_STATE.env"
+                ),
+                str(
+                    temp
+                    / "runtime/M4_SOURCE_AUTHORITY.env"
+                ),
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        if state_contract.returncode != 0:
+            print(
+                state_contract.stdout,
+                file=sys.stderr,
+            )
+            print(
+                state_contract.stderr,
+                file=sys.stderr,
+            )
+            raise SystemExit(
+                "activated disposable state failed "
+                "shared M4 authority contract"
+            )
+
+        if (
+            "M4_AUTHORITY_STATE_CONTRACT=PASS"
+            not in state_contract.stdout
+        ):
+            raise SystemExit(
+                "shared M4 authority state PASS token missing"
+            )
+
         after_first = tree_digest(temp)
 
         second = run_tool(
@@ -476,6 +517,7 @@ def main() -> int:
         print("STATUS_CURRENT_FOCUS_UPDATE=PASS")
         print("STATUS_MACHINE_MIRROR_UPDATE=PASS")
         print("CURRENT_CONTINUITY_FIVE_SURFACE_SET=PASS")
+        print("SHARED_M4_AUTHORITY_STATE_CONTRACT=PASS")
         print("IDEMPOTENT_SECOND_RUN=PASS")
         print("PS_TO_VNC_M4_ACTIVATION_SELF_TEST=PASS")
 

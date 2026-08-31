@@ -69,6 +69,11 @@ case "$CURRENT_STAGE" in
         test "$CURRENT_STAGE_STATUS" = \
             'ARCHITECTURAL_NORMALIZATION'
         test -n "$NEXT_ACTION"
+
+        python3 \
+            "$ROOT/scripts/testkit/m4-authority-state-check.py" \
+            "$STATE" \
+            "$ROOT/runtime/M4_SOURCE_AUTHORITY.env"
         ;;
     *)
         echo "ERROR=UNSUPPORTED_CURRENT_STAGE:$CURRENT_STAGE"
@@ -76,7 +81,9 @@ case "$CURRENT_STAGE" in
         ;;
 esac
 
-test "$BLOCKED_BY" = 'NONE'
+if [ "$CURRENT_STAGE" != 'M4' ]; then
+    test "$BLOCKED_BY" = 'NONE'
+fi
 
 echo "LAST_COMPLETE_STAGE=$LAST_COMPLETE_STAGE"
 echo "CURRENT_STAGE=$CURRENT_STAGE"

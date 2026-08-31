@@ -148,3 +148,24 @@ Before first live use after any tool change, the activation tool must pass:
 
 The activation self-test operates only on disposable copies of the authority
 files and requires idempotent second execution.
+
+## M4 authority-state checker
+
+`migration-check.sh` and the disposable M4 hardware-checkpoint activation
+self-test share the same fail-closed state contract:
+
+    scripts/testkit/m4-authority-state-check.py
+
+Supported current-runtime states are:
+
+- `HARDWARE_QUALIFIED`: no blocker is permitted and hardware qualification
+  must be complete.
+- `HARDWARE_PENDING`: a concrete non-`NONE` blocker is required and overall,
+  machine, and physical hardware qualification must all remain `PENDING`.
+
+The shared checker also requires migration state and M4 source authority to
+agree on the current source commit, next action, and blocker.
+
+The contract matrix is regression-tested by:
+
+    scripts/testkit/m4-authority-state-self-test.py

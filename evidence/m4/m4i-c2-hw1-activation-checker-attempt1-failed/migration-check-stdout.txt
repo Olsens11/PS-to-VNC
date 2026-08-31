@@ -1,0 +1,9 @@
+===== PS-to-VNC MIGRATION COHERENCE CHECK =====
+
+===== A. REPOSITORY IDENTITY =====
+PROJECT_ROOT=/home/ps2/PS-to-VNC
+NEW_GIT_DIR=/home/ps2/PS-to-VNC/.git
+LEGACY_GIT_DIR=/home/ps2/ps2vnc/.git
+REPOSITORY_IDENTITY=PASS
+
+===== B. MIGRATION STATE =====

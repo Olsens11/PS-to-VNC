@@ -1,0 +1,89 @@
++scripts/migration-check.sh:2: set -euo pipefail
++++scripts/migration-check.sh:7: dirname scripts/migration-check.sh
+++scripts/migration-check.sh:7: cd scripts/..
+++scripts/migration-check.sh:7: pwd -P
++scripts/migration-check.sh:7: ROOT=/home/ps2/PS-to-VNC
++scripts/migration-check.sh:9: STATE=/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env
++scripts/migration-check.sh:11: cd /home/ps2/PS-to-VNC
++scripts/migration-check.sh:13: test -f /home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env
++scripts/migration-check.sh:16: source /home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:1: MIGRATION_STATE_VERSION=1
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:3: PROJECT_NAME=PS-to-VNC
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:4: PROJECT_ROOT=/home/ps2/PS-to-VNC
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:6: LEGACY_PROJECT=PS2VNC
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:7: LEGACY_ROOT=/home/ps2/ps2vnc
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:8: LEGACY_MUTABLE=NO
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:9: LEGACY_SEPARATION_HEAD=5781f4f7105ee290fa77819d7b9ec96e833bd2b8
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:11: LEGACY_GIT_BUNDLE=/home/ps2/ps2vnc-legacy-backups/ps2vnc-legacy-allrefs-20260830-002434.bundle
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:12: LEGACY_GIT_BUNDLE_SHA256=7f018a3623c5cdd7e7ed30bfbc3f00040b632735fc83f92d49c5a0c672bea85a
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:14: BASELINE_DUT=D17AL-F8J2-B4A
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:15: BASELINE_SOURCE=baseline/frozen-b4a/ps2ip.c
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:16: BASELINE_SOURCE_SHA256=67d7ae945553a391689447f07c2fcf8057301bf82a998a598c866739da449aac
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:17: BASELINE_SOURCE_LINES=18938
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:18: BASELINE_ELF_SHA256=2deb9f4c3dab34eebdccc31a53fe7158ebce625aec4e9cf03cda902abf2611e8
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:20: DEPENDENCY_MAP=baseline/analysis/B4A-dependency-map
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:21: DEPENDENCY_MAP_SHA256SUMS_SHA256=075d68d9992332a32bdca54a32964363fb893071fdcc5c9e2dfc7fb26a2e1749
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:23: PRE_RECOVERY_INDEX_TREE=2f7f3dcae878251bda1ad8169912df035ca34020
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:24: PRE_RECOVERY_ARCHIVE=/home/ps2/ps2vnc-legacy-backups/PS-to-VNC-pre-recovery-staged-20260830-003258.tar
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:25: PRE_RECOVERY_ARCHIVE_SHA256=a8426ff95e82b06fe1dc9056d7dabeeca91b3bccb5d2711ac3d2d8c59ecd5251
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:27: LAST_COMPLETE_STAGE=M3
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:28: CURRENT_STAGE=M4
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:29: CURRENT_STAGE_STATUS=ARCHITECTURAL_NORMALIZATION
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:31: PRODUCT_VERSION=0.1.0-alpha.1
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:32: PRODUCT_TAG=v0.1.0-alpha.1
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:34: CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:35: CURRENT_SOURCE_HEAD=24cc85e7c7afe71a874b98d1c5c0c81645050387
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:36: CURRENT_DOC_HEAD=4bd35434f618e9014a909ad331cb13a78347e8cf
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:38: LAST_BUILD_RESULT=M4I_C2_DEBUG_STATE_TRANSPORT_REPRODUCIBLE_PASS_NONIDENTICAL_HARDWARE_REQUIRED
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:39: LAST_HARDWARE_RESULT=M4H_PASS_MACHINE_AND_PHYSICAL
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:40: LAST_VALIDATED_WORKING_ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:42: NEXT_ACTION=M4I-C2_HW1_direct_hardware_qualification
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:43: BLOCKED_BY=M4I_C2_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:45: DO_NOT_TOUCH=/home/ps2/ps2vnc
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:47: GITHUB_PUBLICATION_STATUS=PRIVATE_PUBLISHED
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:48: GITHUB_OWNER=Olsens11
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:49: GITHUB_REPOSITORY=Olsens11/PS-to-VNC
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:50: GITHUB_REMOTE_NAME=origin
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:51: GITHUB_REMOTE_URL=https://github.com/Olsens11/PS-to-VNC.git
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:52: GITHUB_VISIBILITY=PRIVATE
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:53: GITHUB_DEFAULT_BRANCH=main
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:55: CURRENT_WORKING_ELF_SHA256=4d85cfe6fca18ff0d6e23b681354df8121e9ccc5cc104e48ca51ed110751f5e5
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:56: CURRENT_WORKING_PT_LOAD_SHA256=1c330db6c1a16974e7d7907fd57fbfa55f48d5131634be37f4efcaf310a88491
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:57: CURRENT_WORKING_PT_LOAD_BYTES=449928
+++/home/ps2/PS-to-VNC/runtime/MIGRATION_STATE.env:58: CURRENT_WORKING_VALIDATION_BASIS=PENDING_DIRECT_HARDWARE_QUALIFICATION
++scripts/migration-check.sh:18: echo '===== PS-to-VNC MIGRATION COHERENCE CHECK ====='
+===== PS-to-VNC MIGRATION COHERENCE CHECK =====
++scripts/migration-check.sh:20: echo
+
++scripts/migration-check.sh:21: echo '===== A. REPOSITORY IDENTITY ====='
+===== A. REPOSITORY IDENTITY =====
++scripts/migration-check.sh:23: test PS-to-VNC = PS-to-VNC
++scripts/migration-check.sh:24: test /home/ps2/PS-to-VNC = /home/ps2/PS-to-VNC
++scripts/migration-check.sh:25: test /home/ps2/PS-to-VNC = /home/ps2/PS-to-VNC
++scripts/migration-check.sh:27: test /home/ps2/ps2vnc = /home/ps2/ps2vnc
++scripts/migration-check.sh:28: test NO = NO
++scripts/migration-check.sh:29: test /home/ps2/ps2vnc = /home/ps2/ps2vnc
++scripts/migration-check.sh:31: test -d /home/ps2/PS-to-VNC/.git
++scripts/migration-check.sh:32: test -d /home/ps2/ps2vnc/.git
+++scripts/migration-check.sh:36: readlink -f /home/ps2/PS-to-VNC/.git
++scripts/migration-check.sh:36: NEW_GIT=/home/ps2/PS-to-VNC/.git
+++scripts/migration-check.sh:40: readlink -f /home/ps2/ps2vnc/.git
++scripts/migration-check.sh:40: LEGACY_GIT=/home/ps2/ps2vnc/.git
++scripts/migration-check.sh:42: test /home/ps2/PS-to-VNC/.git '!=' /home/ps2/ps2vnc/.git
++scripts/migration-check.sh:44: echo PROJECT_ROOT=/home/ps2/PS-to-VNC
+PROJECT_ROOT=/home/ps2/PS-to-VNC
++scripts/migration-check.sh:45: echo NEW_GIT_DIR=/home/ps2/PS-to-VNC/.git
+NEW_GIT_DIR=/home/ps2/PS-to-VNC/.git
++scripts/migration-check.sh:46: echo LEGACY_GIT_DIR=/home/ps2/ps2vnc/.git
+LEGACY_GIT_DIR=/home/ps2/ps2vnc/.git
++scripts/migration-check.sh:47: echo REPOSITORY_IDENTITY=PASS
+REPOSITORY_IDENTITY=PASS
++scripts/migration-check.sh:49: echo
+
++scripts/migration-check.sh:50: echo '===== B. MIGRATION STATE ====='
+===== B. MIGRATION STATE =====
++scripts/migration-check.sh:51: case "$CURRENT_STAGE" in
++scripts/migration-check.sh:68: test M3 = M3
++scripts/migration-check.sh:69: test ARCHITECTURAL_NORMALIZATION = ARCHITECTURAL_NORMALIZATION
++scripts/migration-check.sh:71: test -n M4I-C2_HW1_direct_hardware_qualification
++scripts/migration-check.sh:79: test M4I_C2_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE = NONE
