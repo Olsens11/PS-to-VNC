@@ -1,0 +1,7 @@
+TESTKIT_PT_LOAD_FINGERPRINT_VERSION=1
+ELF=evidence/m4/m4i-final-diagnostics-reporting-source-authority/PS2VNC-M4I-FINAL-pristine.ELF
+PT_LOAD_SEGMENTS=1
+PT_LOAD_SHA256=fbb9a68913a10468827e72ef1db5c912a475fd357179f5f2cb993f3491d145db
+PT_LOAD_BYTES=450696
+PT_LOAD_OUTPUT=evidence/m4/m4i-final-diagnostics-reporting-source-authority/PS2VNC-M4I-FINAL-pristine.ptload.bin
+TESTKIT_PT_LOAD_FINGERPRINT=PASS
