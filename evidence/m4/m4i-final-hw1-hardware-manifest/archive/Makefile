@@ -1,0 +1,99 @@
+GSKIT ?= $(PS2DEV)/gsKit
+
+EE_BIN = PS2VNC.ELF
+EE_OBJS = ps2ip.o pstvnc_video_mode.o pstvnc_video_geometry.o ps2vnc_runtime.o ps2vnc_runtime_tail.o ps2vnc_framebuffer.o ps2vnc_framebuffer_tail.o ps2vnc_ui_display.o ps2vnc_ui_tail.o ps2vnc_display.o ps2vnc_display_tail.o ps2vnc_services.o ps2vnc_management_tail.o ps2vnc_calibration_tail.o pstvnc_config_text.o pstvnc_diagnostics_identity.o pstvnc_diagnostics_debug.o pstvnc_diagnostics_report.o ps2vnc_gsHires.o DEV9_irx.o NETMAN_irx.o SMAP_irx.o
+
+EE_INCS = -I$(GSKIT)/include -I../../src
+
+PS2IP_LIB = build/deps/libps2ip_mtu1458_wscale128.a
+EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lpad -lnetman $(PS2IP_LIB) -ldebug -lpatches -Wl,--wrap=sendto
+
+all: $(EE_BIN)
+
+$(EE_BIN): $(PS2IP_LIB)
+
+$(PS2IP_LIB):
+	@echo "Missing generated PS2IP dependency: $(PS2IP_LIB)" >&2
+	@echo "Run ./scripts/build.sh from the repository root." >&2
+	@false
+
+
+pstvnc_video_mode.o: ../../src/video/mode.c ../../src/video/mode.h
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+pstvnc_config_text.o: ../../src/config/text.c ../../src/config/text.h
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+pstvnc_diagnostics_identity.o: ../../src/diagnostics/identity.c ../../src/diagnostics/identity.h
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+pstvnc_diagnostics_debug.o: ../../src/diagnostics/debug.c ../../src/diagnostics/debug.h
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+pstvnc_diagnostics_report.o: ../../src/diagnostics/report.c ../../src/diagnostics/report.h ../../src/diagnostics/debug.h
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+clean:
+	rm -f $(EE_BIN) $(EE_OBJS) DEV9_irx.c NETMAN_irx.c SMAP_irx.c
+
+DEV9_irx.c: $(PS2SDK)/iop/irx/ps2dev9.irx
+	bin2c $< DEV9_irx.c DEV9_irx
+
+NETMAN_irx.c: $(PS2SDK)/iop/irx/netman.irx
+	bin2c $< NETMAN_irx.c NETMAN_irx
+
+SMAP_irx.c: $(PS2SDK)/iop/irx/smap.irx
+	bin2c $< SMAP_irx.c SMAP_irx
+
+run: $(EE_BIN)
+	ps2client execee host:$(EE_BIN)
+
+reset:
+	ps2client reset
+
+include $(PS2SDK)/samples/Makefile.pref
+
+
+# Local gsKit HIRES override.
+#
+# Source lineage:
+#   gsKit 43122eb96289167975b56caa45beb71eb8684fa2
+#
+# Compilation options preserve the exact tested gsKit HIRES code shape.
+ps2vnc_gsHires.o: ps2vnc_gsHires.c
+	mips64r5900el-ps2-elf-gcc \
+		-D_EE \
+		-DF_gsKit_hires_init_screen=1 \
+		-G0 \
+		-march=r5900 \
+		-mhard-float \
+		-msingle-float \
+		-mno-llsc \
+		-mno-shared \
+		-mplt \
+		-O2 \
+		-g \
+		-flto=auto \
+		-fno-fat-lto-objects \
+		-I$(GSKIT)/include \
+		-I$(PS2SDK)/ee/include \
+		-I$(PS2SDK)/common/include \
+		-c $< -o $@
+
+include $(PS2SDK)/samples/Makefile.eeglobal
+
+# M3 coarse migration scaffold.
+
+# M3 hierarchical migration dependencies.
+
+# M3 recursive hierarchy dependencies.
+
+# M3 semantic hierarchy dependencies.
+
+# M3E first real translation-unit split.
+ps2ip.o: ps2vnc_macro_body.inc ps2vnc_macro_region1.inc ps2vnc_macro_region2.inc ps2vnc_macro_region3.inc ps2vnc_runtime_support.inc ps2vnc_ui_controller.inc ps2vnc_framebuffer_engine.inc ps2vnc_cross_types.h ps2vnc_services_exports.h
+ps2vnc_services.o: ps2vnc_services.c ps2vnc_services_compat.h ps2vnc_cross_types.h ps2vnc_services_imports.h ps2vnc_display_orchestration.inc ps2vnc_management_core.inc ps2vnc_calibration_core.inc ps2vnc_management_tail_to_services.h
+ps2vnc_management_tail.o: ps2vnc_management_tail.c ps2vnc_services_compat.h ps2vnc_cross_types.h ps2vnc_services_imports.h ps2vnc_management_tail.inc ps2vnc_management_core_to_tail.h
+
+pstvnc_video_geometry.o: ../../src/video/geometry.c ../../src/video/geometry.h ../../src/video/mode.h
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
