@@ -82,3 +82,43 @@ void pstvnc_diagnostics_report_debug(
         msg,
         (size_t)len);
 }
+
+void pstvnc_diagnostics_report_profile(
+    const pstvnc_diagnostics_profile_report_t *report)
+{
+    char msg[256];
+    int len;
+
+    if (!report || !pstvnc_debug_is_ready())
+        return;
+
+    len = snprintf(
+        msg,
+        sizeof(msg),
+        "PRF frame=%u rn=%u dn=%u bytes=%u raw=%u hx=%u "
+        "ps=%u fl=%u rfb=%u rx=%u hd=%u hr=%u dw=%u cp=%u",
+        report->frame,
+        report->rfb_updates,
+        report->dirty_updates,
+        report->changed_bytes,
+        report->raw_rects,
+        report->hextile_rects,
+        report->present_sync_us,
+        report->flip_us,
+        report->rfb_us,
+        report->rx_wait_us,
+        report->hextile_us,
+        report->hextile_rx_wait_us,
+        report->dirty_wait_us,
+        report->dirty_work_us);
+
+    if (len <= 0)
+        return;
+
+    if (len >= (int)sizeof(msg))
+        len = sizeof(msg) - 1;
+
+    (void)pstvnc_debug_send(
+        msg,
+        (size_t)len);
+}

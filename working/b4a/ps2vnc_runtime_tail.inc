@@ -289,33 +289,33 @@ unsigned int profile_ticks_us(u64 ticks)
 
  void profile_emit_now(void)
 {
-    char msg[256];
-    int len;
+    pstvnc_diagnostics_profile_report_t report;
 
-    if (pstvnc_debug_is_ready()) {
-        len = snprintf(
-            msg, sizeof(msg),
-            "PRF frame=%u rn=%u dn=%u bytes=%u raw=%u hx=%u "
-            "ps=%u fl=%u rfb=%u rx=%u hd=%u hr=%u dw=%u cp=%u",
-            debug_frame_counter,
-            profile_rfb_updates,
-            profile_dirty_updates,
-            profile_changed_bytes,
-            profile_raw_rects,
-            profile_hextile_rects,
-            profile_ticks_us(profile_present_sync_ticks),
-            profile_ticks_us(profile_flip_ticks),
-            profile_ticks_us(profile_rfb_ticks),
-            profile_ticks_us(profile_rx_wait_ticks),
-            profile_ticks_us(profile_hextile_ticks),
-            profile_ticks_us(profile_hextile_rx_wait_ticks),
-            profile_ticks_us(profile_dirty_wait_ticks),
-            profile_ticks_us(profile_dirty_work_ticks)
-        );
+    report.frame = debug_frame_counter;
+    report.rfb_updates = profile_rfb_updates;
+    report.dirty_updates = profile_dirty_updates;
+    report.changed_bytes = profile_changed_bytes;
+    report.raw_rects = profile_raw_rects;
+    report.hextile_rects = profile_hextile_rects;
 
-        if (len > 0)
-            (void)pstvnc_debug_send(msg, (size_t)len);
-    }
+    report.present_sync_us =
+        profile_ticks_us(profile_present_sync_ticks);
+    report.flip_us =
+        profile_ticks_us(profile_flip_ticks);
+    report.rfb_us =
+        profile_ticks_us(profile_rfb_ticks);
+    report.rx_wait_us =
+        profile_ticks_us(profile_rx_wait_ticks);
+    report.hextile_us =
+        profile_ticks_us(profile_hextile_ticks);
+    report.hextile_rx_wait_us =
+        profile_ticks_us(profile_hextile_rx_wait_ticks);
+    report.dirty_wait_us =
+        profile_ticks_us(profile_dirty_wait_ticks);
+    report.dirty_work_us =
+        profile_ticks_us(profile_dirty_work_ticks);
+
+    pstvnc_diagnostics_report_profile(&report);
 
     profile_present_sync_ticks = 0;
     profile_flip_ticks = 0;

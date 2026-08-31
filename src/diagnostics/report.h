@@ -56,4 +56,26 @@ typedef struct pstvnc_diagnostics_debug_report
 void pstvnc_diagnostics_report_debug(
     const pstvnc_diagnostics_debug_report_t *report);
 
+typedef struct pstvnc_diagnostics_profile_report
+{
+    unsigned int frame;
+    unsigned int rfb_updates;
+    unsigned int dirty_updates;
+    unsigned int changed_bytes;
+    unsigned int raw_rects;
+    unsigned int hextile_rects;
+
+    unsigned int present_sync_us;
+    unsigned int flip_us;
+    unsigned int rfb_us;
+    unsigned int rx_wait_us;
+    unsigned int hextile_us;
+    unsigned int hextile_rx_wait_us;
+    unsigned int dirty_wait_us;
+    unsigned int dirty_work_us;
+} pstvnc_diagnostics_profile_report_t;
+
+void pstvnc_diagnostics_report_profile(
+    const pstvnc_diagnostics_profile_report_t *report);
+
 #endif
