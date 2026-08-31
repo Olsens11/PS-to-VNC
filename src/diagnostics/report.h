@@ -78,4 +78,24 @@ typedef struct pstvnc_diagnostics_profile_report
 void pstvnc_diagnostics_report_profile(
     const pstvnc_diagnostics_profile_report_t *report);
 
+typedef struct pstvnc_diagnostics_geometry_report
+{
+    int fit_width;
+    int fit_height;
+    int fit_offset_x;
+    int fit_offset_y;
+    int full_bypass;
+
+    unsigned int desktop_width;
+    unsigned int desktop_height;
+    unsigned int output_x;
+    unsigned int output_y;
+
+    int display_config_loaded;
+    int force_calibration;
+} pstvnc_diagnostics_geometry_report_t;
+
+void pstvnc_diagnostics_report_geometry(
+    const pstvnc_diagnostics_geometry_report_t *report);
+
 #endif

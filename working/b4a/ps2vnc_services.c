@@ -8,4 +8,5 @@
 
 #include "ps2vnc_management_core.inc"
 #include "ps2vnc_management_tail_to_services.h"
+#include "diagnostics/report.h"
 #include "ps2vnc_calibration_core.inc"

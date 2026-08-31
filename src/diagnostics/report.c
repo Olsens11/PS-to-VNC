@@ -122,3 +122,40 @@ void pstvnc_diagnostics_report_profile(
         msg,
         (size_t)len);
 }
+
+void pstvnc_diagnostics_report_geometry(
+    const pstvnc_diagnostics_geometry_report_t *report)
+{
+    char msg[192];
+    int len;
+
+    if (!report || !pstvnc_debug_is_ready())
+        return;
+
+    len = snprintf(
+        msg,
+        sizeof(msg),
+        "GEOM fit=%dx%d@%d,%d full=%d "
+        "desk=%ux%u out=%u,%u cfg=%d force=%d",
+        report->fit_width,
+        report->fit_height,
+        report->fit_offset_x,
+        report->fit_offset_y,
+        report->full_bypass,
+        report->desktop_width,
+        report->desktop_height,
+        report->output_x,
+        report->output_y,
+        report->display_config_loaded,
+        report->force_calibration);
+
+    if (len <= 0)
+        return;
+
+    if (len >= (int)sizeof(msg))
+        len = sizeof(msg) - 1;
+
+    (void)pstvnc_debug_send(
+        msg,
+        (size_t)len);
+}

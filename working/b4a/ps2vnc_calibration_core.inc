@@ -1465,39 +1465,25 @@ int ps2vnc_config_load_from_pi(void)
  */
 void debug_emit_geometry_snapshot(void)
 {
-    char msg[192];
-    int len;
+    pstvnc_diagnostics_geometry_report_t report;
 
-    if (!pstvnc_debug_is_ready())
-        return;
+    report.fit_width = screen_fit_width;
+    report.fit_height = screen_fit_height;
+    report.fit_offset_x = screen_fit_offset_x;
+    report.fit_offset_y = screen_fit_offset_y;
+    report.full_bypass = screen_fit_full_bypass;
 
-    len = snprintf(
-        msg,
-        sizeof(msg),
-        "GEOM fit=%dx%d@%d,%d full=%d "
-        "desk=%ux%u out=%u,%u cfg=%d force=%d",
-        screen_fit_width,
-        screen_fit_height,
-        screen_fit_offset_x,
-        screen_fit_offset_y,
-        screen_fit_full_bypass,
-        desktop_width,
-        desktop_height,
-        desktop_output_x,
-        desktop_output_y,
-        ps2vnc_display_config_loaded,
-        force_screen_fit_calibration
-    );
+    report.desktop_width = desktop_width;
+    report.desktop_height = desktop_height;
+    report.output_x = desktop_output_x;
+    report.output_y = desktop_output_y;
 
-    if (len <= 0)
-        return;
+    report.display_config_loaded =
+        ps2vnc_display_config_loaded;
+    report.force_calibration =
+        force_screen_fit_calibration;
 
-    if (len >= (int)sizeof(msg))
-        len = sizeof(msg) - 1;
-
-    (void)pstvnc_debug_send(
-        msg,
-        (size_t)len);
+    pstvnc_diagnostics_report_geometry(&report);
 }
 
 
