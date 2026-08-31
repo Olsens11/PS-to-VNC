@@ -114,3 +114,31 @@ tool changes directories.
 
 Relevant self-tests must exercise relative caller paths as well as absolute
 paths.
+
+## M4 hardware-checkpoint activation
+
+M4 hardware-pending authority transitions are a repeatable development
+operation and must use:
+
+    scripts/testkit/activate-m4-hardware-checkpoint.py
+
+The tool is manifest driven and updates the four established M4 activation
+surfaces together:
+
+- `runtime/M4_ARCHITECTURE_BASELINE.env`
+- `runtime/M4_SOURCE_AUTHORITY.env`
+- `runtime/MIGRATION_STATE.env`
+- the machine-state mirror and checkpoint record in `docs/MIGRATION_STATE.md`
+
+The transition is deliberately not hardware authority. It makes a new
+reproducible source generation `HARDWARE_PENDING`, preserves the previous
+`LAST_VALIDATED` generation and previous direct hardware authority, and records
+the exact identity-stamped hardware DUT that is awaiting qualification.
+
+Before first live use after any tool change, the activation tool must pass:
+
+    scripts/testkit/activation-self-test.py
+    scripts/testkit/self-test.sh
+
+The activation self-test operates only on disposable copies of the authority
+files and requires idempotent second execution.
