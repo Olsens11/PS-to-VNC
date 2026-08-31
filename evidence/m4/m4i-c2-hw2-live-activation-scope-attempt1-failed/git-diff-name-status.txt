@@ -1,0 +1,6 @@
+M	docs/MIGRATION_STATE.md
+M	docs/status.md
+M	runtime/M4_ARCHITECTURE_BASELINE.env
+M	runtime/M4_SOURCE_AUTHORITY.env
+M	runtime/MIGRATION_STATE.env
+M	working/b4a/PS2VNC.ELF

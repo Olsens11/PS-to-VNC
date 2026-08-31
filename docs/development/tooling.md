@@ -132,6 +132,17 @@ surfaces together:
 - the current-development-focus section and machine-state mirror in
   `docs/status.md`
 
+
+The activation tool itself owns those five authority surfaces. If the caller
+also installs a different **tracked current working ELF** so that the on-disk
+working artifact matches the newly activated `CURRENT_WORKING_ELF_SHA256`, that
+ELF is an additional member of the caller transaction.
+
+For the current repository layout this means
+`working/b4a/PS2VNC.ELF` must be included in transaction review, staging, and
+the activation commit whenever its bytes change. It is not a sixth authority
+surface; it is the tracked artifact corresponding to the authority record.
+
 `docs/status.md` is part of the development-continuity authority and must move
 atomically with the machine state. The disposable activation regression test
 therefore includes all five surfaces.
