@@ -50,21 +50,37 @@ Qualification included:
 
 ## Current development focus
 
-Tranche 3 diagnostics is active.
+A new M4 source generation is active as a hardware-pending checkpoint.
 
-M4I-B1 identity normalization is complete. The active build/runtime identity
-transport now lives under:
+Its source/build authority is established, but it does not replace the
+previously validated runtime until independent machine and physical
+hardware qualification passes.
 
-    src/diagnostics/identity.c
-    src/diagnostics/identity.h
+Permanent ownership:
 
-Its reproducible PT_LOAD image is byte-for-byte identical to M4H, so the
-existing M4H hardware qualification remains applicable to the runtime image.
+    src/diagnostics/debug.c
+    src/diagnostics/debug.h
 
-    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
-    BLOCKED_BY=NONE
+Pristine reproducible candidate:
 
-Next product work is the permanent debug-reporting ownership boundary.
+    ELF_SHA256=4d85cfe6fca18ff0d6e23b681354df8121e9ccc5cc104e48ca51ed110751f5e5
+    PT_LOAD_SHA256=1c330db6c1a16974e7d7907fd57fbfa55f48d5131634be37f4efcaf310a88491
+    PT_LOAD_BYTES=449928
+
+Exact identity-stamped hardware DUT:
+
+    TEST_ID=M4I-C2-HW1
+    ELF_IDENTITY_SHA256=28dbe5d985cfcbdcc2721e10e8b816fcfe37eb1e20e0b4d0e97c217299c515b8
+    STAMPED_ELF_SHA256=035bd9a3adb631984b4bbabe8f058d2ae3b4f6a078cbf64003a7add0d5099067
+    STAMPED_PT_LOAD_SHA256=ba4e7a7b6139cca2e7ba81772ad731b18b3ff5dea4ec6e9058d83641928b561b
+
+Previous validated ELF remains:
+
+    LAST_VALIDATED_WORKING_ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
+
+    NEXT_ACTION=M4I-C2_HW1_direct_hardware_qualification
+    BLOCKED_BY=M4I_C2_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
+    CHECKPOINT_ID=M4I-C2-HW1
 
 ## Development continuity
 
@@ -90,9 +106,9 @@ These percentages are planning estimates, not machine authority.
     LAST_HARDWARE_RESULT=M4H_PASS_MACHINE_AND_PHYSICAL
     LAST_VALIDATED_WORKING_ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
     LAST_VALIDATED_PT_LOAD_SHA256=a33efdb0bee3f383d4828db8fb6a06f62ddb90fdc42a97308dc12777ed8197b9
-    CURRENT_WORKING_ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
-    CURRENT_WORKING_VALIDATION_BASIS=INHERITED_M4H_PT_LOAD_BYTE_EXACT
-    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
-    BLOCKED_BY=NONE
+    CURRENT_WORKING_ELF_SHA256=4d85cfe6fca18ff0d6e23b681354df8121e9ccc5cc104e48ca51ed110751f5e5
+    CURRENT_WORKING_VALIDATION_BASIS=PENDING_DIRECT_HARDWARE_QUALIFICATION
+    NEXT_ACTION=M4I-C2_HW1_direct_hardware_qualification
+    BLOCKED_BY=M4I_C2_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
 
 Machine-readable authority remains under `runtime/`.

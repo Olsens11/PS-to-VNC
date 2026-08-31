@@ -181,10 +181,10 @@ canonical machine-readable state.
     CURRENT_STAGE=M4
     CURRENT_STAGE_STATUS=ARCHITECTURAL_NORMALIZATION
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=9eeee8e9ba65f8cead561e27aab42103573f1a37
+    CURRENT_SOURCE_HEAD=24cc85e7c7afe71a874b98d1c5c0c81645050387
     LAST_HARDWARE_RESULT=M4H_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
-    BLOCKED_BY=NONE
+    NEXT_ACTION=M4I-C2_HW1_direct_hardware_qualification
+    BLOCKED_BY=M4I_C2_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
 
 The canonical machine-readable source remains:
 
@@ -1316,3 +1316,33 @@ profiling ownership remain.
 
     NEXT_ACTION=M4I-C_debug_reporting_boundary_census
     BLOCKED_BY=NONE
+
+## M4I-C2 diagnostics debug state / transport — hardware pending
+
+Hardware checkpoint activation is pending direct PS2 qualification.
+
+Source authority:
+
+    SOURCE_COMMIT=24cc85e7c7afe71a874b98d1c5c0c81645050387
+    SOURCE_AUTHORITY_COMMIT=4bd35434f618e9014a909ad331cb13a78347e8cf
+
+Pristine reproducible candidate:
+
+    ELF_SHA256=4d85cfe6fca18ff0d6e23b681354df8121e9ccc5cc104e48ca51ed110751f5e5
+    PT_LOAD_SHA256=1c330db6c1a16974e7d7907fd57fbfa55f48d5131634be37f4efcaf310a88491
+    PT_LOAD_BYTES=449928
+
+Exact identity-stamped hardware DUT:
+
+    TEST_ID=M4I-C2-HW1
+    ELF_IDENTITY_SHA256=28dbe5d985cfcbdcc2721e10e8b816fcfe37eb1e20e0b4d0e97c217299c515b8
+    STAMPED_ELF_SHA256=035bd9a3adb631984b4bbabe8f058d2ae3b4f6a078cbf64003a7add0d5099067
+    STAMPED_PT_LOAD_SHA256=ba4e7a7b6139cca2e7ba81772ad731b18b3ff5dea4ec6e9058d83641928b561b
+
+The previous validated runtime remains authoritative until this
+checkpoint passes independent machine and physical qualification.
+
+    LAST_VALIDATED_ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
+    NEXT_ACTION=M4I-C2_HW1_direct_hardware_qualification
+    BLOCKED_BY=M4I_C2_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
+    CHECKPOINT_ID=M4I-C2-HW1
