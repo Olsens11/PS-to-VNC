@@ -1,84 +1,63 @@
  void debug_emit_now(void)
 {
-    char msg[640];
-    int len;
-    pstvnc_debug_stage_t stage;
+    pstvnc_diagnostics_debug_report_t report;
+    unsigned int i;
 
     if (!pstvnc_debug_is_ready())
         return;
 
-    stage = pstvnc_debug_get_stage();
+    report.frame = debug_frame_counter;
+    report.stage = pstvnc_debug_get_stage();
+    report.changed_bytes = debug_changed_bytes;
 
-    len = snprintf(
-        msg, sizeof(msg),
-        "DBG frame=%u stage=%s(%u) bytes=%d msg=%u "
-        "rect=%u/%u xywh=%u,%u,%u,%u enc=%08x ctl=%u cerr=%d osk=%d "
-        "hdr=%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x "
-        "hs=%u/%u hav=%u he=%u/%u rn=%d rc=%u "
-        "hkm=%04x hks=%u/%u hka=%d hkt=%d hhp=%u hcd=%u "
-        "hkl=%d hq=%04x sm=%d dm=%d rar=%d "
-        "b4=%u ppr=%d ppa=%d q=%u",
-        debug_frame_counter,
-        pstvnc_debug_stage_name(stage),
-        (unsigned int)stage,
-        debug_changed_bytes,
-        live_message_type,
-        live_rect_index,
-        live_rect_count,
-        live_rect_x,
-        live_rect_y,
-        live_rect_w,
-        live_rect_h,
-        live_encoding,
-        controller_loop_counter,
-        controller_thread_error,
-        osk_visible,
-        live_hdr_raw[0],
-        live_hdr_raw[1],
-        live_hdr_raw[2],
-        live_hdr_raw[3],
-        live_hdr_raw[4],
-        live_hdr_raw[5],
-        live_hdr_raw[6],
-        live_hdr_raw[7],
-        live_hdr_raw[8],
-        live_hdr_raw[9],
-        live_hdr_raw[10],
-        live_hdr_raw[11],
-        live_hdr_start_pos,
-        live_hdr_start_end,
-        live_hdr_start_avail,
-        live_hdr_end_pos,
-        live_hdr_end_end,
-        live_hdr_recv_n,
-        live_hdr_recv_call,
-        debug_hotkey_mask,
-        debug_hotkey_stable_polls,
-        debug_hotkey_settle_target,
-        debug_hotkey_action,
-        debug_hotkey_trigger,
-        debug_hotkey_hold_polls,
-        system_menu_countdown_seconds,
-        debug_hotkey_latched,
-        debug_hotkey_quarantine,
-        system_menu_visible,
-        display_menu_visible,
-        runtime_action_request,
-        debug_transition_phase,
-        controller_pad_pause_requested,
-        controller_pad_pause_ack,
-        rfb_out_count
-    );
+    report.message_type = live_message_type;
+    report.rect_index = live_rect_index;
+    report.rect_count = live_rect_count;
+    report.rect_x = live_rect_x;
+    report.rect_y = live_rect_y;
+    report.rect_w = live_rect_w;
+    report.rect_h = live_rect_h;
+    report.encoding = live_encoding;
 
-    if (len <= 0)
-        return;
+    report.controller_loop = controller_loop_counter;
+    report.controller_error = controller_thread_error;
+    report.osk_visible = osk_visible;
 
-    if (len >= (int)sizeof(msg))
-        len = sizeof(msg) - 1;
+    for (i = 0; i < 12; ++i)
+        report.header_raw[i] = live_hdr_raw[i];
 
-    (void)pstvnc_debug_send(
-        msg,
-        (size_t)len);
+    report.header_start_pos = live_hdr_start_pos;
+    report.header_start_end = live_hdr_start_end;
+    report.header_start_avail = live_hdr_start_avail;
+    report.header_end_pos = live_hdr_end_pos;
+    report.header_end_end = live_hdr_end_end;
+    report.header_recv_n = live_hdr_recv_n;
+    report.header_recv_call = live_hdr_recv_call;
+
+    report.hotkey_mask = debug_hotkey_mask;
+    report.hotkey_stable_polls = debug_hotkey_stable_polls;
+    report.hotkey_settle_target = debug_hotkey_settle_target;
+    report.hotkey_action = debug_hotkey_action;
+    report.hotkey_trigger = debug_hotkey_trigger;
+    report.hotkey_hold_polls = debug_hotkey_hold_polls;
+    report.system_menu_countdown_seconds =
+        system_menu_countdown_seconds;
+    report.hotkey_latched = debug_hotkey_latched;
+    report.hotkey_quarantine = debug_hotkey_quarantine;
+
+    report.system_menu_visible = system_menu_visible;
+    report.display_menu_visible = display_menu_visible;
+    report.runtime_action_request = runtime_action_request;
+
+    report.transition_phase = debug_transition_phase;
+    report.controller_pad_pause_requested =
+        controller_pad_pause_requested;
+    report.controller_pad_pause_ack =
+        controller_pad_pause_ack;
+
+    report.rfb_out_count = rfb_out_count;
+
+    pstvnc_diagnostics_report_debug(&report);
 }
 
 

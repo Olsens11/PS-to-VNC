@@ -26,6 +26,8 @@ test -f "$ROOT/src/diagnostics/identity.c"
 test -f "$ROOT/src/diagnostics/identity.h"
 test -f "$ROOT/src/diagnostics/debug.c"
 test -f "$ROOT/src/diagnostics/debug.h"
+test -f "$ROOT/src/diagnostics/report.c"
+test -f "$ROOT/src/diagnostics/report.h"
 
 ACTUAL_DEP_SHA="$(
     sha256sum "$FROZEN_DEP" |

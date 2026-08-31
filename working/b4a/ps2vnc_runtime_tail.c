@@ -9,6 +9,7 @@
 #include "ps2vnc_runtime_compat.h"
 #include "ps2vnc_cross_types.h"
 #include "diagnostics/debug.h"
+#include "diagnostics/report.h"
 #include "ps2vnc_services_imports.h"
 #include "ps2vnc_services_exports.h"
 #include "ps2vnc_ui_display_to_runtime.h"
