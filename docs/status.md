@@ -50,37 +50,30 @@ Qualification included:
 
 ## Current development focus
 
-A new M4 source generation is active as a hardware-pending checkpoint.
+M4I diagnostics normalization is COMPLETE.
 
-Its source/build authority is established, but it does not replace the
-previously validated runtime until independent machine and physical
-hardware qualification passes.
+Permanent diagnostics ownership now includes identity, debug state /
+transport, and DBG / PRF / GEOM reporting serialization.
 
-Permanent ownership:
+Final qualified source generation:
 
-    src/diagnostics/identity.c
-    src/diagnostics/identity.h
+    SOURCE_COMMIT=d205e32637a4cb0e7295a267cc471b076e58791d
+    SOURCE_AUTHORITY_COMMIT=c62c7f7ee9a57bac03dcc9d20285400c2b1e2bc8
+    ELF_SHA256=62e9b180ba73fc1377f853cfe21c17449be958723be6e7a2142de02dd1cee75e
+    PT_LOAD_SHA256=fbb9a68913a10468827e72ef1db5c912a475fd357179f5f2cb993f3491d145db
+    PT_LOAD_BYTES=450696
 
-Pristine reproducible candidate:
+Final direct hardware authority:
 
-    ELF_SHA256=144f668da0a3756ba4bd8f2fbfc3826983a1df6f5ea4ed0c44d2a1b0f45b2d93
-    PT_LOAD_SHA256=c0030d28dea593b056bc604f94a9bd68576ccfc0f79e688c694193045378e701
-    PT_LOAD_BYTES=450440
+    TEST_ID=M4I-FINAL-HW1
+    HARDWARE_AUTHORITY_COMMIT=9ec0ddc6505f422dffd966b8be9c34aff97d6b38
+    MACHINE_RESULT=PASS_5_OF_5
+    PHYSICAL_RESULT=FULL_PASS
+    FINAL_STARTUP_MODE=480p
 
-Exact identity-stamped hardware DUT:
-
-    TEST_ID=M4I-C2-HW2
-    ELF_IDENTITY_SHA256=0366569620c55b9657523032173d64fdddb744547fdbbf96e3edc105bacdb033
-    STAMPED_ELF_SHA256=d3b99c8c48d5b34057ee139650fd885cee998bd13f2b026279799512c865f912
-    STAMPED_PT_LOAD_SHA256=bb9c6b3e2ae98dfae811c4ec42ca65d7e028716a27862a1d88ba24f357e1476f
-
-Previous validated ELF remains:
-
-    LAST_VALIDATED_WORKING_ELF_SHA256=144f668da0a3756ba4bd8f2fbfc3826983a1df6f5ea4ed0c44d2a1b0f45b2d93
-
-    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
+    NEXT_ACTION=M4J_management_normalization
     BLOCKED_BY=NONE
-    CHECKPOINT_ID=M4I-C2-HW2
+    CHECKPOINT_ID=M4I-FINAL-HW1
 
 ## Development continuity
 
@@ -94,21 +87,23 @@ Routine procedures must reuse canonical saved tooling when available.
 
 ## Planning estimate
 
-    OVERALL_ARCHITECTURAL_NORMALIZATION=approximately_31_percent
-    DIAGNOSTICS_TRANCHE=approximately_40_percent
+    OVERALL_ARCHITECTURAL_NORMALIZATION=approximately_36_percent
+    DIAGNOSTICS_TRANCHE=complete_100_percent
     VIDEO_GEOMETRY=complete
     DIAGNOSTICS_IDENTITY=complete
+    DIAGNOSTICS_DEBUG_STATE_TRANSPORT=complete
+    DIAGNOSTICS_REPORTING=complete
 
 These percentages are planning estimates, not machine authority.
 
 ## Machine-state mirror
 
-    LAST_HARDWARE_RESULT=M4I_C2_PASS_MACHINE_AND_PHYSICAL
-    LAST_VALIDATED_WORKING_ELF_SHA256=144f668da0a3756ba4bd8f2fbfc3826983a1df6f5ea4ed0c44d2a1b0f45b2d93
-    LAST_VALIDATED_PT_LOAD_SHA256=c0030d28dea593b056bc604f94a9bd68576ccfc0f79e688c694193045378e701
-    CURRENT_WORKING_ELF_SHA256=144f668da0a3756ba4bd8f2fbfc3826983a1df6f5ea4ed0c44d2a1b0f45b2d93
-    CURRENT_WORKING_VALIDATION_BASIS=PENDING_DIRECT_HARDWARE_QUALIFICATION
-    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
+    LAST_HARDWARE_RESULT=M4I_FINAL_PASS_MACHINE_AND_PHYSICAL
+    LAST_VALIDATED_WORKING_ELF_SHA256=62e9b180ba73fc1377f853cfe21c17449be958723be6e7a2142de02dd1cee75e
+    LAST_VALIDATED_PT_LOAD_SHA256=fbb9a68913a10468827e72ef1db5c912a475fd357179f5f2cb993f3491d145db
+    CURRENT_WORKING_ELF_SHA256=62e9b180ba73fc1377f853cfe21c17449be958723be6e7a2142de02dd1cee75e
+    CURRENT_WORKING_VALIDATION_BASIS=M4I_FINAL_DIRECT_HARDWARE_QUALIFICATION
+    NEXT_ACTION=M4J_management_normalization
     BLOCKED_BY=NONE
 
 Machine-readable authority remains under `runtime/`.

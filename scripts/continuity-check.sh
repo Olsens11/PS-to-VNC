@@ -88,7 +88,7 @@ test "$M4_SOURCE_COMMIT" = \
     "$MIG_SOURCE_COMMIT"
 
 M4_HW_HEAD="$(
-    get_env "$M4" M4I_C2_HARDWARE_HEAD
+    get_env "$M4" M4I_FINAL_HARDWARE_HEAD
 )"
 
 test "$(
@@ -99,11 +99,11 @@ git cat-file -e "$M4_HW_HEAD^{commit}"
 
 test "$(
     get_env "$M4" LAST_DIRECT_HARDWARE_AUTHORITY
-)" = 'M4I-C2'
+)" = 'M4I-FINAL'
 
 test "$(
     get_env "$M4" LAST_DIRECT_HARDWARE_RESULT
-)" = 'M4I_C2_PASS_MACHINE_AND_PHYSICAL'
+)" = 'M4I_FINAL_PASS_MACHINE_AND_PHYSICAL'
 
 test "$(
     get_env "$M4" NEXT_ACTION
@@ -139,7 +139,7 @@ then
 fi
 
 test "$(
-    get_env "$M4" M4I_C2_HARDWARE_QUALIFIED
+    get_env "$M4" M4I_FINAL_HARDWARE_QUALIFIED
 )" = 'YES'
 
 echo 'M4_CURRENT_AUTHORITY_COHERENCE=PASS'

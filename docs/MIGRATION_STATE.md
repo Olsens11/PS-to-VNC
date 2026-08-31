@@ -181,9 +181,9 @@ canonical machine-readable state.
     CURRENT_STAGE=M4
     CURRENT_STAGE_STATUS=ARCHITECTURAL_NORMALIZATION
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
-    CURRENT_SOURCE_HEAD=e37448e3375ddf0fb004ab797fb501f4a5ae7e12
-    LAST_HARDWARE_RESULT=M4I_C2_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
+    CURRENT_SOURCE_HEAD=d205e32637a4cb0e7295a267cc471b076e58791d
+    LAST_HARDWARE_RESULT=M4I_FINAL_PASS_MACHINE_AND_PHYSICAL
+    NEXT_ACTION=M4J_management_normalization
     BLOCKED_BY=NONE
 
 The canonical machine-readable source remains:
@@ -1402,4 +1402,37 @@ Hardware authority:
 M4I_C2_HARDWARE_QUALIFICATION=PASS_MACHINE_AND_PHYSICAL
 
 NEXT_ACTION=M4I-C_debug_reporting_boundary_census
+BLOCKED_BY=NONE
+
+## M4I diagnostics normalization — COMPLETE
+
+Final qualified source generation:
+
+    SOURCE_COMMIT=d205e32637a4cb0e7295a267cc471b076e58791d
+    SOURCE_AUTHORITY_COMMIT=c62c7f7ee9a57bac03dcc9d20285400c2b1e2bc8
+    ELF_SHA256=62e9b180ba73fc1377f853cfe21c17449be958723be6e7a2142de02dd1cee75e
+    PT_LOAD_SHA256=fbb9a68913a10468827e72ef1db5c912a475fd357179f5f2cb993f3491d145db
+    PT_LOAD_BYTES=450696
+
+Permanent diagnostics modules:
+
+    src/diagnostics/identity.c
+    src/diagnostics/debug.c
+    src/diagnostics/report.c
+
+Final hardware qualification:
+
+    TEST_ID=M4I-FINAL-HW1
+    HARDWARE_AUTHORITY_COMMIT=9ec0ddc6505f422dffd966b8be9c34aff97d6b38
+    exact runtime identity = PASS
+    DBG records = 2460
+    PRF records = 3
+    GEOM records = 11
+    five-mode machine regression = PASS 5/5
+    physical/operator result = FULL PASS
+    final startup mode = 480p
+
+M4I_FINAL_HARDWARE_QUALIFICATION=PASS_MACHINE_AND_PHYSICAL
+
+NEXT_ACTION=M4J_management_normalization
 BLOCKED_BY=NONE
