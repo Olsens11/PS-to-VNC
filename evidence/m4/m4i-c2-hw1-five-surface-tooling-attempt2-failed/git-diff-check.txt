@@ -1,0 +1,2 @@
+scripts/testkit/activate-m4-hardware-checkpoint.py:214: trailing whitespace.
++        + [""] 

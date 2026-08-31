@@ -179,6 +179,45 @@ def append_block_once(
     atomic_write_lines(path, lines)
 
 
+def replace_markdown_section(
+    path: Path,
+    heading: str,
+    body: list[str],
+) -> None:
+    lines = read_lines(path)
+
+    matches = [
+        index
+        for index, line in enumerate(lines)
+        if line.strip() == heading
+    ]
+
+    if len(matches) != 1:
+        die(
+            "markdown section heading occurrence mismatch: "
+            f"{path}:{heading} count={len(matches)}"
+        )
+
+    start = matches[0]
+    end = len(lines)
+
+    for index in range(start + 1, len(lines)):
+        if lines[index].startswith("## "):
+            end = index
+            break
+
+    replacement = [heading, ""] + body
+
+    new_lines = (
+        lines[:start]
+        + replacement
+        + [""]
+        + lines[end:]
+    )
+
+    atomic_write_lines(path, new_lines)
+
+
 def update_machine_mirror(
     path: Path,
     values: dict[str, str],
@@ -224,6 +263,7 @@ def candidate_already_applied(
     authority: Path,
     migration: Path,
     docs: Path,
+    status: Path,
     m: dict[str, str],
 ) -> bool:
     checks = [
@@ -297,8 +337,52 @@ def candidate_already_applied(
         f"CHECKPOINT_ID={m['CHECKPOINT_ID']}"
     )
 
-    return marker in docs.read_text(
+    docs_text = docs.read_text(
         encoding="utf-8"
+    )
+
+    status_text = status.read_text(
+        encoding="utf-8"
+    )
+
+    status_requirements = [
+        marker,
+        (
+            "    LAST_HARDWARE_RESULT="
+            f"{m['LAST_DIRECT_HARDWARE_RESULT']}"
+        ),
+        (
+            "    LAST_VALIDATED_WORKING_ELF_SHA256="
+            f"{m['LAST_VALIDATED_ELF_SHA256']}"
+        ),
+        (
+            "    LAST_VALIDATED_PT_LOAD_SHA256="
+            f"{m['LAST_VALIDATED_PT_LOAD_SHA256']}"
+        ),
+        (
+            "    CURRENT_WORKING_ELF_SHA256="
+            f"{m['CANDIDATE_ELF_SHA256']}"
+        ),
+        (
+            "    CURRENT_WORKING_VALIDATION_BASIS="
+            f"{m['CURRENT_WORKING_VALIDATION_BASIS']}"
+        ),
+        (
+            "    NEXT_ACTION="
+            f"{m['NEXT_ACTION']}"
+        ),
+        (
+            "    BLOCKED_BY="
+            f"{m['BLOCKED_BY']}"
+        ),
+    ]
+
+    return (
+        marker in docs_text
+        and all(
+            item in status_text
+            for item in status_requirements
+        )
     )
 
 
@@ -419,12 +503,14 @@ def main() -> int:
         root / "runtime/MIGRATION_STATE.env"
     )
     docs = root / "docs/MIGRATION_STATE.md"
+    status = root / "docs/status.md"
 
     for path in [
         architecture,
         authority,
         migration,
         docs,
+        status,
     ]:
         if not path.is_file():
             die(f"required authority surface missing: {path}")
@@ -433,6 +519,7 @@ def main() -> int:
         authority,
         migration,
         docs,
+        status,
         m,
     ):
         print(
@@ -857,6 +944,101 @@ def main() -> int:
         docs,
         doc_marker,
         doc_block,
+    )
+
+    status_focus = [
+        (
+            "A new M4 source generation is active as a "
+            "hardware-pending checkpoint."
+        ),
+        "",
+        (
+            "Its source/build authority is established, but it "
+            "does not replace the"
+        ),
+        (
+            "previously validated runtime until independent "
+            "machine and physical"
+        ),
+        "hardware qualification passes.",
+        "",
+        "Permanent ownership:",
+        "",
+        f"    {m['PERMANENT_SOURCE']}",
+        f"    {m['PERMANENT_HEADER']}",
+        "",
+        "Pristine reproducible candidate:",
+        "",
+        (
+            "    ELF_SHA256="
+            f"{m['CANDIDATE_ELF_SHA256']}"
+        ),
+        (
+            "    PT_LOAD_SHA256="
+            f"{m['CANDIDATE_PT_LOAD_SHA256']}"
+        ),
+        (
+            "    PT_LOAD_BYTES="
+            f"{m['CANDIDATE_PT_LOAD_BYTES']}"
+        ),
+        "",
+        "Exact identity-stamped hardware DUT:",
+        "",
+        (
+            "    TEST_ID="
+            f"{m['HARDWARE_TEST_ID']}"
+        ),
+        (
+            "    ELF_IDENTITY_SHA256="
+            f"{m['HARDWARE_ELF_IDENTITY_SHA256']}"
+        ),
+        (
+            "    STAMPED_ELF_SHA256="
+            f"{m['HARDWARE_STAMPED_ELF_SHA256']}"
+        ),
+        (
+            "    STAMPED_PT_LOAD_SHA256="
+            f"{m['HARDWARE_STAMPED_PT_LOAD_SHA256']}"
+        ),
+        "",
+        (
+            "Previous validated ELF remains:"
+        ),
+        "",
+        (
+            "    LAST_VALIDATED_WORKING_ELF_SHA256="
+            f"{m['LAST_VALIDATED_ELF_SHA256']}"
+        ),
+        "",
+        f"    NEXT_ACTION={m['NEXT_ACTION']}",
+        f"    BLOCKED_BY={m['BLOCKED_BY']}",
+        f"    CHECKPOINT_ID={m['CHECKPOINT_ID']}",
+    ]
+
+    replace_markdown_section(
+        status,
+        "## Current development focus",
+        status_focus,
+    )
+
+    update_machine_mirror(
+        status,
+        {
+            "LAST_HARDWARE_RESULT":
+                m["LAST_DIRECT_HARDWARE_RESULT"],
+            "LAST_VALIDATED_WORKING_ELF_SHA256":
+                m["LAST_VALIDATED_ELF_SHA256"],
+            "LAST_VALIDATED_PT_LOAD_SHA256":
+                m["LAST_VALIDATED_PT_LOAD_SHA256"],
+            "CURRENT_WORKING_ELF_SHA256":
+                m["CANDIDATE_ELF_SHA256"],
+            "CURRENT_WORKING_VALIDATION_BASIS":
+                m["CURRENT_WORKING_VALIDATION_BASIS"],
+            "NEXT_ACTION":
+                m["NEXT_ACTION"],
+            "BLOCKED_BY":
+                m["BLOCKED_BY"],
+        },
     )
 
     print(

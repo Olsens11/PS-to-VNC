@@ -122,13 +122,19 @@ operation and must use:
 
     scripts/testkit/activate-m4-hardware-checkpoint.py
 
-The tool is manifest driven and updates the four established M4 activation
+The tool is manifest driven and updates the five current M4 activation
 surfaces together:
 
 - `runtime/M4_ARCHITECTURE_BASELINE.env`
 - `runtime/M4_SOURCE_AUTHORITY.env`
 - `runtime/MIGRATION_STATE.env`
 - the machine-state mirror and checkpoint record in `docs/MIGRATION_STATE.md`
+- the current-development-focus section and machine-state mirror in
+  `docs/status.md`
+
+`docs/status.md` is part of the development-continuity authority and must move
+atomically with the machine state. The disposable activation regression test
+therefore includes all five surfaces.
 
 The transition is deliberately not hardware authority. It makes a new
 reproducible source generation `HARDWARE_PENDING`, preserves the previous

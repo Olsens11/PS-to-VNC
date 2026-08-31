@@ -40,6 +40,7 @@ def tree_digest(root: Path) -> str:
         "runtime/M4_SOURCE_AUTHORITY.env",
         "runtime/MIGRATION_STATE.env",
         "docs/MIGRATION_STATE.md",
+        "docs/status.md",
     ]:
         path = root / rel
         digest.update(rel.encode())
@@ -104,6 +105,7 @@ def main() -> int:
             "runtime/M4_SOURCE_AUTHORITY.env",
             "runtime/MIGRATION_STATE.env",
             "docs/MIGRATION_STATE.md",
+            "docs/status.md",
         ]:
             src = ROOT / rel
             dst = temp / rel
@@ -409,7 +411,61 @@ def main() -> int:
                 "checkpoint documentation marker count != 1"
             )
 
-        print("TESTKIT_M4_ACTIVATION_SELF_TEST_VERSION=1")
+        status = (
+            temp / "docs/status.md"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        status_required = [
+            "## Current development focus",
+            "hardware-pending checkpoint",
+            "CHECKPOINT_ID=SELFTEST-HW",
+            (
+                "    LAST_HARDWARE_RESULT="
+                f"{last_direct_result}"
+            ),
+            (
+                "    LAST_VALIDATED_WORKING_ELF_SHA256="
+                f"{last_validated}"
+            ),
+            (
+                "    LAST_VALIDATED_PT_LOAD_SHA256="
+                f"{last_validated_load}"
+            ),
+            (
+                "    CURRENT_WORKING_ELF_SHA256="
+                f"{fake['candidate_elf']}"
+            ),
+            (
+                "    CURRENT_WORKING_VALIDATION_BASIS="
+                "PENDING_DIRECT_HARDWARE_QUALIFICATION"
+            ),
+            (
+                "    NEXT_ACTION="
+                "SELFTEST_direct_hardware_qualification"
+            ),
+            (
+                "    BLOCKED_BY="
+                "SELFTEST_NONIDENTICAL_PT_LOAD"
+            ),
+        ]
+
+        for required in status_required:
+            if required not in status:
+                raise SystemExit(
+                    "status activation surface missing: "
+                    f"{required}"
+                )
+
+        if status.count(
+            "CHECKPOINT_ID=SELFTEST-HW"
+        ) != 1:
+            raise SystemExit(
+                "status checkpoint marker count != 1"
+            )
+
+        print("TESTKIT_M4_ACTIVATION_SELF_TEST_VERSION=2")
         print("DISPOSABLE_AUTHORITY_ROOT=PASS")
         print("FAIL_CLOSED_PRECONDITIONS=PASS")
         print("HARDWARE_PENDING_TRANSITION=PASS")
@@ -417,6 +473,9 @@ def main() -> int:
         print("PREVIOUS_HARDWARE_AUTHORITY_PRESERVED=PASS")
         print("MACHINE_MIRROR_UPDATE=PASS")
         print("HUMAN_CHECKPOINT_RECORD=PASS")
+        print("STATUS_CURRENT_FOCUS_UPDATE=PASS")
+        print("STATUS_MACHINE_MIRROR_UPDATE=PASS")
+        print("CURRENT_CONTINUITY_FIVE_SURFACE_SET=PASS")
         print("IDEMPOTENT_SECOND_RUN=PASS")
         print("PS_TO_VNC_M4_ACTIVATION_SELF_TEST=PASS")
 
