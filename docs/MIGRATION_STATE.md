@@ -182,9 +182,9 @@ canonical machine-readable state.
     CURRENT_STAGE_STATUS=ARCHITECTURAL_NORMALIZATION
     CURRENT_WORKING_SOURCE=working/b4a/ps2ip.c
     CURRENT_SOURCE_HEAD=e37448e3375ddf0fb004ab797fb501f4a5ae7e12
-    LAST_HARDWARE_RESULT=M4H_PASS_MACHINE_AND_PHYSICAL
-    NEXT_ACTION=M4I-C2_HW2_direct_hardware_qualification
-    BLOCKED_BY=M4I_C2_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
+    LAST_HARDWARE_RESULT=M4I_C2_PASS_MACHINE_AND_PHYSICAL
+    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
+    BLOCKED_BY=NONE
 
 The canonical machine-readable source remains:
 
@@ -1344,7 +1344,7 @@ checkpoint passes independent machine and physical qualification.
 
     LAST_VALIDATED_ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
     NEXT_ACTION=M4I-C2_HW1_direct_hardware_qualification
-    BLOCKED_BY=M4I_C2_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
+    BLOCKED_BY=NONE
     CHECKPOINT_ID=M4I-C2-HW1
 
 ## M4I-C2 diagnostics identity serialization repair - hardware pending
@@ -1373,6 +1373,33 @@ The previous validated runtime remains authoritative until this
 checkpoint passes independent machine and physical qualification.
 
     LAST_VALIDATED_ELF_SHA256=6491424f81fe46c630863dcf13e2d4575c5a3925f5d5e704d6fdb8e47a8db3ac
-    NEXT_ACTION=M4I-C2_HW2_direct_hardware_qualification
-    BLOCKED_BY=M4I_C2_NONIDENTICAL_PT_LOAD_REQUIRES_HARDWARE
+    NEXT_ACTION=M4I-C_debug_reporting_boundary_census
+    BLOCKED_BY=NONE
     CHECKPOINT_ID=M4I-C2-HW2
+
+
+## M4I-C2 diagnostics debug state / transport — COMPLETE
+
+Qualified source generation:
+
+    SOURCE_COMMIT=e37448e3375ddf0fb004ab797fb501f4a5ae7e12
+    ELF_SHA256=144f668da0a3756ba4bd8f2fbfc3826983a1df6f5ea4ed0c44d2a1b0f45b2d93
+    PT_LOAD_SHA256=c0030d28dea593b056bc604f94a9bd68576ccfc0f79e688c694193045378e701
+
+Hardware qualification:
+
+    exact runtime identity = PASS
+    identity packets = 1 received / 1 parsed / 1 unique
+    five-mode machine regression = PASS 5/5
+    physical/operator result = FULL PASS
+    final display state = IDLE / 480p
+
+Hardware authority:
+
+    M4I_C2_HARDWARE_HEAD=3ff14f417ad6e8dae27ca91801f4a3c2d74e0c93
+    M4I_C2_HARDWARE_MANIFEST_SHA256=30fd61dea0b64c5fc841413d699f2ed2f9021db03d49925a03db3c8107947f52
+
+M4I_C2_HARDWARE_QUALIFICATION=PASS_MACHINE_AND_PHYSICAL
+
+NEXT_ACTION=M4I-C_debug_reporting_boundary_census
+BLOCKED_BY=NONE
