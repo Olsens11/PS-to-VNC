@@ -170,6 +170,37 @@ The contract matrix is regression-tested by:
 
     scripts/testkit/m4-authority-state-self-test.py
 
+## Pending-to-pending M4 checkpoint supersession
+
+When an M4 hardware-pending checkpoint is invalidated and replaced by another
+hardware-pending candidate, validate the replacement before changing live
+authority:
+
+    scripts/testkit/pending-supersession-self-test.py \
+        evidence/m4/<checkpoint>-activation/ACTIVATION.env
+
+The validator runs the canonical M4 hardware-checkpoint activator against
+disposable copies of the five continuity surfaces. It requires the candidate
+manifest to match the exact current pending checkpoint, proves the
+pending-to-pending transition, preserves last-validated runtime and previous
+direct-hardware authority, runs the shared M4 authority-state contract, proves
+activator idempotence, and verifies that the live five continuity surfaces
+remain byte-unchanged.
+
+Only after that disposable regression passes should
+`scripts/testkit/activate-m4-hardware-checkpoint.py` be used with the same
+manifest against live authority.
+
+## Side-effect-free Python static validation
+
+When repository cleanliness is itself a checked invariant, do not use
+`python -m py_compile` for a one-off static syntax check because it creates
+`__pycache__` bytecode artifacts.
+
+Use Python `compile()` on source text in memory instead. This validates syntax
+without changing the filesystem and avoids contaminating exact dirty-state
+preconditions.
+
 ## Successor / frozen-legacy Hardware TestKit bridge
 
 PS-to-VNC successor hardware runs use:

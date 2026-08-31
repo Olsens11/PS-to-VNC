@@ -1,0 +1,2 @@
+scripts/testkit/pending-supersession-self-test.py
+scripts/testkit/__pycache__/pending-supersession-self-test.cpython-311.pyc
