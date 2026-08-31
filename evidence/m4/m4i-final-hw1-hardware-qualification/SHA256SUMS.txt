@@ -1,0 +1,11 @@
+d6bc9b6c9db5726eca28bbe83a4fe6c59f22c85e0b00c2ecdb4f479317b2b5a4  ./ELF-IDENTITY-PROOF.txt
+f48dcffb1015c3540d8506468ae4a2c07c64b00082446a5681a2c28d0e86bde6  ./FINAL-TESTKIT-RESULT.txt
+c599a34c6d788ef69f8aa807702f00df39d88fe3b3bb5ae5d553778f7f55609e  ./FINAL-TESTKIT-STATUS.txt
+41a375a738edb5cbc4ac5f3c0095d88aa1ec4847610b797a1d245f350d4e992c  ./five-mode-regression-final-m4i/APPARATUS-COMMANDS.txt
+1d7fcd69d7c84f397b2f27e7437c5d5daf794184769b6c113771d398c07709a3  ./five-mode-regression-final-m4i/events.jsonl
+62580f9d6a05643b9d65c9346ecc7eec7f491dc306badb7a5dd83116feea6afa  ./five-mode-regression-final-m4i/iterations.tsv
+69d3af7502247dc14dc3d46a7f486a3788b5df542f05cda6edd03a85becea2ee  ./five-mode-regression-final-m4i/RUN.json
+78678825a90fa84968438fc0bfc3664287b971378ed3467189eaf8b2d3f6ae70  ./five-mode-regression-final-m4i/SUMMARY.txt
+6aad43611cee49f9dd5d7d6aa6331c2bd0b067e8c9a1959623244638b036dcce  ./HARDWARE-AUTHORITY.env
+a87bdcb504fc7623be0afbe45b14cf3c9ca6bb6bec6c20c088793aa11f0d3328  ./TOOLKIT-PROVENANCE.txt
+c2ad51083ccd9588f148a65fdd7ecdbdaf30d9fefe1539db198e040aaef81334  ./udp5999-telemetry.log
