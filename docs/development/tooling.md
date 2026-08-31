@@ -169,3 +169,53 @@ agree on the current source commit, next action, and blocker.
 The contract matrix is regression-tested by:
 
     scripts/testkit/m4-authority-state-self-test.py
+
+## Successor / frozen-legacy Hardware TestKit bridge
+
+PS-to-VNC successor hardware runs use:
+
+    scripts/testkit/legacy-hardware-bridge.py
+
+The bridge does not mutate or casually migrate the frozen PS2VNC repository.
+Instead it:
+
+1. requires a fully clean successor repository;
+2. requires the exact frozen legacy HEAD;
+3. requires the legacy tracked working tree and index to be unchanged;
+4. deliberately permits and preserves pre-existing untracked legacy
+   evidence/runtime artifacts;
+5. creates a persistent successor-rooted isolated workspace;
+6. copies the inherited legacy `scripts/testkit/` tree byte-for-byte and with
+   executable modes preserved;
+7. records bridge/TestKit provenance;
+8. runs inherited `verify-build.sh` before hardware-facing use.
+
+The bridge exposes:
+
+    prepare
+    verify
+    deploy-dry-run
+    start
+    status
+    watch
+    result
+
+A hardware manifest must be tracked in the successor repository before
+`prepare`. The isolated clone therefore has the same committed source,
+manifest, DUT evidence, and authority that the bridge is asked to validate.
+
+`deploy-dry-run` is explicitly non-networking because inherited
+`deploy-elf.sh` exits on `TESTKIT_DRY_RUN=1` before requiring `curl`.
+
+The regression authority is:
+
+    scripts/testkit/legacy-hardware-bridge-self-test.py
+
+The self-test proves both sides of the legacy immutability rule:
+
+- untracked legacy artifacts are accepted and preserved;
+- any tracked legacy mutation fails closed.
+
+Real hardware use still requires an explicit hardware manifest and a separate
+operator-authorized `start` invocation. Preparing or self-testing the bridge
+does not contact FTP or the PS2.

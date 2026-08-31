@@ -178,4 +178,8 @@ echo 'FIXTURE_IMMUTABLE=PASS'
 echo '[SELFTEST] M4 hardware-checkpoint activation'
 python3 scripts/testkit/activation-self-test.py
 
+echo '[SELFTEST] successor / frozen-legacy hardware bridge'
+
+./scripts/testkit/legacy-hardware-bridge-self-test.py
+
 echo 'PS_TO_VNC_TESTKIT_SELF_TEST=PASS'

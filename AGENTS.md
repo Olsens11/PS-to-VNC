@@ -165,3 +165,16 @@ TestKit self-test before first operational use and before commit.
 The historical repository at `/home/ps2/ps2vnc` remains immutable. Successor
 tooling may call its established TestKit utilities, but must never modify the
 legacy repository.
+
+## Frozen legacy repository immutability clarification
+
+For `/home/ps2/ps2vnc`, immutable means:
+
+- the required frozen Git HEAD must remain exact;
+- tracked working-tree content must remain unchanged;
+- the Git index must remain unchanged.
+
+Pre-existing untracked forensic, runtime, log, cache, and test artifacts are
+not tracked-source mutations. They must be preserved, must not be cleaned as
+part of ordinary PS-to-VNC work, and do not by themselves violate legacy
+immutability.

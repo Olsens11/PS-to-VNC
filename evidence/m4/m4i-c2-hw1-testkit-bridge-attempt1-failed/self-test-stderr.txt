@@ -1,0 +1,7 @@
+
+===== LIVE ELF IDENTITY =====
+
+ELF identity TEST_ID mismatch: expected=BRIDGE-SELFTEST observed=M4I-C2-HW1
+BRIDGE_ERROR=inherited verify-build failed for prepared workspace: /tmp/ps-to-vnc-bridge-selftest.mp95lnif/positive-workspaces/BRIDGE-SELFTEST-20260830-203602-6484
+
+self-test child command failed: /usr/bin/python3 /home/ps2/PS-to-VNC/scripts/testkit/legacy-hardware-bridge.py prepare fixture/HARDWARE.env --successor-root /tmp/ps-to-vnc-bridge-selftest.mp95lnif/successor --legacy-root /home/ps2/ps2vnc --legacy-head 5781f4f7105ee290fa77819d7b9ec96e833bd2b8 --workspace-root /tmp/ps-to-vnc-bridge-selftest.mp95lnif/positive-workspaces

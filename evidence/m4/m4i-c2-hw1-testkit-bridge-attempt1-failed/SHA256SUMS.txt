@@ -1,0 +1,4 @@
+a27ab48baf20b7aba1d1cbee80528c3efd2ac3db233099b7a5884e6cba60a466  CLASSIFICATION.env
+a389d4a7e6ccbced75d338d006f56c2267743fdc84f9bf4009a6b2803fd64dab  FAILURE.env
+0a9406e59f2132a0afcf811067b3ea2bf49fd6274cca78f0f5fd0eb52e2991ad  self-test-stderr.txt
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  self-test-stdout.txt
