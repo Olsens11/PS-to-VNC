@@ -75,3 +75,42 @@ Large one-off command packets remain appropriate for:
 - examining a state with no established procedure.
 
 They are not the normal interface for routine build/deploy/test work.
+
+## Toolkit-first rule
+
+Routine development mechanics are tooling responsibilities, not
+conversation-specific shell-generation responsibilities.
+
+Before writing bespoke commands for a repeated build, deploy, hardware,
+identity, evidence, fingerprint, observer, sealing, or similar procedure:
+
+1. inspect the existing project/TestKit tooling;
+2. reuse an established fail-closed tool when available;
+3. if a new one-off correction proves reliable and is generally reusable,
+   promote it into successor-owned tooling and test it before using that
+   procedure again.
+
+Novel forensic audits and genuinely one-time structural investigations may
+still use purpose-built commands when no reusable contract exists.
+
+Reusable shell helpers must pass shell syntax validation and the relevant
+TestKit self-test before they are trusted for an operational run. A tool failure
+is development-infrastructure evidence, not a DUT failure.
+
+The legacy `/home/ps2/ps2vnc` repository is immutable historical authority.
+New reusable helpers belong to PS-to-VNC and may delegate to the legacy
+TestKit without modifying it.
+
+## Cross-tool path boundaries
+
+A reusable tool that delegates file operands to another tool which may change
+its working directory must normalize those operands to absolute paths before
+delegation.
+
+This is especially important when successor tooling calls immutable legacy
+TestKit utilities from another repository. Relative paths are caller context;
+they must not be allowed to acquire a different meaning after the delegated
+tool changes directories.
+
+Relevant self-tests must exercise relative caller paths as well as absolute
+paths.

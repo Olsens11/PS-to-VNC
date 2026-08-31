@@ -146,3 +146,22 @@ Where applicable, completion includes:
 - reconciled repository state.
 
 See `CONTRIBUTING.md` and `docs/development/` for detailed policy.
+
+## Toolkit-first routine operations
+
+Before generating one-off shell or helper code for a routine build,
+deployment, hardware-test, identity, evidence, fingerprint, or other repeated
+development procedure, inspect the established tooling first and reuse a
+proven tool when one exists.
+
+When an ad-hoc recovery or correction produces a reliable procedure that is
+likely to recur and no equivalent canonical tool exists, promote that working
+procedure into reusable successor-owned tooling, test it, document it, and use
+the saved tool thereafter instead of regenerating the procedure.
+
+New or changed reusable shell tooling must pass `bash -n` and its relevant
+TestKit self-test before first operational use and before commit.
+
+The historical repository at `/home/ps2/ps2vnc` remains immutable. Successor
+tooling may call its established TestKit utilities, but must never modify the
+legacy repository.
