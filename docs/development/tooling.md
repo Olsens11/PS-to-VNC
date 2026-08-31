@@ -261,3 +261,16 @@ The self-test proves both sides of the legacy immutability rule:
 Real hardware use still requires an explicit hardware manifest and a separate
 operator-authorized `start` invocation. Preparing or self-testing the bridge
 does not contact FTP or the PS2.
+
+Real successor hardware manifests must also be validated through the successor
+bridge rather than by directly invoking the frozen legacy `verify-build.sh`
+against the successor manifest. `BUILD_BASE_HEAD` names successor Git
+authority; the same commit is not required to exist in the frozen legacy
+repository.
+
+The bridge owns this repository-context boundary: it creates an isolated
+successor-rooted repository, copies the inherited TestKit with exact
+provenance, and runs inherited `verify-build.sh` there. Direct legacy
+invocation is appropriate only for operations whose contract is independent of
+successor Git authority, such as verifying an identity blob from an absolute
+ELF path.
