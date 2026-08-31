@@ -178,6 +178,10 @@ echo 'FIXTURE_IMMUTABLE=PASS'
 echo '[SELFTEST] M4 hardware-checkpoint activation'
 python3 scripts/testkit/activation-self-test.py
 
+echo '[SELFTEST] runtime identity message serialization'
+
+./scripts/testkit/identity-runtime-message-self-test.sh
+
 echo '[SELFTEST] successor / frozen-legacy hardware bridge'
 
 ./scripts/testkit/legacy-hardware-bridge-self-test.py
