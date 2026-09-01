@@ -19,6 +19,7 @@ DICT_NAME = "SYMBOLS.md"
 EXCLUDED_PARTS = {"baseline", "evidence", "working", "build", ".git"}
 PLACEHOLDERS = {"todo", "tbd", "unknown", "placeholder", "describe me"}
 HEADER = ("Name", "Kind", "File", "Owner", "Scope", "Description", "Context")
+COVERAGE_STATES = {"IN_PROGRESS", "COMPLETE"}
 
 
 class DictionaryError(RuntimeError):
@@ -57,14 +58,17 @@ def unescape(cell: str) -> str:
     return cell.strip().replace("\\|", "|").replace("`", "")
 
 
-def parse_dictionary(path: Path, root: Path) -> tuple[str, list[Entry]]:
+def parse_dictionary(path: Path, root: Path) -> tuple[str, str, list[Entry]]:
     lines = path.read_text(encoding="utf-8").splitlines()
     directory = None
+    coverage = None
     entries: list[Entry] = []
     in_table = False
     for number, line in enumerate(lines, 1):
         if line.startswith("DIRECTORY="):
             directory = line.split("=", 1)[1].strip()
+        if line.startswith("COVERAGE="):
+            coverage = line.split("=", 1)[1].strip()
         if line.strip().startswith("| Name | Kind | File |"):
             cells = tuple(unescape(x) for x in line.strip().strip("|").split("|"))
             if cells != HEADER:
@@ -82,20 +86,26 @@ def parse_dictionary(path: Path, root: Path) -> tuple[str, list[Entry]]:
             in_table = False
     if not directory:
         raise DictionaryError(f"{path}: missing DIRECTORY metadata")
+    if coverage not in COVERAGE_STATES:
+        allowed = ", ".join(sorted(COVERAGE_STATES))
+        raise DictionaryError(f"{path}: COVERAGE must be one of {allowed}")
     expected = path.parent.relative_to(root).as_posix() or "."
     if directory != expected:
         raise DictionaryError(f"{path}: DIRECTORY={directory}, expected {expected}")
-    return directory, entries
+    return directory, coverage, entries
 
 
-def validate(root: Path) -> tuple[list[tuple[str, Path, list[Entry]]], set[Path]]:
+def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str, str, Path, list[Entry]]], set[Path]]:
     dictionaries = []
     covered: set[Path] = set()
     keys: set[tuple[str, str, str, str]] = set()
+    incomplete: list[str] = []
     for path in sorted(root.rglob(DICT_NAME)):
         if is_excluded(path, root):
             continue
-        directory, entries = parse_dictionary(path, root)
+        directory, coverage, entries = parse_dictionary(path, root)
+        if coverage != "COMPLETE":
+            incomplete.append(directory)
         if not entries:
             raise DictionaryError(f"{path}: dictionary has no entries")
         for entry in entries:
@@ -108,11 +118,12 @@ def validate(root: Path) -> tuple[list[tuple[str, Path, list[Entry]]], set[Path]
                 ) from exc
             if not source.is_file():
                 raise DictionaryError(f"{path}:{entry.line}: missing file {entry.file}")
-            if CLEAN_MARKER not in source.read_text(encoding="utf-8")[:2048]:
+            source_text = source.read_text(encoding="utf-8")
+            if CLEAN_MARKER not in source_text[:2048]:
                 raise DictionaryError(
                     f"{path}:{entry.line}: {entry.file} is not clean-generation source"
                 )
-            if not re.search(rf"(?<![A-Za-z0-9_]){re.escape(entry.name)}(?![A-Za-z0-9_])", source.read_text(encoding="utf-8")):
+            if not re.search(rf"(?<![A-Za-z0-9_]){re.escape(entry.name)}(?![A-Za-z0-9_])", source_text):
                 raise DictionaryError(
                     f"{path}:{entry.line}: stale symbol {entry.name} in {entry.file}"
                 )
@@ -125,11 +136,14 @@ def validate(root: Path) -> tuple[list[tuple[str, Path, list[Entry]]], set[Path]
                 raise DictionaryError(f"{path}:{entry.line}: duplicate entry {key}")
             keys.add(key)
             covered.add(Path(entry.file))
-        dictionaries.append((directory, path, entries))
+        dictionaries.append((directory, coverage, path, entries))
     missing = clean_files(root) - covered
     if missing:
         names = ", ".join(sorted(x.as_posix() for x in missing))
         raise DictionaryError(f"clean-generation files without dictionary entries: {names}")
+    if require_complete and incomplete:
+        names = ", ".join(sorted(incomplete))
+        raise DictionaryError(f"incomplete directory dictionaries: {names}")
     return dictionaries, covered
 
 
@@ -137,11 +151,11 @@ def render_portal(root: Path, dictionaries) -> str:
     lines = [
         "# Clean Source Symbol Dictionaries", "",
         "This portal is generated from directory-owned `SYMBOLS.md` files.", "",
-        "| Directory | Dictionary | Symbols |", "|---|---|---:|",
+        "| Directory | Dictionary | Coverage | Symbols |", "|---|---|---|---:|",
     ]
-    for directory, path, entries in dictionaries:
+    for directory, coverage, path, entries in dictionaries:
         rel = path.relative_to(root).as_posix()
-        lines.append(f"| `{directory}` | [`{rel}`](../../{rel}) | {len(entries)} |")
+        lines.append(f"| `{directory}` | [`{rel}`](../../{rel}) | {coverage} | {len(entries)} |")
     lines += ["", "Generate the comprehensive view with:", "", "```sh",
               "python3 scripts/source-dictionary.py aggregate", "```", ""]
     return "\n".join(lines)
@@ -150,13 +164,15 @@ def render_portal(root: Path, dictionaries) -> str:
 def render_aggregate(dictionaries) -> str:
     lines = ["# Comprehensive Clean Source Symbol Index", "",
              "Generated from directory-owned dictionaries; do not edit here.", ""]
-    for directory, _path, entries in dictionaries:
-        lines += [f"## `{directory}`", "", "| Name | Kind | File | Owner | Scope | Description | Context |",
+    for directory, coverage, _path, entries in dictionaries:
+        lines += [f"## `{directory}`", "", f"Coverage: `{coverage}`", "",
+                  "| Name | Kind | File | Owner | Scope | Description | Context |",
                   "|---|---|---|---|---|---|---|"]
-        for e in sorted(entries, key=lambda x: (x.file, x.owner, x.kind, x.name)):
-            vals = [e.name, e.kind, e.file, e.owner, e.scope, e.description, e.context]
-            vals = [v.replace("|", "\\|") for v in vals]
-            lines.append("| " + " | ".join(vals) + " |")
+        for entry in sorted(entries, key=lambda item: (item.file, item.owner, item.kind, item.name)):
+            values = [entry.name, entry.kind, entry.file, entry.owner, entry.scope,
+                      entry.description, entry.context]
+            values = [value.replace("|", "\\|") for value in values]
+            lines.append("| " + " | ".join(values) + " |")
         lines.append("")
     return "\n".join(lines)
 
@@ -166,17 +182,26 @@ def main() -> int:
     parser.add_argument("command", choices=("check", "portal", "aggregate"))
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--require-complete",
+        action="store_true",
+        help="fail if any directory dictionary still declares COVERAGE=IN_PROGRESS",
+    )
     args = parser.parse_args()
     try:
-        dictionaries, _ = validate(args.root.resolve())
+        dictionaries, _ = validate(args.root.resolve(), args.require_complete)
         if args.command == "check":
             print("SOURCE_DICTIONARIES=PASS")
             return 0
-        text = render_portal(args.root.resolve(), dictionaries) if args.command == "portal" else render_aggregate(dictionaries)
+        rendered = (
+            render_portal(args.root.resolve(), dictionaries)
+            if args.command == "portal"
+            else render_aggregate(dictionaries)
+        )
         if args.output:
-            args.output.write_text(text, encoding="utf-8")
+            args.output.write_text(rendered, encoding="utf-8")
         else:
-            sys.stdout.write(text)
+            sys.stdout.write(rendered)
         return 0
     except DictionaryError as exc:
         print(f"SOURCE_DICTIONARIES=FAIL: {exc}", file=sys.stderr)

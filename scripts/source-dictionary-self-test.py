@@ -19,9 +19,17 @@ def write(root: Path, relative: str, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def run(root: Path, expected: int, command: str = "check") -> str:
+def run(
+    root: Path,
+    expected: int,
+    command: str = "check",
+    require_complete: bool = False,
+) -> str:
+    arguments = ["python3", str(TOOL), command, "--root", str(root)]
+    if require_complete:
+        arguments.append("--require-complete")
     completed = subprocess.run(
-        ["python3", str(TOOL), command, "--root", str(root)],
+        arguments,
         check=False,
         text=True,
         stdout=subprocess.PIPE,
@@ -31,10 +39,11 @@ def run(root: Path, expected: int, command: str = "check") -> str:
     return completed.stdout
 
 
-def dictionary(rows: str) -> str:
-    return """# Symbols
+def dictionary(rows: str, coverage: str = "IN_PROGRESS") -> str:
+    return f"""# Symbols
 
 DIRECTORY=src/net
+COVERAGE={coverage}
 
 | Name | Kind | File | Owner | Scope | Description | Context |
 |---|---|---|---|---|---|---|
@@ -54,10 +63,18 @@ static int packet_count;
     write(root, "src/net/SYMBOLS.md", dictionary(row))
 
     assert "SOURCE_DICTIONARIES=PASS" in run(root, 0)
+    assert "incomplete directory dictionaries" in run(root, 1, require_complete=True)
+
+    write(root, "src/net/SYMBOLS.md", dictionary(row, coverage="COMPLETE"))
+    assert "SOURCE_DICTIONARIES=PASS" in run(root, 0, require_complete=True)
     portal_a = run(root, 0, "portal")
     portal_b = run(root, 0, "portal")
     assert portal_a == portal_b
     assert "src/net/SYMBOLS.md" in portal_a
+    assert "COMPLETE" in portal_a
+
+    write(root, "src/net/SYMBOLS.md", dictionary(row, coverage="UNVERIFIED"))
+    assert "COVERAGE must be one of" in run(root, 1)
 
     write(root, "src/net/SYMBOLS.md", dictionary(row + row))
     assert "duplicate entry" in run(root, 1)
