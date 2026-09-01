@@ -11,9 +11,9 @@ Development sessions begin with:
 - `PROJECT_INTENT.md` — seed of intent, reconstruction principles, development
   values, and the clean-rebuild strategy.
 - `status.md` — concise current human-readable state.
-- `../runtime/` — machine-readable migration-era/current state; preserved as
-  historical authority during the clean reconstruction transition until a new
-  state model is introduced deliberately.
+- `../runtime/PROJECT_STATE.env` — current machine-readable project state.
+- `../runtime/MIGRATION_STATE.env` — preserved migration-era machine authority.
+- `../runtime/` — additional machine-readable authority and historical state.
 
 ## Architecture
 

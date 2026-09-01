@@ -85,6 +85,8 @@ Development-continuity baseline version 1 remains active.
     DOCS_ROUTER=docs/README.md
     DEVELOPMENT_POLICY=docs/development/README.md
     PROJECT_INTENT=docs/PROJECT_INTENT.md
+    MACHINE_CURRENT_STATE=runtime/PROJECT_STATE.env
+    MIGRATION_STATE_ROLE=HISTORICAL_REFERENCE
 
 Repository authority remains more important than conversational memory.
 Historical evidence must be preserved rather than rewritten to fit the new

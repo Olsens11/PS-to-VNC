@@ -274,3 +274,49 @@ provenance, and runs inherited `verify-build.sh` there. Direct legacy
 invocation is appropriate only for operations whose contract is independent of
 successor Git authority, such as verifying an identity blob from an absolute
 ELF path.
+
+## Git authority on review branches
+
+The canonical project checks must be usable before a pull request is merged.
+
+For a published repository, `scripts/migration-check.sh` therefore recognizes
+two Git-authority classes:
+
+- the default branch must track and exactly match `origin/main`;
+- a development/review branch must track the same-named branch on `origin`,
+  contain the current `origin/main`, and must not be behind or divergent from
+  its upstream.
+
+A development branch may contain local commits ahead of its published upstream.
+This allows the canonical checks to validate a proposed commit before it is
+pushed.
+
+This is not permission for arbitrary detached or untracked development state.
+Missing upstreams, stale branches that do not contain current `origin/main`,
+branches behind their upstream, and divergent histories fail closed.
+
+## Current project state versus migration history
+
+Current clean-reconstruction machine state is:
+
+    runtime/PROJECT_STATE.env
+
+The completed exploratory migration/normalization state remains:
+
+    runtime/MIGRATION_STATE.env
+
+The latter is historical/reference authority and must not be rewritten merely
+to reflect a later strategic change in project direction.
+
+`scripts/resume-state.sh` reports current project state first while retaining
+the migration state as preserved exploratory authority.
+
+For compatibility:
+
+    scripts/resume-state.sh --field <name>
+
+continues to query migration-era state.
+
+Current project fields are queried explicitly with:
+
+    scripts/resume-state.sh --project-field <name>
