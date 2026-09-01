@@ -10,11 +10,13 @@ unit: \
 	$(BUILD_DIR)/config_text_test \
 	$(BUILD_DIR)/video_mode_test \
 	$(BUILD_DIR)/rfb_wire_test \
-	$(BUILD_DIR)/framebuffer_test
+	$(BUILD_DIR)/framebuffer_test \
+	$(BUILD_DIR)/rfb_session_test
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/video_mode_test
 	./$(BUILD_DIR)/rfb_wire_test
 	./$(BUILD_DIR)/framebuffer_test
+	./$(BUILD_DIR)/rfb_session_test
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -59,6 +61,20 @@ $(BUILD_DIR)/framebuffer_test: \
 		-I../src \
 		unit/framebuffer_test.c \
 		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/rfb_session_test: \
+	unit/rfb_session_test.c \
+	../src/rfb.c \
+	../src/rfb.h \
+	../src/rfb_io.h \
+	../src/rfb_session.c \
+	../src/rfb_session.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_session_test.c \
+		../src/rfb_session.c \
+		../src/rfb.c \
 		-o $@
 
 clean:

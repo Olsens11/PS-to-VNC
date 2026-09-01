@@ -1,0 +1,47 @@
+#ifndef PSTVNC_RFB_SESSION_H
+#define PSTVNC_RFB_SESSION_H
+
+#include <stdint.h>
+
+#include "rfb.h"
+
+#define PSTVNC_RFB_SESSION_TEXT_MAX 127u
+
+typedef enum pstvnc_rfb_session_state {
+    PSTVNC_RFB_SESSION_NEW = 0,
+    PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME,
+    PSTVNC_RFB_SESSION_FAILED
+} pstvnc_rfb_session_state_t;
+
+typedef enum pstvnc_rfb_session_error {
+    PSTVNC_RFB_SESSION_ERROR_NONE = 0,
+    PSTVNC_RFB_SESSION_ERROR_IO,
+    PSTVNC_RFB_SESSION_ERROR_PROTOCOL_VERSION,
+    PSTVNC_RFB_SESSION_ERROR_SERVER_REJECTED,
+    PSTVNC_RFB_SESSION_ERROR_SECURITY_NONE_UNAVAILABLE,
+    PSTVNC_RFB_SESSION_ERROR_SECURITY_RESULT,
+    PSTVNC_RFB_SESSION_ERROR_SERVER_INIT,
+    PSTVNC_RFB_SESSION_ERROR_GEOMETRY
+} pstvnc_rfb_session_error_t;
+
+typedef struct pstvnc_rfb_session {
+    int socket_fd;
+    pstvnc_rfb_session_state_t state;
+    pstvnc_rfb_session_error_t error;
+    unsigned int server_major;
+    unsigned int server_minor;
+    pstvnc_rfb_server_init_t server_init;
+    char desktop_name[PSTVNC_RFB_SESSION_TEXT_MAX + 1u];
+    char server_rejection[PSTVNC_RFB_SESSION_TEXT_MAX + 1u];
+} pstvnc_rfb_session_t;
+
+void pstvnc_rfb_session_init(
+    pstvnc_rfb_session_t *session);
+
+int pstvnc_rfb_session_start(
+    pstvnc_rfb_session_t *session,
+    int socket_fd,
+    uint16_t expected_width,
+    uint16_t expected_height);
+
+#endif

@@ -4,7 +4,7 @@
 
     WORKSTREAM=GITHUB_ISSUE_7
     PHASE=CLEAN_RECONSTRUCTION
-    CURRENT_TRANCHE=RFB_WIRE_AND_FRAMEBUFFER_FOUNDATION
+    CURRENT_TRANCHE=SCRIPTED_RFB_SESSION_FOUNDATION
     HOST_TESTABLE=YES
     PS2_BUILD_INTEGRATED=NO
     HARDWARE_QUALIFIED=NO
@@ -82,10 +82,6 @@ serialization that can be tested without PS2 hardware:
 `tests/unit/rfb_wire_test.c` byte-compares those messages against the qualified
 historical wire contract, including the first 704x462 full-frame request.
 
-This code contains no sockets, PS2SDK calls, graphics calls, recovery policy,
-controller logic, or global runtime state. It is intentionally a small protocol
-leaf, not a framework.
-
 ## Owned desktop framebuffer
 
 `src/framebuffer.c` / `src/framebuffer.h` introduce the first clean authoritative
@@ -119,13 +115,69 @@ only after it succeeds. Therefore:
 rectangle writes, dirty-union behavior, bounds/stride rejection, and explicit
 validity transitions.
 
+## Scripted RFB startup session
+
+`src/rfb_session.c` / `src/rfb_session.h` now express the first actual RFB session
+transition without owning platform socket mechanics.
+
+The startup session:
+
+- requires a syntactically valid RFB banner in the 3.8-or-later 3.x protocol
+  family and responds with the qualified 3.8 client banner;
+- consumes the complete server-rejection reason when security count is zero;
+- requires SecurityType None and successful SecurityResult;
+- sends shared ClientInit;
+- parses ServerInit and requires the fixed target geometry supplied by the
+  application;
+- consumes the complete desktop-name field while retaining only a bounded
+  diagnostic copy;
+- sends the qualified GS555 SetPixelFormat;
+- advertises Raw only;
+- sends the first non-incremental full-frame request;
+- transitions to `PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME` only after every prior
+  operation succeeds.
+
+A failure moves the session to `PSTVNC_RFB_SESSION_FAILED` with a typed failure
+class. The caller must treat that socket/stream as failed rather than attempting
+to continue from uncertain framing.
+
+`src/rfb_io.h` is intentionally a two-function direct-call seam:
+
+- `pstvnc_rfb_io_read_exact()`;
+- `pstvnc_rfb_io_write_exact()`.
+
+There are no callbacks, transport object hierarchy, or generalized dependency
+injection layer. Host tests link scripted implementations of those direct
+functions; the PS2 build will provide the real exact socket implementation.
+
+`tests/unit/rfb_session_test.c` scripts server bytes and proves both consumption
+and exact client output for:
+
+- the successful TigerVNC-compatible startup sequence;
+- SecurityType None absent;
+- explicit server rejection;
+- wrong ServerInit geometry;
+- desktop names longer than the retained diagnostic buffer, including complete
+  discard of the remainder so framing stays exact;
+- incompatible old protocol banner;
+- short/failed exact I/O.
+
+The successful script verifies the exact output sequence:
+
+    RFB 003.008\n
+    SecurityType None
+    shared ClientInit
+    GS555 SetPixelFormat
+    Raw SetEncodings
+    full 704x462 FramebufferUpdateRequest
+
 ## Deliberately not implemented yet
 
-- TCP/socket ownership and exact send/receive loops;
-- server rejection-reason consumption;
-- desktop-name bounded consumption;
-- Raw rectangle/session-message decoding into the owned framebuffer;
-- asynchronous server-message framing;
+- real TCP connect/close and PS2 exact send/receive loops;
+- Raw FramebufferUpdate rectangle/session-message decoding into the owned
+  framebuffer;
+- asynchronous legal server-message handling (Bell, colormap, cut text);
+- nonblocking live receive and safe-boundary application yield;
 - PS2 Ethernet/module initialization;
 - 480p GS presentation;
 - diagnostics/runtime ELF identity integration;
@@ -139,12 +191,12 @@ Those are added only when the previous layer is explicit and testable.
 
 ## Next implementation order
 
-1. add a small RFB session/transport layer with exact-length framing and one
-   socket owner;
-2. host-test handshake/session transitions with scripted byte streams where
-   practical;
-3. decode the first required complete Raw framebuffer into the owned framebuffer
-   and mark it valid only after the full-frame contract succeeds;
+1. decode the first required complete Raw FramebufferUpdate into the owned
+   framebuffer and mark it valid only after the full-frame contract succeeds;
+2. extend framing to consume the other legal asynchronous RFB server messages
+   without losing synchronization;
+3. implement the PS2 exact socket I/O/connect seam and one-socket-owner startup
+   path;
 4. wire the transport to the PS2 private Ethernet platform seam;
 5. wire the authoritative framebuffer to the fixed proven 480p presentation
    path;
@@ -153,4 +205,6 @@ Those are added only when the previous layer is explicit and testable.
 7. build and qualify the exact ELF on real PS2 hardware using the inherited
    TestKit/evidence rules.
 
-No host/unit result is a substitute for the final PT_LOAD and real-hardware gate.
+Nonblocking live servicing, safe-boundary benign yield, input, Hextile and
+recovery remain later layers. No host/unit result is a substitute for the final
+PT_LOAD and real-hardware gate.
