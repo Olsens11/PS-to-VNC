@@ -5,7 +5,7 @@
     AUDIT_WORKSTREAM=GITHUB_ISSUE_2
     INVENTORY_STRUCTURE=ACTIVE
     DETAILED_BEHAVIOR_AUDIT=IN_PROGRESS
-    COMPLETED_TRANCHE=B01_B06_EVIDENCE_SUPPORTED
+    COMPLETED_TRANCHE=B01_B09_EVIDENCE_SUPPORTED
 
 This is the top-level inventory of product behaviors and responsibilities that
 must be understood before the clean architecture is derived.
@@ -32,9 +32,9 @@ authority, not a module blueprint.
 | B04 | Framebuffer updates, rectangles, Raw/Hextile decode, and framebuffer validity | EVIDENCE_SUPPORTED | B4A/current decode path, legacy Test9/Test10 history, successor evidence snapshots |
 | B05 | GS/video presentation and framebuffer-to-display transfer | EVIDENCE_SUPPORTED | B4A/current presentation source, legacy Test14 interrupt campaign, M3/M4 display qualification |
 | B06 | Display modes, display transactions, geometry, and safe-area calibration | EVIDENCE_SUPPORTED | `src/video/`, B4A/current display/calibration source, M3/M4 five-mode hardware evidence |
-| B07 | Controller acquisition, pointer semantics, clicks, and logical actions | SEEDED | controller/input source, controller tests and diagnostics |
-| B08 | Keyboard, on-screen keyboard, modifiers, and text interaction | SEEDED | OSK/input/UI source and interaction history |
-| B09 | Menus, overlays, curtains, status presentation, and local UI flow | SEEDED | UI source, display-transition/UI evidence |
+| B07 | Controller acquisition, pointer semantics, clicks, and logical actions | EVIDENCE_SUPPORTED | B4A/current input source, recovered Test11 foundation, Test13I, F8J2/B4A input-curtain authority |
+| B08 | Keyboard, on-screen keyboard, modifiers, and text interaction | EVIDENCE_SUPPORTED | B4A/current OSK/key-event source, recovered Test11 keyboard/OSK foundation |
+| B09 | Menus, overlays, curtains, status presentation, and local UI flow | EVIDENCE_SUPPORTED | B4A/current UI source, B06 transaction evidence, F8J2/B4A curtain/input ownership evidence |
 | B10 | Human-readable configuration, validation, persistence, and bindings | SEEDED | configuration source/modules, config tests and migration evidence |
 | B11 | Manual refresh, recovery policy, reconnect mechanisms, and Pi management transactions | SEEDED | management/recovery source, rollback/recovery evidence |
 | B12 | Diagnostics, runtime identity, telemetry, profiling, and reporting | SEEDED | `src/diagnostics/`, identity/profiling evidence |
@@ -918,32 +918,210 @@ restored.
 
 ## B07 — Controller and pointer behavior
 
-**Maturity:** `SEEDED`
+**Maturity:** `EVIDENCE_SUPPORTED`
 
-Audit pending.
+Detailed audit: `docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md`.
 
-This domain includes controller hardware acquisition, logical button actions,
-pointer movement, click semantics, pause/ack behavior, chords, and configurable
-bindings.
+### Responsibility boundary
+
+B07 owns the physical controller/libpad owner, pointer/click/scroll response,
+controller-derived hotkey gestures, explicit libpad handoff, and publication of
+logical input actions. It does not own the local-menu state machine, OSK model,
+display reconstruction, or RFB socket itself.
+
+### Core behavior
+
+The current authority preserves precise D-pad mouse motion with delayed repeat
+and later acceleration, shaped fractional analog motion, Cross/Circle remote
+pointer buttons, Triangle+D-pad and L3+analog scrolling, transient keyboard
+chords, and generic multi-button hotkey arbitration.
+
+The gesture arbiter prevents growing/shrinking chords from accidentally firing
+subset actions and prevents desktop-only gestures begun under a local UI from
+becoming desktop shortcuts merely because the foreground changes before
+release.
+
+### libpad ownership and stale-state invalidation
+
+`controller_pad_pause_requested` / `controller_pad_pause_ack` implement a real
+ownership boundary: acknowledgement is published immediately before the
+controller's next libpad access, and no `padGetState()`/`padRead()` occurs while
+ownership is held elsewhere.
+
+On return, pre-handoff edge/button, D-pad, analog, scroll, hotkey, and quarantine
+state is cleared. Calibration may additionally require physical release before
+returning ownership. The B4A hostile-stick remote transition deliberately does
+not require neutral analog release; instead it relies on derived-state
+invalidation.
+
+The invariant is therefore **no pre-handoff state leaks into the next input
+context**, not “every handoff must wait for physical neutral.”
+
+### Hard remote transition
+
+Frozen B4A wraps B3C reconstruction with:
+
+    controller OFF
+      -> discard queued controller RFB
+      -> transition curtain / settle
+      -> display reconstruction
+      -> destination curtain / settle
+      -> coherent destination frame
+      -> controller ON
+
+The main-thread queue discard removes controller actions generated before the
+pause acknowledgement without touching the RFB receive stream. This makes the
+distinction between physical-input ownership and already-published logical
+input explicit.
+
+### Evidence
+
+Recovered legacy commit `007379b6d4daae87251381b790a7641abab8725d`
+marks Test11 input/keyboard history as a `PROVEN HISTORICAL FOUNDATION` built
+from preserved hardware-validated ELFs and known-good Test11L source. Test13I
+commit `eaa5976171132dc619ccd96ecb9366b704cadc53` records the later
+Triangle+D-pad wheel addition.
+
+Final mappings remain B4A/current authority; the Test11 document explicitly
+warns against reviving obsolete test mappings.
+
+B4A is preserved as a known tested historical DUT, and M0 states that its
+byte-identical reproduction inherits existing B4A hardware-validation evidence.
+The exact hard-curtain mechanism is source/diff authority; the successor does
+not contain a standalone imported B4A operator log, so this audit does not
+invent a more granular artifact.
+
+### Clean-rebuild implication
+
+Build a controller owner that emits logical actions through narrow interfaces.
+Preserve libpad handoff, derived-state invalidation, gesture arbitration, and
+pointer/scroll response, while modeling already-queued logical input separately
+from physical controller ownership.
 
 ## B08 — Keyboard and on-screen keyboard
 
-**Maturity:** `SEEDED`
+**Maturity:** `EVIDENCE_SUPPORTED`
 
-Audit pending.
+Detailed audit: `docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md`.
 
-This domain includes keyboard event generation, OSK navigation, modifier state,
-and interaction between local UI controls and remote keyboard input.
+### Responsibility boundary
+
+B08 owns RFB keyboard-event semantics and the local OSK model. B07 may request a
+logical key action; B09 determines when the OSK owns foreground input; B03 owns
+transport/session serialization.
+
+### Key-event and modifier semantics
+
+The qualified implementation sends explicit RFB KeyEvent down/up sequences with
+X11 keysyms. Modified taps explicitly bracket the target key with modifier
+down/up events through the shared serialized RFB output path.
+
+The OSK provides ABC and FUNC pages plus a permanent utility row:
+
+    ABC FUNC SHIFT CTRL ALT SPACE TAB BKSP DEL ENTER ESC
+
+Shift/Ctrl/Alt are deliberately one-shot. After the next real key action all
+latched modifiers clear. Printable Shift-layer characters and true extended
+modifier combinations remain distinct so the historical TigerVNC
+CapsLock/modifier-reconciliation problem is not reintroduced.
+
+### Local ownership behavior
+
+While the OSK is active, D-pad navigates, Cross activates, Triangle toggles
+Shift, Square sends Backspace, Start sends Enter, R1 sends Tab, and
+Circle/Select closes while clearing modifiers.
+
+Opening the OSK resets it to predictable page/selection/modifier state and
+releases any remotely held pointer button first.
+
+Local OSK navigation changes only PS2-local pixels. Historical code wakes a
+blocked incremental render loop with a one-pixel pointer jiggle; the durable
+requirement is a first-class local UI wake/invalidation path, not that specific
+hack.
+
+### Evidence and rebuild implication
+
+Recovered Test11, especially 11G and 11L, provides the historical keyboard/OSK
+foundation. Final B4A/current source supplies current mappings and interaction
+with later hotkey/UI behavior.
+
+The clean design should separate a small keyboard/RFB action layer from the OSK
+state model and from controller polling. Modifier lifetime and failure cleanup
+must be explicit.
 
 ## B09 — Local UI
 
-**Maturity:** `SEEDED`
+**Maturity:** `EVIDENCE_SUPPORTED`
 
-Audit pending.
+Detailed audit: `docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md`.
 
-This domain includes menus, overlays, transition curtains, current-state
-presentation, selection/focus behavior, and any UI state that exists
-independently of the remote desktop.
+### Responsibility boundary and precedence
+
+B09 owns local foreground/input context, menus, overlays, modal confirmation,
+transition curtains, restored acknowledgement, selection/focus, quarantine, and
+local presentation state.
+
+The current decision-tree precedence is:
+
+1. restored-display acknowledgement;
+2. display confirmation / provisional remote transition;
+3. System menu;
+4. Display Settings;
+5. ordinary desktop when OSK is hidden;
+6. OSK.
+
+The final architecture need not retain the historical `if/else` structure, but
+foreground ownership must remain equally unambiguous.
+
+### Local-input quarantine
+
+Buttons consumed by local UI remain quarantined until **physical release**.
+Closing a menu while Circle/X is still held therefore cannot reinterpret that
+same held state as a remote desktop click on the next poll.
+
+This ordinary context-transition mechanism complements B07's stronger libpad
+handoff/reset boundary.
+
+### System and display UI
+
+The System surface exposes Refresh VNC Session, Display Settings, and Exit to
+System Menu, including visible refresh/countdown state. A global System overlay
+may temporarily cover an ordinary OSK/Display Settings underlay without
+destroying it, but it cannot punch through a provisional display transaction or
+calibration/libpad boundary.
+
+Display Settings preserves the active-mode/calibration contract from B06:
+
+- active mode visibly marked CURRENT;
+- X active => `CALIBRATE <mode> SAFE AREA`;
+- X admitted inactive => switch;
+- X locked inactive => hard no-op;
+- active mode cannot be locked from the UI;
+- inactive switching stays disabled until authoritative lock policy is loaded;
+- Circle can return to a preserved System underlay.
+
+### Confirmation, curtain, and restored acknowledgement
+
+Risky local mode changes default to Go Back and expose Keep/Go Back plus the
+wall-clock auto-revert countdown owned by B06. Remote machine-owned provisional
+transactions use the same foreground input boundary but suppress human
+Keep/Go Back control while active.
+
+B4A's transition curtain prevents an incomplete hazardous reconstruction from
+being exposed as an interactive desktop. A coherent destination frame is
+presented before controller ownership returns.
+
+Human rollback can publish an explicit restored acknowledgement whose durable
+RESTORED state remains outstanding until ACK completes. Remote rollback may
+ACK automatically; if durable automatic ACK fails, the human acknowledgement is
+shown instead of hiding unresolved state.
+
+### Clean-rebuild implication
+
+Create an explicit local UI/foreground model consuming logical actions from B07
+and B08. Preserve quarantine, underlay, modal ownership, transition-curtain,
+and durable-ack semantics. Give local UI a direct repaint/wake mechanism rather
+than coupling correctness to remote framebuffer damage.
 
 ## B10 — Configuration and persistence
 
@@ -1021,11 +1199,16 @@ These are inputs to the audit, not conclusions about final module layout:
 - physical timing, logical desktop, presentation geometry, safe-area calibration,
   and persisted startup mode are different concepts;
 - a risky display change is a complete transaction, not a mode-register write;
+- controller correctness is an ownership problem across time, not only a
+  button-to-action mapping;
+- physical input ownership and already-published logical input are distinct;
+- locally consumed held buttons remain quarantined until release;
+- local UI rendering must not depend on unrelated remote framebuffer damage;
 - hardware-facing conclusions ultimately require physical PS2 qualification.
 
 ## Next audit action
 
-Audit B07, B08, and B09 together. Controller/pointer behavior, keyboard/OSK
-behavior, and local overlay/menu ownership share the same historical controller
-thread and input-quarantine boundaries, but the audit must still separate their
-product responsibilities.
+Audit B10 and B11 together. Configuration/persistence/bindings and
+recovery/management share Pi management endpoints and durable state, but the
+audit must preserve the already established policy-versus-mechanism,
+local-versus-Pi authority, and explicit-failure-versus-silent-stall distinctions.
