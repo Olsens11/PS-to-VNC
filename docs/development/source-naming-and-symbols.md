@@ -33,15 +33,30 @@ accomplishes, owns, excludes, and where its plain-language context lives.
 Internal comments explain invariants, authority, ordering, failure consequences,
 hardware assumptions, and rationale rather than narrating syntax.
 
-## Canonical dictionary
+## Directory-owned dictionaries
 
-The generated lookup surface is:
+Canonical descriptions live beside the clean source that owns them:
 
-    docs/reference/SOURCE_SYMBOL_INDEX.md
+    <clean-source-directory>/SYMBOLS.md
 
-Every maintained project-defined symbol receives its exact name, kind, language,
-defining file, owning function/module where applicable, scope, and a concise
-plain-language description. Contextual documentation is included where useful.
+Each dictionary covers symbols defined directly in its directory. Entries are
+grouped by defining file and owner so local names remain near their context.
+Moving a symbol between directories moves its canonical description as part of
+the same change.
+
+The lightweight generated portal is:
+
+    docs/reference/SOURCE_SYMBOL_DICTIONARIES.md
+
+It reports directory responsibilities, dictionary links, symbol counts, and
+validation status. A deterministic comprehensive Markdown view is generated on
+demand by `scripts/source-dictionary.py aggregate`; it is an output, not a
+second manually maintained authority.
+
+Every clean-generation project-defined symbol receives its exact name, kind,
+language, defining file, owning function/module where applicable, scope, and a
+concise plain-language description. Contextual documentation is included where
+useful.
 
 Coverage includes functions, parameters, local/file/global variables, types,
 structures, fields, enums and values, macros/constants, Python definitions and
@@ -67,10 +82,12 @@ generation boundary explicitly.
 
 ## Synchronization gate
 
-A saved successor-owned checker must fail for missing symbols, stale entries,
-ambiguous duplicates, empty/placeholder descriptions, or generated Markdown
-that differs from the committed index. Deterministic generator/checker fixtures
-must prove positive, missing, stale, duplicate, and excluded-tree cases before
+A saved successor-owned checker must fail for missing clean files or symbols,
+stale entries, cross-directory ownership violations, ambiguous duplicates,
+empty/placeholder descriptions, or generated portal output that differs from
+the committed portal. Directory-local checks may be used during editing; CI
+runs complete cross-directory validation. Deterministic fixtures must prove
+positive, missing, stale, duplicate, ownership, and excluded-tree cases before
 the checker joins `scripts/check.sh`.
 
 ## Retrofit completion

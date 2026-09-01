@@ -101,6 +101,13 @@ These documents describe how development itself is conducted and preserved.
 - retained historical decision material remains historical evidence until
   explicitly reconciled.
 
+## Source dictionaries
+
+- `reference/SOURCE_SYMBOL_DICTIONARIES.md` — generated portal for the
+  directory-owned clean-source dictionaries.
+- `development/source-naming-and-symbols.md` — governing naming, description,
+  scope, and validation policy.
+
 ## Testing and evidence
 
 Machine and hardware evidence lives under:
