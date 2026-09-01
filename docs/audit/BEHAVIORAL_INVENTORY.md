@@ -5,7 +5,7 @@
     AUDIT_WORKSTREAM=GITHUB_ISSUE_2
     INVENTORY_STRUCTURE=ACTIVE
     DETAILED_BEHAVIOR_AUDIT=IN_PROGRESS
-    FIRST_TRANCHE=B01_B04_EVIDENCE_SUPPORTED
+    COMPLETED_TRANCHE=B01_B06_EVIDENCE_SUPPORTED
 
 This is the top-level inventory of product behaviors and responsibilities that
 must be understood before the clean architecture is derived.
@@ -30,8 +30,8 @@ authority, not a module blueprint.
 | B02 | PS2-to-Pi Ethernet and networking | EVIDENCE_SUPPORTED | B4A/current source, frozen PS2IP dependency, early VNC baseline, legacy Test9/Test10/Test12 history |
 | B03 | RFB connection, handshake, negotiation, and session state | EVIDENCE_SUPPORTED | B4A/current RFB/recovery source, early VNC baseline, legacy Test12 recovery history |
 | B04 | Framebuffer updates, rectangles, Raw/Hextile decode, and framebuffer validity | EVIDENCE_SUPPORTED | B4A/current decode path, legacy Test9/Test10 history, successor evidence snapshots |
-| B05 | GS/video presentation and framebuffer-to-display transfer | SEEDED | B4A/current video code, `src/video/`, display evidence |
-| B06 | Display modes, display transactions, geometry, and safe-area calibration | SEEDED | display-mode source, M4 display evidence, historical hardware qualification |
+| B05 | GS/video presentation and framebuffer-to-display transfer | EVIDENCE_SUPPORTED | B4A/current presentation source, legacy Test14 interrupt campaign, M3/M4 display qualification |
+| B06 | Display modes, display transactions, geometry, and safe-area calibration | EVIDENCE_SUPPORTED | `src/video/`, B4A/current display/calibration source, M3/M4 five-mode hardware evidence |
 | B07 | Controller acquisition, pointer semantics, clicks, and logical actions | SEEDED | controller/input source, controller tests and diagnostics |
 | B08 | Keyboard, on-screen keyboard, modifiers, and text interaction | SEEDED | OSK/input/UI source and interaction history |
 | B09 | Menus, overlays, curtains, status presentation, and local UI flow | SEEDED | UI source, display-transition/UI evidence |
@@ -518,26 +518,403 @@ must be first-class. A legal asynchronous message, short read, malformed
 rectangle, or stale framebuffer may never be silently transformed into the next
 apparent freeze.
 
-## B05 — GS/video presentation
+## B05 — GS/video presentation and framebuffer-to-display transfer
 
-**Maturity:** `SEEDED`
+**Maturity:** `EVIDENCE_SUPPORTED`
 
-Audit pending.
+### Purpose
 
-The audit must separate the logical framebuffer produced by RFB decoding from
-PS2-specific GS/DMA/presentation mechanisms. Test14's reconstructed GS HSync
-interrupt discipline and the PS2SDK `ExitHandler()` workaround are priority
-evidence for this domain.
+Turn a coherent logical framebuffer produced by B04 into visible PS2 GS output.
+B05 owns PS2-specific display-backend mechanics, VRAM/presentation resources,
+draw/finish/flip semantics, and the HIRES scanline/HSync machinery. It does not
+own RFB parsing or the user-facing policy that chooses a display mode.
 
-## B06 — Display modes and calibration
+### Presentation backends
 
-**Maturity:** `SEEDED`
+The historical implementation supports two distinct backend families:
 
-Audit pending.
+- **STANDARD** — ordinary gsKit presentation for modes with a proven standard
+  rendering contract;
+- **HIRES** — gsKit HIRES/scanline-managed presentation for large/interlaced
+  modes and the high-resolution mode progression.
 
-This domain includes mode selection, mode persistence, transactions,
-confirmation/rollback behavior, logical versus presented geometry, safe-area
-calibration, and hardware-specific invariants.
+The mode catalog associates each mode with an allowed/default backend, but mode
+identity and backend identity are separate state. The presentation abstraction
+provides common semantic operations such as create/destroy, prepare desktop,
+draw, finish draw, flip, and memory-idle synchronization while mapping those
+operations to backend-specific mechanisms.
+
+For example, the qualified source maps finish-draw/flip differently for HIRES
+and STANDARD rather than pretending both backends have identical GS mechanics.
+That abstraction boundary is useful; the historical placement and global state
+are not automatically the clean architecture.
+
+### Framebuffer-to-presentation boundary
+
+B04 owns decoded framebuffer validity. B05 consumes coherent GS-ready pixels and
+prepares/publishes them through the active backend.
+
+A display reconstruction obtains an authoritative complete framebuffer before
+preparing and exposing a newly created GS presentation. Live incremental
+updates can then update/publish only the affected presentation regions when the
+backend supports it, but presentation-buffer coherency must be established
+before normal incremental traffic resumes.
+
+The clean design must keep these concepts distinct:
+
+- RFB pixel/rectangle validity;
+- EE framebuffer representation validity;
+- GS/VRAM presentation-buffer validity;
+- physical timing/scanout progress.
+
+### Test14 HIRES HSync failure
+
+Test14 provides hardware-grounded evidence for a real PS2-specific interrupt
+contract in the HIRES HSync callback.
+
+The observed vulnerable interval was:
+
+    current INTC_GS callback active
+        -> acknowledge/re-arm current HSINT early
+        -> continue ordinary callback work
+        -> another HSync reasserts CSR.HSINT
+        -> callback has not yet retired
+        -> terminal HIRES synchronization failure can occur
+
+The campaign demonstrated that the screen/display path could park while the
+controller thread remained responsive. It also demonstrated that the GS/EE
+synchronization path could be recovered in place; reboot was not intrinsically
+required to repair the subsystem.
+
+### Reconstructed and tested interrupt discipline
+
+The corrective discriminator was not a blind second ACK and was not prevention
+of HSync events. The validated discipline is:
+
+1. enter the `INTC_GS` HSync callback;
+2. suppress HSync interrupt **delivery** while the callback owns the current
+   transaction;
+3. acknowledge the current HSINT at the ordinary source-ACK location;
+4. perform normal scanline/pass accounting;
+5. preserve ordinary semaphore signaling;
+6. do not add a blind second HSINT acknowledgement near return;
+7. restore HSync delivery only after ordinary callback work is complete;
+8. keep restoration immediately adjacent to interrupt retirement;
+9. execute the required PS2SDK `ExitHandler()` sequence;
+10. return.
+
+Cg6 is the key mechanism discriminator: CSR.HSINT reasserted while HSync
+delivery remained masked, and healthy synchronization continued afterward.
+Therefore masking changes delivery timing; it does not suppress the physical
+HSync event/source assertion.
+
+### Source/destination interrupt state distinction
+
+The audit must preserve four distinct concepts:
+
+- GS CSR interrupt source condition/acknowledgement;
+- GS IMR source-delivery permission;
+- EE I_STAT destination request state;
+- EE I_MASK destination permission.
+
+Test14 rejected simpler explanations involving a forgotten ACK, an occupied
+I_STAT request, a disabled I_MASK bit, or CSR.HSINT first becoming stranded only
+after `ExitHandler()`.
+
+### `ExitHandler()` scope
+
+PS2SDK/homebrew practice requires `ExitHandler()` immediately before returning
+from an EE interrupt handler; the workaround shape includes `sync; ei`.
+Test14 preserved and qualified that requirement but did not recover a complete
+Sony cycle-by-cycle explanation of the ROM-kernel defect.
+
+This is a B05 platform mechanism, **not** B01 application exit.
+
+### Tested constants versus generalized rule
+
+The exact corrected PS2VNC state used:
+
+    GS_IMR 0x7f00 = HSync delivery masked
+    GS_IMR 0x7b00 = HSync delivery enabled
+
+Those constants describe the tested state. A clean/generalized presentation
+implementation must preserve unrelated GS interrupt permissions rather than
+blindly overwrite the entire mask register if other interrupt users coexist.
+
+### Hardware evidence
+
+- Test14 Cg5 remained healthy for 40 minutes of operator-observed use.
+- Test14 Cg6 sealed the source-reassertion-while-masked mechanism and continued
+  healthy synchronization for hundreds of frames afterward.
+- The production closeout subsequently recorded 127,159 frames over more than
+  16 hours with no recurrence of the Test14 720p failure, including more than
+  five hours of controlled high-change workload.
+- Successor M3/M4 hardware qualification repeatedly exercised the resulting
+  presentation mechanisms across the five principal display modes.
+
+### Invariants
+
+- visible-frame failure must not be assumed to mean the entire process or RFB
+  session is dead;
+- B05 consumes coherent framebuffer state; it does not silently repair protocol
+  corruption;
+- HIRES callback source acknowledgement and interrupt retirement form one
+  delivery transaction, not unrelated bit operations;
+- HSync delivery remains suppressed during the active HIRES callback work;
+- delivery is restored before `ExitHandler()`/return;
+- no blind second HSINT ACK is introduced without new evidence;
+- generalized mask handling preserves unrelated interrupt permissions;
+- presentation backend state is separate from mode-selection policy.
+
+### Primary authority
+
+- `working/b4a/ps2vnc_gsHires.c` — qualified HSync callback;
+- `working/b4a/ps2vnc_calibration_tail.inc` — backend presentation operations;
+- `working/b4a/ps2vnc_display_core.inc` — presentation reconstruction boundary;
+- legacy `docs/test14/TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md` and
+  associated Cg evidence;
+- successor M3/M4 display hardware evidence.
+
+### Clean-rebuild implication
+
+Create an explicit presentation responsibility whose public contract is about
+creating a backend, preparing/publishing coherent pixels, drawing/finishing,
+flipping, and waiting for presentation memory. Keep PS2-specific Standard and
+HIRES mechanics behind that boundary. Preserve the Test14 interrupt discipline
+as a qualified hardware invariant, while expressing mask changes in a way that
+can coexist safely with future GS interrupt users.
+
+## B06 — Display modes, transactions, geometry, and safe-area calibration
+
+**Maturity:** `EVIDENCE_SUPPORTED`
+
+### Purpose
+
+Own the product meaning of display configuration: available physical modes,
+backend choice/admission, remote desktop geometry, presented desktop rectangle,
+safe-area calibration, persistence, risky-transition confirmation, rollback,
+and startup reconciliation.
+
+B06 coordinates B03 RFB resizing and B05 presentation reconstruction but should
+not own their internal transport or GS mechanisms.
+
+### Distinct geometry concepts
+
+The mode catalog explicitly establishes that these are separate concepts:
+
+1. **physical timing/raster geometry** — the GS output timing/raster;
+2. **GS drawing geometry** — the dimensions used by the selected presentation
+   backend;
+3. **RFB logical desktop geometry** — what TigerVNC is asked to render/send;
+4. **presented desktop rectangle** — x/y/width/height placing the logical
+   desktop within the physical raster;
+5. **safe-area calibration** — per-mode safe width/height and offsets used to
+   derive the guaranteed-visible presentation;
+6. **startup mode** — durable mode identity selected for future boots.
+
+Do not collapse these into one width/height pair. Historical 480i is an obvious
+example: physical NTSC 480i timing, 704x232 GS FRAME drawing geometry, and a
+704x464 RFB desktop are intentionally different.
+
+Likewise, a high-resolution physical output may remain at its native raster
+while TigerVNC is reduced to a calibrated guaranteed-visible logical desktop.
+
+### Mode catalog and backend policy
+
+`src/video/mode.c` is the normalized catalog for named modes and captures
+physical GS timing, raster dimensions, Standard/HIRES geometry, backend support,
+and menu grouping.
+
+The catalog contains more exploratory/survey modes than the five-mode hardware
+regression. Catalog presence is therefore not equivalent to hardware
+qualification. The repeatedly qualified principal matrix is:
+
+    480i, 480p-hires, 576i, 720p, 1080i
+
+480p Standard is also a historically proven contract used as reference for
+480p-hires geometry, but the audit keeps exact qualification claims tied to the
+specific evidence set rather than promoting every catalog entry automatically.
+
+### Display switch transaction
+
+A mode switch is not a register write. The qualified reconstruction path:
+
+1. resolves/validates the target mode and presented rectangle before touching
+   the current display;
+2. serializes RFB ownership and flushes queued controller-originated RFB data;
+3. destroys the old presentation and creates the target backend/mode;
+4. re-advertises ExtendedDesktopSize capability;
+5. derives the target logical RFB desktop from the presented geometry;
+6. requests/confirms the TigerVNC desktop resize when needed;
+7. publishes the new logical/presented geometry and locks it;
+8. requests a complete Raw authoritative framebuffer for that target geometry;
+9. receives it under the strict full-frame contract;
+10. prepares the desktop/OSK in the new presentation backend;
+11. restores normal live RFB encoding;
+12. explicitly presents a coherent destination frame before normal interaction
+    resumes.
+
+The remote/backdoor transition wrapper additionally takes controller/libpad
+ownership, discards stale queued input, shows a transition curtain in source and
+destination timing, and inserts settle periods around the hazardous
+reconstruction. Those exact UI timings are historical behavior; the durable
+invariant is that input and visible exposure do not race an incomplete display
+transaction.
+
+### Active-mode selection means calibration
+
+The user-facing Display Settings UI distinguishes active and inactive modes:
+
+- X on the **active** mode opens runtime safe-area calibration;
+- X on an inactive, admitted/unlocked mode requests a mode switch;
+- a locked inactive mode is a hard no-op for switching;
+- the active mode is not lockable from the UI.
+
+The main thread independently verifies that a calibration request still names
+the current active mode. A stale calibration request is never reinterpreted as
+a switch. After calibration, focus returns to the active row so X again means
+`Calibrate <mode> Safe Area`.
+
+The low-level switch owner also treats a same-mode switch request as a no-op;
+the intended user-facing path to same-mode work is calibration, not
+reinitializing the active timing.
+
+### Safe-area calibration and persistence
+
+Calibration is per mode and stores a safe rectangle/offset concept rather than
+blindly replacing physical raster dimensions. The persisted representation uses
+safe width/height/x/y values; presentation geometry is reconstructed from those
+values relative to the active mode's raster.
+
+Accepted calibration is valid for the current session even if persistence to
+the Pi fails. Persistence failure therefore should be visible/reportable but
+must not retroactively invalidate the pixels the user just accepted in the live
+session.
+
+Startup mode persistence is a separate operation represented by the named
+`startup_mode = <mode>` value. A mode that is explicitly kept after a risky
+transition becomes durable startup authority only after the Pi-side commit is
+acknowledged.
+
+### Confirmation and rollback
+
+A risky local display transition arms a real wall-clock confirmation deadline:
+
+    DISPLAY_CONFIRM_TIMEOUT_SECONDS = 30
+
+The default selection is **Go Back**. The deadline begins before the hazardous
+switch completes. While reconstruction is incomplete the confirmation UI may be
+hidden, but timeout can already publish rollback.
+
+If the main thread is still trapped inside the risky synchronous reconstruction
+when the deadline expires, the controller thread does **not** manipulate GS or
+RFB directly. The hard-stall fail-safe returns through the established OSDSYS
+process-replacement path, leaving the durable transaction provisional so startup
+reconciliation restores the previously confirmed authority.
+
+If the candidate is responsive:
+
+- **Keep** does not reconstruct the already-running candidate; it asks the Pi to
+  promote the complete provisional profile to confirmed/durable state;
+- commit failure returns ownership to the confirmation UI instead of silently
+  accepting an unpersisted candidate;
+- **Go Back**, Circle, timeout, or candidate failure reconstructs the complete
+  saved known-good profile.
+
+### Complete profile rollback
+
+Rollback restores more than the mode name. The saved known-good authority
+includes at least:
+
+- video mode;
+- presentation backend;
+- RFB logical desktop geometry;
+- presented output x/y/width/height;
+- safe-area width/height/offset state and bypass policy.
+
+If transport may be dirty, rollback first obtains a fresh synchronized RFB
+session. If the old stream is known to be at a clean message boundary, it may be
+reused. The previous display is reconstructed, safe-area state is restored as an
+independent component, and the complete resulting profile is verified before
+rollback is treated as successful.
+
+### Durable transaction state and startup reconciliation
+
+The historical durable display transaction has explicit states:
+
+    NONE
+    PROVISIONAL
+    COMMITTING
+    RESTORING
+    RESTORED
+
+The Pi-side state exists so a reboot/process replacement during a hazardous
+transition does not leave startup guessing whether candidate B or confirmed A
+owns authority.
+
+Startup preflight selects one complete authoritative profile and can advance an
+interrupted provisional/committing state into RESTORING. RFB handshake may
+temporarily accept the server's actual stale geometry so the system can converge
+TigerVNC back to the authoritative profile; temporary transport acceptance does
+not change display authority.
+
+RESTORED/acknowledgement is also explicit. A best-effort local rollback is not
+silently called globally successful if the management/durable state transition
+failed.
+
+### Hardware qualification
+
+The successor normalization campaign repeatedly exercised display transitions
+across the principal five-mode matrix. Final M4I-FINAL-HW1 recorded:
+
+- machine result: PASS 5/5;
+- physical result: FULL PASS;
+- operator result: FULL PASS;
+- sequence: 480i, 480p-hires, 576i, 720p, 1080i;
+- final persisted startup mode: 480p.
+
+This is direct hardware evidence that the integrated display-mode,
+transaction/geometry, presentation, and persistence mechanisms survived that
+matrix. It does not imply every exploratory VGA/alternate-refresh catalog entry
+was independently qualified.
+
+### Invariants
+
+- mode identity, backend, physical raster, RFB logical geometry, presented
+  rectangle, safe area, and startup persistence remain distinguishable state;
+- selecting the already-active mode enters calibration rather than reinitializing
+  the timing;
+- an unavailable/locked target cannot partially mutate the current display;
+- a candidate is not durable merely because it is visible;
+- confirmation timeout is wall-clock safety state, not tied to render-loop
+  progress;
+- rollback restores and verifies a complete known-good profile;
+- suspect RFB transport is replaced before rollback reconstruction;
+- input cannot leak across a hazardous display reconstruction boundary;
+- startup never guesses authority from whichever geometry TigerVNC happens to
+  report after an interrupted transaction;
+- hardware qualification claims remain mode/evidence-specific.
+
+### Primary authority
+
+- `src/video/mode.c` / `src/video/mode.h` — normalized mode catalog/semantics;
+- `working/b4a/ps2vnc_display_core.inc` — switch and rollback transaction;
+- `working/b4a/ps2vnc_display_tail.inc` — main-thread transaction owner;
+- `working/b4a/ps2vnc_ui_core.inc` / `ps2vnc_ui_tail.inc` — mode/calibration UI
+  semantics and confirmation deadline handling;
+- `working/b4a/ps2vnc_calibration_core.inc` / `ps2vnc_calibration_tail.inc` —
+  safe-area persistence, startup authority, geometry, and presentation helpers;
+- M3/M4 five-mode hardware evidence, especially M4I-FINAL-HW1.
+
+### Clean-rebuild implication
+
+Model a display profile explicitly rather than spreading its components across
+globals. Separate the mode catalog, safe-area calibration, durable startup
+choice, and risky-transition state machine from the B05 backend implementation
+and B03 RFB transport. The application should coordinate a display transaction
+through narrow operations and be able to state, at every point, which complete
+profile is authoritative and whether it is provisional, confirmed, or being
+restored.
 
 ## B07 — Controller and pointer behavior
 
@@ -641,11 +1018,14 @@ These are inputs to the audit, not conclusions about final module layout:
 - silent-freeze recovery policy must not be invented merely to make testing
   convenient;
 - PS2SDK `ExitHandler()` and application exit-to-OSDSYS are different concepts;
+- physical timing, logical desktop, presentation geometry, safe-area calibration,
+  and persisted startup mode are different concepts;
+- a risky display change is a complete transaction, not a mode-register write;
 - hardware-facing conclusions ultimately require physical PS2 qualification.
 
 ## Next audit action
 
-Audit B05 and B06 together because GS/video presentation, high-resolution
-interrupt behavior, display modes, geometry, calibration, and display
-transactions are tightly coupled in the historical evidence while still being
-distinct responsibilities.
+Audit B07, B08, and B09 together. Controller/pointer behavior, keyboard/OSK
+behavior, and local overlay/menu ownership share the same historical controller
+thread and input-quarantine boundaries, but the audit must still separate their
+product responsibilities.
