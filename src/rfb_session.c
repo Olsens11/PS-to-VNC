@@ -5,6 +5,16 @@
 #include "rfb_io.h"
 #include "rfb_session.h"
 
+#define PSTVNC_RFB_INITIAL_COVERAGE_BYTES \
+    ((PSTVNC_RFB_SESSION_MAX_FRAME_PIXELS + 7u) / 8u)
+
+/*
+ * Temporary parser scratch for the single main-thread-owned Issue #7 session.
+ * This is not product state: it is cleared before each strict initial frame and
+ * exists only to prove that every authoritative pixel is written exactly once.
+ */
+static uint8_t initial_frame_coverage[PSTVNC_RFB_INITIAL_COVERAGE_BYTES];
+
 static uint32_t read_be32(const uint8_t bytes[4])
 {
     return ((uint32_t)bytes[0] << 24) |
@@ -123,6 +133,35 @@ static int region_fits(
            (uint32_t)y + height <= framebuffer_height;
 }
 
+static int mark_initial_frame_coverage(
+    const pstvnc_framebuffer_t *framebuffer,
+    uint16_t x,
+    uint16_t y,
+    uint16_t width,
+    uint16_t height,
+    size_t *covered_pixels)
+{
+    uint16_t row;
+    uint16_t column;
+
+    for (row = 0; row < height; row++) {
+        for (column = 0; column < width; column++) {
+            size_t pixel_index =
+                (size_t)(y + row) * framebuffer->width + (x + column);
+            size_t byte_index = pixel_index >> 3;
+            uint8_t bit = (uint8_t)(1u << (pixel_index & 7u));
+
+            if ((initial_frame_coverage[byte_index] & bit) != 0)
+                return 0;
+
+            initial_frame_coverage[byte_index] |= bit;
+            (*covered_pixels)++;
+        }
+    }
+
+    return 1;
+}
+
 static int read_raw_row(
     pstvnc_rfb_session_t *session,
     uint16_t width)
@@ -213,9 +252,25 @@ static int receive_framebuffer_update(
             uint8_t update_header[3];
             uint16_t rectangle_count;
             uint16_t rectangle_index;
+            size_t covered_pixels = 0;
             size_t total_pixel_bytes = 0;
-            size_t required_pixel_bytes =
-                pstvnc_framebuffer_pixel_count(framebuffer) * 2u;
+            size_t framebuffer_pixels =
+                pstvnc_framebuffer_pixel_count(framebuffer);
+            size_t required_pixel_bytes = framebuffer_pixels * 2u;
+
+            if (require_full) {
+                size_t coverage_bytes;
+
+                if (framebuffer_pixels >
+                    PSTVNC_RFB_SESSION_MAX_FRAME_PIXELS)
+                    return fail_frame(
+                        session,
+                        framebuffer,
+                        PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_COVERAGE);
+
+                coverage_bytes = (framebuffer_pixels + 7u) / 8u;
+                memset(initial_frame_coverage, 0, coverage_bytes);
+            }
 
             if (!read_exact(
                     session->socket_fd,
@@ -279,6 +334,19 @@ static int receive_framebuffer_update(
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_RECTANGLE_BOUNDS);
 
+                if (require_full &&
+                    !mark_initial_frame_coverage(
+                        framebuffer,
+                        x,
+                        y,
+                        width,
+                        height,
+                        &covered_pixels))
+                    return fail_frame(
+                        session,
+                        framebuffer,
+                        PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_COVERAGE);
+
                 for (row = 0; row < height; row++) {
                     if (!read_raw_row(session, width))
                         return fail_frame(
@@ -311,11 +379,17 @@ static int receive_framebuffer_update(
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_SIZE);
 
+                if (covered_pixels != framebuffer_pixels)
+                    return fail_frame(
+                        session,
+                        framebuffer,
+                        PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_COVERAGE);
+
                 if (!pstvnc_framebuffer_mark_valid(framebuffer))
                     return fail_frame(
                         session,
                         framebuffer,
-                        PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_SIZE);
+                        PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_COVERAGE);
             }
 
             session->error = PSTVNC_RFB_SESSION_ERROR_NONE;

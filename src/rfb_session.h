@@ -8,6 +8,8 @@
 
 #define PSTVNC_RFB_SESSION_TEXT_MAX 127u
 #define PSTVNC_RFB_SESSION_MAX_ROW_PIXELS 1920u
+/* Fixed Issue #7 baseline ceiling; expand deliberately with later display work. */
+#define PSTVNC_RFB_SESSION_MAX_FRAME_PIXELS (704u * 462u)
 
 typedef enum pstvnc_rfb_session_state {
     PSTVNC_RFB_SESSION_NEW = 0,
@@ -30,6 +32,7 @@ typedef enum pstvnc_rfb_session_error {
     PSTVNC_RFB_SESSION_ERROR_UNSUPPORTED_ENCODING,
     PSTVNC_RFB_SESSION_ERROR_RECTANGLE_BOUNDS,
     PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_SIZE,
+    PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_COVERAGE,
     PSTVNC_RFB_SESSION_ERROR_ROW_WIDTH
 } pstvnc_rfb_session_error_t;
 
