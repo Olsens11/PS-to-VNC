@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "app.h"
 #include "diagnostics.h"
 #include "display.h"
 #include "framebuffer.h"
