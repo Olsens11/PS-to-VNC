@@ -7,6 +7,11 @@
 #include "../display.h"
 #include "ps2_graphics.h"
 
+/*
+ * This module owns the PS2 presentation resources. The application supplies
+ * completed pixels, but it neither allocates GS VRAM nor manipulates gsKit
+ * state directly.
+ */
 static GSGLOBAL *display;
 static GSTEXTURE desktop_texture;
 static int texture_configured;
@@ -22,6 +27,11 @@ static void configure_texture(const uint16_t *gs_pixels)
     desktop_texture.Filter = GS_FILTER_NEAREST;
     desktop_texture.VramClut = 0;
 
+    /*
+     * Allocate the texture's VRAM address once. Each presentation uploads new
+     * EE-side pixels into that same GS allocation rather than accumulating a
+     * new texture allocation per framebuffer update.
+     */
     desktop_texture.Vram = gsKit_vram_alloc(
         display,
         gsKit_texture_size(
@@ -52,6 +62,11 @@ int pstvnc_ps2_graphics_init(void)
     if (display == NULL)
         return -1;
 
+    /*
+     * Issue #7 fixes one known-safe presentation contract: physical DTV 480p
+     * with a 704x462 logical desktop. Mode selection, calibration, and
+     * transaction/rollback policy intentionally remain outside this baseline.
+     */
     display->Mode = GS_MODE_DTV_480P;
     display->Interlace = GS_NONINTERLACED;
     display->Field = GS_FRAME;
@@ -96,6 +111,11 @@ int pstvnc_ps2_graphics_present(
     else
         desktop_texture.Mem = (u32 *)gs_pixels;
 
+    /*
+     * Upload and draw a complete coherent desktop on every dirty update. This
+     * deliberately favors a simple authoritative path over historical partial
+     * or direct-to-GS optimizations that could make CPU and GS state disagree.
+     */
     gsKit_texture_upload(display, &desktop_texture);
 
     gsKit_clear(display, clear_color);
@@ -113,6 +133,10 @@ int pstvnc_ps2_graphics_present(
         1,
         texture_color);
 
+    /*
+     * Queue execution submits the draw; synchronized flip makes completion the
+     * presentation boundary before the application reuses the EE-side buffer.
+     */
     gsKit_queue_exec(display);
     gsKit_sync_flip(display);
     return 0;

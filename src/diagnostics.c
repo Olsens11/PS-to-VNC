@@ -9,6 +9,11 @@
 #define PSTVNC_DIAGNOSTICS_HOST_IPV4 "192.168.50.1"
 #define PSTVNC_DIAGNOSTICS_UDP_PORT 5999
 
+/*
+ * Diagnostics owns only this optional UDP transport. Product readiness and
+ * failure decisions remain with the coordinator; losing telemetry must not
+ * become a hidden dependency of ordinary VNC operation.
+ */
 static int diagnostics_socket = -1;
 static struct sockaddr_in diagnostics_address;
 
@@ -41,6 +46,11 @@ int pstvnc_diagnostics_send(const void *data, size_t length)
     if (diagnostics_socket < 0 || data == NULL || length == 0)
         return -1;
 
+    /*
+     * One sendto() corresponds to one observer datagram. The linker wraps this
+     * call in qualified builds so the deterministic runtime identity packet is
+     * attempted immediately before the first diagnostic payload.
+     */
     return (int)sendto(
         diagnostics_socket,
         data,

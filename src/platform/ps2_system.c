@@ -9,6 +9,11 @@
 
 int pstvnc_ps2_system_prepare_iop(void)
 {
+    /*
+     * Resetting the IOP discards whatever module/RPC state the launching
+     * environment left behind. Re-establishing that foundation makes startup
+     * deterministic before PS-to-VNC loads its own network modules.
+     */
     sceSifInitRpc(0);
 
     while (!SifIopReset("", 0)) {

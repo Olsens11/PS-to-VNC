@@ -23,6 +23,12 @@ extern unsigned int size_SMAP_irx;
 
 #define PSTVNC_PS2_RFB_RX_BUFFER_SIZE 32768u
 
+/*
+ * TCP is a byte stream: one recv() need not equal one RFB field or message.
+ * This private buffer lets the protocol layer request exact byte counts without
+ * depending on packet boundaries. It belongs to the single main-thread socket
+ * owner and is reset whenever that socket identity changes.
+ */
 static unsigned char rfb_rx_buffer[PSTVNC_PS2_RFB_RX_BUFFER_SIZE];
 static size_t rfb_rx_pos;
 static size_t rfb_rx_end;
@@ -58,6 +64,11 @@ int pstvnc_ps2_network_init(void)
     struct ip4_addr netmask;
     struct ip4_addr gateway;
 
+    /*
+     * These embedded IOP modules form the qualified PS2 Ethernet stack. Their
+     * load order is a hardware/platform invariant: DEV9 hardware support,
+     * network-manager abstraction, then the SMAP Ethernet driver.
+     */
     if (SifExecModuleBuffer(
             DEV9_irx,
             size_DEV9_irx,
@@ -85,6 +96,11 @@ int pstvnc_ps2_network_init(void)
     if (NetManInit() < 0)
         return -1;
 
+    /*
+     * The first clean milestone uses a deliberately fixed private link. The PS2
+     * is .2 and the directly attached Pi is both peer and gateway at .1; DHCP
+     * and portable network configuration are later product responsibilities.
+     */
     IP4_ADDR(&local_ip, 192, 168, 50, 2);
     IP4_ADDR(&netmask, 255, 255, 255, 0);
     IP4_ADDR(&gateway, 192, 168, 50, 1);
@@ -101,6 +117,11 @@ int pstvnc_ps2_network_wait_link(void)
     int thread_id = GetThreadId();
     int retry_cycles;
 
+    /*
+     * Sleep through bounded alarm-driven intervals rather than busy-spinning
+     * the EE. Failure remains explicit after the startup allowance; this is not
+     * the silent-stall auto-recovery policy deferred during debugging.
+     */
     for (retry_cycles = 0; !link_is_up(); retry_cycles++) {
         if (SetAlarm(1000 * 16, &link_wait_alarm, &thread_id) < 0)
             return -1;
@@ -166,6 +187,11 @@ int pstvnc_rfb_io_read_exact(
     if (rfb_rx_socket != socket_fd)
         reset_rfb_rx(socket_fd);
 
+    /*
+     * Satisfy the caller's protocol-sized request even when TCP returns fewer
+     * or more bytes than requested. Extra received bytes stay buffered for the
+     * next exact read, preserving RFB framing.
+     */
     while (done < count) {
         size_t available = rfb_rx_end - rfb_rx_pos;
 
@@ -218,6 +244,11 @@ int pstvnc_rfb_io_write_exact(
     if (socket_fd < 0 || (buffer == NULL && count != 0))
         return -1;
 
+    /*
+     * A successful send() may still accept only part of the message. Continue
+     * until every byte is owned by the socket or fail the synchronized session;
+     * a truncated RFB client message cannot be treated as success.
+     */
     while (done < count) {
         int sent = send(
             socket_fd,

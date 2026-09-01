@@ -2,6 +2,12 @@
 
 #include "rfb.h"
 
+/*
+ * This file is the pure wire-format layer: it translates fixed RFB byte
+ * layouts but owns no socket, session state, framebuffer, or recovery policy.
+ * Keeping it side-effect free makes protocol details host-testable.
+ */
+
 static uint16_t read_be16(const uint8_t *bytes)
 {
     return (uint16_t)(((uint16_t)bytes[0] << 8) | bytes[1]);
@@ -129,6 +135,11 @@ int pstvnc_rfb_parse_server_init(
 void pstvnc_rfb_build_set_pixel_format_gs555(
     uint8_t out[PSTVNC_RFB_SET_PIXEL_FORMAT_SIZE])
 {
+    /*
+     * Request little-endian 16-bpp/depth-15 true color with five bits per
+     * channel. Shifts 0/5/10 produce B5:G5:R5, matching the PS2 CT16 color bits
+     * and avoiding a per-pixel channel rearrangement during presentation.
+     */
     static const uint8_t message[PSTVNC_RFB_SET_PIXEL_FORMAT_SIZE] = {
         0, 0, 0, 0,
         16, 15, 0, 1,
@@ -145,6 +156,11 @@ void pstvnc_rfb_build_set_pixel_format_gs555(
 void pstvnc_rfb_build_set_encodings_raw(
     uint8_t out[PSTVNC_RFB_SET_ENCODINGS_RAW_SIZE])
 {
+    /*
+     * Raw is the only advertised encoding for the qualification baseline. This
+     * keeps the first hardware result independent of Hextile and other
+     * performance paths that will be restored as separate capabilities.
+     */
     static const uint8_t message[PSTVNC_RFB_SET_ENCODINGS_RAW_SIZE] = {
         2, 0,
         0, 1,
