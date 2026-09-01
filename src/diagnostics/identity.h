@@ -2,6 +2,9 @@
  * File synopsis:
  * Declares stable runtime-identity formatting and stamping constants, not
  * application or experiment policy.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Clean diagnostics and
+ * deterministic runtime identity"; docs/reconstruction/ISSUE7_DUT_MANIFEST.md.
  */
 
 #ifndef PSTVNC_DIAGNOSTICS_IDENTITY_H

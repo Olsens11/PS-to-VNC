@@ -2,6 +2,9 @@
  * File synopsis:
  * Declares PS2 private-link and socket lifecycle operations while leaving RFB
  * semantics to the protocol layer.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "PS2 system and
+ * private-Ethernet platform seam".
  */
 
 #ifndef PSTVNC_PS2_NETWORK_H

@@ -2,6 +2,9 @@
  * File synopsis:
  * Implements the authoritative CPU-side desktop image: geometry, validity,
  * rectangle writes, and conservative dirty bounds.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Owned authoritative
+ * framebuffer"; docs/CLEAN_ARCHITECTURE.md, "Desktop framebuffer".
  */
 
 #include <string.h>

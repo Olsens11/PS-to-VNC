@@ -2,6 +2,9 @@
  * File synopsis:
  * Implements the richer retained debug-stage model and UDP transport without
  * owning the application behavior being observed.
+ *
+ * Context: docs/CLEAN_ARCHITECTURE.md, "Diagnostics and runtime identity";
+ * docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md.
  */
 
 #include "diagnostics/debug.h"

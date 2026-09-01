@@ -2,6 +2,9 @@
  * File synopsis:
  * Declares the fixed Issue #7 display-conversion contract while hiding PS2
  * graphics mechanisms.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Fixed Standard 480p
+ * presentation"; docs/CLEAN_ARCHITECTURE.md, "Display model and presentation".
  */
 
 #ifndef PSTVNC_DISPLAY_H

@@ -2,6 +2,9 @@
  * File synopsis:
  * Owns qualified PS2 Ethernet startup, fixed private-link configuration, VNC
  * connection, and buffered exact RFB I/O.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "PS2 system and
+ * private-Ethernet platform seam".
  */
 
 #include <kernel.h>

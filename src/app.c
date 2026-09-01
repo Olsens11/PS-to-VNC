@@ -3,6 +3,10 @@
  * Runs the application coordinator: ordered startup, the live RFB/presentation
  * loop, failure policy, and owned cleanup. Subsystems retain their own private
  * mechanisms.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Complete application
+ * coordinator"; docs/CLEAN_ARCHITECTURE.md, "Application coordinator" and
+ * "Live loop".
  */
 
 #include "app.h"

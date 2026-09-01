@@ -2,6 +2,8 @@
  * File synopsis:
  * Declares the top-level coordinator entry point without exposing its private
  * subsystem state.
+ *
+ * Context: docs/CLEAN_ARCHITECTURE.md, "Application coordinator".
  */
 
 #ifndef PSTVNC_APP_H

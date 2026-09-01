@@ -2,6 +2,9 @@
  * File synopsis:
  * Owns the synchronized RFB handshake, requests, server-message framing, Raw
  * decoding, initial coverage proof, and fail-closed state.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Shared Raw
+ * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session".
  */
 
 #include <stddef.h>

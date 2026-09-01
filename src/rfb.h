@@ -2,6 +2,9 @@
  * File synopsis:
  * Defines RFB constants, parsed values, and pure wire helpers; sequencing and
  * transport live elsewhere.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "RFB connection and
+ * wire contract"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session".
  */
 
 #ifndef PSTVNC_RFB_H

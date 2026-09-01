@@ -1,6 +1,10 @@
 /*
  * File synopsis:
  * Owns deterministic IOP bootstrap and the final OSDSYS system-menu exit path.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "PS2 system and
+ * private-Ethernet platform seam"; docs/CLEAN_ARCHITECTURE.md, "PS2 platform
+ * mechanisms".
  */
 
 #include <iopcontrol.h>

@@ -2,6 +2,9 @@
  * File synopsis:
  * Implements pure RFB byte-layout parsing and construction without owning
  * transport, session state, framebuffer authority, or recovery.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "RFB connection and
+ * wire contract"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session".
  */
 
 #include <string.h>

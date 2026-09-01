@@ -2,6 +2,9 @@
  * File synopsis:
  * Declares minimal diagnostic transport; callers retain ownership of the state
  * they report.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Clean diagnostics and
+ * deterministic runtime identity".
  */
 
 #ifndef PSTVNC_DIAGNOSTICS_H

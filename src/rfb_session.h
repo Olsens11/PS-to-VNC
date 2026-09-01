@@ -2,6 +2,9 @@
  * File synopsis:
  * Defines session state, errors, bounded scratch storage, and lifecycle while
  * leaving recovery policy with the coordinator.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Shared Raw
+ * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session".
  */
 
 #ifndef PSTVNC_RFB_SESSION_H

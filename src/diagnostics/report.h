@@ -2,6 +2,9 @@
  * File synopsis:
  * Defines diagnostic report records and formatting entry points; originating
  * subsystems retain state ownership.
+ *
+ * Context: docs/CLEAN_ARCHITECTURE.md, "Diagnostics and runtime identity";
+ * docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md.
  */
 
 #ifndef PSTVNC_DIAGNOSTICS_REPORT_H

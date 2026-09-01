@@ -1,6 +1,10 @@
 /*
  * File synopsis:
  * Declares the PS2 system-lifecycle seam and hides IOP and OSDSYS mechanisms.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "PS2 system and
+ * private-Ethernet platform seam"; docs/CLEAN_ARCHITECTURE.md, "PS2 platform
+ * mechanisms".
  */
 
 #ifndef PSTVNC_PS2_SYSTEM_H

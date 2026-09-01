@@ -2,6 +2,9 @@
  * File synopsis:
  * Implements deterministic DUT identity emission using a stampable ELF blob
  * and a linker sendto wrapper before the first diagnostic datagram.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Clean diagnostics and
+ * deterministic runtime identity"; docs/reconstruction/ISSUE7_DUT_MANIFEST.md.
  */
 
 /*

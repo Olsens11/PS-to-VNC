@@ -2,6 +2,9 @@
  * File synopsis:
  * Provides process entry, delegates the product lifecycle to the coordinator,
  * and converges returns on the PS2 system menu.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Complete application
+ * coordinator"; docs/CLEAN_ARCHITECTURE.md, "Startup lifecycle".
  */
 
 #include "app.h"

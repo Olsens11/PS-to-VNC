@@ -2,6 +2,9 @@
  * File synopsis:
  * Implements the immutable video-mode catalog and lookup helpers without
  * activating any mode.
+ *
+ * Context: docs/CLEAN_ARCHITECTURE.md, "Display model and presentation";
+ * docs/audit/CROSS_DOMAIN_STATE_INTERFACES.md.
  */
 
 #include <string.h>

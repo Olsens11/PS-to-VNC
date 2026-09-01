@@ -2,6 +2,9 @@
  * File synopsis:
  * Implements the minimal best-effort UDP diagnostics transport. It observes
  * product activity but never decides readiness, failure, or recovery.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Clean diagnostics and
+ * deterministic runtime identity".
  */
 
 #include "diagnostics.h"

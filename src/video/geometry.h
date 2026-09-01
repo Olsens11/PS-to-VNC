@@ -2,6 +2,9 @@
  * File synopsis:
  * Defines raster rectangles and reusable geometry operations; display
  * transactions remain separate.
+ *
+ * Context: docs/CLEAN_ARCHITECTURE.md, "Display model and presentation" and
+ * "Stable cross-domain values".
  */
 
 #ifndef PSTVNC_VIDEO_GEOMETRY_H

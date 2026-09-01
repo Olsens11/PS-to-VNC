@@ -2,6 +2,9 @@
  * File synopsis:
  * Owns GS/dmaKit resources for fixed Standard 480p initialization, complete
  * CT16 texture presentation, synchronized flips, and shutdown.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Fixed Standard 480p
+ * presentation"; docs/CLEAN_ARCHITECTURE.md, "PS2 platform mechanisms".
  */
 
 #include <dmaKit.h>

@@ -2,6 +2,9 @@
  * File synopsis:
  * Converts a valid authoritative RFB framebuffer into GS-compatible CT16
  * presentation pixels without modifying remote authority.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Fixed Standard 480p
+ * presentation"; docs/CLEAN_ARCHITECTURE.md, "Display model and presentation".
  */
 
 #include "display.h"

@@ -2,6 +2,9 @@
  * File synopsis:
  * Defines PS2SDK-independent mode/backend values that describe capabilities
  * rather than live display authority.
+ *
+ * Context: docs/CLEAN_ARCHITECTURE.md, "Display model and presentation";
+ * docs/audit/CROSS_DOMAIN_STATE_INTERFACES.md.
  */
 
 #ifndef PSTVNC_VIDEO_MODE_H

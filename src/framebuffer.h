@@ -2,6 +2,9 @@
  * File synopsis:
  * Defines the desktop-framebuffer value and lifecycle so allocated storage,
  * trusted pixels, and dirty state remain distinct.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Owned authoritative
+ * framebuffer"; docs/CLEAN_ARCHITECTURE.md, "Desktop framebuffer".
  */
 
 #ifndef PSTVNC_FRAMEBUFFER_H

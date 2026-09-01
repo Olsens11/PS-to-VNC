@@ -2,6 +2,9 @@
  * File synopsis:
  * Defines exact-read/exact-write transport operations that preserve protocol
  * framing across arbitrary TCP packet boundaries.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "RFB connection and
+ * wire contract" and "PS2 system and private-Ethernet platform seam".
  */
 
 #ifndef PSTVNC_RFB_IO_H
