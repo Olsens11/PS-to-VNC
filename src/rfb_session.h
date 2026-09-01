@@ -3,13 +3,16 @@
 
 #include <stdint.h>
 
+#include "framebuffer.h"
 #include "rfb.h"
 
 #define PSTVNC_RFB_SESSION_TEXT_MAX 127u
+#define PSTVNC_RFB_SESSION_MAX_ROW_PIXELS 1920u
 
 typedef enum pstvnc_rfb_session_state {
     PSTVNC_RFB_SESSION_NEW = 0,
     PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME,
+    PSTVNC_RFB_SESSION_READY,
     PSTVNC_RFB_SESSION_FAILED
 } pstvnc_rfb_session_state_t;
 
@@ -21,7 +24,13 @@ typedef enum pstvnc_rfb_session_error {
     PSTVNC_RFB_SESSION_ERROR_SECURITY_NONE_UNAVAILABLE,
     PSTVNC_RFB_SESSION_ERROR_SECURITY_RESULT,
     PSTVNC_RFB_SESSION_ERROR_SERVER_INIT,
-    PSTVNC_RFB_SESSION_ERROR_GEOMETRY
+    PSTVNC_RFB_SESSION_ERROR_GEOMETRY,
+    PSTVNC_RFB_SESSION_ERROR_UNSUPPORTED_SERVER_MESSAGE,
+    PSTVNC_RFB_SESSION_ERROR_EMPTY_UPDATE,
+    PSTVNC_RFB_SESSION_ERROR_UNSUPPORTED_ENCODING,
+    PSTVNC_RFB_SESSION_ERROR_RECTANGLE_BOUNDS,
+    PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_SIZE,
+    PSTVNC_RFB_SESSION_ERROR_ROW_WIDTH
 } pstvnc_rfb_session_error_t;
 
 typedef struct pstvnc_rfb_session {
@@ -33,6 +42,7 @@ typedef struct pstvnc_rfb_session {
     pstvnc_rfb_server_init_t server_init;
     char desktop_name[PSTVNC_RFB_SESSION_TEXT_MAX + 1u];
     char server_rejection[PSTVNC_RFB_SESSION_TEXT_MAX + 1u];
+    uint16_t row_scratch[PSTVNC_RFB_SESSION_MAX_ROW_PIXELS];
 } pstvnc_rfb_session_t;
 
 void pstvnc_rfb_session_init(
@@ -43,5 +53,9 @@ int pstvnc_rfb_session_start(
     int socket_fd,
     uint16_t expected_width,
     uint16_t expected_height);
+
+int pstvnc_rfb_session_receive_initial_frame(
+    pstvnc_rfb_session_t *session,
+    pstvnc_framebuffer_t *framebuffer);
 
 #endif

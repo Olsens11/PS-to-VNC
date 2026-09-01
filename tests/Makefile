@@ -11,12 +11,14 @@ unit: \
 	$(BUILD_DIR)/video_mode_test \
 	$(BUILD_DIR)/rfb_wire_test \
 	$(BUILD_DIR)/framebuffer_test \
-	$(BUILD_DIR)/rfb_session_test
+	$(BUILD_DIR)/rfb_session_test \
+	$(BUILD_DIR)/rfb_initial_frame_test
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/video_mode_test
 	./$(BUILD_DIR)/rfb_wire_test
 	./$(BUILD_DIR)/framebuffer_test
 	./$(BUILD_DIR)/rfb_session_test
+	./$(BUILD_DIR)/rfb_initial_frame_test
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -69,12 +71,32 @@ $(BUILD_DIR)/rfb_session_test: \
 	../src/rfb.h \
 	../src/rfb_io.h \
 	../src/rfb_session.c \
-	../src/rfb_session.h | $(BUILD_DIR)
+	../src/rfb_session.h \
+	../src/framebuffer.c \
+	../src/framebuffer.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/rfb_session_test.c \
 		../src/rfb_session.c \
 		../src/rfb.c \
+		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/rfb_initial_frame_test: \
+	unit/rfb_initial_frame_test.c \
+	../src/rfb.c \
+	../src/rfb.h \
+	../src/rfb_io.h \
+	../src/rfb_session.c \
+	../src/rfb_session.h \
+	../src/framebuffer.c \
+	../src/framebuffer.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_initial_frame_test.c \
+		../src/rfb_session.c \
+		../src/rfb.c \
+		../src/framebuffer.c \
 		-o $@
 
 clean:
