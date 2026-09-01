@@ -32,6 +32,7 @@ jobs:
             "$IMAGE" \
             -lc '
               set -eu
+              apk add --no-cache bash >/dev/null
               export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
               ./scripts/check-clean-ps2-compile.sh
             '
