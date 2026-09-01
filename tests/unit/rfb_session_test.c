@@ -171,6 +171,46 @@ static void test_success(void)
     CHECK(memcmp(output + 42, full, sizeof(full)) == 0);
 }
 
+static void test_live_update_request(void)
+{
+    static const unsigned char incremental[10] = {
+        3, 1,
+        0, 0,
+        0, 0,
+        0x02, 0xc0,
+        0x01, 0xce
+    };
+    static const unsigned char full[10] = {
+        3, 0,
+        0, 0,
+        0, 0,
+        0x02, 0xc0,
+        0x01, 0xce
+    };
+    pstvnc_rfb_session_t session;
+
+    script_reset();
+    pstvnc_rfb_session_init(&session);
+    session.socket_fd = 7;
+    session.state = PSTVNC_RFB_SESSION_READY;
+    session.server_init.width = 704;
+    session.server_init.height = 462;
+
+    CHECK(pstvnc_rfb_session_request_update(&session, 1));
+    CHECK(output_size == sizeof(incremental));
+    CHECK(memcmp(output, incremental, sizeof(incremental)) == 0);
+
+    script_reset();
+    CHECK(pstvnc_rfb_session_request_update(&session, 0));
+    CHECK(output_size == sizeof(full));
+    CHECK(memcmp(output, full, sizeof(full)) == 0);
+
+    script_reset();
+    session.state = PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME;
+    CHECK(!pstvnc_rfb_session_request_update(&session, 1));
+    CHECK(output_size == 0);
+}
+
 static void test_none_missing(void)
 {
     static const unsigned char banner[12] = "RFB 003.008\n";
@@ -261,6 +301,7 @@ static void test_bad_version_and_short_io(void)
 int main(void)
 {
     test_success();
+    test_live_update_request();
     test_none_missing();
     test_server_rejection();
     test_geometry_mismatch();

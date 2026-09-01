@@ -450,6 +450,37 @@ int pstvnc_rfb_session_start(
     return 1;
 }
 
+int pstvnc_rfb_session_request_update(
+    pstvnc_rfb_session_t *session,
+    int incremental)
+{
+    uint8_t message[PSTVNC_RFB_FRAMEBUFFER_REQUEST_SIZE];
+
+    if (session == NULL ||
+        session->socket_fd < 0 ||
+        session->state != PSTVNC_RFB_SESSION_READY ||
+        session->server_init.width == 0 ||
+        session->server_init.height == 0)
+        return 0;
+
+    pstvnc_rfb_build_framebuffer_update_request(
+        message,
+        incremental,
+        0,
+        0,
+        session->server_init.width,
+        session->server_init.height);
+
+    if (!write_exact(
+            session->socket_fd,
+            message,
+            sizeof(message)))
+        return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
+
+    session->error = PSTVNC_RFB_SESSION_ERROR_NONE;
+    return 1;
+}
+
 int pstvnc_rfb_session_receive_initial_frame(
     pstvnc_rfb_session_t *session,
     pstvnc_framebuffer_t *framebuffer)

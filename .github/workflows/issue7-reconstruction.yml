@@ -36,3 +36,16 @@ jobs:
               export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
               ./scripts/check-clean-ps2-compile.sh
             '
+
+  ps2-link:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build linked clean Issue 7 ELF
+        run: ./scripts/build-issue7-clean.sh
+      - name: Preserve unqualified linked ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue7-unqualified-clean-elf
+          path: build/reconstruction/issue7/PS-to-VNC-Issue7.ELF
+          if-no-files-found: error

@@ -53,6 +53,8 @@ COMMON_FLAGS=(
 )
 
 SOURCES=(
+    src/main.c
+    src/app.c
     src/rfb.c
     src/framebuffer.c
     src/rfb_session.c

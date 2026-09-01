@@ -7,4 +7,10 @@
  */
 int pstvnc_ps2_system_prepare_iop(void);
 
+/*
+ * Converge to the ordinary PS2 system menu. If LoadExecPS2 unexpectedly
+ * returns, park the current thread rather than continuing in unknown state.
+ */
+void pstvnc_ps2_system_exit_to_menu(void);
+
 #endif

@@ -54,6 +54,15 @@ int pstvnc_rfb_session_start(
     uint16_t expected_width,
     uint16_t expected_height);
 
+/*
+ * Serialize and send one full-desktop FramebufferUpdateRequest on the owned
+ * synchronized session. The caller chooses full (0) or incremental (nonzero)
+ * service; ordinary Issue #7 live operation uses incremental requests.
+ */
+int pstvnc_rfb_session_request_update(
+    pstvnc_rfb_session_t *session,
+    int incremental);
+
 int pstvnc_rfb_session_receive_initial_frame(
     pstvnc_rfb_session_t *session,
     pstvnc_framebuffer_t *framebuffer);

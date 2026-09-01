@@ -1,5 +1,6 @@
 #include <iopcontrol.h>
 #include <iopheap.h>
+#include <kernel.h>
 #include <loadfile.h>
 #include <sbv_patches.h>
 #include <sifrpc.h>
@@ -30,4 +31,15 @@ int pstvnc_ps2_system_prepare_iop(void)
         return -1;
 
     return 0;
+}
+
+void pstvnc_ps2_system_exit_to_menu(void)
+{
+    LoadExecPS2("rom0:OSDSYS", 0, NULL);
+
+    /*
+     * Returning from OSDSYS launch is not a valid continuation path. Park the
+     * thread instead of running on in partially shut-down product state.
+     */
+    SleepThread();
 }
