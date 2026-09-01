@@ -100,7 +100,7 @@ def extract_build_authority() -> tuple[str, str]:
     return dep.group(1), image.group(1)
 
 
-def verify_hex_sha(name: str, value: str) -> None:
+def verify_hex_sha256(name: str, value: str) -> None:
     if re.fullmatch(r"[0-9a-f]{64}", value) is None:
         fail(f"{name} is not a lowercase SHA-256 value")
 
@@ -129,11 +129,12 @@ def main() -> int:
         fail("unexpected staged git diff output")
 
     head = git("rev-parse", "HEAD")
-    verify_hex_sha("SOURCE_COMMIT", head)
+    if re.fullmatch(r"[0-9a-f]{40}", head) is None:
+        fail("SOURCE_COMMIT is not a 40-character lowercase Git object ID")
 
     prep = parse_prep(prep_log)
     for key in SHA_KEYS:
-        verify_hex_sha(key, prep[key])
+        verify_hex_sha256(key, prep[key])
 
     if prep["IDENTITY_STAMP_REPRODUCIBLE"] != "YES":
         fail("preparation log does not prove reproducible stamping")
