@@ -1,0 +1,16 @@
+CAPTURED_AT=2026-08-31T19:36:15-04:00
+HOSTNAME=ps2box
+MODEL=Raspberry Pi 4 Model B Rev 1.5
+ARCH=armhf
+KERNEL=6.12.93+rpt-rpi-v8
+
+PRETTY_NAME="Raspbian GNU/Linux 12 (bookworm)"
+NAME="Raspbian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=raspbian
+ID_LIKE=debian
+HOME_URL="http://www.raspbian.org/"
+SUPPORT_URL="http://www.raspbian.org/RaspbianForums"
+BUG_REPORT_URL="http://www.raspbian.org/RaspbianBugs"

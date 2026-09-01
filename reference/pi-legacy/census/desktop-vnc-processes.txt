@@ -1,0 +1,3 @@
+15395     1 ps2      Xtigervnc       /usr/bin/Xtigervnc :1 -geometry 1280x720 -depth 24 -rfbport 5900 -SecurityTypes None -localhost no -AlwaysShared -ac -interface 192.168.50.1
+15410     1 ps2      openbox         /usr/bin/openbox
+15417     1 ps2      lxpanel         /usr/bin/lxpanel

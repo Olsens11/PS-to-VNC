@@ -1,0 +1,33 @@
+UNIT FILE                          STATE   PRESET
+apparmor.service                   enabled enabled
+avahi-daemon.service               enabled enabled
+bluetooth.service                  enabled enabled
+console-setup.service              enabled enabled
+containerd.service                 enabled enabled
+cron.service                       enabled enabled
+docker.service                     enabled enabled
+dphys-swapfile.service             enabled enabled
+e2scrub_reap.service               enabled enabled
+fake-hwclock.service               enabled enabled
+getty@.service                     enabled enabled
+hciuart.service                    enabled enabled
+keyboard-setup.service             enabled enabled
+ModemManager.service               enabled enabled
+NetworkManager-dispatcher.service  enabled enabled
+NetworkManager-wait-online.service enabled enabled
+NetworkManager.service             enabled enabled
+nmbd.service                       enabled enabled
+ps2vnc-health.service              enabled enabled
+rpi-display-backlight.service      enabled enabled
+rpi-eeprom-update.service          enabled enabled
+samba-ad-dc.service                enabled enabled
+smbd.service                       enabled enabled
+ssh.service                        enabled enabled
+sshswitch.service                  enabled enabled
+systemd-pstore.service             enabled enabled
+systemd-timesyncd.service          enabled enabled
+triggerhappy.service               enabled enabled
+udisks2.service                    enabled enabled
+wpa_supplicant.service             enabled enabled
+
+30 unit files listed.

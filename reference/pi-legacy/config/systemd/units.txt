@@ -1,0 +1,142 @@
+===== etc/systemd/system/ps2vnc-health.service =====
+[Unit]
+Description=PS2VNC Pi runtime health supervisor
+After=ps2vnc-network.service
+Wants=ps2vnc-network.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/lib/ps2vnc/health-supervisor.sh
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
+
+===== etc/systemd/system/ps2vnc-management.service =====
+[Unit]
+Description=PS2VNC management/control service
+Requires=ps2vnc-network.service
+After=ps2vnc-network.service
+PartOf=ps2vnc.target
+
+[Service]
+Type=simple
+User=ps2
+Environment=HOME=/home/ps2
+Environment=PS2VNC_CONFIG_FILE=/var/lib/ps2vnc/ps2vnc.conf
+ExecStart=/usr/bin/python3 /usr/local/lib/ps2vnc/management-server.py
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=ps2vnc.target
+
+===== etc/systemd/system/ps2vnc-network.service =====
+[Unit]
+Description=PS2VNC dedicated PS2 Ethernet
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/ps2vnc/network-up.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=ps2vnc.target
+
+===== etc/systemd/system/ps2vnc-openbox.service =====
+[Unit]
+Description=PS2VNC Openbox desktop
+Requires=ps2vnc-vnc.service
+After=ps2vnc-vnc.service
+PartOf=ps2vnc.target
+
+[Service]
+Type=simple
+User=ps2
+Environment=HOME=/home/ps2
+Environment=DISPLAY=:1
+ExecStartPre=/usr/local/lib/ps2vnc/wait-for-display.sh
+ExecStart=/usr/bin/openbox
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=ps2vnc.target
+
+===== etc/systemd/system/ps2vnc-panel.service =====
+[Unit]
+Description=PS2VNC lxpanel taskbar
+Requires=ps2vnc-vnc.service
+After=ps2vnc-vnc.service ps2vnc-openbox.service
+PartOf=ps2vnc.target
+
+[Service]
+Type=simple
+User=ps2
+Environment=HOME=/home/ps2
+Environment=DISPLAY=:1
+ExecStartPre=/usr/local/lib/ps2vnc/wait-for-display.sh
+ExecStart=/usr/bin/lxpanel
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=ps2vnc.target
+
+===== etc/systemd/system/ps2vnc-vnc-pacing.service =====
+[Unit]
+Description=PS2VNC VNC traffic pacing
+Requires=ps2vnc-network.service
+After=ps2vnc-network.service
+Before=ps2vnc-vnc.service
+PartOf=ps2vnc.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/ps2vnc/vnc-pacing.sh start
+ExecReload=/usr/local/lib/ps2vnc/vnc-pacing.sh start
+ExecStop=/usr/local/lib/ps2vnc/vnc-pacing.sh stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=ps2vnc.target
+
+===== etc/systemd/system/ps2vnc-vnc.service =====
+[Unit]
+Description=PS2VNC TigerVNC display
+Requires=ps2vnc-network.service
+Requires=ps2vnc-vnc-pacing.service
+After=ps2vnc-network.service ps2vnc-vnc-pacing.service
+PartOf=ps2vnc.target
+
+[Service]
+Type=simple
+User=ps2
+Environment=HOME=/home/ps2
+ExecStartPre=/usr/local/lib/ps2vnc/prepare-display.sh
+ExecStart=/usr/bin/Xtigervnc :1 -geometry 1280x720 -depth 24 -rfbport 5900 -SecurityTypes None -localhost no -AlwaysShared -ac -interface 192.168.50.1
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=ps2vnc.target
+
+===== etc/systemd/system/ps2vnc.target =====
+[Unit]
+Description=Complete PS2VNC Pi runtime
+Requires=ps2vnc-network.service
+Requires=ps2vnc-vnc-pacing.service
+Requires=ps2vnc-vnc.service
+Requires=ps2vnc-openbox.service
+Requires=ps2vnc-panel.service
+Wants=ps2vnc-management.service
+After=ps2vnc-network.service
+After=ps2vnc-vnc-pacing.service
+After=ps2vnc-vnc.service
+After=ps2vnc-openbox.service
+After=ps2vnc-panel.service
+
+[Install]
+WantedBy=multi-user.target
