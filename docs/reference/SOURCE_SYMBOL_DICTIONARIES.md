@@ -11,11 +11,12 @@ for whether a local dictionary is complete.
 
 | Directory | Responsibility | Dictionary | Current status |
 |---|---|---|---|
-| `src` | coordinator, framebuffer, display conversion, RFB core | [`src/SYMBOLS.md`](../../src/SYMBOLS.md) | IN_PROGRESS |
+| `src` | coordinator, framebuffer, display conversion, RFB core | [`src/SYMBOLS.md`](../../src/SYMBOLS.md) | COMPLETE |
 | `src/platform` | PS2 system, Ethernet, and GS mechanisms | [`src/platform/SYMBOLS.md`](../../src/platform/SYMBOLS.md) | COMPLETE |
 | `src/diagnostics` | adopted deterministic runtime identity | [`src/diagnostics/SYMBOLS.md`](../../src/diagnostics/SYMBOLS.md) | COMPLETE |
-| `scripts` | clean-generation development tooling | [`scripts/SYMBOLS.md`](../../scripts/SYMBOLS.md) | IN_PROGRESS |
+| `scripts` | clean Issue #7 build/compile verification and dictionary tooling | [`scripts/SYMBOLS.md`](../../scripts/SYMBOLS.md) | COMPLETE |
 | `tests/unit` | clean-generation host unit and failure-path tests | [`tests/unit/SYMBOLS.md`](../../tests/unit/SYMBOLS.md) | IN_PROGRESS |
+| `scripts/testkit` | successor identity, DUT preparation, and manifest tooling | dictionary pending | IN_PROGRESS |
 
 Generate an optional comprehensive view with:
 
@@ -23,9 +24,13 @@ Generate an optional comprehensive view with:
 python3 scripts/source-dictionary.py aggregate
 ```
 
+The remaining retrofit work is concentrated in the pre-policy clean unit tests
+and the successor-owned Issue #7 TestKit files. Historical TestKit/M4/legacy
+apparatus remains excluded rather than being relabeled as clean-generation code.
+
 The final portal will be regenerated from the directory dictionaries when the
 retrofit reaches exhaustive coverage; strict completion is intentionally not a
-project gate while any directory still declares `IN_PROGRESS`.
+project gate while any directory still declares or is recorded as `IN_PROGRESS`.
 
 Historical, migration-era, evidence, and retained pre-refresh symbols are
 deliberately outside this clean-generation portal.
