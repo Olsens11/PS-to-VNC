@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Defines exact-read/exact-write transport operations that preserve protocol
+ * framing across arbitrary TCP packet boundaries.
+ */
+
 #ifndef PSTVNC_RFB_IO_H
 #define PSTVNC_RFB_IO_H
 

@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Owns qualified PS2 Ethernet startup, fixed private-link configuration, VNC
+ * connection, and buffered exact RFB I/O.
+ */
+
 #include <kernel.h>
 #include <loadfile.h>
 #include <netman.h>

@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Implements the minimal best-effort UDP diagnostics transport. It observes
+ * product activity but never decides readiness, failure, or recovery.
+ */
+
 #include "diagnostics.h"
 
 #include <arpa/inet.h>

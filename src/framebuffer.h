@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Defines the desktop-framebuffer value and lifecycle so allocated storage,
+ * trusted pixels, and dirty state remain distinct.
+ */
+
 #ifndef PSTVNC_FRAMEBUFFER_H
 #define PSTVNC_FRAMEBUFFER_H
 

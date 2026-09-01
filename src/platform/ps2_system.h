@@ -1,3 +1,8 @@
+/*
+ * File synopsis:
+ * Declares the PS2 system-lifecycle seam and hides IOP and OSDSYS mechanisms.
+ */
+
 #ifndef PSTVNC_PS2_SYSTEM_H
 #define PSTVNC_PS2_SYSTEM_H
 

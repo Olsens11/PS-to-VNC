@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Defines RFB constants, parsed values, and pure wire helpers; sequencing and
+ * transport live elsewhere.
+ */
+
 #ifndef PSTVNC_RFB_H
 #define PSTVNC_RFB_H
 

@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Declares configuration text helpers; it owns no accepted or live application
+ * settings.
+ */
+
 #ifndef PSTVNC_CONFIG_TEXT_H
 #define PSTVNC_CONFIG_TEXT_H
 

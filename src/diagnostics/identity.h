@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Declares stable runtime-identity formatting and stamping constants, not
+ * application or experiment policy.
+ */
+
 #ifndef PSTVNC_DIAGNOSTICS_IDENTITY_H
 #define PSTVNC_DIAGNOSTICS_IDENTITY_H
 

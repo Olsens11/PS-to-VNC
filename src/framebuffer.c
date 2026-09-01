@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Implements the authoritative CPU-side desktop image: geometry, validity,
+ * rectangle writes, and conservative dirty bounds.
+ */
+
 #include <string.h>
 
 #include "framebuffer.h"

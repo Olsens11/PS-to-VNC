@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Declares the top-level coordinator entry point without exposing its private
+ * subsystem state.
+ */
+
 #ifndef PSTVNC_APP_H
 #define PSTVNC_APP_H
 

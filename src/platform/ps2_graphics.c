@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Owns GS/dmaKit resources for fixed Standard 480p initialization, complete
+ * CT16 texture presentation, synchronized flips, and shutdown.
+ */
+
 #include <dmaKit.h>
 #include <gsKit.h>
 

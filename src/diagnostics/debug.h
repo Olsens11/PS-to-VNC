@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Defines the retained debug-stage vocabulary and transport boundary shared by
+ * diagnostic producers.
+ */
+
 #ifndef PSTVNC_DIAGNOSTICS_DEBUG_H
 #define PSTVNC_DIAGNOSTICS_DEBUG_H
 

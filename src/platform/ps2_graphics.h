@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Declares the narrow PS2 graphics seam without exposing gsKit or VRAM
+ * ownership upstream.
+ */
+
 #ifndef PSTVNC_PS2_GRAPHICS_H
 #define PSTVNC_PS2_GRAPHICS_H
 

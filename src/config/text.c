@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Implements strict, side-effect-free trimming and parsing helpers for
+ * human-readable configuration values.
+ */
+
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>

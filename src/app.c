@@ -1,3 +1,10 @@
+/*
+ * File synopsis:
+ * Runs the application coordinator: ordered startup, the live RFB/presentation
+ * loop, failure policy, and owned cleanup. Subsystems retain their own private
+ * mechanisms.
+ */
+
 #include "app.h"
 
 #include <stdint.h>

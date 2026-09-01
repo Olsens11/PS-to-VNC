@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Defines raster rectangles and reusable geometry operations; display
+ * transactions remain separate.
+ */
+
 #ifndef PSTVNC_VIDEO_GEOMETRY_H
 #define PSTVNC_VIDEO_GEOMETRY_H
 

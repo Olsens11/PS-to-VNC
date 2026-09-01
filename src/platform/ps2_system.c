@@ -1,3 +1,8 @@
+/*
+ * File synopsis:
+ * Owns deterministic IOP bootstrap and the final OSDSYS system-menu exit path.
+ */
+
 #include <iopcontrol.h>
 #include <iopheap.h>
 #include <kernel.h>

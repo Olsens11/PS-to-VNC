@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Implements the immutable video-mode catalog and lookup helpers without
+ * activating any mode.
+ */
+
 #include <string.h>
 
 #include <gsKit.h>

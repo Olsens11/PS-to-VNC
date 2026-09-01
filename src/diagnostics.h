@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Declares minimal diagnostic transport; callers retain ownership of the state
+ * they report.
+ */
+
 #ifndef PSTVNC_DIAGNOSTICS_H
 #define PSTVNC_DIAGNOSTICS_H
 

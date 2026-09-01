@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Implements pure safe-area and presented-rectangle validation/resolution
+ * without touching GS state or selecting live policy.
+ */
+
 #include "video/geometry.h"
 
 #include <limits.h>

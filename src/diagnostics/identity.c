@@ -1,4 +1,10 @@
 /*
+ * File synopsis:
+ * Implements deterministic DUT identity emission using a stampable ELF blob
+ * and a linker sendto wrapper before the first diagnostic datagram.
+ */
+
+/*
  * PS2VNC runtime ELF identity transport.
  *
  * This file deliberately does not depend on experiment-specific ps2ip.c

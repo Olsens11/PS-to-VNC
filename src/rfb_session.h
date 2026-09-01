@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Defines session state, errors, bounded scratch storage, and lifecycle while
+ * leaving recovery policy with the coordinator.
+ */
+
 #ifndef PSTVNC_RFB_SESSION_H
 #define PSTVNC_RFB_SESSION_H
 

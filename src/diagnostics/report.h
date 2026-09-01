@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Defines diagnostic report records and formatting entry points; originating
+ * subsystems retain state ownership.
+ */
+
 #ifndef PSTVNC_DIAGNOSTICS_REPORT_H
 #define PSTVNC_DIAGNOSTICS_REPORT_H
 

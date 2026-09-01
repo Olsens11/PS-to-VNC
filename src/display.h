@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Declares the fixed Issue #7 display-conversion contract while hiding PS2
+ * graphics mechanisms.
+ */
+
 #ifndef PSTVNC_DISPLAY_H
 #define PSTVNC_DISPLAY_H
 

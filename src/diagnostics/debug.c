@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Implements the richer retained debug-stage model and UDP transport without
+ * owning the application behavior being observed.
+ */
+
 #include "diagnostics/debug.h"
 
 #include <arpa/inet.h>

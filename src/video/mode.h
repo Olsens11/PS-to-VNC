@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Defines PS2SDK-independent mode/backend values that describe capabilities
+ * rather than live display authority.
+ */
+
 #ifndef PSTVNC_VIDEO_MODE_H
 #define PSTVNC_VIDEO_MODE_H
 

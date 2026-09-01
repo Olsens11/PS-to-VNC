@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Formats caller-owned debug, performance, and geometry snapshots into
+ * diagnostic datagrams without becoming authoritative for their values.
+ */
+
 #include <stdio.h>
 
 #include "diagnostics/report.h"

@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Provides process entry, delegates the product lifecycle to the coordinator,
+ * and converges returns on the PS2 system menu.
+ */
+
 #include "app.h"
 #include "platform/ps2_system.h"
 

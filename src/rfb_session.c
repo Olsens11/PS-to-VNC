@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Owns the synchronized RFB handshake, requests, server-message framing, Raw
+ * decoding, initial coverage proof, and fail-closed state.
+ */
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>

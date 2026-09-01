@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Converts a valid authoritative RFB framebuffer into GS-compatible CT16
+ * presentation pixels without modifying remote authority.
+ */
+
 #include "display.h"
 
 int pstvnc_display_prepare_gs16(

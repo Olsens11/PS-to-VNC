@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Implements pure RFB byte-layout parsing and construction without owning
+ * transport, session state, framebuffer authority, or recovery.
+ */
+
 #include <string.h>
 
 #include "rfb.h"

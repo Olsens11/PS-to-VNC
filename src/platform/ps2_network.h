@@ -1,3 +1,9 @@
+/*
+ * File synopsis:
+ * Declares PS2 private-link and socket lifecycle operations while leaving RFB
+ * semantics to the protocol layer.
+ */
+
 #ifndef PSTVNC_PS2_NETWORK_H
 #define PSTVNC_PS2_NETWORK_H
 
