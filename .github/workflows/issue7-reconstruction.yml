@@ -20,6 +20,8 @@ jobs:
         run: ./scripts/testkit/identity-runtime-message-self-test.sh
       - name: Analyze historical identity digest contract
         run: ./scripts/testkit/identity-digest-forensics.py
+      - name: Prove successor identity tools against sealed historical fixtures
+        run: ./scripts/testkit/successor-identity-compat-self-test.py
 
   ps2-compile:
     runs-on: ubuntu-latest
