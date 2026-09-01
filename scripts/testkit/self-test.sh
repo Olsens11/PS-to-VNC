@@ -145,6 +145,7 @@ after="$(
 [ "$before" = "$after" ]
 
 echo 'TESTKIT_SELF_TEST_VERSION=3'
+echo 'TESTKIT_SELF_TEST_SCOPE=SUCCESSOR_IDENTITY_PREPARATION'
 echo "FIXTURE_ELF_SHA256=$before"
 echo "SELF_TEST_ID=$TEST_ID"
 echo "PREPARED_ELF_SHA256=$prepared_sha"
@@ -160,13 +161,12 @@ echo 'FIXTURE_IMMUTABLE=PASS'
 echo '[SELFTEST] sealed historical identity compatibility'
 ./scripts/testkit/successor-identity-compat-self-test.py
 
-echo '[SELFTEST] M4 hardware-checkpoint activation'
-python3 scripts/testkit/activation-self-test.py
-
 echo '[SELFTEST] runtime identity message serialization'
 ./scripts/testkit/identity-runtime-message-self-test.sh
 
-echo '[SELFTEST] successor / frozen-legacy hardware bridge'
-./scripts/testkit/legacy-hardware-bridge-self-test.py
-
+# Checkpoint activation and the frozen-legacy hardware bridge have independent
+# self-tests and separate ownership. They are intentionally not prerequisites
+# for successor-owned ELF identity preparation.
+echo 'CHECKPOINT_ACTIVATION_SELF_TEST=SEPARATE_SCOPE'
+echo 'LEGACY_HARDWARE_BRIDGE_SELF_TEST=SEPARATE_SCOPE'
 echo 'PS_TO_VNC_TESTKIT_SELF_TEST=PASS'
