@@ -10,7 +10,7 @@ cd "$ROOT"
 
 PREP="$ROOT/scripts/testkit/prepare-hardware-elf.sh"
 MANIFEST="$ROOT/scripts/testkit/issue7-dut-manifest.py"
-FIXTURE="${TESTKIT_FIXTURE_ELF:-$ROOT/working/b4a/PS2VNC.ELF}"
+PRISTINE="$ROOT/build/reconstruction/issue7/PS-to-VNC-Issue7.ELF"
 TEST_ID="${TESTKIT_MANIFEST_SELF_TEST_ID:-ISSUE7-MANIFEST-SELFTEST}"
 
 [ -x "$PREP" ] || {
@@ -23,8 +23,13 @@ TEST_ID="${TESTKIT_MANIFEST_SELF_TEST_ID:-ISSUE7-MANIFEST-SELFTEST}"
     exit 1
 }
 
-[ -f "$FIXTURE" ] || {
-    echo "fixture ELF missing: $FIXTURE" >&2
+[ -f "$PRISTINE" ] || {
+    echo \
+        "canonical clean Issue 7 ELF missing: $PRISTINE" \
+        >&2
+    echo \
+        'run the linked reproducibility gate before this self-test' \
+        >&2
     exit 1
 }
 
@@ -38,7 +43,7 @@ cleanup()
 trap cleanup EXIT
 
 "$PREP" \
-    "$FIXTURE" \
+    "$PRISTINE" \
     "$TEST_ID" \
     "$TMP/dut.ELF" \
     > "$TMP/preparation.env"
@@ -60,6 +65,9 @@ grep -qx 'QUALIFICATION_SCOPE=PRE_HARDWARE_IDENTITY_ONLY' "$TMP/manifest-a.env"
 grep -qx 'HARDWARE_QUALIFIED=NO' "$TMP/manifest-a.env"
 grep -qx 'SOURCE_REPOSITORY=Olsens11/PS-to-VNC' "$TMP/manifest-a.env"
 grep -qx 'SOURCE_BRANCH=reconstruct/issue7-minimal-core' "$TMP/manifest-a.env"
+grep -qx \
+    'PRISTINE_BUILD_PATH=build/reconstruction/issue7/PS-to-VNC-Issue7.ELF' \
+    "$TMP/manifest-a.env"
 grep -qx "HARDWARE_TEST_ID=$TEST_ID" "$TMP/manifest-a.env"
 grep -qx 'IDENTITY_STAMP_REPRODUCIBLE=YES' "$TMP/manifest-a.env"
 grep -qx 'DEPLOYED=NO' "$TMP/manifest-a.env"
@@ -94,8 +102,9 @@ sha_a="$(sha256sum "$TMP/manifest-a.env" | awk '{print $1}')"
 sha_b="$(sha256sum "$TMP/manifest-b.env" | awk '{print $1}')"
 [ "$sha_a" = "$sha_b" ]
 
-echo 'ISSUE7_DUT_MANIFEST_SELF_TEST_VERSION=1'
+echo 'ISSUE7_DUT_MANIFEST_SELF_TEST_VERSION=2'
 echo "MANIFEST_SHA256=$sha_a"
+echo 'CANONICAL_CLEAN_BUILD_BINDING=PASS'
 echo 'DETERMINISTIC_MANIFEST=PASS'
 echo 'SOURCE_AUTHORITY_FIELDS=PASS'
 echo 'PREPARATION_EVIDENCE_FIELDS=PASS'
