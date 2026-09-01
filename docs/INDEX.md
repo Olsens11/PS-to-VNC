@@ -29,6 +29,15 @@ This is the canonical entry point for current PS-to-VNC documentation.
 
 - `docs/reference/FILE_AND_SERVICE_MAP.md` — canonical living map of where
   source, evidence and responsibilities currently reside.
+- `docs/reference/PRESERVATION_STATUS.md` — completed exploratory-reference
+  preservation scope and disposition.
+
+## Semantic audit
+
+- `docs/audit/README.md` — semantic-audit contract, evidence classes, and
+  maturity model.
+- `docs/audit/BEHAVIORAL_INVENTORY.md` — complete product behavior inventory
+  and current audit status.
 
 ## Documentation contract
 

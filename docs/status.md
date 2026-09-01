@@ -2,37 +2,168 @@
 
 This is the concise human-readable current-state authority.
 
-Chronological migration and exploratory-normalization history remains in
-`docs/MIGRATION_STATE.md`, preserved evidence, and Git.
+Chronological migration/exploratory history remains in `docs/MIGRATION_STATE.md`,
+preserved evidence, and Git.
 
 ## Product
 
     version=0.1.0-alpha.1
 
-## Strategic transition
+## Current phase
 
-The exploratory implementation and successor normalization work have been
-preserved as reference authority.
+    PHASE=PRESERVE_CLEAN_UNDERSTAND_RECONSTRUCT
+    REFERENCE_PRESERVATION=COMPLETE
+    SEMANTIC_AUDIT=COMPLETE
+    CLEAN_ARCHITECTURE=REBUILD_READY
+    CLEAN_PS2_RECONSTRUCTION=NOT_STARTED
+    PI_REPRODUCIBILITY_PACKAGE=NOT_STARTED
 
-The project is now entering a clean reconstruction phase governed by:
-
-    docs/PROJECT_INTENT.md
-
-The reconstruction principle is:
+The reconstruction principle remains:
 
 > Rebuild PS-to-VNC as the program we would have written if we had known at the
 > beginning everything the exploratory implementation taught us.
 
-Existing B4A/current code remains behavioral reference, evidence, and a source
-of proven mechanisms. It is not the structural blueprint for the new product.
+Frozen B4A/current code and migration-era slices remain behavioral/reference
+authority and sources of proven mechanisms. They are not the structural
+blueprint for the new product.
 
-The previous extraction-oriented normalization trajectory is historical from
-this point forward unless a specific completed mechanism or lesson is
-explicitly adopted into the clean design.
+## Current architecture authority
 
-## Preserved exploratory authority
+The clean reconstruction architecture is now:
 
-The final completed normalization boundary before the strategic restart was
+    docs/CLEAN_ARCHITECTURE.md
+
+It was derived from the completed B01-B14 semantic audit rather than from the
+M4 file hierarchy.
+
+For new clean-reconstruction work, `CLEAN_ARCHITECTURE.md` supersedes the
+normalization-era target documents as current design authority. The older
+`ARCHITECTURE.md`, `TARGET_ARCHITECTURE.md`, `STATE_OWNERSHIP.md`,
+`DEPENDENCY_RULES.md`, `NORMALIZATION_SEQUENCE.md`, and
+`ARCHITECTURAL_NORMALIZATION.md` remain historical/reference material.
+
+The architecture is responsibility-oriented and deliberately small. Its stable
+contract is ownership/dependency direction, not an exact permanent count of `.c`
+files.
+
+## Semantic audit completion
+
+B01 through B14 have completed:
+
+- behavioral/source/evidence audit;
+- historical source/state/coupling mapping;
+- historical experiment/lesson mining;
+- cross-domain state ownership;
+- interface/dependency synthesis;
+- startup/live/display-transition/recovery flow verification;
+- current clean-architecture derivation.
+
+Current maturity authority:
+
+    docs/audit/REBUILD_READY_PROMOTION.md
+
+All B01-B14 behavior families are now:
+
+    REBUILD_READY
+
+`docs/audit/BEHAVIORAL_INVENTORY.md` remains the detailed evidence-harvest ledger
+and intentionally preserves the earlier `EVIDENCE_SUPPORTED` checkpoint inside
+its long-form entries. The promotion record is additive rather than a cosmetic
+rewrite of that historical audit record.
+
+Durable audit outputs:
+
+    docs/audit/BEHAVIORAL_INVENTORY.md
+    docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md
+    docs/audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md
+    docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md
+    docs/audit/SOURCE_RESPONSIBILITY_MAP.md
+    docs/audit/HISTORICAL_LESSONS.md
+    docs/audit/CROSS_DOMAIN_SYNTHESIS.md
+    docs/audit/CROSS_DOMAIN_STATE_INTERFACES.md
+    docs/audit/REBUILD_READY_PROMOTION.md
+
+## Core clean-architecture conclusions
+
+The initial PS2 design has explicit owners for:
+
+- application orchestration/policy;
+- one RFB session/stream;
+- one authoritative CPU-side desktop framebuffer;
+- display model/profile and PS2 presentation;
+- controller/input semantics;
+- local UI/OSK;
+- typed human configuration;
+- the small Pi management client;
+- diagnostics/runtime identity;
+- genuinely PS2-specific platform mechanisms.
+
+Important cross-domain rules include:
+
+- main/application remains the sole VNC socket owner;
+- controller publishes typed semantic input rather than encoded RFB packets;
+- ordinary semantic input, urgent control intent, and libpad ownership handoff
+  are three separate cross-thread seams;
+- RFB may keep straightforward exact-length parsing;
+- after input becomes active, nonblocking RFB refill permits benign application
+  yield only at a complete server-message boundary before partial consumption;
+- Refresh/rollback/exit may hard-interrupt a partial receive only by treating the
+  old stream as suspect and replacing it;
+- RFB decoding, CPU framebuffer validity, and GS/presentation validity are
+  separate concepts;
+- complete `display_profile` values cross config/application/display/RFB/
+  management boundaries rather than component globals;
+- display transitions remain application-owned cross-machine transactions;
+- local UI has a first-class local dirty/wake path and does not depend on remote
+  pointer-jiggle damage;
+- human desired configuration, accepted live state, and crash-safe Pi
+  transaction authority remain separate;
+- explicit link/socket/RFB failures may recover automatically, while unexplained
+  silent stalls remain manual under the current debugging policy;
+- diagnostics observes product state without owning it;
+- changed PT_LOAD remains hardware-gated unless explicit qualification-transfer
+  authority exists.
+
+## Historical mechanisms adopted/deferred
+
+Adopted or adapted into clean ownership include the qualified PS2IP/private-link
+foundation, exact RFB framing, one-thread socket ownership, authoritative full
+frame before normal incremental operation, Test14 HIRES interrupt discipline,
+complete display-profile rollback, libpad handoff, input quarantine, one-shot
+OSK modifiers, strict config validation, manual Refresh cooldown, durable Pi
+transaction reconciliation, deterministic runtime identity, endpoint-based Pi
+health, and exact DUT/PT_LOAD/apparatus/evidence qualification.
+
+Deferred from the first clean milestone include direct-to-presentation paths that
+can stale the conventional framebuffer, advanced dirty/Hextile/presentation
+optimization, MPEG/hybrid video, nonessential exploratory display modes, and
+replacement of mature TestKit merely for aesthetic consistency.
+
+The first clean hardware milestones continue through the proven immutable
+successor-to-legacy TestKit bridge.
+
+## Pi companion boundary
+
+The Pi behavior is `REBUILD_READY`, while exact clean-platform package adoption
+remains implementation work under GitHub Issue #5.
+
+The clean companion remains a normal supported Raspberry Pi OS plus narrowly
+product-specific state/services:
+
+- private PS2 Ethernet;
+- predictable dedicated VNC desktop;
+- small management/persistence service;
+- endpoint-based health/recovery;
+- operator controls;
+- versioned installer/package definition and dependency ledger.
+
+Historical TigerVNC/Openbox/lxpanel and VNC-only pacing are reference candidates
+to classify as `EVALUATING`/`ADOPTED_*` through the clean ledger rather than
+being copied as unexplained machine folklore.
+
+## Preserved exploratory hardware authority
+
+The final completed normalization boundary before the strategic restart remains
 M4I diagnostics.
 
 Final qualified source generation:
@@ -51,73 +182,36 @@ Final direct hardware authority:
     PHYSICAL_RESULT=FULL_PASS
     FINAL_STARTUP_MODE=480p
 
-These remain valid historical/empirical authorities. The former planned next
-action `M4J_management_normalization` is no longer the active product roadmap.
+These remain valid historical/empirical authorities. Former planned
+`M4J_management_normalization` is not the current roadmap.
 
-## Current development focus
+## Reconstruction progress
 
-The active phase is:
+Planning indicators:
 
-    PHASE=PRESERVE_CLEAN_UNDERSTAND_RECONSTRUCT
+    REFERENCE_PRESERVATION=100_PERCENT
+    SEMANTIC_AUDIT=100_PERCENT
+    CLEAN_PS2_RECONSTRUCTION=0_PERCENT
+    PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
+    GITHUB_RECONCILIATION=90_PERCENT
 
-Immediate work:
+The previous `OVERALL_ARCHITECTURAL_NORMALIZATION` percentage remains historical
+and is not reconstruction progress.
 
-1. finish sealing and verifying the exploratory repositories, runtime state,
-   evidence, and Pi environment;
-2. establish the clean Raspberry Pi baseline and dependency/reproducibility
-   ledger;
-3. perform a semantic audit of what PS-to-VNC is and what each component does;
-4. mine historical tests for durable lessons and proven mechanisms;
-5. derive the clean target architecture from audited behavior;
-6. begin bottom-up reconstruction from the minimal PS2/Pi Ethernet and RFB
-   path.
-
-The semantic audit must describe purpose, inputs/triggers, owned state, normal
-behavior, outputs/effects, dependencies, failure behavior, invariants,
-implementation references, historical lessons, and rebuild implications for
-each meaningful component.
+`GITHUB_RECONCILIATION` is temporarily below 100% only because the completed
+semantic-audit/architecture branch still needs its final PR/merge into `main`.
 
 ## Development continuity
-
-Development-continuity baseline version 1 remains active.
 
     SESSION_BOOTSTRAP=AGENTS.md
     DOCS_ROUTER=docs/README.md
     DEVELOPMENT_POLICY=docs/development/README.md
     PROJECT_INTENT=docs/PROJECT_INTENT.md
+    CLEAN_ARCHITECTURE=docs/CLEAN_ARCHITECTURE.md
     MACHINE_CURRENT_STATE=runtime/PROJECT_STATE.env
     MIGRATION_STATE_ROLE=HISTORICAL_REFERENCE
 
-Repository authority remains more important than conversational memory.
-Historical evidence must be preserved rather than rewritten to fit the new
-architecture.
-
-## Reconstruction progress
-
-These are planning indicators, not machine authority:
-
-    PRESERVATION_AND_RESET=35_PERCENT
-    SEMANTIC_AUDIT=0_PERCENT
-    CLEAN_PS2_RECONSTRUCTION=0_PERCENT
-    PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
-    GITHUB_RECONCILIATION=100_PERCENT
-
-The previous `OVERALL_ARCHITECTURAL_NORMALIZATION` percentage is historical and
-is not carried forward as reconstruction progress.
-
-## Repository / GitHub authority
-
-The development Pi and GitHub are reconciled on the formal
-clean-reconstruction baseline:
-
-    RECONCILED_MAIN=434384e56c0acfc978922f62572da8df9b0372ec
-
-PR #10 promoted the qualified clean-reconstruction intent, project-state
-authority, continuity model, and semantic-audit direction to `main`.
-
-The final exploratory successor head remains preserved separately as:
-
-    EXPLORATORY_FINAL_SUCCESSOR_HEAD=d8ae5b13947f7ef3d250c0b18be967a10f8c76a8
+Repository authority remains more important than conversation memory.
 
 ## Frozen safety boundary
 
@@ -125,18 +219,17 @@ Historical repository:
 
     /home/ps2/ps2vnc
 
-This remains immutable reference authority.
-
-Frozen B4A and successor-era evidence remain reference material. No clean
-reconstruction step should destroy or silently rewrite them.
+It remains immutable reference authority. Frozen B4A and successor-era evidence
+must not be destroyed or silently rewritten by clean reconstruction work.
 
 ## Next action
 
-    NEXT_ACTION=PRESERVE_RUNTIME_AND_SYSTEM_STATE_THEN_BEGIN_SEMANTIC_AUDIT
+    NEXT_ACTION=PROMOTE_SEMANTIC_AUDIT_BRANCH_THEN_BEGIN_ISSUES_5_AND_7
     BLOCKED_BY=NONE
 
-Current machine-readable project authority is `runtime/PROJECT_STATE.env`.
+After branch promotion, work proceeds in parallel on:
 
-Migration-era authority remains byte-preserved under
-`runtime/MIGRATION_STATE.env` and `runtime/M4_SOURCE_AUTHORITY.env` as
-historical/reference authority for the exploratory generation.
+- GitHub Issue #5 — clean Pi baseline/dependency ledger;
+- GitHub Issue #7 — smallest PS2/Pi Ethernet + RFB clean reconstruction core.
+
+Current machine-readable authority is `runtime/PROJECT_STATE.env`.

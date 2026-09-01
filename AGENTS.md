@@ -41,7 +41,9 @@ Different kinds of truth have different homes:
 - current human state: `docs/status.md`;
 - current machine state: `runtime/PROJECT_STATE.env`;
 - preserved migration-era machine state: `runtime/MIGRATION_STATE.env`;
-- architecture: `docs/ARCHITECTURE.md` and linked architecture documents;
+- current clean architecture: `docs/CLEAN_ARCHITECTURE.md`;
+- historical/normalization architecture: the superseded architecture documents
+  routed by `docs/README.md`;
 - durable design rationale: `docs/adr/` and retained historical decisions;
 - empirical evidence: `evidence/` and testing documentation;
 - deferred work: `docs/ROADMAP.md`;
