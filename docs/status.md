@@ -107,14 +107,17 @@ is not carried forward as reconstruction progress.
 
 ## Repository / GitHub authority
 
-The exploratory successor history has been reconciled between the development
-Pi and GitHub through:
+The development Pi and GitHub are reconciled on the formal
+clean-reconstruction baseline:
 
-    RECONCILED_MAIN=d8ae5b13947f7ef3d250c0b18be967a10f8c76a8
+    RECONCILED_MAIN=434384e56c0acfc978922f62572da8df9b0372ec
 
-The clean-reconstruction intent and semantic-audit setup are being developed on:
+PR #10 promoted the qualified clean-reconstruction intent, project-state
+authority, continuity model, and semantic-audit direction to `main`.
 
-    reboot/intent-and-semantic-audit
+The final exploratory successor head remains preserved separately as:
+
+    EXPLORATORY_FINAL_SUCCESSOR_HEAD=d8ae5b13947f7ef3d250c0b18be967a10f8c76a8
 
 ## Frozen safety boundary
 
@@ -129,7 +132,7 @@ reconstruction step should destroy or silently rewrite them.
 
 ## Next action
 
-    NEXT_ACTION=FORMALIZE_PROJECT_INTENT_AND_SEMANTIC_AUDIT
+    NEXT_ACTION=PRESERVE_RUNTIME_AND_SYSTEM_STATE_THEN_BEGIN_SEMANTIC_AUDIT
     BLOCKED_BY=NONE
 
 Current machine-readable project authority is `runtime/PROJECT_STATE.env`.
