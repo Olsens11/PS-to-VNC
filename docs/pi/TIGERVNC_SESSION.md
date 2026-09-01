@@ -5,6 +5,7 @@
     WORKSTREAM=GITHUB_ISSUE_5
     ROLE=PRE_LIVE_SESSION_DESIGN
     TIGERVNC=Xtigervnc_1.15.0+dfsg-2.1~deb13u1
+    TIGERVNC_EXECUTABLE=/usr/bin/Xtigervnc
     LIVE_APPLICATION=NOT_YET_PERFORMED
     HARDWARE_QUALIFICATION=NOT_YET_PERFORMED
 
@@ -26,6 +27,11 @@ The adopted Debian 13 package is:
     tigervnc-standalone-server
     1.15.0+dfsg-2.1~deb13u1
 
+`TIGERVNC_PACKAGE_AUTHORITY.md` records the reviewed trixie/arm64 package file
+list. It establishes that this package supplies:
+
+    /usr/bin/Xtigervnc
+
 The Debian trixie `Xtigervnc(1)` man page for that exact package confirms the
 parameter surface used by this candidate:
 
@@ -41,8 +47,11 @@ parameter surface used by this candidate:
 - `-AcceptSetDesktopSize=0` can prevent a viewer from mutating the fixed
   server-side desktop geometry.
 
-Reference:
-`https://manpages.debian.org/trixie/tigervnc-standalone-server/Xtigervnc.1.en.html`
+References:
+
+- `docs/pi/TIGERVNC_PACKAGE_AUTHORITY.md`;
+- `https://packages.debian.org/trixie/arm64/tigervnc-standalone-server/filelist`;
+- `https://manpages.debian.org/trixie/tigervnc-standalone-server/Xtigervnc.1.en.html`.
 
 These package facts are source support for a candidate. They do not replace live
 verification on the clean Pi.
@@ -51,7 +60,7 @@ verification on the clean Pi.
 
 The initial PS2-facing endpoint should satisfy exactly this narrow contract:
 
-    implementation = Xtigervnc
+    implementation = /usr/bin/Xtigervnc
     X display = :1
     RFB TCP port = 5900
     bind/interface = 192.168.50.1
@@ -83,7 +92,7 @@ implicit foundation change.
 The first candidate should be equivalent to:
 
 ```sh
-Xtigervnc :1 \
+/usr/bin/Xtigervnc :1 \
     -geometry 704x462 \
     -depth 16 \
     -pixelformat RGB565 \
@@ -95,9 +104,16 @@ Xtigervnc :1 \
 ```
 
 This is intentionally documented as an invocation contract rather than already
-committed as a systemd unit. The exact executable path, foreground behavior,
-PID/lifetime behavior, logs, X authority state, and service-user environment
-must be observed from the installed Debian package before a unit is promoted.
+committed as a systemd unit. The executable path is now package-authoritative;
+foreground behavior, PID/lifetime behavior, logs, X authority state, and the
+service-user environment still must be observed from the installed Debian
+package before a unit is promoted.
+
+The same Debian package also ships its normal `tigervncserver@.service` and
+`tigervncsession` machinery. Package presence does not adopt that service model
+for PS-to-VNC. A small project-owned direct-Xtigervnc unit and the packaged
+session machinery remain alternatives until live behavior proves which one
+satisfies the narrower product contract without importing unwanted policy.
 
 Do not add historical Openbox/LXPanel startup to this command. Xtigervnc itself
 is sufficient to establish the RFB/X framebuffer endpoint. Session contents are
@@ -148,7 +164,8 @@ After the foundation provisioning succeeds, the session is not promoted until a
 read-only validation records all of the following:
 
 - exact installed TigerVNC package version;
-- exact `Xtigervnc` executable path/version;
+- `/usr/bin/Xtigervnc` exists and belongs to the reviewed package;
+- exact `Xtigervnc` version reported live;
 - exact command line/service unit used;
 - process ownership and service user;
 - bound listener is exactly `192.168.50.1:5900`, not `0.0.0.0:5900` or a Wi-Fi
@@ -211,4 +228,6 @@ Until then:
 
     TIGERVNC_DECISION=ADOPTED_RUNTIME
     TIGERVNC_SESSION_CANDIDATE=DEFINED
+    TIGERVNC_EXECUTABLE_PATH=PACKAGE_AUTHORITY
+    TIGERVNC_SERVICE_MODEL=EVALUATING
     TIGERVNC_SESSION_LIVE_VALIDATION=PENDING
