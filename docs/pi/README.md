@@ -8,6 +8,8 @@
     DEPENDENCY_LEDGER=ACTIVE
     TIGERVNC_DECISION=ADOPTED_RUNTIME
     TRACKED_FOUNDATION_PROVISIONING=READY
+    TIGERVNC_SESSION_CANDIDATE=DEFINED
+    TIGERVNC_SESSION_LIVE_VALIDATION=PENDING
 
 This directory is the current authority for building the clean Raspberry Pi
 companion from a normal supported Raspberry Pi OS installation.
@@ -70,7 +72,7 @@ At a reproducibility milestone, a fresh supported OS must be transformable into
 the required companion state using tracked project definitions rather than
 operator memory.
 
-## Tracked provisioning
+## Tracked foundation provisioning
 
 `PROVISIONING.md` defines the first mutation contract. The tracked scripts are:
 
@@ -79,12 +81,30 @@ operator memory.
 - `scripts/pi/verify-foundation.sh`.
 
 These deliberately stop before VNC service/session creation. The first clean
-foundation must be applied and verified before the dedicated 480p TigerVNC
-service is defined.
+foundation must be applied and verified before a systemd TigerVNC service is
+promoted.
+
+## Dedicated TigerVNC session candidate
+
+`TIGERVNC_SESSION.md` defines the pre-live candidate for the smallest
+PS2-facing RFB endpoint required by the clean Issue #7 milestone.
+
+The candidate deliberately separates the stable RFB endpoint from desktop
+contents. It targets one fixed 704x462, depth-16 Xtigervnc virtual desktop on
+`192.168.50.1:5900` with SecurityType None restricted to the private PS2 link.
+It does not adopt Openbox, LXPanel, management, Samba, traffic pacing, WayVNC
+bridging, or remote-VNC routing.
+
+The document also records the live-validation questions that cannot be answered
+from source/package documentation alone, especially exact installed executable
+behavior, systemd lifecycle, no-carrier network ordering, listener ownership,
+and a deterministic incremental-update stimulus.
 
 ## Current next step
 
 Apply the tracked foundation provisioning on the clean Pi from an exact
-`pi/issue5-clean-baseline` checkout, record the resulting package/network
-identity, and then define the smallest dedicated TigerVNC session required by the
-PS2 RFB contract.
+`pi/issue5-clean-baseline` checkout and record the resulting package/network
+identity. Then validate the candidate in `TIGERVNC_SESSION.md` live before
+promoting an installed service unit.
+
+No live product provisioning has yet been claimed by this branch.
