@@ -60,14 +60,16 @@ The active phase is:
 
     PHASE=PRESERVE_CLEAN_UNDERSTAND_RECONSTRUCT
 
+Reference preservation is complete. The preserved exploratory environment is
+now forensic/reference authority rather than unfinished reconstruction work.
+
 Immediate work:
 
-1. finish sealing and verifying the exploratory repositories, runtime state,
-   evidence, and Pi environment;
-2. establish the clean Raspberry Pi baseline and dependency/reproducibility
-   ledger;
-3. perform a semantic audit of what PS-to-VNC is and what each component does;
-4. mine historical tests for durable lessons and proven mechanisms;
+1. build the complete semantic behavioral inventory;
+2. map B4A/current implementation and mutable state to product responsibilities;
+3. mine historical tests for durable lessons and proven mechanisms;
+4. establish the clean Raspberry Pi baseline and dependency/reproducibility
+   ledger in parallel;
 5. derive the clean target architecture from audited behavior;
 6. begin bottom-up reconstruction from the minimal PS2/Pi Ethernet and RFB
    path.
@@ -96,8 +98,8 @@ architecture.
 
 These are planning indicators, not machine authority:
 
-    PRESERVATION_AND_RESET=35_PERCENT
-    SEMANTIC_AUDIT=0_PERCENT
+    REFERENCE_PRESERVATION=100_PERCENT
+    SEMANTIC_AUDIT=5_PERCENT
     CLEAN_PS2_RECONSTRUCTION=0_PERCENT
     PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
     GITHUB_RECONCILIATION=100_PERCENT
@@ -132,7 +134,7 @@ reconstruction step should destroy or silently rewrite them.
 
 ## Next action
 
-    NEXT_ACTION=PRESERVE_RUNTIME_AND_SYSTEM_STATE_THEN_BEGIN_SEMANTIC_AUDIT
+    NEXT_ACTION=POPULATE_BEHAVIORAL_INVENTORY_FROM_SOURCE_AND_EVIDENCE
     BLOCKED_BY=NONE
 
 Current machine-readable project authority is `runtime/PROJECT_STATE.env`.

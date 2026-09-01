@@ -49,6 +49,12 @@ Audit work should connect:
 Defined audit work is tracked in GitHub Issues; durable findings belong back in
 this repository.
 
+Current durable audit surfaces:
+
+- `audit/README.md` — audit contract, evidence classes, and maturity model.
+- `audit/BEHAVIORAL_INVENTORY.md` — complete top-level product behavior
+  inventory and audit status.
+
 ## Development process
 
 - `development/README.md`
