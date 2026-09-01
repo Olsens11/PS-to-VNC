@@ -36,9 +36,9 @@ Allowed states:
 | Openbox `3.6.1-12+rpt1` | `OS_BASE` | Installed in virgin image; historical companion used it, but clean adoption is not automatic. |
 | `wayvnc-control.service` | `OS_BASE` | Enabled in virgin image. Presence does not prove a dedicated usable PS2-facing VNC endpoint. |
 | LightDM | `OS_BASE` | Enabled in virgin image; desktop-login mechanism, not yet a PS-to-VNC dependency. |
-| `samba` package state | `EVALUATING` | Virgin query printed a bare package name without a version; exact dpkg state pending Issue #14. Samba is not required for the minimal VNC milestone. |
-| `lxpanel` package state | `EVALUATING` | Virgin query printed a bare package name without a version; exact dpkg state pending Issue #14. Historical panel behavior is not automatically adopted. |
-| TigerVNC/Xtigervnc | `EVALUATING` | Historical proven companion used a dedicated Xtigervnc `:1`; not proven installed in virgin clean image. Compare against WayVNC before adoption. |
+| `samba` package | `EVALUATING` | Targeted virgin `dpkg-query` reports `not-installed`; useful broader companion capability but absent from the clean base image and not required for the first VNC milestone. |
+| `lxpanel` package | `EVALUATING` | Targeted virgin `dpkg-query` reports `not-installed`; historical panel behavior is not automatically adopted. |
+| TigerVNC/Xtigervnc | `EVALUATING` | `tigervnc-standalone-server` is not installed in the virgin clean image. Historical proven companion used a dedicated Xtigervnc `:1`; compare against OS-base WayVNC before adoption. |
 | Dedicated PS2-facing VNC desktop/session | `EVALUATING` | Required product behavior; implementation choice still open. Must be predictable, independently health-checkable, and reachable from the private PS2 link. |
 | Private PS2 Ethernet `192.168.50.1/24` on `eth0` | `EVALUATING` | Required historical/product topology, but virgin `eth0` is still unconfigured/down. First clean network mutation must be tracked and reproducible. |
 | Pi management service / TCP 5959 | `EVALUATING` | Product behavior is rebuild-ready but not required for the first minimal Ethernet+RFB proof. |
@@ -59,8 +59,7 @@ Allowed states:
 
 For the first clean PS2↔Pi milestone:
 
-1. resolve virgin `samba` / `lxpanel` dpkg ambiguity;
-2. evaluate/configure the private `eth0` link reproducibly;
-3. compare virgin WayVNC/labwc capability with the historical dedicated TigerVNC contract;
-4. adopt the smallest VNC runtime that can supply the required RFB behavior to the PS2;
-5. leave management, Samba, pacing, and desktop conveniences out until the core requires them.
+1. evaluate/configure the private `eth0` link reproducibly;
+2. compare virgin WayVNC/labwc capability with the historical dedicated TigerVNC contract;
+3. adopt the smallest VNC runtime that can supply the required RFB behavior to the PS2;
+4. leave management, Samba, pacing, and desktop conveniences out until the core requires them.
