@@ -24,6 +24,8 @@ jobs:
         run: ./scripts/testkit/successor-identity-compat-self-test.py
       - name: Self-test successor hardware preparation
         run: ./scripts/testkit/self-test.sh
+      - name: Self-test fail-closed Issue 7 DUT manifest
+        run: bash ./scripts/testkit/issue7-dut-manifest-self-test.sh
 
   ps2-compile:
     runs-on: ubuntu-latest
