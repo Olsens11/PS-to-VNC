@@ -5,7 +5,7 @@
     AUDIT_WORKSTREAM=GITHUB_ISSUE_2
     INVENTORY_STRUCTURE=ACTIVE
     DETAILED_BEHAVIOR_AUDIT=IN_PROGRESS
-    COMPLETED_TRANCHE=B01_B09_EVIDENCE_SUPPORTED
+    COMPLETED_TRANCHE=B01_B11_EVIDENCE_SUPPORTED
 
 This is the top-level inventory of product behaviors and responsibilities that
 must be understood before the clean architecture is derived.
@@ -35,8 +35,8 @@ authority, not a module blueprint.
 | B07 | Controller acquisition, pointer semantics, clicks, and logical actions | EVIDENCE_SUPPORTED | B4A/current input source, recovered Test11 foundation, Test13I, F8J2/B4A input-curtain authority |
 | B08 | Keyboard, on-screen keyboard, modifiers, and text interaction | EVIDENCE_SUPPORTED | B4A/current OSK/key-event source, recovered Test11 keyboard/OSK foundation |
 | B09 | Menus, overlays, curtains, status presentation, and local UI flow | EVIDENCE_SUPPORTED | B4A/current UI source, B06 transaction evidence, F8J2/B4A curtain/input ownership evidence |
-| B10 | Human-readable configuration, validation, persistence, and bindings | SEEDED | configuration source/modules, config tests and migration evidence |
-| B11 | Manual refresh, recovery policy, reconnect mechanisms, and Pi management transactions | SEEDED | management/recovery source, rollback/recovery evidence |
+| B10 | Human-readable configuration, validation, persistence, and bindings | EVIDENCE_SUPPORTED | config source, M4F normalization/unit/byte-identity authority, B06 persistence evidence |
+| B11 | Manual refresh, recovery policy, reconnect mechanisms, and Pi management transactions | EVIDENCE_SUPPORTED | B4A/current recovery/management source, legacy Test12, B06 durable rollback evidence |
 | B12 | Diagnostics, runtime identity, telemetry, profiling, and reporting | SEEDED | `src/diagnostics/`, identity/profiling evidence |
 | B13 | Pi-side VNC desktop, management/service, networking, and companion responsibilities | SEEDED | preserved Pi environment, service/config census, product intent |
 | B14 | Build, deployment, test, evidence, and qualification mechanisms that constrain product development | SEEDED | `scripts/`, TestKit history, `evidence/`, development-system lessons |
@@ -1125,27 +1125,151 @@ than coupling correctness to remote framebuffer damage.
 
 ## B10 — Configuration and persistence
 
-**Maturity:** `SEEDED`
+**Maturity:** `EVIDENCE_SUPPORTED`
 
-Audit pending.
+Detailed audit: `docs/audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md`.
 
-The audit must identify the human-readable configuration contract, defaults,
-validation, persistence boundaries, display-mode/calibration persistence,
-controller bindings, and ownership of parsed versus live state.
+### Responsibility boundary
+
+B10 owns the human-readable configuration contract, typed validation, ordinary
+persistence, cached user policy, and the eventual user-adjustable binding
+representation. It does not own crash-safe display-transaction authority.
+
+The audit distinguishes three layers that the historical implementation places
+near one another:
+
+1. human-editable desired configuration;
+2. validated live runtime state;
+3. crash-safe cross-machine transaction authority.
+
+These must remain separate in the clean design.
+
+### Configuration contract and validation
+
+The PS2 retrieves `/ps2vnc.conf` through a bounded HTTP/1.0 management request
+on TCP 5959, independently of RFB. Retrieval failure is non-fatal during
+ordinary startup.
+
+The format permits comments, blank lines, and unknown future sections/keys for
+forward compatibility. Recognized state is strict: embedded NUL, oversized
+input, duplicate recognized keys/sections, malformed or overflowing integers,
+partial current display presets, and impossible geometry are rejected.
+
+Parsing does not mutate live display state. A complete recognized preset is
+published only after the full candidate passes syntax, completeness, integer,
+and geometry validation.
+
+### Persistence boundaries
+
+Startup mode and per-mode safe-area calibration are distinct persisted values.
+Calibration writes carry the explicit mode plus exact selected safe rectangle;
+startup-mode writes carry the symbolic mode separately. Lock/unlock and
+hide-locked-mode policy are separate persisted/cache surfaces.
+
+An accepted calibration remains valid for the current session even if its
+ordinary save operation fails. This is different from durable risky-display
+commit/restore state, where management acknowledgement is part of safety
+authority.
+
+### Binding contract gap
+
+B4A already has a useful typed hotkey model—button mask, semantic action,
+trigger kind, and context—but the final historical binding table is compiled
+into the program. The audit has not found authority that B4A completed
+human-readable configurable bindings.
+
+The clean reconstruction should retain the semantic model while deliberately
+making user-adjustable bindings part of the human-readable config and exposing
+the same state through a future UI.
+
+### Evidence and rebuild implication
+
+M4F moved reusable text helpers to `src/config/text.c/.h` with no product logic
+change, passed host unit tests, and produced a PT_LOAD byte-identical to the
+already hardware-qualified M4A image; qualification transfer was therefore
+explicitly grounded in byte identity. B06 additionally provides integrated
+hardware evidence for mode/calibration/startup persistence.
+
+Build one typed configuration model with side-effect-free parsing and atomic
+publication. Keep persistence adapters separate from parsing, and keep human
+configuration separate from transactional safety state.
 
 ## B11 — Recovery and management
 
-**Maturity:** `SEEDED`
+**Maturity:** `EVIDENCE_SUPPORTED`
 
-Audit pending.
+Detailed audit: `docs/audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md`.
 
-The audit must distinguish:
+### Responsibility boundary
 
-- mechanism from policy;
-- explicit socket/link error recovery from silent-stall policy;
-- manual refresh from automatic recovery;
-- PS2-local state from Pi-management transactions;
-- display-mode rollback/recovery from RFB-session recovery.
+B11 owns recovery policy, coordination of RFB replacement, visible recovery
+lifecycle, manual Refresh admission/cooldown, and semantic Pi management
+clients. B03 owns RFB session mechanics; B06 owns display-transaction meaning;
+B13 owns the companion service/runtime architecture.
+
+### Explicit failures versus silent stalls
+
+Test12 directly established visible automatic recovery for explicit
+carrier/socket/RFB failures and a supervised Pi VNC runtime. The final receive
+loop preserves a different policy for unexplained silence: ordinary
+`EAGAIN/EWOULDBLOCK` waiting does not become a generic elapsed-time reconnect
+watchdog.
+
+A silent receive is interrupted only by explicit causes such as manual Refresh,
+exit, rollback, physical carrier loss, actual socket failure, or the specific
+remote temporary-display safety lease. Thus manual intervention can recover a
+silent stall without automatically erasing the failure during debugging.
+
+### Manual Refresh
+
+Manual Refresh is a semantic runtime action that reuses the qualified full
+session-replacement mechanism. One admission gate rejects unsafe overlays,
+concurrent actions, and attempts while already refreshing/cooling down.
+
+If Refresh arrives inside `recv_exact()`, the old receive is deliberately
+aborted even if partially consumed; that stream is treated as suspect and
+replaced rather than resynchronized by guesswork. After success, visible
+completion state remains under a three-second anti-spam cooldown before READY
+returns.
+
+### Recovery mechanism and transaction ownership
+
+A replacement session discards the old socket/transport state, negotiates a
+fresh RFB session, obtains a complete authoritative framebuffer, re-establishes
+resize capability and authoritative geometry, publishes the complete frame, and
+only then resumes live encoding/connected state.
+
+An RFB failure while a risky display candidate remains unconfirmed belongs to
+the display transaction and rolls the candidate back instead of generically
+recovering into an unapproved profile.
+
+### Pi management semantics
+
+TCP 5959/HTTP is only a transport shared by several semantic clients:
+configuration GET/save, policy writes, durable display transaction state, and
+later best-effort development remote display control. These clients do not have
+the same failure policy merely because they share a port.
+
+Development remote-control polling is explicitly best-effort and cannot damage
+VNC when unavailable; durable begin/commit/restore/restored/ack operations are
+part of cross-machine safety authority and cannot silently report success when
+Pi reconciliation failed.
+
+Test12's Pi lesson also remains: service health means the VNC endpoint/X display
+is actually usable, not merely that a process exists.
+
+### Evidence and rebuild implication
+
+Test12 is the direct historical recovery/runtime foundation. B06 successor
+hardware evidence qualifies integrated durable rollback/persistence behavior;
+final B4A source precisely records later manual Refresh/cooldown and development
+remote-control semantics without requiring the audit to claim every helper was
+independently isolated in hardware.
+
+Create distinct recovery-policy, RFB-replacement, local recovery-presentation,
+and semantic management-client responsibilities. Keep the generic HTTP helper
+small, and do not introduce a silent-stall watchdog merely because a reconnect
+mechanism exists.
 
 ## B12 — Diagnostics and identity
 
@@ -1204,11 +1328,18 @@ These are inputs to the audit, not conclusions about final module layout:
 - physical input ownership and already-published logical input are distinct;
 - locally consumed held buttons remain quarantined until release;
 - local UI rendering must not depend on unrelated remote framebuffer damage;
+- human-readable desired configuration and durable transaction authority are
+  distinct;
+- parsing/validation and publication of live state are distinct;
+- recovery policy and recovery mechanism are distinct;
+- sharing one management transport does not imply one reliability/failure
+  policy;
 - hardware-facing conclusions ultimately require physical PS2 qualification.
 
 ## Next audit action
 
-Audit B10 and B11 together. Configuration/persistence/bindings and
-recovery/management share Pi management endpoints and durable state, but the
-audit must preserve the already established policy-versus-mechanism,
-local-versus-Pi authority, and explicit-failure-versus-silent-stall distinctions.
+Audit B12, B13, and B14 as the remaining seeded behavior families. Diagnostics
+and identity, the Raspberry Pi companion runtime, and product-significant
+build/deployment/evidence infrastructure must remain separate responsibilities,
+but together they close the evidence/reproducibility surface needed before the
+cross-domain `REBUILD_READY` architecture synthesis.
