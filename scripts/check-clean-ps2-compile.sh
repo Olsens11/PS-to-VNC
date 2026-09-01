@@ -55,6 +55,8 @@ COMMON_FLAGS=(
 SOURCES=(
     src/main.c
     src/app.c
+    src/diagnostics.c
+    src/diagnostics/identity.c
     src/rfb.c
     src/framebuffer.c
     src/rfb_session.c

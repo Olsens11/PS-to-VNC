@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run host unit tests
         run: make -C tests unit
+      - name: Verify deterministic runtime identity serialization
+        run: ./scripts/testkit/identity-runtime-message-self-test.sh
 
   ps2-compile:
     runs-on: ubuntu-latest
@@ -41,9 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build linked clean Issue 7 ELF
+      - name: Build identity-ready linked clean Issue 7 ELF
         run: ./scripts/build-issue7-clean.sh
-      - name: Preserve unqualified linked ELF
+      - name: Preserve unqualified identity-ready linked ELF
         uses: actions/upload-artifact@v4
         with:
           name: issue7-unqualified-clean-elf

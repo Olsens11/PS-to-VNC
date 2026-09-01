@@ -14,6 +14,8 @@ EE_BIN = $(BUILD_DIR)/PS-to-VNC-Issue7.ELF
 EE_OBJS = \
 	$(BUILD_DIR)/main.o \
 	$(BUILD_DIR)/app.o \
+	$(BUILD_DIR)/diagnostics.o \
+	$(BUILD_DIR)/diagnostics_identity.o \
 	$(BUILD_DIR)/rfb.o \
 	$(BUILD_DIR)/framebuffer.o \
 	$(BUILD_DIR)/rfb_session.o \
@@ -26,7 +28,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/SMAP_irx.o
 
 EE_INCS = -Isrc -Isrc/platform -I$(GSKIT)/include
-EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman $(PS2IP_LIB) -lpatches
+EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
 
 .PHONY: all clean
 
@@ -45,7 +47,13 @@ $(EE_BIN): $(PS2IP_LIB) | $(BUILD_DIR)
 $(BUILD_DIR)/main.o: src/main.c src/app.h src/platform/ps2_system.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/app.o: src/app.c src/app.h src/display.h src/framebuffer.h src/rfb_session.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h | $(BUILD_DIR)
+$(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics.h src/display.h src/framebuffer.h src/rfb_session.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/diagnostics.o: src/diagnostics.c src/diagnostics.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/diagnostics_identity.o: src/diagnostics/identity.c src/diagnostics/identity.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/rfb.o: src/rfb.c src/rfb.h | $(BUILD_DIR)

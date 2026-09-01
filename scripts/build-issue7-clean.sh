@@ -61,7 +61,11 @@ docker run --rm \
 
 test -f "$ELF"
 
+"$ROOT/scripts/check-issue7-identity-blob.py" "$ELF"
+"$ROOT/scripts/testkit/pt-load-fingerprint.sh" "$ELF"
+
 echo 'ISSUE7_LINKED_BUILD=PASS'
+echo 'ISSUE7_RUNTIME_IDENTITY_LINKED=YES'
 echo "PS2IP_SHA256=$EXPECTED_DEP_SHA"
 echo "ELF_PATH=$ELF"
 sha256sum "$ELF"

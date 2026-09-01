@@ -4,10 +4,11 @@
 
     WORKSTREAM=GITHUB_ISSUE_7
     PHASE=CLEAN_RECONSTRUCTION
-    CURRENT_TRANCHE=APPLICATION_COORDINATOR_AND_LINKED_BUILD
+    CURRENT_TRANCHE=DETERMINISTIC_RUNTIME_IDENTITY
     HOST_TESTABLE=YES
     PS2_PLATFORM_COMPILE_GATED=YES
     LINKED_CLEAN_BUILD_DEFINED=YES
+    RUNTIME_IDENTITY_INTEGRATED=YES
     HARDWARE_QUALIFIED=NO
 
 This document tracks the first clean PS2-side implementation milestone after the
@@ -30,9 +31,6 @@ product:
 - first presentation backend: the proven Standard 480p path;
 - no display-mode menu, persistence, calibration transaction, or HIRES work yet.
 
-The 704x462 logical geometry is the existing qualified 480p geometry. The clean
-core uses it directly without adopting the historical display hierarchy.
-
 ## RFB connection and wire contract
 
 The startup session implements the audited RFB 3.8 sequence:
@@ -50,44 +48,30 @@ The startup session implements the audited RFB 3.8 sequence:
 11. send one non-incremental full-frame request;
 12. publish READY only after a complete authoritative first framebuffer exists.
 
-The qualified wire pixel format remains:
-
-- bits-per-pixel: 16;
-- depth: 15;
-- little-endian pixels;
-- true-color;
-- red/green/blue max: 31/31/31;
-- shifts: red 0, green 5, blue 10.
+The qualified wire pixel format remains 16 bpp / depth 15, little-endian,
+true-color, max 31/31/31, with shifts 0/5/10.
 
 `src/rfb.c` / `src/rfb.h` own pure wire parsing/serialization.
 `src/rfb_session.c` / `src/rfb_session.h` own synchronized session behavior.
-`src/rfb_io.h` remains the intentionally tiny exact-read/exact-write platform
-seam.
+`src/rfb_io.h` is the deliberately tiny exact-read/exact-write platform seam.
 
-The session now also owns full-desktop FramebufferUpdateRequest transmission via
+The session owns full-desktop FramebufferUpdateRequest transmission through
 `pstvnc_rfb_session_request_update()`. Application policy chooses full versus
 incremental service; it does not construct or write RFB wire messages itself.
 
 ## Owned authoritative framebuffer
 
-`src/framebuffer.c` / `src/framebuffer.h` own:
-
-- caller-provided 16-bit pixel storage and capacity;
-- logical geometry;
-- validity;
-- per-update dirty state;
-- dirty bounding rectangle.
+`src/framebuffer.c` / `src/framebuffer.h` own caller-provided 16-bit storage,
+logical geometry, validity, per-update dirty state, and the dirty bounding
+rectangle.
 
 `framebuffer.valid` means a complete authoritative remote desktop exists. Partial
-rectangle writes never publish initial authority.
-
-Startup requires total Raw pixel payload equal to `width * height * 2` before
-marking the framebuffer valid. Live updates preserve authority only when the
-complete current server message is successfully framed and decoded.
+rectangle writes never publish initial authority. Startup requires total Raw
+pixel payload equal to `width * height * 2` before marking the framebuffer valid.
 
 ## Shared Raw server-message parser
 
-Startup and live service use the same parser. It understands:
+Startup and live service use one parser. It understands:
 
 - type 0 `FramebufferUpdate`;
 - type 1 `SetColorMapEntries` by exact payload consumption;
@@ -102,32 +86,19 @@ invalidate framebuffer authority rather than leaving a partially updated image
 trusted.
 
 Live zero-rectangle FramebufferUpdates are legal. Dirty state describes only the
-most recently completed update.
-
-Hextile remains deliberately deferred.
+most recently completed update. Hextile remains deliberately deferred.
 
 ## PS2 system and private-Ethernet platform seam
 
-`src/platform/ps2_system.c` now owns the minimal qualified lifecycle mechanisms:
+`src/platform/ps2_system.c` owns the minimal lifecycle mechanisms: SIF RPC
+initialization, IOP reset/synchronization, loadfile/IOP heap initialization, LMB
+patch enable, final `rom0:OSDSYS` convergence, and stopped-thread fallback if
+`LoadExecPS2()` unexpectedly returns.
 
-- SIF RPC initialization;
-- IOP reset and synchronization;
-- loadfile/IOP heap initialization;
-- LMB patch enable;
-- final convergence to `rom0:OSDSYS`;
-- stopped-thread fallback if `LoadExecPS2()` unexpectedly returns.
-
-`src/platform/ps2_network.c` owns the first private-link mechanisms:
-
-- embedded DEV9, NETMAN, and SMAP module startup;
-- `NetManInit()`;
-- static PS2 IP `192.168.50.2/24`;
-- Pi/gateway `192.168.50.1`;
-- bounded carrier wait through NETMAN link status;
-- one TCP connection to `192.168.50.1:5900`;
-- exact write loop;
-- 32 KiB buffered exact receive loop;
-- socket close and buffered-stream reset.
+`src/platform/ps2_network.c` owns embedded DEV9/NETMAN/SMAP startup,
+`NetManInit()`, static PS2 IP `192.168.50.2/24`, Pi/gateway `192.168.50.1`, bounded
+carrier wait, one TCP connection to `192.168.50.1:5900`, exact writes, a 32 KiB
+buffered exact receive path, and socket close/stream reset.
 
 The receive buffer deliberately prevents RFB framing from depending on individual
 `recv()` boundaries.
@@ -141,35 +112,24 @@ concurrency requires them.
 
 `src/display.c` converts one valid authoritative 704x462 RFB framebuffer into a
 separate GS16 presentation buffer. The remote framebuffer remains unchanged.
+B5:G5:R5 already matches GS CT16 color bits; presentation locally sets A1.
 
-The B5:G5:R5 color bits already match GS CT16; presentation locally sets bit 15
-(A1).
-
-`src/platform/ps2_graphics.c` owns the first conventional hardware path:
-
-- DMAKit initialization;
-- gsKit global initialization;
-- `GS_MODE_DTV_480P`;
-- noninterlaced FRAME output;
-- fixed 704x462 logical drawing surface;
-- current Standard offsets X=-4, Y=3;
-- CT16 texture;
-- nearest filtering;
-- full texture upload;
-- one full-screen sprite;
-- queue execution and synchronized flip.
+`src/platform/ps2_graphics.c` owns DMAKit/gsKit initialization,
+`GS_MODE_DTV_480P`, noninterlaced FRAME output, the fixed 704x462 logical surface,
+Standard offsets X=-4/Y=3, CT16 texture upload, nearest filtering, full-screen
+sprite presentation, queue execution, and synchronized flip.
 
 This intentionally favors a boring coherent full presentation over historical
 performance shortcuts. HIRES/direct-write paths remain deferred.
 
-## First complete application coordinator
+## Complete application coordinator
 
-`src/main.c` is process entry only. `src/app.c` now composes the first complete
-Raw fixed-480p product path:
+`src/main.c` is process entry only. `src/app.c` composes the first complete Raw
+fixed-480p product path:
 
 1. prepare PS2 IOP/system foundation;
-2. initialize the private Ethernet stack;
-3. wait for carrier;
+2. initialize the private Ethernet stack and wait for carrier;
+3. initialize optional diagnostics;
 4. initialize one owned 704x462 framebuffer;
 5. initialize Standard 480p presentation;
 6. connect one TCP socket to the Pi VNC endpoint;
@@ -179,48 +139,73 @@ Raw fixed-480p product path:
 10. repeatedly request one incremental full-desktop update;
 11. receive one complete legal server-message/update sequence;
 12. present only when that update produced dirty pixels;
-13. on fatal failure, close owned transport/presentation resources and return to
-    the process entry path, which converges to OSDSYS.
+13. on fatal failure, close owned transport/presentation/diagnostics resources
+    and converge to OSDSYS.
 
-There is still only one application thread and one RFB socket owner. No input,
-UI, recovery, management, or display transaction behavior is smuggled into this
+There is still one application thread and one RFB socket owner. No input, UI,
+recovery, management, or display transaction behavior is smuggled into this
 milestone.
 
 The two 704x462 16-bit application buffers are statically allocated and
 128-byte-aligned: one authoritative remote image and one conventional GS
 presentation image.
 
-## Host and PS2 compile gates
+## Clean diagnostics and deterministic runtime identity
 
-Host unit coverage includes:
+The first clean milestone now has a deliberately small `src/diagnostics.c` /
+`src/diagnostics.h` transport. It owns only the optional UDP socket/destination
+and caller-supplied diagnostic datagram transport to `192.168.50.1:5999`.
+Product state and failure policy remain owned by the application/subsystems.
 
-- wire message byte contracts;
-- framebuffer geometry/validity/dirty semantics;
-- scripted RFB startup success and failure cases;
-- complete startup Raw-frame authority;
-- legal asynchronous message consumption;
-- partial/multi-rectangle/zero-rectangle live Raw updates;
-- malformed/truncated live failure behavior;
-- session-owned full and incremental update-request serialization;
-- fixed 480p framebuffer-to-GS conversion.
+The coordinator currently emits only a few fixed milestone literals such as
+`NET_READY`, `GS_READY`, `DESKTOP_READY`, and `FATAL`. Diagnostics initialization
+or send failure remains non-fatal to ordinary product startup.
+
+`src/diagnostics/identity.c` / `identity.h` retain the hardware-proven TestKit
+runtime identity contract. A fixed 146-byte stampable blob contains:
+
+- magic `PS2VNCIDv1!BLOB!` plus NUL;
+- 64-byte test-ID field;
+- 65-byte 64-hex digest field plus NUL.
+
+The pristine clean ELF carries `UNSTAMPED` plus an all-zero hexadecimal digest.
+The linked build uses `-Wl,--wrap=sendto`; immediately before the first successful
+diagnostic UDP datagram to port 5999, the wrapper attempts the deterministic
+identity packet:
+
+    PS2VNC_ID version=1 test=<test-id> digest=<64-hex>
+
+The serializer is the repaired bounded byte-copy implementation proven after the
+historical 106-byte truncation failure. It does not use printf-family formatting
+for the runtime identity message.
+
+`scripts/check-issue7-identity-blob.py` fails closed unless the pristine linked
+ELF contains exactly one correctly laid-out unstamped identity blob. The
+established runtime-message self-test remains part of Issue #7 CI.
+
+Actual test-ID/digest stamping is intentionally still delegated to the inherited
+qualified TestKit hardware-preparation path. The clean reconstruction is not
+creating a competing stamp format or replacement qualification system.
+
+## Host, compile, link, and identity gates
+
+Host coverage includes wire contracts, framebuffer authority/dirty semantics,
+scripted RFB startup/live behavior, session-owned full/incremental update
+requests, display conversion, and deterministic runtime identity serialization.
 
 `scripts/check-clean-ps2-compile.sh` compiles every clean Issue #7 translation
-unit, including the coordinator, with the R5900 compiler under strict warnings.
+unit, including diagnostics/identity, with the R5900 compiler under strict
+warnings.
 
-The branch workflow runs host tests and the PS2 translation-unit compile gate in
-the pinned PS2DEV container.
+The linked clean build remains separate from historical `scripts/build.sh`:
 
-## Separate linked clean build
-
-The clean executable now has a build path separate from historical
-`scripts/build.sh`:
-
-- `mk/issue7-clean.mk` defines only the clean Issue #7 source set;
-- `scripts/build-issue7-clean.sh` verifies the qualified frozen PS2IP archive,
-  stages it into generated build state, and links in the pinned PS2DEV image;
+- `mk/issue7-clean.mk` owns only the clean Issue #7 source set;
+- `scripts/build-issue7-clean.sh` verifies the qualified frozen PS2IP archive and
+  links in the pinned PS2DEV image;
+- the link includes the TestKit-compatible `sendto()` identity wrapper;
 - generated output lives only under `build/reconstruction/issue7/`;
-- `.gitignore` excludes generated build output;
-- GitHub Actions builds the linked ELF as a separate gate/artifact.
+- the build checks the pristine identity blob and records a PT_LOAD fingerprint;
+- GitHub Actions preserves the result only as an **unqualified** ELF artifact.
 
 The qualified PS2IP input remains:
 
@@ -230,13 +215,14 @@ The qualified PS2IP input remains:
 Historical `scripts/build.sh` remains untouched and continues to mean the frozen
 B4A/reference build until the clean build earns replacement authority.
 
-A successfully linked ELF is still **not hardware authority**.
+A successful link, identity-blob check, or PT_LOAD fingerprint is still **not
+hardware authority**.
 
 ## Deliberately not implemented yet
 
-- deterministic runtime ELF identity/stamping integration for the clean build;
-- diagnostic UDP/runtime-stage evidence suitable for exact DUT proof;
-- real PS2 hardware qualification of the clean executable;
+- a stamped first clean hardware DUT and hardware-specific test definition;
+- real PS2 runtime identity observation/qualification of the clean executable;
+- real PS2 physical/operator qualification;
 - controller/input handling;
 - nonblocking live receive and safe-boundary application yield;
 - Hextile;
@@ -248,16 +234,17 @@ A successfully linked ELF is still **not hardware authority**.
 
 ## Next implementation order
 
-1. require the coordinator + linked-build CI tranche to pass exactly;
-2. integrate deterministic diagnostics/runtime ELF identity without changing the
-   clean ownership model;
-3. record exact source, qualified dependency, whole-ELF, PT_LOAD, and runtime
-   identity for the first DUT candidate;
+1. require the identity-ready host/compile/link CI tranche to pass exactly;
+2. preserve the resulting pristine ELF, whole-ELF SHA, PT_LOAD fingerprint, and
+   qualified PS2IP identity;
+3. prepare one named first-clean-DUT ELF through the inherited TestKit stamping
+   contract;
 4. deploy through the inherited qualified TestKit bridge;
-5. collect machine evidence and separate physical/operator observation;
-6. only after the boring Raw 480p baseline is hardware-qualified, restore
+5. require runtime identity evidence and machine evidence;
+6. collect separate physical/operator observation;
+7. only after the boring Raw 480p baseline is hardware-qualified, restore
    controller/input-driven nonblocking receive and later features in audited
    order.
 
-No host, compile, or linked-build result substitutes for the PT_LOAD and real
-hardware gate.
+No host, compile, linked-build, identity-blob, or PT_LOAD result substitutes for
+the real-hardware gate.
