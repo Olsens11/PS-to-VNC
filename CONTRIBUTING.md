@@ -40,6 +40,15 @@ Follow:
 
 Current truth and chronological history are separate responsibilities.
 
+## Source readability
+
+All maintained project-defined names and existing source are subject to:
+
+    docs/development/source-naming-and-symbols.md
+
+New or changed symbols must use clear names, preserve file-level orientation,
+and remain synchronized with the canonical generated source-symbol dictionary.
+
 ## Architecture decisions
 
 Use `docs/adr/` for durable decisions whose rationale should survive the code

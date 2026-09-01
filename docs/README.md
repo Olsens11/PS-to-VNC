@@ -85,6 +85,8 @@ outputs.
 
 ## Development process
 
+- `development/source-naming-and-symbols.md` — naming, file-orientation, and
+  complete source-symbol dictionary policy.
 - `development/README.md`
 - `development/documentation.md`
 - `development/testing.md`
