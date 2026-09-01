@@ -58,4 +58,8 @@ int pstvnc_rfb_session_receive_initial_frame(
     pstvnc_rfb_session_t *session,
     pstvnc_framebuffer_t *framebuffer);
 
+int pstvnc_rfb_session_receive_update(
+    pstvnc_rfb_session_t *session,
+    pstvnc_framebuffer_t *framebuffer);
+
 #endif

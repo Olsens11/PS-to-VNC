@@ -64,6 +64,17 @@ int pstvnc_rfb_io_write_exact(
     return 0;
 }
 
+static void append_update_header(uint16_t rectangle_count)
+{
+    unsigned char update[4] = {
+        0, 0,
+        (unsigned char)(rectangle_count >> 8),
+        (unsigned char)rectangle_count
+    };
+
+    append_input(update, sizeof(update));
+}
+
 static void append_rectangle(
     uint16_t x,
     uint16_t y,
@@ -123,6 +134,16 @@ static void prepare(
     CHECK(pstvnc_framebuffer_set_geometry(framebuffer, 4, 3));
 }
 
+static void prepare_live(
+    pstvnc_rfb_session_t *session,
+    pstvnc_framebuffer_t *framebuffer,
+    uint16_t *pixels)
+{
+    prepare(session, framebuffer, pixels);
+    CHECK(pstvnc_framebuffer_mark_valid(framebuffer));
+    session->state = PSTVNC_RFB_SESSION_READY;
+}
+
 static void test_success_with_async_messages(void)
 {
     static const unsigned char bell = 2;
@@ -138,11 +159,6 @@ static void test_success_with_async_messages(void)
         0, 0,
         0, 1,
         0, 0, 0, 0, 0, 0
-    };
-    static const unsigned char update[] = {
-        0,
-        0,
-        0, 1
     };
     static const uint16_t source[12] = {
         1, 2, 3, 4,
@@ -160,7 +176,7 @@ static void test_success_with_async_messages(void)
     append_input(&bell, 1);
     append_input(cut_text, sizeof(cut_text));
     append_input(color_map, sizeof(color_map));
-    append_input(update, sizeof(update));
+    append_update_header(1);
     append_rectangle(0, 0, 4, 3, 0, source);
 
     CHECK(pstvnc_rfb_session_receive_initial_frame(
@@ -179,11 +195,6 @@ static void test_success_with_async_messages(void)
 
 static void test_multiple_rectangles(void)
 {
-    static const unsigned char update[] = {
-        0,
-        0,
-        0, 2
-    };
     static const uint16_t top[8] = {
         1, 2, 3, 4,
         5, 6, 7, 8
@@ -198,7 +209,7 @@ static void test_multiple_rectangles(void)
     script_reset();
     prepare(&session, &framebuffer, pixels);
 
-    append_input(update, sizeof(update));
+    append_update_header(2);
     append_rectangle(0, 0, 4, 2, 0, top);
     append_rectangle(0, 2, 4, 1, 0, bottom);
 
@@ -211,11 +222,6 @@ static void test_multiple_rectangles(void)
 
 static void test_partial_full_frame_rejected(void)
 {
-    static const unsigned char update[] = {
-        0,
-        0,
-        0, 1
-    };
     static const uint16_t half[6] = {
         1, 2,
         3, 4,
@@ -228,7 +234,7 @@ static void test_partial_full_frame_rejected(void)
     script_reset();
     prepare(&session, &framebuffer, pixels);
 
-    append_input(update, sizeof(update));
+    append_update_header(1);
     append_rectangle(0, 0, 2, 3, 0, half);
 
     CHECK(!pstvnc_rfb_session_receive_initial_frame(
@@ -240,16 +246,6 @@ static void test_partial_full_frame_rejected(void)
 
 static void test_protocol_failures(void)
 {
-    static const unsigned char empty_update[] = {
-        0,
-        0,
-        0, 0
-    };
-    static const unsigned char one_rect_update[] = {
-        0,
-        0,
-        0, 1
-    };
     static const uint16_t one_pixel[2] = { 1, 2 };
     uint16_t pixels[12] = { 0 };
     pstvnc_rfb_session_t session;
@@ -257,14 +253,14 @@ static void test_protocol_failures(void)
 
     script_reset();
     prepare(&session, &framebuffer, pixels);
-    append_input(empty_update, sizeof(empty_update));
+    append_update_header(0);
     CHECK(!pstvnc_rfb_session_receive_initial_frame(
         &session, &framebuffer));
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_EMPTY_UPDATE);
 
     script_reset();
     prepare(&session, &framebuffer, pixels);
-    append_input(one_rect_update, sizeof(one_rect_update));
+    append_update_header(1);
     append_rectangle(0, 0, 1, 1, 5, one_pixel);
     CHECK(!pstvnc_rfb_session_receive_initial_frame(
         &session, &framebuffer));
@@ -272,7 +268,7 @@ static void test_protocol_failures(void)
 
     script_reset();
     prepare(&session, &framebuffer, pixels);
-    append_input(one_rect_update, sizeof(one_rect_update));
+    append_update_header(1);
     append_rectangle(3, 2, 2, 1, 0, one_pixel);
     CHECK(!pstvnc_rfb_session_receive_initial_frame(
         &session, &framebuffer));
@@ -292,11 +288,6 @@ static void test_protocol_failures(void)
 
 static void test_short_pixel_payload_invalidates(void)
 {
-    static const unsigned char update[] = {
-        0,
-        0,
-        0, 1
-    };
     static const unsigned char rectangle_header[12] = {
         0, 0,
         0, 0,
@@ -312,12 +303,104 @@ static void test_short_pixel_payload_invalidates(void)
     script_reset();
     prepare(&session, &framebuffer, pixels);
 
-    append_input(update, sizeof(update));
+    append_update_header(1);
     append_input(rectangle_header, sizeof(rectangle_header));
     append_input(one_pixel, sizeof(one_pixel));
 
     CHECK(!pstvnc_rfb_session_receive_initial_frame(
         &session, &framebuffer));
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_IO);
+    CHECK(!framebuffer.valid);
+    CHECK(!framebuffer.dirty);
+}
+
+static void test_live_partial_update(void)
+{
+    static const uint16_t changed[2] = { 0x1234, 0x5678 };
+    uint16_t pixels[12];
+    pstvnc_rfb_session_t session;
+    pstvnc_framebuffer_t framebuffer;
+    pstvnc_framebuffer_rect_t dirty;
+    unsigned int i;
+
+    for (i = 0; i < 12; i++)
+        pixels[i] = 0x1111;
+
+    script_reset();
+    prepare_live(&session, &framebuffer, pixels);
+
+    append_update_header(1);
+    append_rectangle(1, 1, 2, 1, 0, changed);
+
+    CHECK(pstvnc_rfb_session_receive_update(&session, &framebuffer));
+    CHECK(session.state == PSTVNC_RFB_SESSION_READY);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
+    CHECK(framebuffer.valid);
+    CHECK(pixels[5] == changed[0]);
+    CHECK(pixels[6] == changed[1]);
+    CHECK(pixels[0] == 0x1111);
+    CHECK(pixels[11] == 0x1111);
+    CHECK(pstvnc_framebuffer_get_dirty(&framebuffer, &dirty));
+    CHECK(dirty.x == 1);
+    CHECK(dirty.y == 1);
+    CHECK(dirty.width == 2);
+    CHECK(dirty.height == 1);
+}
+
+static void test_live_dirty_resets_per_update(void)
+{
+    static const uint16_t first = 0x0101;
+    static const uint16_t second = 0x0202;
+    uint16_t pixels[12] = { 0 };
+    pstvnc_rfb_session_t session;
+    pstvnc_framebuffer_t framebuffer;
+    pstvnc_framebuffer_rect_t dirty;
+
+    script_reset();
+    prepare_live(&session, &framebuffer, pixels);
+
+    append_update_header(2);
+    append_rectangle(0, 0, 1, 1, 0, &first);
+    append_rectangle(3, 2, 1, 1, 0, &second);
+    append_update_header(0);
+
+    CHECK(pstvnc_rfb_session_receive_update(&session, &framebuffer));
+    CHECK(pstvnc_framebuffer_get_dirty(&framebuffer, &dirty));
+    CHECK(dirty.x == 0);
+    CHECK(dirty.y == 0);
+    CHECK(dirty.width == 4);
+    CHECK(dirty.height == 3);
+
+    CHECK(pstvnc_rfb_session_receive_update(&session, &framebuffer));
+    CHECK(framebuffer.valid);
+    CHECK(!framebuffer.dirty);
+    CHECK(session.state == PSTVNC_RFB_SESSION_READY);
+    CHECK(input_pos == input_size);
+}
+
+static void test_live_failure_invalidates(void)
+{
+    static const unsigned char rectangle_header[12] = {
+        0, 1,
+        0, 1,
+        0, 2,
+        0, 1,
+        0, 0, 0, 0
+    };
+    static const unsigned char one_pixel[2] = { 0x34, 0x12 };
+    uint16_t pixels[12] = { 0 };
+    pstvnc_rfb_session_t session;
+    pstvnc_framebuffer_t framebuffer;
+
+    script_reset();
+    prepare_live(&session, &framebuffer, pixels);
+
+    append_update_header(1);
+    append_input(rectangle_header, sizeof(rectangle_header));
+    append_input(one_pixel, sizeof(one_pixel));
+
+    CHECK(!pstvnc_rfb_session_receive_update(&session, &framebuffer));
+    CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_IO);
     CHECK(!framebuffer.valid);
     CHECK(!framebuffer.dirty);
@@ -330,6 +413,9 @@ int main(void)
     test_partial_full_frame_rejected();
     test_protocol_failures();
     test_short_pixel_payload_invalidates();
+    test_live_partial_update();
+    test_live_dirty_resets_per_update();
+    test_live_failure_invalidates();
 
     if (failures != 0) {
         fprintf(
