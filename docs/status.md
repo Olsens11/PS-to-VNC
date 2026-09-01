@@ -132,6 +132,8 @@ reconstruction step should destroy or silently rewrite them.
     NEXT_ACTION=FORMALIZE_PROJECT_INTENT_AND_SEMANTIC_AUDIT
     BLOCKED_BY=NONE
 
-Machine-readable migration-era authority under `runtime/` remains preserved
-historical authority until the clean reconstruction introduces its replacement
-state model deliberately.
+Current machine-readable project authority is `runtime/PROJECT_STATE.env`.
+
+Migration-era authority remains byte-preserved under
+`runtime/MIGRATION_STATE.env` and `runtime/M4_SOURCE_AUTHORITY.env` as
+historical/reference authority for the exploratory generation.

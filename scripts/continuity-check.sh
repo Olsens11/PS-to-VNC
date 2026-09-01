@@ -58,26 +58,50 @@ PROJECT='runtime/PROJECT_STATE.env'
 
 test "$(get_env "$PROJECT" PROJECT_NAME)" = 'PS-to-VNC'
 test "$(get_env "$PROJECT" PROJECT_STATE_ROLE)" = 'CURRENT'
-test "$(get_env "$PROJECT" MACHINE_CURRENT_STATE)" =     'runtime/PROJECT_STATE.env'
-test "$(get_env "$PROJECT" HUMAN_CURRENT_STATE)" =     'docs/status.md'
-test "$(get_env "$PROJECT" MIGRATION_STATE_ROLE)" =     'HISTORICAL_REFERENCE'
-test "$(get_env "$PROJECT" EXPLORATORY_MIGRATION_STATE)" =     'runtime/MIGRATION_STATE.env'
 
-for field in     PHASE     MACHINE_CURRENT_STATE     MIGRATION_STATE_ROLE     RECONCILED_MAIN     PRESERVATION_AND_RESET     SEMANTIC_AUDIT     CLEAN_PS2_RECONSTRUCTION     PI_REPRODUCIBILITY_PACKAGE     GITHUB_RECONCILIATION     NEXT_ACTION     BLOCKED_BY
+test "$(get_env "$PROJECT" MACHINE_CURRENT_STATE)" = \
+    'runtime/PROJECT_STATE.env'
+
+test "$(get_env "$PROJECT" HUMAN_CURRENT_STATE)" = \
+    'docs/status.md'
+
+test "$(get_env "$PROJECT" MIGRATION_STATE_ROLE)" = \
+    'HISTORICAL_REFERENCE'
+
+test "$(get_env "$PROJECT" EXPLORATORY_MIGRATION_STATE)" = \
+    'runtime/MIGRATION_STATE.env'
+
+for field in \
+    PHASE \
+    MACHINE_CURRENT_STATE \
+    MIGRATION_STATE_ROLE \
+    RECONCILED_MAIN \
+    PRESERVATION_AND_RESET \
+    SEMANTIC_AUDIT \
+    CLEAN_PS2_RECONSTRUCTION \
+    PI_REPRODUCIBILITY_PACKAGE \
+    GITHUB_RECONCILIATION \
+    NEXT_ACTION \
+    BLOCKED_BY
 do
     value="$(get_env "$PROJECT" "$field")"
     grep -q "${field}=${value}" docs/status.md
 done
 
-test "$(get_env "$PROJECT" EXPLORATORY_FINAL_SOURCE_HEAD)" =     "$(get_env "$MIG" CURRENT_SOURCE_HEAD)"
+test "$(get_env "$PROJECT" EXPLORATORY_FINAL_SOURCE_HEAD)" = \
+    "$(get_env "$MIG" CURRENT_SOURCE_HEAD)"
 
-test "$(get_env "$PROJECT" EXPLORATORY_FINAL_HARDWARE_HEAD)" =     "$(get_env "$M4" M4I_FINAL_HARDWARE_HEAD)"
+test "$(get_env "$PROJECT" EXPLORATORY_FINAL_HARDWARE_HEAD)" = \
+    "$(get_env "$M4" M4I_FINAL_HARDWARE_HEAD)"
 
-test "$(get_env "$PROJECT" EXPLORATORY_FINAL_ELF_SHA256)" =     "$(get_env "$MIG" LAST_VALIDATED_WORKING_ELF_SHA256)"
+test "$(get_env "$PROJECT" EXPLORATORY_FINAL_ELF_SHA256)" = \
+    "$(get_env "$MIG" LAST_VALIDATED_WORKING_ELF_SHA256)"
 
-test "$(get_env "$PROJECT" EXPLORATORY_FINAL_PT_LOAD_SHA256)" =     "$(get_env "$M4" LAST_VALIDATED_PT_LOAD_SHA256)"
+test "$(get_env "$PROJECT" EXPLORATORY_FINAL_PT_LOAD_SHA256)" = \
+    "$(get_env "$M4" LAST_VALIDATED_PT_LOAD_SHA256)"
 
-test "$(get_env "$PROJECT" EXPLORATORY_FORMER_NEXT_ACTION)" =     "$(get_env "$MIG" NEXT_ACTION)"
+test "$(get_env "$PROJECT" EXPLORATORY_FORMER_NEXT_ACTION)" = \
+    "$(get_env "$MIG" NEXT_ACTION)"
 
 echo 'CURRENT_PROJECT_STATE_MIRROR=PASS'
 echo 'EXPLORATORY_STATE_PRESERVATION=PASS'
@@ -85,8 +109,13 @@ echo 'EXPLORATORY_STATE_PRESERVATION=PASS'
 test "$(get_env "$DEV" SESSION_BOOTSTRAP)" = 'AGENTS.md'
 test "$(get_env "$DEV" DOCS_ROUTER)" = 'docs/README.md'
 test "$(get_env "$DEV" HUMAN_CURRENT_STATE)" = 'docs/status.md'
-test "$(get_env "$DEV" MACHINE_CURRENT_STATE)" =     'runtime/PROJECT_STATE.env'
-test "$(get_env "$DEV" HISTORICAL_MIGRATION_STATE)" =     'runtime/MIGRATION_STATE.env'
+
+test "$(get_env "$DEV" MACHINE_CURRENT_STATE)" = \
+    'runtime/PROJECT_STATE.env'
+
+test "$(get_env "$DEV" HISTORICAL_MIGRATION_STATE)" = \
+    'runtime/MIGRATION_STATE.env'
+
 test "$(get_env "$DEV" CANONICAL_TOOL_REUSE)" = 'REQUIRED'
 test "$(get_env "$DEV" REAL_PROJECT_AGITATION)" = 'ENABLED'
 
