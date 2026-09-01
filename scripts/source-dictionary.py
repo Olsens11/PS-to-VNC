@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Validate and aggregate directory-owned PS-to-VNC symbol dictionaries."""
+"""File synopsis:
+Validate and aggregate directory-owned PS-to-VNC symbol dictionaries.
+
+This tool owns clean-generation dictionary validation and deterministic views;
+it does not define product symbols or include historical/pre-refresh source.
+"""
 
 from __future__ import annotations
 

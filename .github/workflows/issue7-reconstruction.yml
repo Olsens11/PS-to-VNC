@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run host unit tests
         run: make -C tests unit
+      - name: Self-test clean source dictionary tooling
+        run: ./scripts/source-dictionary-self-test.py
       - name: Verify deterministic runtime identity serialization
         run: ./scripts/testkit/identity-runtime-message-self-test.sh
       - name: Analyze historical identity digest contract

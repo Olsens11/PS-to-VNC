@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""Disposable regression tests for source_dictionary.py."""
+"""File synopsis:
+Run disposable regression tests for the clean source-dictionary tooling.
+
+This self-test owns only validator fixtures; it does not inspect historical
+source or claim exhaustive production symbol coverage.
+"""
 
 from pathlib import Path
 import subprocess
 import tempfile
 
-TOOL = Path(__file__).with_name("source_dictionary.py")
+TOOL = Path(__file__).with_name("source-dictionary.py")
 
 
 def write(root: Path, relative: str, text: str) -> None:
