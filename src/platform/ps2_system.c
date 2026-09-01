@@ -1,0 +1,33 @@
+#include <iopcontrol.h>
+#include <iopheap.h>
+#include <loadfile.h>
+#include <sbv_patches.h>
+#include <sifrpc.h>
+
+#include "ps2_system.h"
+
+int pstvnc_ps2_system_prepare_iop(void)
+{
+    sceSifInitRpc(0);
+
+    while (!SifIopReset("", 0)) {
+        /* The qualified startup waits until the reset request is accepted. */
+    }
+
+    while (!SifIopSync()) {
+        /* The IOP must be synchronized before loading product modules. */
+    }
+
+    sceSifInitRpc(0);
+
+    if (SifLoadFileInit() < 0)
+        return -1;
+
+    if (SifInitIopHeap() < 0)
+        return -1;
+
+    if (sbv_patch_enable_lmb() < 0)
+        return -1;
+
+    return 0;
+}
