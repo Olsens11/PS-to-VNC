@@ -49,21 +49,26 @@ At capture:
 
 This proves the private PS2 link had not been configured before the baseline capture.
 
-## Relevant packages visibly present in the virgin image
+## Relevant package state in the virgin image
 
-The first package census directly reported versions for:
+The baseline and targeted follow-up query establish:
 
 | Package | Virgin status | Version at capture |
 |---|---|---|
-| `network-manager` | present | `1.52.1-1+rpt4` |
-| `labwc` | present | `0.9.7-1+rpt1` |
-| `wayvnc` | present | `0.9.1-1+rpt5` |
-| `openbox` | present | `3.6.1-12+rpt1` |
-| `python3` | present | `3.13.5-1` |
-| `curl` | present | `8.14.1-2+deb13u3` |
-| `git` | present | `1:2.47.3-0+deb13u1` |
+| `network-manager` | installed | `1.52.1-1+rpt4` |
+| `labwc` | installed | `0.9.7-1+rpt1` |
+| `wayvnc` | installed | `0.9.1-1+rpt5` |
+| `openbox` | installed | `3.6.1-12+rpt1` |
+| `python3` | installed | `3.13.5-1` |
+| `curl` | installed | `8.14.1-2+deb13u3` |
+| `git` | installed | `1:2.47.3-0+deb13u1` |
+| `samba` | not installed | none |
+| `lxpanel` | not installed | none |
+| `tigervnc-standalone-server` | not installed / no installed version | none |
 
-The same query printed bare names for `samba` and `lxpanel` without versions. Their exact dpkg install state is intentionally left unresolved pending a targeted status query (GitHub Issue #14). `tigervnc-standalone-server`, `wayfire`, and `docker.io` did not produce an installed-version line in this capture and therefore are not classified as installed from this evidence alone.
+The follow-up used `dpkg-query` only and reported `PRODUCT_MUTATIONS=NONE`.
+
+`wayfire` and `docker.io` did not produce an installed-version line in the first capture and are not classified as installed from that evidence alone.
 
 ## Enabled service baseline
 
@@ -99,7 +104,8 @@ Important initial differences:
 - clean baseline: Debian 13 / arm64 / kernel 6.18 / labwc/Wayland-oriented desktop image;
 - historical companion: older Bookworm/armhf runtime with a dedicated TigerVNC/Xtigervnc `:1` desktop and Openbox/LXPanel service graph;
 - clean `eth0`: unconfigured/down at baseline;
-- historical `eth0`: product-configured `192.168.50.1/24` private PS2 link.
+- historical `eth0`: product-configured `192.168.50.1/24` private PS2 link;
+- clean image already includes WayVNC/labwc/Openbox but not TigerVNC, Samba, or LXPanel.
 
 The historical system remains evidence of required behavior, not an instruction to reproduce the old package stack blindly.
 
@@ -107,6 +113,6 @@ The historical system remains evidence of required behavior, not an instruction 
 
 The virgin-baseline requirement from Issue #5 is satisfied for hardware, OS, storage, network, relevant package surface, enabled service surface, and active graphical-session surface.
 
-No product mutation occurred before capture.
+No product mutation occurred before or during capture/follow-up package clarification.
 
-Next: resolve the two ambiguous package-status lines, then evaluate the smallest clean dependencies needed for private Ethernet plus a predictable PS2-facing VNC endpoint.
+Next: evaluate the smallest reproducible private-Ethernet definition and compare the OS-base WayVNC/labwc path against the historical dedicated TigerVNC contract before adopting a PS2-facing VNC runtime.
