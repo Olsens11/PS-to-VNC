@@ -65,12 +65,12 @@ now forensic/reference authority rather than unfinished reconstruction work.
 
 Immediate work:
 
-1. build the complete semantic behavioral inventory;
-2. map B4A/current implementation and mutable state to product responsibilities;
-3. mine historical tests for durable lessons and proven mechanisms;
+1. complete the semantic behavioral inventory and cross-domain synthesis;
+2. reconcile B4A/current mutable state to explicit clean ownership;
+3. derive subsystem interfaces and dependency direction from audited behavior;
 4. establish the clean Raspberry Pi baseline and dependency/reproducibility
    ledger in parallel;
-5. derive the clean target architecture from audited behavior;
+5. promote sufficiently reconciled behavior to `REBUILD_READY`;
 6. begin bottom-up reconstruction from the minimal PS2/Pi Ethernet and RFB
    path.
 
@@ -81,7 +81,7 @@ each meaningful component.
 
 ### Behavioral-audit checkpoint
 
-B01 through B11 have completed their source-plus-historical-evidence audit
+B01 through B14 have completed their source-plus-historical-evidence audit
 tranches and are recorded as `EVIDENCE_SUPPORTED` in:
 
     docs/audit/BEHAVIORAL_INVENTORY.md
@@ -90,8 +90,9 @@ Detailed grouped tranches are retained at:
 
     docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md
     docs/audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md
+    docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md
 
-Covered so far:
+Covered behavior families:
 
 - B01 startup/application lifecycle;
 - B02 PS2-to-Pi Ethernet/networking;
@@ -108,7 +109,13 @@ Covered so far:
 - B10 human-readable configuration, strict typed validation, persistence
   boundaries, display policy, and the controller-binding gap;
 - B11 manual Refresh, explicit-failure recovery, silent-stall policy, RFB
-  replacement, and semantic Pi management transactions.
+  replacement, and semantic Pi management transactions;
+- B12 diagnostics transport/stages, structured reports, deterministic runtime
+  identity, profiling, and qualification-facing telemetry;
+- B13 reproducible Pi companion networking, dedicated VNC desktop, management,
+  service health, persistence, and runtime/operator controls;
+- B14 reproducible build/dependency/DUT identity, deployment/TestKit apparatus,
+  evidence integrity, PT_LOAD hardware gating, and qualification authority.
 
 Important display conclusions include:
 
@@ -144,7 +151,7 @@ Important input/UI conclusions include:
 - local UI foreground/underlay ownership must be explicit and local repaint must
   not depend on unrelated remote framebuffer damage.
 
-Important configuration/recovery conclusions now include:
+Important configuration/recovery conclusions include:
 
 - human-editable desired configuration, validated live state, and crash-safe
   transactional authority are different concepts;
@@ -168,11 +175,36 @@ Important configuration/recovery conclusions now include:
 - local recovery success and durable cross-machine reconciliation are not
   silently treated as equivalent.
 
-The next grouped audit is B12/B13/B14: diagnostics/identity, the Raspberry Pi
-companion runtime, and product-significant build/deployment/test/evidence
-infrastructure. They remain separate responsibilities but together close the
-remaining seeded evidence/reproducibility surface before cross-domain
-`REBUILD_READY` architecture synthesis.
+Important diagnostics/Pi/development conclusions now include:
+
+- diagnostics are optional to ordinary product startup but may be mandatory
+  evidence for a particular qualification manifest;
+- exact runtime identity closes the DUT-to-telemetry loop, and ambiguous runtime
+  identity fails qualification even when the desktop visibly runs;
+- the M4I identity truncation was a real source/runtime defect, not a reason to
+  weaken TestKit validation; deterministic bounded identity serialization fixed
+  it and was requalified on hardware;
+- the Pi companion should be a normal supported Raspberry Pi OS plus narrowly
+  product-specific services, not a clone of the exploratory development
+  machine;
+- VNC desktop availability is independent of management-service availability;
+- service health means actual listener/X usability rather than merely an active
+  process;
+- historical VNC-only traffic pacing is explicit runtime state to preserve and
+  re-evaluate, not an invisible machine tweak or universally proven constant;
+- build environment, significant dependency identity, ELF/PT_LOAD/runtime DUT
+  identity, apparatus, and operator procedure are part of empirical meaning;
+- a changed PT_LOAD crosses the hardware gate unless an explicit authority
+  records a valid qualification transfer;
+- machine evidence and physical/operator evidence remain independent;
+- raw evidence is byte-preserved and invalid/ambiguous evidence fails closed;
+- migration-specific machinery survives only when it expresses a recurring
+  development invariant.
+
+All seeded behavior families are therefore evidence-supported. The next phase is
+not implementation yet: cross-domain synthesis must turn these audited facts into
+explicit state ownership, interfaces, dependency direction, PS2/Pi boundaries,
+and a deliberately small target architecture before `REBUILD_READY` promotion.
 
 ## Development continuity
 
@@ -194,10 +226,14 @@ architecture.
 These are planning indicators, not machine authority:
 
     REFERENCE_PRESERVATION=100_PERCENT
-    SEMANTIC_AUDIT=40_PERCENT
+    SEMANTIC_AUDIT=50_PERCENT
     CLEAN_PS2_RECONSTRUCTION=0_PERCENT
     PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
     GITHUB_RECONCILIATION=100_PERCENT
+
+The 50% semantic-audit checkpoint means all seeded behavior families have
+source-plus-evidence support. It deliberately reserves the remaining audit work
+for cross-domain ownership/interface synthesis and `REBUILD_READY` promotion.
 
 The previous `OVERALL_ARCHITECTURAL_NORMALIZATION` percentage is historical and
 is not carried forward as reconstruction progress.
@@ -229,7 +265,7 @@ reconstruction step should destroy or silently rewrite them.
 
 ## Next action
 
-    NEXT_ACTION=AUDIT_B12_B13_B14_DIAGNOSTICS_PI_AND_DEVELOPMENT_INFRASTRUCTURE
+    NEXT_ACTION=SYNTHESIZE_CROSS_DOMAIN_OWNERSHIP_INTERFACES_AND_REBUILD_READY_ARCHITECTURE
     BLOCKED_BY=NONE
 
 Current machine-readable project authority is `runtime/PROJECT_STATE.env`.
