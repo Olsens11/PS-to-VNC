@@ -83,6 +83,9 @@ Durable audit outputs:
     docs/audit/CROSS_DOMAIN_STATE_INTERFACES.md
     docs/audit/REBUILD_READY_PROMOTION.md
 
+GitHub Issues #1, #2, #3, #4, and #6 closed as completed when PR #12 promoted the
+semantic audit and clean architecture to `main`.
+
 ## Core clean-architecture conclusions
 
 The initial PS2 design has explicit owners for:
@@ -193,13 +196,14 @@ Planning indicators:
     SEMANTIC_AUDIT=100_PERCENT
     CLEAN_PS2_RECONSTRUCTION=0_PERCENT
     PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
-    GITHUB_RECONCILIATION=90_PERCENT
+    GITHUB_RECONCILIATION=100_PERCENT
 
 The previous `OVERALL_ARCHITECTURAL_NORMALIZATION` percentage remains historical
 and is not reconstruction progress.
 
-`GITHUB_RECONCILIATION` is temporarily below 100% only because the completed
-semantic-audit/architecture branch still needs its final PR/merge into `main`.
+PR #12 promoted the completed semantic audit and clean architecture to `main` at:
+
+    SEMANTIC_AUDIT_PROMOTION_MAIN=a990bdc447f7f2073952b166b8cbd66e331f4e98
 
 ## Development continuity
 
@@ -224,12 +228,14 @@ must not be destroyed or silently rewritten by clean reconstruction work.
 
 ## Next action
 
-    NEXT_ACTION=PROMOTE_SEMANTIC_AUDIT_BRANCH_THEN_BEGIN_ISSUES_5_AND_7
+    NEXT_ACTION=BEGIN_ISSUES_5_AND_7_IN_PARALLEL
     BLOCKED_BY=NONE
 
-After branch promotion, work proceeds in parallel on:
+Parallel next workstreams:
 
-- GitHub Issue #5 — clean Pi baseline/dependency ledger;
-- GitHub Issue #7 — smallest PS2/Pi Ethernet + RFB clean reconstruction core.
+- GitHub Issue #5 — establish the clean Pi baseline/dependency ledger and first
+  reproducible companion contract;
+- GitHub Issue #7 — construct the smallest clean PS2/Pi Ethernet + RFB core in
+  the promoted architecture.
 
 Current machine-readable authority is `runtime/PROJECT_STATE.env`.
