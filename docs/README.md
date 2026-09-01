@@ -17,26 +17,39 @@ Development sessions begin with:
 
 ## Architecture
 
-Current/historical architecture is rooted in:
+Current clean-reconstruction architecture authority:
 
-- `ARCHITECTURE.md`
-- `TARGET_ARCHITECTURE.md`
-- `STATE_OWNERSHIP.md`
-- `DEPENDENCY_RULES.md`
-- `NORMALIZATION_SEQUENCE.md`
-- `ARCHITECTURAL_NORMALIZATION.md`
+- `CLEAN_ARCHITECTURE.md` — evidence-derived responsibility, state ownership,
+  dependency, lifecycle, concurrency, Pi-boundary, and reconstruction model.
 
-Subsystem architecture may additionally live under `architecture/`.
+Supporting semantic derivation lives under `audit/`, especially:
 
-During the semantic-audit phase, these are reference material rather than an
-automatic structural blueprint for the clean reconstruction.
+- `audit/CROSS_DOMAIN_SYNTHESIS.md`;
+- `audit/CROSS_DOMAIN_STATE_INTERFACES.md`;
+- `audit/SOURCE_RESPONSIBILITY_MAP.md`;
+- `audit/HISTORICAL_LESSONS.md`.
+
+Normalization-era architecture remains historical/reference material:
+
+- `ARCHITECTURE.md`;
+- `TARGET_ARCHITECTURE.md`;
+- `STATE_OWNERSHIP.md`;
+- `DEPENDENCY_RULES.md`;
+- `NORMALIZATION_SEQUENCE.md`;
+- `ARCHITECTURAL_NORMALIZATION.md`.
+
+Those documents retain useful principles and migration history, but their
+preselected M4 decomposition is superseded by `CLEAN_ARCHITECTURE.md` for new
+clean-reconstruction work.
+
+Subsystem historical architecture may additionally live under `architecture/`.
 
 ## Semantic audit
 
-The clean reconstruction begins by documenting what PS-to-VNC actually does
-before redesigning it.
+The clean reconstruction first documented what PS-to-VNC actually does before
+freezing replacement structure.
 
-Audit work should connect:
+Audit work connects:
 
 - product behavior;
 - subsystem responsibility;
@@ -51,9 +64,24 @@ this repository.
 
 Current durable audit surfaces:
 
-- `audit/README.md` — audit contract, evidence classes, and maturity model.
+- `audit/README.md` — audit contract, evidence classes, and maturity model;
 - `audit/BEHAVIORAL_INVENTORY.md` — complete top-level product behavior
-  inventory and audit status.
+  inventory;
+- `audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md` — detailed input/UI tranche;
+- `audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md` — detailed config and
+  recovery/management tranche;
+- `audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md` — diagnostics,
+  companion, and engineering-infrastructure tranche;
+- `audit/SOURCE_RESPONSIBILITY_MAP.md` — historical implementation/state/coupling
+  map;
+- `audit/HISTORICAL_LESSONS.md` — durable experiment/failure lessons;
+- `audit/CROSS_DOMAIN_SYNTHESIS.md` — responsibility-level architecture
+  derivation;
+- `audit/CROSS_DOMAIN_STATE_INTERFACES.md` — explicit state ownership,
+  interfaces, concurrency seams, and critical-flow verification.
+
+`CLEAN_ARCHITECTURE.md` is the promoted design authority derived from these audit
+outputs.
 
 ## Development process
 
@@ -101,14 +129,15 @@ unless explicitly adopted into the new reconstruction roadmap.
 Migration state/history documents, Git history, and preserved evidence retain
 the chronological development record.
 
-They are not substitutes for the concise current state in `status.md` or the
-project values in `PROJECT_INTENT.md`.
+They are not substitutes for the concise current state in `status.md`, the
+project values in `PROJECT_INTENT.md`, or the current architecture in
+`CLEAN_ARCHITECTURE.md`.
 
 ## Compatibility documents
 
 Migration-era router and state files remain because existing migration tooling
 still references their paths.
 
-Where historical current-state text conflicts with `status.md` or the clean
-reconstruction intent, classify the older material as historical rather than
-silently rewriting the record.
+Where historical current-state or architecture text conflicts with `status.md`,
+`PROJECT_INTENT.md`, or `CLEAN_ARCHITECTURE.md`, classify the older material as
+historical rather than silently rewriting the record.
