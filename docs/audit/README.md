@@ -11,6 +11,9 @@ The governing product intent is:
 
 GitHub Issue #1 is the umbrella audit.
 GitHub Issue #2 owns the behavioral inventory.
+GitHub Issue #3 owns the historical source/responsibility map.
+GitHub Issue #4 owns the durable historical lessons ledger.
+GitHub Issue #6 owns the clean ownership/architecture derivation.
 
 ## Core rule
 
@@ -69,29 +72,56 @@ Behavioral-inventory entries use these maturity states:
 - `SOURCE_MAPPED` — relevant implementation/state has been located;
 - `EVIDENCE_SUPPORTED` — important behavior is connected to historical tests or
   evidence;
-- `REBUILD_READY` — purpose, behavior, state, failures, invariants, and rebuild
-  implications are sufficiently understood to design the clean replacement.
+- `REBUILD_READY` — purpose, behavior, state, failures, invariants, ownership,
+  interfaces, and rebuild implications are sufficiently understood to guide the
+  clean replacement.
 
 `SEEDED` does not mean audited.
 
+`REBUILD_READY` does not mean a historical implementation/file split is accepted
+unchanged, and it does not freeze every future implementation choice. It means
+the behavior and ownership contract are strong enough to reconstruct without
+rediscovering why the old program worked.
+
 ## Audit sequence
 
-The default order is:
+The completed semantic-audit sequence is:
 
-1. complete the behavioral inventory;
-2. map source/state ownership to those behaviors;
-3. mine historical experiments and failures;
-4. resolve contradictions and open questions;
-5. derive clean module ownership only from the resulting behavioral model.
+1. build the B01-B14 behavioral inventory;
+2. map historical source/state/coupling to those responsibilities;
+3. mine historical experiments and failures for durable lessons;
+4. reconcile evidence strength and preserved uncertainty;
+5. derive cross-domain ownership, interfaces, concurrency, and lifecycle;
+6. verify startup/live/display-transition/recovery flows against the ownership
+   model;
+7. promote the evidence-derived clean architecture.
 
-The audit may move between these steps when evidence requires it.
+Exact Pi package adoption and bottom-up implementation remain separate clean
+reconstruction work; they do not reopen the semantic audit unless new evidence
+contradicts an audited behavior.
 
 ## Durable outputs
 
 Current audit outputs:
 
-- `BEHAVIORAL_INVENTORY.md` — complete behavior/responsibility inventory and
-  per-domain audit state.
+- `BEHAVIORAL_INVENTORY.md` — complete behavior/responsibility inventory;
+- `B07_B09_INPUT_KEYBOARD_LOCAL_UI.md` — detailed input/UI audit;
+- `B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md` — detailed config/recovery
+  audit;
+- `B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md` — detailed final seeded
+  tranche;
+- `SOURCE_RESPONSIBILITY_MAP.md` — responsibility to historical source/state
+  mapping and hidden coupling;
+- `HISTORICAL_LESSONS.md` — durable experiment/failure lessons and preserved
+  uncertainty;
+- `CROSS_DOMAIN_SYNTHESIS.md` — responsibility-level architecture derivation;
+- `CROSS_DOMAIN_STATE_INTERFACES.md` — state ownership, interfaces, concurrency,
+  and critical-flow verification.
 
-Additional focused documents should be created only when a domain needs enough
-detail that keeping it in the inventory would make the inventory harder to use.
+The promoted current architecture authority is:
+
+    docs/CLEAN_ARCHITECTURE.md
+
+Additional focused audit documents should be created only when new evidence or a
+future subsystem requires enough detail that keeping it in the existing outputs
+would make them harder to use.
