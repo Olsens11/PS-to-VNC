@@ -81,8 +81,8 @@ each meaningful component.
 
 ### Behavioral-audit checkpoint
 
-B01 through B04 have completed their first source-plus-historical-evidence
-tranche and are recorded as `EVIDENCE_SUPPORTED` in:
+B01 through B06 have completed their source-plus-historical-evidence audit
+tranches and are recorded as `EVIDENCE_SUPPORTED` in:
 
     docs/audit/BEHAVIORAL_INVENTORY.md
 
@@ -91,11 +91,27 @@ Covered so far:
 - B01 startup/application lifecycle;
 - B02 PS2-to-Pi Ethernet/networking;
 - B03 RFB session/transport state;
-- B04 framebuffer/update processing.
+- B04 framebuffer/update processing;
+- B05 GS/video presentation and PS2 interrupt discipline;
+- B06 display modes, transactions, geometry, calibration, rollback, and
+  persistence.
 
-The next paired audit is B05/B06: GS/video presentation plus display
-modes/transactions/geometry/calibration. Test14 GS HSync interrupt behavior is
-priority B05 evidence rather than an RFB/lifecycle mechanism.
+Important display conclusions include:
+
+- RFB decoding and GS presentation are separate responsibilities;
+- PS2SDK `ExitHandler()` is an interrupt-return mechanism, not application exit;
+- physical raster, GS drawing geometry, RFB logical geometry, presented desktop,
+  safe area, and startup-mode persistence are distinct state;
+- selecting the active mode enters safe-area calibration rather than
+  reinitializing that mode;
+- risky mode changes are complete transactions with wall-clock confirmation,
+  durable provisional/restore state, and complete-profile rollback;
+- the principal five-mode matrix (480i, 480p-hires, 576i, 720p, 1080i) has
+  direct machine and physical qualification.
+
+The next grouped audit is B07/B08/B09: controller/pointer behavior,
+keyboard/OSK behavior, and local menus/overlays. These share historical input
+ownership/quarantine machinery while remaining separate product responsibilities.
 
 ## Development continuity
 
@@ -117,7 +133,7 @@ architecture.
 These are planning indicators, not machine authority:
 
     REFERENCE_PRESERVATION=100_PERCENT
-    SEMANTIC_AUDIT=15_PERCENT
+    SEMANTIC_AUDIT=22_PERCENT
     CLEAN_PS2_RECONSTRUCTION=0_PERCENT
     PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
     GITHUB_RECONCILIATION=100_PERCENT
@@ -152,7 +168,7 @@ reconstruction step should destroy or silently rewrite them.
 
 ## Next action
 
-    NEXT_ACTION=AUDIT_B05_B06_PRESENTATION_DISPLAY_AND_CALIBRATION
+    NEXT_ACTION=AUDIT_B07_B08_B09_INPUT_KEYBOARD_AND_LOCAL_UI
     BLOCKED_BY=NONE
 
 Current machine-readable project authority is `runtime/PROJECT_STATE.env`.
