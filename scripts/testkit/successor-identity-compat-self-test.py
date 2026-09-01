@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-"""Prove successor identity tooling reproduces sealed historical stamps exactly."""
+"""File synopsis:
+Prove successor identity tooling reproduces sealed historical stamps exactly.
+"""
 
 from __future__ import annotations
 

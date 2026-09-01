@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-"""Read-only forensics for the historical TestKit ELF identity digest.
+"""File synopsis:
+Read-only forensics for the historical TestKit ELF identity digest.
 
 This script deliberately does not stamp or modify repository files. It tests a
 small set of mechanically plausible normalization/hash formulas against multiple

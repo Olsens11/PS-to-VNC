@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-"""Successor-owned TestKit ELF identity stamp/verify implementation.
+"""File synopsis:
+Successor-owned TestKit ELF identity stamp/verify implementation.
 
 The digest contract is recovered from sealed historical artifacts and is kept
 small and explicit:
