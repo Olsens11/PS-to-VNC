@@ -4,11 +4,14 @@
 
     WORKSTREAM=GITHUB_ISSUE_7
     PHASE=CLEAN_RECONSTRUCTION
-    CURRENT_TRANCHE=DETERMINISTIC_RUNTIME_IDENTITY
+    CURRENT_TRANCHE=PRE_HARDWARE_QUALIFICATION
     HOST_TESTABLE=YES
     PS2_PLATFORM_COMPILE_GATED=YES
     LINKED_CLEAN_BUILD_DEFINED=YES
+    LINKED_CLEAN_BUILD_REPRODUCIBLE=YES
     RUNTIME_IDENTITY_INTEGRATED=YES
+    SUCCESSOR_IDENTITY_PREPARATION=YES
+    HARDWARE_QUALIFICATION_DEFINITION=READY
     HARDWARE_QUALIFIED=NO
 
 This document tracks the first clean PS2-side implementation milestone after the
@@ -65,9 +68,15 @@ incremental service; it does not construct or write RFB wire messages itself.
 logical geometry, validity, per-update dirty state, and the dirty bounding
 rectangle.
 
-`framebuffer.valid` means a complete authoritative remote desktop exists. Partial
-rectangle writes never publish initial authority. Startup requires total Raw
-pixel payload equal to `width * height * 2` before marking the framebuffer valid.
+`framebuffer.valid` means every pixel in the remote desktop is authoritative.
+The strict startup path therefore proves **exact pixel coverage**, not merely a
+matching Raw byte total. It tracks unique initial-frame coverage, rejects
+repeated/overlapping pixels, and requires the unique covered-pixel count to equal
+`width * height` before validity is published. This closes the overlap-plus-gap
+case where the right total number of bytes could otherwise leave unseen pixels.
+
+The coverage proof is startup-only. Ordinary incremental updates preserve the
+already-authoritative framebuffer and may legally update any in-bounds subset.
 
 ## Shared Raw server-message parser
 
@@ -81,9 +90,9 @@ Startup and live service use one parser. It understands:
 Unknown server message types fail closed. Raw rectangles are bounds checked,
 read at exact lengths, reconstructed from little-endian 16-bit wire pixels, and
 written into the authoritative framebuffer. Unsupported encodings, malformed
-rectangles, short reads, and framing failures fail the session; receive failures
-invalidate framebuffer authority rather than leaving a partially updated image
-trusted.
+rectangles, short reads, framing failures, and invalid startup coverage fail the
+session; receive failures invalidate framebuffer authority rather than leaving a
+partially updated image trusted.
 
 Live zero-rectangle FramebufferUpdates are legal. Dirty state describes only the
 most recently completed update. Hextile remains deliberately deferred.
@@ -152,7 +161,7 @@ presentation image.
 
 ## Clean diagnostics and deterministic runtime identity
 
-The first clean milestone now has a deliberately small `src/diagnostics.c` /
+The first clean milestone has a deliberately small `src/diagnostics.c` /
 `src/diagnostics.h` transport. It owns only the optional UDP socket/destination
 and caller-supplied diagnostic datagram transport to `192.168.50.1:5999`.
 Product state and failure policy remain owned by the application/subsystems.
@@ -169,9 +178,8 @@ runtime identity contract. A fixed 146-byte stampable blob contains:
 - 65-byte 64-hex digest field plus NUL.
 
 The pristine clean ELF carries `UNSTAMPED` plus an all-zero hexadecimal digest.
-The linked build uses `-Wl,--wrap=sendto`; immediately before the first successful
-diagnostic UDP datagram to port 5999, the wrapper attempts the deterministic
-identity packet:
+The linked build uses `-Wl,--wrap=sendto`; immediately before the first diagnostic
+UDP datagram to port 5999, the wrapper attempts the deterministic identity packet:
 
     PS2VNC_ID version=1 test=<test-id> digest=<64-hex>
 
@@ -180,18 +188,55 @@ historical 106-byte truncation failure. It does not use printf-family formatting
 for the runtime identity message.
 
 `scripts/check-issue7-identity-blob.py` fails closed unless the pristine linked
-ELF contains exactly one correctly laid-out unstamped identity blob. The
-established runtime-message self-test remains part of Issue #7 CI.
+ELF contains exactly one correctly laid-out unstamped identity blob. The runtime
+message self-test remains part of Issue #7 CI.
 
-Actual test-ID/digest stamping is intentionally still delegated to the inherited
-qualified TestKit hardware-preparation path. The clean reconstruction is not
-creating a competing stamp format or replacement qualification system.
+## Successor-owned identity preparation
 
-## Host, compile, link, and identity gates
+The old TestKit stamp/verify behavior has now been recovered from durable sealed
+repository authority rather than copied from the retired Pi filesystem.
+
+Cross-fixture forensics over three independently sealed historical stamped ELFs
+established exactly one consistent digest rule:
+
+1. write the requested test ID into the fixed 64-byte field;
+2. leave the digest field as 64 ASCII zeroes plus NUL;
+3. SHA-256 the **entire ELF** in that normalized state;
+4. write the resulting 64 lowercase hexadecimal characters plus NUL into the
+   digest field.
+
+Whole-ELF-pristine and PT_LOAD-based hypotheses do not reproduce the sealed
+historical digests.
+
+`scripts/testkit/elf-identity.py` now owns stamp/verify semantics in the successor
+repository, with shell compatibility entry points:
+
+- `scripts/testkit/stamp-elf-identity.sh`;
+- `scripts/testkit/verify-elf-identity.sh`.
+
+`successor-identity-compat-self-test.py` reconstructs pristine inputs from three
+sealed historical stamped fixtures and requires the successor tool to reproduce
+each historical stamped ELF byte-for-byte, including its known whole-ELF and
+identity SHA values. It also requires already-stamped and overlong-ID attempts to
+fail without mutating their inputs.
+
+`scripts/testkit/prepare-hardware-elf.sh` now uses those successor-owned tools,
+verifies the result, repeats stamping from the pristine input to prove
+determinism, and records both whole-ELF and PT_LOAD effects. Routine identity
+preparation no longer depends on `/home/ps2/ps2vnc/scripts/testkit`.
+
+This does **not** abolish the separate frozen-legacy hardware/apparatus bridge.
+Deployment/observer mechanics that genuinely rely on historical apparatus remain
+a distinct qualification boundary until replaced from equally strong authority.
+
+## Host, compile, link, identity, and reproducibility gates
 
 Host coverage includes wire contracts, framebuffer authority/dirty semantics,
-scripted RFB startup/live behavior, session-owned full/incremental update
-requests, display conversion, and deterministic runtime identity serialization.
+the overlap-plus-gap exact-coverage regression, scripted RFB startup/live
+behavior, session-owned full/incremental update requests, display conversion,
+deterministic runtime identity serialization, historical identity-digest
+forensics, byte-exact successor stamp compatibility, and successor preparation
+self-tests.
 
 `scripts/check-clean-ps2-compile.sh` compiles every clean Issue #7 translation
 unit, including diagnostics/identity, with the R5900 compiler under strict
@@ -205,7 +250,19 @@ The linked clean build remains separate from historical `scripts/build.sh`:
 - the link includes the TestKit-compatible `sendto()` identity wrapper;
 - generated output lives only under `build/reconstruction/issue7/`;
 - the build checks the pristine identity blob and records a PT_LOAD fingerprint;
-- GitHub Actions preserves the result only as an **unqualified** ELF artifact.
+- `scripts/check-issue7-linked-reproducibility.sh` performs two independent clean
+  links and requires byte-identical whole ELFs plus identical PT_LOAD SHA/length;
+- GitHub Actions preserves the result only after that gate, still explicitly as
+  an **unqualified** ELF artifact.
+
+Current green pre-hardware checkpoint:
+
+    HEAD=7bb383492179361d4ce547d5e2f4e426bb428106
+    CI_RUN=33508578439
+    CI_RESULT=SUCCESS
+    PRISTINE_ELF_SHA256=0c714781a86e64731654b127414b69f5ed2ebd3b63bfc259e13defd3f2c2e162
+    PRISTINE_PT_LOAD_SHA256=e3278880d0522caf58c6735c640995c339a51055486c9bd3ac8137a0dce93e55
+    PRISTINE_PT_LOAD_BYTES=335240
 
 The qualified PS2IP input remains:
 
@@ -215,12 +272,25 @@ The qualified PS2IP input remains:
 Historical `scripts/build.sh` remains untouched and continues to mean the frozen
 B4A/reference build until the clean build earns replacement authority.
 
-A successful link, identity-blob check, or PT_LOAD fingerprint is still **not
-hardware authority**.
+A successful host test, compile, link, reproducibility proof, identity preparation,
+or PT_LOAD fingerprint is still **not hardware authority**.
 
-## Deliberately not implemented yet
+## Hardware qualification definition
 
-- a stamped first clean hardware DUT and hardware-specific test definition;
+`docs/reconstruction/ISSUE7_HARDWARE_QUALIFICATION.md` defines the first clean
+hardware experiment before deployment. It separates:
+
+- exact DUT/source/dependency/whole-ELF/PT_LOAD/runtime-identity authority;
+- clean Pi endpoint prerequisites;
+- machine evidence for startup and one deterministic incremental Raw update;
+- physical/operator observations;
+- explicit failure classifications.
+
+The definition is ready; the experiment has not been executed.
+
+## Deliberately not implemented or qualified yet
+
+- a stamped/deployed first clean hardware DUT result;
 - real PS2 runtime identity observation/qualification of the clean executable;
 - real PS2 physical/operator qualification;
 - controller/input handling;
@@ -234,17 +304,16 @@ hardware authority**.
 
 ## Next implementation order
 
-1. require the identity-ready host/compile/link CI tranche to pass exactly;
-2. preserve the resulting pristine ELF, whole-ELF SHA, PT_LOAD fingerprint, and
-   qualified PS2IP identity;
-3. prepare one named first-clean-DUT ELF through the inherited TestKit stamping
-   contract;
-4. deploy through the inherited qualified TestKit bridge;
-5. require runtime identity evidence and machine evidence;
+1. keep PR #15 draft and preserve the exact green pre-hardware checkpoint;
+2. finish/validate the clean Pi TigerVNC endpoint required by the qualification
+   definition;
+3. prepare one named first-clean-DUT ELF with the successor-owned identity tools;
+4. use only proven deployment/apparatus mechanics for the controlled hardware run;
+5. require runtime identity plus the defined machine evidence;
 6. collect separate physical/operator observation;
 7. only after the boring Raw 480p baseline is hardware-qualified, restore
    controller/input-driven nonblocking receive and later features in audited
    order.
 
-No host, compile, linked-build, identity-blob, or PT_LOAD result substitutes for
-the real-hardware gate.
+No host, compile, linked-build, reproducibility, identity, or PT_LOAD result
+substitutes for the real-hardware gate.
