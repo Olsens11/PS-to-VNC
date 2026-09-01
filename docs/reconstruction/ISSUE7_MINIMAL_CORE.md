@@ -4,7 +4,7 @@
 
     WORKSTREAM=GITHUB_ISSUE_7
     PHASE=CLEAN_RECONSTRUCTION
-    CURRENT_TRANCHE=RFB_WIRE_FOUNDATION
+    CURRENT_TRANCHE=RFB_WIRE_AND_FRAMEBUFFER_FOUNDATION
     HOST_TESTABLE=YES
     PS2_BUILD_INTEGRATED=NO
     HARDWARE_QUALIFIED=NO
@@ -64,9 +64,9 @@ directly into the PS2 presentation representation by adding the local GS alpha
 bit. Performance encodings such as Hextile remain later work; startup remains
 Raw-first.
 
-## First clean implementation tranche
+## RFB wire foundation
 
-`src/rfb.c` / `src/rfb.h` now own only protocol-value parsing and wire-message
+`src/rfb.c` / `src/rfb.h` own protocol-value parsing and wire-message
 serialization that can be tested without PS2 hardware:
 
 - strict RFB banner syntax parsing;
@@ -86,13 +86,45 @@ This code contains no sockets, PS2SDK calls, graphics calls, recovery policy,
 controller logic, or global runtime state. It is intentionally a small protocol
 leaf, not a framework.
 
+## Owned desktop framebuffer
+
+`src/framebuffer.c` / `src/framebuffer.h` introduce the first clean authoritative
+desktop image object.
+
+The framebuffer owns:
+
+- caller-supplied 16-bit pixel storage and its capacity;
+- current logical width and height;
+- validity;
+- dirty state and a bounding dirty rectangle.
+
+It deliberately does **not** allocate memory, perform RFB parsing, convert pixels
+to GS presentation format, or decide when a remote session is coherent.
+
+Geometry changes validate against storage capacity and invalidate the existing
+image. Rectangle writes are bounds/stride checked and union into the dirty
+bounding rectangle. A rectangle write does not make the framebuffer valid.
+
+That last rule preserves the historical `require_full` behavior at the correct
+architectural boundary. The qualified implementation rejected a required full
+startup/recovery Raw update unless the received Raw byte total equaled
+`desktop_width * desktop_height * 2`. In the clean design, the RFB session will
+apply that complete-frame contract and call `pstvnc_framebuffer_mark_valid()`
+only after it succeeds. Therefore:
+
+> `framebuffer.valid` means a complete authoritative desktop has been
+> established, not merely that some pixels have arrived.
+
+`tests/unit/framebuffer_test.c` covers storage/capacity setup, geometry changes,
+rectangle writes, dirty-union behavior, bounds/stride rejection, and explicit
+validity transitions.
+
 ## Deliberately not implemented yet
 
 - TCP/socket ownership and exact send/receive loops;
 - server rejection-reason consumption;
 - desktop-name bounded consumption;
-- owned desktop framebuffer storage/validity;
-- Raw rectangle decoding;
+- Raw rectangle/session-message decoding into the owned framebuffer;
 - asynchronous server-message framing;
 - PS2 Ethernet/module initialization;
 - 480p GS presentation;
@@ -107,11 +139,12 @@ Those are added only when the previous layer is explicit and testable.
 
 ## Next implementation order
 
-1. add the owned conventional desktop framebuffer for the fixed 704x462 target;
-2. add a small RFB session/transport layer with exact-length framing and one
+1. add a small RFB session/transport layer with exact-length framing and one
    socket owner;
-3. host-test handshake/session transitions with scripted byte streams where
+2. host-test handshake/session transitions with scripted byte streams where
    practical;
+3. decode the first required complete Raw framebuffer into the owned framebuffer
+   and mark it valid only after the full-frame contract succeeds;
 4. wire the transport to the PS2 private Ethernet platform seam;
 5. wire the authoritative framebuffer to the fixed proven 480p presentation
    path;
