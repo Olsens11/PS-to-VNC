@@ -14,7 +14,8 @@ unit: \
 	$(BUILD_DIR)/rfb_session_test \
 	$(BUILD_DIR)/rfb_initial_frame_test \
 	$(BUILD_DIR)/rfb_initial_coverage_test \
-	$(BUILD_DIR)/display_test
+	$(BUILD_DIR)/display_test \
+	$(BUILD_DIR)/app_test
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/video_mode_test
 	./$(BUILD_DIR)/rfb_wire_test
@@ -23,6 +24,7 @@ unit: \
 	./$(BUILD_DIR)/rfb_initial_frame_test
 	./$(BUILD_DIR)/rfb_initial_coverage_test
 	./$(BUILD_DIR)/display_test
+	./$(BUILD_DIR)/app_test
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -131,6 +133,23 @@ $(BUILD_DIR)/display_test: \
 		unit/display_test.c \
 		../src/display.c \
 		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/app_test: \
+	unit/app_test.c \
+	../src/app.c \
+	../src/app.h \
+	../src/diagnostics.h \
+	../src/display.h \
+	../src/framebuffer.h \
+	../src/platform/ps2_graphics.h \
+	../src/platform/ps2_network.h \
+	../src/platform/ps2_system.h \
+	../src/rfb_session.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/app_test.c \
+		../src/app.c \
 		-o $@
 
 clean:
