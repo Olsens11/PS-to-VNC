@@ -79,6 +79,24 @@ behavior, outputs/effects, dependencies, failure behavior, invariants,
 implementation references, historical lessons, and rebuild implications for
 each meaningful component.
 
+### Behavioral-audit checkpoint
+
+B01 through B04 have completed their first source-plus-historical-evidence
+tranche and are recorded as `EVIDENCE_SUPPORTED` in:
+
+    docs/audit/BEHAVIORAL_INVENTORY.md
+
+Covered so far:
+
+- B01 startup/application lifecycle;
+- B02 PS2-to-Pi Ethernet/networking;
+- B03 RFB session/transport state;
+- B04 framebuffer/update processing.
+
+The next paired audit is B05/B06: GS/video presentation plus display
+modes/transactions/geometry/calibration. Test14 GS HSync interrupt behavior is
+priority B05 evidence rather than an RFB/lifecycle mechanism.
+
 ## Development continuity
 
 Development-continuity baseline version 1 remains active.
@@ -99,7 +117,7 @@ architecture.
 These are planning indicators, not machine authority:
 
     REFERENCE_PRESERVATION=100_PERCENT
-    SEMANTIC_AUDIT=5_PERCENT
+    SEMANTIC_AUDIT=15_PERCENT
     CLEAN_PS2_RECONSTRUCTION=0_PERCENT
     PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
     GITHUB_RECONCILIATION=100_PERCENT
@@ -134,7 +152,7 @@ reconstruction step should destroy or silently rewrite them.
 
 ## Next action
 
-    NEXT_ACTION=POPULATE_BEHAVIORAL_INVENTORY_FROM_SOURCE_AND_EVIDENCE
+    NEXT_ACTION=AUDIT_B05_B06_PRESENTATION_DISPLAY_AND_CALIBRATION
     BLOCKED_BY=NONE
 
 Current machine-readable project authority is `runtime/PROJECT_STATE.env`.
