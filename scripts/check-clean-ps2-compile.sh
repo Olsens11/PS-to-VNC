@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# File synopsis:
+# Compile every clean Issue #7 C translation unit with the strict R5900 flags
+# and pinned SDK/include expectations used by CI, without linking or deploying.
 set -euo pipefail
 
 ROOT="$(

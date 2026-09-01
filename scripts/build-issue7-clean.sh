@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# File synopsis:
+# Build the canonical clean Issue #7 ELF in a pinned PS2 toolchain container,
+# binding the qualified PS2IP archive and verifying pristine runtime identity.
+# This successor-owned build does not replace historical scripts/build.sh.
 set -euo pipefail
 
 ROOT="$(

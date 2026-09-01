@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""File synopsis:
+Verify that a freshly linked Issue #7 ELF contains exactly one pristine,
+stampable runtime-identity blob and report its whole-ELF identity.
+"""
 
 import hashlib
 from pathlib import Path

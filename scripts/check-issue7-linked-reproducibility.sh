@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# File synopsis:
+# Build the clean Issue #7 ELF twice and require byte-for-byte whole-ELF plus
+# PT_LOAD digest/length reproducibility before accepting the linked artifact.
 set -euo pipefail
 
 ROOT="$(
