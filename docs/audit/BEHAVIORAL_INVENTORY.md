@@ -5,7 +5,7 @@
     AUDIT_WORKSTREAM=GITHUB_ISSUE_2
     INVENTORY_STRUCTURE=ACTIVE
     DETAILED_BEHAVIOR_AUDIT=IN_PROGRESS
-    COMPLETED_TRANCHE=B01_B11_EVIDENCE_SUPPORTED
+    COMPLETED_TRANCHE=B01_B14_EVIDENCE_SUPPORTED
 
 This is the top-level inventory of product behaviors and responsibilities that
 must be understood before the clean architecture is derived.
@@ -37,9 +37,9 @@ authority, not a module blueprint.
 | B09 | Menus, overlays, curtains, status presentation, and local UI flow | EVIDENCE_SUPPORTED | B4A/current UI source, B06 transaction evidence, F8J2/B4A curtain/input ownership evidence |
 | B10 | Human-readable configuration, validation, persistence, and bindings | EVIDENCE_SUPPORTED | config source, M4F normalization/unit/byte-identity authority, B06 persistence evidence |
 | B11 | Manual refresh, recovery policy, reconnect mechanisms, and Pi management transactions | EVIDENCE_SUPPORTED | B4A/current recovery/management source, legacy Test12, B06 durable rollback evidence |
-| B12 | Diagnostics, runtime identity, telemetry, profiling, and reporting | SEEDED | `src/diagnostics/`, identity/profiling evidence |
-| B13 | Pi-side VNC desktop, management/service, networking, and companion responsibilities | SEEDED | preserved Pi environment, service/config census, product intent |
-| B14 | Build, deployment, test, evidence, and qualification mechanisms that constrain product development | SEEDED | `scripts/`, TestKit history, `evidence/`, development-system lessons |
+| B12 | Diagnostics, runtime identity, telemetry, profiling, and reporting | EVIDENCE_SUPPORTED | `src/diagnostics/`, M4I identity failure/repair, M4I final sealed hardware qualification |
+| B13 | Pi-side VNC desktop, management/service, networking, and companion responsibilities | EVIDENCE_SUPPORTED | legacy Test12/runtime installer, management/pacing runtime, successor service evidence, project intent |
+| B14 | Build, deployment, test, evidence, and qualification mechanisms that constrain product development | EVIDENCE_SUPPORTED | canonical build, successor/legacy TestKit bridge, M4I test manifest/evidence, development policy |
 
 ## B01 — Startup and application lifecycle
 
@@ -1273,37 +1273,166 @@ mechanism exists.
 
 ## B12 — Diagnostics and identity
 
-**Maturity:** `SEEDED`
+**Maturity:** `EVIDENCE_SUPPORTED`
 
-Audit pending.
+Detailed audit: `docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md`.
 
-This domain includes debug stages, low-overhead telemetry, profiling,
-deterministic identity/report serialization, build/runtime provenance, and
-evidence-facing state.
+### Responsibility boundary
+
+B12 owns optional diagnostic transport/stage state, structured evidence reports,
+and exact runtime identity. Product subsystems continue to own the state being
+reported.
+
+Ordinary diagnostics use UDP `192.168.50.1:5999`. Diagnostic initialization is
+non-fatal to normal startup, while a qualification manifest may independently
+require particular telemetry before a run can become authority.
+
+### Structured telemetry
+
+Permanent diagnostics expose named runtime stages and typed DBG, PRF, and GEOM
+reports. DBG captures execution/RFB/input/UI/transition state; PRF captures
+update and timing buckets; GEOM captures safe-area/logical/output geometry and
+configuration state.
+
+The durable architecture should collect subsystem-owned snapshots and serialize
+them without making diagnostics a second mutable owner.
+
+### Exact runtime identity
+
+The ELF contains a fixed stampable identity blob. A `sendto()` wrapper emits one
+identity message immediately before the first diagnostic UDP packet:
+
+    PS2VNC_ID version=1 test=<test-id> digest=<64-hex>
+
+M4I proved why this is not decorative metadata. A printf-family identity path
+truncated otherwise healthy hardware runs at 106 bytes, so TestKit refused
+qualification. The repaired identity serializer uses deterministic bounded byte
+copies and exact field validation.
+
+M4I-FINAL-HW1 then proved one exact runtime identity packet plus 2460 DBG, 3 PRF,
+and 11 GEOM records, passed the diagnostic error gate, and closed with a sealed
+machine/physical/operator-qualified result.
+
+### Clean-rebuild implication
+
+Keep diagnostics as an optional narrow service from the first clean executable:
+semantic stages, structured snapshots/reports, and deterministic runtime
+identity. Preserve the fail-closed qualification relationship without making
+telemetry mandatory for ordinary product use.
 
 ## B13 — Raspberry Pi companion
 
-**Maturity:** `SEEDED`
+**Maturity:** `EVIDENCE_SUPPORTED`
 
-Audit pending.
+Detailed audit: `docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md`.
 
-This domain must identify which Pi responsibilities are ordinary operating
-system responsibilities and which genuinely belong to PS-to-VNC.
+### Responsibility boundary
 
-Areas include VNC desktop/service lifecycle, networking, management endpoints,
-recovery, Samba/file access where product-significant, and future installer
-state.
+B13 owns the reproducible companion environment and the product-specific
+orchestration that must exist on the Pi. Commodity networking, package/service
+management, SSH, desktop components, and Samba remain normal OS mechanisms
+unless a PS-to-VNC behavior gives them a specific contract.
+
+### Proven runtime shape
+
+The Test12/final historical runtime installs ordinary TigerVNC/Openbox/lxpanel/X
+and networking packages, then installs small custom PS2VNC services/state under
+`/usr/local` and `/var/lib/ps2vnc`.
+
+The private PS2 link is `192.168.50.1/24`. The dedicated VNC display runs as
+`:1`, historically at 1280x720x24 on TCP 5900 bound to the PS2-side interface.
+Management uses independent TCP 5959 and is deliberately not a hard requirement
+for VNC desktop availability.
+
+Systemd expresses the real service dependency graph: private network and
+VNC/pacing precede VNC; Openbox/lxpanel wait for a genuinely usable X display;
+a health supervisor verifies interface/address, traffic pacing, listener, X
+usability, and desktop children rather than trusting process state alone.
+
+### Historical pacing and commodity services
+
+The final historical runtime applies a narrowly scoped 60 Mbit/s traffic-control
+rule only to VNC TCP 5900 traffic toward the PS2 and refuses to overwrite an
+unknown foreign root qdisc. This is integrated historical runtime state to be
+preserved/re-evaluated through the clean dependency ledger, not a universally
+proven networking constant.
+
+Samba/file services are useful commodity companion capabilities but are not a
+runtime dependency of the proven VNC service graph itself.
+
+### Reproducibility contract
+
+The clean companion begins from a normal supported Raspberry Pi OS and is
+created by a versioned tracked install/package definition. Every meaningful
+manual deviation becomes declared installer/ledger state or is removed. A
+ready-to-flash image may be a convenience artifact but is not the canonical
+definition.
+
+### Clean-rebuild implication
+
+Rebuild the Pi as a standard OS plus explicit PS-to-VNC companion services:
+private Ethernet, predictable dedicated VNC desktop, management/state,
+health/recovery, and operator controls. Re-evaluate historical package/pacing
+choices deliberately instead of cloning the exploratory development Pi.
 
 ## B14 — Product-significant development infrastructure
 
-**Maturity:** `SEEDED`
+**Maturity:** `EVIDENCE_SUPPORTED`
 
-Audit pending.
+Detailed audit: `docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md`.
 
-Build, deployment, TestKit, identity, evidence capture, and hardware
-qualification are not runtime product features, but some of their constraints
-are part of the product's engineering definition and must survive the clean
-reconstruction.
+### Responsibility boundary
+
+B14 is not runtime UI behavior. It owns the engineering contracts required to
+say that a build, deployment, experiment, and hardware result actually mean what
+the project claims they mean.
+
+### Build and DUT identity
+
+The canonical exploratory-generation build pins both the build container image
+and the exact qualified PS2IP archive hash. Hardware claims distinguish source
+authority, whole-ELF SHA256, PT_LOAD SHA256/bytes, stamped runtime identity, and
+where required deployment/readback identity.
+
+The standing hardware gate is explicit: a changed PT_LOAD requires hardware
+qualification unless an explicit recorded authority permits inherited
+qualification.
+
+Hardware-ELF preparation stamps and verifies identity reproducibly, repeats the
+stamp to require byte-exact determinism, and records whole-ELF/PT_LOAD changes
+rather than assuming identity stamping is outside the runtime-loaded image.
+
+### Experiment/apparatus authority
+
+Versioned TestKit manifests pin the DUT, source/Makefile/ELF/PT_LOAD identities,
+deployment targets, execution proof, observer hashes, capture budgets,
+qualification workload, telemetry requirements, and physical-operator
+requirements. Apparatus changes are experimental variables.
+
+The successor uses mature legacy TestKit only through an immutable bridge that
+requires the exact frozen legacy HEAD and clean tracked/index state, copies the
+TestKit byte/mode-exactly into an isolated successor workspace, records
+provenance, and exposes an allowlisted routine tool set.
+
+### Evidence rules
+
+Machine and physical/operator evidence are separate authorities. Raw evidence is
+preserved byte-for-byte and can be sealed/hashes verified. Ambiguous DUT or
+apparatus identity fails closed rather than being narratively repaired after the
+run; the M4I 106-byte identity failure is the canonical example.
+
+Migration-specific extraction machinery is historical unless it expresses a
+recurring invariant. The clean project should preserve reproducible build,
+canonical deployment, exact identity, experiment provenance, PT_LOAD gating,
+evidence integrity, and safe continuity—not every M0-M4 migration script.
+
+### Clean-rebuild implication
+
+Keep a small successor-owned development toolchain around build/dependency
+identity, ELF/PT_LOAD/runtime identity, deployment, declarative tests, capture,
+result, and evidence sealing. Retain inherited TestKit only through the proven
+immutable bridge until equivalent successor-owned tooling is deliberately
+adopted and qualified.
 
 ## Cross-domain rules already established
 
@@ -1334,12 +1463,28 @@ These are inputs to the audit, not conclusions about final module layout:
 - recovery policy and recovery mechanism are distinct;
 - sharing one management transport does not imply one reliability/failure
   policy;
+- diagnostics may be optional to ordinary runtime while mandatory to a specific
+  qualification contract;
+- exact runtime identity closes the DUT-to-telemetry evidence loop;
+- the Pi companion should keep commodity responsibilities on standard OS
+  mechanisms and custom behavior narrowly product-specific;
+- process/service activity is not the same as endpoint/service usability;
+- the development machine is not the product; Pi state must be reproducible;
+- build/dependency/DUT/apparatus identity are part of hardware qualification;
+- PT_LOAD changes cross the hardware gate unless explicit authority records a
+  valid qualification transfer;
+- machine evidence and physical/operator evidence are separate authorities;
+- invalid or ambiguous evidence fails closed;
+- raw empirical evidence is byte-preserved rather than normalized as source;
+- migration ceremony is historical unless it expresses a recurring engineering
+  invariant;
 - hardware-facing conclusions ultimately require physical PS2 qualification.
 
 ## Next audit action
 
-Audit B12, B13, and B14 as the remaining seeded behavior families. Diagnostics
-and identity, the Raspberry Pi companion runtime, and product-significant
-build/deployment/evidence infrastructure must remain separate responsibilities,
-but together they close the evidence/reproducibility surface needed before the
-cross-domain `REBUILD_READY` architecture synthesis.
+All B01-B14 behavior families are now `EVIDENCE_SUPPORTED`.
+
+Next perform the cross-domain synthesis required for `REBUILD_READY`: reconcile
+mutable-state ownership, subsystem interfaces, dependency direction, application
+orchestration, PS2/Pi responsibility boundaries, and qualification hooks into
+the smallest deliberate clean architecture that preserves the audited behavior.
