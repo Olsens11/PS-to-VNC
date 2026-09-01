@@ -235,8 +235,8 @@ Host coverage includes wire contracts, framebuffer authority/dirty semantics,
 the overlap-plus-gap exact-coverage regression, scripted RFB startup/live
 behavior, session-owned full/incremental update requests, display conversion,
 deterministic runtime identity serialization, historical identity-digest
-forensics, byte-exact successor stamp compatibility, and successor preparation
-self-tests.
+forensics, byte-exact successor stamp compatibility, successor preparation
+self-tests, and disposable regression tests for clean-source dictionary tooling.
 
 `scripts/check-clean-ps2-compile.sh` compiles every clean Issue #7 translation
 unit, including diagnostics/identity, with the R5900 compiler under strict
@@ -255,14 +255,17 @@ The linked clean build remains separate from historical `scripts/build.sh`:
 - GitHub Actions preserves the result only after that gate, still explicitly as
   an **unqualified** ELF artifact.
 
-Current green pre-hardware checkpoint:
+### Live checkpoint authority
 
-    HEAD=7bb383492179361d4ce547d5e2f4e426bb428106
-    CI_RUN=33508578439
-    CI_RESULT=SUCCESS
-    PRISTINE_ELF_SHA256=0c714781a86e64731654b127414b69f5ed2ebd3b63bfc259e13defd3f2c2e162
-    PRISTINE_PT_LOAD_SHA256=e3278880d0522caf58c6735c640995c339a51055486c9bd3ac8137a0dce93e55
-    PRISTINE_PT_LOAD_BYTES=335240
+Exact branch-head and CI identities are intentionally **not** embedded here as a
+"current" checkpoint. A tracked document that names its own current commit
+becomes stale as soon as that document is committed.
+
+For the live pre-hardware checkpoint, use the head of draft PR #15 together with
+the GitHub Actions run for that exact head. The linked-build job is the authority
+for the pristine whole-ELF SHA256 and PT_LOAD SHA256/byte count. Preserve older
+exact head/CI/build identities in Git/CI history as historical checkpoints rather
+than rewriting them into current truth.
 
 The qualified PS2IP input remains:
 
@@ -304,7 +307,7 @@ The definition is ready; the experiment has not been executed.
 
 ## Next implementation order
 
-1. keep PR #15 draft and preserve the exact green pre-hardware checkpoint;
+1. keep PR #15 draft and preserve exact green checkpoints in GitHub CI/history;
 2. finish/validate the clean Pi TigerVNC endpoint required by the qualification
    definition;
 3. prepare one named first-clean-DUT ELF with the successor-owned identity tools;
