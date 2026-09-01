@@ -81,10 +81,14 @@ each meaningful component.
 
 ### Behavioral-audit checkpoint
 
-B01 through B06 have completed their source-plus-historical-evidence audit
+B01 through B09 have completed their source-plus-historical-evidence audit
 tranches and are recorded as `EVIDENCE_SUPPORTED` in:
 
     docs/audit/BEHAVIORAL_INVENTORY.md
+
+The detailed B07-B09 tranche is also retained at:
+
+    docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md
 
 Covered so far:
 
@@ -94,7 +98,12 @@ Covered so far:
 - B04 framebuffer/update processing;
 - B05 GS/video presentation and PS2 interrupt discipline;
 - B06 display modes, transactions, geometry, calibration, rollback, and
-  persistence.
+  persistence;
+- B07 controller acquisition, pointer/click/scroll semantics, hotkeys, and
+  libpad ownership;
+- B08 keyboard/RFB key events, OSK navigation, and one-shot modifiers;
+- B09 local menu/overlay/curtain ownership, input quarantine, and foreground
+  flow.
 
 Important display conclusions include:
 
@@ -109,9 +118,30 @@ Important display conclusions include:
 - the principal five-mode matrix (480i, 480p-hires, 576i, 720p, 1080i) has
   direct machine and physical qualification.
 
-The next grouped audit is B07/B08/B09: controller/pointer behavior,
-keyboard/OSK behavior, and local menus/overlays. These share historical input
-ownership/quarantine machinery while remaining separate product responsibilities.
+Important input/UI conclusions now include:
+
+- controller/libpad handoff is explicit ownership, not merely a mutex around a
+  read call;
+- the controller acknowledgement is published immediately before the next
+  libpad access, after which that owner performs no pad reads until release;
+- the durable handoff rule is no pre-handoff physical/derived state leakage;
+  calibration may enforce that with physical release, while the B4A
+  hostile-stick remote transition enforces it by state invalidation;
+- physical input ownership and already-queued logical RFB input are separate
+  concerns;
+- B4A drops pre-boundary queued controller actions before hazardous remote
+  reconstruction and exposes one coherent destination frame before returning
+  input;
+- recovered Test11 is a proven historical foundation for pointer/keyboard/OSK
+  behavior but is not authority to restore obsolete mappings;
+- OSK Shift/Ctrl/Alt are deliberate one-shot modifiers;
+- buttons consumed by a local UI remain quarantined until physical release;
+- local UI foreground/underlay ownership must be explicit and local repaint must
+  not depend on unrelated remote framebuffer damage.
+
+The next grouped audit is B10/B11: human-readable configuration/persistence/
+bindings and recovery/management. These share Pi management and durable-state
+surfaces while remaining separate policy responsibilities.
 
 ## Development continuity
 
@@ -133,7 +163,7 @@ architecture.
 These are planning indicators, not machine authority:
 
     REFERENCE_PRESERVATION=100_PERCENT
-    SEMANTIC_AUDIT=22_PERCENT
+    SEMANTIC_AUDIT=32_PERCENT
     CLEAN_PS2_RECONSTRUCTION=0_PERCENT
     PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
     GITHUB_RECONCILIATION=100_PERCENT
@@ -168,7 +198,7 @@ reconstruction step should destroy or silently rewrite them.
 
 ## Next action
 
-    NEXT_ACTION=AUDIT_B07_B08_B09_INPUT_KEYBOARD_AND_LOCAL_UI
+    NEXT_ACTION=AUDIT_B10_B11_CONFIGURATION_PERSISTENCE_RECOVERY_AND_MANAGEMENT
     BLOCKED_BY=NONE
 
 Current machine-readable project authority is `runtime/PROJECT_STATE.env`.
