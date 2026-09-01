@@ -15,6 +15,10 @@ static int rect_fits(
     if (framebuffer == NULL || width == 0 || height == 0)
         return 0;
 
+    /*
+     * Widen before addition. Wire coordinates are 16-bit, so performing these
+     * sums in that type could wrap a malformed rectangle back into bounds.
+     */
     right = (uint32_t)x + (uint32_t)width;
     bottom = (uint32_t)y + (uint32_t)height;
 
@@ -36,6 +40,12 @@ static void include_dirty(
     uint32_t current_right;
     uint32_t current_bottom;
 
+    /*
+     * Dirty state summarizes the most recently decoded server update. The
+     * bounding box may include untouched pixels between rectangles; it is a
+     * conservative presentation hint, never evidence that those pixels were
+     * received in this update.
+     */
     if (!framebuffer->dirty) {
         framebuffer->dirty_rect.x = x;
         framebuffer->dirty_rect.y = y;
@@ -98,6 +108,12 @@ int pstvnc_framebuffer_set_geometry(
 
     framebuffer->width = width;
     framebuffer->height = height;
+
+    /*
+     * Geometry changes revoke pixel authority. Capacity alone proves that the
+     * storage is safe to address; only the RFB startup coverage proof may later
+     * establish that every logical pixel contains current desktop data.
+     */
     pstvnc_framebuffer_invalidate(framebuffer);
     return 1;
 }
@@ -128,6 +144,10 @@ int pstvnc_framebuffer_mark_valid(
         framebuffer->width == 0 || framebuffer->height == 0)
         return 0;
 
+    /*
+     * This function records a proof made by the owning session; it does not
+     * attempt to infer completeness from dirty state or byte counts.
+     */
     framebuffer->valid = 1;
     return 1;
 }
@@ -163,6 +183,11 @@ int pstvnc_framebuffer_write_rect(
         );
     }
 
+    /*
+     * Pixel mutation and whole-frame authority are intentionally separate.
+     * Startup decoding writes rows while valid is still false; the session
+     * promotes authority only after the complete update passes all checks.
+     */
     include_dirty(framebuffer, x, y, width, height);
     return 1;
 }

@@ -10,6 +10,13 @@
 #include "platform/ps2_system.h"
 #include "rfb_session.h"
 
+/*
+ * These buffers have deliberately different authority. remote_pixels backs the
+ * one CPU-side image trusted to represent the complete VNC desktop. gs_pixels
+ * is disposable presentation data with the GS alpha bit added; display
+ * conversion must never modify remote authority in place. The 128-byte
+ * alignment satisfies the PS2 DMA/cache-facing presentation path.
+ */
 static uint16_t remote_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
     __attribute__((aligned(128)));
 static uint16_t gs_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
@@ -37,6 +44,11 @@ int pstvnc_app_run(void)
     int graphics_ready = 0;
     int diagnostics_ready = 0;
 
+    /*
+     * The coordinator owns ordering and failure policy. Each subsystem owns its
+     * mechanism, but none may independently advance the product to READY or
+     * decide how a fatal startup failure converges.
+     */
     if (pstvnc_ps2_system_prepare_iop() < 0)
         goto fail;
 
@@ -88,6 +100,11 @@ int pstvnc_app_run(void)
             PSTVNC_DISPLAY_HEIGHT))
         goto fail;
 
+    /*
+     * Session startup has requested a non-incremental desktop. The receive call
+     * publishes framebuffer.valid only after proving exact coverage of every
+     * pixel; presenting before that point could expose unwritten or stale data.
+     */
     if (!pstvnc_rfb_session_receive_initial_frame(
             &session,
             &framebuffer))
@@ -109,6 +126,12 @@ int pstvnc_app_run(void)
         desktop_ready,
         sizeof(desktop_ready) - 1u);
 
+    /*
+     * Issue #7 intentionally has one blocking owner for both halves of the RFB
+     * exchange: request one update, consume one complete server update, then
+     * present coherent state. Input concurrency and safe-boundary yielding are
+     * later responsibilities, not hidden behavior in this baseline loop.
+     */
     for (;;) {
         if (!pstvnc_rfb_session_request_update(&session, 1))
             goto fail;
@@ -137,6 +160,11 @@ int pstvnc_app_run(void)
     }
 
 fail:
+    /*
+     * Every fatal path converges here. Diagnostics is observational and
+     * best-effort; resource ownership flags determine cleanup, and main() owns
+     * the final transition back to OSDSYS.
+     */
     send_diagnostic_literal(
         diagnostics_ready,
         fatal,

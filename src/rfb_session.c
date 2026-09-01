@@ -47,6 +47,11 @@ static int read_bounded_text(
     size_t take = length;
     uint32_t remaining;
 
+    /*
+     * Retain only bounded diagnostic text, but consume the server's entire
+     * declared field. Truncating storage must not leave unread bytes to be
+     * mistaken for the next RFB message.
+     */
     if (take > PSTVNC_RFB_SESSION_TEXT_MAX)
         take = PSTVNC_RFB_SESSION_TEXT_MAX;
 
@@ -104,6 +109,11 @@ static int fail_frame(
     pstvnc_framebuffer_t *framebuffer,
     pstvnc_rfb_session_error_t error)
 {
+    /*
+     * Rectangle decoding writes directly into the owned framebuffer. Any error
+     * may therefore occur after partial mutation; invalidating authority keeps
+     * later code from presenting a mixture of old and incomplete new state.
+     */
     pstvnc_framebuffer_invalidate(framebuffer);
     return fail(session, error);
 }
@@ -144,6 +154,11 @@ static int mark_initial_frame_coverage(
     uint16_t row;
     uint16_t column;
 
+    /*
+     * Byte totals alone cannot prove a complete initial desktop: overlapping
+     * rectangles can duplicate pixels while leaving an equal-sized gap. This
+     * bitmap rejects every duplicate and counts unique pixel authority.
+     */
     for (row = 0; row < height; row++) {
         for (column = 0; column < width; column++) {
             size_t pixel_index =
@@ -187,6 +202,12 @@ static int receive_framebuffer_update(
     pstvnc_framebuffer_t *framebuffer,
     int require_full)
 {
+    /*
+     * Bell, clipboard, and color-map messages may legally arrive before the
+     * requested framebuffer update. They are consumed to exact boundaries so
+     * the single blocking stream remains synchronized; only a completed type-0
+     * update returns control to the application.
+     */
     for (;;) {
         uint8_t message_type;
 
@@ -373,6 +394,11 @@ static int receive_framebuffer_update(
             }
 
             if (require_full) {
+                /*
+                 * The size check catches excess/short Raw payload accounting;
+                 * the independent coverage check proves pixel identity. Both
+                 * must pass before framebuffer.valid becomes authoritative.
+                 */
                 if (total_pixel_bytes != required_pixel_bytes)
                     return fail_frame(
                         session,
@@ -513,6 +539,11 @@ int pstvnc_rfb_session_start(
             socket_fd, message, PSTVNC_RFB_SET_ENCODINGS_RAW_SIZE))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
+    /*
+     * The first request is deliberately non-incremental. READY is withheld
+     * until its response proves a complete authoritative desktop; incremental
+     * updates are meaningful only after that baseline exists.
+     */
     pstvnc_rfb_build_framebuffer_update_request(
         message, 0, 0, 0, expected_width, expected_height);
     if (!write_exact(
