@@ -3,9 +3,11 @@
 ## Status
 
     WORKSTREAM=GITHUB_ISSUE_5
-    BASELINE_CAPTURE=AWAITING_FIRST_BOOT
+    BASELINE_CAPTURE=COMPLETE
     PRODUCT_MUTATIONS=NONE
     DEPENDENCY_LEDGER=ACTIVE
+    TIGERVNC_DECISION=ADOPTED_RUNTIME
+    TRACKED_FOUNDATION_PROVISIONING=READY
 
 This directory is the current authority for building the clean Raspberry Pi
 companion from a normal supported Raspberry Pi OS installation.
@@ -18,15 +20,15 @@ The governing rule is:
 The old PS2VNC Pi remains forensic/reference authority. It is not an installation
 template for this machine.
 
-## Before the first product change
+## Virgin baseline
 
-Capture `BASELINE.md` from the newly imaged Pi before installing packages,
-copying old configuration, adding services, changing the private Ethernet
-interface, or creating PS-to-VNC runtime state.
+`BASELINE.md` records the clean 1 TB Pi before any PS-to-VNC runtime mutation.
+The captured machine is Debian 13 (trixie), arm64, on a Raspberry Pi 4 Model B
+Rev 1.5. At capture, `eth0` was unconfigured for PS-to-VNC and TigerVNC was not
+installed.
 
-The baseline records what the OS supplied on its own. A package/configuration
-that is already present may later be classified `OS_BASE`; it must not be
-silently treated as a project installation step.
+The baseline intentionally omits household WLAN details, machine/boot IDs, MAC
+addresses, credentials, and other host-specific private values.
 
 ## Dependency states
 
@@ -43,6 +45,11 @@ silently treated as a project installation step.
 
 The reason for a state is part of the record. Rejected and replaced experiments
 remain documented.
+
+TigerVNC/Xtigervnc is adopted as the stable PS2-facing RFB runtime. WayVNC stays
+an OS-base capability and possible future upstream desktop source rather than the
+default PS2 endpoint. LXPanel is rejected for the clean baseline; Openbox remains
+a separate session-content decision.
 
 ## Configuration rule
 
@@ -63,8 +70,21 @@ At a reproducibility milestone, a fresh supported OS must be transformable into
 the required companion state using tracked project definitions rather than
 operator memory.
 
+## Tracked provisioning
+
+`PROVISIONING.md` defines the first mutation contract. The tracked scripts are:
+
+- `scripts/pi/install-tigervnc.sh`;
+- `scripts/pi/configure-ps2-link.sh`;
+- `scripts/pi/verify-foundation.sh`.
+
+These deliberately stop before VNC service/session creation. The first clean
+foundation must be applied and verified before the dedicated 480p TigerVNC
+service is defined.
+
 ## Current next step
 
-Capture the virgin first-boot OS/hardware/package/service/network baseline into
-`BASELINE.md` and classify what is already supplied by the image before any
-PS-to-VNC-specific mutation.
+Apply the tracked foundation provisioning on the clean Pi from an exact
+`pi/issue5-clean-baseline` checkout, record the resulting package/network
+identity, and then define the smallest dedicated TigerVNC session required by the
+PS2 RFB contract.
