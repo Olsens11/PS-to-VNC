@@ -81,14 +81,15 @@ each meaningful component.
 
 ### Behavioral-audit checkpoint
 
-B01 through B09 have completed their source-plus-historical-evidence audit
+B01 through B11 have completed their source-plus-historical-evidence audit
 tranches and are recorded as `EVIDENCE_SUPPORTED` in:
 
     docs/audit/BEHAVIORAL_INVENTORY.md
 
-The detailed B07-B09 tranche is also retained at:
+Detailed grouped tranches are retained at:
 
     docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md
+    docs/audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md
 
 Covered so far:
 
@@ -103,7 +104,11 @@ Covered so far:
   libpad ownership;
 - B08 keyboard/RFB key events, OSK navigation, and one-shot modifiers;
 - B09 local menu/overlay/curtain ownership, input quarantine, and foreground
-  flow.
+  flow;
+- B10 human-readable configuration, strict typed validation, persistence
+  boundaries, display policy, and the controller-binding gap;
+- B11 manual Refresh, explicit-failure recovery, silent-stall policy, RFB
+  replacement, and semantic Pi management transactions.
 
 Important display conclusions include:
 
@@ -118,7 +123,7 @@ Important display conclusions include:
 - the principal five-mode matrix (480i, 480p-hires, 576i, 720p, 1080i) has
   direct machine and physical qualification.
 
-Important input/UI conclusions now include:
+Important input/UI conclusions include:
 
 - controller/libpad handoff is explicit ownership, not merely a mutex around a
   read call;
@@ -139,9 +144,35 @@ Important input/UI conclusions now include:
 - local UI foreground/underlay ownership must be explicit and local repaint must
   not depend on unrelated remote framebuffer damage.
 
-The next grouped audit is B10/B11: human-readable configuration/persistence/
-bindings and recovery/management. These share Pi management and durable-state
-surfaces while remaining separate policy responsibilities.
+Important configuration/recovery conclusions now include:
+
+- human-editable desired configuration, validated live state, and crash-safe
+  transactional authority are different concepts;
+- configuration parsing is side-effect free and recognized state publishes only
+  after complete validation;
+- startup mode, per-mode calibration, and display lock/hide policy are distinct
+  persisted state;
+- B4A has a typed semantic hotkey model but does not establish completed
+  human-readable configurable bindings; that remains an explicit clean-product
+  requirement;
+- explicit carrier/socket/RFB failure recovery is supported automatically, but
+  unexplained silent waits do not become a generic automatic reconnect timer;
+- manual Refresh deliberately can break a suspect blocking/partial receive and
+  then replaces that stream rather than guessing protocol alignment;
+- successful manual Refresh has visible completion state plus a three-second
+  anti-spam cooldown;
+- an unconfirmed display candidate owns transport failure and rolls back rather
+  than being legitimized by generic reconnect;
+- sharing TCP 5959/HTTP does not make configuration, durable transactions, and
+  development control one reliability class;
+- local recovery success and durable cross-machine reconciliation are not
+  silently treated as equivalent.
+
+The next grouped audit is B12/B13/B14: diagnostics/identity, the Raspberry Pi
+companion runtime, and product-significant build/deployment/test/evidence
+infrastructure. They remain separate responsibilities but together close the
+remaining seeded evidence/reproducibility surface before cross-domain
+`REBUILD_READY` architecture synthesis.
 
 ## Development continuity
 
@@ -163,7 +194,7 @@ architecture.
 These are planning indicators, not machine authority:
 
     REFERENCE_PRESERVATION=100_PERCENT
-    SEMANTIC_AUDIT=32_PERCENT
+    SEMANTIC_AUDIT=40_PERCENT
     CLEAN_PS2_RECONSTRUCTION=0_PERCENT
     PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
     GITHUB_RECONCILIATION=100_PERCENT
@@ -198,7 +229,7 @@ reconstruction step should destroy or silently rewrite them.
 
 ## Next action
 
-    NEXT_ACTION=AUDIT_B10_B11_CONFIGURATION_PERSISTENCE_RECOVERY_AND_MANAGEMENT
+    NEXT_ACTION=AUDIT_B12_B13_B14_DIAGNOSTICS_PI_AND_DEVELOPMENT_INFRASTRUCTURE
     BLOCKED_BY=NONE
 
 Current machine-readable project authority is `runtime/PROJECT_STATE.env`.
