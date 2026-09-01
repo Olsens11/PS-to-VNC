@@ -37,13 +37,13 @@ Allowed states:
 | `wayvnc-control.service` | `OS_BASE` | Enabled in virgin image. Presence does not prove a dedicated usable PS2-facing VNC endpoint. |
 | LightDM | `OS_BASE` | Enabled in virgin image; desktop-login mechanism, not yet a PS-to-VNC dependency. |
 | `samba` package | `EVALUATING` | Targeted virgin `dpkg-query` reports `not-installed`; useful broader companion capability but absent from the clean base image and not required for the first VNC milestone. |
-| `lxpanel` package | `EVALUATING` | Targeted virgin `dpkg-query` reports `not-installed`; historical panel behavior is not automatically adopted. |
+| `lxpanel` package | `REJECTED` | Not installed in the virgin image. The clean OS already supplies a native graphical frontend, so the historical LXPanel role is not carried forward by default. If a future dedicated PS2 VNC session needs its own panel/taskbar, select that deliberately rather than resurrecting LXPanel for historical similarity. |
 | TigerVNC/Xtigervnc | `EVALUATING` | `tigervnc-standalone-server` is not installed in the virgin clean image. Historical proven companion used a dedicated Xtigervnc `:1`; compare against OS-base WayVNC before adoption. |
 | Dedicated PS2-facing VNC desktop/session | `EVALUATING` | Required product behavior; implementation choice still open. Must be predictable, independently health-checkable, and reachable from the private PS2 link. |
 | Private PS2 Ethernet `192.168.50.1/24` on `eth0` | `EVALUATING` | Required historical/product topology, but virgin `eth0` is still unconfigured/down. First clean network mutation must be tracked and reproducible. |
 | Pi management service / TCP 5959 | `EVALUATING` | Product behavior is rebuild-ready but not required for the first minimal Ethernet+RFB proof. |
 | Historical VNC-only 60 Mbit/s pacing | `EVALUATING` | Historical integrated setting; not a universal requirement. Re-evaluate only if clean hardware evidence needs it. |
-| Historical Openbox/LXPanel dedicated desktop stack | `EVALUATING` | Proven historical implementation; compare against the clean OS's native labwc/WayVNC possibilities. |
+| Historical Openbox/LXPanel dedicated desktop stack | `EVALUATING` | Historical reference only. LXPanel is rejected for the clean baseline; Openbox remains separately available as OS-base software and is not adopted unless a dedicated session genuinely needs it. |
 | Samba/file services | `EVALUATING` | Useful broader companion feature but not a dependency of the first clean VNC milestone. |
 | Docker on Pi | `EVALUATING` | Not shown as installed by the virgin package query. Build strategy should not assume it until needed and justified. |
 
@@ -62,4 +62,4 @@ For the first clean PS2↔Pi milestone:
 1. evaluate/configure the private `eth0` link reproducibly;
 2. compare virgin WayVNC/labwc capability with the historical dedicated TigerVNC contract;
 3. adopt the smallest VNC runtime that can supply the required RFB behavior to the PS2;
-4. leave management, Samba, pacing, and desktop conveniences out until the core requires them.
+4. leave management, Samba, pacing, and extra desktop conveniences out until the core requires them.
