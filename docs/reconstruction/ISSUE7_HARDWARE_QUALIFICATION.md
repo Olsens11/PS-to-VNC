@@ -38,8 +38,13 @@ Do not prepare or deploy a DUT until all of these are true:
 6. The linked pristine ELF contains exactly one valid `PS2VNCIDv1!BLOB!`
    identity record and is still `UNSTAMPED` before DUT preparation.
 7. Whole-ELF and PT_LOAD identities for the pristine build are recorded.
-8. The strict initial-full-frame completeness review item has been resolved or
-   explicitly dispositioned before hardware authority is granted.
+8. Initial-frame authority is proven by the clean implementation and host tests:
+   the first non-incremental update must account for exactly the expected Raw
+   byte total **and** cover every 704x462 pixel exactly once. Duplicate/overlap
+   coverage cannot substitute for a gap, and `framebuffer.valid` remains false
+   until both proofs succeed. The corresponding short/truncated, duplicate,
+   overlap/gap, and malformed-frame negative tests must be green on the exact
+   intended source head.
 9. The clean Pi foundation is applied and verified.
 10. The PS2-facing TigerVNC endpoint is validated independently before the PS2
     DUT is blamed for endpoint setup failures.
