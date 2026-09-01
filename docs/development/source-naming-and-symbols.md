@@ -3,15 +3,16 @@
 ## Status
 
     POLICY=ACTIVE
-    APPLIES_RETROACTIVELY=YES
+    APPLIES_TO_CLEAN_RECONSTRUCTION=YES
+    PRE_REFRESH_RETROFIT_REQUIRED=NO
     SYMBOL_DICTIONARY=REQUIRED
     COMPLETENESS_GATE=REQUIRED
     CURRENT_RETROFIT_STATUS=IN_PROGRESS
 
-PS-to-VNC source must be understandable both where a name appears and from one
-canonical lookup surface. Existing maintained successor code is subject to the
-same standard as new work; an unclear name is not grandfathered because it
-already compiles.
+Clean-reconstruction PS-to-VNC source must be understandable both where a name
+appears and from one canonical lookup surface. The boundary begins with the
+strategic refresh and applies to the new product generation being built from
+`docs/CLEAN_ARCHITECTURE.md`, including Issue #7 and all later capabilities.
 
 ## Naming
 
@@ -48,19 +49,21 @@ variables, shell functions and maintained variables, and project-owned Make
 targets and variables. Repeated uses and third-party names are not separate
 project symbols.
 
-## Retrofit scope and exclusions
+## Clean-generation scope and exclusions
 
-Maintained scope:
+Required scope:
 
-- `src/`;
-- `tests/`;
-- project-owned `scripts/`;
-- active project-owned Makefiles and `mk/`.
+- product source newly written for the clean reconstruction;
+- tests newly written for that clean source;
+- build, qualification, and development tools newly written to support it;
+- every later capability added to the refreshed product generation.
 
-Do not rewrite or enforce current naming style on `baseline/frozen-b4a/`,
-sealed `evidence/`, provenance snapshots, generated output, or third-party
-interfaces. The dictionary records this boundary explicitly rather than
-pretending excluded historical material does not exist.
+Do not retrofit frozen PS2VNC/B4A, sealed evidence, migration-era normalization
+source, retained pre-refresh modules, provenance snapshots, generated output, or
+third-party interfaces merely because they remain present in this repository.
+A retained module enters scope only when the clean reconstruction deliberately
+adopts or rewrites it as current product source. The dictionary records this
+generation boundary explicitly.
 
 ## Synchronization gate
 
@@ -72,8 +75,9 @@ the checker joins `scripts/check.sh`.
 
 ## Retrofit completion
 
-The retrofit is complete only when every maintained surface and symbol is
-inventoried and described, unclear names are corrected or justified, the
+The clean-generation retrofit is complete only when every in-scope refreshed
+surface and symbol already written is inventoried and described, unclear names
+are corrected or justified, the
 synchronization gate and project checks pass, and any PT_LOAD-changing rename
 remains hardware-pending until qualification.
 

@@ -1,12 +1,3 @@
-/*
- * File synopsis:
- * Defines the retained debug-stage vocabulary and transport boundary shared by
- * diagnostic producers.
- *
- * Context: docs/CLEAN_ARCHITECTURE.md, "Diagnostics and runtime identity";
- * docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md.
- */
-
 #ifndef PSTVNC_DIAGNOSTICS_DEBUG_H
 #define PSTVNC_DIAGNOSTICS_DEBUG_H
 

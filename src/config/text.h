@@ -1,11 +1,3 @@
-/*
- * File synopsis:
- * Declares configuration text helpers; it owns no accepted or live application
- * settings.
- *
- * Context: docs/CLEAN_ARCHITECTURE.md, "Configuration".
- */
-
 #ifndef PSTVNC_CONFIG_TEXT_H
 #define PSTVNC_CONFIG_TEXT_H
 

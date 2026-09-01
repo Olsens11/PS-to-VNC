@@ -1,12 +1,3 @@
-/*
- * File synopsis:
- * Implements pure safe-area and presented-rectangle validation/resolution
- * without touching GS state or selecting live policy.
- *
- * Context: docs/CLEAN_ARCHITECTURE.md, "Display model and presentation" and
- * "Stable cross-domain values".
- */
-
 #include "video/geometry.h"
 
 #include <limits.h>

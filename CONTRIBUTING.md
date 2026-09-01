@@ -42,12 +42,15 @@ Current truth and chronological history are separate responsibilities.
 
 ## Source readability
 
-All maintained project-defined names and existing source are subject to:
+All clean-reconstruction names and source written from the strategic refresh
+forward are subject to:
 
     docs/development/source-naming-and-symbols.md
 
-New or changed symbols must use clear names, preserve file-level orientation,
-and remain synchronized with the canonical generated source-symbol dictionary.
+New or changed clean-generation symbols must use clear names, preserve
+file-level orientation, and remain synchronized with the canonical generated
+source-symbol dictionary. Retained pre-refresh source is outside this retrofit
+until deliberately adopted into the clean product.
 
 ## Architecture decisions
 

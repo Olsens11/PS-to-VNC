@@ -1,11 +1,3 @@
-/*
- * File synopsis:
- * Implements strict, side-effect-free trimming and parsing helpers for
- * human-readable configuration values.
- *
- * Context: docs/CLEAN_ARCHITECTURE.md, "Configuration".
- */
-
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>

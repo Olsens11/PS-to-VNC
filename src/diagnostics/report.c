@@ -1,12 +1,3 @@
-/*
- * File synopsis:
- * Formats caller-owned debug, performance, and geometry snapshots into
- * diagnostic datagrams without becoming authoritative for their values.
- *
- * Context: docs/CLEAN_ARCHITECTURE.md, "Diagnostics and runtime identity";
- * docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md.
- */
-
 #include <stdio.h>
 
 #include "diagnostics/report.h"
