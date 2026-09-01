@@ -14,6 +14,7 @@ unit: \
 	$(BUILD_DIR)/rfb_session_test \
 	$(BUILD_DIR)/rfb_initial_frame_test \
 	$(BUILD_DIR)/rfb_initial_coverage_test \
+	$(BUILD_DIR)/rfb_async_framing_test \
 	$(BUILD_DIR)/display_test \
 	$(BUILD_DIR)/app_test
 	./$(BUILD_DIR)/config_text_test
@@ -23,6 +24,7 @@ unit: \
 	./$(BUILD_DIR)/rfb_session_test
 	./$(BUILD_DIR)/rfb_initial_frame_test
 	./$(BUILD_DIR)/rfb_initial_coverage_test
+	./$(BUILD_DIR)/rfb_async_framing_test
 	./$(BUILD_DIR)/display_test
 	./$(BUILD_DIR)/app_test
 
@@ -117,6 +119,23 @@ $(BUILD_DIR)/rfb_initial_coverage_test: \
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/rfb_initial_coverage_test.c \
+		../src/rfb_session.c \
+		../src/rfb.c \
+		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/rfb_async_framing_test: \
+	unit/rfb_async_framing_test.c \
+	../src/rfb.c \
+	../src/rfb.h \
+	../src/rfb_io.h \
+	../src/rfb_session.c \
+	../src/rfb_session.h \
+	../src/framebuffer.c \
+	../src/framebuffer.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_async_framing_test.c \
 		../src/rfb_session.c \
 		../src/rfb.c \
 		../src/framebuffer.c \
