@@ -8,6 +8,7 @@ ROOT="$(
 
 : "${PS2DEV:=/usr/local/ps2dev}"
 : "${PS2SDK:=$PS2DEV/ps2sdk}"
+: "${GSKIT:=$PS2DEV/gsKit}"
 
 CC="$PS2DEV/ee/bin/mips64r5900el-ps2-elf-gcc"
 
@@ -18,6 +19,11 @@ fi
 
 if [ ! -d "$PS2SDK/ee/include" ] || [ ! -d "$PS2SDK/common/include" ]; then
     echo "PS2SDK headers not found under: $PS2SDK" >&2
+    exit 1
+fi
+
+if [ ! -d "$GSKIT/include" ]; then
+    echo "gsKit headers not found under: $GSKIT" >&2
     exit 1
 fi
 
@@ -43,14 +49,17 @@ COMMON_FLAGS=(
     -I"$ROOT/src/platform"
     -I"$PS2SDK/ee/include"
     -I"$PS2SDK/common/include"
+    -I"$GSKIT/include"
 )
 
 SOURCES=(
     src/rfb.c
     src/framebuffer.c
     src/rfb_session.c
+    src/display.c
     src/platform/ps2_system.c
     src/platform/ps2_network.c
+    src/platform/ps2_graphics.c
 )
 
 for source in "${SOURCES[@]}"; do
