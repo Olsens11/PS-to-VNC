@@ -6,14 +6,18 @@ Development sessions begin with:
 
     ../AGENTS.md
 
-## Current state
+## Project intent and current state
 
+- `PROJECT_INTENT.md` — seed of intent, reconstruction principles, development
+  values, and the clean-rebuild strategy.
 - `status.md` — concise current human-readable state.
-- `../runtime/` — machine-readable current state.
+- `../runtime/PROJECT_STATE.env` — current machine-readable project state.
+- `../runtime/MIGRATION_STATE.env` — preserved migration-era machine authority.
+- `../runtime/` — additional machine-readable authority and historical state.
 
 ## Architecture
 
-Current architecture is rooted in:
+Current/historical architecture is rooted in:
 
 - `ARCHITECTURE.md`
 - `TARGET_ARCHITECTURE.md`
@@ -23,6 +27,27 @@ Current architecture is rooted in:
 - `ARCHITECTURAL_NORMALIZATION.md`
 
 Subsystem architecture may additionally live under `architecture/`.
+
+During the semantic-audit phase, these are reference material rather than an
+automatic structural blueprint for the clean reconstruction.
+
+## Semantic audit
+
+The clean reconstruction begins by documenting what PS-to-VNC actually does
+before redesigning it.
+
+Audit work should connect:
+
+- product behavior;
+- subsystem responsibility;
+- B4A/current implementation references;
+- historical tests and evidence;
+- failure modes and invariants;
+- lessons that must survive the rewrite;
+- implications for the clean design.
+
+Defined audit work is tracked in GitHub Issues; durable findings belong back in
+this repository.
 
 ## Development process
 
@@ -50,6 +75,9 @@ Testing policy is:
 
     development/testing.md
 
+Historical evidence remains valid evidence even when the clean reconstruction
+chooses a different architecture.
+
 ## Roadmap
 
 Deferred work belongs in:
@@ -59,18 +87,22 @@ Deferred work belongs in:
 Capture useful deferred work before moving on rather than relying on
 conversation memory.
 
+The migration-era extraction sequence is historical from the strategic reboot
+unless explicitly adopted into the new reconstruction roadmap.
+
 ## Migration/history
 
 Migration state/history documents, Git history, and preserved evidence retain
 the chronological development record.
 
-They are not substitutes for the concise current state in `status.md`.
+They are not substitutes for the concise current state in `status.md` or the
+project values in `PROJECT_INTENT.md`.
 
 ## Compatibility documents
 
 Migration-era router and state files remain because existing migration tooling
 still references their paths.
 
-Where historical current-state text conflicts with `status.md` or machine
-state under `runtime/`, investigate the discrepancy rather than silently
-choosing one.
+Where historical current-state text conflicts with `status.md` or the clean
+reconstruction intent, classify the older material as historical rather than
+silently rewriting the record.

@@ -245,7 +245,7 @@ echo "GIT_BRANCH=$GIT_BRANCH"
 echo "GIT_HEAD=$GIT_HEAD"
 echo "GIT_REMOTE_COUNT=$GIT_REMOTE_COUNT"
 
-test "$GIT_BRANCH" = 'main'
+test -n "$GIT_BRANCH"
 
 if [ "${GITHUB_PUBLICATION_STATUS:-}" = 'PRIVATE_PUBLISHED' ]; then
     test "$GIT_REMOTE_COUNT" -eq 1
@@ -263,10 +263,52 @@ if [ "${GITHUB_PUBLICATION_STATUS:-}" = 'PRIVATE_PUBLISHED' ]; then
     test "$(git remote get-url --push origin)" = \
         "$GITHUB_REMOTE_URL"
 
+    GIT_UPSTREAM="$(
+        git rev-parse \
+            --abbrev-ref \
+            --symbolic-full-name \
+            '@{upstream}' \
+            2>/dev/null || true
+    )"
+
+    echo "GIT_UPSTREAM=$GIT_UPSTREAM"
+
+    test -n "$GIT_UPSTREAM"
+
+    if [ "$GIT_BRANCH" = "$GITHUB_DEFAULT_BRANCH" ]; then
+        EXPECTED_UPSTREAM="$GITHUB_REMOTE_NAME/$GITHUB_DEFAULT_BRANCH"
+
+        test "$GIT_UPSTREAM" = "$EXPECTED_UPSTREAM"
+        test "$GIT_HEAD" = "$(git rev-parse "$GIT_UPSTREAM")"
+
+        echo 'GIT_AUTHORITY_CLASS=DEFAULT_BRANCH_EXACT_REMOTE'
+    else
+        EXPECTED_UPSTREAM="$GITHUB_REMOTE_NAME/$GIT_BRANCH"
+
+        test "$GIT_UPSTREAM" = "$EXPECTED_UPSTREAM"
+
+        # A review/development branch must contain the current published
+        # default branch. This rejects a branch that has fallen behind main.
+        git merge-base --is-ancestor \
+            "$GITHUB_REMOTE_NAME/$GITHUB_DEFAULT_BRANCH" \
+            "$GIT_HEAD"
+
+        # The published development branch must be an ancestor of the local
+        # branch. This permits intentional local commits awaiting push while
+        # rejecting a branch that is behind or divergent from its upstream.
+        git merge-base --is-ancestor \
+            "$GIT_UPSTREAM" \
+            "$GIT_HEAD"
+
+        echo 'GIT_AUTHORITY_CLASS=PUBLISHED_DEVELOPMENT_BRANCH'
+    fi
+
     echo 'GITHUB_PUBLICATION_STATUS=PRIVATE_PUBLISHED'
     echo 'GIT_AUTHORITY=PASS'
 else
     test "$GIT_REMOTE_COUNT" -eq 0
+    test "$GIT_BRANCH" = 'main'
+    echo 'GIT_AUTHORITY_CLASS=UNPUBLISHED_MAIN'
     echo 'GIT_AUTHORITY=PASS'
 fi
 

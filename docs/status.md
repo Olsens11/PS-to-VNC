@@ -2,58 +2,38 @@
 
 This is the concise human-readable current-state authority.
 
-Chronological migration history remains in `docs/MIGRATION_STATE.md` and Git.
+Chronological migration and exploratory-normalization history remains in
+`docs/MIGRATION_STATE.md`, preserved evidence, and Git.
 
 ## Product
 
     version=0.1.0-alpha.1
 
-## Last completed normalization boundary
+## Strategic transition
 
-Normalization Tranche 2 — video mode and pure geometry — is complete.
+The exploratory implementation and successor normalization work have been
+preserved as reference authority.
 
-M4H-A safe-area / presentation geometry is hardware qualified.
+The project is now entering a clean reconstruction phase governed by:
 
-M4H-B residual-boundary review is complete. The valid self-tested third
-census, followed by manual boundary confirmation, found no additional coherent
-pure-geometry responsibility to extract.
+    docs/PROJECT_INTENT.md
 
-    PURE_VIDEO_GEOMETRY_MODEL=COMPLETE
-    ADDITIONAL_PURE_GEOMETRY_EXTRACTION=NO
+The reconstruction principle is:
 
-Residual calibration state/policy, framebuffer/raster mapping, GS
-presentation, UI/diagnostics, and display orchestration remain assigned to
-their later canonical owners.
+> Rebuild PS-to-VNC as the program we would have written if we had known at the
+> beginning everything the exploratory implementation taught us.
 
-Permanent module:
+Existing B4A/current code remains behavioral reference, evidence, and a source
+of proven mechanisms. It is not the structural blueprint for the new product.
 
-    src/video/geometry.c
-    src/video/geometry.h
+The previous extraction-oriented normalization trajectory is historical from
+this point forward unless a specific completed mechanism or lesson is
+explicitly adopted into the clean design.
 
-Qualification included:
+## Preserved exploratory authority
 
-- host unit tests;
-- two byte-reproducible PS2 builds;
-- exact ELF/PT_LOAD identity;
-- controlled nontrivial safe-area hardware validation;
-- signed center-relative offset validation;
-- byte-exact configuration restoration;
-- normal 480p restoration;
-- five-mode machine regression PASS 5/5;
-- operator physical result FULL PASS;
-- final display state IDLE / 480p.
-
-## Validated executable
-
-    ELF_SHA256=42163c30b68ebf84b51b1c8c81d541017e64ffaa52e27bb0408f91edb25e2992
-    PT_LOAD_SHA256=c0030d28dea593b056bc604f94a9bd68576ccfc0f79e688c694193045378e701
-
-## Current development focus
-
-M4I diagnostics normalization is COMPLETE.
-
-Permanent diagnostics ownership now includes identity, debug state /
-transport, and DBG / PRF / GEOM reporting serialization.
+The final completed normalization boundary before the strategic restart was
+M4I diagnostics.
 
 Final qualified source generation:
 
@@ -71,39 +51,89 @@ Final direct hardware authority:
     PHYSICAL_RESULT=FULL_PASS
     FINAL_STARTUP_MODE=480p
 
-    NEXT_ACTION=M4J_management_normalization
-    BLOCKED_BY=NONE
-    CHECKPOINT_ID=M4I-FINAL-HW1
+These remain valid historical/empirical authorities. The former planned next
+action `M4J_management_normalization` is no longer the active product roadmap.
+
+## Current development focus
+
+The active phase is:
+
+    PHASE=PRESERVE_CLEAN_UNDERSTAND_RECONSTRUCT
+
+Immediate work:
+
+1. finish sealing and verifying the exploratory repositories, runtime state,
+   evidence, and Pi environment;
+2. establish the clean Raspberry Pi baseline and dependency/reproducibility
+   ledger;
+3. perform a semantic audit of what PS-to-VNC is and what each component does;
+4. mine historical tests for durable lessons and proven mechanisms;
+5. derive the clean target architecture from audited behavior;
+6. begin bottom-up reconstruction from the minimal PS2/Pi Ethernet and RFB
+   path.
+
+The semantic audit must describe purpose, inputs/triggers, owned state, normal
+behavior, outputs/effects, dependencies, failure behavior, invariants,
+implementation references, historical lessons, and rebuild implications for
+each meaningful component.
 
 ## Development continuity
 
-Development-continuity baseline version 1 is active.
+Development-continuity baseline version 1 remains active.
 
     SESSION_BOOTSTRAP=AGENTS.md
     DOCS_ROUTER=docs/README.md
     DEVELOPMENT_POLICY=docs/development/README.md
+    PROJECT_INTENT=docs/PROJECT_INTENT.md
+    MACHINE_CURRENT_STATE=runtime/PROJECT_STATE.env
+    MIGRATION_STATE_ROLE=HISTORICAL_REFERENCE
 
-Routine procedures must reuse canonical saved tooling when available.
+Repository authority remains more important than conversational memory.
+Historical evidence must be preserved rather than rewritten to fit the new
+architecture.
 
-## Planning estimate
+## Reconstruction progress
 
-    OVERALL_ARCHITECTURAL_NORMALIZATION=approximately_36_percent
-    DIAGNOSTICS_TRANCHE=complete_100_percent
-    VIDEO_GEOMETRY=complete
-    DIAGNOSTICS_IDENTITY=complete
-    DIAGNOSTICS_DEBUG_STATE_TRANSPORT=complete
-    DIAGNOSTICS_REPORTING=complete
+These are planning indicators, not machine authority:
 
-These percentages are planning estimates, not machine authority.
+    PRESERVATION_AND_RESET=35_PERCENT
+    SEMANTIC_AUDIT=0_PERCENT
+    CLEAN_PS2_RECONSTRUCTION=0_PERCENT
+    PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
+    GITHUB_RECONCILIATION=100_PERCENT
 
-## Machine-state mirror
+The previous `OVERALL_ARCHITECTURAL_NORMALIZATION` percentage is historical and
+is not carried forward as reconstruction progress.
 
-    LAST_HARDWARE_RESULT=M4I_FINAL_PASS_MACHINE_AND_PHYSICAL
-    LAST_VALIDATED_WORKING_ELF_SHA256=62e9b180ba73fc1377f853cfe21c17449be958723be6e7a2142de02dd1cee75e
-    LAST_VALIDATED_PT_LOAD_SHA256=fbb9a68913a10468827e72ef1db5c912a475fd357179f5f2cb993f3491d145db
-    CURRENT_WORKING_ELF_SHA256=62e9b180ba73fc1377f853cfe21c17449be958723be6e7a2142de02dd1cee75e
-    CURRENT_WORKING_VALIDATION_BASIS=M4I_FINAL_DIRECT_HARDWARE_QUALIFICATION
-    NEXT_ACTION=M4J_management_normalization
+## Repository / GitHub authority
+
+The exploratory successor history has been reconciled between the development
+Pi and GitHub through:
+
+    RECONCILED_MAIN=d8ae5b13947f7ef3d250c0b18be967a10f8c76a8
+
+The clean-reconstruction intent and semantic-audit setup are being developed on:
+
+    reboot/intent-and-semantic-audit
+
+## Frozen safety boundary
+
+Historical repository:
+
+    /home/ps2/ps2vnc
+
+This remains immutable reference authority.
+
+Frozen B4A and successor-era evidence remain reference material. No clean
+reconstruction step should destroy or silently rewrite them.
+
+## Next action
+
+    NEXT_ACTION=FORMALIZE_PROJECT_INTENT_AND_SEMANTIC_AUDIT
     BLOCKED_BY=NONE
 
-Machine-readable authority remains under `runtime/`.
+Current machine-readable project authority is `runtime/PROJECT_STATE.env`.
+
+Migration-era authority remains byte-preserved under
+`runtime/MIGRATION_STATE.env` and `runtime/M4_SOURCE_AUTHORITY.env` as
+historical/reference authority for the exploratory generation.

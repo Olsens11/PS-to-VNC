@@ -13,6 +13,8 @@ This is the canonical entry point for current PS-to-VNC documentation.
 
 ## Project
 
+- `docs/PROJECT_INTENT.md` — seed of intent, clean-reconstruction principles,
+  development values, and the preserve/clean/understand/reconstruct strategy.
 - `docs/PROJECT_IDENTITY.md` — project identity, naming and repository roles.
 - `docs/PROJECT_STATE.md` — current implementation and validation state.
 - `docs/LEGACY_HANDOFF.md` — relationship to the preserved PS2VNC project.
@@ -21,7 +23,7 @@ This is the canonical entry point for current PS-to-VNC documentation.
 
 ## Architecture
 
-- `docs/architecture/ARCHITECTURE.md` — current target subsystem architecture.
+- `docs/architecture/ARCHITECTURE.md` — current/historical subsystem architecture reference.
 
 ## Reference
 
@@ -36,8 +38,12 @@ Living/current PS-to-VNC documentation must be updated in the same stage that
 moves source ownership, changes interfaces, changes build authority or changes
 project state.
 
-No modularization stage is complete until its documentation is current and the
+No development stage is complete until its documentation is current and the
 documentation checker passes.
+
+The clean reconstruction does not erase completed migration evidence; it
+reclassifies the former extraction-oriented next steps as historical unless
+explicitly adopted into the new design.
 
 ## Migration recovery
 
@@ -112,6 +118,7 @@ Canonical successor entry points:
 - `CONTRIBUTING.md`
 - `docs/README.md`
 - `docs/status.md`
+- `docs/PROJECT_INTENT.md`
 
 Development-system policy:
 

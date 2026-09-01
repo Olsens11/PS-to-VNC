@@ -27,11 +27,14 @@ The repository is authoritative.
 Read these files in order:
 
 1. START_HERE.md
-2. runtime/MIGRATION_STATE.env
-3. docs/PROJECT_STATE.md
-4. docs/MIGRATION_STATE.md
-5. docs/MODULARIZATION.md
-6. docs/reference/FILE_AND_SERVICE_MAP.md
+2. docs/PROJECT_INTENT.md
+3. runtime/PROJECT_STATE.env
+4. docs/status.md
+5. runtime/MIGRATION_STATE.env
+6. docs/MIGRATION_STATE.md
+7. docs/PROJECT_STATE.md
+8. docs/MODULARIZATION.md
+9. docs/reference/FILE_AND_SERVICE_MAP.md
 
 Then run these commands:
 
@@ -41,6 +44,11 @@ Then run these commands:
     scripts/docs-check.sh
 
 Do not perform a project mutation until those checks pass.
+
+`runtime/MIGRATION_STATE.env` remains the preserved authority for the completed
+exploratory migration/normalization history. It is not the current clean-
+reconstruction roadmap. Current project direction is carried by
+`runtime/PROJECT_STATE.env` and `docs/status.md`.
 
 ## Repository safety boundary
 

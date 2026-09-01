@@ -123,3 +123,40 @@ document inventory serve different purposes.
 requires complete indexing, `docs/INDEX.md` may additionally provide a complete
 compatibility inventory so every document is discoverable without implying
 that every document is a current authority.
+
+## Canonical checks must work on review branches
+
+During formalization of the clean-reconstruction reboot, the canonical project
+and documentation checks failed after all repository, evidence, migration, and
+human/machine coherence checks had passed.
+
+The failure was development-infrastructure-specific: Git authority was
+hard-coded to require the checked-out branch to be `main`. As a result, no
+pull-request branch could ever pass the canonical checks before merge.
+
+The durable rule is that repository authority and branch identity are separate
+concerns. The default branch remains exact published authority, while a
+published development branch may be validated when its ancestry, upstream, and
+relationship to the default branch are explicit and fail closed.
+
+A review workflow should never require merging unvalidated work merely so the
+validation machinery will run.
+
+## Strategic transitions need a new current-state authority
+
+A strategic project restart must not rewrite a completed historical machine
+authority merely to make it look current.
+
+The final M4 migration and hardware state remains valid evidence of the
+exploratory implementation. The clean reconstruction therefore introduced a
+separate current project-state authority rather than changing M4's recorded
+next action after the fact.
+
+The durable rule is to separate:
+
+- what was current at the end of a completed development generation;
+- what the project is doing now;
+- the evidence connecting the two.
+
+Historical authority stays historical. Current direction gets an explicit new
+authority surface.
