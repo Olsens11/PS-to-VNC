@@ -16,9 +16,13 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_BRANCH = "reconstruct/issue7-minimal-core"
+EXPECTED_PRISTINE = (
+    ROOT / "build/reconstruction/issue7/PS-to-VNC-Issue7.ELF"
+).resolve()
 BUILD_SCRIPT = ROOT / "scripts/build-issue7-clean.sh"
 TRACKED_INPUTS = (
     "scripts/build-issue7-clean.sh",
+    "scripts/check-issue7-linked-reproducibility.sh",
     "mk/issue7-clean.mk",
     "scripts/testkit/prepare-hardware-elf.sh",
     "scripts/testkit/elf-identity.py",
@@ -121,12 +125,17 @@ def main() -> int:
     if not output.parent.is_dir():
         fail(f"output directory not found: {output.parent}")
 
-    # A DUT manifest must describe an exact committed source tree. Generated and
-    # ignored build outputs are allowed; tracked working/staged changes are not.
-    if git("diff", "--quiet") != "":
-        fail("unexpected git diff output")
-    if git("diff", "--cached", "--quiet") != "":
-        fail("unexpected staged git diff output")
+    # A DUT manifest must describe one exact committed source checkout. Ignored
+    # generated build outputs are allowed; tracked working/staged changes are not.
+    if git("status", "--porcelain", "--untracked-files=no"):
+        fail("tracked source tree is not clean")
+
+    branch = git("branch", "--show-current")
+    if branch != EXPECTED_BRANCH:
+        fail(
+            f"expected source branch {EXPECTED_BRANCH}; "
+            f"current branch is {branch or 'DETACHED'}"
+        )
 
     head = git("rev-parse", "HEAD")
     if re.fullmatch(r"[0-9a-f]{40}", head) is None:
@@ -141,8 +150,18 @@ def main() -> int:
     if prep["TESTKIT_PREPARE_HARDWARE_ELF"] != "PASS":
         fail("preparation log is not a passing hardware-ELF preparation")
 
-    pristine = Path(prep["PRISTINE_ELF"])
-    stamped = Path(prep["HARDWARE_STAMPED_ELF"])
+    pristine = Path(prep["PRISTINE_ELF"]).resolve()
+    stamped = Path(prep["HARDWARE_STAMPED_ELF"]).resolve()
+
+    # This is the source-to-DUT provenance boundary: a real Issue #7 manifest may
+    # only be made from the deterministic clean linked-build output left by
+    # check-issue7-linked-reproducibility.sh / build-issue7-clean.sh.
+    if pristine != EXPECTED_PRISTINE:
+        fail(
+            "preparation evidence does not name the canonical Issue #7 clean "
+            f"build output: expected {EXPECTED_PRISTINE}, got {pristine}"
+        )
+
     if not pristine.is_file() or not stamped.is_file():
         fail("preparation log references a missing ELF")
 
@@ -162,8 +181,9 @@ def main() -> int:
         ("QUALIFICATION_SCOPE", "PRE_HARDWARE_IDENTITY_ONLY"),
         ("HARDWARE_QUALIFIED", "NO"),
         ("SOURCE_REPOSITORY", "Olsens11/PS-to-VNC"),
-        ("SOURCE_BRANCH", EXPECTED_BRANCH),
+        ("SOURCE_BRANCH", branch),
         ("SOURCE_COMMIT", head),
+        ("PRISTINE_BUILD_PATH", str(EXPECTED_PRISTINE.relative_to(ROOT))),
         ("PS2DEV_IMAGE", toolchain_image),
         ("PS2IP_SHA256", dep_sha),
     ]
