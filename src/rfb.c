@@ -60,8 +60,11 @@ int pstvnc_rfb_parse_protocol_version(
 void pstvnc_rfb_build_client_version(
     uint8_t out[PSTVNC_RFB_PROTOCOL_VERSION_SIZE])
 {
-    static const uint8_t version[PSTVNC_RFB_PROTOCOL_VERSION_SIZE] =
-        "RFB 003.008\n";
+    static const uint8_t version[PSTVNC_RFB_PROTOCOL_VERSION_SIZE] = {
+        'R', 'F', 'B', ' ',
+        '0', '0', '3', '.',
+        '0', '0', '8', '\n'
+    };
 
     memcpy(out, version, sizeof(version));
 }
