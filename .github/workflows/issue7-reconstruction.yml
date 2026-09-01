@@ -22,6 +22,8 @@ jobs:
         run: ./scripts/testkit/identity-digest-forensics.py
       - name: Prove successor identity tools against sealed historical fixtures
         run: ./scripts/testkit/successor-identity-compat-self-test.py
+      - name: Self-test successor hardware preparation
+        run: ./scripts/testkit/self-test.sh
 
   ps2-compile:
     runs-on: ubuntu-latest
