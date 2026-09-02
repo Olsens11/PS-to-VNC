@@ -13,6 +13,14 @@ SOURCE_DIR="$REPO_ROOT/systemd/pi"
 DEST_DIR='/etc/systemd/system'
 SOCKET_NAME='ps-to-vnc-rfb.socket'
 SERVICE_NAME='ps-to-vnc-rfb.service'
+TMP_CANDIDATE=''
+
+cleanup() {
+    if [ -n "$TMP_CANDIDATE" ] && [ -d "$TMP_CANDIDATE" ]; then
+        rm -rf "$TMP_CANDIDATE"
+    fi
+}
+trap cleanup EXIT INT TERM
 
 usage() {
     echo "Usage: sudo $0 {install|remove}" >&2
@@ -28,7 +36,7 @@ if [ "${EUID}" -ne 0 ]; then
     exit 3
 fi
 
-for tool in cmp install systemd-analyze systemctl sha256sum id; do
+for tool in awk cmp cp id install mktemp rm sha256sum systemctl systemd-analyze; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "ERROR: required tool missing: $tool" >&2
         exit 4
@@ -43,7 +51,7 @@ for name in "$SOCKET_NAME" "$SERVICE_NAME"; do
 done
 
 install_candidate() {
-    local tmpdir target name
+    local target name
 
     if ! id ps2 >/dev/null 2>&1; then
         echo 'ERROR: expected service user ps2 does not exist.' >&2
@@ -57,11 +65,14 @@ install_candidate() {
     # Validate the exact candidate pair before touching /etc. Copying to a
     # temporary directory preserves the real unit basenames for dependency
     # resolution during systemd-analyze verify.
-    tmpdir="$(mktemp -d)"
-    trap 'rm -rf "$tmpdir"' EXIT
-    cp "$SOURCE_DIR/$SOCKET_NAME" "$tmpdir/$SOCKET_NAME"
-    cp "$SOURCE_DIR/$SERVICE_NAME" "$tmpdir/$SERVICE_NAME"
-    systemd-analyze verify "$tmpdir/$SOCKET_NAME" "$tmpdir/$SERVICE_NAME"
+    TMP_CANDIDATE="$(mktemp -d)"
+    cp "$SOURCE_DIR/$SOCKET_NAME" "$TMP_CANDIDATE/$SOCKET_NAME"
+    cp "$SOURCE_DIR/$SERVICE_NAME" "$TMP_CANDIDATE/$SERVICE_NAME"
+    systemd-analyze verify \
+        "$TMP_CANDIDATE/$SOCKET_NAME" \
+        "$TMP_CANDIDATE/$SERVICE_NAME"
+    rm -rf "$TMP_CANDIDATE"
+    TMP_CANDIDATE=''
 
     # Fail closed on any pre-existing definition that is not byte-for-byte the
     # candidate being installed. Never overwrite unknown or hand-edited units.
