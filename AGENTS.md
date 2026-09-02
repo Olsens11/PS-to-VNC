@@ -90,6 +90,54 @@ Different kinds of truth have different homes:
 Do not silently choose between contradictory authorities. Investigate and
 reconcile the discrepancy.
 
+## Reconstruction decision discipline
+
+The reconstruction principle in `docs/PROJECT_INTENT.md` is an active design
+constraint, not background reading:
+
+> Rebuild PS-to-VNC as the program we would have written if we had known at the
+> beginning everything the exploratory implementation taught us.
+
+Before promoting a meaningful implementation, architecture, dependency,
+lifecycle, recovery, or test-apparatus choice, explicitly answer:
+
+1. **What product behavior or historical lesson are we preserving?**
+2. **Are we preserving a requirement, or accidentally preserving an old
+   implementation detail?**
+3. **What is the conventional supported solution on the target platform if the
+   project is designed fresh today?**
+4. **If we deviate from convention, what concrete PS-to-VNC benefit earns that
+   deviation?**
+5. **Does the choice preserve explicit ownership and a replaceable module or
+   service boundary, or leak provider-specific assumptions into unrelated
+   domains?**
+6. **Is this solving a demonstrated present requirement, or building speculative
+   infrastructure for deferred work?**
+7. **What evidence, test, or hardware qualification will decide whether the
+   choice is promoted?**
+
+Use the project's disposition vocabulary where useful: `ADOPT`, `ADAPT`,
+`DEFER`, `REJECT`, and `EVALUATING`.
+
+Prefer standards for commodity machinery and customize policy where the product
+benefits. Do not reject a good project-specific idea merely because it is not a
+distro default; implement it through standard mechanisms when practical.
+Likewise, do not invent a custom mechanism merely because it can be made to
+work.
+
+Do not create abstractions solely for hypothetical future features. Instead,
+preserve clean seams so an implementation can be replaced later without forcing
+unrelated subsystems to change.
+
+When presenting a candidate for review or hardware testing, state at minimum:
+
+- the requirement/lesson being addressed;
+- the commodity mechanisms being relied upon;
+- the project-specific adaptation, if any;
+- implementation/provider choices that remain replaceable;
+- deferred future concerns intentionally not solved now;
+- the qualification evidence required for promotion.
+
 ## Discover before inventing
 
 Before redesigning a subsystem or constructing a development procedure, check
