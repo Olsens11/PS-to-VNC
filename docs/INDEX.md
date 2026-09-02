@@ -9,7 +9,9 @@
 > CANONICAL_DOCS_ROUTER=docs/README.md
 
 
-This is the canonical entry point for current PS-to-VNC documentation.
+This file is the mechanically complete compatibility inventory. Use
+`docs/README.md` for curated current navigation and `AGENTS.md` to start a
+fresh development session.
 
 ## Project
 
@@ -22,7 +24,8 @@ This is the canonical entry point for current PS-to-VNC documentation.
 - `docs/status.md` — concise timestamped human status snapshot.
 - `docs/LEGACY_HANDOFF.md` — relationship to the preserved PS2VNC project.
 - `docs/MODULARIZATION.md` — staged migration ledger and lockstep rules.
-- `docs/ROADMAP.md` — ordered future development direction.
+- `docs/ROADMAP.md` — durable clean direction plus an explicitly historical
+  migration-era roadmap section; not a live `NEXT_ACTION` surface.
 
 ## Architecture
 
@@ -143,7 +146,7 @@ A fresh conversation begins through `AGENTS.md` and the fresh-session procedure;
 
 ## M1B mechanical extraction
 
-- `docs/M1B_EXTRACTION_RESULT.md` — exact result and source authority for the first mechanical module extraction.
+- `docs/M1B_EXTRACTION_RESULT.md` — exact result and source authority for the M2 scalar-parser mechanical extraction.
 
 ## M1C modular DUT authority
 
