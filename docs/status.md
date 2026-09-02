@@ -2,7 +2,7 @@
 
 Temporal role: `SNAPSHOT`
 
-Recorded at: `2026-09-02T15:14:42-04:00`
+Recorded at: `2026-09-02T15:35:00-04:00`
 
 This is the concise human-readable project-status snapshot **as recorded at the
 time above**. It is not an eternal present-tense authority. Before repeating any
@@ -28,48 +28,49 @@ Recorded `main` head:
 
 ## Hands-on priority when the operator returns
 
-Do **not** consume an available hardware session merely finishing branch or
-documentation cleanup. The continuity work has been durably captured in
-`docs/development/CONTINUITY_FOLLOWUPS.md` and may be resumed later.
+Do **not** consume an available hardware session merely finishing documentation
+or branch cleanup. The remaining continuity work is durably captured in
+`docs/development/CONTINUITY_FOLLOWUPS.md`.
 
-The active technical work should resume from the exact Issue/PR records rather
-than from this prose snapshot.
+Resume technical work from the exact current Issue/PR/evidence records rather
+than treating this prose snapshot as a substitute for live reconciliation.
 
 ### Issue #5 / PR #17 — clean Pi and RFB endpoint lifecycle
 
-Recorded active authorities:
+Recorded authorities at this snapshot:
 
 - foundation branch: `pi/issue5-clean-baseline`;
-- foundation head observed during this snapshot cycle:
-  `87baebce32e3c07ffc12298d6a168ac890231cf2`;
-- evaluating lifecycle branch: `pi/issue5-rfb-socket-activation-candidate`;
+- foundation head: `87baebce32e3c07ffc12298d6a168ac890231cf2`;
+- evaluating branch: `pi/issue5-rfb-socket-activation-candidate`;
+- candidate head observed during the branch audit:
+  `66988ebcfb1eed57cb84f422fb84bdb6faf98952`;
 - draft PR #17: `Evaluate PS2-facing RFB endpoint lifecycle`.
 
-The next hands-on direction is the already-documented Xtigervnc path, not new
-provider exploration:
+The next hands-on direction remains the documented Xtigervnc path:
 
 1. inspect live Pi state before mutation, especially remaining exploratory
    w0/kanshi/helper state;
 2. preserve the w0 experiment as reference only;
 3. re-establish the documented dedicated packaged Xtigervnc path;
-4. instrument untouched cold/no-carrier -> PS2 carrier -> NetworkManager
-   address -> port-5900-listener sequencing;
+4. instrument untouched cold/no-carrier -> PS2 carrier -> NetworkManager address
+   -> port-5900-listener sequencing;
 5. qualify the systemd socket-activation + Xtigervnc `-inetd` candidate against
-   the conventional persistent-provider control only after the baseline timing
-   is measured;
+   the conventional persistent-provider control only after baseline timing is
+   measured;
 6. keep NetworkManager identity, provider choice, and service lifecycle as
    separate decisions;
-7. reconcile live Pi mutations into the Issue #5 dependency/provisioning record
-   before promotion.
+7. reconcile live Pi mutations into Issue #5 before promotion.
 
 Socket activation, a no-carrier override, w0/WayVNC, and historical traffic
 shaping remain unpromoted unless their own evidence gates say otherwise.
 
 ### Issue #7 / PR #15 — clean minimal Raw/480p PS2 core
 
-Recorded branch authority:
+Recorded authority:
 
 - `reconstruct/issue7-minimal-core`;
+- branch head observed during the branch audit:
+  `e7b4a35f681101fe39e59c4b04b28740b0f536de`;
 - draft PR #15: `Reconstruct minimal Raw 480p PS2↔Pi core`.
 
 The exact clean fixed-480p / Raw / incremental RFB / GS behavior has already
@@ -81,37 +82,54 @@ failed because the diagnostic capture observed only:
 and did not observe the earlier runtime identity, `NET_READY`, or `GS_READY`
 datagrams.
 
-If Issue #7 is resumed, keep the next experiment narrow: isolate why the early
+If Issue #7 is resumed, keep the next experiment narrow: isolate why early
 startup/runtime-identity diagnostic `sendto` evidence is absent while the later
 `DESKTOP_READY` send succeeds. Do **not** perturb the demonstrated RFB/Raw/GS
 path merely to chase the evidence defect.
 
-## Development-continuity work captured but allowed to wait
+## Continuity work completed before this snapshot
 
-The user-requested follow-up backlog is now explicit in:
+The documentation/continuity branch is PR #16,
+`docs/fresh-session-reconstruction`, still draft.
+
+Completed during the current cleanup pass:
+
+- full 11-branch GitHub inventory and provenance/lifecycle audit;
+- review and harvest of all three unique `reconstruction/m1-minimal-core`
+  commits;
+- classification of four fully merged reboot/audit/state branches as historical
+  cold-storage candidates, with no deletion authorization;
+- protected w0vncserver archive classification retained;
+- PS2VNC continuity-system harvest covering bootstrap, status, TestKit,
+  provenance, historical-harvest, known-good, and context-routing lessons;
+- root README now exposes the one-line fresh-chat handoff;
+- `START_HERE.md` is now a compatibility redirect rather than a competing
+  bootstrap contract;
+- clean-current tool/context router added at
+  `docs/reference/CURRENT_TOOL_AND_CONTEXT_MAP.md`;
+- migration-era `FILE_AND_SERVICE_MAP.md` explicitly demoted to historical/
+  compatibility routing;
+- temporal snapshot rules wired into status documents, resume output, and
+  continuity checks;
+- PR #16 description refreshed to record its expanded scope and promotion gate.
+
+Detailed continuation/backlog:
 
 `docs/development/CONTINUITY_FOLLOWUPS.md`
 
-It includes:
+## What remains before PR #16 should be promoted
 
-- finish branch deobfuscation/lifecycle audit;
-- specially harvest the three unique commits from
-  `reconstruction/m1-minimal-core` before any retirement recommendation;
-- review fully merged historical branches for possible verified cold-storage
-  retirement;
-- never delete any branch without explicit approval for that specific branch;
-- finish/reconcile PR #16 and eventually promote the continuity/casebook package
-  when appropriate;
-- deeply mine the historical PS2VNC `START_HERE`, documentation, status,
-  TestKit, file/service-map, resume-state, development-wrap, context-routing,
-  provenance, and documentation-by-default systems for reusable lessons;
-- make brand-new conversations require as little user handoff as practical;
-- mechanically harden timestamp/snapshot semantics for mutable status records
-  where worthwhile.
+- run `scripts/check.sh` on an actual checkout of the exact PR head;
+- fix any migration-era checker assumptions that conflict with the new temporal
+  semantics or routing model;
+- verify every new Markdown file remains indexed/routed;
+- review the complete PR diff for duplicate/conflicting authority;
+- keep branch retirement as a separate cold-storage + explicit-user-approval
+  workflow.
 
-That backlog is deliberately **not a blocker for the next hardware session**.
+Those items are **not a blocker for the next available hardware session**.
 
-## Major-investigation casebook recorded on PR #16
+## Major-investigation casebook on PR #16
 
 - `MI-001` — `RESOLVED`: GS/EE HIRES HSync / `ExitHandler()` handoff;
 - `MI-002` — `OPEN_NON_BLOCKING`: MTU1458 / SMAP RX corruption;
@@ -120,9 +138,9 @@ That backlog is deliberately **not a blocker for the next hardware session**.
   family;
 - `MI-005` — `OPEN_NON_BLOCKING`: persistent 576p low-level transition stall.
 
-MI-001 also has the complete original Test14 mechanism report copied into the
-successor repository so ordinary future comprehension does not require opening
-the legacy PS2VNC repository.
+MI-001 includes the complete original Test14 mechanism report copied into the
+successor repository so ordinary comprehension does not require the legacy
+PS2VNC repository.
 
 ## Protected boundaries
 
@@ -139,7 +157,7 @@ the legacy PS2VNC repository.
 
 ## Fresh-chat minimal handoff
 
-The intended short instruction remains:
+The intended instruction is:
 
 > Open `Olsens11/PS-to-VNC`. Read `AGENTS.md` and follow the fresh-session
 > reconstruction procedure completely before doing any project work.
