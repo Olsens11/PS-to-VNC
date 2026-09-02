@@ -1,0 +1,68 @@
+name: Development continuity
+
+on:
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - 'README.md'
+      - 'START_HERE.md'
+      - 'docs/**'
+      - 'runtime/PROJECT_STATE.env'
+      - 'runtime/DEVELOPMENT_SYSTEM.env'
+      - 'scripts/continuity-check.sh'
+      - 'scripts/resume-state.sh'
+      - '.github/workflows/continuity.yml'
+  push:
+    branches:
+      - docs/fresh-session-reconstruction
+    paths:
+      - 'AGENTS.md'
+      - 'README.md'
+      - 'START_HERE.md'
+      - 'docs/**'
+      - 'runtime/PROJECT_STATE.env'
+      - 'runtime/DEVELOPMENT_SYSTEM.env'
+      - 'scripts/continuity-check.sh'
+      - 'scripts/resume-state.sh'
+      - '.github/workflows/continuity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  portable-continuity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Shell syntax
+        run: |
+          bash -n scripts/resume-state.sh
+          bash -n scripts/continuity-check.sh
+
+      - name: Continuity contract
+        run: scripts/continuity-check.sh
+
+      - name: Documentation index completeness
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          while IFS= read -r file; do
+            [ "$file" = 'docs/INDEX.md' ] && continue
+            if ! grep -Fq "$file" docs/INDEX.md; then
+              echo "ERROR=UNINDEXED_DOCUMENT:$file"
+              missing=1
+            fi
+          done < <(find docs -type f -name '*.md' -print | sort)
+          if [ "$missing" -ne 0 ]; then
+            exit 30
+          fi
+          echo 'ALL_DOCUMENTS_INDEXED=PASS'
+
+      - name: Diff whitespace
+        run: git diff --check origin/main...HEAD

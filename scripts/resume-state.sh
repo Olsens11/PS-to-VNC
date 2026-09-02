@@ -45,28 +45,66 @@ if [ "${1:-}" = '--field' ]; then
     exit
 fi
 
-# New clean-reconstruction current-project interface.
+# Clean-reconstruction committed snapshot interface.
 if [ "${1:-}" = '--project-field' ]; then
     FIELD="${2:?field name required}"
     get_field "$PROJECT_STATE" "$FIELD"
     exit
 fi
 
-echo '===== PS-to-VNC RESUME STATE ====='
+STATE_RECORDED_AT="$(get_field "$PROJECT_STATE" STATE_RECORDED_AT)"
+STATE_TEMPORAL_ROLE="$(get_field "$PROJECT_STATE" STATE_TEMPORAL_ROLE)"
 
+if git -C "$ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
+    GIT_HEAD="$(git -C "$ROOT" rev-parse HEAD)"
+    GIT_BRANCH="$(git -C "$ROOT" branch --show-current)"
+    GIT_HEAD_COMMITTED_AT="$(git -C "$ROOT" show -s --format=%cI HEAD)"
+    NEWER_LOCAL_COMMITS="$(
+        git -C "$ROOT" rev-list --count --all --since="$STATE_RECORDED_AT" 2>/dev/null ||
+        printf 'UNKNOWN\n'
+    )"
+else
+    GIT_HEAD='UNBORN'
+    GIT_BRANCH=''
+    GIT_HEAD_COMMITTED_AT='UNKNOWN'
+    NEWER_LOCAL_COMMITS='UNKNOWN'
+fi
+
+echo '===== PS-to-VNC RESUME STATE ====='
 echo "PROJECT_NAME=$(get_field "$PROJECT_STATE" PROJECT_NAME)"
 echo "PROJECT_ROOT=$ROOT"
 
 echo
-echo '===== CURRENT PROJECT STATE ====='
-echo "PHASE=$(get_field "$PROJECT_STATE" PHASE)"
+echo '===== COMMITTED PROJECT STATE SNAPSHOT ====='
+echo "STATE_TEMPORAL_ROLE=$STATE_TEMPORAL_ROLE"
+echo "STATE_RECORDED_AT=$STATE_RECORDED_AT"
+echo "STATE_FRESHNESS=$(get_field "$PROJECT_STATE" STATE_FRESHNESS)"
+echo "STATE_FRESHNESS_POLICY=$(get_field "$PROJECT_STATE" STATE_FRESHNESS_POLICY)"
+echo "PROJECT_STATE_ROLE=$(get_field "$PROJECT_STATE" PROJECT_STATE_ROLE)"
+echo "PHASE_RECORDED_AT_SNAPSHOT=$(get_field "$PROJECT_STATE" PHASE)"
 echo "PROJECT_INTENT=$(get_field "$PROJECT_STATE" PROJECT_INTENT)"
-echo "MACHINE_CURRENT_STATE=$(get_field "$PROJECT_STATE" MACHINE_CURRENT_STATE)"
-echo "NEXT_ACTION=$(get_field "$PROJECT_STATE" NEXT_ACTION)"
-echo "BLOCKED_BY=$(get_field "$PROJECT_STATE" BLOCKED_BY)"
+echo "MACHINE_STATE_SNAPSHOT=$PROJECT_STATE"
+echo "NEXT_ACTION_RECORDED_AT_SNAPSHOT=$(get_field "$PROJECT_STATE" NEXT_ACTION)"
+echo "BLOCKED_BY_RECORDED_AT_SNAPSHOT=$(get_field "$PROJECT_STATE" BLOCKED_BY)"
+echo 'PRESENT_TENSE_STATE_AUTHORITY=REQUIRES_GITHUB_AND_LIVE_RECONCILIATION'
 
 echo
-echo '===== RECONSTRUCTION PROGRESS ====='
+echo '===== SNAPSHOT FRESHNESS CONTEXT ====='
+echo "CURRENT_GIT_HEAD=$GIT_HEAD"
+echo "CURRENT_GIT_BRANCH=$GIT_BRANCH"
+echo "CURRENT_GIT_HEAD_COMMITTED_AT=$GIT_HEAD_COMMITTED_AT"
+echo "LOCAL_COMMITS_AFTER_STATE_SNAPSHOT=$NEWER_LOCAL_COMMITS"
+
+if [ "$NEWER_LOCAL_COMMITS" != 'UNKNOWN' ] && [ "$NEWER_LOCAL_COMMITS" -gt 0 ]; then
+    echo 'STATE_FRESHNESS_LOCAL=NEWER_GIT_ACTIVITY_PRESENT'
+    echo 'RECORDED_NEXT_ACTION_USABLE_AS_CURRENT=NO_WITHOUT_RECONCILIATION'
+else
+    echo 'STATE_FRESHNESS_LOCAL=NO_NEWER_LOCAL_COMMIT_PROVEN'
+    echo 'RECORDED_NEXT_ACTION_USABLE_AS_CURRENT=NOT_PROVEN'
+fi
+
+echo
+echo '===== RECONSTRUCTION PROGRESS RECORDED AT SNAPSHOT ====='
 echo "REFERENCE_PRESERVATION=$(get_field "$PROJECT_STATE" REFERENCE_PRESERVATION)"
 echo "SEMANTIC_AUDIT=$(get_field "$PROJECT_STATE" SEMANTIC_AUDIT)"
 echo "CLEAN_PS2_RECONSTRUCTION=$(get_field "$PROJECT_STATE" CLEAN_PS2_RECONSTRUCTION)"
@@ -100,26 +138,17 @@ echo "LEGACY_MUTABLE=$(get_field "$MIGRATION_STATE" LEGACY_MUTABLE)"
 echo "DO_NOT_TOUCH=$(get_field "$MIGRATION_STATE" DO_NOT_TOUCH)"
 
 echo
-echo '===== GIT ====='
-
-if git -C "$ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
-    echo "GIT_HEAD=$(git -C "$ROOT" rev-parse HEAD)"
-else
-    echo 'GIT_HEAD=UNBORN'
-fi
-
-echo "GIT_BRANCH=$(git -C "$ROOT" branch --show-current)"
-echo "GIT_REMOTE_COUNT=$(git -C "$ROOT" remote | wc -l)"
-
-echo
 echo '===== GIT STATUS ====='
 git -C "$ROOT" status --short
 
 echo
 echo '===== DEVELOPMENT CONTINUITY ====='
 echo 'SESSION_BOOTSTRAP=AGENTS.md'
-echo 'CURRENT_HUMAN_STATE=docs/status.md'
-echo 'CURRENT_MACHINE_STATE=runtime/PROJECT_STATE.env'
+echo 'HUMAN_STATE_SNAPSHOT=docs/status.md'
+echo 'MACHINE_STATE_SNAPSHOT=runtime/PROJECT_STATE.env'
+echo 'TEMPORAL_STATE_POLICY=docs/development/TEMPORAL_STATE_SEMANTICS.md'
+echo 'BRANCH_WORKSTREAM_INDEX=docs/development/BRANCH_WORKSTREAM_INDEX.md'
+echo 'CONTINUITY_FOLLOWUPS=docs/development/CONTINUITY_FOLLOWUPS.md'
 echo 'HISTORICAL_MIGRATION_STATE=runtime/MIGRATION_STATE.env'
 echo 'DOCS_ROUTER=docs/README.md'
 echo 'DEVELOPMENT_POLICY=docs/development/README.md'

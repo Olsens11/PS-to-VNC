@@ -4,79 +4,65 @@
 >
 > Canonical development-session bootstrap: `AGENTS.md`.
 >
-> Canonical current state: `docs/status.md`.
->
-> This file remains because migration-era workflows reference its path.
-> Historical current-state material below is not the canonical current-state
-> authority.
+> This path is retained because migration-era documentation and tooling refer to
+> `START_HERE.md`. It is **not** a second bootstrap procedure.
 >
 > CANONICAL_SESSION_BOOTSTRAP=AGENTS.md
 
+## New development session
 
-This is the mandatory recovery entry point whenever conversational or
-developer context is missing.
+Use this instruction:
 
-## Authority rule
+> Open `Olsens11/PS-to-VNC`. Read `AGENTS.md` and follow the fresh-session
+> reconstruction procedure completely before doing any project work.
 
-Do not reconstruct current project state from chat memory.
+Then stop using this compatibility file as an authority and follow `AGENTS.md`.
 
-The repository is authoritative.
+The canonical procedure will:
 
-## Recovery procedure
+- reconcile timestamped status snapshots before repeating present-tense claims;
+- reconstruct the complete GitHub issue/PR/branch/history record;
+- discover active workstreams dynamically;
+- load relevant open and resolved major-investigation cases;
+- identify exact source/build/evidence authority and protected state;
+- use canonical project tools rather than inventing parallel procedures;
+- distinguish current clean-reconstruction direction from preserved migration
+  history.
 
-Read these files in order:
+## Why this file no longer contains a second recovery checklist
 
-1. START_HERE.md
-2. docs/PROJECT_INTENT.md
-3. runtime/PROJECT_STATE.env
-4. docs/status.md
-5. runtime/MIGRATION_STATE.env
-6. docs/MIGRATION_STATE.md
-7. docs/PROJECT_STATE.md
-8. docs/MODULARIZATION.md
-9. docs/reference/FILE_AND_SERVICE_MAP.md
+The older PS-to-VNC migration workflow used this file as its primary recovery
+entry point. Maintaining a second ordered reading list here would now create two
+competing bootstrap contracts and make them drift apart.
 
-Then run these commands:
+`AGENTS.md` therefore owns the entrance and
+`docs/development/SESSION_RECONSTRUCTION.md` owns the detailed procedure.
 
-    cd /home/ps2/PS-to-VNC
-    scripts/resume-state.sh
-    scripts/migration-check.sh
-    scripts/docs-check.sh
+## Migration-era authority remains preserved
 
-Do not perform a project mutation until those checks pass.
+When the task specifically requires migration/reconstruction history, the
+canonical bootstrap will route to the preserved material, including:
 
-`runtime/MIGRATION_STATE.env` remains the preserved authority for the completed
-exploratory migration/normalization history. It is not the current clean-
-reconstruction roadmap. Current project direction is carried by
-`runtime/PROJECT_STATE.env` and `docs/status.md`.
+- `runtime/MIGRATION_STATE.env`;
+- `docs/MIGRATION_STATE.md`;
+- `docs/PROJECT_STATE.md`;
+- `docs/MODULARIZATION.md`;
+- migration-era evidence and checks.
+
+Those records explain historical state. They do not become present-day project
+status merely because they once used words such as `CURRENT` or `NEXT_ACTION`.
 
 ## Repository safety boundary
 
 Historical repository:
 
-    /home/ps2/ps2vnc
+`/home/ps2/ps2vnc`
 
-This is read-only historical authority.
+It remains read-only historical/provenance authority.
 
 Current successor repository:
 
-    /home/ps2/PS-to-VNC
+`/home/ps2/PS-to-VNC`
 
-All new development occurs here.
-
-## Migration-stage rule
-
-Every stage must durably record:
-
-- last completed stage;
-- current stage and status;
-- current source authority;
-- Git authority;
-- build and hardware-validation state;
-- source/module ownership;
-- temporary architectural debt;
-- documentation state;
-- explicit next action.
-
-A stage is not COMPLETE unless a fresh conversation can resume from repository
-state alone.
+All new development occurs in the successor repository unless a specific
+read-only historical investigation requires consulting the legacy project.

@@ -9,26 +9,37 @@
 > CANONICAL_DOCS_ROUTER=docs/README.md
 
 
-This is the canonical entry point for current PS-to-VNC documentation.
+This file is the mechanically complete compatibility inventory. Use
+`docs/README.md` for curated current navigation and `AGENTS.md` to start a
+fresh development session.
 
 ## Project
 
 - `docs/PROJECT_INTENT.md` — seed of intent, clean-reconstruction principles,
   development values, and the preserve/clean/understand/reconstruct strategy.
 - `docs/PROJECT_IDENTITY.md` — project identity, naming and repository roles.
-- `docs/PROJECT_STATE.md` — current implementation and validation state.
+- `docs/PROJECT_STATE.md` — preserved/current-at-recorded-time implementation and
+  validation checkpoint; see temporal-state policy before treating status prose
+  as present-tense truth.
+- `docs/status.md` — concise timestamped human status snapshot.
 - `docs/LEGACY_HANDOFF.md` — relationship to the preserved PS2VNC project.
 - `docs/MODULARIZATION.md` — staged migration ledger and lockstep rules.
-- `docs/ROADMAP.md` — ordered future development direction.
+- `docs/ROADMAP.md` — durable clean direction plus an explicitly historical
+  migration-era roadmap section; not a live `NEXT_ACTION` surface.
 
 ## Architecture
 
-- `docs/architecture/ARCHITECTURE.md` — current/historical subsystem architecture reference.
+- `docs/CLEAN_ARCHITECTURE.md` — current clean-reconstruction architecture
+  authority.
+- `docs/architecture/ARCHITECTURE.md` — subsystem historical/reference
+  architecture material.
 
 ## Reference
 
-- `docs/reference/FILE_AND_SERVICE_MAP.md` — canonical living map of where
-  source, evidence and responsibilities currently reside.
+- `docs/reference/CURRENT_TOOL_AND_CONTEXT_MAP.md` — clean-current router for
+  canonical tools, authority classes, and context acquisition.
+- `docs/reference/FILE_AND_SERVICE_MAP.md` — migration-era compatibility/reference
+  map; not clean-current routing authority.
 - `docs/reference/PRESERVATION_STATUS.md` — completed exploratory-reference
   preservation scope and disposition.
 
@@ -37,7 +48,41 @@ This is the canonical entry point for current PS-to-VNC documentation.
 - `docs/audit/README.md` — semantic-audit contract, evidence classes, and
   maturity model.
 - `docs/audit/BEHAVIORAL_INVENTORY.md` — complete product behavior inventory
-  and current audit status.
+  and audit evidence ledger.
+- `docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md` — input, keyboard, and local-UI
+  behavioral audit tranche.
+- `docs/audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md` — configuration,
+  recovery, and management behavioral audit tranche.
+- `docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md` — diagnostics,
+  Pi companion, and development-infrastructure audit tranche.
+- `docs/audit/SOURCE_RESPONSIBILITY_MAP.md` — historical source/state/coupling to
+  product-responsibility map.
+- `docs/audit/HISTORICAL_LESSONS.md` — durable historical experiment/failure
+  lessons used by the clean reconstruction.
+- `docs/audit/CROSS_DOMAIN_SYNTHESIS.md` — responsibility-level architecture
+  synthesis.
+- `docs/audit/CROSS_DOMAIN_STATE_INTERFACES.md` — explicit state ownership,
+  interfaces, concurrency seams, and critical-flow analysis.
+- `docs/audit/REBUILD_READY_PROMOTION.md` — semantic-audit/architecture maturity
+  promotion record.
+
+## Major investigation casebook
+
+- `docs/investigations/README.md` — casebook router, threshold, statuses, and
+  reviewed-not-promoted topics.
+- `docs/investigations/TEMPLATE.md` — required structure for new major cases.
+- `docs/investigations/MI-001-GS-INTERRUPT-EXITHANDLER.md` — resolved GS/EE
+  HSync / `ExitHandler()` interrupt-handoff case.
+- `docs/investigations/MI-002-MTU1458-SMAP-RX.md` — open MTU1458 / SMAP RX
+  corruption investigation.
+- `docs/investigations/MI-003-PS2-RECEIVE-BURST-PACING.md` — open PS2 receive
+  burst-tolerance / sender-pacing investigation.
+- `docs/investigations/MI-004-DISPLAY-TRANSITION-LIVENESS.md` — open intermittent
+  display-transition/reconstruction liveness family.
+- `docs/investigations/MI-005-576P-LOW-LEVEL-TRANSITION.md` — open persistent
+  576p low-level transition stall.
+- `docs/investigations/source/MI-001-TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md`
+  — exact copied full Test14 mechanism report retained locally in PS-to-VNC.
 
 ## Documentation contract
 
@@ -54,15 +99,22 @@ The clean reconstruction does not erase completed migration evidence; it
 reclassifies the former extraction-oriented next steps as historical unless
 explicitly adopted into the new design.
 
+Mutable status is temporal: a status/current/next-action document says what was
+recorded at its timestamp. Read
+`docs/development/TEMPORAL_STATE_SEMANTICS.md` before repeating freshness-sensitive
+claims as present-tense truth.
+
 ## Migration recovery
 
-- `START_HERE.md` — mandatory recovery entry point after context loss.
+- `START_HERE.md` — migration-era compatibility redirect to `AGENTS.md`.
 - `docs/MIGRATION_STATE.md` — human-readable migration authority.
 - `runtime/MIGRATION_STATE.env` — machine-readable migration authority.
-- `scripts/resume-state.sh` — reconstruct current migration state.
+- `scripts/resume-state.sh` — produce a snapshot-aware resume report and expose
+  migration compatibility fields.
 - `scripts/migration-check.sh` — prove migration/source/document coherence.
 
-A fresh conversation begins with `START_HERE.md`, not conversational memory.
+A fresh conversation begins through `AGENTS.md` and the fresh-session procedure;
+`START_HERE.md` remains a migration-era compatibility entry point.
 
 ## Baseline reproduction
 
@@ -96,7 +148,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 
 - `docs/M1B_EXTRACTION_RESULT.md` — exact result and source authority for the first mechanical module extraction.
 
-## M1C first modular DUT
+## M1C modular DUT authority
 
 - `docs/M1C_DUT_CHARACTERIZATION.md` — build, reproducibility, linkage, host parity, and ELF characterization for the first modular PS-to-VNC executable.
 
@@ -108,15 +160,9 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 
 - `docs/M1_COMPLETION.md` — authoritative closure record for M1.
 - `docs/M2A_EXTRACTION_BOUNDARY.md` — exact committed M2A scalar-parser extraction boundary.
-
-## M2B mechanical extraction
-
 - `docs/M2B_EXTRACTION_RESULT.md` — exact result and source authority for the M2 scalar-parser mechanical extraction.
-
 - `docs/M2C_DUT_CHARACTERIZATION.md` — reproducible M2 DUT build, linkage, parser parity and validation authority.
-
 - `docs/M2_COMPLETION.md` — authoritative M2 closure and accelerated-migration transition record.
-
 - `docs/M3_MACRO_MIGRATION.md` — coarse-first hierarchical migration authority for the M3 implementation scaffold.
 
 ## Development continuity
@@ -129,13 +175,23 @@ Canonical successor entry points:
 - `docs/status.md`
 - `docs/PROJECT_INTENT.md`
 
-Development-system policy:
+Development-system policy and routing:
 
 - `docs/development/README.md`
+- `docs/development/SESSION_RECONSTRUCTION.md`
+- `docs/development/TEMPORAL_STATE_SEMANTICS.md`
+- `docs/development/BRANCH_LIFECYCLE.md`
+- `docs/development/BRANCH_WORKSTREAM_INDEX.md`
+- `docs/development/CONTINUITY_FOLLOWUPS.md`
+- `docs/development/PS2VNC_CONTINUITY_HARVEST.md`
 - `docs/development/documentation.md`
 - `docs/development/testing.md`
 - `docs/development/tooling.md`
 - `docs/development/lessons-learned.md`
+
+Point-in-time branch audit:
+
+- `docs/development/branch-audits/2026-09-02-live-branch-audit.md`
 
 Decision records:
 
@@ -145,6 +201,8 @@ Decision records:
 Machine-readable development-system state:
 
 - `runtime/DEVELOPMENT_SYSTEM.env`
+- `runtime/PROJECT_STATE.env` — timestamped machine-state snapshot, not eternal
+  present-tense authority.
 
 Checks:
 

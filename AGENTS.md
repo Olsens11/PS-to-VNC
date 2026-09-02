@@ -13,20 +13,66 @@ Conversation memory is useful context, but it is not project authority.
 Before proposing source changes, tests, recovery actions, or architectural
 changes:
 
-1. read `docs/status.md`;
-2. read `docs/README.md`;
-3. read `docs/development/README.md`;
-4. read architecture, ADR, testing, runbook, and reference material relevant
+1. read `docs/development/SESSION_RECONSTRUCTION.md` and complete its fresh-session
+   reconstruction procedure;
+2. read `docs/status.md`;
+3. read `runtime/PROJECT_STATE.env`;
+4. read `docs/development/TEMPORAL_STATE_SEMANTICS.md` and apply its timestamped
+   snapshot rules before repeating any present-tense status claim;
+5. read `docs/PROJECT_INTENT.md`;
+6. read `docs/README.md`;
+7. read `docs/development/README.md`;
+8. read architecture, ADR, testing, runbook, and reference material relevant
    to the active subsystem;
-5. inspect:
-   - current branch;
-   - recent Git history;
-   - `git status`;
-   - staged changes;
-   - relevant unstaged and untracked work;
-6. run:
-   - `scripts/resume-state.sh`
-   - `scripts/check.sh`
+9. reconstruct the GitHub work record broadly enough to understand how the
+   current project state was reached, including:
+   - open **and closed** issues;
+   - issue descriptions and substantive comments;
+   - open, merged, and closed pull requests;
+   - PR discussion/review where it contains durable reasoning;
+   - relevant branch heads and recent commit history;
+   - releases, Discussions, Projects, or other planning surfaces when used by
+     the repository;
+10. dynamically determine the active workstreams, exact branch/commit authority,
+    last proven results, unresolved questions, protected boundaries, and next
+    documented action rather than assuming particular issue numbers are current;
+11. inspect:
+    - current branch;
+    - recent Git history;
+    - `git status`;
+    - staged changes;
+    - relevant unstaged and untracked work;
+    - active worktrees and their exact heads;
+12. run:
+    - `scripts/resume-state.sh`
+    - `scripts/check.sh`
+
+A closed issue is not automatically obsolete context. It may contain the
+experiment or rationale that explains a current invariant. Likewise, an open
+issue does not outrank newer repository authority merely because it remains
+open.
+
+## Temporal status rule
+
+Present-tense status is perishable.
+
+A document saying `CURRENT`, `ACTIVE`, `NEXT_ACTION`, `RUNNING`, `BLOCKED`, or
+"we are working on X" describes the state **at the time that record was
+written**, unless newer evidence proves it is still true.
+
+Before saying something is current:
+
+- inspect the record's explicit `Recorded at` / `STATE_RECORDED_AT` timestamp;
+- determine the branch/head or live identity that record described;
+- check whether later commits, issues, PRs, branch changes, tests, or live-state
+  updates superseded it;
+- distinguish durable historical facts from freshness-sensitive state.
+
+If freshness is not proved, say **"recorded as of <timestamp>"** instead of
+using present tense. Do not treat an old snapshot as current merely because its
+own prose used the word "current" when it was written.
+
+The governing policy is `docs/development/TEMPORAL_STATE_SEMANTICS.md`.
 
 Do not reset, clean, checkout over, or otherwise discard uncommitted work
 during catch-up.
@@ -34,12 +80,27 @@ during catch-up.
 Treat dirty state as potentially important active development until it is
 understood.
 
+Before beginning substantive work, a fresh session should be able to summarize
+in plain language:
+
+- project intent;
+- current authority;
+- most recent relevant qualified proof;
+- active work and exact branch/commit authority;
+- current uncertainty or evaluation candidates;
+- protected state;
+- the next documented action.
+
+If that summary cannot be made confidently, continue reconstructing context
+instead of improvising a plan.
+
 ## Authority model
 
 Different kinds of truth have different homes:
 
-- current human state: `docs/status.md`;
-- current machine state: `runtime/PROJECT_STATE.env`;
+- human state snapshots: `docs/status.md`;
+- machine state snapshots: `runtime/PROJECT_STATE.env`;
+- temporal/freshness semantics: `docs/development/TEMPORAL_STATE_SEMANTICS.md`;
 - preserved migration-era machine state: `runtime/MIGRATION_STATE.env`;
 - current clean architecture: `docs/CLEAN_ARCHITECTURE.md`;
 - historical/normalization architecture: the superseded architecture documents
@@ -47,12 +108,60 @@ Different kinds of truth have different homes:
 - durable design rationale: `docs/adr/` and retained historical decisions;
 - empirical evidence: `evidence/` and testing documentation;
 - deferred work: `docs/ROADMAP.md`;
-- chronological history: migration/history documents and Git;
+- chronological history: migration/history documents, GitHub issues/PRs, and Git;
 - development rules: `AGENTS.md`, `CONTRIBUTING.md`, and
   `docs/development/`.
 
 Do not silently choose between contradictory authorities. Investigate and
 reconcile the discrepancy.
+
+## Reconstruction decision discipline
+
+The reconstruction principle in `docs/PROJECT_INTENT.md` is an active design
+constraint, not background reading:
+
+> Rebuild PS-to-VNC as the program we would have written if we had known at the
+> beginning everything the exploratory implementation taught us.
+
+Before promoting a meaningful implementation, architecture, dependency,
+lifecycle, recovery, or test-apparatus choice, explicitly answer:
+
+1. **What product behavior or historical lesson are we preserving?**
+2. **Are we preserving a requirement, or accidentally preserving an old
+   implementation detail?**
+3. **What is the conventional supported solution on the target platform if the
+   project is designed fresh today?**
+4. **If we deviate from convention, what concrete PS-to-VNC benefit earns that
+   deviation?**
+5. **Does the choice preserve explicit ownership and a replaceable module or
+   service boundary, or leak provider-specific assumptions into unrelated
+   domains?**
+6. **Is this solving a demonstrated present requirement, or building speculative
+   infrastructure for deferred work?**
+7. **What evidence, test, or hardware qualification will decide whether the
+   choice is promoted?**
+
+Use the project's disposition vocabulary where useful: `ADOPT`, `ADAPT`,
+`DEFER`, `REJECT`, and `EVALUATING`.
+
+Prefer standards for commodity machinery and customize policy where the product
+benefits. Do not reject a good project-specific idea merely because it is not a
+distro default; implement it through standard mechanisms when practical.
+Likewise, do not invent a custom mechanism merely because it can be made to
+work.
+
+Do not create abstractions solely for hypothetical future features. Instead,
+preserve clean seams so an implementation can be replaced later without forcing
+unrelated subsystems to change.
+
+When presenting a candidate for review or hardware testing, state at minimum:
+
+- the requirement/lesson being addressed;
+- the commodity mechanisms being relied upon;
+- the project-specific adaptation, if any;
+- implementation/provider choices that remain replaceable;
+- deferred future concerns intentionally not solved now;
+- the qualification evidence required for promotion.
 
 ## Discover before inventing
 
@@ -109,6 +218,10 @@ Before materially changing documentation:
 5. update the documentation as a set;
 6. run the documentation checks.
 
+Any documentation whose purpose is to describe mutable present state must carry
+an explicit timestamp and snapshot role under
+`docs/development/TEMPORAL_STATE_SEMANTICS.md`.
+
 Do not create a second current authority because the first is inconvenient.
 
 If durable knowledge is required by a future development session, it belongs
@@ -143,7 +256,7 @@ Where applicable, completion includes:
 - reproducible build identity;
 - empirical evidence;
 - hardware/operator qualification;
-- current-state update;
+- current-state update with an explicit timestamp;
 - documentation update;
 - deferred-work capture;
 - reconciled repository state.

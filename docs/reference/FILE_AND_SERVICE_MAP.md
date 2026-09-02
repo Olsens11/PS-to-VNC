@@ -1,8 +1,21 @@
 # PS-to-VNC File and Service Map
 
-This file is the canonical living location map for the successor project.
+Status: `MIGRATION_ERA_COMPATIBILITY_REFERENCE`
 
-Update it whenever canonical code ownership or file location changes.
+> **Current clean-successor router:**
+> `docs/reference/CURRENT_TOOL_AND_CONTEXT_MAP.md`
+
+This file preserves the detailed file/service map accumulated during the
+migration/modularization generation. Its statements such as "current working
+source" or "current runtime" describe that historical generation and must not be
+reused as present-day clean-reconstruction status without reconciliation.
+
+Use this file when investigating migration-era artifacts and provenance. Use the
+current tool/context map, `AGENTS.md`, timestamped status records, and current
+GitHub state for clean-successor development routing.
+
+The historical content below is intentionally retained rather than cosmetically
+rewritten into the new architecture.
 
 ## Repositories
 
