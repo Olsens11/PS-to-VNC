@@ -26,7 +26,10 @@ This is the canonical entry point for current PS-to-VNC documentation.
 
 ## Architecture
 
-- `docs/architecture/ARCHITECTURE.md` — current/historical subsystem architecture reference.
+- `docs/CLEAN_ARCHITECTURE.md` — current clean-reconstruction architecture
+  authority.
+- `docs/architecture/ARCHITECTURE.md` — subsystem historical/reference
+  architecture material.
 
 ## Reference
 
@@ -42,7 +45,23 @@ This is the canonical entry point for current PS-to-VNC documentation.
 - `docs/audit/README.md` — semantic-audit contract, evidence classes, and
   maturity model.
 - `docs/audit/BEHAVIORAL_INVENTORY.md` — complete product behavior inventory
-  and current audit status.
+  and audit evidence ledger.
+- `docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md` — input, keyboard, and local-UI
+  behavioral audit tranche.
+- `docs/audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md` — configuration,
+  recovery, and management behavioral audit tranche.
+- `docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md` — diagnostics,
+  Pi companion, and development-infrastructure audit tranche.
+- `docs/audit/SOURCE_RESPONSIBILITY_MAP.md` — historical source/state/coupling to
+  product-responsibility map.
+- `docs/audit/HISTORICAL_LESSONS.md` — durable historical experiment/failure
+  lessons used by the clean reconstruction.
+- `docs/audit/CROSS_DOMAIN_SYNTHESIS.md` — responsibility-level architecture
+  synthesis.
+- `docs/audit/CROSS_DOMAIN_STATE_INTERFACES.md` — explicit state ownership,
+  interfaces, concurrency seams, and critical-flow analysis.
+- `docs/audit/REBUILD_READY_PROMOTION.md` — semantic-audit/architecture maturity
+  promotion record.
 
 ## Major investigation casebook
 
