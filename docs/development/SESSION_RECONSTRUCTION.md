@@ -16,6 +16,8 @@ The goal is not merely to read the newest status file. It is to understand:
 - what has already been proven;
 - why important architecture and tooling choices exist;
 - what experiments were adopted, rejected, replaced, or left evaluating;
+- what major failures have unresolved or resolved case reports that constrain
+  present design;
 - what work is active now;
 - what was most recently completed;
 - what remains blocked or uncertain;
@@ -43,13 +45,20 @@ changes:
 4. `docs/PROJECT_INTENT.md`;
 5. `docs/README.md`;
 6. `docs/development/README.md`;
-7. the current architecture authority routed by those documents;
-8. relevant ADR, audit, test, runbook, Pi, reconstruction, and reference
+7. `docs/investigations/README.md` and every major case relevant to the active
+   subsystem;
+8. the current architecture authority routed by those documents;
+9. relevant ADR, audit, test, runbook, Pi, reconstruction, and reference
    documents for the subsystem that appears active.
 
 Do not treat a historical roadmap, migration document, superseded architecture,
 or old issue description as current authority merely because it contains more
 text.
+
+A resolved major investigation is not merely historical trivia. It may explain
+why a present invariant exists. An open major investigation may define a
+qualified workaround or design guardrail that current work must not accidentally
+bake into unrelated architecture.
 
 ## 2. Reconstruct the complete GitHub work record
 
@@ -81,7 +90,8 @@ sampling only the most recent items:
 
 1. inventory issues and PRs;
 2. read them in a useful chronological and topical order;
-3. follow cross-links between issues, PRs, commits, evidence, and docs;
+3. follow cross-links between issues, PRs, major-investigation cases, commits,
+   evidence, and docs;
 4. note promotion, rejection, replacement, and supersession decisions;
 5. identify unresolved threads that remain genuinely open.
 
@@ -92,6 +102,8 @@ Use the following distinction:
 - repository current-state documents answer **what is authoritative now**;
 - architecture and ADR material answer **how the system is intended to work and
   why**;
+- major-investigation cases answer **what significant failures taught us, what
+  workaround or correction exists, and what uncertainty still constrains us**;
 - empirical evidence and qualification records answer **what has actually been
   demonstrated**;
 - GitHub issues, PRs, and comments answer **how the project arrived here**;
@@ -111,7 +123,8 @@ Important distinctions to preserve include:
 - machine result versus physical/operator result;
 - product failure versus apparatus or infrastructure failure;
 - historical implementation versus current architectural intent;
-- branch-local work versus merged `main` authority.
+- branch-local work versus merged `main` authority;
+- resolved engineering contract versus residual low-level unknown detail.
 
 ## 4. Re-apply the reconstruction philosophy before choosing a solution
 
@@ -160,6 +173,8 @@ Do not hard-code specific issue or PR numbers into session bootstrap logic.
 From the reconstructed record, determine:
 
 - which issues, PRs, branches, or worktrees are active;
+- which major-investigation cases are open, monitoring, or relevant resolved
+  constraints for the active subsystem;
 - which branch or commit is authoritative for each active workstream;
 - what was most recently completed and what evidence qualified it;
 - what work is blocked and by what;
@@ -213,6 +228,10 @@ Do not turn a convenient exploratory result into an architecture decision unless
 it has actually been promoted through the project's decision and qualification
 process.
 
+When an experiment materially changes a major investigation, update the case
+report with the new evidence/disposition rather than leaving the conclusion only
+in chat or a transient test comment.
+
 ## 8. Produce a short reconstruction summary before acting
 
 Before beginning substantive work, a fresh session should be able to state:
@@ -220,6 +239,7 @@ Before beginning substantive work, a fresh session should be able to state:
 - **Project intent:** what the product is and the reconstruction principle;
 - **Current authority:** which docs/commits define present architecture and state;
 - **Completed proof:** the most recent relevant qualified results;
+- **Major cases:** relevant open and resolved major-investigation constraints;
 - **Active work:** the workstreams currently in progress and their branch/commit
   authorities;
 - **Current uncertainty:** what is still evaluating, blocked, or unproven;
@@ -237,6 +257,9 @@ Once the reconstruction summary is internally consistent:
 - use existing canonical tools before generating replacements;
 - continue the established plan unless evidence justifies changing it;
 - preserve experiment/source/apparatus provenance;
+- create a major-investigation case early when a problem meets the casebook
+  threshold rather than waiting for root cause;
+- update existing major cases as hypotheses/evidence change;
 - promote durable new knowledge into repository documentation;
 - keep current-state documents current as work is completed;
 - leave rejected and superseded decisions discoverable rather than erasing them.
