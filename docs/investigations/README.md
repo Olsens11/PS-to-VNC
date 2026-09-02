@@ -97,8 +97,8 @@ open case may explain a temporary workaround.
 
 | Case | Status | Subject | GitHub | Durable engineering rule |
 | --- | --- | --- | --- | --- |
-| `MI-001` | `RESOLVED` | GS/EE HIRES HSync interrupt handoff and `ExitHandler()` | resolved historical Test14 campaign; successor tracking issue to be linked here | HSync delivery is suppressed for the callback-owned transaction, ordinary HSINT ACK/work is preserved, delivery is restored immediately before `ExitHandler()`/return. |
-| `MI-002` | `OPEN_NON_BLOCKING` | MTU1458 / SMAP RX corruption | Issue #18 | Keep the qualified MTU1458 workaround isolated at the PS2 networking seam; prefer eventual standard MTU1500 if the low-level cause can be fixed or avoided cleanly. |
+| `MI-001` | `RESOLVED` | GS/EE HIRES HSync interrupt handoff and `ExitHandler()` | Issue #19 (closed) | HSync delivery is suppressed for the callback-owned transaction, ordinary HSINT ACK/work is preserved, delivery is restored immediately before `ExitHandler()`/return. |
+| `MI-002` | `OPEN_NON_BLOCKING` | MTU1458 / SMAP RX corruption | Issue #18 (open) | Keep the qualified MTU1458 workaround isolated at the PS2 networking seam; prefer eventual standard MTU1500 if the low-level cause can be fixed or avoided cleanly. |
 
 Case reports:
 
