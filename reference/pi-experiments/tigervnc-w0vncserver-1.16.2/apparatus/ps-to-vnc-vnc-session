@@ -1,0 +1,54 @@
+#!/bin/sh
+set -u
+
+W0="$HOME/.local/lib/ps-to-vnc/w0vncserver"
+RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+LOCK="$RUNTIME/ps-to-vnc-vnc.lock"
+LOG="$RUNTIME/ps-to-vnc-vnc.log"
+
+test -x "$W0" || exit 1
+
+exec 9>"$LOCK"
+
+# Kanshi may re-apply profiles. Only one session owner may survive.
+if ! flock -n 9; then
+    exit 0
+fi
+
+while :; do
+    # The PS2 Ethernet link may have no carrier until PS2VNC starts.
+    # Do not start TigerVNC until NetworkManager has installed the
+    # private PS2-side address that TigerVNC must bind to.
+    while ! ip -4 addr show dev eth0 2>/dev/null |
+        grep -q 'inet 192\.168\.50\.1/24'
+    do
+        sleep 1
+    done
+
+    printf '%s private PS2 address ready; starting w0vncserver\n' \
+        "$(date --iso-8601=seconds)" \
+        >>"$LOG"
+
+    if "$W0" \
+        -interface 192.168.50.1 \
+        -rfbport 5900 \
+        -SecurityTypes None \
+        -AcceptKeyEvents=0 \
+        -AcceptPointerEvents=0 \
+        -RememberDisplayChoice Never \
+        -FrameRate 30 \
+        >>"$LOG" \
+        2>&1
+    then
+        rc=0
+    else
+        rc=$?
+    fi
+
+    printf '%s w0vncserver exited rc=%s\n' \
+        "$(date --iso-8601=seconds)" \
+        "$rc" \
+        >>"$LOG"
+
+    sleep 1
+done

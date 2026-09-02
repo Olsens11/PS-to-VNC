@@ -1,0 +1,12 @@
+2026-09-02T00:18:37-04:00 private PS2 address ready; starting w0vncserver
+
+Wed Sep  2 00:18:38 2026
+ main:        Listening for VNC connections on 192.168.50.1 interface(s), port
+              5900
+
+Wed Sep  2 00:19:00 2026
+ Connections: Accepted: 192.168.50.2::52432
+ SConnection: Client needs protocol version 3.8
+ SConnection: Client requests security type None(1)
+ VNCSConnST:  Server default pixel format depth 24 (32bpp) little-endian bgr888
+ VNCSConnST:  Client pixel format depth 15 (16bpp) little-endian bgr555

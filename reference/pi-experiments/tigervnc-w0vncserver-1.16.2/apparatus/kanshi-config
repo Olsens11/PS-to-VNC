@@ -1,0 +1,4 @@
+profile ps-to-vnc-headless {
+    output NOOP-1 enable mode --custom 704x462 position 0,0 scale 1
+    exec /home/ps2/.local/bin/ps-to-vnc-vnc-session
+}
