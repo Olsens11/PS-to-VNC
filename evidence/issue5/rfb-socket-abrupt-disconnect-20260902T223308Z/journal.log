@@ -1,0 +1,1 @@
+[ 2179.955454] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388397.8623] device (eth0): state change: activated -> unavailable (reason 'carrier-changed', managed-type: 'full')
