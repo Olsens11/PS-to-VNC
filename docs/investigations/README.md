@@ -100,6 +100,12 @@ Before changing a subsystem, check this casebook for open or resolved cases that
 constrain the design. A resolved case may explain a current invariant just as an
 open case may explain a temporary workaround.
 
+For historical cases, the clean repository should contain enough copied/synthesized
+material to understand the case without requiring legacy-repository access. Legacy
+repositories remain provenance/evidence authorities and may still be needed for
+raw artifacts or deeper forensic verification, but not for ordinary comprehension
+of a closed or ongoing major case.
+
 ## Current cases
 
 | Case | Status | Subject | GitHub | Durable engineering rule |
