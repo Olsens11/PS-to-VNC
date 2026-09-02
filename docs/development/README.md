@@ -32,16 +32,25 @@ If a new chat requires a long conversation-specific handoff to know what the
 project is doing, treat that as evidence that repository continuity needs to be
 improved.
 
-## Branch lifecycle and cold storage
+## Branch lifecycle, workstream index, and cold storage
 
 Branch count is a continuity concern too. Developers should not be expected to
 remember which branch contains which work or infer safety from a branch name.
 
-The branch audit / retirement policy is:
+Current branch/workstream routing:
+
+    docs/development/BRANCH_WORKSTREAM_INDEX.md
+
+Branch audit / retirement policy:
 
     docs/development/BRANCH_LIFECYCLE.md
 
-Important rules include:
+The workstream index identifies what is current, candidate, archival, or
+superseded. Fresh sessions must still verify it against the actual GitHub branch
+inventory and related PRs; the index exists to make that verification fast and
+comprehensible rather than to become another stale authority.
+
+Important lifecycle rules include:
 
 - branch audits may recommend `SAFE_TO_RETIRE`, but never delete automatically;
 - **every branch deletion requires explicit user approval for that specific
