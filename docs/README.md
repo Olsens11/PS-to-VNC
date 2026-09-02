@@ -6,14 +6,25 @@ Development sessions begin with:
 
     ../AGENTS.md
 
-## Project intent and current state
+Clean-current tool/context routing:
+
+    reference/CURRENT_TOOL_AND_CONTEXT_MAP.md
+
+## Project intent and state
 
 - `PROJECT_INTENT.md` — seed of intent, reconstruction principles, development
   values, and the clean-rebuild strategy.
-- `status.md` — concise current human-readable state.
-- `../runtime/PROJECT_STATE.env` — current machine-readable project state.
+- `status.md` — concise timestamped human state snapshot.
+- `../runtime/PROJECT_STATE.env` — timestamped machine state snapshot.
+- `development/TEMPORAL_STATE_SEMANTICS.md` — required freshness rules before
+  repeating snapshot `current`, `active`, `next`, `blocked`, progress, or
+  running-state claims as present-tense truth.
 - `../runtime/MIGRATION_STATE.env` — preserved migration-era machine authority.
 - `../runtime/` — additional machine-readable authority and historical state.
+
+The fact that a state file or paragraph once called itself `current` does not make
+its mutable claims current forever. Reconcile timestamps against newer
+repository/GitHub/live activity.
 
 ## Architecture
 
@@ -105,13 +116,27 @@ open case may explain a temporary qualified workaround.
 ## Development process
 
 - `development/README.md`
+- `development/SESSION_RECONSTRUCTION.md`
+- `development/TEMPORAL_STATE_SEMANTICS.md`
+- `development/BRANCH_LIFECYCLE.md`
+- `development/BRANCH_WORKSTREAM_INDEX.md`
+- `development/CONTINUITY_FOLLOWUPS.md`
+- `development/PS2VNC_CONTINUITY_HARVEST.md`
 - `development/documentation.md`
 - `development/testing.md`
 - `development/tooling.md`
 - `development/lessons-learned.md`
-- `development/SESSION_RECONSTRUCTION.md`
 
 These documents describe how development itself is conducted and preserved.
+
+## Tools and context routing
+
+- `reference/CURRENT_TOOL_AND_CONTEXT_MAP.md` — clean-current router for
+  bootstrap, state/freshness, architecture, investigations, branch lifecycle,
+  development policy, and canonical checks/tools.
+- `reference/FILE_AND_SERVICE_MAP.md` — migration-era compatibility/reference
+  map. It is useful for historical migration artifacts but is no longer the
+  clean-current routing authority.
 
 ## Decisions
 
@@ -149,15 +174,16 @@ unless explicitly adopted into the new reconstruction roadmap.
 Migration state/history documents, Git history, and preserved evidence retain
 the chronological development record.
 
-They are not substitutes for the concise current state in `status.md`, the
-project values in `PROJECT_INTENT.md`, or the current architecture in
+They are not substitutes for a freshness-reconciled present state, the project
+values in `PROJECT_INTENT.md`, or the current architecture in
 `CLEAN_ARCHITECTURE.md`.
 
 ## Compatibility documents
 
 Migration-era router and state files remain because existing migration tooling
-still references their paths.
+still references their paths and because they preserve useful chronology.
 
-Where historical current-state or architecture text conflicts with `status.md`,
-`PROJECT_INTENT.md`, or `CLEAN_ARCHITECTURE.md`, classify the older material as
-historical rather than silently rewriting the record.
+Where historical current-state or architecture text conflicts with current clean
+routing, temporal-state reconciliation, `PROJECT_INTENT.md`, or
+`CLEAN_ARCHITECTURE.md`, classify the older material as historical rather than
+silently treating its old present tense as current truth.
