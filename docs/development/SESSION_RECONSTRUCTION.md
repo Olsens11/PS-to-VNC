@@ -34,6 +34,32 @@ The goal is not merely to read the newest status file. It is to understand:
 Repository authority defines current truth. GitHub history explains how that
 truth was reached. Neither should be read in isolation.
 
+## Temporal rule: status records are snapshots
+
+Before interpreting any present-tense state document, read
+`docs/development/TEMPORAL_STATE_SEMANTICS.md`.
+
+A status record is authoritative for what was recorded **at its timestamp**. It
+is not proof that the same state remains true later. Fields and prose such as
+`CURRENT`, `ACTIVE`, `NEXT_ACTION`, `BLOCKED`, `RUNNING`, progress percentages,
+or "we are working on X" are freshness-sensitive.
+
+For every status-like source:
+
+1. identify its explicit `Recorded at` / `STATE_RECORDED_AT` timestamp;
+2. identify the branch/head/live identity it described when available;
+3. check for later commits, PR/issue changes, branch movement, tests, or live
+   state that may supersede it;
+4. separate durable historical facts from freshness-sensitive state;
+5. use present tense only after currentness is independently reconciled.
+
+If freshness cannot be proved, phrase the claim as **"recorded as of
+<timestamp>"** rather than "currently".
+
+Do not use a fixed age threshold as the sole rule. A five-minute-old snapshot
+can be stale after a new authoritative event, while a much older qualified
+hardware result can remain a valid historical fact.
+
 ## 1. Read current repository authority first
 
 Read these entry points before proposing source, architecture, test, or recovery
@@ -42,18 +68,19 @@ changes:
 1. `AGENTS.md`;
 2. `docs/status.md`;
 3. `runtime/PROJECT_STATE.env`;
-4. `docs/PROJECT_INTENT.md`;
-5. `docs/README.md`;
-6. `docs/development/README.md`;
-7. `docs/investigations/README.md` and every major case relevant to the active
+4. `docs/development/TEMPORAL_STATE_SEMANTICS.md`;
+5. `docs/PROJECT_INTENT.md`;
+6. `docs/README.md`;
+7. `docs/development/README.md`;
+8. `docs/investigations/README.md` and every major case relevant to the active
    subsystem;
-8. the current architecture authority routed by those documents;
-9. relevant ADR, audit, test, runbook, Pi, reconstruction, and reference
-   documents for the subsystem that appears active.
+9. the current architecture authority routed by those documents;
+10. relevant ADR, audit, test, runbook, Pi, reconstruction, and reference
+    documents for the subsystem that appears active.
 
 Do not treat a historical roadmap, migration document, superseded architecture,
-or old issue description as current authority merely because it contains more
-text.
+old issue description, or stale status snapshot as current authority merely
+because it contains more text or uses present tense.
 
 A resolved major investigation is not merely historical trivia. It may explain
 why a present invariant exists. An open major investigation may define a
@@ -99,7 +126,9 @@ sampling only the most recent items:
 
 Use the following distinction:
 
-- repository current-state documents answer **what is authoritative now**;
+- timestamped state documents answer **what the project recorded as current at a
+  particular time** and require freshness reconciliation before present-tense
+  reuse;
 - architecture and ADR material answer **how the system is intended to work and
   why**;
 - major-investigation cases answer **what significant failures taught us, what
@@ -113,13 +142,14 @@ If these sources appear to disagree, investigate the discrepancy.
 
 Do not silently choose the newest-looking source, the longest source, or the
 open issue over a closed one. Determine whether one source superseded another,
-whether a result was only exploratory, or whether current-state documentation
-has become stale.
+whether a result was only exploratory, whether a timestamped state record has
+become stale, or whether current-state documentation needs to be refreshed.
 
 Important distinctions to preserve include:
 
 - `ADOPTED` versus `EVALUATING`;
 - current authority versus preserved experiment;
+- current status versus historical status snapshot;
 - machine result versus physical/operator result;
 - product failure versus apparatus or infrastructure failure;
 - historical implementation versus current architectural intent;
@@ -170,16 +200,17 @@ work in theory," the reconstruction reasoning is incomplete.
 
 Do not hard-code specific issue or PR numbers into session bootstrap logic.
 
-From the reconstructed record, determine:
+From the reconstructed and freshness-checked record, determine:
 
-- which issues, PRs, branches, or worktrees are active;
+- which issues, PRs, branches, or worktrees are active **now**;
 - which major-investigation cases are open, monitoring, or relevant resolved
   constraints for the active subsystem;
 - which branch or commit is authoritative for each active workstream;
 - what was most recently completed and what evidence qualified it;
 - what work is blocked and by what;
 - what experiment, if any, is currently in progress;
-- what the documented next action is;
+- what the current next action is, not merely what an older snapshot once called
+  `NEXT_ACTION`;
 - what deferred work is intentionally not being pursued yet;
 - what experimental candidates remain `EVALUATING` rather than adopted;
 - what repositories, worktrees, evidence directories, or historical states are
@@ -221,7 +252,7 @@ run:
 5. the apparatus used;
 6. the workload/stimulus used;
 7. known apparatus defects or environmental variables;
-8. the intended next experiment;
+8. the intended next experiment after freshness reconciliation;
 9. the rollback or failure-safety boundary.
 
 Do not turn a convenient exploratory result into an architecture decision unless
@@ -238,13 +269,15 @@ Before beginning substantive work, a fresh session should be able to state:
 
 - **Project intent:** what the product is and the reconstruction principle;
 - **Current authority:** which docs/commits define present architecture and state;
+- **Status freshness:** which timestamped status snapshots were read and what
+  newer evidence reconciled them to the present;
 - **Completed proof:** the most recent relevant qualified results;
 - **Major cases:** relevant open and resolved major-investigation constraints;
 - **Active work:** the workstreams currently in progress and their branch/commit
   authorities;
 - **Current uncertainty:** what is still evaluating, blocked, or unproven;
 - **Protected boundaries:** what must not be mutated or discarded;
-- **Next action:** the next documented task and why it is next.
+- **Next action:** the current reconciled next task and why it is next.
 
 If any of those cannot be stated confidently, continue reconstructing context
 instead of improvising a plan.
@@ -261,7 +294,8 @@ Once the reconstruction summary is internally consistent:
   threshold rather than waiting for root cause;
 - update existing major cases as hypotheses/evidence change;
 - promote durable new knowledge into repository documentation;
-- keep current-state documents current as work is completed;
+- refresh mutable current-state snapshots with explicit timestamps as work is
+  completed;
 - leave rejected and superseded decisions discoverable rather than erasing them.
 
 ## Minimal handoff for a brand-new chat
@@ -272,7 +306,9 @@ instruction is:
 > Open the `Olsens11/PS-to-VNC` repository. Read `AGENTS.md` and follow the fresh
 > development session reconstruction procedure completely before doing any
 > project work. Reconstruct current state from the repository and the complete
-> GitHub issue/PR/history record rather than assuming prior chat context.
+> GitHub issue/PR/history record rather than assuming prior chat context. Treat
+> status documents as timestamped snapshots and reconcile their freshness before
+> repeating present-tense claims.
 
 If that instruction is insufficient for a capable development session, the
 repository continuity system is incomplete and should be improved rather than
