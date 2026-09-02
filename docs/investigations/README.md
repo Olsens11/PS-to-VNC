@@ -99,11 +99,36 @@ open case may explain a temporary workaround.
 | --- | --- | --- | --- | --- |
 | `MI-001` | `RESOLVED` | GS/EE HIRES HSync interrupt handoff and `ExitHandler()` | Issue #19 (closed) | HSync delivery is suppressed for the callback-owned transaction, ordinary HSINT ACK/work is preserved, delivery is restored immediately before `ExitHandler()`/return. |
 | `MI-002` | `OPEN_NON_BLOCKING` | MTU1458 / SMAP RX corruption | Issue #18 (open) | Keep the qualified MTU1458 workaround isolated at the PS2 networking seam; prefer eventual standard MTU1500 if the low-level cause can be fixed or avoided cleanly. |
+| `MI-003` | `OPEN_NON_BLOCKING` | PS2 receive burst tolerance and sender-side pacing | Issue #20 (open) | Preserve the demonstrated burst-service-envelope lesson without treating 60 Mbit/s or TCP/5900 as a universal hardware/protocol constant; requalify pacing against the clean provider/workload and future aggregate traffic classes. |
+| `MI-004` | `OPEN_NON_BLOCKING` | Display reconstruction liveness / green-corruption failures | Issue #21 (open) | Rebuild display switching as an instrumented ownership transaction and qualify sequence, workload, RFB epoch, controller, presentation, and stale-generation boundaries rather than assuming a single successful mode transition proves the state machine. |
 
 Case reports:
 
 - `MI-001-GS-INTERRUPT-EXITHANDLER.md`
 - `MI-002-MTU1458-SMAP-RX.md`
+- `MI-003-PS2-RECEIVE-BURST-PACING.md`
+- `MI-004-DISPLAY-TRANSITION-LIVENESS.md`
+
+## Survey disposition: what is **not** a major case right now
+
+The casebook is deliberately selective. During the initial historical sweep, the
+following were reviewed but not promoted into separate cases:
+
+- the missing historical Test9D outcome — later networking evidence superseded
+  the need to resolve that old matrix cell by itself;
+- individual later PBUF/window-scale settings — their uncertainty belongs inside
+  the MTU/receive and burst/pacing cases rather than creating one case per knob;
+- the current one-shot PS2 initial-connect/startup race — active Issue #5 / PR #17
+  already owns that present engineering work; create a major case only if it
+  develops a durable cross-layer mechanism that should outlive the workstream;
+- controller hotkey/chord usability and clean application exit/relaunch — real
+  product work remains, but the present evidence is better treated as input/UI
+  and lifecycle requirements unless a deeper platform failure campaign emerges;
+- ordinary roadmap/deferred features — future work is not an investigation merely
+  because it is unfinished.
+
+This disposition should be revisited when new evidence changes the significance
+of one of these topics.
 
 ## Relationship to other documentation
 
