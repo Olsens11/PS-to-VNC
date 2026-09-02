@@ -4,14 +4,16 @@
 
     WORKSTREAM=GITHUB_ISSUE_5
     BASELINE_CAPTURE=COMPLETE
-    PRODUCT_MUTATIONS=NONE
+    PRODUCT_MUTATIONS=TRACKED_AND_QUALIFIED
     DEPENDENCY_LEDGER=ACTIVE
     TIGERVNC_DECISION=ADOPTED_RUNTIME
     TIGERVNC_ROLE=CURRENT_REPLACEABLE_RFB_PROVIDER
     TRACKED_FOUNDATION_PROVISIONING=READY
-    TIGERVNC_SESSION_CANDIDATE=DEFINED
-    TIGERVNC_SESSION_LIVE_VALIDATION=PENDING
-    RFB_SOCKET_ACTIVATION=EVALUATING
+    TIGERVNC_SESSION_CANDIDATE=QUALIFIED_CURRENT_PROVIDER
+    TIGERVNC_SESSION_LIVE_VALIDATION=PASS
+    RFB_SOCKET_ACTIVATION=ADOPTED_RUNTIME
+    NETWORKMANAGER_NO_CARRIER_OVERRIDE=REJECTED_FOR_CURRENT_REQUIREMENT
+    QUALIFICATION_EVIDENCE_HEAD=b40f422a760a0b7b6f2ab41699c5e72fda83bb83
 
 This directory is the current authority for building the clean Raspberry Pi
 companion from a normal supported Raspberry Pi OS installation.
@@ -107,30 +109,28 @@ These deliberately stop before VNC service/session creation. The first clean
 foundation must be applied and verified before a systemd RFB-provider service is
 promoted.
 
-## Dedicated TigerVNC session candidate
+## Dedicated TigerVNC provider
 
-`TIGERVNC_SESSION.md` defines the pre-live candidate for the smallest current
-provider needed by the clean Issue #7 milestone.
+`TIGERVNC_SESSION.md` records the qualified smallest current provider for the
+clean Issue #7 milestone.
 
-The candidate deliberately separates the PS2-facing RFB behavior from desktop
+The provider deliberately separates the PS2-facing RFB behavior from desktop
 contents. It targets one fixed 704x462, depth-16 Xtigervnc virtual desktop on
 `192.168.50.1:5900` with SecurityType None restricted to the private PS2 link.
 It does not adopt Openbox, LXPanel, management, Samba, traffic pacing, WayVNC
 bridging, or remote-VNC routing.
 
-The document also records the live-validation questions that cannot be answered
-from source/package documentation alone, especially exact installed executable
-behavior, systemd lifecycle, no-carrier network ordering, listener ownership,
-and a deterministic incremental-update stimulus.
+The live hardware record now answers the package, lifecycle, no-carrier,
+listener-ownership, first-connect, reconnect, controlled-failure, and
+incremental-update questions that source documentation alone could not answer.
 
 ## RFB connection-establishment evaluation
 
-`RFB_ACTIVATION_RESEARCH.md` records the standards research prompted by the
-observed cold-boot/first-connect race. `RFB_SOCKET_ACTIVATION.md` applies the
-clean-reconstruction decision discipline and turns that research into a layered
-live evaluation.
+`RFB_ACTIVATION_RESEARCH.md` preserves the pre-test standards research prompted
+by the cold-boot/first-connect risk. `RFB_SOCKET_ACTIVATION.md` records the
+completed live evaluation and adopted lifecycle decision.
 
-The preferred experiment separates:
+The adopted lifecycle separates:
 
 - NetworkManager as owner of the static private `eth0` identity;
 - `ps-to-vnc-rfb.socket` as the generic PS2-facing RFB endpoint boundary;
@@ -138,15 +138,16 @@ The preferred experiment separates:
 - TigerVNC's documented `-inetd` wait mode as the provider-specific adapter to
   the inherited listening socket.
 
-A conventional always-running provider control is also tracked as
-`ps-to-vnc-rfb-tigervnc-persistent.service`. It is not to run concurrently with
-the socket candidate. If socket activation adds fragility without a demonstrated
-product benefit, the persistent control wins.
+A conventional always-running provider control remains tracked as
+`ps-to-vnc-rfb-tigervnc-persistent.service`. It must not run concurrently with
+the adopted socket lifecycle. The control remains an optional fallback; its
+conditional comparison was unnecessary because inherited-socket and provider
+lifecycle behavior were unambiguous in hardware qualification.
 
-This remains `EVALUATING`. A scoped NetworkManager `ignore-carrier` snippet is
-tracked only as a conditional candidate and must not be installed unless a
-read-only baseline proves the existing static profile does not own
-`192.168.50.1/24` before carrier.
+The scoped NetworkManager `ignore-carrier` snippet is rejected for the current
+requirement. The address was absent without carrier, but NetworkManager installed
+it about 1.18 seconds before the PS2's sole SYN after carrier appeared. The
+candidate remains tracked as rejected evidence and is not installed.
 
 Prepared apparatus and mutation staging are intentionally separate:
 
@@ -159,19 +160,28 @@ Prepared apparatus and mutation staging are intentionally separate:
 - `scripts/pi/install-ps2-link-no-carrier-candidate.sh` — fail-closed conditional
   NetworkManager snippet staging, with no reload or connection-state side effect.
 
-## Current next step
+## Qualified stopping point
 
-On the next hardware session, capture the untouched pre-change no-carrier state
-and one current first-connect attempt before installing anything. Use that
-evidence to decide whether the NetworkManager no-carrier snippet is necessary.
-Then stage the lifecycle units and validate the architectural control point:
-`ps-to-vnc-rfb.socket` listening while no RFB provider process exists.
+Issue #5 hardware qualification passed the planned socket-lifecycle gates:
 
-After that, test one-launch demand activation through the current TigerVNC
-provider, RFB first bytes, persistent reconnect behavior, controlled provider
-exit/retrigger behavior, and finally cold reboot behavior. Use the persistent
-TigerVNC unit as a clean control if socket inheritance or lifecycle behavior is
-ambiguous.
+- systemd owned `192.168.50.1:5900` before carrier, address assignment, or
+  provider startup;
+- one PS2 launch activated packaged Xtigervnc and completed the intended RFB
+  contract;
+- disconnect/relaunch retained the same provider and framebuffer;
+- orderly stop and `SIGKILL` failure both left the socket demand-ready and the
+  next launch activated a fresh provider without a `Restart=` loop or manual
+  stale-display cleanup;
+- cold reboot with the PS2 off restored the providerless socket, and one launch
+  produced the qualified 704x462 endpoint;
+- a red `xsetroot` stimulus was physically displayed through the PS2, proving
+  the bare virtual framebuffer and ordinary update path.
 
-No socket-activation, provider-lifecycle, or no-carrier candidate has been
-promoted by this branch.
+Evidence through
+`b40f422a760a0b7b6f2ab41699c5e72fda83bb83` supports adopting the generic
+systemd-owned RFB endpoint with packaged Xtigervnc as its current replaceable
+provider. The persistent unit remains an optional mutually exclusive fallback.
+
+The qualified provider supplies a bare virtual framebuffer, not the finished
+user desktop. Selecting and qualifying any window manager, panel, or other
+session contents is the next separate Pi layer.

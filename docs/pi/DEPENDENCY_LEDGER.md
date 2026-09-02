@@ -5,7 +5,7 @@
     WORKSTREAM=GITHUB_ISSUE_5
     LEDGER_VERSION=1
     VIRGIN_BASELINE_CAPTURED=YES
-    PRODUCT_MUTATIONS=NONE
+    PRODUCT_MUTATIONS=TRACKED_AND_QUALIFIED
 
 This ledger records product-significant clean-Pi dependency decisions. Historical presence is not adoption.
 
@@ -40,9 +40,10 @@ Allowed states:
 | `lxpanel` package | `REJECTED` | Not installed in the virgin image. The clean OS already supplies a native graphical frontend, so the historical LXPanel role is not carried forward by default. If a future dedicated PS2 VNC session needs its own panel/taskbar, select that deliberately rather than resurrecting LXPanel for historical similarity. |
 | TigerVNC/Xtigervnc | `ADOPTED_RUNTIME` | Adopted as the **current RFB provider** for the clean foundation because the exploratory hardware campaign proved the PS2 client against it and it supplies a deterministic independent virtual framebuffer, fixed geometry, RGB565-capable RFB behavior, and ordinary Linux service integration. This is a concrete runtime dependency for the current milestone, not a permanent architecture requirement. Provider-specific assumptions must remain localized so a future PS-to-VNC gateway or another provider can replace it for a demonstrated product benefit. |
 | Predictable PS2-facing RFB endpoint/session | `ADOPTED_RUNTIME` | Durable product requirement. The PS2 needs a deterministic private RFB service with known geometry/protocol behavior and restartable endpoint health. The current implementation is an independently managed Xtigervnc virtual desktop, but the service contract rather than the provider identity is the architectural boundary. |
-| Private PS2 Ethernet `192.168.50.1/24` on `eth0` | `EVALUATING` | Required historical/product topology, but virgin `eth0` is still unconfigured/down. First clean network mutation must be tracked and reproducible. |
-| systemd-owned PS2-facing RFB listening socket | `EVALUATING` | Standards-first demand-activation candidate. Could keep the RFB endpoint ready independently of the current provider process and directly address the legacy one-shot first-connect race. Live comparison against a persistent provider is required before promotion. |
-| Scoped NetworkManager no-carrier behavior for `eth0` | `EVALUATING` | Conditional candidate only. Current NetworkManager may already activate a static Layer-3 profile without carrier; measure first and add a per-device override only if the real Pi proves it necessary. |
+| Private PS2 Ethernet `192.168.50.1/24` on `eth0` | `ADOPTED_RUNTIME` | NetworkManager owns the tracked `ps2-link` profile with no gateway, `never-default`, and IPv6 disabled. Live qualification preserved the Wi-Fi management/default route and installed the private address before the PS2's first SYN after carrier. |
+| systemd-owned PS2-facing RFB listening socket | `ADOPTED_RUNTIME` | Qualified standards-based lifecycle boundary. systemd owned the exact private listener before carrier/address/provider readiness, activated packaged Xtigervnc from the first PS2 SYN, preserved same-provider reconnects, retriggered after orderly stop and `SIGKILL`, and passed cold-reboot/one-launch qualification. |
+| Persistent Xtigervnc provider control | `ADOPTED_OPTIONAL` | Retained as a mutually exclusive conventional fallback/control, not the selected runtime. Its conditional comparison was not required because the adopted socket path produced unambiguous first-connect and lifecycle evidence. |
+| Scoped NetworkManager no-carrier behavior for `eth0` | `REJECTED` | Not required for the present endpoint contract. The private address was absent without carrier but NetworkManager installed it about 1.18 seconds before the sole PS2 SYN; no override was installed. Retain the scoped candidate only as rejected evidence for reconsideration if future hardware changes the timing requirement. |
 | Pi management service / TCP 5959 | `EVALUATING` | Product behavior is rebuild-ready but not required for the first minimal Ethernet+RFB proof. |
 | Historical VNC-only 60 Mbit/s pacing | `EVALUATING` | Historical integrated setting; not a universal requirement. Re-evaluate only if clean hardware evidence needs it. |
 | Historical Openbox/LXPanel dedicated desktop stack | `REPLACED` | The old stack as a unit is not adopted. TigerVNC is retained deliberately for the current provider; LXPanel is rejected; Openbox remains independently evaluable if the clean dedicated session needs a lightweight window manager. |
@@ -64,14 +65,19 @@ Allowed states:
 7. Future media/audio/remote-source ideas justify keeping seams clean but do not justify speculative gateway, multiplexing, or provider-selection infrastructure in the current milestone.
 8. Prefer conventional platform machinery first; adapt policy only when PS-to-VNC gains a demonstrated benefit, and qualify the adaptation against the simpler conventional control.
 
-## Immediate implementation order
+## Qualified foundation and next layer
 
-For the first clean PS2↔Pi milestone:
+The first clean PS2↔Pi foundation now has:
 
-1. inspect the Debian 13/arm64 TigerVNC package/version/dependency surface before installation;
-2. define and apply the private `eth0` link reproducibly;
-3. establish a predictable PS2-facing RFB endpoint using the current TigerVNC provider while keeping provider-specific assumptions localized;
-4. compare the conventional persistent-provider lifecycle with the systemd socket-activation candidate using real first-connect evidence;
-5. choose only the minimum session/window-manager components actually required inside the current virtual desktop;
-6. verify RFB 3.8, SecurityType None on the private link, fixed 480p geometry, RGB565 behavior, Raw first-frame behavior, resize capability, and endpoint health/restartability;
-7. leave WayVNC integration, remote-source routing, custom gateway work, MPEG-2, audio, management, Samba, pacing, and extra desktop conveniences out until their own milestones require them.
+1. the reviewed packaged Xtigervnc provider;
+2. NetworkManager ownership of the private `eth0` identity;
+3. a systemd-owned PS2-facing RFB listener;
+4. first-SYN demand activation with provider-specific `-inetd` details localized;
+5. qualified reconnect, orderly-stop, failure-retrigger, and cold-boot behavior;
+6. verified RFB 3.8, SecurityType None, fixed 704x462/depth-16 behavior, private
+   listener scope, Raw presentation, and incremental framebuffer updates.
+
+The next Pi layer is deliberate desktop/session content selection. WayVNC
+integration, remote-source routing, custom gateway work, MPEG-2, audio,
+management, Samba, traffic pacing, and extra desktop conveniences remain outside
+this milestone until their own requirements justify them.

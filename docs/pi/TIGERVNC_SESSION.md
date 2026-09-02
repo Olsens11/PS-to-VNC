@@ -3,17 +3,17 @@
 ## Status
 
     WORKSTREAM=GITHUB_ISSUE_5
-    ROLE=PRE_LIVE_CURRENT_PROVIDER_DESIGN
+    ROLE=QUALIFIED_CURRENT_PROVIDER_CONTRACT
     TIGERVNC=Xtigervnc_1.15.0+dfsg-2.1~deb13u1
     TIGERVNC_EXECUTABLE=/usr/bin/Xtigervnc
     PROVIDER_ROLE=REPLACEABLE_IMPLEMENTATION
-    LIVE_APPLICATION=NOT_YET_PERFORMED
-    HARDWARE_QUALIFICATION=NOT_YET_PERFORMED
+    LIVE_APPLICATION=PERFORMED
+    HARDWARE_QUALIFICATION=PASS
+    QUALIFICATION_EVIDENCE_HEAD=b40f422a760a0b7b6f2ab41699c5e72fda83bb83
 
-This document defines the smallest clean **current TigerVNC provider** candidate
-for the PS2-facing RFB service. It is a design and validation contract only.
-Nothing here claims that the provider or lifecycle model has been promoted on the
-clean Pi yet.
+This document records the smallest clean **current TigerVNC provider** qualified
+for the PS2-facing RFB service. It preserves both the original validation
+contract and the resulting live decision.
 
 The reconstruction rule remains:
 
@@ -24,7 +24,7 @@ The first purpose of this provider is to supply a deterministic RFB endpoint for
 the clean Raw-only 704x462 PS2 milestone. It is not yet the full user desktop,
 and TigerVNC itself is not the permanent architectural boundary.
 
-`RFB_SOCKET_ACTIVATION.md` owns the current lifecycle evaluation and the
+`RFB_SOCKET_ACTIVATION.md` owns the adopted lifecycle decision and the
 provider-boundary interpretation.
 
 ## Authority and reviewed parameter surface
@@ -40,7 +40,7 @@ list. It establishes that this package supplies:
     /usr/bin/Xtigervnc
 
 The Debian trixie `Xtigervnc(1)` man page for that exact package confirms the
-parameter surface used by this candidate:
+parameter surface used by this provider:
 
 - `-geometry widthxheight` selects virtual desktop geometry;
 - `-depth 16` is supported;
@@ -62,8 +62,8 @@ References:
 - `https://packages.debian.org/trixie/arm64/tigervnc-standalone-server/filelist`;
 - `https://manpages.debian.org/trixie/tigervnc-standalone-server/Xtigervnc.1.en.html`.
 
-These package facts are source support for a candidate. They do not replace live
-verification on the clean Pi.
+These package facts support the provider contract; the clean-Pi evidence records
+its live qualification.
 
 ## Current provider product contract
 
@@ -116,17 +116,17 @@ The conventional direct control should be equivalent to:
     -AcceptSetDesktopSize=0
 ```
 
-The tracked evaluation unit is:
+The tracked optional control unit is:
 
     ps-to-vnc-rfb-tigervnc-persistent.service
 
 This is the simple conventional lifecycle control. It does not run concurrently
-with the socket-activation candidate.
+with the adopted socket lifecycle.
 
 ## Socket-activated provider invocation
 
-The preferred lifecycle experiment separates the endpoint listener from this
-provider. systemd owns `192.168.50.1:5900` through:
+The adopted lifecycle separates the endpoint listener from this provider.
+systemd owns `192.168.50.1:5900` through:
 
     ps-to-vnc-rfb.socket
 
@@ -162,29 +162,24 @@ that satisfies that need and record it separately in the dependency ledger.
 Future local-Wayland, remote-computer, gateway, MPEG-2, or audio work must not be
 pre-solved by importing extra desktop machinery into this provider milestone.
 
-## Network/service ordering issue to prove live
+## Network/service ordering result
 
-The tracked `ps2-link` NetworkManager profile defines `192.168.50.1/24`, but the
-current live no-carrier behavior must be measured rather than assumed.
+The `ps2-link` NetworkManager profile defines `192.168.50.1/24`. With no carrier,
+the live interface had no private address. After the PS2 launch established
+carrier, NetworkManager installed the address about 1.18 seconds before the sole
+PS2 SYN.
 
-A provider bound directly to `192.168.50.1` cannot be assumed to start
-successfully before that address exists. The socket-activation candidate can use
-`FreeBind=yes` to remove the userspace-listen ordering race, but NetworkManager
-still must establish the real Layer-3 identity for ARP/IP traffic.
+The generic systemd socket used `FreeBind=yes` and owned the exact scoped listener
+while the address and provider were absent. The first SYN then activated the
+provider successfully. The scoped NetworkManager no-carrier candidate was
+therefore rejected for the current requirement and was not installed.
 
-Therefore the first live session test must explicitly classify:
-
-1. whether the private address exists before Ethernet carrier;
-2. whether a scoped NetworkManager no-carrier setting is necessary;
-3. whether the generic systemd socket can be ready while this provider is absent;
-4. whether the first PS2 connection activates this provider successfully.
-
-Do not resurrect a historical immediate-network unit automatically. Add only the
-smallest declared mechanism that the clean hardware proves necessary.
+NetworkManager remains the private Layer-3 identity owner; systemd owns endpoint
+readiness; Xtigervnc remains the replaceable provider.
 
 ## Live validation gate
 
-The current provider is not qualified until read-only/live validation records:
+The completed read-only/live qualification records:
 
 - exact installed TigerVNC package version;
 - `/usr/bin/Xtigervnc` belongs to the reviewed package;
@@ -205,20 +200,19 @@ The current provider is not qualified until read-only/live validation records:
 - logs identify startup failures clearly enough to diagnose
   address/bind/provider problems.
 
-The first PS2 hardware qualification should consume this verified provider path.
-It must not be the first time the provider contract itself is inspected.
+All listed gates passed on the clean Pi. The persistent-provider comparison was
+conditional and was not needed because socket inheritance and lifecycle behavior
+were unambiguous.
 
 ## Incremental-update stimulus
 
-A static root framebuffer is enough to prove initial RFB handshake and the first
-complete Raw frame, but Issue #7 also contains an ordinary incremental
-request/receive/present loop.
+A static black root framebuffer established the initial complete Raw display.
+While the same provider and PS2 session remained connected, `xsetroot` changed
+display `:1` to solid red and the change appeared physically on the PS2. This
+qualified the bare virtual framebuffer and ordinary update path without adding
+a window manager, panel, or historical desktop stack.
 
-Use a small deterministic desktop change to prove incremental behavior. Do not
-install a historical panel or full desktop merely to create motion. The prior
-hardware work has already shown `xsetroot` can provide a simple visible stimulus
-when available; the live test should verify the exact tool/environment before
-using it as evidence.
+This does not qualify finished desktop contents; those remain a separate layer.
 
 ## Explicit exclusions
 
@@ -239,18 +233,17 @@ This provider tranche does not add:
 
 Those remain later product layers.
 
-## Promotion rule
+## Qualified state
 
-The current TigerVNC provider becomes qualified clean-companion runtime only
-after the tracked foundation has been applied, the exact provider invocation and
-selected lifecycle have been validated on the clean Pi, and the required
-endpoint properties above are recorded as evidence.
-
-Until then:
+The tracked foundation, exact provider invocation, inherited-socket lifecycle,
+private listener, RFB contract, reconnect behavior, controlled stop/failure
+retrigger, and cold-reboot/one-launch behavior have been validated on the clean
+Pi.
 
     TIGERVNC_DECISION=ADOPTED_RUNTIME_CURRENT_PROVIDER
     RFB_PROVIDER=TIGERVNC
     RFB_PROVIDER_REPLACEABLE=YES
     TIGERVNC_EXECUTABLE_PATH=PACKAGE_AUTHORITY
-    RFB_SERVICE_MODEL=EVALUATING
-    TIGERVNC_PROVIDER_LIVE_VALIDATION=PENDING
+    RFB_SERVICE_MODEL=SYSTEMD_SOCKET_ACTIVATED
+    TIGERVNC_PROVIDER_LIVE_VALIDATION=PASS
+    DESKTOP_SESSION_CONTENTS=NOT_YET_SELECTED

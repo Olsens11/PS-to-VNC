@@ -19,6 +19,6 @@ ExecStart=/usr/bin/Xtigervnc :1 -inetd -geometry 704x462 -depth 16 -pixelformat 
 # boundary: a future provider may replace this unit while retaining the same
 # PS2-facing RFB listener contract.
 #
-# Restart policy is intentionally left unset while Issue #5 validates socket
-# retrigger, controlled failure, and desktop-persistence semantics. The socket
-# remains the demand-ready authority if this service exits.
+# Restart policy is intentionally unset. Hardware qualification proved that
+# socket demand retriggers a fresh provider after orderly stop or SIGKILL without
+# a restart loop. The socket remains the demand-ready endpoint authority.

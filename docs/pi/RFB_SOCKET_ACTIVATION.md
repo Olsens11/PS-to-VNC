@@ -1,17 +1,18 @@
-# PS2-Facing RFB Endpoint Lifecycle Evaluation
+# PS2-Facing RFB Endpoint Lifecycle
 
 ## Status
 
     WORKSTREAM=GITHUB_ISSUE_5
-    CLASSIFICATION=EVALUATING
+    CLASSIFICATION=ADOPTED_RUNTIME
     BASE_AUTHORITY=87baebce32e3c07ffc12298d6a168ac890231cf2
     CURRENT_PROVIDER=Xtigervnc_1.15.0+dfsg-2.1~deb13u1
     CURRENT_PROVIDER_ROLE=REPLACEABLE_IMPLEMENTATION
     NETWORK_OWNER=NetworkManager
     LIFECYCLE_OWNER=systemd
-    SERVICE_MODEL=EVALUATING
-    LIVE_APPLICATION=NOT_YET_PERFORMED
-    HARDWARE_QUALIFICATION=NOT_YET_PERFORMED
+    SERVICE_MODEL=SYSTEMD_SOCKET_ACTIVATED
+    LIVE_APPLICATION=PERFORMED
+    HARDWARE_QUALIFICATION=PASS
+    QUALIFICATION_EVIDENCE_HEAD=b40f422a760a0b7b6f2ab41699c5e72fda83bb83
 
 This document develops the PS2-facing RFB connection-establishment design under
 the project's clean-reconstruction principle:
@@ -23,7 +24,7 @@ The goal is not to make TigerVNC start cleverly. The goal is to establish a
 clean, conventional, replaceable PS2-facing service boundary whose **current**
 provider happens to be TigerVNC.
 
-Nothing here promotes a service model before live validation.
+The pre-test design below is now reconciled with the completed live qualification.
 
 ## Reconstruction decision check
 
@@ -49,13 +50,13 @@ The durable lesson is **endpoint readiness**, not "run TigerVNC at boot."
 
 ### PS-to-VNC adaptation
 
-Evaluate an always-ready kernel listener with demand-started userspace because
-it directly addresses the PS2's one-shot first-connect behavior while retaining
+Adopt the qualified always-ready kernel listener with demand-started userspace.
+It directly addresses the PS2's one-shot first-connect behavior while retaining
 standard Linux mechanisms.
 
 ### Replaceable provider / mechanism
 
-The stable concept under evaluation is the **PS2-facing RFB endpoint**. The
+The stable adopted concept is the **PS2-facing RFB endpoint**. The
 current provider is Xtigervnc. TigerVNC-specific process arguments live only in
 the provider unit. A future PS-to-VNC Pi gateway may replace that provider and
 consume the same listener through a standard inherited-file-descriptor interface,
@@ -85,9 +86,49 @@ reliability without increasing lifecycle ambiguity, coupling, exposure, or
 reproducibility cost. The conventional always-running provider remains the
 control/fallback.
 
+## Hardware qualification result
+
+The 2026-09-02 campaign passed every required socket-lifecycle gate:
+
+- the untouched timing run showed NetworkManager install `192.168.50.1/24`
+  about 1.18 seconds before the sole PS2 SYN;
+- the providerless socket owned `192.168.50.1:5900` while carrier, address, and
+  Xtigervnc were absent;
+- the first SYN activated Xtigervnc about 5.6 ms later and valid RFB server bytes
+  followed about 379 ms after the SYN;
+- one launch completed RFB 3.8/SecurityType None and the fixed framebuffer
+  contract;
+- reset/relaunch reused the same provider PID and preserved the red framebuffer;
+- orderly stop left the socket ready and the next launch created a fresh
+  provider;
+- `SIGKILL` exposed a failed provider and stale X artifacts, but the next demand
+  retriggered without `reset-failed`, manual cleanup, or a `Restart=` loop;
+- cold reboot with the PS2 off restored the providerless socket and one launch
+  activated the endpoint successfully.
+
+The PS2's post-disconnect transition after orderly provider shutdown varied
+between remaining black and returning to Free McBoot. The Pi-side socket,
+provider-stop, and listener results were repeatable, so that observation is a
+separate PS2 client exit-timing concern rather than lifecycle ambiguity.
+
+The preserved evidence is under `evidence/issue5/`, including the first-launch
+timing, first socket activation, same-provider relaunch, controlled stop,
+controlled failure, retrigger, repeated-stop, and cold-reboot/one-launch runs.
+
+Decision classifications:
+
+- **Adopt:** generic systemd ownership of the PS2-facing RFB endpoint;
+- **Adapt:** packaged Xtigervnc `-inetd` mode localized in the current provider;
+- **Reject for the current requirement:** scoped NetworkManager no-carrier
+  override;
+- **Adopt as optional:** persistent provider unit retained as a mutually
+  exclusive fallback/control, not the selected runtime;
+- **Defer:** desktop/window-manager contents beyond the qualified bare
+  framebuffer.
+
 ## Stable layer boundaries
 
-The current candidate deliberately separates four concerns:
+The adopted design deliberately separates four concerns:
 
 ```text
 PS2
@@ -126,7 +167,7 @@ owns the private Ethernet identity. Likewise, a future gateway that eventually
 owns RFB plus additional media/control transports does not require us to pretend
 those transports exist today.
 
-## Why systemd socket activation remains architecturally useful
+## Why systemd socket activation is architecturally useful
 
 A `.socket` unit is not inherently a TigerVNC mechanism. It is a standard
 service-manager boundary around a listening socket. With `Accept=no`, systemd
@@ -144,9 +185,9 @@ This matters because the durable idea is:
 
 That remains useful even if the provider changes.
 
-## NetworkManager no-carrier policy
+## NetworkManager no-carrier decision
 
-The clean companion already uses a static `ps2-link` profile:
+The clean companion uses a static `ps2-link` profile:
 
     interface = eth0
     address = 192.168.50.1/24
@@ -155,21 +196,15 @@ The clean companion already uses a static `ps2-link` profile:
     ipv6.method = disabled
     autoconnect = yes
 
-Current NetworkManager documentation says a static Layer-3 profile can already
-autoconnect without carrier in some startup paths and also provides a per-device
-`ignore-carrier` setting for server-like static interfaces.
+The untouched cold/no-carrier snapshot had no private address. That fact alone
+did not establish a product failure: after carrier appeared, NetworkManager
+installed the address about 1.18 seconds before the PS2's sole SYN. The first
+connection therefore had the required Layer-3 identity without an override.
 
-Therefore **measure before configuring**:
-
-1. if `192.168.50.1/24` already exists with no PS2 carrier, add nothing;
-2. if it does not, evaluate only the scoped `eth0` `ignore-carrier=true`
-   candidate;
-3. do not use a global ignore-carrier policy;
-4. prove management/Wi-Fi routing remains independent.
-
-`FreeBind=yes` on the systemd socket does not substitute for this. It permits an
-early bind but does not make an unassigned address a usable Layer-3 identity or
-answer ARP for it.
+The scoped `ignore-carrier=true` candidate is rejected for the current
+requirement and was not installed. NetworkManager remains the address owner.
+`FreeBind=yes` serves the separate purpose of allowing systemd to own the
+listener before address assignment.
 
 ## Candidate mechanisms
 
@@ -216,11 +251,11 @@ than a redesign of NetworkManager, the PS2 client, or unrelated Pi services.
 startup is standard systemd policy; no custom watcher; provider identity is
 localized.
 
-**Costs:** current TigerVNC provider depends on its less-common `-inetd` wait
-path and the exact Debian package behavior, so hardware qualification is
-required.
+**Qualification cost:** the current TigerVNC provider depends on its
+less-common `-inetd` wait path and exact Debian package behavior. Hardware
+qualification was therefore required and passed.
 
-**Role:** preferred experiment.
+**Role:** adopted runtime lifecycle after hardware qualification.
 
 ### Candidate C — scoped NetworkManager no-carrier behavior
 
@@ -228,9 +263,10 @@ Tracked candidate snippet:
 
     config/pi/NetworkManager/90-ps-to-vnc-ps2-link.conf
 
-This is **conditional**, not a third lifecycle design. Use it only if the
-untouched clean Pi proves the static profile does not own `192.168.50.1/24`
-before carrier.
+This was **conditional**, not a third lifecycle design. Live timing showed the
+address was absent without carrier but available well before the PS2's first
+SYN. The candidate is therefore rejected for the current requirement and remains
+uninstalled.
 
 ### Rejected primary mechanisms for this problem
 
@@ -248,7 +284,8 @@ constraint that changes the problem.
 
 ## Current provider contract
 
-For this Issue #5 experiment, TigerVNC remains the current desktop provider. Its
+For the qualified Issue #5 lifecycle, TigerVNC remains the current desktop
+provider. Its
 provider-local settings are:
 
     geometry = 704x462
@@ -289,7 +326,10 @@ one process, multiple processes, one TCP session, multiple sockets, UDP, or any
 particular synchronization protocol. When those issues become active, the
 network/session module can be revised from real requirements.
 
-## Prepared hardware-test sequence
+## Hardware-test sequence
+
+The following sequence is retained as the completed qualification procedure.
+Its results are summarized above.
 
 The operator session is intentionally layered so each mutation answers one
 question.
@@ -312,18 +352,12 @@ Then run `scripts/pi/capture-rfb-activation-timeline.sh` and perform exactly one
 current PS2 launch. Preserve the pre-change ordering of carrier, address,
 ARP/TCP, and listener state.
 
-### Phase 1 — establish early private identity only if baseline requires it
+### Phase 1 — classify private-identity timing
 
-If and only if the baseline proves the address is absent before carrier:
-
-1. stage the scoped NetworkManager candidate with
-   `install-ps2-link-no-carrier-candidate.sh`;
-2. inspect the exact staged file;
-3. reboot as a separate operator-visible step;
-4. prove `192.168.50.1/24` exists before PS2 carrier;
-5. prove no default route moved to `eth0` and management remains intact.
-
-If the address already exists before carrier, skip this entire phase.
+The address was absent before carrier. The captured carrier/address/SYN ordering
+then proved that NetworkManager installed it about 1.18 seconds before the sole
+PS2 SYN. Because the endpoint succeeded on the first attempt, the conditional
+no-carrier override was not installed.
 
 ### Phase 2 — stage lifecycle candidates
 
@@ -383,24 +417,18 @@ After success:
 
 ### Phase 6 — persistent-service control if needed or for comparison
 
-Stop the socket candidate completely, then start
-`ps-to-vnc-rfb-tigervnc-persistent.service`.
-
-Use the same RFB and physical stimulus checks. This tells us whether any failure
-belongs to socket inheritance/lifecycle rather than TigerVNC/RFB itself.
-
-The persistent service wins if socket activation adds fragility without a clear
-product benefit.
+The persistent service was retained as a mutually exclusive control/fallback.
+The comparison gate was conditional: use it only if socket inheritance or
+lifecycle remains ambiguous. All socket gates passed, so changing to the control
+would not have answered an unresolved product question and was skipped.
 
 ### Phase 7 — cold-boot qualification
 
-Only after the layers above are understood:
-
-1. select exactly one lifecycle candidate;
-2. reboot with no active PS2 VNC session;
-3. confirm private identity/listener readiness;
-4. launch the PS2 client once;
-5. prove desktop and incremental update behavior without operator repair.
+The generic socket was enabled as the sole lifecycle, then the Pi was rebooted
+with the PS2 powered off. Before carrier or address assignment, systemd owned the
+exact private listener and the provider was absent. One PS2 launch established
+the address, activated Xtigervnc, negotiated the intended RFB endpoint, and
+displayed the black 480p root framebuffer without operator repair.
 
 ## Promotion criteria
 
@@ -417,14 +445,11 @@ Promote a lifecycle only if evidence supports it. Minimum requirements are:
 - reproducible tracked configuration;
 - provider-specific assumptions localized to the provider layer.
 
-If socket activation passes, the adopted statement should be approximately:
+The adopted statement is:
 
 > systemd owns the PS2-facing RFB listener and activates the selected RFB
 > provider on demand; TigerVNC is the current provider implementation.
 
-It should **not** be:
-
-> PS-to-VNC architecture requires TigerVNC `-inetd`.
-
-That distinction preserves the clean-reconstruction intent while still choosing
-a concrete, testable implementation today.
+The architecture does **not** require TigerVNC `-inetd`. That is the qualified
+adapter used by the current replaceable provider. This distinction preserves the
+clean-reconstruction intent while choosing a concrete implementation today.

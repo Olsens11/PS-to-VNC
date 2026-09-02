@@ -12,10 +12,9 @@ WorkingDirectory=/home/ps2
 UMask=0077
 ExecStart=/usr/bin/Xtigervnc :1 -geometry 704x462 -depth 16 -pixelformat RGB565 -rfbport 5900 -interface 192.168.50.1 -localhost=0 -SecurityTypes None -AcceptSetDesktopSize=0 -UseIPv6=0 -nolisten tcp -Log *:syslog:30
 
-# EVALUATING control only. This is the conventional always-running provider
-# against which socket activation is compared. Do not enable it alongside the
-# ps-to-vnc-rfb.socket candidate. No restart policy is promoted until live
-# lifecycle behavior is measured.
+# Optional conventional fallback/control, not the selected runtime lifecycle.
+# Do not enable it alongside ps-to-vnc-rfb.socket. Its conditional comparison was
+# not required after socket activation passed the lifecycle qualification gates.
 
 [Install]
 WantedBy=multi-user.target
