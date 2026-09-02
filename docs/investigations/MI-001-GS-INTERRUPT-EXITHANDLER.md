@@ -304,7 +304,7 @@ The clean repository now contains the complete mechanism-synthesis report needed
 to reconstruct the engineering conclusion without consulting the legacy
 repository:
 
-- [`docs/investigations/source/MI-001-TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md`](source/MI-001-TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md)
+- [full preserved Test14 mechanism synthesis](source/MI-001-TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md)
 - Git blob SHA: `4994b8e076c2e70248be433b466f0ccced5d0f02`
 
 Legacy PS2VNC remains read-only **provenance/evidence authority**, but is no
