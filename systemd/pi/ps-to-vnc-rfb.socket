@@ -1,13 +1,14 @@
 [Unit]
 Description=PS-to-VNC PS2-facing RFB activation socket
 Documentation=https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+Conflicts=ps-to-vnc-rfb-tigervnc-persistent.service
 
 [Socket]
 ListenStream=192.168.50.1:5900
 Accept=no
 BindToDevice=eth0
 FreeBind=yes
-Service=ps-to-vnc-rfb.service
+Service=ps-to-vnc-rfb-tigervnc.service
 
 [Install]
 WantedBy=sockets.target
