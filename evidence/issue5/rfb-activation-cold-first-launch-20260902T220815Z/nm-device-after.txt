@@ -1,0 +1,4 @@
+GENERAL.STATE:                          20 (unavailable)
+GENERAL.CONNECTION:                     --
+GENERAL.DEVICE:                         eth0
+WIRED-PROPERTIES.CARRIER:               off

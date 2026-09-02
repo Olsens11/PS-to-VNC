@@ -1,0 +1,12 @@
+[  686.077277] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386903.9842] device (eth0): carrier: link connected
+[  686.079454] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386903.9864] device (eth0): state change: unavailable -> disconnected (reason 'carrier-changed', managed-type: 'full')
+[  686.083465] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386903.9904] policy: auto-activating connection 'ps2-link' (5e9c8537-6e20-41b2-b0f5-8c508d9e3436)
+[  686.085266] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386903.9922] device (eth0): Activation: starting connection 'ps2-link' (5e9c8537-6e20-41b2-b0f5-8c508d9e3436)
+[  686.085662] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386903.9926] device (eth0): state change: disconnected -> prepare (reason 'none', managed-type: 'full')
+[  686.086753] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386903.9936] device (eth0): state change: prepare -> config (reason 'none', managed-type: 'full')
+[  686.089727] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386903.9966] device (eth0): state change: config -> ip-config (reason 'none', managed-type: 'full')
+[  686.242769] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386904.1497] device (eth0): state change: ip-config -> ip-check (reason 'none', managed-type: 'full')
+[  686.321866] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386904.2288] device (eth0): state change: ip-check -> secondaries (reason 'none', managed-type: 'full')
+[  686.322493] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386904.2294] device (eth0): state change: secondaries -> activated (reason 'none', managed-type: 'full')
+[  686.324226] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386904.2311] device (eth0): Activation: successful, device activated.
+[  701.300644] ps-to-vnc-dev NetworkManager[732]: <info>  [1788386919.2075] device (eth0): state change: activated -> unavailable (reason 'carrier-changed', managed-type: 'full')

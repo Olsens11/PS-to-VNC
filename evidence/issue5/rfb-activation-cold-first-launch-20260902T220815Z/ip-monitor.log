@@ -1,0 +1,20 @@
+2026-09-02T22:08:16.008891790Z 2: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN group default 
+2026-09-02T22:08:16.011583719Z     link/ether d8:3a:dd:90:86:d9 brd ff:ff:ff:ff:ff:ff
+2026-09-02T22:08:23.987676260Z multicast ff00::/8 dev eth0 table local proto kernel metric 256 pref medium
+2026-09-02T22:08:23.992404322Z 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default 
+2026-09-02T22:08:23.997442725Z     link/ether d8:3a:dd:90:86:d9 brd ff:ff:ff:ff:ff:ff
+2026-09-02T22:08:24.002938721Z Deleted multicast ff00::/8 dev eth0 table local proto kernel metric 256 pref medium
+2026-09-02T22:08:24.007412828Z multicast ff00::/8 dev eth0 table local proto kernel metric 256 pref medium
+2026-09-02T22:08:24.011580891Z Deleted multicast ff00::/8 dev eth0 table local proto kernel metric 256 pref medium
+2026-09-02T22:08:24.151512664Z 2: eth0    inet 192.168.50.1/24 brd 192.168.50.255 scope global noprefixroute eth0
+2026-09-02T22:08:24.156593062Z        valid_lft forever preferred_lft forever
+2026-09-02T22:08:24.161438450Z local 192.168.50.1 dev eth0 table local proto kernel scope host src 192.168.50.1 
+2026-09-02T22:08:24.166113994Z broadcast 192.168.50.255 dev eth0 table local proto kernel scope link src 192.168.50.1 
+2026-09-02T22:08:24.171118043Z 192.168.50.0/24 dev eth0 proto kernel scope link src 192.168.50.1 metric 100 
+2026-09-02T22:08:33.205234290Z 2: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN group default 
+2026-09-02T22:08:33.210749977Z     link/ether d8:3a:dd:90:86:d9 brd ff:ff:ff:ff:ff:ff
+2026-09-02T22:08:39.213192325Z Deleted 2: eth0    inet 192.168.50.1/24 brd 192.168.50.255 scope global noprefixroute eth0
+2026-09-02T22:08:39.217114791Z        valid_lft forever preferred_lft forever
+2026-09-02T22:08:39.220968556Z Deleted broadcast 192.168.50.255 dev eth0 table local proto kernel scope link src 192.168.50.1 linkdown 
+2026-09-02T22:08:39.225215266Z Deleted local 192.168.50.1 dev eth0 table local proto kernel scope host src 192.168.50.1 
+2026-09-02T22:08:39.230373710Z Deleted 192.168.50.0/24 dev eth0 proto kernel scope link src 192.168.50.1 metric 100 linkdown 
