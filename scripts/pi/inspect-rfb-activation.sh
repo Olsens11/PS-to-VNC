@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Read-only preflight for the Issue #5 RFB activation experiment.
+# Read-only preflight for the Issue #5 RFB endpoint-lifecycle experiment.
 # This script must not change NetworkManager, systemd, packages, files, routes,
 # processes, or listeners.
 
@@ -10,6 +10,10 @@ PROFILE='ps2-link'
 DEVICE='eth0'
 ADDRESS='192.168.50.1/24'
 PORT='5900'
+SOCKET_UNIT='ps-to-vnc-rfb.socket'
+ACTIVATED_PROVIDER_UNIT='ps-to-vnc-rfb-tigervnc.service'
+PERSISTENT_PROVIDER_UNIT='ps-to-vnc-rfb-tigervnc-persistent.service'
+LEGACY_GENERIC_UNIT='ps-to-vnc-rfb.service'
 
 section() {
     printf '\n===== %s =====\n' "$1"
@@ -77,12 +81,16 @@ run pgrep -a Xtigervnc
 run pgrep -a w0vncserver
 run pgrep -af 'ps-to-vnc-vnc-session|wayvnc|Xtigervnc|w0vncserver'
 
-section 'SYSTEMD RFB CANDIDATE STATE'
-run systemctl status --no-pager ps-to-vnc-rfb.socket
-run systemctl status --no-pager ps-to-vnc-rfb.service
-run systemctl is-enabled ps-to-vnc-rfb.socket
-run systemctl is-active ps-to-vnc-rfb.socket
-run systemctl is-active ps-to-vnc-rfb.service
+section 'SYSTEMD RFB BOUNDARY / PROVIDER STATE'
+for unit in \
+    "$SOCKET_UNIT" \
+    "$ACTIVATED_PROVIDER_UNIT" \
+    "$PERSISTENT_PROVIDER_UNIT" \
+    "$LEGACY_GENERIC_UNIT"; do
+    run systemctl status --no-pager "$unit"
+    run systemctl is-enabled "$unit"
+    run systemctl is-active "$unit"
+done
 
 section 'DISPLAY :1 COLLISION CHECK'
 for path in /tmp/.X1-lock /tmp/.X11-unix/X1; do
@@ -112,5 +120,8 @@ section 'READ-ONLY PRECHECK SUMMARY'
 echo "EXPECTED_DEVICE=$DEVICE"
 echo "EXPECTED_ADDRESS=$ADDRESS"
 echo "EXPECTED_RFB_PORT=$PORT"
+echo "RFB_BOUNDARY_UNIT=$SOCKET_UNIT"
+echo "CURRENT_SOCKET_ACTIVATED_PROVIDER=$ACTIVATED_PROVIDER_UNIT"
+echo "PERSISTENT_CONTROL_PROVIDER=$PERSISTENT_PROVIDER_UNIT"
 echo 'MUTATION_PERFORMED=NO'
 echo 'RFB_ACTIVATION_PREFLIGHT=COMPLETE'
