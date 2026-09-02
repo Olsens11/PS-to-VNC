@@ -113,7 +113,47 @@ Important distinctions to preserve include:
 - historical implementation versus current architectural intent;
 - branch-local work versus merged `main` authority.
 
-## 4. Discover the active work dynamically
+## 4. Re-apply the reconstruction philosophy before choosing a solution
+
+Understanding the current state is not enough. Before proposing a new direction,
+re-read the active reconstruction principle from `docs/PROJECT_INTENT.md` and
+apply it to the specific decision being made.
+
+For every meaningful implementation or architecture choice, determine:
+
+1. the product behavior or historical lesson that must survive;
+2. which parts of the historical implementation are merely accidental structure;
+3. the conventional supported mechanism that would normally solve the problem
+   on the target platform today;
+4. whether PS-to-VNC has a demonstrated reason to adapt or depart from that
+   convention;
+5. which owner/module/service boundary should remain stable if the provider or
+   mechanism is replaced later;
+6. which attractive future features are only context for preserving a seam and
+   must remain deferred rather than being implemented speculatively;
+7. the evidence required to classify the candidate as adopted, adapted,
+   evaluating, rejected, or deferred.
+
+The purpose is not to maximize abstraction or conventionality. It is to build
+what we would have built from the beginning with today's knowledge: commodity
+responsibilities handled by commodity mechanisms, project-specific policy where
+it earns its complexity, and clean replaceable seams where future evolution is
+plausible.
+
+Before hardware testing or implementation promotion, summarize the candidate in
+plain language as:
+
+- **Requirement / lesson**
+- **Conventional machinery**
+- **PS-to-VNC adaptation**
+- **Replaceable provider/mechanism**
+- **Deferred concerns**
+- **Qualification gate**
+
+If the solution can only be justified as "this worked before" or "this should
+work in theory," the reconstruction reasoning is incomplete.
+
+## 5. Discover the active work dynamically
 
 Do not hard-code specific issue or PR numbers into session bootstrap logic.
 
@@ -133,7 +173,7 @@ From the reconstructed record, determine:
 A fresh session should be able to explain the current work in plain language
 before changing anything.
 
-## 5. Inspect live repository state before mutation
+## 6. Inspect live repository state before mutation
 
 When a local checkout is available, inspect:
 
@@ -154,7 +194,7 @@ Then run the canonical continuity tooling when available:
 Do not reset, clean, checkout over, or otherwise discard dirty state during
 catch-up. Dirty state is potentially active project evidence until understood.
 
-## 6. Reconstruct empirical-test context separately
+## 7. Reconstruct empirical-test context separately
 
 If hardware or live-system testing is active, identify before proposing another
 run:
@@ -173,7 +213,7 @@ Do not turn a convenient exploratory result into an architecture decision unless
 it has actually been promoted through the project's decision and qualification
 process.
 
-## 7. Produce a short reconstruction summary before acting
+## 8. Produce a short reconstruction summary before acting
 
 Before beginning substantive work, a fresh session should be able to state:
 
@@ -189,10 +229,11 @@ Before beginning substantive work, a fresh session should be able to state:
 If any of those cannot be stated confidently, continue reconstructing context
 instead of improvising a plan.
 
-## 8. Only then begin project work
+## 9. Only then begin project work
 
 Once the reconstruction summary is internally consistent:
 
+- apply the reconstruction decision discipline before selecting a mechanism;
 - use existing canonical tools before generating replacements;
 - continue the established plan unless evidence justifies changing it;
 - preserve experiment/source/apparatus provenance;
