@@ -110,10 +110,18 @@ For this product, `Accept=no` is the important mode. systemd documents that:
   service exits (`FlushPending=no` is the default).
 
 For inetd-compatible programs, systemd can expose the inherited socket as file
-descriptor 0 with `StandardInput=socket`. Native socket-activated services can
-instead consume the file descriptors passed by systemd directly.
-`systemd-socket-activate --inetd` provides the inetd-style handoff for
-command-line testing.
+descriptor 0 with `StandardInput=socket`. The current systemd execution manual
+explicitly allows this when the activating socket unit has `Accept=yes` **or
+when it specifies a single socket only**. Our candidate uses one `ListenStream`
+and `Accept=no`, so fd 0 is the listening socket, which is the inetd **wait**
+shape TigerVNC expects. When `StandardInput=socket` is used, the same descriptor
+is not additionally advertised through the native `$LISTEN_FDS` environment;
+that distinction keeps the current inetd adapter separate from how a future
+native systemd-aware provider might receive sockets.
+
+Native socket-activated services can instead consume the file descriptors passed
+by systemd directly. `systemd-socket-activate --inetd` provides the inetd-style
+handoff for command-line testing.
 
 References:
 
@@ -175,6 +183,7 @@ client.
 That maps naturally to:
 
     systemd Accept=no
+    + one ListenStream
     + StandardInput=socket
     + Xtigervnc -inetd
     = TigerVNC wait mode
