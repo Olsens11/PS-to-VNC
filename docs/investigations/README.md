@@ -101,6 +101,7 @@ open case may explain a temporary workaround.
 | `MI-002` | `OPEN_NON_BLOCKING` | MTU1458 / SMAP RX corruption | Issue #18 (open) | Keep the qualified MTU1458 workaround isolated at the PS2 networking seam; prefer eventual standard MTU1500 if the low-level cause can be fixed or avoided cleanly. |
 | `MI-003` | `OPEN_NON_BLOCKING` | PS2 receive burst tolerance and sender-side pacing | Issue #20 (open) | Preserve the demonstrated burst-service-envelope lesson without treating 60 Mbit/s or TCP/5900 as a universal hardware/protocol constant; requalify pacing against the clean provider/workload and future aggregate traffic classes. |
 | `MI-004` | `OPEN_NON_BLOCKING` | Display reconstruction liveness / green-corruption failures | Issue #21 (open) | Rebuild display switching as an instrumented ownership transaction and qualify sequence, workload, RFB epoch, controller, presentation, and stale-generation boundaries rather than assuming a single successful mode transition proves the state machine. |
+| `MI-005` | `OPEN_NON_BLOCKING` | Persistent 576p low-level display-transition stall | Issue #22 (open) | Qualify sink compatibility and PS2 transition liveness independently; preserve 576p as a low-level mode-transition problem until a healthy software transition is proven regardless of whether a particular display accepts the timing. |
 
 Case reports:
 
@@ -108,6 +109,7 @@ Case reports:
 - `MI-002-MTU1458-SMAP-RX.md`
 - `MI-003-PS2-RECEIVE-BURST-PACING.md`
 - `MI-004-DISPLAY-TRANSITION-LIVENESS.md`
+- `MI-005-576P-LOW-LEVEL-TRANSITION.md`
 
 ## Survey disposition: what is **not** a major case right now
 
