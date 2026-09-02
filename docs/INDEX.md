@@ -146,7 +146,7 @@ A fresh conversation begins through `AGENTS.md` and the fresh-session procedure;
 
 ## M1B mechanical extraction
 
-- `docs/M1B_EXTRACTION_RESULT.md` — exact result and source authority for the M2 scalar-parser mechanical extraction.
+- `docs/M1B_EXTRACTION_RESULT.md` — exact result and source authority for the first mechanical module extraction.
 
 ## M1C modular DUT authority
 
