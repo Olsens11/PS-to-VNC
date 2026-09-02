@@ -16,6 +16,9 @@ DEVICE="${DEVICE:-eth0}"
 ADDRESS="${ADDRESS:-192.168.50.1/24}"
 PORT="${PORT:-5900}"
 RUN_ROOT="${RUN_ROOT:-/tmp}"
+SOCKET_UNIT='ps-to-vnc-rfb.socket'
+ACTIVATED_PROVIDER_UNIT='ps-to-vnc-rfb-tigervnc.service'
+PERSISTENT_PROVIDER_UNIT='ps-to-vnc-rfb-tigervnc-persistent.service'
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 RUN_DIR="$RUN_ROOT/ps-to-vnc-rfb-activation-$STAMP"
 
@@ -49,6 +52,9 @@ trap cleanup EXIT INT TERM
     echo "DEVICE=$DEVICE"
     echo "ADDRESS=$ADDRESS"
     echo "PORT=$PORT"
+    echo "RFB_BOUNDARY_UNIT=$SOCKET_UNIT"
+    echo "SOCKET_ACTIVATED_PROVIDER=$ACTIVATED_PROVIDER_UNIT"
+    echo "PERSISTENT_CONTROL_PROVIDER=$PERSISTENT_PROVIDER_UNIT"
     echo "RUN_DIR=$RUN_DIR"
     echo "NETWORKMANAGER_VERSION=$(NetworkManager --version 2>/dev/null || true)"
     echo "SYSTEMD_VERSION=$(systemctl --version 2>/dev/null | head -1 || true)"
@@ -63,7 +69,8 @@ nmcli -f GENERAL.STATE,GENERAL.CONNECTION,GENERAL.DEVICE,WIRED-PROPERTIES.CARRIE
     >"$RUN_DIR/nm-device-before.txt" 2>&1 || true
 nmcli connection show ps2-link >"$RUN_DIR/nm-ps2-link-before.txt" 2>&1 || true
 ss -ltnp "sport = :$PORT" >"$RUN_DIR/listener-before.txt" 2>&1 || true
-systemctl status --no-pager ps-to-vnc-rfb.socket ps-to-vnc-rfb.service \
+systemctl status --no-pager \
+    "$SOCKET_UNIT" "$ACTIVATED_PROVIDER_UNIT" "$PERSISTENT_PROVIDER_UNIT" \
     >"$RUN_DIR/systemd-before.txt" 2>&1 || true
 
 WATCH_PIDS=''
@@ -82,8 +89,9 @@ WATCH_PIDS+=" $!"
 # pre-capture journal history from being mixed into this bounded observation.
 (timeout "$DURATION" journalctl -n 0 -f -o short-monotonic \
     -u NetworkManager \
-    -u ps-to-vnc-rfb.socket \
-    -u ps-to-vnc-rfb.service \
+    -u "$SOCKET_UNIT" \
+    -u "$ACTIVATED_PROVIDER_UNIT" \
+    -u "$PERSISTENT_PROVIDER_UNIT" \
     --no-pager 2>&1 || true) >"$RUN_DIR/journal.log" &
 WATCH_PIDS+=" $!"
 
@@ -148,7 +156,8 @@ ip -4 route show >"$RUN_DIR/routes-after.txt" 2>&1 || true
 nmcli -f GENERAL.STATE,GENERAL.CONNECTION,GENERAL.DEVICE,WIRED-PROPERTIES.CARRIER device show "$DEVICE" \
     >"$RUN_DIR/nm-device-after.txt" 2>&1 || true
 ss -ltnp "sport = :$PORT" >"$RUN_DIR/listener-after.txt" 2>&1 || true
-systemctl status --no-pager ps-to-vnc-rfb.socket ps-to-vnc-rfb.service \
+systemctl status --no-pager \
+    "$SOCKET_UNIT" "$ACTIVATED_PROVIDER_UNIT" "$PERSISTENT_PROVIDER_UNIT" \
     >"$RUN_DIR/systemd-after.txt" 2>&1 || true
 printf 'UTC_END=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)" >>"$RUN_DIR/metadata.env"
 
