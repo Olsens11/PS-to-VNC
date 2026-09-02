@@ -82,7 +82,7 @@ claims as present-tense truth.
 
 ## Migration recovery
 
-- `START_HERE.md` — mandatory recovery entry point after context loss.
+- `START_HERE.md` — migration-era compatibility redirect to `AGENTS.md`.
 - `docs/MIGRATION_STATE.md` — human-readable migration authority.
 - `runtime/MIGRATION_STATE.env` — machine-readable migration authority.
 - `scripts/resume-state.sh` — produce a snapshot-aware resume report and expose
@@ -159,6 +159,7 @@ Development-system policy and routing:
 - `docs/development/BRANCH_LIFECYCLE.md`
 - `docs/development/BRANCH_WORKSTREAM_INDEX.md`
 - `docs/development/CONTINUITY_FOLLOWUPS.md`
+- `docs/development/PS2VNC_CONTINUITY_HARVEST.md`
 - `docs/development/documentation.md`
 - `docs/development/testing.md`
 - `docs/development/tooling.md`
