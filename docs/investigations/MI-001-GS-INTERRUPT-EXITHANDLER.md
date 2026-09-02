@@ -8,6 +8,24 @@ Opened historically: 2026-08-20
 
 Mechanism synthesis: 2026-08-21
 
+## Full preserved investigation
+
+The complete historical mechanism-synthesis report has been copied into this
+repository so future reconstruction does not require access to the legacy
+PS2VNC repository:
+
+- `source/MI-001-TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md`
+
+The preserved copy is byte-for-byte identical to the legacy file
+`docs/test14/TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md` on branch
+`experiment/test14-720p-freeze`; both have Git blob SHA
+`4994b8e076c2e70248be433b466f0ccced5d0f02`.
+
+Use the preserved full report when the detailed Cf/Cg1-Cg6 chronology, evidence
+categories, commercial comparator, rejected explanations, measured states, or
+reconstruction limits matter. This MI-001 file is the successor service-bulletin
+summary and clean-project design guardrail.
+
 ## Executive summary
 
 The legacy PS2VNC 720p/HIRES path could eventually freeze at a HIRES
@@ -282,20 +300,27 @@ relevant. They do not invalidate the tested HIRES contract.
 
 ## Evidence and authority
 
-Legacy PS2VNC remains read-only historical authority.
+The clean repository now contains the complete mechanism-synthesis report needed
+to reconstruct the engineering conclusion without consulting the legacy
+repository:
 
-Primary historical synthesis:
+- `docs/investigations/source/MI-001-TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md`
+- Git blob SHA: `4994b8e076c2e70248be433b466f0ccced5d0f02`
+
+Legacy PS2VNC remains read-only **provenance/evidence authority**, but is no
+longer required merely to read the full report. Original provenance:
 
 - repository: `Olsens11/PS2VNC`
 - branch: `experiment/test14-720p-freeze`
-- `docs/test14/TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md`
-- `docs/test14/TEST14-HSINT-INTC-EXITHANDLER-RECONSTRUCTION-PLAN-20260820.md`
+- original path: `docs/test14/TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md`
+- historical plan: `docs/test14/TEST14-HSINT-INTC-EXITHANDLER-RECONSTRUCTION-PLAN-20260820.md`
 - related Cg1-Cg4 result documents under `docs/test14/`
-- Cg5/Cg6 hardware evidence referenced by the synthesis.
+- Cg5/Cg6 hardware evidence referenced by the preserved synthesis.
 
 Successor durable lesson:
 
 - `docs/audit/HISTORICAL_LESSONS.md`, especially L01, L10, and L11.
 
-This case file is a successor index/closeout report. It does not mutate or
-supersede the legacy evidence.
+This case file is the successor index/closeout report. The preserved source copy
+retains the full original mechanism synthesis; neither changes the immutable
+legacy evidence.
