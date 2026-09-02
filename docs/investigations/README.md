@@ -112,8 +112,8 @@ open case may explain a temporary workaround.
 
 Case reports:
 
-- `MI-001-GS-INTERRUPT-EXITHANDLER.md`
-  - full preserved historical synthesis: `source/MI-001-TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md`
+- [`MI-001-GS-INTERRUPT-EXITHANDLER.md`](MI-001-GS-INTERRUPT-EXITHANDLER.md)
+  - [full preserved historical synthesis](source/MI-001-TEST14-GS-INTERRUPT-CONTRACT-RECONSTRUCTION.md)
 - `MI-002-MTU1458-SMAP-RX.md`
 - `MI-003-PS2-RECEIVE-BURST-PACING.md`
 - `MI-004-DISPLAY-TRANSITION-LIVENESS.md`
