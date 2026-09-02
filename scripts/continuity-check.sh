@@ -12,16 +12,21 @@ cd "$ROOT"
 echo '===== DEVELOPMENT CONTINUITY CHECK ====='
 
 required=(
+    README.md
+    START_HERE.md
     AGENTS.md
     CONTRIBUTING.md
     docs/README.md
+    docs/INDEX.md
     docs/status.md
+    docs/reference/CURRENT_TOOL_AND_CONTEXT_MAP.md
     docs/development/README.md
     docs/development/SESSION_RECONSTRUCTION.md
     docs/development/TEMPORAL_STATE_SEMANTICS.md
     docs/development/BRANCH_LIFECYCLE.md
     docs/development/BRANCH_WORKSTREAM_INDEX.md
     docs/development/CONTINUITY_FOLLOWUPS.md
+    docs/development/PS2VNC_CONTINUITY_HARVEST.md
     docs/development/documentation.md
     docs/development/testing.md
     docs/development/tooling.md
@@ -226,6 +231,11 @@ test "$(
 
 echo 'M4_HISTORICAL_AUTHORITY_COHERENCE=PASS'
 
+# There must be one obvious new-session entrance even though compatibility
+# entry points remain for migration-era tools.
+grep -q 'AGENTS.md' README.md
+grep -q 'Canonical development-session bootstrap: `AGENTS.md`' START_HERE.md
+grep -q 'CANONICAL_SESSION_BOOTSTRAP=AGENTS.md' START_HERE.md
 grep -q 'scripts/resume-state.sh' AGENTS.md
 grep -q 'scripts/check.sh' AGENTS.md
 grep -q 'TEMPORAL_STATE_SEMANTICS.md' AGENTS.md
@@ -235,7 +245,12 @@ grep -q 'canonical saved' AGENTS.md
 grep -q 'last proven result' AGENTS.md
 grep -q 'next intended test' AGENTS.md
 
-echo 'BOOTSTRAP_RULES=PASS'
+grep -q 'CURRENT_TOOL_AND_CONTEXT_MAP.md' docs/README.md
+grep -q 'CURRENT_TOOL_AND_CONTEXT_MAP.md' docs/INDEX.md
+grep -q 'PS2VNC_CONTINUITY_HARVEST.md' docs/README.md
+grep -q 'PS2VNC_CONTINUITY_HARVEST.md' docs/INDEX.md
+
+echo 'BOOTSTRAP_AND_CONTEXT_ROUTING=PASS'
 
 grep -q 'PS2VNC' docs/development/README.md
 grep -q 'PS-to-VNC' docs/development/README.md
@@ -256,11 +271,16 @@ grep -q 'cold storage' \
 echo 'BRANCH_LIFECYCLE_CONTRACT=PASS'
 
 git diff --check -- \
+    README.md \
+    START_HERE.md \
     AGENTS.md \
     CONTRIBUTING.md \
     docs/README.md \
+    docs/INDEX.md \
     docs/status.md \
     docs/development \
+    docs/reference/CURRENT_TOOL_AND_CONTEXT_MAP.md \
+    docs/reference/FILE_AND_SERVICE_MAP.md \
     docs/adr \
     runtime/DEVELOPMENT_SYSTEM.env \
     runtime/PROJECT_STATE.env \
