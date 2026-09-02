@@ -83,6 +83,25 @@ Current durable audit surfaces:
 `CLEAN_ARCHITECTURE.md` is the promoted design authority derived from these audit
 outputs.
 
+## Major investigations
+
+- `investigations/README.md` — canonical major-investigation casebook containing
+  both ongoing investigations and resolved service-bulletin-style closeouts.
+- `investigations/TEMPLATE.md` — required structure for a new major case.
+
+Major cases are created only when a failure, workaround, cross-layer mechanism,
+or unresolved platform behavior is significant enough that losing its reasoning
+could harm future design. They begin while the issue is still unresolved and are
+updated through final closeout rather than being written only after the fact.
+
+GitHub issues remain useful working chronology/discussion surfaces; the durable
+technical case report belongs under `investigations/` and links the exact test,
+evidence, branch, source, and legacy authority instead of replacing them.
+
+Before changing a subsystem, check the casebook for relevant open **and
+resolved** cases. A resolved case may explain a current invariant just as an
+open case may explain a temporary qualified workaround.
+
 ## Development process
 
 - `development/README.md`
@@ -90,6 +109,7 @@ outputs.
 - `development/testing.md`
 - `development/tooling.md`
 - `development/lessons-learned.md`
+- `development/SESSION_RECONSTRUCTION.md`
 
 These documents describe how development itself is conducted and preserved.
 
