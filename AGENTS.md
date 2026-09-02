@@ -13,26 +13,62 @@ Conversation memory is useful context, but it is not project authority.
 Before proposing source changes, tests, recovery actions, or architectural
 changes:
 
-1. read `docs/status.md`;
-2. read `docs/README.md`;
-3. read `docs/development/README.md`;
-4. read architecture, ADR, testing, runbook, and reference material relevant
+1. read `docs/development/SESSION_RECONSTRUCTION.md` and complete its fresh-session
+   reconstruction procedure;
+2. read `docs/status.md`;
+3. read `runtime/PROJECT_STATE.env`;
+4. read `docs/PROJECT_INTENT.md`;
+5. read `docs/README.md`;
+6. read `docs/development/README.md`;
+7. read architecture, ADR, testing, runbook, and reference material relevant
    to the active subsystem;
-5. inspect:
+8. reconstruct the GitHub work record broadly enough to understand how the
+   current project state was reached, including:
+   - open **and closed** issues;
+   - issue descriptions and substantive comments;
+   - open, merged, and closed pull requests;
+   - PR discussion/review where it contains durable reasoning;
+   - relevant branch heads and recent commit history;
+   - releases, Discussions, Projects, or other planning surfaces when used by
+     the repository;
+9. dynamically determine the active workstreams, exact branch/commit authority,
+   last proven results, unresolved questions, protected boundaries, and next
+   documented action rather than assuming particular issue numbers are current;
+10. inspect:
    - current branch;
    - recent Git history;
    - `git status`;
    - staged changes;
    - relevant unstaged and untracked work;
-6. run:
+   - active worktrees and their exact heads;
+11. run:
    - `scripts/resume-state.sh`
    - `scripts/check.sh`
+
+A closed issue is not automatically obsolete context. It may contain the
+experiment or rationale that explains a current invariant. Likewise, an open
+issue does not outrank newer repository authority merely because it remains
+open.
 
 Do not reset, clean, checkout over, or otherwise discard uncommitted work
 during catch-up.
 
 Treat dirty state as potentially important active development until it is
 understood.
+
+Before beginning substantive work, a fresh session should be able to summarize
+in plain language:
+
+- project intent;
+- current authority;
+- most recent relevant qualified proof;
+- active work and exact branch/commit authority;
+- current uncertainty or evaluation candidates;
+- protected state;
+- the next documented action.
+
+If that summary cannot be made confidently, continue reconstructing context
+instead of improvising a plan.
 
 ## Authority model
 
@@ -47,7 +83,7 @@ Different kinds of truth have different homes:
 - durable design rationale: `docs/adr/` and retained historical decisions;
 - empirical evidence: `evidence/` and testing documentation;
 - deferred work: `docs/ROADMAP.md`;
-- chronological history: migration/history documents and Git;
+- chronological history: migration/history documents, GitHub issues/PRs, and Git;
 - development rules: `AGENTS.md`, `CONTRIBUTING.md`, and
   `docs/development/`.
 
