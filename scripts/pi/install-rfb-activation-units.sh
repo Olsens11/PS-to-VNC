@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Install or remove the tracked Issue #5 RFB socket-activation unit candidate.
+# Install or remove the tracked Issue #5 RFB lifecycle evaluation units.
 # This script deliberately does NOT enable, start, stop, restart, or mask units.
 # Service activation remains a separate operator-visible experiment step.
 
@@ -12,7 +12,9 @@ REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)"
 SOURCE_DIR="$REPO_ROOT/systemd/pi"
 DEST_DIR='/etc/systemd/system'
 SOCKET_NAME='ps-to-vnc-rfb.socket'
-SERVICE_NAME='ps-to-vnc-rfb.service'
+ACTIVATED_SERVICE_NAME='ps-to-vnc-rfb-tigervnc.service'
+PERSISTENT_SERVICE_NAME='ps-to-vnc-rfb-tigervnc-persistent.service'
+LEGACY_GENERIC_SERVICE_NAME='ps-to-vnc-rfb.service'
 TMP_CANDIDATE=''
 
 cleanup() {
@@ -43,7 +45,13 @@ for tool in awk cmp cp id install mktemp rm sha256sum systemctl systemd-analyze;
     fi
 done
 
-for name in "$SOCKET_NAME" "$SERVICE_NAME"; do
+UNIT_NAMES=(
+    "$SOCKET_NAME"
+    "$ACTIVATED_SERVICE_NAME"
+    "$PERSISTENT_SERVICE_NAME"
+)
+
+for name in "${UNIT_NAMES[@]}"; do
     if [ ! -f "$SOURCE_DIR/$name" ]; then
         echo "ERROR: tracked candidate missing: $SOURCE_DIR/$name" >&2
         exit 5
@@ -61,40 +69,46 @@ install_candidate() {
         echo 'ERROR: /usr/bin/Xtigervnc is absent or not executable.' >&2
         exit 11
     fi
+    if [ -e "$DEST_DIR/$LEGACY_GENERIC_SERVICE_NAME" ]; then
+        echo "ERROR: stale/unknown $DEST_DIR/$LEGACY_GENERIC_SERVICE_NAME exists; inspect it before staging the provider-specific units." >&2
+        exit 12
+    fi
 
-    # Validate the exact candidate pair before touching /etc. Copying to a
-    # temporary directory preserves the real unit basenames for dependency
+    # Validate the exact candidate set before touching /etc. Copying to a
+    # temporary directory preserves real unit basenames for dependency
     # resolution during systemd-analyze verify.
     TMP_CANDIDATE="$(mktemp -d)"
-    cp "$SOURCE_DIR/$SOCKET_NAME" "$TMP_CANDIDATE/$SOCKET_NAME"
-    cp "$SOURCE_DIR/$SERVICE_NAME" "$TMP_CANDIDATE/$SERVICE_NAME"
+    for name in "${UNIT_NAMES[@]}"; do
+        cp "$SOURCE_DIR/$name" "$TMP_CANDIDATE/$name"
+    done
     systemd-analyze verify \
         "$TMP_CANDIDATE/$SOCKET_NAME" \
-        "$TMP_CANDIDATE/$SERVICE_NAME"
+        "$TMP_CANDIDATE/$ACTIVATED_SERVICE_NAME" \
+        "$TMP_CANDIDATE/$PERSISTENT_SERVICE_NAME"
     rm -rf "$TMP_CANDIDATE"
     TMP_CANDIDATE=''
 
     # Fail closed on any pre-existing definition that is not byte-for-byte the
     # candidate being installed. Never overwrite unknown or hand-edited units.
-    for name in "$SOCKET_NAME" "$SERVICE_NAME"; do
+    for name in "${UNIT_NAMES[@]}"; do
         target="$DEST_DIR/$name"
         if [ -e "$target" ] && ! cmp -s "$SOURCE_DIR/$name" "$target"; then
             echo "ERROR: refusing to overwrite non-identical $target" >&2
-            exit 12
+            exit 13
         fi
     done
 
     install -d -m 0755 "$DEST_DIR"
-    install -m 0644 "$SOURCE_DIR/$SOCKET_NAME" "$DEST_DIR/$SOCKET_NAME"
-    install -m 0644 "$SOURCE_DIR/$SERVICE_NAME" "$DEST_DIR/$SERVICE_NAME"
+    for name in "${UNIT_NAMES[@]}"; do
+        install -m 0644 "$SOURCE_DIR/$name" "$DEST_DIR/$name"
+        echo "UNIT_SHA256_${name//[^A-Za-z0-9]/_}=$(sha256sum "$DEST_DIR/$name" | awk '{print $1}')"
+    done
     systemctl daemon-reload
 
-    echo "SOCKET_SHA256=$(sha256sum "$DEST_DIR/$SOCKET_NAME" | awk '{print $1}')"
-    echo "SERVICE_SHA256=$(sha256sum "$DEST_DIR/$SERVICE_NAME" | awk '{print $1}')"
-    echo 'RFB_ACTIVATION_UNITS_INSTALLED=YES'
-    echo 'RFB_ACTIVATION_UNITS_ENABLED=NO_CHANGE'
-    echo 'RFB_ACTIVATION_UNITS_STARTED=NO_CHANGE'
-    echo 'NEXT=VERIFY_PORT_AND_DISPLAY_ARE_FREE_THEN_START_SOCKET_EXPLICITLY'
+    echo 'RFB_LIFECYCLE_UNITS_INSTALLED=YES'
+    echo 'RFB_LIFECYCLE_UNITS_ENABLED=NO_CHANGE'
+    echo 'RFB_LIFECYCLE_UNITS_STARTED=NO_CHANGE'
+    echo 'NEXT=VERIFY_PORT_AND_DISPLAY_ARE_FREE_THEN_CHOOSE_EXACTLY_ONE_CONTROL_OR_SOCKET_ACTIVATION_PATH'
 }
 
 remove_candidate() {
@@ -102,14 +116,14 @@ remove_candidate() {
 
     # Removal is equally fail closed. An active unit must be stopped as its own
     # explicit experiment/rollback step before its definition is removed.
-    for name in "$SOCKET_NAME" "$SERVICE_NAME"; do
+    for name in "${UNIT_NAMES[@]}"; do
         if systemctl is-active --quiet "$name" 2>/dev/null; then
             echo "ERROR: $name is active; stop it explicitly before removal." >&2
             exit 20
         fi
     done
 
-    for name in "$SOCKET_NAME" "$SERVICE_NAME"; do
+    for name in "${UNIT_NAMES[@]}"; do
         target="$DEST_DIR/$name"
         if [ -e "$target" ]; then
             if ! cmp -s "$SOURCE_DIR/$name" "$target"; then
@@ -121,8 +135,8 @@ remove_candidate() {
     done
 
     systemctl daemon-reload
-    echo 'RFB_ACTIVATION_UNITS_PRESENT=NO'
-    echo 'RFB_ACTIVATION_UNITS_REMOVED=YES'
+    echo 'RFB_LIFECYCLE_UNITS_PRESENT=NO'
+    echo 'RFB_LIFECYCLE_UNITS_REMOVED=YES'
 }
 
 case "$ACTION" in
