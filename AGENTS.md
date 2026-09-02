@@ -17,12 +17,14 @@ changes:
    reconstruction procedure;
 2. read `docs/status.md`;
 3. read `runtime/PROJECT_STATE.env`;
-4. read `docs/PROJECT_INTENT.md`;
-5. read `docs/README.md`;
-6. read `docs/development/README.md`;
-7. read architecture, ADR, testing, runbook, and reference material relevant
+4. read `docs/development/TEMPORAL_STATE_SEMANTICS.md` and apply its timestamped
+   snapshot rules before repeating any present-tense status claim;
+5. read `docs/PROJECT_INTENT.md`;
+6. read `docs/README.md`;
+7. read `docs/development/README.md`;
+8. read architecture, ADR, testing, runbook, and reference material relevant
    to the active subsystem;
-8. reconstruct the GitHub work record broadly enough to understand how the
+9. reconstruct the GitHub work record broadly enough to understand how the
    current project state was reached, including:
    - open **and closed** issues;
    - issue descriptions and substantive comments;
@@ -31,24 +33,46 @@ changes:
    - relevant branch heads and recent commit history;
    - releases, Discussions, Projects, or other planning surfaces when used by
      the repository;
-9. dynamically determine the active workstreams, exact branch/commit authority,
-   last proven results, unresolved questions, protected boundaries, and next
-   documented action rather than assuming particular issue numbers are current;
-10. inspect:
-   - current branch;
-   - recent Git history;
-   - `git status`;
-   - staged changes;
-   - relevant unstaged and untracked work;
-   - active worktrees and their exact heads;
-11. run:
-   - `scripts/resume-state.sh`
-   - `scripts/check.sh`
+10. dynamically determine the active workstreams, exact branch/commit authority,
+    last proven results, unresolved questions, protected boundaries, and next
+    documented action rather than assuming particular issue numbers are current;
+11. inspect:
+    - current branch;
+    - recent Git history;
+    - `git status`;
+    - staged changes;
+    - relevant unstaged and untracked work;
+    - active worktrees and their exact heads;
+12. run:
+    - `scripts/resume-state.sh`
+    - `scripts/check.sh`
 
 A closed issue is not automatically obsolete context. It may contain the
 experiment or rationale that explains a current invariant. Likewise, an open
 issue does not outrank newer repository authority merely because it remains
 open.
+
+## Temporal status rule
+
+Present-tense status is perishable.
+
+A document saying `CURRENT`, `ACTIVE`, `NEXT_ACTION`, `RUNNING`, `BLOCKED`, or
+"we are working on X" describes the state **at the time that record was
+written**, unless newer evidence proves it is still true.
+
+Before saying something is current:
+
+- inspect the record's explicit `Recorded at` / `STATE_RECORDED_AT` timestamp;
+- determine the branch/head or live identity that record described;
+- check whether later commits, issues, PRs, branch changes, tests, or live-state
+  updates superseded it;
+- distinguish durable historical facts from freshness-sensitive state.
+
+If freshness is not proved, say **"recorded as of <timestamp>"** instead of
+using present tense. Do not treat an old snapshot as current merely because its
+own prose used the word "current" when it was written.
+
+The governing policy is `docs/development/TEMPORAL_STATE_SEMANTICS.md`.
 
 Do not reset, clean, checkout over, or otherwise discard uncommitted work
 during catch-up.
@@ -74,8 +98,9 @@ instead of improvising a plan.
 
 Different kinds of truth have different homes:
 
-- current human state: `docs/status.md`;
-- current machine state: `runtime/PROJECT_STATE.env`;
+- human state snapshots: `docs/status.md`;
+- machine state snapshots: `runtime/PROJECT_STATE.env`;
+- temporal/freshness semantics: `docs/development/TEMPORAL_STATE_SEMANTICS.md`;
 - preserved migration-era machine state: `runtime/MIGRATION_STATE.env`;
 - current clean architecture: `docs/CLEAN_ARCHITECTURE.md`;
 - historical/normalization architecture: the superseded architecture documents
@@ -193,6 +218,10 @@ Before materially changing documentation:
 5. update the documentation as a set;
 6. run the documentation checks.
 
+Any documentation whose purpose is to describe mutable present state must carry
+an explicit timestamp and snapshot role under
+`docs/development/TEMPORAL_STATE_SEMANTICS.md`.
+
 Do not create a second current authority because the first is inconvenient.
 
 If durable knowledge is required by a future development session, it belongs
@@ -227,7 +256,7 @@ Where applicable, completion includes:
 - reproducible build identity;
 - empirical evidence;
 - hardware/operator qualification;
-- current-state update;
+- current-state update with an explicit timestamp;
 - documentation update;
 - deferred-work capture;
 - reconciled repository state.
