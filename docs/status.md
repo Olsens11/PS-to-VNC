@@ -2,152 +2,147 @@
 
 Temporal role: `SNAPSHOT`
 
-Recorded at: `2026-09-02T15:01:00-04:00`
+Recorded at: `2026-09-02T15:14:42-04:00`
 
-This file is the concise human-readable status snapshot **as recorded at the
+This is the concise human-readable project-status snapshot **as recorded at the
 time above**. It is not an eternal present-tense authority. Before repeating any
-`current`, `active`, `next`, `blocked`, progress, or workstream claim from this
-file, reconcile it with newer GitHub/repository/live state under
+`current`, `active`, `next`, `blocked`, progress, branch-head, or workstream
+claim later, reconcile it with newer GitHub/repository/live state under
 `docs/development/TEMPORAL_STATE_SEMANTICS.md`.
 
-Older versions of this file remain historical snapshots in Git history.
-
-## Product / reconstruction principle
+## Project intent
 
 PS-to-VNC is the clean successor to the historical PS2VNC research project.
 
-The governing reconstruction principle remains:
+Governing reconstruction principle:
 
 > **Rebuild PS-to-VNC as the program we would have written if we had known at
 > the beginning everything the exploratory implementation taught us.**
 
-Current clean architecture authority remains `docs/CLEAN_ARCHITECTURE.md`.
-Historical/normalization-era architecture remains evidence/reference rather
-than the structural blueprint for new work.
+Integrated architecture authority at this snapshot remains
+`docs/CLEAN_ARCHITECTURE.md` on `main`.
 
-## Integrated repository authority at this snapshot
-
-`main`:
+Recorded `main` head:
 
 `34b53d724dede1f3875d136a8adf59ce888fa680`
 
-The semantic audit and clean architecture are already promoted to `main` and
-remain the current integrated design foundation.
+## Hands-on priority when the operator returns
 
-## Active workstreams at this snapshot
+Do **not** consume an available hardware session merely finishing branch or
+documentation cleanup. The continuity work has been durably captured in
+`docs/development/CONTINUITY_FOLLOWUPS.md` and may be resumed later.
 
-### Development continuity / major-investigation casebook / branch hygiene
+The active technical work should resume from the exact Issue/PR records rather
+than from this prose snapshot.
 
-- branch: `docs/fresh-session-reconstruction`
-- PR: #16 — `Document complete fresh-session reconstruction`
-- state: `ACTIVE`, draft
-- purpose: fresh-session reconstruction, temporal/status semantics, major
-  investigation casebook, branch/workstream index, branch lifecycle/cold-storage
-  policy, and continuity improvements.
+### Issue #5 / PR #17 — clean Pi and RFB endpoint lifecycle
 
-This branch is also performing the current read-only branch deobfuscation audit.
-No branch may be deleted without explicit user approval for that specific branch.
-The preferred retirement path is verified cold storage first.
+Recorded active authorities:
 
-### Clean Raspberry Pi foundation
+- foundation branch: `pi/issue5-clean-baseline`;
+- foundation head observed during this snapshot cycle:
+  `87baebce32e3c07ffc12298d6a168ac890231cf2`;
+- evaluating lifecycle branch: `pi/issue5-rfb-socket-activation-candidate`;
+- draft PR #17: `Evaluate PS2-facing RFB endpoint lifecycle`.
 
-- branch: `pi/issue5-clean-baseline`
-- head: `87baebce32e3c07ffc12298d6a168ac890231cf2`
-- issue: #5
-- state: `ACTIVE`
+The next hands-on direction is the already-documented Xtigervnc path, not new
+provider exploration:
 
-This remains the current clean Pi foundation/dependency baseline.
+1. inspect live Pi state before mutation, especially remaining exploratory
+   w0/kanshi/helper state;
+2. preserve the w0 experiment as reference only;
+3. re-establish the documented dedicated packaged Xtigervnc path;
+4. instrument untouched cold/no-carrier -> PS2 carrier -> NetworkManager
+   address -> port-5900-listener sequencing;
+5. qualify the systemd socket-activation + Xtigervnc `-inetd` candidate against
+   the conventional persistent-provider control only after the baseline timing
+   is measured;
+6. keep NetworkManager identity, provider choice, and service lifecycle as
+   separate decisions;
+7. reconcile live Pi mutations into the Issue #5 dependency/provisioning record
+   before promotion.
 
-### PS2-facing RFB endpoint lifecycle candidate
+Socket activation, a no-carrier override, w0/WayVNC, and historical traffic
+shaping remain unpromoted unless their own evidence gates say otherwise.
 
-- branch: `pi/issue5-rfb-socket-activation-candidate`
-- PR: #17 — `Evaluate PS2-facing RFB endpoint lifecycle`
-- head observed during this snapshot: `66988ebcfb1eed57cb84f422fb84bdb6faf98952`
-- state: `EVALUATING` / `CANDIDATE`
+### Issue #7 / PR #15 — clean minimal Raw/480p PS2 core
 
-Socket activation and associated lifecycle choices are not architecture merely
-because they are implemented on this branch. They require live qualification
-and comparison against the conventional persistent-provider control before any
-promotion.
+Recorded branch authority:
 
-### Clean minimal PS2 core
+- `reconstruct/issue7-minimal-core`;
+- draft PR #15: `Reconstruct minimal Raw 480p PS2↔Pi core`.
 
-- branch: `reconstruct/issue7-minimal-core`
-- PR: #15 — `Reconstruct minimal Raw 480p PS2↔Pi core`
-- head observed during this snapshot: `e7b4a35f681101fe39e59c4b04b28740b0f536de`
-- state: `ACTIVE`, draft
+The exact clean fixed-480p / Raw / incremental RFB / GS behavior has already
+been physically demonstrated on the stamped DUT. Formal HW1 promotion still
+failed because the diagnostic capture observed only:
 
-The clean minimal Raw/480p core remains the active Issue #7 workstream. Draft
-status means its current branch state must not be described as merged `main`
-authority.
+`PSTVNC_STAGE DESKTOP_READY`
 
-### Preserved w0vncserver feasibility experiment
+and did not observe the earlier runtime identity, `NET_READY`, or `GS_READY`
+datagrams.
 
-- branch: `archive/w0vncserver-1.16.2-experiment`
-- state: `PROTECTED_ARCHIVE`
+If Issue #7 is resumed, keep the next experiment narrow: isolate why the early
+startup/runtime-identity diagnostic `sendto` evidence is absent while the later
+`DESKTOP_READY` send succeeds. Do **not** perturb the demonstrated RFB/Raw/GS
+path merely to chase the evidence defect.
 
-The experiment is preserved evidence, not current provider architecture.
+## Development-continuity work captured but allowed to wait
 
-## Major-investigation casebook at this snapshot
+The user-requested follow-up backlog is now explicit in:
 
-The casebook is being introduced on PR #16 under `docs/investigations/`.
+`docs/development/CONTINUITY_FOLLOWUPS.md`
 
-- `MI-001` — `RESOLVED`: GS/EE HIRES HSync / `ExitHandler()` handoff.
-- `MI-002` — `OPEN_NON_BLOCKING`: MTU1458 / SMAP RX corruption.
-- `MI-003` — `OPEN_NON_BLOCKING`: PS2 receive burst tolerance / sender pacing.
+It includes:
+
+- finish branch deobfuscation/lifecycle audit;
+- specially harvest the three unique commits from
+  `reconstruction/m1-minimal-core` before any retirement recommendation;
+- review fully merged historical branches for possible verified cold-storage
+  retirement;
+- never delete any branch without explicit approval for that specific branch;
+- finish/reconcile PR #16 and eventually promote the continuity/casebook package
+  when appropriate;
+- deeply mine the historical PS2VNC `START_HERE`, documentation, status,
+  TestKit, file/service-map, resume-state, development-wrap, context-routing,
+  provenance, and documentation-by-default systems for reusable lessons;
+- make brand-new conversations require as little user handoff as practical;
+- mechanically harden timestamp/snapshot semantics for mutable status records
+  where worthwhile.
+
+That backlog is deliberately **not a blocker for the next hardware session**.
+
+## Major-investigation casebook recorded on PR #16
+
+- `MI-001` — `RESOLVED`: GS/EE HIRES HSync / `ExitHandler()` handoff;
+- `MI-002` — `OPEN_NON_BLOCKING`: MTU1458 / SMAP RX corruption;
+- `MI-003` — `OPEN_NON_BLOCKING`: PS2 receive burst tolerance / sender pacing;
 - `MI-004` — `OPEN_NON_BLOCKING`: display-transition liveness / green-corruption
-  family.
+  family;
 - `MI-005` — `OPEN_NON_BLOCKING`: persistent 576p low-level transition stall.
 
-Open investigation status does not automatically block unrelated work. Resolved
-cases remain relevant when they explain a current invariant.
-
-## Branch clarity at this snapshot
-
-The authoritative routing aid on PR #16 is:
-
-`docs/development/BRANCH_WORKSTREAM_INDEX.md`
-
-The branch list must be treated as a timestamped inventory, not memorized.
-Several fully merged transition/audit branches are classified `SUPERSEDED` and
-are candidates for later retirement review, while
-`reconstruction/m1-minimal-core` still has unique-history review outstanding.
-No retirement recommendation is deletion permission.
+MI-001 also has the complete original Test14 mechanism report copied into the
+successor repository so ordinary future comprehension does not require opening
+the legacy PS2VNC repository.
 
 ## Protected boundaries
 
 - historical PS2VNC repository remains read-only historical/provenance authority;
-- do not silently substitute PS2IP/network dependencies during unrelated work;
-- do not treat exploratory providers or branch-local candidates as architecture;
-- preserve machine evidence separately from physical/operator observation;
-- do not reset/clean/discard dirty worktrees during context reconstruction;
-- no branch deletion without branch-specific explicit user approval.
+- no branch deletion without branch-specific explicit user approval;
+- preferred branch retirement path is verified cold storage before deletion;
+- do not reset/clean/discard unexplained dirty worktree state;
+- do not silently substitute PS2IP/network dependencies;
+- machine evidence and physical/operator observation remain separate;
+- exploratory provider or lifecycle success does not equal architecture
+  promotion;
+- old status snapshots state what was recorded then, not necessarily what is
+  true now.
 
-## Immediate work ordering recorded at this snapshot
+## Fresh-chat minimal handoff
 
-1. Continue the **branch deobfuscation/read-only lifecycle audit** and clarify
-   branch/workstream ownership before doing broader new-session infrastructure
-   expansion.
-2. Complete the special harvest/review of `reconstruction/m1-minimal-core` and
-   the fully merged retirement candidates; do not delete anything.
-3. Continue/finish PR #16 review and continuity/casebook integration when the
-   branch picture is understood.
-4. After the branch picture is clear, improve the fresh-conversation bootstrap
-   further, deliberately mining the successful PS2VNC documentation/status/
-   TestKit continuity system for reusable lessons.
-5. Continue active Issue #5 / PR #17 and Issue #7 / PR #15 engineering according
-   to their own qualification gates rather than allowing documentation cleanup
-   to redefine their technical evidence.
+The intended short instruction remains:
 
-## Freshness rule
+> Open `Olsens11/PS-to-VNC`. Read `AGENTS.md` and follow the fresh-session
+> reconstruction procedure completely before doing any project work.
 
-If this timestamp is older than newer project activity, do **not** say that the
-workstreams or next actions above are still current merely because this file uses
-present tense.
-
-Say instead:
-
-> "The project status snapshot recorded at 2026-09-02T15:01:00-04:00 said ..."
-
-Then reconcile against newer GitHub branch/PR/issue state, later status records,
-and identity-valid live state before describing the present.
+A capable session must reconcile timestamps and current GitHub activity before
+reusing this snapshot's present-tense claims.
