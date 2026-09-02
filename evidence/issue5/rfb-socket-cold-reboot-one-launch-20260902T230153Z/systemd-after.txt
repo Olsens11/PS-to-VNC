@@ -1,0 +1,39 @@
+● ps-to-vnc-rfb.socket - PS-to-VNC PS2-facing RFB activation socket
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb.socket; enabled; preset: enabled)
+     Active: active (running) since Wed 2026-09-02 18:58:42 EDT; 4min 12s ago
+ Invocation: 1403e4b40f3247f49a2a3425537ccadd
+   Triggers: ● ps-to-vnc-rfb-tigervnc.service
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+     Listen: 192.168.50.1:5900 (Stream)
+      Tasks: 0 (limit: 8796)
+        CPU: 1ms
+     CGroup: /system.slice/ps-to-vnc-rfb.socket
+
+Sep 02 18:58:42 ps-to-vnc-dev systemd[1]: Listening on ps-to-vnc-rfb.socket - PS-to-VNC PS2-facing RFB activation socket.
+
+● ps-to-vnc-rfb-tigervnc.service - PS-to-VNC socket-activated TigerVNC RFB provider
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb-tigervnc.service; static)
+     Active: active (running) since Wed 2026-09-02 19:02:01 EDT; 52s ago
+ Invocation: 37022cc135634de0b778bad1a5c15ebc
+TriggeredBy: ● ps-to-vnc-rfb.socket
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+   Main PID: 2533 (Xtigervnc)
+      Tasks: 2 (limit: 8796)
+        CPU: 210ms
+     CGroup: /system.slice/ps-to-vnc-rfb-tigervnc.service
+             └─2533 /usr/bin/Xtigervnc :1 -inetd -geometry 704x462 -depth 16 -pixelformat RGB565 -SecurityTypes None -AcceptSetDesktopSize=0 -UseIPv6=0 -nolisten tcp -Log "*:syslog:30"
+
+Sep 02 19:02:01 ps-to-vnc-dev systemd[1]: Started ps-to-vnc-rfb-tigervnc.service - PS-to-VNC socket-activated TigerVNC RFB provider.
+Sep 02 19:02:01 ps-to-vnc-dev Xtigervnc[2533]: vncext: VNC extension running!
+Sep 02 19:02:01 ps-to-vnc-dev Xtigervnc[2533]: vncext: inetd wait
+Sep 02 19:02:01 ps-to-vnc-dev Xtigervnc[2533]: vncext: Created VNC server for screen 0
+Sep 02 19:02:01 ps-to-vnc-dev Xtigervnc[2533]: Connections: Accepted: 192.168.50.2::52432
+Sep 02 19:02:01 ps-to-vnc-dev Xtigervnc[2533]: SConnection: Client needs protocol version 3.8
+Sep 02 19:02:01 ps-to-vnc-dev Xtigervnc[2533]: SConnection: Client requests security type None(1)
+Sep 02 19:02:01 ps-to-vnc-dev Xtigervnc[2533]: VNCSConnST: Server default pixel format depth 16 (16bpp) little-endian rgb565
+Sep 02 19:02:01 ps-to-vnc-dev Xtigervnc[2533]: VNCSConnST: Client pixel format depth 15 (16bpp) little-endian bgr555
+
+○ ps-to-vnc-rfb-tigervnc-persistent.service - PS-to-VNC persistent TigerVNC RFB provider control
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb-tigervnc-persistent.service; disabled; preset: enabled)
+     Active: inactive (dead)
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
