@@ -5,7 +5,7 @@
     WORKSTREAM=GITHUB_ISSUE_5
     CLASSIFICATION=EVALUATING_RESEARCH
     BASE_AUTHORITY=87baebce32e3c07ffc12298d6a168ac890231cf2
-    RECOMMENDED_EXPERIMENT=SYSTEMD_SOCKET_PLUS_XTIGERVNC_INETD_WAIT
+    RECOMMENDED_EXPERIMENT=SYSTEMD_RFB_SOCKET_PLUS_CURRENT_XTIGERVNC_PROVIDER
     LIVE_PI_PROOF=PENDING
 
 This note records the standards research behind
@@ -19,6 +19,31 @@ The governing design principle is:
 > interfaces. Adapt the policy when that produces a real PS-to-VNC product
 > benefit; do not reject a useful design merely because it is not the distro's
 > default configuration.
+
+## Clean-reconstruction interpretation
+
+After reviewing this work against `docs/PROJECT_INTENT.md`, the durable design
+question is **not** "how should TigerVNC start?" It is:
+
+> How should the Pi own a predictable PS2-facing RFB endpoint while keeping the
+> current RFB provider replaceable?
+
+This distinction matters because future product work may eventually justify a
+custom Pi-side gateway for high-motion MPEG-2 presentation, audio, or normalized
+remote-computer sources. Those features are deferred, and no gateway protocol is
+being designed here. Their only present implication is that provider-specific
+assumptions should not leak into the private-link or PS2-facing service boundary.
+
+systemd socket activation fits that philosophy better than a TigerVNC-specific
+watcher because a listening socket is an ordinary OS-owned interface. The
+current Xtigervnc provider can consume it through its documented inetd-compatible
+file descriptor. A future custom provider could instead consume inherited file
+descriptors through systemd's native socket-activation interface. If a future
+provider requires a materially different lifecycle, that layer can still be
+replaced without rewriting NetworkManager ownership of the private PS2 link.
+
+No provider-selection framework or speculative multi-socket media architecture
+is justified by the current milestone.
 
 ## Requirements derived from the real system
 
@@ -35,10 +60,11 @@ Other requirements remain conventional:
 
 - fixed private service address, independent of Wi-Fi/management identity;
 - no default route through the PS2 interface;
-- no unauthenticated VNC exposure on Wi-Fi or wildcard interfaces;
+- no unauthenticated RFB exposure on Wi-Fi or wildcard interfaces;
 - normal OS supervision, logging and rollback;
 - no custom polling daemon when standard mechanisms provide the same behavior;
-- reproducible configuration from a supported Debian/Raspberry Pi OS base.
+- reproducible configuration from a supported Debian/Raspberry Pi OS base;
+- provider-specific process details localized behind the RFB endpoint boundary.
 
 ## NetworkManager findings
 
@@ -84,13 +110,16 @@ For this product, `Accept=no` is the important mode. systemd documents that:
   service exits (`FlushPending=no` is the default).
 
 For inetd-compatible programs, systemd can expose the inherited socket as file
-descriptor 0 with `StandardInput=socket`. `systemd-socket-activate --inetd`
-provides the same style of handoff for command-line testing.
+descriptor 0 with `StandardInput=socket`. Native socket-activated services can
+instead consume the file descriptors passed by systemd directly.
+`systemd-socket-activate --inetd` provides the inetd-style handoff for
+command-line testing.
 
 References:
 
 - `systemd.socket(5)`
 - `systemd.exec(5)`
+- `sd_listen_fds(3)`
 - `systemd-socket-activate(1)`
 - https://www.freedesktop.org/software/systemd/man/
 
@@ -99,24 +128,24 @@ References:
 With direct process startup, the race is:
 
 ```text
-PS2 carrier -> Pi address -> Xtigervnc starts -> userspace listen()
+PS2 carrier -> Pi address -> current provider starts -> userspace listen()
      `---------------- PS2 connect() can arrive here ----------------'
 ```
 
-With socket activation, the listener is OS-owned before Xtigervnc exists:
+With socket activation, the listener is OS-owned before the provider exists:
 
 ```text
 Pi boot -> systemd LISTEN on 192.168.50.1:5900
 PS2 carrier -> SYN/SYN-ACK -> connect() succeeds/queues
-                           -> systemd starts Xtigervnc
-                           -> Xtigervnc accepts queued connection
+                           -> systemd starts current provider
+                           -> provider accepts queued connection
                            -> RFB banner/handshake
 ```
 
 This is materially better than merely making a service start quickly. The
 kernel can complete/queue TCP establishment while userspace is still starting,
 which directly accommodates the legacy PS2 client's one-shot initial connect.
-The client then waits in its ordinary RFB receive path for Xtigervnc to become
+The client then waits in its ordinary RFB receive path for the provider to become
 ready.
 
 `FreeBind=yes` alone does **not** make `192.168.50.1` a usable local Layer-3
@@ -124,9 +153,9 @@ identity and does not answer ARP for an address the host does not own. It makes
 the listening socket boot-order tolerant. NetworkManager still owns the actual
 address assignment.
 
-## TigerVNC `-inetd` is a real supported interface
+## TigerVNC `-inetd` is a real supported provider interface
 
-The exact adopted server is Debian trixie's
+The exact current provider is Debian trixie's
 `tigervnc-standalone-server=1.15.0+dfsg-2.1~deb13u1`.
 
 TigerVNC's `Xtigervnc(1)` manual documents two inetd modes:
@@ -150,6 +179,9 @@ That maps naturally to:
     + Xtigervnc -inetd
     = TigerVNC wait mode
 
+This mapping is a **provider adapter**, not the permanent PS-to-VNC architecture.
+The generic endpoint is the listening RFB service contract.
+
 References:
 
 - TigerVNC tag `v1.15.0`, `unix/xserver/hw/vnc/xvnc.c`
@@ -164,12 +196,12 @@ xinetd configurations commonly attach stdout to the network stream, so VNC
 clients received banner text before `RFB 003.008` and rejected the server.
 TigerVNC issue #1937 documents the failure and upstream fix.
 
-This is directly relevant to evaluating whether `-inetd` is mature enough for
-PS-to-VNC, and it has a favorable answer for the **exact Debian package we
-adopted**: Debian carries `0030 fix inetd mode.patch` specifically to restore
-Xtigervnc inetd operation. Debian's patch tracker describes the 1.15 banner
-regression, the resulting RFB protocol corruption, and the carried fix. The
-same patch is present in the trixie
+This is directly relevant to evaluating whether the current provider's `-inetd`
+adapter is mature enough for PS-to-VNC, and it has a favorable answer for the
+**exact Debian package we adopted**: Debian carries `0030 fix inetd mode.patch`
+specifically to restore Xtigervnc inetd operation. Debian's patch tracker
+describes the 1.15 banner regression, the resulting RFB protocol corruption, and
+the carried fix. The same patch is present in the trixie
 `1.15.0+dfsg-2.1~deb13u1` source package.
 
 References:
@@ -184,40 +216,43 @@ Two consequences matter:
 2. the live gate should still verify the installed Debian package identity and
    actual first bytes on the wire rather than trusting version text alone.
 
-The candidate service also keeps `StandardOutput=journal` and directs TigerVNC's
-own logger to syslog. The network socket is inherited on fd 0; ordinary process
-stdout is therefore not being used as our RFB transport. This is useful
-separation, but the package-level inetd fix remains part of the dependency
-identity and should be verified rather than treated as unnecessary.
+The candidate provider service keeps `StandardOutput=journal` and directs
+TigerVNC's own logger to syslog. The network socket is inherited on fd 0;
+ordinary process stdout is therefore not being used as our RFB transport. This
+is useful separation, but the package-level inetd fix remains part of the
+provider dependency identity and should be verified rather than treated as
+unnecessary.
 
 ## Alternatives considered
 
-### 1. Always-running direct Xtigervnc service
+### 1. Always-running direct current provider
 
 **Conventionality:** excellent.
 
 **Advantages:** smallest conceptual service graph; no inherited-socket behavior;
 server already initialized before the PS2 arrives.
 
-**Costs:** Xtigervnc and its X framebuffer run from boot even if never used;
+**Costs:** provider and its framebuffer run from boot even if never used;
 startup still needs deterministic ordering after the private address exists; it
 does not exploit the useful demand-start product idea.
 
 **Role:** control/fallback. If socket activation is less reliable or harder to
 operate on the real Pi, this wins immediately.
 
-### 2. systemd socket activation + native Xtigervnc wait mode
+### 2. systemd socket activation + current provider adapter
 
 **Conventionality:** excellent machinery plus an application-supported inetd
-interface.
+interface for the current provider.
 
 **Advantages:** kernel listener is ready before userspace; no custom watcher;
-first TCP connection naturally triggers server startup; one persistent desktop
+first TCP connection naturally triggers provider startup; one persistent desktop
 accepts later viewers; exact private address/device exposure is systemd-owned;
-clean failure/retrigger semantics are testable through standard units.
+clean failure/retrigger semantics are testable through standard units; listener
+ownership can survive a future provider change.
 
-**Costs:** depends on a less commonly used TigerVNC startup path and therefore
-requires exact package/source verification and live qualification.
+**Costs:** the current TigerVNC adapter depends on a less commonly used startup
+path and therefore requires exact package/source verification and live
+qualification.
 
 **Role:** preferred experiment.
 
@@ -245,7 +280,7 @@ maintenance for a job the OS already implements.
 
 **Role:** rejected absent a requirement standard mechanisms cannot satisfy.
 
-### 5. `systemd-socket-proxyd` in front of ordinary Xtigervnc
+### 5. `systemd-socket-proxyd` in front of a provider
 
 **Conventionality:** systemd-provided and useful for daemons that cannot inherit
 sockets.
@@ -254,11 +289,11 @@ sockets.
 backend.
 
 **Costs:** extra local data path and process; backend readiness/connection
-ordering must still be coordinated; TigerVNC already has native `-inetd` wait
-mode, so the proxy currently solves no missing capability.
+ordering must still be coordinated; current TigerVNC already has native
+inherited-listener support, so the proxy currently solves no missing capability.
 
-**Role:** fallback technique only if native TigerVNC listener inheritance proves
-unusable for a reason not visible in source/docs.
+**Role:** fallback technique only if a future/current provider cannot inherit the
+listener and evidence shows the extra hop is worthwhile.
 
 ### 6. PS2 initial-connect retry only
 
@@ -278,22 +313,17 @@ which is intentionally disabled during current freeze debugging.
 
 TigerVNC also exposes `MaxDisconnectionTime`: terminate the server after no VNC
 client has been connected for N seconds. Combined with a persistent systemd
-socket, that could create a fully cyclic demand model:
+socket, that could create a cyclic demand model for the current provider.
 
-```text
-first PS2 connect -> start desktop -> keep session for reconnects
-idle/disconnected N seconds -> Xtigervnc exits -> socket remains ready
-next PS2 connect -> fresh desktop starts
-```
-
-This is an upstream-supported mechanism, not a custom idle watcher. It is **not**
+This is upstream-supported behavior, not a custom idle watcher. It is **not**
 part of the first candidate because session persistence is currently more
 valuable than speculative resource savings. It should be considered later only
 if a measured product benefit justifies losing desktop state after the timeout.
+A future non-TigerVNC provider would have its own lifecycle policy.
 
 ## Recommendation before hardware testing
 
-Prepare and test candidate 2 first, with candidate 1 retained as the simple
+Evaluate candidate 2 first, with candidate 1 retained as the simple
 control/fallback.
 
 Do not add the NetworkManager no-carrier snippet unless the real clean Pi proves
@@ -303,10 +333,14 @@ the odds of the first experiment.
 The decisive live evidence is straightforward:
 
 1. what owns `192.168.50.1/24` before carrier;
-2. whether systemd can own `192.168.50.1:5900` while Xtigervnc is absent;
-3. whether one PS2 launch completes TCP and triggers the service;
-4. whether the first network payload from the server is valid RFB, not process
+2. whether systemd can own `192.168.50.1:5900` while the current provider is
+   absent;
+3. whether one PS2 launch completes TCP and triggers the provider;
+4. whether the first network payload from the provider is valid RFB, not process
    output;
 5. whether Xtigervnc remains alive and accepts a second viewer connection;
-6. whether service exit returns the system cleanly to socket-ready state;
-7. whether a cold reboot repeats the behavior without operator intervention.
+6. whether provider exit returns the system cleanly to socket-ready state;
+7. whether the persistent-provider control behaves more simply/reliably if the
+   inherited-listener path fails;
+8. whether a cold reboot repeats the selected behavior without operator
+   intervention.
