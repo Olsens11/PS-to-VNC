@@ -30,8 +30,10 @@ This is the canonical entry point for current PS-to-VNC documentation.
 
 ## Reference
 
-- `docs/reference/FILE_AND_SERVICE_MAP.md` — canonical living map of where
-  source, evidence and responsibilities currently reside.
+- `docs/reference/CURRENT_TOOL_AND_CONTEXT_MAP.md` — clean-current router for
+  canonical tools, authority classes, and context acquisition.
+- `docs/reference/FILE_AND_SERVICE_MAP.md` — migration-era compatibility/reference
+  map; not clean-current routing authority.
 - `docs/reference/PRESERVATION_STATUS.md` — completed exploratory-reference
   preservation scope and disposition.
 
@@ -124,7 +126,7 @@ A fresh conversation begins through `AGENTS.md` and the fresh-session procedure;
 
 - `docs/M1B_EXTRACTION_RESULT.md` — exact result and source authority for the first mechanical module extraction.
 
-## M1C first modular DUT
+## M1C modular DUT authority
 
 - `docs/M1C_DUT_CHARACTERIZATION.md` — build, reproducibility, linkage, host parity, and ELF characterization for the first modular PS-to-VNC executable.
 
