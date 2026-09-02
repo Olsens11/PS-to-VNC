@@ -17,6 +17,11 @@ required=(
     docs/README.md
     docs/status.md
     docs/development/README.md
+    docs/development/SESSION_RECONSTRUCTION.md
+    docs/development/TEMPORAL_STATE_SEMANTICS.md
+    docs/development/BRANCH_LIFECYCLE.md
+    docs/development/BRANCH_WORKSTREAM_INDEX.md
+    docs/development/CONTINUITY_FOLLOWUPS.md
     docs/development/documentation.md
     docs/development/testing.md
     docs/development/tooling.md
@@ -51,13 +56,29 @@ get_env()
         "$file"
 }
 
+require_iso8601_timestamp()
+{
+    local value="$1"
+
+    printf '%s\n' "$value" |
+        grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})$'
+}
+
 MIG='runtime/MIGRATION_STATE.env'
 M4='runtime/M4_SOURCE_AUTHORITY.env'
 DEV='runtime/DEVELOPMENT_SYSTEM.env'
 PROJECT='runtime/PROJECT_STATE.env'
 
+# Committed mutable state is a timestamped snapshot, not timeless live
+# authority. Durable historical identities still receive exact checks below.
+test "$(get_env "$PROJECT" PROJECT_STATE_VERSION)" = '2'
 test "$(get_env "$PROJECT" PROJECT_NAME)" = 'PS-to-VNC'
-test "$(get_env "$PROJECT" PROJECT_STATE_ROLE)" = 'CURRENT'
+test "$(get_env "$PROJECT" STATE_TEMPORAL_ROLE)" = 'SNAPSHOT'
+require_iso8601_timestamp "$(get_env "$PROJECT" STATE_RECORDED_AT)"
+test "$(get_env "$PROJECT" STATE_FRESHNESS_POLICY)" = \
+    'docs/development/TEMPORAL_STATE_SEMANTICS.md'
+test "$(get_env "$PROJECT" PROJECT_STATE_ROLE)" = \
+    'CURRENT_AT_RECORDED_TIME'
 
 test "$(get_env "$PROJECT" MACHINE_CURRENT_STATE)" = \
     'runtime/PROJECT_STATE.env'
@@ -71,23 +92,41 @@ test "$(get_env "$PROJECT" MIGRATION_STATE_ROLE)" = \
 test "$(get_env "$PROJECT" EXPLORATORY_MIGRATION_STATE)" = \
     'runtime/MIGRATION_STATE.env'
 
-for field in \
-    PHASE \
-    MACHINE_CURRENT_STATE \
-    MIGRATION_STATE_ROLE \
-    RECONCILED_MAIN \
-    REFERENCE_PRESERVATION \
-    SEMANTIC_AUDIT \
-    CLEAN_PS2_RECONSTRUCTION \
-    PI_REPRODUCIBILITY_PACKAGE \
-    GITHUB_RECONCILIATION \
-    NEXT_ACTION \
-    BLOCKED_BY
-do
-    value="$(get_env "$PROJECT" "$field")"
-    grep -q "${field}=${value}" docs/status.md
-done
+grep -q 'Temporal role: `SNAPSHOT`' docs/status.md
+STATUS_RECORDED_AT="$(
+    sed -n 's/^Recorded at: `\([^`]*\)`$/\1/p' docs/status.md |
+    head -n 1
+)"
+test -n "$STATUS_RECORDED_AT"
+require_iso8601_timestamp "$STATUS_RECORDED_AT"
+grep -q 'TEMPORAL_STATE_SEMANTICS.md' docs/status.md
 
+grep -q 'Status: `BRANCH_INVENTORY_SNAPSHOT`' \
+    docs/development/BRANCH_WORKSTREAM_INDEX.md
+grep -q 'Temporal role: `SNAPSHOT`' \
+    docs/development/BRANCH_WORKSTREAM_INDEX.md
+BRANCH_RECORDED_AT="$(
+    sed -n 's/^Recorded at: `\([^`]*\)`$/\1/p' \
+        docs/development/BRANCH_WORKSTREAM_INDEX.md |
+    head -n 1
+)"
+test -n "$BRANCH_RECORDED_AT"
+require_iso8601_timestamp "$BRANCH_RECORDED_AT"
+
+grep -q 'Temporal role: `SNAPSHOT_BACKLOG`' \
+    docs/development/CONTINUITY_FOLLOWUPS.md
+FOLLOWUPS_RECORDED_AT="$(
+    sed -n 's/^Recorded at: `\([^`]*\)`$/\1/p' \
+        docs/development/CONTINUITY_FOLLOWUPS.md |
+    head -n 1
+)"
+test -n "$FOLLOWUPS_RECORDED_AT"
+require_iso8601_timestamp "$FOLLOWUPS_RECORDED_AT"
+
+echo 'TEMPORAL_STATE_CONTRACT=PASS'
+
+# Durable exploratory/provenance identity remains exact even though mutable
+# NEXT/CURRENT fields are no longer mirrored as timeless present-tense truth.
 test "$(get_env "$PROJECT" EXPLORATORY_FINAL_SOURCE_HEAD)" = \
     "$(get_env "$MIG" CURRENT_SOURCE_HEAD)"
 
@@ -103,7 +142,6 @@ test "$(get_env "$PROJECT" EXPLORATORY_FINAL_PT_LOAD_SHA256)" = \
 test "$(get_env "$PROJECT" EXPLORATORY_FORMER_NEXT_ACTION)" = \
     "$(get_env "$MIG" NEXT_ACTION)"
 
-echo 'CURRENT_PROJECT_STATE_MIRROR=PASS'
 echo 'EXPLORATORY_STATE_PRESERVATION=PASS'
 
 test "$(get_env "$DEV" SESSION_BOOTSTRAP)" = 'AGENTS.md'
@@ -129,8 +167,7 @@ MIG_SOURCE_COMMIT="$(
     get_env "$MIG" CURRENT_SOURCE_HEAD
 )"
 
-test "$M4_SOURCE_COMMIT" = \
-    "$MIG_SOURCE_COMMIT"
+test "$M4_SOURCE_COMMIT" = "$MIG_SOURCE_COMMIT"
 
 M4_HW_HEAD="$(
     get_env "$M4" M4I_FINAL_HARDWARE_HEAD
@@ -187,11 +224,12 @@ test "$(
     get_env "$M4" M4I_FINAL_HARDWARE_QUALIFIED
 )" = 'YES'
 
-echo 'M4_CURRENT_AUTHORITY_COHERENCE=PASS'
-
+echo 'M4_HISTORICAL_AUTHORITY_COHERENCE=PASS'
 
 grep -q 'scripts/resume-state.sh' AGENTS.md
 grep -q 'scripts/check.sh' AGENTS.md
+grep -q 'TEMPORAL_STATE_SEMANTICS.md' AGENTS.md
+grep -q 'SESSION_RECONSTRUCTION.md' AGENTS.md
 grep -q 'uncommitted work' AGENTS.md
 grep -q 'canonical saved' AGENTS.md
 grep -q 'last proven result' AGENTS.md
@@ -210,6 +248,13 @@ grep -q '/home/ps2/ps2vnc/scripts/testkit/' \
 
 echo 'LEGACY_TESTKIT_ROUTING=PASS'
 
+grep -q 'explicit user approval' \
+    docs/development/BRANCH_LIFECYCLE.md
+grep -q 'cold storage' \
+    docs/development/BRANCH_LIFECYCLE.md
+
+echo 'BRANCH_LIFECYCLE_CONTRACT=PASS'
+
 git diff --check -- \
     AGENTS.md \
     CONTRIBUTING.md \
@@ -218,6 +263,8 @@ git diff --check -- \
     docs/development \
     docs/adr \
     runtime/DEVELOPMENT_SYSTEM.env \
-    scripts/continuity-check.sh
+    runtime/PROJECT_STATE.env \
+    scripts/continuity-check.sh \
+    scripts/resume-state.sh
 
 echo 'DEVELOPMENT_CONTINUITY_CHECK=PASS'
