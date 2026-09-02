@@ -1,0 +1,23 @@
+● ps-to-vnc-rfb.socket - PS-to-VNC PS2-facing RFB activation socket
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb.socket; disabled; preset: enabled)
+     Active: active (listening) since Wed 2026-09-02 18:17:34 EDT; 7min ago
+ Invocation: eade09b369c34337a760de04497fe44f
+   Triggers: ● ps-to-vnc-rfb-tigervnc.service
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+     Listen: 192.168.50.1:5900 (Stream)
+      Tasks: 0 (limit: 8796)
+        CPU: 921us
+     CGroup: /system.slice/ps-to-vnc-rfb.socket
+
+Sep 02 18:17:34 ps-to-vnc-dev systemd[1]: Listening on ps-to-vnc-rfb.socket - PS-to-VNC PS2-facing RFB activation socket.
+
+○ ps-to-vnc-rfb-tigervnc.service - PS-to-VNC socket-activated TigerVNC RFB provider
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb-tigervnc.service; static)
+     Active: inactive (dead)
+TriggeredBy: ● ps-to-vnc-rfb.socket
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+
+○ ps-to-vnc-rfb-tigervnc-persistent.service - PS-to-VNC persistent TigerVNC RFB provider control
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb-tigervnc-persistent.service; disabled; preset: enabled)
+     Active: inactive (dead)
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
