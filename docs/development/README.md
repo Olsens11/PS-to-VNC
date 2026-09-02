@@ -32,6 +32,21 @@ If a new chat requires a long conversation-specific handoff to know what the
 project is doing, treat that as evidence that repository continuity needs to be
 improved.
 
+## Historical continuity harvest
+
+PS2VNC's mature documentation/status/TestKit system is a deliberate source of
+lessons, not a structural template for the clean successor.
+
+The reviewed harvest and `ADOPT` / `ADAPT` / `DEFER` / `REJECT` dispositions are
+recorded in:
+
+    docs/development/PS2VNC_CONTINUITY_HARVEST.md
+
+This keeps the useful historical continuity reasoning inside PS-to-VNC so a
+fresh session does not need the legacy repository merely to understand why the
+successor bootstrap, temporal-state, provenance, apparatus, and tool-routing
+rules exist.
+
 ## Branch lifecycle, workstream index, and cold storage
 
 Branch count is a continuity concern too. Developers should not be expected to
