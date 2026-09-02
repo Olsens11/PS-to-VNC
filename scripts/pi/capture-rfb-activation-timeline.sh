@@ -24,7 +24,7 @@ if [ "${EUID}" -ne 0 ]; then
     exit 2
 fi
 
-for tool in ip ss journalctl tcpdump timeout date nmcli systemctl sha256sum; do
+for tool in ip ss journalctl tcpdump timeout date nmcli systemctl sha256sum find sort xargs; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "ERROR: required tool missing: $tool" >&2
         exit 3
@@ -150,14 +150,12 @@ nmcli -f GENERAL.STATE,GENERAL.CONNECTION,GENERAL.DEVICE,WIRED-PROPERTIES.CARRIE
 ss -ltnp "sport = :$PORT" >"$RUN_DIR/listener-after.txt" 2>&1 || true
 systemctl status --no-pager ps-to-vnc-rfb.socket ps-to-vnc-rfb.service \
     >"$RUN_DIR/systemd-after.txt" 2>&1 || true
+printf 'UTC_END=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)" >>"$RUN_DIR/metadata.env"
 
-# Hash all completed evidence files, then hash the manifest separately if a
-# caller needs a single top-level identity.
+# Hash the finalized evidence set. The manifest intentionally excludes itself.
 find "$RUN_DIR" -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 \
     | sort -z \
     | xargs -0 sha256sum >"$RUN_DIR/SHA256SUMS.txt"
-
-printf 'UTC_END=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)" >>"$RUN_DIR/metadata.env"
 
 echo "RFB_ACTIVATION_TIMELINE_CAPTURE=COMPLETE"
 echo "RUN_DIR=$RUN_DIR"
