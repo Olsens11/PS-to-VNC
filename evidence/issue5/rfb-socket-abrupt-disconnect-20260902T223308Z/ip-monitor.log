@@ -1,0 +1,9 @@
+2026-09-02T22:33:08.285011371Z 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default 
+2026-09-02T22:33:08.287887153Z     link/ether d8:3a:dd:90:86:d9 brd ff:ff:ff:ff:ff:ff
+2026-09-02T22:33:11.861843435Z 2: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN group default 
+2026-09-02T22:33:11.864269752Z     link/ether d8:3a:dd:90:86:d9 brd ff:ff:ff:ff:ff:ff
+2026-09-02T22:33:17.871662242Z Deleted 2: eth0    inet 192.168.50.1/24 brd 192.168.50.255 scope global noprefixroute eth0
+2026-09-02T22:33:17.876047670Z        valid_lft forever preferred_lft forever
+2026-09-02T22:33:17.880839471Z Deleted broadcast 192.168.50.255 dev eth0 table local proto kernel scope link src 192.168.50.1 linkdown 
+2026-09-02T22:33:17.886263527Z Deleted local 192.168.50.1 dev eth0 table local proto kernel scope host src 192.168.50.1 
+2026-09-02T22:33:17.891824356Z Deleted 192.168.50.0/24 dev eth0 proto kernel scope link src 192.168.50.1 metric 100 linkdown 

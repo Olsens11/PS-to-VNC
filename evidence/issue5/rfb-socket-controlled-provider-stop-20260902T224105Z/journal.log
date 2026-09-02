@@ -1,0 +1,12 @@
+Sep 02 18:41:06.529771 ps-to-vnc-dev systemd[1]: Stopping ps-to-vnc-rfb-tigervnc.service - PS-to-VNC socket-activated TigerVNC RFB provider...
+Sep 02 18:41:06.530491 ps-to-vnc-dev Xtigervnc[6428]: VNCSConnST: Closing 192.168.50.2::52432: Server shutdown
+Sep 02 18:41:06.530500 ps-to-vnc-dev Xtigervnc[6428]: EncodeManager: Framebuffer updates: 1
+Sep 02 18:41:06.530506 ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:   Raw:
+Sep 02 18:41:06.530527 ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:     Solid: 5 rects, 325.248 kpixels
+Sep 02 18:41:06.530536 ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:            635.309 KiB (1:1 ratio)
+Sep 02 18:41:06.530546 ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:   Total: 5 rects, 325.248 kpixels
+Sep 02 18:41:06.530554 ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:          635.309 KiB (1:1 ratio)
+Sep 02 18:41:06.530599 ps-to-vnc-dev Xtigervnc[6428]: ComparingUpdateTracker: 0 pixels in / 0 pixels out
+Sep 02 18:41:06.530605 ps-to-vnc-dev Xtigervnc[6428]: ComparingUpdateTracker: (1:nan ratio)
+Sep 02 18:41:06.626863 ps-to-vnc-dev systemd[1]: ps-to-vnc-rfb-tigervnc.service: Deactivated successfully.
+Sep 02 18:41:06.627320 ps-to-vnc-dev systemd[1]: Stopped ps-to-vnc-rfb-tigervnc.service - PS-to-VNC socket-activated TigerVNC RFB provider.

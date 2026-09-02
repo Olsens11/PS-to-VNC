@@ -1,0 +1,4 @@
+GENERAL.STATE:                          100 (connected)
+GENERAL.CONNECTION:                     ps2-link
+GENERAL.DEVICE:                         eth0
+WIRED-PROPERTIES.CARRIER:               on

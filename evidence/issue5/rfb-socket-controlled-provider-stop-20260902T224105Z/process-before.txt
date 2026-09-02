@@ -1,0 +1,1 @@
+6428 /usr/bin/Xtigervnc :1 -inetd -geometry 704x462 -depth 16 -pixelformat RGB565 -SecurityTypes None -AcceptSetDesktopSize=0 -UseIPv6=0 -nolisten tcp -Log *:syslog:30

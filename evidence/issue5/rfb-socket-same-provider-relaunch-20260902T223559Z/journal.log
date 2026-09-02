@@ -1,0 +1,26 @@
+[ 2349.053432] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388566.9603] device (eth0): carrier: link connected
+[ 2349.056676] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388566.9635] device (eth0): state change: unavailable -> disconnected (reason 'carrier-changed', managed-type: 'full')
+[ 2349.060129] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388566.9669] policy: auto-activating connection 'ps2-link' (5e9c8537-6e20-41b2-b0f5-8c508d9e3436)
+[ 2349.062408] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388566.9693] device (eth0): Activation: starting connection 'ps2-link' (5e9c8537-6e20-41b2-b0f5-8c508d9e3436)
+[ 2349.063853] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388566.9707] device (eth0): state change: disconnected -> prepare (reason 'none', managed-type: 'full')
+[ 2349.066847] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388566.9737] device (eth0): state change: prepare -> config (reason 'none', managed-type: 'full')
+[ 2349.071572] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388566.9784] device (eth0): state change: config -> ip-config (reason 'none', managed-type: 'full')
+[ 2349.215694] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388567.1226] device (eth0): state change: ip-config -> ip-check (reason 'none', managed-type: 'full')
+[ 2349.318371] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388567.2253] device (eth0): state change: ip-check -> secondaries (reason 'none', managed-type: 'full')
+[ 2349.318884] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388567.2258] device (eth0): state change: secondaries -> activated (reason 'none', managed-type: 'full')
+[ 2349.319927] ps-to-vnc-dev NetworkManager[732]: <info>  [1788388567.2268] device (eth0): Activation: successful, device activated.
+[ 2350.517584] ps-to-vnc-dev Xtigervnc[6428]: VNCSConnST: Closing 192.168.50.2::52432: read: Connection reset by peer (104)
+[ 2350.517601] ps-to-vnc-dev Xtigervnc[6428]: EncodeManager: Framebuffer updates: 2
+[ 2350.517606] ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:   Raw:
+[ 2350.517629] ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:     Solid: 10 rects, 650.496 kpixels
+[ 2350.517637] ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:            1.24084 MiB (1:1 ratio)
+[ 2350.517646] ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:   Total: 10 rects, 650.496 kpixels
+[ 2350.517653] ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:          1.24084 MiB (1:1 ratio)
+[ 2350.517760] ps-to-vnc-dev Xtigervnc[6428]: Connections: Closed: 192.168.50.2::52432
+[ 2350.517772] ps-to-vnc-dev Xtigervnc[6428]: ComparingUpdateTracker: 325.248 kpixels in / 325.248 kpixels out
+[ 2350.517776] ps-to-vnc-dev Xtigervnc[6428]: ComparingUpdateTracker: (1:1 ratio)
+[ 2350.517954] ps-to-vnc-dev Xtigervnc[6428]: Connections: Accepted: 192.168.50.2::52432
+[ 2350.519882] ps-to-vnc-dev Xtigervnc[6428]: SConnection: Client needs protocol version 3.8
+[ 2350.521402] ps-to-vnc-dev Xtigervnc[6428]: SConnection: Client requests security type None(1)
+[ 2350.521437] ps-to-vnc-dev Xtigervnc[6428]: VNCSConnST: Server default pixel format depth 16 (16bpp) little-endian rgb565
+[ 2350.524507] ps-to-vnc-dev Xtigervnc[6428]: VNCSConnST: Client pixel format depth 15 (16bpp) little-endian bgr555

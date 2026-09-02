@@ -1,0 +1,20 @@
+[ 1712.125132] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.0320] device (eth0): carrier: link connected
+[ 1712.127246] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.0341] device (eth0): state change: unavailable -> disconnected (reason 'carrier-changed', managed-type: 'full')
+[ 1712.129789] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.0367] policy: auto-activating connection 'ps2-link' (5e9c8537-6e20-41b2-b0f5-8c508d9e3436)
+[ 1712.131499] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.0384] device (eth0): Activation: starting connection 'ps2-link' (5e9c8537-6e20-41b2-b0f5-8c508d9e3436)
+[ 1712.131884] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.0388] device (eth0): state change: disconnected -> prepare (reason 'none', managed-type: 'full')
+[ 1712.133590] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.0405] device (eth0): state change: prepare -> config (reason 'none', managed-type: 'full')
+[ 1712.135150] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.0420] device (eth0): state change: config -> ip-config (reason 'none', managed-type: 'full')
+[ 1712.304370] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.2113] device (eth0): state change: ip-config -> ip-check (reason 'none', managed-type: 'full')
+[ 1712.381937] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.2888] device (eth0): state change: ip-check -> secondaries (reason 'none', managed-type: 'full')
+[ 1712.382459] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.2894] device (eth0): state change: secondaries -> activated (reason 'none', managed-type: 'full')
+[ 1712.383969] ps-to-vnc-dev NetworkManager[732]: <info>  [1788387930.2909] device (eth0): Activation: successful, device activated.
+[ 1713.185628] ps-to-vnc-dev systemd[1]: Started ps-to-vnc-rfb-tigervnc.service - PS-to-VNC socket-activated TigerVNC RFB provider.
+[ 1713.469060] ps-to-vnc-dev Xtigervnc[6428]: vncext: VNC extension running!
+[ 1713.469092] ps-to-vnc-dev Xtigervnc[6428]: vncext: inetd wait
+[ 1713.469140] ps-to-vnc-dev Xtigervnc[6428]: vncext: Created VNC server for screen 0
+[ 1713.556589] ps-to-vnc-dev Xtigervnc[6428]: Connections: Accepted: 192.168.50.2::52432
+[ 1713.560974] ps-to-vnc-dev Xtigervnc[6428]: SConnection: Client needs protocol version 3.8
+[ 1713.562485] ps-to-vnc-dev Xtigervnc[6428]: SConnection: Client requests security type None(1)
+[ 1713.563385] ps-to-vnc-dev Xtigervnc[6428]: VNCSConnST: Server default pixel format depth 16 (16bpp) little-endian rgb565
+[ 1713.566562] ps-to-vnc-dev Xtigervnc[6428]: VNCSConnST: Client pixel format depth 15 (16bpp) little-endian bgr555

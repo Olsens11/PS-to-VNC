@@ -1,0 +1,35 @@
+● ps-to-vnc-rfb.socket - PS-to-VNC PS2-facing RFB activation socket
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb.socket; disabled; preset: enabled)
+     Active: active (running) since Wed 2026-09-02 18:17:34 EDT; 23min ago
+ Invocation: eade09b369c34337a760de04497fe44f
+   Triggers: ● ps-to-vnc-rfb-tigervnc.service
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+     Listen: 192.168.50.1:5900 (Stream)
+      Tasks: 0 (limit: 8796)
+        CPU: 921us
+     CGroup: /system.slice/ps-to-vnc-rfb.socket
+
+Sep 02 18:17:34 ps-to-vnc-dev systemd[1]: Listening on ps-to-vnc-rfb.socket - PS-to-VNC PS2-facing RFB activation socket.
+
+● ps-to-vnc-rfb-tigervnc.service - PS-to-VNC socket-activated TigerVNC RFB provider
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb-tigervnc.service; static)
+     Active: active (running) since Wed 2026-09-02 18:25:31 EDT; 15min ago
+ Invocation: 3b850b0b538e44989e373ee6e4474dee
+TriggeredBy: ● ps-to-vnc-rfb.socket
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+   Main PID: 6428 (Xtigervnc)
+      Tasks: 2 (limit: 8796)
+        CPU: 230ms
+     CGroup: /system.slice/ps-to-vnc-rfb-tigervnc.service
+             └─6428 /usr/bin/Xtigervnc :1 -inetd -geometry 704x462 -depth 16 -pixelformat RGB565 -SecurityTypes None -AcceptSetDesktopSize=0 -UseIPv6=0 -nolisten tcp -Log "*:syslog:30"
+
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:   Total: 10 rects, 650.496 kpixels
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: EncodeManager:          1.24084 MiB (1:1 ratio)
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: Connections: Closed: 192.168.50.2::52432
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: ComparingUpdateTracker: 325.248 kpixels in / 325.248 kpixels out
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: ComparingUpdateTracker: (1:1 ratio)
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: Connections: Accepted: 192.168.50.2::52432
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: SConnection: Client needs protocol version 3.8
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: SConnection: Client requests security type None(1)
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: VNCSConnST: Server default pixel format depth 16 (16bpp) little-endian rgb565
+Sep 02 18:36:08 ps-to-vnc-dev Xtigervnc[6428]: VNCSConnST: Client pixel format depth 15 (16bpp) little-endian bgr555
