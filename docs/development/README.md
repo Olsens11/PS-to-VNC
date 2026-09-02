@@ -13,6 +13,25 @@ A fresh development session should be able to determine from the repository:
 - which tools are canonical;
 - how to continue the active experiment safely.
 
+## Canonical fresh-session procedure
+
+The detailed reconstruction procedure is:
+
+    docs/development/SESSION_RECONSTRUCTION.md
+
+`AGENTS.md` is the canonical entry point and requires that procedure before
+substantive project work begins.
+
+Fresh-session reconstruction is intentionally not tied to today's issue or PR
+numbers. A capable session must discover the active work dynamically by
+reconciling current repository authority with the complete GitHub work record,
+including open and closed issues, issue comments, open/merged/closed PRs, PR
+reasoning, relevant branch heads, and recent Git history.
+
+If a new chat requires a long conversation-specific handoff to know what the
+project is doing, treat that as evidence that repository continuity needs to be
+improved.
+
 ## Two-layer model
 
 ### Portable continuity layer
