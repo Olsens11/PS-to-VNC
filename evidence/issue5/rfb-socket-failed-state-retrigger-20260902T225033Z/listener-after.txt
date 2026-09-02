@@ -1,0 +1,2 @@
+State  Recv-Q Send-Q     Local Address:Port Peer Address:PortProcess                                                                                   
+LISTEN 0      4096   192.168.50.1%eth0:5900      0.0.0.0:*    users:(("Xtigervnc",pid=14315,fd=3),("Xtigervnc",pid=14315,fd=0),("systemd",pid=1,fd=74))

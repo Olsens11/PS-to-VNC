@@ -1,0 +1,3 @@
+Sep 02 18:48:28.850525 ps-to-vnc-dev systemd[1]: ps-to-vnc-rfb-tigervnc.service: Sent signal SIGKILL to main process 12307 (Xtigervnc) on client request.
+Sep 02 18:48:28.866807 ps-to-vnc-dev systemd[1]: ps-to-vnc-rfb-tigervnc.service: Main process exited, code=killed, status=9/KILL
+Sep 02 18:48:28.867560 ps-to-vnc-dev systemd[1]: ps-to-vnc-rfb-tigervnc.service: Failed with result 'signal'.

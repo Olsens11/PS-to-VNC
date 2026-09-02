@@ -1,0 +1,2 @@
+State      Recv-Q Send-Q     Local Address:Port Peer Address:Port Process
+FIN-WAIT-2 0      0      192.168.50.1%eth0:5900 192.168.50.2:52432       

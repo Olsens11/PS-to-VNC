@@ -1,0 +1,34 @@
+● ps-to-vnc-rfb.socket - PS-to-VNC PS2-facing RFB activation socket
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb.socket; disabled; preset: enabled)
+     Active: active (listening) since Wed 2026-09-02 18:17:34 EDT; 37min ago
+ Invocation: eade09b369c34337a760de04497fe44f
+   Triggers: ● ps-to-vnc-rfb-tigervnc.service
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+     Listen: 192.168.50.1:5900 (Stream)
+      Tasks: 0 (limit: 8796)
+        CPU: 921us
+     CGroup: /system.slice/ps-to-vnc-rfb.socket
+
+Sep 02 18:17:34 ps-to-vnc-dev systemd[1]: Listening on ps-to-vnc-rfb.socket - PS-to-VNC PS2-facing RFB activation socket.
+
+○ ps-to-vnc-rfb-tigervnc.service - PS-to-VNC socket-activated TigerVNC RFB provider
+     Loaded: loaded (/etc/systemd/system/ps-to-vnc-rfb-tigervnc.service; static)
+     Active: inactive (dead) since Wed 2026-09-02 18:54:30 EDT; 9s ago
+   Duration: 3min 49.086s
+ Invocation: 9c217b8772334382a80b6f648b68ec78
+TriggeredBy: ● ps-to-vnc-rfb.socket
+       Docs: https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+    Process: 14315 ExecStart=/usr/bin/Xtigervnc :1 -inetd -geometry 704x462 -depth 16 -pixelformat RGB565 -SecurityTypes None -AcceptSetDesktopSize=0 -UseIPv6=0 -nolisten tcp -Log *:syslog:30 (code=exited, status=0/SUCCESS)
+   Main PID: 14315 (code=exited, status=0/SUCCESS)
+        CPU: 219ms
+
+Sep 02 18:54:30 ps-to-vnc-dev Xtigervnc[14315]: EncodeManager: Framebuffer updates: 2
+Sep 02 18:54:30 ps-to-vnc-dev Xtigervnc[14315]: EncodeManager:   Raw:
+Sep 02 18:54:30 ps-to-vnc-dev Xtigervnc[14315]: EncodeManager:     Solid: 10 rects, 650.496 kpixels
+Sep 02 18:54:30 ps-to-vnc-dev Xtigervnc[14315]: EncodeManager:            1.24084 MiB (1:1 ratio)
+Sep 02 18:54:30 ps-to-vnc-dev Xtigervnc[14315]: EncodeManager:   Total: 10 rects, 650.496 kpixels
+Sep 02 18:54:30 ps-to-vnc-dev Xtigervnc[14315]: EncodeManager:          1.24084 MiB (1:1 ratio)
+Sep 02 18:54:30 ps-to-vnc-dev Xtigervnc[14315]: ComparingUpdateTracker: 325.248 kpixels in / 325.248 kpixels out
+Sep 02 18:54:30 ps-to-vnc-dev Xtigervnc[14315]: ComparingUpdateTracker: (1:1 ratio)
+Sep 02 18:54:30 ps-to-vnc-dev systemd[1]: ps-to-vnc-rfb-tigervnc.service: Deactivated successfully.
+Sep 02 18:54:30 ps-to-vnc-dev systemd[1]: Stopped ps-to-vnc-rfb-tigervnc.service - PS-to-VNC socket-activated TigerVNC RFB provider.
