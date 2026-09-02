@@ -1,241 +1,153 @@
 # Current Project Status
 
-This is the concise human-readable current-state authority.
+Temporal role: `SNAPSHOT`
 
-Chronological migration/exploratory history remains in `docs/MIGRATION_STATE.md`,
-preserved evidence, and Git.
+Recorded at: `2026-09-02T15:01:00-04:00`
 
-## Product
+This file is the concise human-readable status snapshot **as recorded at the
+time above**. It is not an eternal present-tense authority. Before repeating any
+`current`, `active`, `next`, `blocked`, progress, or workstream claim from this
+file, reconcile it with newer GitHub/repository/live state under
+`docs/development/TEMPORAL_STATE_SEMANTICS.md`.
 
-    version=0.1.0-alpha.1
+Older versions of this file remain historical snapshots in Git history.
 
-## Current phase
+## Product / reconstruction principle
 
-    PHASE=PRESERVE_CLEAN_UNDERSTAND_RECONSTRUCT
-    REFERENCE_PRESERVATION=COMPLETE
-    SEMANTIC_AUDIT=COMPLETE
-    CLEAN_ARCHITECTURE=REBUILD_READY
-    CLEAN_PS2_RECONSTRUCTION=NOT_STARTED
-    PI_REPRODUCIBILITY_PACKAGE=NOT_STARTED
+PS-to-VNC is the clean successor to the historical PS2VNC research project.
 
-The reconstruction principle remains:
+The governing reconstruction principle remains:
 
-> Rebuild PS-to-VNC as the program we would have written if we had known at the
-> beginning everything the exploratory implementation taught us.
-
-Frozen B4A/current code and migration-era slices remain behavioral/reference
-authority and sources of proven mechanisms. They are not the structural
-blueprint for the new product.
-
-## Current architecture authority
-
-The clean reconstruction architecture is now:
-
-    docs/CLEAN_ARCHITECTURE.md
-
-It was derived from the completed B01-B14 semantic audit rather than from the
-M4 file hierarchy.
-
-For new clean-reconstruction work, `CLEAN_ARCHITECTURE.md` supersedes the
-normalization-era target documents as current design authority. The older
-`ARCHITECTURE.md`, `TARGET_ARCHITECTURE.md`, `STATE_OWNERSHIP.md`,
-`DEPENDENCY_RULES.md`, `NORMALIZATION_SEQUENCE.md`, and
-`ARCHITECTURAL_NORMALIZATION.md` remain historical/reference material.
-
-The architecture is responsibility-oriented and deliberately small. Its stable
-contract is ownership/dependency direction, not an exact permanent count of `.c`
-files.
-
-## Semantic audit completion
-
-B01 through B14 have completed:
-
-- behavioral/source/evidence audit;
-- historical source/state/coupling mapping;
-- historical experiment/lesson mining;
-- cross-domain state ownership;
-- interface/dependency synthesis;
-- startup/live/display-transition/recovery flow verification;
-- current clean-architecture derivation.
-
-Current maturity authority:
-
-    docs/audit/REBUILD_READY_PROMOTION.md
-
-All B01-B14 behavior families are now:
-
-    REBUILD_READY
-
-`docs/audit/BEHAVIORAL_INVENTORY.md` remains the detailed evidence-harvest ledger
-and intentionally preserves the earlier `EVIDENCE_SUPPORTED` checkpoint inside
-its long-form entries. The promotion record is additive rather than a cosmetic
-rewrite of that historical audit record.
-
-Durable audit outputs:
+> **Rebuild PS-to-VNC as the program we would have written if we had known at
+> the beginning everything the exploratory implementation taught us.**
 
-    docs/audit/BEHAVIORAL_INVENTORY.md
-    docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md
-    docs/audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md
-    docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md
-    docs/audit/SOURCE_RESPONSIBILITY_MAP.md
-    docs/audit/HISTORICAL_LESSONS.md
-    docs/audit/CROSS_DOMAIN_SYNTHESIS.md
-    docs/audit/CROSS_DOMAIN_STATE_INTERFACES.md
-    docs/audit/REBUILD_READY_PROMOTION.md
-
-GitHub Issues #1, #2, #3, #4, and #6 closed as completed when PR #12 promoted the
-semantic audit and clean architecture to `main`.
-
-## Core clean-architecture conclusions
-
-The initial PS2 design has explicit owners for:
-
-- application orchestration/policy;
-- one RFB session/stream;
-- one authoritative CPU-side desktop framebuffer;
-- display model/profile and PS2 presentation;
-- controller/input semantics;
-- local UI/OSK;
-- typed human configuration;
-- the small Pi management client;
-- diagnostics/runtime identity;
-- genuinely PS2-specific platform mechanisms.
+Current clean architecture authority remains `docs/CLEAN_ARCHITECTURE.md`.
+Historical/normalization-era architecture remains evidence/reference rather
+than the structural blueprint for new work.
 
-Important cross-domain rules include:
-
-- main/application remains the sole VNC socket owner;
-- controller publishes typed semantic input rather than encoded RFB packets;
-- ordinary semantic input, urgent control intent, and libpad ownership handoff
-  are three separate cross-thread seams;
-- RFB may keep straightforward exact-length parsing;
-- after input becomes active, nonblocking RFB refill permits benign application
-  yield only at a complete server-message boundary before partial consumption;
-- Refresh/rollback/exit may hard-interrupt a partial receive only by treating the
-  old stream as suspect and replacing it;
-- RFB decoding, CPU framebuffer validity, and GS/presentation validity are
-  separate concepts;
-- complete `display_profile` values cross config/application/display/RFB/
-  management boundaries rather than component globals;
-- display transitions remain application-owned cross-machine transactions;
-- local UI has a first-class local dirty/wake path and does not depend on remote
-  pointer-jiggle damage;
-- human desired configuration, accepted live state, and crash-safe Pi
-  transaction authority remain separate;
-- explicit link/socket/RFB failures may recover automatically, while unexplained
-  silent stalls remain manual under the current debugging policy;
-- diagnostics observes product state without owning it;
-- changed PT_LOAD remains hardware-gated unless explicit qualification-transfer
-  authority exists.
+## Integrated repository authority at this snapshot
 
-## Historical mechanisms adopted/deferred
+`main`:
 
-Adopted or adapted into clean ownership include the qualified PS2IP/private-link
-foundation, exact RFB framing, one-thread socket ownership, authoritative full
-frame before normal incremental operation, Test14 HIRES interrupt discipline,
-complete display-profile rollback, libpad handoff, input quarantine, one-shot
-OSK modifiers, strict config validation, manual Refresh cooldown, durable Pi
-transaction reconciliation, deterministic runtime identity, endpoint-based Pi
-health, and exact DUT/PT_LOAD/apparatus/evidence qualification.
+`34b53d724dede1f3875d136a8adf59ce888fa680`
 
-Deferred from the first clean milestone include direct-to-presentation paths that
-can stale the conventional framebuffer, advanced dirty/Hextile/presentation
-optimization, MPEG/hybrid video, nonessential exploratory display modes, and
-replacement of mature TestKit merely for aesthetic consistency.
+The semantic audit and clean architecture are already promoted to `main` and
+remain the current integrated design foundation.
 
-The first clean hardware milestones continue through the proven immutable
-successor-to-legacy TestKit bridge.
+## Active workstreams at this snapshot
 
-## Pi companion boundary
+### Development continuity / major-investigation casebook / branch hygiene
 
-The Pi behavior is `REBUILD_READY`, while exact clean-platform package adoption
-remains implementation work under GitHub Issue #5.
+- branch: `docs/fresh-session-reconstruction`
+- PR: #16 — `Document complete fresh-session reconstruction`
+- state: `ACTIVE`, draft
+- purpose: fresh-session reconstruction, temporal/status semantics, major
+  investigation casebook, branch/workstream index, branch lifecycle/cold-storage
+  policy, and continuity improvements.
 
-The clean companion remains a normal supported Raspberry Pi OS plus narrowly
-product-specific state/services:
+This branch is also performing the current read-only branch deobfuscation audit.
+No branch may be deleted without explicit user approval for that specific branch.
+The preferred retirement path is verified cold storage first.
 
-- private PS2 Ethernet;
-- predictable dedicated VNC desktop;
-- small management/persistence service;
-- endpoint-based health/recovery;
-- operator controls;
-- versioned installer/package definition and dependency ledger.
+### Clean Raspberry Pi foundation
 
-Historical TigerVNC/Openbox/lxpanel and VNC-only pacing are reference candidates
-to classify as `EVALUATING`/`ADOPTED_*` through the clean ledger rather than
-being copied as unexplained machine folklore.
+- branch: `pi/issue5-clean-baseline`
+- head: `87baebce32e3c07ffc12298d6a168ac890231cf2`
+- issue: #5
+- state: `ACTIVE`
 
-## Preserved exploratory hardware authority
+This remains the current clean Pi foundation/dependency baseline.
 
-The final completed normalization boundary before the strategic restart remains
-M4I diagnostics.
+### PS2-facing RFB endpoint lifecycle candidate
 
-Final qualified source generation:
+- branch: `pi/issue5-rfb-socket-activation-candidate`
+- PR: #17 — `Evaluate PS2-facing RFB endpoint lifecycle`
+- head observed during this snapshot: `66988ebcfb1eed57cb84f422fb84bdb6faf98952`
+- state: `EVALUATING` / `CANDIDATE`
 
-    SOURCE_COMMIT=d205e32637a4cb0e7295a267cc471b076e58791d
-    SOURCE_AUTHORITY_COMMIT=c62c7f7ee9a57bac03dcc9d20285400c2b1e2bc8
-    ELF_SHA256=62e9b180ba73fc1377f853cfe21c17449be958723be6e7a2142de02dd1cee75e
-    PT_LOAD_SHA256=fbb9a68913a10468827e72ef1db5c912a475fd357179f5f2cb993f3491d145db
-    PT_LOAD_BYTES=450696
+Socket activation and associated lifecycle choices are not architecture merely
+because they are implemented on this branch. They require live qualification
+and comparison against the conventional persistent-provider control before any
+promotion.
 
-Final direct hardware authority:
+### Clean minimal PS2 core
 
-    TEST_ID=M4I-FINAL-HW1
-    HARDWARE_AUTHORITY_COMMIT=9ec0ddc6505f422dffd966b8be9c34aff97d6b38
-    MACHINE_RESULT=PASS_5_OF_5
-    PHYSICAL_RESULT=FULL_PASS
-    FINAL_STARTUP_MODE=480p
+- branch: `reconstruct/issue7-minimal-core`
+- PR: #15 — `Reconstruct minimal Raw 480p PS2↔Pi core`
+- head observed during this snapshot: `e7b4a35f681101fe39e59c4b04b28740b0f536de`
+- state: `ACTIVE`, draft
 
-These remain valid historical/empirical authorities. Former planned
-`M4J_management_normalization` is not the current roadmap.
+The clean minimal Raw/480p core remains the active Issue #7 workstream. Draft
+status means its current branch state must not be described as merged `main`
+authority.
 
-## Reconstruction progress
+### Preserved w0vncserver feasibility experiment
 
-Planning indicators:
+- branch: `archive/w0vncserver-1.16.2-experiment`
+- state: `PROTECTED_ARCHIVE`
 
-    REFERENCE_PRESERVATION=100_PERCENT
-    SEMANTIC_AUDIT=100_PERCENT
-    CLEAN_PS2_RECONSTRUCTION=0_PERCENT
-    PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
-    GITHUB_RECONCILIATION=100_PERCENT
+The experiment is preserved evidence, not current provider architecture.
 
-The previous `OVERALL_ARCHITECTURAL_NORMALIZATION` percentage remains historical
-and is not reconstruction progress.
+## Major-investigation casebook at this snapshot
 
-PR #12 promoted the completed semantic audit and clean architecture to `main` at:
+The casebook is being introduced on PR #16 under `docs/investigations/`.
 
-    SEMANTIC_AUDIT_PROMOTION_MAIN=a990bdc447f7f2073952b166b8cbd66e331f4e98
+- `MI-001` — `RESOLVED`: GS/EE HIRES HSync / `ExitHandler()` handoff.
+- `MI-002` — `OPEN_NON_BLOCKING`: MTU1458 / SMAP RX corruption.
+- `MI-003` — `OPEN_NON_BLOCKING`: PS2 receive burst tolerance / sender pacing.
+- `MI-004` — `OPEN_NON_BLOCKING`: display-transition liveness / green-corruption
+  family.
+- `MI-005` — `OPEN_NON_BLOCKING`: persistent 576p low-level transition stall.
 
-## Development continuity
+Open investigation status does not automatically block unrelated work. Resolved
+cases remain relevant when they explain a current invariant.
 
-    SESSION_BOOTSTRAP=AGENTS.md
-    DOCS_ROUTER=docs/README.md
-    DEVELOPMENT_POLICY=docs/development/README.md
-    PROJECT_INTENT=docs/PROJECT_INTENT.md
-    CLEAN_ARCHITECTURE=docs/CLEAN_ARCHITECTURE.md
-    MACHINE_CURRENT_STATE=runtime/PROJECT_STATE.env
-    MIGRATION_STATE_ROLE=HISTORICAL_REFERENCE
+## Branch clarity at this snapshot
 
-Repository authority remains more important than conversation memory.
+The authoritative routing aid on PR #16 is:
 
-## Frozen safety boundary
+`docs/development/BRANCH_WORKSTREAM_INDEX.md`
 
-Historical repository:
+The branch list must be treated as a timestamped inventory, not memorized.
+Several fully merged transition/audit branches are classified `SUPERSEDED` and
+are candidates for later retirement review, while
+`reconstruction/m1-minimal-core` still has unique-history review outstanding.
+No retirement recommendation is deletion permission.
 
-    /home/ps2/ps2vnc
+## Protected boundaries
 
-It remains immutable reference authority. Frozen B4A and successor-era evidence
-must not be destroyed or silently rewritten by clean reconstruction work.
+- historical PS2VNC repository remains read-only historical/provenance authority;
+- do not silently substitute PS2IP/network dependencies during unrelated work;
+- do not treat exploratory providers or branch-local candidates as architecture;
+- preserve machine evidence separately from physical/operator observation;
+- do not reset/clean/discard dirty worktrees during context reconstruction;
+- no branch deletion without branch-specific explicit user approval.
 
-## Next action
+## Immediate work ordering recorded at this snapshot
 
-    NEXT_ACTION=BEGIN_ISSUES_5_AND_7_IN_PARALLEL
-    BLOCKED_BY=NONE
+1. Continue the **branch deobfuscation/read-only lifecycle audit** and clarify
+   branch/workstream ownership before doing broader new-session infrastructure
+   expansion.
+2. Complete the special harvest/review of `reconstruction/m1-minimal-core` and
+   the fully merged retirement candidates; do not delete anything.
+3. Continue/finish PR #16 review and continuity/casebook integration when the
+   branch picture is understood.
+4. After the branch picture is clear, improve the fresh-conversation bootstrap
+   further, deliberately mining the successful PS2VNC documentation/status/
+   TestKit continuity system for reusable lessons.
+5. Continue active Issue #5 / PR #17 and Issue #7 / PR #15 engineering according
+   to their own qualification gates rather than allowing documentation cleanup
+   to redefine their technical evidence.
 
-Parallel next workstreams:
+## Freshness rule
 
-- GitHub Issue #5 — establish the clean Pi baseline/dependency ledger and first
-  reproducible companion contract;
-- GitHub Issue #7 — construct the smallest clean PS2/Pi Ethernet + RFB core in
-  the promoted architecture.
+If this timestamp is older than newer project activity, do **not** say that the
+workstreams or next actions above are still current merely because this file uses
+present tense.
 
-Current machine-readable authority is `runtime/PROJECT_STATE.env`.
+Say instead:
+
+> "The project status snapshot recorded at 2026-09-02T15:01:00-04:00 said ..."
+
+Then reconcile against newer GitHub branch/PR/issue state, later status records,
+and identity-valid live state before describing the present.
