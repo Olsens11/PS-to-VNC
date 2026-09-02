@@ -32,6 +32,28 @@ If a new chat requires a long conversation-specific handoff to know what the
 project is doing, treat that as evidence that repository continuity needs to be
 improved.
 
+## Reconstruction philosophy must affect decisions
+
+Continuity is incomplete if a session can recite `docs/PROJECT_INTENT.md` but
+then makes implementation choices without applying it.
+
+After reconstructing state and before promoting a meaningful solution, use the
+decision discipline defined in `AGENTS.md` and
+`docs/development/SESSION_RECONSTRUCTION.md`:
+
+- identify the durable requirement or historical lesson;
+- separate it from accidental historical implementation structure;
+- start with the conventional supported mechanism for the target platform;
+- justify any PS-to-VNC-specific adaptation by a concrete product benefit;
+- keep ownership/provider seams replaceable where evidence says future change is
+  plausible;
+- defer speculative future infrastructure rather than pre-building it;
+- state the empirical qualification gate that can promote or reject the choice.
+
+A development handoff should therefore communicate not only **what we are doing**
+but enough authority and procedure for the next session to understand **why this
+is the clean-reconstruction choice**.
+
 ## Two-layer model
 
 ### Portable continuity layer
