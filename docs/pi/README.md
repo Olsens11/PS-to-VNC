@@ -10,6 +10,7 @@
     TRACKED_FOUNDATION_PROVISIONING=READY
     TIGERVNC_SESSION_CANDIDATE=DEFINED
     TIGERVNC_SESSION_LIVE_VALIDATION=PENDING
+    RFB_SOCKET_ACTIVATION=EVALUATING
 
 This directory is the current authority for building the clean Raspberry Pi
 companion from a normal supported Raspberry Pi OS installation.
@@ -18,6 +19,11 @@ The governing rule is:
 
 > Every product-significant deviation from the virgin supported OS must be
 > declared, reproducible, and justified.
+
+For mechanism selection, prefer conventional Linux ownership/lifecycle first,
+then adapt policy where PS-to-VNC gains a demonstrated product benefit. A useful
+project-specific behavior is not rejected merely because it is not a distro
+default; it should be implemented through standard mechanisms where practical.
 
 The old PS2VNC Pi remains forensic/reference authority. It is not an installation
 template for this machine.
@@ -100,11 +106,44 @@ from source/package documentation alone, especially exact installed executable
 behavior, systemd lifecycle, no-carrier network ordering, listener ownership,
 and a deterministic incremental-update stimulus.
 
+## RFB connection-establishment evaluation
+
+`RFB_ACTIVATION_RESEARCH.md` records the standards research prompted by the
+observed cold-boot/first-connect race. `RFB_SOCKET_ACTIVATION.md` turns that
+research into one deliberately narrow live candidate.
+
+The preferred experiment uses:
+
+- NetworkManager for the static private `eth0` identity;
+- systemd `Accept=no` socket activation for an always-ready kernel listener;
+- `BindToDevice=eth0` and `FreeBind=yes` for private-interface and boot-order
+  semantics;
+- TigerVNC's documented `-inetd` **wait** mode so one demand-started Xtigervnc
+  inherits the listening socket and remains available for reconnects.
+
+This is still `EVALUATING`. The ordinary always-running direct Xtigervnc service
+remains the control/fallback. A scoped NetworkManager `ignore-carrier` snippet is
+also tracked only as a conditional candidate and must not be installed unless a
+read-only baseline proves the existing static profile does not own
+`192.168.50.1/24` before carrier.
+
+Prepared apparatus and mutation staging are intentionally separate:
+
+- `scripts/pi/inspect-rfb-activation.sh` — read-only preflight;
+- `scripts/pi/capture-rfb-activation-timeline.sh` — bounded read-only timing and
+  packet evidence;
+- `scripts/pi/install-rfb-activation-units.sh` — fail-closed unit-file staging,
+  with no enable/start/stop side effects;
+- `scripts/pi/install-ps2-link-no-carrier-candidate.sh` — fail-closed conditional
+  NetworkManager snippet staging, with no reload or connection-state side effect.
+
 ## Current next step
 
-Apply the tracked foundation provisioning on the clean Pi from an exact
-`pi/issue5-clean-baseline` checkout and record the resulting package/network
-identity. Then validate the candidate in `TIGERVNC_SESSION.md` live before
-promoting an installed service unit.
+On the next hardware session, capture the untouched pre-change no-carrier state
+and one current first-connect attempt before installing the socket-activation
+candidate. Use that evidence to decide whether the NetworkManager no-carrier
+snippet is necessary. Then validate socket ownership, one-launch demand
+activation, RFB first bytes, persistent reconnect behavior, controlled service
+exit/retrigger behavior, and finally cold reboot behavior.
 
-No live product provisioning has yet been claimed by this branch.
+No socket-activation or no-carrier candidate has been promoted by this branch.
