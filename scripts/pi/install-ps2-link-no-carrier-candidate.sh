@@ -31,7 +31,7 @@ if [ "${EUID}" -ne 0 ]; then
     exit 3
 fi
 
-for tool in cmp install sha256sum; do
+for tool in awk cmp dirname install rm sha256sum; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         echo "ERROR: required tool missing: $tool" >&2
         exit 4
