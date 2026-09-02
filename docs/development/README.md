@@ -32,6 +32,30 @@ If a new chat requires a long conversation-specific handoff to know what the
 project is doing, treat that as evidence that repository continuity needs to be
 improved.
 
+## Branch lifecycle and cold storage
+
+Branch count is a continuity concern too. Developers should not be expected to
+remember which branch contains which work or infer safety from a branch name.
+
+The branch audit / retirement policy is:
+
+    docs/development/BRANCH_LIFECYCLE.md
+
+Important rules include:
+
+- branch audits may recommend `SAFE_TO_RETIRE`, but never delete automatically;
+- **every branch deletion requires explicit user approval for that specific
+  branch**;
+- the preferred retirement path is a verified self-contained Git archive/bundle
+  plus a manifest and SHA-256 in cold storage before the live branch ref is
+  removed;
+- merged status alone is not permission to retire a branch;
+- protected archive branches and dirty worktrees must be treated as evidence,
+  not cleanup debris.
+
+When the branch list becomes difficult to understand, improve the branch/workstream
+index and perform a read-only audit before considering any deletion.
+
 ## Reconstruction philosophy must affect decisions
 
 Continuity is incomplete if a session can recite `docs/PROJECT_INTENT.md` but
