@@ -364,12 +364,10 @@ static void test_connect_failure_cleans_only_acquired_resources(void)
 
     CHECK(pstvnc_app_run() == -1);
     CHECK(event_occurrences(EV_CLOSE) == 0);
-    CHECK(event_occurrences(EV_GRAPHICS_SHUTDOWN) == 1);
+    CHECK(event_occurrences(EV_GRAPHICS_SHUTDOWN) == 0);
     CHECK(event_occurrences(EV_DIAG_SHUTDOWN) == 1);
-    CHECK(diagnostic_count == 3);
-    CHECK(strcmp(diagnostics[0], "PSTVNC_STAGE NET_READY") == 0);
-    CHECK(strcmp(diagnostics[1], "PSTVNC_STAGE GS_READY") == 0);
-    CHECK(strcmp(diagnostics[2], "PSTVNC_STAGE FATAL") == 0);
+    CHECK(diagnostic_count == 1);
+    CHECK(strcmp(diagnostics[0], "PSTVNC_STAGE FATAL") == 0);
 }
 
 static void test_session_failure_cleanup_order(void)
