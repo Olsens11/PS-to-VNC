@@ -129,18 +129,29 @@ profile should be entered, kept, or rolled back.
 
 ### Input/controller
 
-Owns:
+This is a responsibility family rather than a requirement for one controller
+translation layer.
 
-- controller polling/thread lifecycle;
-- physical and derived pad state;
+At the hardware-facing edge, PS-to-VNC uses PS2SDK `libpad` directly and keeps
+its established PS2 vocabulary. Basic pad acquisition owns factual physical
+observation, minimal immediate transition history, polling/lifecycle state, and
+stale-state invalidation across libpad ownership boundaries.
+
+Higher-level input responsibilities compose around those facts:
+
 - pointer/scroll response;
-- chord/hold/release recognition;
+- optional chord/hold/release recognition;
 - live binding recognition;
 - libpad acquire/ack/release handoff;
 - physical-release quarantine;
 - semantic input-event production.
 
+Pointer interpretation and chord recognition are not properties of basic pad
+acquisition. Chord semantics are opt-in per consuming input path.
+
 Input never writes the RFB socket or manipulates GS/display state.
+
+See `adr/0002-use-libpad-directly-reference-opl.md`.
 
 ### Local UI
 
@@ -503,6 +514,7 @@ Start small:
         rfb.c / rfb.h
         framebuffer.c / framebuffer.h
         display.c / display.h
+        pad.c / pad.h
         input.c / input.h
         ui.c / ui.h
         config.c / config.h
@@ -512,7 +524,6 @@ Start small:
         platform/
             ps2_system.c / ps2_system.h
             ps2_network.c / ps2_network.h
-            ps2_pad.c / ps2_pad.h
             ps2_graphics.c / ps2_graphics.h
 
 A separate `ps2_graphics_hires.c`, Hextile implementation file, OSK file, pure
@@ -520,8 +531,16 @@ display-model/geometry file, or other split is introduced only when real
 implementation size, independent testing, or hardware invariants make the split
 clearer.
 
+Stage #38 refined the earlier candidate `input.c` plus
+`platform/ps2_pad.c` split. `pad.c` / `pad.h` owns the minimal project-specific
+use of libpad; it is not a replacement controller API. A broader `input.c`
+remains available when semantic routing or another earned input responsibility
+requires it.
+
 The architecture does **not** require this exact file count. It requires the
 ownership contract above.
+
+See `adr/0002-use-libpad-directly-reference-opl.md`.
 
 ---
 

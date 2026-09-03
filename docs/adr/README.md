@@ -26,3 +26,11 @@ Recommended sections:
 
 Accepted ADRs are append-only in spirit. If a decision changes, prefer a new
 ADR that supersedes the old one rather than rewriting historical rationale.
+
+## Accepted records
+
+- `0001-development-continuity-baseline.md` — repository-centered development
+  continuity.
+- `0002-use-libpad-directly-reference-opl.md` — use PS2SDK libpad directly,
+  consult OPL as the preferred mature pad-usage reference, and add only
+  project-specific pad/controller responsibility.

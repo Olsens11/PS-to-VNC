@@ -141,6 +141,7 @@ Decision records:
 
 - `docs/adr/README.md`
 - `docs/adr/0001-development-continuity-baseline.md`
+- `docs/adr/0002-use-libpad-directly-reference-opl.md`
 
 Machine-readable development-system state:
 
