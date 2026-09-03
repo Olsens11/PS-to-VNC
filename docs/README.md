@@ -85,6 +85,8 @@ outputs.
 
 ## Development process
 
+- `development/source-naming-and-symbols.md` — naming, file-orientation, and
+  complete source-symbol dictionary policy.
 - `development/README.md`
 - `development/documentation.md`
 - `development/testing.md`
@@ -98,6 +100,13 @@ These documents describe how development itself is conducted and preserved.
 - `adr/` — current Architecture Decision Records.
 - retained historical decision material remains historical evidence until
   explicitly reconciled.
+
+## Source dictionaries
+
+- `reference/SOURCE_SYMBOL_DICTIONARIES.md` — generated portal for the
+  directory-owned clean-source dictionaries.
+- `development/source-naming-and-symbols.md` — governing naming, description,
+  scope, and validation policy.
 
 ## Testing and evidence
 

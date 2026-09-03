@@ -10,8 +10,8 @@ cd "$ROOT"
 
 PREP="$ROOT/scripts/testkit/prepare-hardware-elf.sh"
 PT="$ROOT/scripts/testkit/pt-load-fingerprint.sh"
-
-LEGACY="${PS2VNC_LEGACY_TESTKIT_ROOT:-/home/ps2/ps2vnc/scripts/testkit}"
+STAMP="$ROOT/scripts/testkit/stamp-elf-identity.sh"
+VERIFY="$ROOT/scripts/testkit/verify-elf-identity.sh"
 
 FIXTURE="${TESTKIT_FIXTURE_ELF:-$ROOT/working/b4a/PS2VNC.ELF}"
 TEST_ID="${TESTKIT_SELF_TEST_ID:-PS-TO-VNC-TESTKIT-SELFTEST}"
@@ -19,8 +19,8 @@ TEST_ID="${TESTKIT_SELF_TEST_ID:-PS-TO-VNC-TESTKIT-SELFTEST}"
 for tool in \
     "$PREP" \
     "$PT" \
-    "$LEGACY/stamp-elf-identity.sh" \
-    "$LEGACY/verify-elf-identity.sh"
+    "$STAMP" \
+    "$VERIFY"
 do
     [ -x "$tool" ] || {
         echo "required executable missing: $tool" >&2
@@ -35,6 +35,8 @@ done
 
 bash -n "$PREP"
 bash -n "$PT"
+bash -n "$STAMP"
+bash -n "$VERIFY"
 
 ABS_TMP="$(mktemp -d)"
 REL_TMP="$(mktemp -d .testkit-self-test.XXXXXX)"
@@ -72,7 +74,11 @@ grep -qx \
     'TESTKIT_PREPARE_HARDWARE_ELF=PASS' \
     "$ABS_TMP/absolute.txt"
 
-echo '[SELFTEST] relative pristine + relative output across legacy delegation'
+grep -qx \
+    'IDENTITY_TOOL_AUTHORITY=SUCCESSOR_REPOSITORY' \
+    "$ABS_TMP/absolute.txt"
+
+echo '[SELFTEST] relative pristine + relative output'
 
 "$PREP" \
     working/b4a/PS2VNC.ELF \
@@ -84,26 +90,9 @@ grep -qx \
     'TESTKIT_PREPARE_HARDWARE_ELF=PASS' \
     "$ABS_TMP/relative.txt"
 
-echo '[SELFTEST] explicit legacy TestKit override'
-
-PS2VNC_LEGACY_TESTKIT_ROOT="$LEGACY" \
-"$PREP" \
-    "$FIXTURE" \
-    "$TEST_ID" \
-    "$ABS_TMP/override.ELF" \
-    > "$ABS_TMP/override.txt"
-
-grep -qx \
-    'TESTKIT_PREPARE_HARDWARE_ELF=PASS' \
-    "$ABS_TMP/override.txt"
-
 cmp -s \
     "$ABS_TMP/absolute.ELF" \
     "$REL_TMP/relative.ELF"
-
-cmp -s \
-    "$ABS_TMP/absolute.ELF" \
-    "$ABS_TMP/override.ELF"
 
 prepared_sha="$(
     sha256sum "$ABS_TMP/absolute.ELF" |
@@ -115,13 +104,7 @@ relative_sha="$(
     awk '{print $1}'
 )"
 
-override_sha="$(
-    sha256sum "$ABS_TMP/override.ELF" |
-    awk '{print $1}'
-)"
-
 [ "$prepared_sha" = "$relative_sha" ]
-[ "$prepared_sha" = "$override_sha" ]
 
 identity="$(
     sed -n \
@@ -132,7 +115,7 @@ identity="$(
 
 [ -n "$identity" ]
 
-"$LEGACY/verify-elf-identity.sh" \
+"$VERIFY" \
     "$ABS_TMP/absolute.ELF" \
     "$TEST_ID" \
     "$identity" \
@@ -161,29 +144,33 @@ after="$(
 
 [ "$before" = "$after" ]
 
-echo 'TESTKIT_SELF_TEST_VERSION=2'
+echo 'TESTKIT_SELF_TEST_VERSION=3'
+echo 'TESTKIT_SELF_TEST_SCOPE=SUCCESSOR_IDENTITY_PREPARATION'
 echo "FIXTURE_ELF_SHA256=$before"
 echo "SELF_TEST_ID=$TEST_ID"
 echo "PREPARED_ELF_SHA256=$prepared_sha"
 echo 'ABSOLUTE_OUTPUT_PATH=PASS'
 echo 'RELATIVE_PRISTINE_PATH=PASS'
 echo 'RELATIVE_OUTPUT_PATH=PASS'
-echo 'CROSS_REPOSITORY_DELEGATION_PATH_NORMALIZATION=PASS'
-echo 'DEFAULT_LEGACY_TESTKIT_PATH=PASS'
-echo 'OVERRIDE_LEGACY_TESTKIT_PATH=PASS'
+echo 'SUCCESSOR_IDENTITY_TOOLING=PASS'
 echo 'DETERMINISTIC_PREPARATION=PASS'
 echo 'CORRECT_THREE_ARGUMENT_IDENTITY_VERIFY=PASS'
 echo 'EXISTING_OUTPUT_FAIL_CLOSED=PASS'
 echo 'FIXTURE_IMMUTABLE=PASS'
-echo '[SELFTEST] M4 hardware-checkpoint activation'
-python3 scripts/testkit/activation-self-test.py
+
+echo '[SELFTEST] sealed historical identity compatibility'
+./scripts/testkit/successor-identity-compat-self-test.py
 
 echo '[SELFTEST] runtime identity message serialization'
-
 ./scripts/testkit/identity-runtime-message-self-test.sh
 
-echo '[SELFTEST] successor / frozen-legacy hardware bridge'
+# Checkpoint activation remains a separate historical/current-state concern.
+# Issue #7 hardware execution is now owned entirely by successor tooling.
+echo 'CHECKPOINT_ACTIVATION_SELF_TEST=SEPARATE_SCOPE'
+echo 'LEGACY_HARDWARE_BRIDGE=RETIRED'
 
-./scripts/testkit/legacy-hardware-bridge-self-test.py
+echo '[SELFTEST] successor Issue #7 hardware apparatus'
+./scripts/testkit/issue7-apparatus-self-test.sh
+echo 'ISSUE7_HARDWARE_APPARATUS_SELF_TEST=PASS'
 
 echo 'PS_TO_VNC_TESTKIT_SELF_TEST=PASS'

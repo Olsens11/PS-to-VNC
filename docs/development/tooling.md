@@ -35,21 +35,35 @@ This is the canonical build authority.
 
 ## Hardware TestKit
 
-PS-to-VNC currently inherits proven hardware-test machinery from the frozen
-PS2VNC development environment.
+Issue #7 hardware qualification is now owned directly by PS-to-VNC.
 
-Canonical inherited TestKit location:
+Canonical successor tooling:
 
-    /home/ps2/ps2vnc/scripts/testkit/
+    scripts/testkit/prepare-hardware-elf.sh
+    scripts/testkit/issue7-dut-manifest.py
+    scripts/testkit/issue7-arm-observers.sh
+    scripts/testkit/issue7-deploy-elf.sh
+    scripts/testkit/issue7-stop-observers.sh
+    scripts/testkit/issue7-result.py
+    scripts/testkit/issue7-apparatus-self-test.sh
 
-Before creating a deployment or hardware-test wrapper:
+The apparatus deliberately keeps the Issue #7 evidence contract narrow:
 
-1. inspect the existing TestKit;
-2. inspect the relevant manifest/procedure;
-3. invoke the saved procedure when it already satisfies the test contract.
+- exact committed source/DUT identity;
+- stamped ELF verification;
+- unique and rolling FTP deployment with byte-exact readback;
+- ordered UDP runtime identity and startup-stage capture;
+- PS2-facing packet capture;
+- run-owned observer shutdown;
+- raw-evidence SHA256 sealing;
+- machine-result evaluation separate from physical/operator judgment.
 
-Do not casually copy the TestKit into PS-to-VNC. A future migration should be
-deliberate, provenance-preserving, and self-tested.
+It does not inherit the historical M4 automatic freeze/capture machinery and it
+does not perform automatic silent-stall recovery.
+
+The PS2VNC TestKit remains historical mechanism/evidence authority. It is not a
+live runtime dependency of Issue #7 qualification. The former
+`legacy-hardware-bridge.py` compatibility path is retired.
 
 ## Tool promotion
 
@@ -212,68 +226,25 @@ Use Python `compile()` on source text in memory instead. This validates syntax
 without changing the filesystem and avoids contaminating exact dirty-state
 preconditions.
 
-## Successor / frozen-legacy Hardware TestKit bridge
+## Issue #7 apparatus provenance and boundary
 
-PS-to-VNC successor hardware runs use:
+The successor apparatus was reconstructed from the qualification requirements
+and from mechanically recovered, hash-verified historical TestKit behavior.
+Historical deployment and observer mechanisms remain evidence, not executable
+dependencies.
 
-    scripts/testkit/legacy-hardware-bridge.py
+The migration intentionally did not copy the full historical TestKit. Issue #7
+does not require its display benchmarks, freeze watcher, automatic trigger,
+sampler, or M4 authority machinery.
 
-The bridge does not mutate or casually migrate the frozen PS2VNC repository.
-Instead it:
+The active regression authority is:
 
-1. requires a fully clean successor repository;
-2. requires the exact frozen legacy HEAD;
-3. requires the legacy tracked working tree and index to be unchanged;
-4. deliberately permits and preserves pre-existing untracked legacy
-   evidence/runtime artifacts;
-5. creates a persistent successor-rooted isolated workspace;
-6. copies the inherited legacy `scripts/testkit/` tree byte-for-byte and with
-   executable modes preserved;
-7. records bridge/TestKit provenance;
-8. runs inherited `verify-build.sh` before hardware-facing use.
+    scripts/testkit/issue7-apparatus-self-test.sh
+    scripts/testkit/self-test.sh
 
-The bridge exposes:
-
-    prepare
-    verify
-    deploy-dry-run
-    start
-    status
-    watch
-    result
-
-A hardware manifest must be tracked in the successor repository before
-`prepare`. The isolated clone therefore has the same committed source,
-manifest, DUT evidence, and authority that the bridge is asked to validate.
-
-`deploy-dry-run` is explicitly non-networking because inherited
-`deploy-elf.sh` exits on `TESTKIT_DRY_RUN=1` before requiring `curl`.
-
-The regression authority is:
-
-    scripts/testkit/legacy-hardware-bridge-self-test.py
-
-The self-test proves both sides of the legacy immutability rule:
-
-- untracked legacy artifacts are accepted and preserved;
-- any tracked legacy mutation fails closed.
-
-Real hardware use still requires an explicit hardware manifest and a separate
-operator-authorized `start` invocation. Preparing or self-testing the bridge
-does not contact FTP or the PS2.
-
-Real successor hardware manifests must also be validated through the successor
-bridge rather than by directly invoking the frozen legacy `verify-build.sh`
-against the successor manifest. `BUILD_BASE_HEAD` names successor Git
-authority; the same commit is not required to exist in the frozen legacy
-repository.
-
-The bridge owns this repository-context boundary: it creates an isolated
-successor-rooted repository, copies the inherited TestKit with exact
-provenance, and runs inherited `verify-build.sh` there. Direct legacy
-invocation is appropriate only for operations whose contract is independent of
-successor Git authority, such as verifying an identity blob from an absolute
-ELF path.
+The apparatus self-test is non-hardware-facing: it uses loopback UDP only and
+must not contact FTP, require sudo, or touch the PS2. Operational arming remains
+an explicit operator action.
 
 ## Git authority on review branches
 

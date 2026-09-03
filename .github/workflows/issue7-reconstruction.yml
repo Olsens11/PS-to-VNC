@@ -1,0 +1,63 @@
+name: Issue 7 reconstruction checks
+
+on:
+  push:
+    branches:
+      - reconstruct/issue7-minimal-core
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run host unit tests
+        run: make -C tests unit
+      - name: Self-test clean source dictionary tooling
+        run: ./scripts/source-dictionary-self-test.py
+      - name: Verify deterministic runtime identity serialization
+        run: ./scripts/testkit/identity-runtime-message-self-test.sh
+      - name: Analyze historical identity digest contract
+        run: ./scripts/testkit/identity-digest-forensics.py
+      - name: Prove successor identity tools against sealed historical fixtures
+        run: ./scripts/testkit/successor-identity-compat-self-test.py
+      - name: Self-test successor hardware preparation
+        run: ./scripts/testkit/self-test.sh
+
+  ps2-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile clean core with pinned PS2 toolchain image
+        env:
+          IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
+        run: |
+          docker run --rm \
+            --entrypoint /bin/sh \
+            -v "$PWD:/repo" \
+            -w /repo \
+            "$IMAGE" \
+            -lc '
+              set -eu
+              apk add --no-cache bash >/dev/null
+              export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              ./scripts/check-clean-ps2-compile.sh
+            '
+
+  ps2-link:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prove reproducible identity-ready linked clean Issue 7 ELF
+        run: ./scripts/check-issue7-linked-reproducibility.sh
+      - name: Self-test fail-closed DUT manifest against canonical clean ELF
+        run: bash ./scripts/testkit/issue7-dut-manifest-self-test.sh
+      - name: Preserve unqualified identity-ready linked ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue7-unqualified-clean-elf
+          path: build/reconstruction/issue7/PS-to-VNC-Issue7.ELF
+          if-no-files-found: error

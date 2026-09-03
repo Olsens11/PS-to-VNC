@@ -165,9 +165,11 @@ the saved tool thereafter instead of regenerating the procedure.
 New or changed reusable shell tooling must pass `bash -n` and its relevant
 TestKit self-test before first operational use and before commit.
 
-The historical repository at `/home/ps2/ps2vnc` remains immutable. Successor
-tooling may call its established TestKit utilities, but must never modify the
-legacy repository.
+The historical repository at `/home/ps2/ps2vnc` remains immutable reference
+authority when present. Issue #7 hardware qualification must not depend on that
+checkout or invoke its TestKit; the active apparatus is successor-owned.
+Historical mechanisms may still be consulted as evidence before deliberate
+adoption.
 
 ## Frozen legacy repository immutability clarification
 

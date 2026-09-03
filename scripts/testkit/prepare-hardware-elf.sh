@@ -6,10 +6,8 @@ ROOT="$(
     pwd
 )"
 
-LEGACY_TESTKIT_ROOT="${PS2VNC_LEGACY_TESTKIT_ROOT:-/home/ps2/ps2vnc/scripts/testkit}"
-
-STAMP_TOOL="$LEGACY_TESTKIT_ROOT/stamp-elf-identity.sh"
-VERIFY_TOOL="$LEGACY_TESTKIT_ROOT/verify-elf-identity.sh"
+STAMP_TOOL="$ROOT/scripts/testkit/stamp-elf-identity.sh"
+VERIFY_TOOL="$ROOT/scripts/testkit/verify-elf-identity.sh"
 PT_TOOL="$ROOT/scripts/testkit/pt-load-fingerprint.sh"
 
 usage()
@@ -59,9 +57,8 @@ OUT_DIR="$(dirname -- "$OUTPUT")"
     exit 1
 }
 
-# Delegated TestKit tools may change their working directory.
-# Convert caller-supplied file operands to absolute paths before crossing
-# that tool/repository boundary so relative successor paths remain valid.
+# Normalize caller-supplied file operands so preparation is independent of the
+# caller's working directory and every tool sees one unambiguous path.
 PRISTINE_DIR="$(dirname -- "$PRISTINE")"
 PRISTINE_BASE="$(basename -- "$PRISTINE")"
 OUTPUT_BASE="$(basename -- "$OUTPUT")"
@@ -303,7 +300,8 @@ report(
 )
 PY
 
-echo "TESTKIT_PREPARE_HARDWARE_ELF_VERSION=1"
+echo "TESTKIT_PREPARE_HARDWARE_ELF_VERSION=2"
+echo "IDENTITY_TOOL_AUTHORITY=SUCCESSOR_REPOSITORY"
 echo "PRISTINE_ELF=$PRISTINE"
 echo "PRISTINE_ELF_SHA256=$PRISTINE_SHA"
 echo "PRISTINE_ELF_BYTES=$PRISTINE_BYTES"

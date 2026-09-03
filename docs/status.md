@@ -142,8 +142,11 @@ can stale the conventional framebuffer, advanced dirty/Hextile/presentation
 optimization, MPEG/hybrid video, nonessential exploratory display modes, and
 replacement of mature TestKit merely for aesthetic consistency.
 
-The first clean hardware milestones continue through the proven immutable
-successor-to-legacy TestKit bridge.
+Issue #7 hardware qualification now uses successor-owned deployment, UDP-stage
+observation, PS2-facing packet capture, run ownership, evidence sealing, and
+result tooling. The former successor-to-legacy TestKit bridge is retired; the
+historical TestKit remains evidence/reference authority rather than a live
+dependency.
 
 ## Pi companion boundary
 

@@ -8,9 +8,25 @@ BUILD_DIR = .build
 
 unit: \
 	$(BUILD_DIR)/config_text_test \
-	$(BUILD_DIR)/video_mode_test
+	$(BUILD_DIR)/video_mode_test \
+	$(BUILD_DIR)/rfb_wire_test \
+	$(BUILD_DIR)/framebuffer_test \
+	$(BUILD_DIR)/rfb_session_test \
+	$(BUILD_DIR)/rfb_initial_frame_test \
+	$(BUILD_DIR)/rfb_initial_coverage_test \
+	$(BUILD_DIR)/rfb_async_framing_test \
+	$(BUILD_DIR)/display_test \
+	$(BUILD_DIR)/app_test
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/video_mode_test
+	./$(BUILD_DIR)/rfb_wire_test
+	./$(BUILD_DIR)/framebuffer_test
+	./$(BUILD_DIR)/rfb_session_test
+	./$(BUILD_DIR)/rfb_initial_frame_test
+	./$(BUILD_DIR)/rfb_initial_coverage_test
+	./$(BUILD_DIR)/rfb_async_framing_test
+	./$(BUILD_DIR)/display_test
+	./$(BUILD_DIR)/app_test
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -35,6 +51,124 @@ $(BUILD_DIR)/video_mode_test: \
 		-I../src \
 		unit/video_mode_test.c \
 		../src/video/mode.c \
+		-o $@
+
+$(BUILD_DIR)/rfb_wire_test: \
+	unit/rfb_wire_test.c \
+	../src/rfb.c \
+	../src/rfb.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_wire_test.c \
+		../src/rfb.c \
+		-o $@
+
+$(BUILD_DIR)/framebuffer_test: \
+	unit/framebuffer_test.c \
+	../src/framebuffer.c \
+	../src/framebuffer.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/framebuffer_test.c \
+		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/rfb_session_test: \
+	unit/rfb_session_test.c \
+	../src/rfb.c \
+	../src/rfb.h \
+	../src/rfb_io.h \
+	../src/rfb_session.c \
+	../src/rfb_session.h \
+	../src/framebuffer.c \
+	../src/framebuffer.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_session_test.c \
+		../src/rfb_session.c \
+		../src/rfb.c \
+		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/rfb_initial_frame_test: \
+	unit/rfb_initial_frame_test.c \
+	../src/rfb.c \
+	../src/rfb.h \
+	../src/rfb_io.h \
+	../src/rfb_session.c \
+	../src/rfb_session.h \
+	../src/framebuffer.c \
+	../src/framebuffer.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_initial_frame_test.c \
+		../src/rfb_session.c \
+		../src/rfb.c \
+		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/rfb_initial_coverage_test: \
+	unit/rfb_initial_coverage_test.c \
+	../src/rfb.c \
+	../src/rfb.h \
+	../src/rfb_io.h \
+	../src/rfb_session.c \
+	../src/rfb_session.h \
+	../src/framebuffer.c \
+	../src/framebuffer.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_initial_coverage_test.c \
+		../src/rfb_session.c \
+		../src/rfb.c \
+		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/rfb_async_framing_test: \
+	unit/rfb_async_framing_test.c \
+	../src/rfb.c \
+	../src/rfb.h \
+	../src/rfb_io.h \
+	../src/rfb_session.c \
+	../src/rfb_session.h \
+	../src/framebuffer.c \
+	../src/framebuffer.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_async_framing_test.c \
+		../src/rfb_session.c \
+		../src/rfb.c \
+		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/display_test: \
+	unit/display_test.c \
+	../src/display.c \
+	../src/display.h \
+	../src/framebuffer.c \
+	../src/framebuffer.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/display_test.c \
+		../src/display.c \
+		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/app_test: \
+	unit/app_test.c \
+	../src/app.c \
+	../src/app.h \
+	../src/diagnostics.h \
+	../src/display.h \
+	../src/framebuffer.h \
+	../src/platform/ps2_graphics.h \
+	../src/platform/ps2_network.h \
+	../src/platform/ps2_system.h \
+	../src/rfb_session.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/app_test.c \
+		../src/app.c \
 		-o $@
 
 clean:
