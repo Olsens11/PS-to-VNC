@@ -27,6 +27,15 @@ TRACKED_INPUTS = (
     "scripts/testkit/prepare-hardware-elf.sh",
     "scripts/testkit/elf-identity.py",
     "scripts/testkit/pt-load-fingerprint.sh",
+    "scripts/testkit/verify-elf-identity.sh",
+    "scripts/testkit/issue7-dut-manifest.py",
+    "scripts/testkit/issue7-apparatus-common.sh",
+    "scripts/testkit/issue7-arm-observers.sh",
+    "scripts/testkit/issue7-deploy-elf.sh",
+    "scripts/testkit/issue7-stop-observers.sh",
+    "scripts/testkit/issue7-udp-observer.py",
+    "scripts/testkit/issue7-result.py",
+    "scripts/testkit/issue7-apparatus-self-test.sh",
 )
 PREP_KEYS = (
     "PRISTINE_ELF",

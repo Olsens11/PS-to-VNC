@@ -4,10 +4,11 @@ DIRECTORY=scripts/testkit
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=IN_PROGRESS
 
-This directory contains both historical TestKit/M4 tooling and successor-owned
-Issue #7 qualification tooling. Only files deliberately adopted into the clean
-generation receive the clean `File synopsis:` marker and enter this dictionary;
-legacy activation/apparatus tooling remains excluded unless separately adopted.
+This directory contains retained historical TestKit/M4 tooling plus
+successor-owned clean qualification tooling. Issue #7 deployment and observer
+apparatus is now successor-owned; the former frozen-legacy compatibility bridge
+is retired. Only deliberately adopted clean-generation files receive the clean
+`File synopsis:` marker and enter this dictionary.
 
 | Name | Kind | File | Owner | Scope | Description | Context |
 |---|---|---|---|---|---|---|
@@ -50,3 +51,16 @@ legacy activation/apparatus tooling remains excluded unless separately adopted.
 | fields | function | scripts/testkit/successor-identity-compat-self-test.py | successor identity compatibility | private | Locates and decodes the identity fields from one sealed stamped ELF fixture. | successor identity compatibility |
 | run | function | scripts/testkit/successor-identity-compat-self-test.py | successor identity compatibility | private | Runs the successor identity command and fails if the subprocess does not succeed. | successor identity compatibility |
 | main | function | scripts/testkit/successor-identity-compat-self-test.py | successor identity compatibility | command line | Proves byte-exact fixture reproduction plus restamp and overlong-ID fail-closed behavior. | successor identity compatibility |
+| issue7_validate_manifest_current | function | scripts/testkit/issue7-apparatus-common.sh | Issue #7 apparatus contract | shared shell helper | Validates that one DUT manifest names the exact current committed Issue #7 source and qualified PS2IP authority. | hardware qualification |
+| issue7_pid_owned | function | scripts/testkit/issue7-apparatus-common.sh | observer ownership | shared shell helper | Proves a live process is the run-specific successor UDP observer before any signal may be sent to it. | fail-closed cleanup |
+| issue7_pcap_owned | function | scripts/testkit/issue7-apparatus-common.sh | observer ownership | shared shell helper | Proves a systemd unit owns the expected run-specific tcpdump capture before it may be stopped. | fail-closed cleanup |
+| cleanup_error | function | scripts/testkit/issue7-arm-observers.sh | observer arming | local trap handler | Cleans only observers started by a failed arming transaction and preserves an apparatus-failure marker. | hardware apparatus |
+| MANIFEST | variable | scripts/testkit/issue7-deploy-elf.sh | exact DUT deployment | script scope | Names the committed successor DUT manifest whose stamped ELF identity governs FTP deployment and readback. | hardware deployment |
+| stop_udp | function | scripts/testkit/issue7-stop-observers.sh | observer shutdown | local helper | Stops the UDP observer only after proving run ownership and fails closed if ownership changes. | evidence preservation |
+| now_iso | function | scripts/testkit/issue7-udp-observer.py | UDP evidence receiver | module helper | Returns an offset-aware timestamp for one received runtime diagnostic datagram. | machine evidence |
+| main | function | scripts/testkit/issue7-udp-observer.py | UDP evidence receiver | command line | Receives UDP diagnostics and writes ordered timestamped JSONL without interpreting or controlling the DUT. | machine evidence |
+| parse_key_values | function | scripts/testkit/issue7-result.py | Issue #7 evidence evaluator | private | Parses the generated DUT manifest without executing it as shell code. | evidence analysis |
+| evaluate_payloads | function | scripts/testkit/issue7-result.py | Issue #7 evidence evaluator | reusable core | Requires one exact runtime identity followed by NET_READY, GS_READY, and DESKTOP_READY with no FATAL stage. | qualification evidence |
+| count_packets | function | scripts/testkit/issue7-result.py | Issue #7 evidence evaluator | private | Counts captured packets matching one explicit tcpdump expression without claiming RFB frame semantics. | packet evidence |
+| main | function | scripts/testkit/issue7-result.py | Issue #7 evidence evaluator | command line | Verifies sealed raw evidence, deployment readback, ordered diagnostics, and basic PS2-facing traffic. | qualification evidence |
+| cleanup | function | scripts/testkit/issue7-apparatus-self-test.sh | apparatus regression test | local trap handler | Removes only disposable self-test state and terminates the loopback UDP receiver when necessary. | development tooling |

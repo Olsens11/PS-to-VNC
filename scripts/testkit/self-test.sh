@@ -164,9 +164,13 @@ echo '[SELFTEST] sealed historical identity compatibility'
 echo '[SELFTEST] runtime identity message serialization'
 ./scripts/testkit/identity-runtime-message-self-test.sh
 
-# Checkpoint activation and the frozen-legacy hardware bridge have independent
-# self-tests and separate ownership. They are intentionally not prerequisites
-# for successor-owned ELF identity preparation.
+# Checkpoint activation remains a separate historical/current-state concern.
+# Issue #7 hardware execution is now owned entirely by successor tooling.
 echo 'CHECKPOINT_ACTIVATION_SELF_TEST=SEPARATE_SCOPE'
-echo 'LEGACY_HARDWARE_BRIDGE_SELF_TEST=SEPARATE_SCOPE'
+echo 'LEGACY_HARDWARE_BRIDGE=RETIRED'
+
+echo '[SELFTEST] successor Issue #7 hardware apparatus'
+./scripts/testkit/issue7-apparatus-self-test.sh
+echo 'ISSUE7_HARDWARE_APPARATUS_SELF_TEST=PASS'
+
 echo 'PS_TO_VNC_TESTKIT_SELF_TEST=PASS'

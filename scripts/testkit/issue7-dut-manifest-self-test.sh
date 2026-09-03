@@ -33,7 +33,20 @@ TEST_ID="${TESTKIT_MANIFEST_SELF_TEST_ID:-ISSUE7-MANIFEST-SELFTEST}"
     exit 1
 }
 
-python3 -m py_compile "$MANIFEST"
+python3 - "$MANIFEST" <<'PYCOMPILE'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+
+compile(
+    path.read_text(encoding="utf-8"),
+    str(path),
+    "exec",
+)
+
+print("ISSUE7_DUT_MANIFEST_PYTHON_SYNTAX=PASS")
+PYCOMPILE
 
 TMP="$(mktemp -d)"
 cleanup()
@@ -78,6 +91,22 @@ grep -qx 'OPERATOR_RESULT=NOT_RUN' "$TMP/manifest-a.env"
 grep -Eq '^SOURCE_COMMIT=[0-9a-f]{40}$' "$TMP/manifest-a.env"
 grep -Eq '^PS2DEV_IMAGE=ps2dev/ps2dev@sha256:[0-9a-f]{64}$' "$TMP/manifest-a.env"
 grep -Eq '^PS2IP_SHA256=[0-9a-f]{64}$' "$TMP/manifest-a.env"
+
+for key in \
+    SCRIPTS_TESTKIT_VERIFY_ELF_IDENTITY_SH_SHA256 \
+    SCRIPTS_TESTKIT_ISSUE7_DUT_MANIFEST_PY_SHA256 \
+    SCRIPTS_TESTKIT_ISSUE7_APPARATUS_COMMON_SH_SHA256 \
+    SCRIPTS_TESTKIT_ISSUE7_ARM_OBSERVERS_SH_SHA256 \
+    SCRIPTS_TESTKIT_ISSUE7_DEPLOY_ELF_SH_SHA256 \
+    SCRIPTS_TESTKIT_ISSUE7_STOP_OBSERVERS_SH_SHA256 \
+    SCRIPTS_TESTKIT_ISSUE7_UDP_OBSERVER_PY_SHA256 \
+    SCRIPTS_TESTKIT_ISSUE7_RESULT_PY_SHA256 \
+    SCRIPTS_TESTKIT_ISSUE7_APPARATUS_SELF_TEST_SH_SHA256
+do
+    grep -Eq \
+        "^${key}=[0-9a-f]{64}$" \
+        "$TMP/manifest-a.env"
+done
 
 if python3 "$MANIFEST" \
     "$TMP/preparation.env" \

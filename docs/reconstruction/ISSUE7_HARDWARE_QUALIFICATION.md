@@ -75,11 +75,15 @@ Before DUT deployment, record:
 - the deterministic desktop-change stimulus selected for the incremental-update
   portion of the test.
 
-## Candidate test identity
+## Corrected qualification test identity
 
-Use a unique test ID for the first clean run. The recommended identifier is:
+`ISSUE7-RAW480P-HW1` is preserved as the first formal hardware attempt. Its
+product path passed, but the formal qualification failed H7 because the required
+early runtime identity / startup-stage evidence did not survive unresolved ARP.
 
-    ISSUE7-RAW480P-HW1
+Do not reuse that test identity. The corrected startup-order requalification is:
+
+    ISSUE7-RAW480P-HW2
 
 The final manifest must not be committed with guessed ELF values. After the exact
 pristine ELF has been selected, prepare one stamped DUT through the established
@@ -175,25 +179,43 @@ The first test is not calibration qualification. Minor safe-area aesthetics do
 not fail this milestone unless they prevent ordinary visibility or indicate the
 wrong display path.
 
+## Canonical successor apparatus
+
+The corrected qualification uses only successor-owned tools:
+
+    scripts/testkit/issue7-arm-observers.sh
+    scripts/testkit/issue7-deploy-elf.sh
+    scripts/testkit/issue7-stop-observers.sh
+    scripts/testkit/issue7-result.py
+
+Arming starts the UDP 5999 observer and PS2-facing packet capture before
+deployment. The capture has a hard safety timeout but no automatic DUT recovery
+or silent-stall masking. Observer shutdown is ownership-checked and hashes raw
+run evidence before interpretation.
+
 ## Suggested test sequence
 
 1. Verify exact GitHub branch head and green CI.
 2. Produce the pristine clean ELF through `scripts/build-issue7-clean.sh`.
 3. Reconfirm pristine ELF/PT_LOAD/dependency identities.
-4. Prepare one unique stamped `ISSUE7-RAW480P-HW1` DUT.
-5. Verify stamp reproducibility and record stamped ELF/PT_LOAD identities.
+4. Prepare one unique stamped `ISSUE7-RAW480P-HW2` DUT.
+5. Verify stamp reproducibility and create the exact successor DUT manifest.
 6. Confirm the clean Pi endpoint is already validated and listening only on the
    intended private address.
-7. Start UDP identity/stage receiver and bounded packet capture.
-8. Deploy the exact stamped ELF through the shared deployment tooling.
+7. Arm UDP identity/stage and PS2-facing packet observers with
+   `issue7-arm-observers.sh`.
+8. Deploy the exact stamped ELF with `issue7-deploy-elf.sh` and require both FTP
+   readback hashes to match.
 9. Launch the exact DUT on the PS2.
 10. Wait for identity and ordered startup-stage evidence.
 11. Record the initial physical 480p desktop result.
 12. Apply the predetermined Pi desktop-change stimulus once.
 13. Confirm incremental network traffic and the visible screen change.
 14. Hold the application for the planned short dwell period.
-15. Stop observers and preserve raw evidence before interpretation.
-16. Record machine result and operator result separately.
+15. Stop the owned observers with `issue7-stop-observers.sh` so raw evidence is
+   hash-sealed.
+16. Run `issue7-result.py` and record its machine result separately from the
+   physical/operator result and detailed RFB-frame analysis.
 
 Do not add feature work during the run to rescue a failure. Classify the failure,
 preserve evidence, then design the next experiment.
