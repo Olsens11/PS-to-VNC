@@ -17,6 +17,12 @@
 int pstvnc_ps2_system_prepare_iop(void);
 
 /*
+ * Sleep the current EE thread for a coordinator-selected delay. Timing policy
+ * belongs to the caller; this seam only hides the PS2SDK mechanism.
+ */
+void pstvnc_ps2_system_delay_ms(unsigned int milliseconds);
+
+/*
  * Converge to the ordinary PS2 system menu. If LoadExecPS2 unexpectedly
  * returns, park the current thread rather than continuing in unknown state.
  */

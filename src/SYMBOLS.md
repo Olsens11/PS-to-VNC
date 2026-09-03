@@ -13,6 +13,11 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 |---|---|---|---|---|---|---|
 | remote_pixels | variable | src/app.c | application coordinator | file | Stores the single authoritative CPU-side remote desktop image. | CLEAN_ARCHITECTURE: Desktop framebuffer |
 | gs_pixels | variable | src/app.c | application coordinator | file | Stores disposable GS-ready presentation pixels derived from remote authority. | CLEAN_ARCHITECTURE: Display model and presentation |
+| PSTVNC_RFB_RECONNECT_DELAY_MS | macro | src/app.c | RFB reconnect policy | file | Sets the modest delay between failed attempts to reconnect the stable Pi RFB endpoint. | explicit connection-loss recovery |
+| reconnect_rfb_after_io_loss | function | src/app.c | application coordinator | file | Replaces only a dead RFB transport and requires a new authoritative full frame without restarting Ethernet or graphics. | explicit connection-loss recovery |
+| socket_fd | parameter | src/app.c | reconnect_rfb_after_io_loss | local | Tracks and replaces coordinator ownership of the current connected RFB socket. | RFB socket lifecycle |
+| session | parameter | src/app.c | reconnect_rfb_after_io_loss | local | Supplies the RFB session state that is rebuilt for each replacement TCP connection. | RFB client/session lifecycle |
+| framebuffer | parameter | src/app.c | reconnect_rfb_after_io_loss | local | Supplies authoritative framebuffer storage that must be repopulated by a complete new initial frame. | authoritative framebuffer semantics |
 | send_diagnostic_literal | function | src/app.c | application coordinator | file | Sends one fixed diagnostic record only when optional diagnostics is available. | ISSUE7_MINIMAL_CORE: Clean diagnostics |
 | diagnostics_ready | parameter | src/app.c | send_diagnostic_literal | local | States whether the optional diagnostics transport is owned and usable. | application coordinator cleanup |
 | text | parameter | src/app.c | send_diagnostic_literal | local | Points to the caller-owned diagnostic bytes to transmit. | clean diagnostics |

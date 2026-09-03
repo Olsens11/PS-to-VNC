@@ -33,6 +33,8 @@ static uint16_t remote_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
 static uint16_t gs_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
     __attribute__((aligned(128)));
 
+#define PSTVNC_RFB_RECONNECT_DELAY_MS 500u
+
 static void send_diagnostic_literal(
     int diagnostics_ready,
     const char *text,
@@ -40,6 +42,69 @@ static void send_diagnostic_literal(
 {
     if (diagnostics_ready)
         (void)pstvnc_diagnostics_send(text, length);
+}
+
+static int reconnect_rfb_after_io_loss(
+    int *socket_fd,
+    pstvnc_rfb_session_t *session,
+    pstvnc_framebuffer_t *framebuffer)
+{
+    /*
+     * A dead TCP/RFB connection is replaceable transport, not application
+     * lifetime. Keep the initialized Ethernet and GS/display state alive and
+     * reconnect only the RFB session to the same stable Pi endpoint.
+     *
+     * Only explicit I/O loss is retryable here. Wrong geometry, malformed RFB,
+     * unsupported encoding, bad full-frame coverage, and every other protocol
+     * failure remain fatal so reconnect cannot hide real bugs.
+     */
+    if (*socket_fd >= 0) {
+        pstvnc_ps2_network_close(*socket_fd);
+        *socket_fd = -1;
+    }
+
+    for (;;) {
+        /*
+         * Try immediately once. If no provider is ready behind the durable
+         * endpoint, pause before trying again rather than hammering connect().
+         */
+        *socket_fd = pstvnc_ps2_network_connect_vnc();
+
+        if (*socket_fd < 0) {
+            pstvnc_ps2_system_delay_ms(
+                PSTVNC_RFB_RECONNECT_DELAY_MS);
+            continue;
+        }
+
+        /*
+         * A replacement TCP connection is a completely new RFB session.
+         * Repeat the handshake and require a new non-incremental full frame
+         * before ordinary incremental operation is allowed to resume.
+         */
+        if (pstvnc_rfb_session_start(
+                session,
+                *socket_fd,
+                PSTVNC_DISPLAY_WIDTH,
+                PSTVNC_DISPLAY_HEIGHT) &&
+            pstvnc_rfb_session_receive_initial_frame(
+                session,
+                framebuffer))
+            return 1;
+
+        /*
+         * A provider that accepted TCP and then disappeared is still ordinary
+         * connection loss. A live connection that fails an RFB semantic check
+         * is not recoverable here and remains fail-closed.
+         */
+        if (session->error != PSTVNC_RFB_SESSION_ERROR_IO)
+            return 0;
+
+        pstvnc_ps2_network_close(*socket_fd);
+        *socket_fd = -1;
+
+        pstvnc_ps2_system_delay_ms(
+            PSTVNC_RFB_RECONNECT_DELAY_MS);
+    }
 }
 
 int pstvnc_app_run(void)
@@ -143,19 +208,49 @@ int pstvnc_app_run(void)
         sizeof(desktop_ready) - 1u);
 
     /*
-     * Issue #7 intentionally has one blocking owner for both halves of the RFB
-     * exchange: request one update, consume one complete server update, then
-     * present coherent state. Input concurrency and safe-boundary yielding are
-     * later responsibilities, not hidden behavior in this baseline loop.
+     * One blocking owner still serializes RFB requests and responses. The only
+     * added recovery policy is for an explicitly dead TCP/RFB connection.
+     *
+     * A silent stall is deliberately unchanged: without an I/O error this
+     * thread remains blocked exactly as before, preserving the failure for
+     * diagnosis.
      */
     for (;;) {
-        if (!pstvnc_rfb_session_request_update(&session, 1))
-            goto fail;
-
-        if (!pstvnc_rfb_session_receive_update(
+        if (!pstvnc_rfb_session_request_update(&session, 1) ||
+            !pstvnc_rfb_session_receive_update(
                 &session,
-                &framebuffer))
-            goto fail;
+                &framebuffer)) {
+            /*
+             * Connection loss must not tear down the whole application. All
+             * other RFB failures still use the existing fatal path.
+             */
+            if (session.error != PSTVNC_RFB_SESSION_ERROR_IO)
+                goto fail;
+
+            if (!reconnect_rfb_after_io_loss(
+                    &socket_fd,
+                    &session,
+                    &framebuffer))
+                goto fail;
+
+            /*
+             * Reconnection produced a new authoritative full frame. Present it
+             * while keeping the existing GS/display mode alive, then resume
+             * ordinary incremental requests.
+             */
+            if (!pstvnc_display_prepare_gs16(
+                    &framebuffer,
+                    gs_pixels,
+                    PSTVNC_DISPLAY_PIXEL_COUNT))
+                goto fail;
+
+            if (pstvnc_ps2_graphics_present(
+                    gs_pixels,
+                    PSTVNC_DISPLAY_PIXEL_COUNT) < 0)
+                goto fail;
+
+            continue;
+        }
 
         if (!framebuffer.valid)
             goto fail;

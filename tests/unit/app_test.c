@@ -1,3 +1,12 @@
+/*
+ * File synopsis:
+ * Exercises application-coordinator startup, live-loop, reconnect, and owned
+ * cleanup policy with deterministic host-side platform and protocol stubs.
+ *
+ * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md; explicit RFB
+ * connection-loss recovery experiment.
+ */
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -40,6 +49,7 @@ typedef enum event_id {
     EV_PRESENT,
     EV_REQUEST_UPDATE,
     EV_RECEIVE_UPDATE,
+    EV_DELAY,
     EV_CLOSE,
     EV_GRAPHICS_SHUTDOWN,
     EV_DIAG_SHUTDOWN
@@ -61,6 +71,7 @@ static int initial_frame_result;
 static int display_prepare_result;
 static int present_result;
 static int request_results[4];
+static pstvnc_rfb_session_error_t request_errors[4];
 static size_t request_result_count;
 static size_t request_calls;
 static int receive_results[4];
@@ -96,6 +107,7 @@ static void reset_script(void)
     present_result = 0;
 
     memset(request_results, 0, sizeof(request_results));
+    memset(request_errors, 0, sizeof(request_errors));
     request_results[0] = 0;
     request_result_count = 1;
     request_calls = 0;
@@ -137,6 +149,12 @@ int pstvnc_ps2_system_prepare_iop(void)
 {
     log_event(EV_PREPARE_IOP);
     return prepare_iop_result;
+}
+
+void pstvnc_ps2_system_delay_ms(unsigned int milliseconds)
+{
+    (void)milliseconds;
+    log_event(EV_DELAY);
 }
 
 void pstvnc_ps2_system_exit_to_menu(void)
@@ -285,14 +303,18 @@ int pstvnc_rfb_session_request_update(
     pstvnc_rfb_session_t *session,
     int incremental)
 {
+    size_t index = request_calls;
     int result = 0;
 
-    (void)session;
     CHECK(incremental != 0);
     log_event(EV_REQUEST_UPDATE);
 
-    if (request_calls < request_result_count)
-        result = request_results[request_calls];
+    if (index < request_result_count) {
+        result = request_results[index];
+        if (!result)
+            session->error = request_errors[index];
+    }
+
     request_calls++;
     return result;
 }
@@ -403,6 +425,40 @@ static void test_clean_update_does_not_represent(void)
     check_owned_cleanup();
 }
 
+static void test_io_loss_reconnects_only_rfb_session(void)
+{
+    reset_script();
+
+    /*
+     * First live service reports an explicit socket I/O loss. The replacement
+     * RFB session succeeds without rebuilding IOP, Ethernet, or GS. A later
+     * non-I/O protocol failure then proves ordinary fail-closed policy remains.
+     */
+    request_results[0] = 0;
+    request_errors[0] = PSTVNC_RFB_SESSION_ERROR_IO;
+    request_results[1] = 0;
+    request_errors[1] = PSTVNC_RFB_SESSION_ERROR_PROTOCOL_VERSION;
+    request_result_count = 2;
+
+    CHECK(pstvnc_app_run() == -1);
+
+    CHECK(event_occurrences(EV_PREPARE_IOP) == 1);
+    CHECK(event_occurrences(EV_NETWORK_INIT) == 1);
+    CHECK(event_occurrences(EV_WAIT_LINK) == 1);
+    CHECK(event_occurrences(EV_GRAPHICS_INIT) == 1);
+
+    CHECK(event_occurrences(EV_CONNECT) == 2);
+    CHECK(event_occurrences(EV_SESSION_START) == 2);
+    CHECK(event_occurrences(EV_INITIAL_FRAME) == 2);
+    CHECK(event_occurrences(EV_DISPLAY_PREPARE) == 2);
+    CHECK(event_occurrences(EV_PRESENT) == 2);
+
+    CHECK(event_occurrences(EV_DELAY) == 0);
+    CHECK(event_occurrences(EV_CLOSE) == 2);
+    CHECK(event_occurrences(EV_GRAPHICS_SHUTDOWN) == 1);
+    CHECK(event_occurrences(EV_DIAG_SHUTDOWN) == 1);
+}
+
 static void test_invalid_live_frame_fails_before_presentation(void)
 {
     reset_script();
@@ -440,6 +496,7 @@ int main(void)
     test_connect_failure_cleans_only_acquired_resources();
     test_session_failure_cleanup_order();
     test_clean_update_does_not_represent();
+    test_io_loss_reconnects_only_rfb_session();
     test_invalid_live_frame_fails_before_presentation();
     test_diagnostics_are_best_effort();
 

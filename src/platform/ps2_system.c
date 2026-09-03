@@ -47,6 +47,35 @@ int pstvnc_ps2_system_prepare_iop(void)
     return 0;
 }
 
+static void system_delay_alarm(
+    s32 alarm_id,
+    u16 time,
+    void *common)
+{
+    (void)alarm_id;
+    (void)time;
+
+    iWakeupThread(*(int *)common);
+}
+
+void pstvnc_ps2_system_delay_ms(unsigned int milliseconds)
+{
+    int thread_id = GetThreadId();
+
+    /*
+     * Use the same alarm-driven EE sleep mechanism as the qualified Ethernet
+     * link wait. The PS2 alarm clock uses 16 ticks per millisecond here, so the
+     * reconnect backoff sleeps without busy-spinning the EE.
+     */
+    if (SetAlarm(
+            milliseconds * 16u,
+            &system_delay_alarm,
+            &thread_id) < 0)
+        return;
+
+    SleepThread();
+}
+
 void pstvnc_ps2_system_exit_to_menu(void)
 {
     LoadExecPS2("rom0:OSDSYS", 0, NULL);
