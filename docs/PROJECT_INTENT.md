@@ -17,6 +17,41 @@ The final system should be understandable, rebuildable, testable, and usable on
 ordinary supported hardware without requiring the exploratory development
 machine that produced the original implementation.
 
+## Platform scope principle
+
+PS-to-VNC should provide excellent general access to the PS2 and build in the
+broadly useful capabilities that make the PS2/Pi combination a practical
+companion platform. Remote desktop and input, display handling, networking,
+storage/file access, configuration, recovery, companion management, media
+plumbing, and utility launching are examples of capabilities that can improve
+the platform itself.
+
+The project should not absorb every specialized PS2 workflow or utility merely
+because that software can run on the Pi or benefit from PS-to-VNC facilities.
+Specialized tools should be deliberately welcome as first-class compatible
+guests without automatically becoming PS-to-VNC product features.
+
+A useful scope test is:
+
+> Does this capability improve the general PS2/Pi platform, or does it implement
+> one particular use of that platform?
+
+Capabilities in the first category are candidates for the core project when
+they are broadly useful and fit the architecture. Capabilities in the second
+category should normally remain separate optional utilities unless repeated
+product experience demonstrates that they have become general platform needs.
+
+PS-to-VNC should therefore make extension easy without making extension code
+part of the core by default. Stable configuration, documented interfaces,
+network/storage primitives, utility launching, and other general integration
+points should let companion software participate cleanly without creating a
+hidden dependency on that software or requiring it in the base installation.
+
+This boundary is about product scope and architectural ownership, not a judgment
+that adjacent utilities are undesirable. The intended result is a clean,
+general companion platform on which useful PS2-community software is easy to
+build, install, and use.
+
 ## Why the project is being restarted
 
 The existing implementation proved that the product is viable and accumulated
@@ -113,6 +148,57 @@ Prefer boring, readable C:
 
 Avoid speculative frameworks, indirection for its own sake, or decomposition
 that makes behavior harder to follow.
+
+## Composition and complexity hierarchy
+
+> Prefer explicit wiring and implicit behavior.
+
+Complex product behavior should normally emerge from deliberately composing
+simple components, each left to perform one defensible duty. A component should
+not be taught about every product context merely so it can decide for itself
+whether its capability is currently wanted. Where possible, the coordinator or
+caller should make that choice explicitly by routing work through the component
+when its capability applies.
+
+The chord-arbitration example captures the intended style: when an input path
+needs chord interpretation, it invokes the chord arbiter; when it does not,
+there are no chord semantics in that path. The arbiter does not need a parallel
+copy of the application's context model simply to know when to turn itself on or
+off.
+
+This is a preference, not a prohibition on state. Some responsibilities really
+do persist across calls or have meaningful phases. Pointer acceleration, parser
+position, UI foreground ownership, Refresh cooldown, and risky display
+transactions are examples where local state, typed state, or a state machine can
+be the clearest representation.
+
+When choosing a mechanism, prefer the lowest level of complexity that expresses
+the requirement clearly and completely:
+
+1. direct composition or a direct call;
+2. local state owned by one component;
+3. explicit ownership or routing between components;
+4. typed persistent state or a small state machine;
+5. deliberate cross-domain coordination when an operation genuinely spans
+   multiple owners.
+
+Moving upward in that hierarchy should have a clear reason. A mode flag, shared
+state, or broader coordinator is acceptable when it represents real behavior
+that cannot be expressed more clearly through ownership, routing, or the current
+operation itself. It should not be introduced merely to duplicate information
+already obvious from the call graph.
+
+A useful design question is:
+
+> What is the least-powerful mechanism that expresses this behavior clearly and
+> completely?
+
+The goal is not statelessness or maximum decomposition. It is to give each
+component a duty that can be understood end-to-end, make the wiring between
+components explicit, and let sophisticated behavior arise from their
+composition. This keeps future rework local: changing one responsibility should
+not require unrelated modules to understand or duplicate that responsibility's
+internal state machine.
 
 ## Architecture remains malleable
 
