@@ -18,7 +18,7 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | text | parameter | src/app.c | send_diagnostic_literal | local | Points to the caller-owned diagnostic bytes to transmit. | clean diagnostics |
 | length | parameter | src/app.c | send_diagnostic_literal | local | Gives the exact diagnostic byte count to transmit. | clean diagnostics |
 | pstvnc_app_run | function | src/app.c | application coordinator | public | Runs ordered startup, the blocking live loop, and fatal cleanup convergence. | ISSUE7_MINIMAL_CORE: Complete application coordinator |
-| net_ready | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic stage record emitted after private networking is ready. | clean diagnostics |
+| net_ready | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic stage record emitted after the private link and required VNC endpoint are connected. | clean diagnostics |
 | gs_ready | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic stage record emitted after graphics initialization. | clean diagnostics |
 | desktop_ready | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic stage record emitted after first authoritative presentation. | clean diagnostics |
 | fatal | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic record emitted when the coordinator enters fatal convergence. | failure policy |

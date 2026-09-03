@@ -138,17 +138,18 @@ fixed-480p product path:
 
 1. prepare PS2 IOP/system foundation;
 2. initialize the private Ethernet stack and wait for carrier;
-3. initialize optional diagnostics;
-4. initialize one owned 704x462 framebuffer;
-5. initialize Standard 480p presentation;
-6. connect one TCP socket to the Pi VNC endpoint;
-7. complete the RFB 3.8 startup session;
-8. receive the required complete authoritative Raw framebuffer;
-9. convert and present it;
-10. repeatedly request one incremental full-desktop update;
-11. receive one complete legal server-message/update sequence;
-12. present only when that update produced dirty pixels;
-13. on fatal failure, close owned transport/presentation/diagnostics resources
+3. initialize optional diagnostics transport without emitting a startup record;
+4. connect one TCP socket to the required Pi VNC endpoint;
+5. emit `NET_READY` only after that required endpoint connection succeeds;
+6. initialize one owned 704x462 framebuffer;
+7. initialize Standard 480p presentation and emit `GS_READY`;
+8. complete the RFB 3.8 startup session;
+9. receive the required complete authoritative Raw framebuffer;
+10. convert and present it;
+11. repeatedly request one incremental full-desktop update;
+12. receive one complete legal server-message/update sequence;
+13. present only when that update produced dirty pixels;
+14. on fatal failure, close owned transport/presentation/diagnostics resources
     and converge to OSDSYS.
 
 There is still one application thread and one RFB socket owner. No input, UI,
@@ -169,6 +170,25 @@ Product state and failure policy remain owned by the application/subsystems.
 The coordinator currently emits only a few fixed milestone literals such as
 `NET_READY`, `GS_READY`, `DESKTOP_READY`, and `FATAL`. Diagnostics initialization
 or send failure remains non-fatal to ordinary product startup.
+
+### Startup-order hardware qualification evidence
+
+Issue #7 hardware qualification proved the ordinary Raw/RFB/Standard-480p
+product path while the expected startup identity, `NET_READY`, and `GS_READY`
+datagrams were absent and the later `DESKTOP_READY` datagram survived.
+
+Wire capture then showed the PS2 resolving the Pi with ARP and the first
+surviving IPv4 packet being the required TCP/5900 connection rather than any
+earlier UDP/5999 diagnostic. Frozen PS2IP object forensics established
+single-packet pending-ARP replacement semantics, while socket `sendto()` may
+still report success before that pending packet is ultimately replaced.
+
+The historical implementation avoided the symptom accidentally because its
+pre-diagnostic management TCP connection resolved the same neighbor first.
+The clean reconstruction does not restore that obsolete management dependency
+or add an ARP-specific product mechanism. Instead it establishes the already
+required generic VNC TCP endpoint before emitting startup diagnostics. The
+MTU1458 PS2IP workaround remains unchanged.
 
 `src/diagnostics/identity.c` / `identity.h` retain the hardware-proven TestKit
 runtime identity contract. A fixed 146-byte stampable blob contains:

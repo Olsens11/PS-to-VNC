@@ -69,13 +69,22 @@ int pstvnc_app_run(void)
     if (pstvnc_ps2_network_wait_link() < 0)
         goto fail;
 
-    if (pstvnc_diagnostics_init() == 0) {
+    if (pstvnc_diagnostics_init() == 0)
         diagnostics_ready = 1;
-        send_diagnostic_literal(
-            diagnostics_ready,
-            net_ready,
-            sizeof(net_ready) - 1u);
-    }
+
+    /*
+     * Connect to the Pi before startup diagnostics.  The frozen PS2IP stack can
+     * replace pending UDP packets while ARP is unresolved.
+     * See Issue #7 startup-order hardware qualification evidence.
+     */
+    socket_fd = pstvnc_ps2_network_connect_vnc();
+    if (socket_fd < 0)
+        goto fail;
+
+    send_diagnostic_literal(
+        diagnostics_ready,
+        net_ready,
+        sizeof(net_ready) - 1u);
 
     if (!pstvnc_framebuffer_init(
             &framebuffer,
@@ -97,10 +106,6 @@ int pstvnc_app_run(void)
         diagnostics_ready,
         gs_ready,
         sizeof(gs_ready) - 1u);
-
-    socket_fd = pstvnc_ps2_network_connect_vnc();
-    if (socket_fd < 0)
-        goto fail;
 
     pstvnc_rfb_session_init(&session);
 
