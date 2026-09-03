@@ -17,6 +17,41 @@ The final system should be understandable, rebuildable, testable, and usable on
 ordinary supported hardware without requiring the exploratory development
 machine that produced the original implementation.
 
+## Platform scope principle
+
+PS-to-VNC should provide excellent general access to the PS2 and build in the
+broadly useful capabilities that make the PS2/Pi combination a practical
+companion platform. Remote desktop and input, display handling, networking,
+storage/file access, configuration, recovery, companion management, media
+plumbing, and utility launching are examples of capabilities that can improve
+the platform itself.
+
+The project should not absorb every specialized PS2 workflow or utility merely
+because that software can run on the Pi or benefit from PS-to-VNC facilities.
+Specialized tools should be deliberately welcome as first-class compatible
+guests without automatically becoming PS-to-VNC product features.
+
+A useful scope test is:
+
+> Does this capability improve the general PS2/Pi platform, or does it implement
+> one particular use of that platform?
+
+Capabilities in the first category are candidates for the core project when
+they are broadly useful and fit the architecture. Capabilities in the second
+category should normally remain separate optional utilities unless repeated
+product experience demonstrates that they have become general platform needs.
+
+PS-to-VNC should therefore make extension easy without making extension code
+part of the core by default. Stable configuration, documented interfaces,
+network/storage primitives, utility launching, and other general integration
+points should let companion software participate cleanly without creating a
+hidden dependency on that software or requiring it in the base installation.
+
+This boundary is about product scope and architectural ownership, not a judgment
+that adjacent utilities are undesirable. The intended result is a clean,
+general companion platform on which useful PS2-community software is easy to
+build, install, and use.
+
 ## Why the project is being restarted
 
 The existing implementation proved that the product is viable and accumulated
