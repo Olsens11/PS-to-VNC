@@ -108,6 +108,13 @@ These documents describe how development itself is conducted and preserved.
 - `development/source-naming-and-symbols.md` — governing naming, description,
   scope, and validation policy.
 
+## Issue #7 experimental results
+
+- `reconstruction/ISSUE7_RFB_RECONNECT_PROVIDER_HANDOFF_EXPERIMENT.md` —
+  hardware-tested explicit RFB reconnect and provider-handoff experiment,
+  preserved apparatus, limits, and future recovery implication tracked by
+  GitHub Issue #25.
+
 ## Testing and evidence
 
 Machine and hardware evidence lives under:

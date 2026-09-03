@@ -166,3 +166,10 @@ Its presence does not make every listed document a current authority.
 - `docs/STATE_OWNERSHIP.md`
 - `docs/TARGET_ARCHITECTURE.md`
 - `docs/VERSIONING.md`
+
+## Issue #7 reconnect/provider-handoff experiment
+
+- `docs/reconstruction/ISSUE7_RFB_RECONNECT_PROVIDER_HANDOFF_EXPERIMENT.md` —
+  formal record of the hardware-tested explicit RFB reconnect and alternate
+  provider-handoff experiment, preserved apparatus, limits, and future recovery
+  implications.
