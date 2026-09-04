@@ -92,20 +92,162 @@ grep -Eq '^SOURCE_COMMIT=[0-9a-f]{40}$' "$TMP/manifest-a.env"
 grep -Eq '^PS2DEV_IMAGE=ps2dev/ps2dev@sha256:[0-9a-f]{64}$' "$TMP/manifest-a.env"
 grep -Eq '^PS2IP_SHA256=[0-9a-f]{64}$' "$TMP/manifest-a.env"
 
-for key in \
-    SCRIPTS_TESTKIT_VERIFY_ELF_IDENTITY_SH_SHA256 \
-    SCRIPTS_TESTKIT_ISSUE7_DUT_MANIFEST_PY_SHA256 \
-    SCRIPTS_TESTKIT_ISSUE7_APPARATUS_COMMON_SH_SHA256 \
-    SCRIPTS_TESTKIT_ISSUE7_ARM_OBSERVERS_SH_SHA256 \
-    SCRIPTS_TESTKIT_ISSUE7_STOP_OBSERVERS_SH_SHA256 \
-    SCRIPTS_TESTKIT_ISSUE7_UDP_OBSERVER_PY_SHA256 \
-    SCRIPTS_TESTKIT_ISSUE7_RESULT_PY_SHA256 \
-    SCRIPTS_TESTKIT_ISSUE7_APPARATUS_SELF_TEST_SH_SHA256
-do
-    grep -Eq \
-        "^${key}=[0-9a-f]{64}$" \
-        "$TMP/manifest-a.env"
-done
+# TRACKED_INPUTS in issue7-dut-manifest.py is the provenance authority.
+# Derive this regression from that list instead of maintaining a second,
+# incomplete list of manifest hash fields here.
+python3 - \
+    "$MANIFEST" \
+    "$TMP/manifest-a.env" <<'PYHASH'
+from pathlib import Path
+import ast
+import hashlib
+import sys
+
+
+manifest_source = Path(
+    sys.argv[1]
+).resolve()
+
+generated_manifest = Path(
+    sys.argv[2]
+).resolve()
+
+tree = ast.parse(
+    manifest_source.read_text(
+        encoding="utf-8"
+    )
+)
+
+tracked_inputs = None
+
+for node in tree.body:
+    if not isinstance(node, ast.Assign):
+        continue
+
+    if any(
+        isinstance(target, ast.Name)
+        and target.id == "TRACKED_INPUTS"
+        for target in node.targets
+    ):
+        tracked_inputs = ast.literal_eval(
+            node.value
+        )
+        break
+
+if tracked_inputs is None:
+    raise SystemExit(
+        "TRACKED_INPUTS not found in DUT manifest tool"
+    )
+
+if not isinstance(tracked_inputs, tuple):
+    raise SystemExit(
+        "TRACKED_INPUTS is not a tuple"
+    )
+
+root = manifest_source.parents[2]
+
+values = {}
+
+for number, raw in enumerate(
+    generated_manifest.read_text(
+        encoding="utf-8"
+    ).splitlines(),
+    start=1,
+):
+    if not raw or raw.startswith("#"):
+        continue
+
+    if "=" not in raw:
+        raise SystemExit(
+            "malformed generated manifest line "
+            f"{number}: {raw!r}"
+        )
+
+    key, value = raw.split("=", 1)
+
+    if key in values:
+        raise SystemExit(
+            f"duplicate generated manifest field: {key}"
+        )
+
+    values[key] = value
+
+
+def manifest_hash_key(relative: str) -> str:
+    return (
+        relative.upper()
+        .replace("/", "_")
+        .replace("-", "_")
+        .replace(".", "_")
+        + "_SHA256"
+    )
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+
+    with path.open("rb") as stream:
+        for block in iter(
+            lambda: stream.read(1024 * 1024),
+            b"",
+        ):
+            digest.update(block)
+
+    return digest.hexdigest()
+
+
+checked = 0
+
+for relative in tracked_inputs:
+    source = root / relative
+
+    if not source.is_file():
+        raise SystemExit(
+            f"tracked manifest input missing: {relative}"
+        )
+
+    key = manifest_hash_key(
+        relative
+    )
+
+    expected = sha256(
+        source
+    )
+
+    actual = values.get(
+        key
+    )
+
+    if actual != expected:
+        raise SystemExit(
+            "tracked-input manifest hash mismatch "
+            f"{key}: expected={expected} actual={actual}"
+        )
+
+    checked += 1
+
+obsolete = (
+    "SCRIPTS_TESTKIT_ISSUE7_DEPLOY_ELF_SH_SHA256"
+)
+
+if obsolete in values:
+    raise SystemExit(
+        "obsolete Issue #7 deployer hash field "
+        "reappeared in generated manifest"
+    )
+
+print(
+    f"ISSUE7_MANIFEST_TRACKED_INPUT_COUNT={checked}"
+)
+
+print(
+    "ISSUE7_MANIFEST_TRACKED_INPUT_HASHES=PASS"
+)
+
+print(
+    "OBSOLETE_ISSUE7_DEPLOY_HASH_FIELD=0"
+)
+PYHASH
 
 if python3 "$MANIFEST" \
     "$TMP/preparation.env" \
@@ -130,7 +272,7 @@ sha_a="$(sha256sum "$TMP/manifest-a.env" | awk '{print $1}')"
 sha_b="$(sha256sum "$TMP/manifest-b.env" | awk '{print $1}')"
 [ "$sha_a" = "$sha_b" ]
 
-echo 'ISSUE7_DUT_MANIFEST_SELF_TEST_VERSION=2'
+echo 'ISSUE7_DUT_MANIFEST_SELF_TEST_VERSION=3'
 echo "MANIFEST_SHA256=$sha_a"
 echo 'CANONICAL_CLEAN_BUILD_BINDING=PASS'
 echo 'DETERMINISTIC_MANIFEST=PASS'
