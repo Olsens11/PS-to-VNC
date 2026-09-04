@@ -76,6 +76,10 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | PLACEHOLDERS | constant | scripts/source-dictionary.py | dictionary validator | private | Defines inadequate description values that always fail validation. | dictionary description quality |
 | HEADER | constant | scripts/source-dictionary.py | dictionary validator | private | Defines the exact ordered Markdown columns required for symbol entries. | dictionary format contract |
 | COVERAGE_STATES | constant | scripts/source-dictionary.py | dictionary validator | private | Defines the only coverage claims accepted from a directory-owned dictionary. | dictionary completeness gate |
+| STATE_PATH | constant | scripts/source-dictionary.py | dictionary baseline authority | private | Names the tracked machine-readable state file holding trusted comprehensive audit authority. | incremental dictionary validation |
+| STATE_VERSION | constant | scripts/source-dictionary.py | dictionary baseline authority | private | Defines the supported schema version for source-dictionary baseline state. | baseline state integrity |
+| BASELINE_UNSET | constant | scripts/source-dictionary.py | dictionary baseline authority | private | Represents the deliberate absence of any proven comprehensive definition-audit baseline. | baseline bootstrap |
+| DEFINITION_DISCOVERY_STATUS | constant | scripts/source-dictionary.py | definition discovery gate | private | Prevents trusted baseline recording until project-definition discovery is genuinely implemented. | baseline safety |
 | DictionaryError | type | scripts/source-dictionary.py | dictionary validator | private | Represents a structural dictionary failure that makes validation results untrustworthy. | dictionary integrity |
 | Entry | type | scripts/source-dictionary.py | dictionary validator | private | Holds one parsed symbol description together with its source dictionary location. | dictionary validation |
 | name | field | scripts/source-dictionary.py | Entry | private | Stores the exact project-defined symbol name described by an entry. | dictionary schema |
@@ -110,6 +114,44 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | cells | variable | scripts/source-dictionary.py | parse_dictionary | local | Holds normalized Markdown cells for a header or symbol row. | dictionary format contract |
 | allowed | variable | scripts/source-dictionary.py | parse_dictionary | local | Formats accepted coverage states for an invalid-state diagnostic. | validation diagnostics |
 | expected | variable | scripts/source-dictionary.py | parse_dictionary | local | Computes the directory metadata value required by dictionary location. | dictionary ownership |
+| run_git | function | scripts/source-dictionary.py | Git state adapter | private | Executes one read-oriented Git query and converts unexpected query failure into dictionary integrity failure. | trusted baseline mechanics |
+| root | parameter | scripts/source-dictionary.py | run_git | local | Supplies the repository in which the Git query executes. | trusted baseline mechanics |
+| arguments | parameter | scripts/source-dictionary.py | run_git | local | Supplies the exact Git subcommand and arguments to execute. | trusted baseline mechanics |
+| check | parameter | scripts/source-dictionary.py | run_git | local | Selects whether a nonzero Git result is an integrity failure or an expected probe result. | trusted baseline mechanics |
+| completed | variable | scripts/source-dictionary.py | run_git | local | Holds the completed Git query with status and captured output. | trusted baseline mechanics |
+| detail | variable | scripts/source-dictionary.py | run_git | local | Holds available Git failure output for an integrity diagnostic. | validation diagnostics |
+| read_long_pass_baseline | function | scripts/source-dictionary.py | dictionary baseline authority | private | Reads and validates the tracked commit identifying the last trusted comprehensive dictionary audit. | incremental dictionary validation |
+| root | parameter | scripts/source-dictionary.py | read_long_pass_baseline | local | Supplies repository authority for resolving baseline state. | baseline state integrity |
+| state_path | variable | scripts/source-dictionary.py | read_long_pass_baseline | local | Resolves the repository-local source-dictionary baseline state file. | baseline state integrity |
+| fields | variable | scripts/source-dictionary.py | read_long_pass_baseline | local | Collects unique machine-readable baseline state fields. | baseline state integrity |
+| line | variable | scripts/source-dictionary.py | read_long_pass_baseline | local | Holds one baseline state line during strict parsing. | baseline state integrity |
+| key | variable | scripts/source-dictionary.py | read_long_pass_baseline | local | Holds one parsed baseline state field name. | baseline state integrity |
+| value | variable | scripts/source-dictionary.py | read_long_pass_baseline | local | Holds one parsed baseline state field value. | baseline state integrity |
+| version | variable | scripts/source-dictionary.py | read_long_pass_baseline | local | Holds the declared baseline state schema version. | baseline state integrity |
+| baseline | variable | scripts/source-dictionary.py | read_long_pass_baseline | local | Holds the stored trusted long-pass commit or explicit UNSET marker. | incremental dictionary validation |
+| changed_paths_since_baseline | function | scripts/source-dictionary.py | Git state adapter | private | Combines committed, staged, unstaged, and untracked path changes since the trusted baseline. | incremental dictionary validation |
+| root | parameter | scripts/source-dictionary.py | changed_paths_since_baseline | local | Supplies the repository whose complete change set is queried. | trusted baseline mechanics |
+| baseline | parameter | scripts/source-dictionary.py | changed_paths_since_baseline | local | Supplies the trusted comprehensive commit used as the committed-diff origin. | trusted baseline mechanics |
+| paths | variable | scripts/source-dictionary.py | changed_paths_since_baseline | local | Accumulates unique repository-relative paths changed since the baseline. | incremental dictionary validation |
+| commands | variable | scripts/source-dictionary.py | changed_paths_since_baseline | local | Defines committed, index, worktree, and untracked Git queries required for complete delta coverage. | incremental dictionary validation |
+| command | variable | scripts/source-dictionary.py | changed_paths_since_baseline | local | Holds one Git query while assembling the baseline delta. | incremental dictionary validation |
+| completed | variable | scripts/source-dictionary.py | changed_paths_since_baseline | local | Holds one completed Git delta query and its NUL-delimited output. | incremental dictionary validation |
+| value | variable | scripts/source-dictionary.py | changed_paths_since_baseline | local | Holds one repository-relative path decoded from Git output. | incremental dictionary validation |
+| is_definition_source_path | function | scripts/source-dictionary.py | definition scope selector | private | Reports whether a changed path belongs to a source language admitted by current clean-source discovery. | incremental dictionary validation |
+| path | parameter | scripts/source-dictionary.py | is_definition_source_path | local | Supplies one changed repository path for source-language classification. | incremental dictionary validation |
+| resolve_definition_scope | function | scripts/source-dictionary.py | definition scope selector | private | Selects explicit long, safety-fallback long, or trusted-baseline incremental definition scope without weakening structural validation. | source-naming-and-symbols policy |
+| root | parameter | scripts/source-dictionary.py | resolve_definition_scope | local | Supplies repository authority for baseline and Git-delta resolution. | incremental dictionary validation |
+| force_long | parameter | scripts/source-dictionary.py | resolve_definition_scope | local | Requests comprehensive scope regardless of available trusted baseline. | comprehensive dictionary audit |
+| baseline | variable | scripts/source-dictionary.py | resolve_definition_scope | local | Holds the tracked long-pass commit or UNSET marker while selecting audit mode. | incremental dictionary validation |
+| commit_probe | variable | scripts/source-dictionary.py | resolve_definition_scope | local | Tests whether the stored baseline still resolves to a Git commit. | baseline safety fallback |
+| ancestor_probe | variable | scripts/source-dictionary.py | resolve_definition_scope | local | Tests whether the stored baseline remains an ancestor of current HEAD. | baseline safety fallback |
+| changed | variable | scripts/source-dictionary.py | resolve_definition_scope | local | Holds all repository paths changed since a usable trusted baseline. | incremental dictionary validation |
+| candidates | variable | scripts/source-dictionary.py | resolve_definition_scope | local | Filters the complete Git delta to paths requiring definition discovery. | incremental dictionary validation |
+| path | variable | scripts/source-dictionary.py | resolve_definition_scope | local | Holds one changed path while filtering incremental definition candidates. | incremental dictionary validation |
+| write_long_pass_baseline | function | scripts/source-dictionary.py | dictionary baseline authority | private | Writes an explicitly proven comprehensive audit commit to tracked baseline state. | explicit baseline advancement |
+| root | parameter | scripts/source-dictionary.py | write_long_pass_baseline | local | Supplies repository authority for the tracked baseline state update. | explicit baseline advancement |
+| commit | parameter | scripts/source-dictionary.py | write_long_pass_baseline | local | Supplies the clean audited HEAD to record as trusted comprehensive authority. | explicit baseline advancement |
+| state_path | variable | scripts/source-dictionary.py | write_long_pass_baseline | local | Resolves the tracked baseline state file being intentionally updated. | explicit baseline advancement |
 | validate | function | scripts/source-dictionary.py | dictionary validator | private | Validates structural integrity while collecting ordinary dictionary-maintenance findings for deterministic reporting. | source-naming-and-symbols policy |
 | root | parameter | scripts/source-dictionary.py | validate | local | Supplies repository authority for complete validation. | dictionary validation |
 | require_complete | parameter | scripts/source-dictionary.py | validate | local | Requests attention findings for directories that still declare incomplete coverage. | dictionary completeness gate |
@@ -150,6 +192,14 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | dictionaries | variable | scripts/source-dictionary.py | main | local | Holds validated dictionaries returned for checking or rendering. | dictionary tooling entry point |
 | attention | variable | scripts/source-dictionary.py | main | local | Holds maintenance findings returned by validation for normal or strict result handling. | dictionary tooling entry point |
 | finding | variable | scripts/source-dictionary.py | main | local | Holds one maintenance finding while producing deterministic operator diagnostics. | validation diagnostics |
+| root | variable | scripts/source-dictionary.py | main | local | Resolves repository authority once for validation, audit-scope selection, and explicit baseline recording. | dictionary tooling entry point |
+| check_mode | variable | scripts/source-dictionary.py | main | local | Holds whether definition scope is incremental, explicit long, or safety-fallback long. | incremental dictionary validation |
+| baseline | variable | scripts/source-dictionary.py | main | local | Holds the trusted long-pass commit reported for the current check. | incremental dictionary validation |
+| baseline_reason | variable | scripts/source-dictionary.py | main | local | Explains why the current check uses incremental or comprehensive definition scope. | validation diagnostics |
+| definition_scope | variable | scripts/source-dictionary.py | main | local | Holds source paths selected for current definition discovery. | incremental dictionary validation |
+| path | variable | scripts/source-dictionary.py | main | local | Holds one selected incremental source path while reporting definition scope. | validation diagnostics |
+| status | variable | scripts/source-dictionary.py | main | local | Holds the clean-worktree Git result required before explicit baseline recording. | explicit baseline advancement |
+| head | variable | scripts/source-dictionary.py | main | local | Holds the clean current commit recorded after a passing comprehensive audit. | explicit baseline advancement |
 | rendered | variable | scripts/source-dictionary.py | main | local | Holds generated portal or aggregate Markdown before output. | deterministic generation |
 | exc | variable | scripts/source-dictionary.py | main | local | Holds a structural validation exception while formatting the hard-failure diagnostic. | dictionary integrity |
 | TOOL | constant | scripts/source-dictionary-self-test.py | dictionary self-test | private | Resolves the validator executable exercised by disposable regression fixtures. | dictionary tooling self-test |
@@ -164,6 +214,8 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | command | parameter | scripts/source-dictionary-self-test.py | run | local | Selects check, portal, or aggregate behavior for the fixture run. | dictionary tooling self-test |
 | require_complete | parameter | scripts/source-dictionary-self-test.py | run | local | Requests incomplete-coverage attention findings for the fixture run. | dictionary completeness self-test |
 | strict | parameter | scripts/source-dictionary-self-test.py | run | local | Selects whether fixture maintenance findings must produce a nonzero strict-gate result. | dictionary strict-mode self-test |
+| long | parameter | scripts/source-dictionary-self-test.py | run | local | Selects explicit comprehensive definition scope for one validator fixture run. | comprehensive audit self-test |
+| record_baseline | parameter | scripts/source-dictionary-self-test.py | run | local | Selects explicit trusted-baseline recording for one validator fixture run. | baseline recording self-test |
 | arguments | variable | scripts/source-dictionary-self-test.py | run | local | Builds the exact subprocess argument vector for the validator invocation. | dictionary tooling self-test |
 | completed | variable | scripts/source-dictionary-self-test.py | run | local | Holds the completed validator subprocess result for assertion and output inspection. | dictionary tooling self-test |
 | dictionary | function | scripts/source-dictionary-self-test.py | dictionary self-test | private | Builds fixture dictionary text with an explicit coverage state. | dictionary tooling self-test |
@@ -175,3 +227,6 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | row | variable | scripts/source-dictionary-self-test.py | fixture runner | local | Holds the canonical valid fixture symbol row before targeted mutations. | dictionary tooling self-test |
 | portal_a | variable | scripts/source-dictionary-self-test.py | fixture runner | local | Holds the first generated portal used in deterministic-output comparison. | deterministic generation self-test |
 | portal_b | variable | scripts/source-dictionary-self-test.py | fixture runner | local | Holds the second generated portal used in deterministic-output comparison. | deterministic generation self-test |
+| output | variable | scripts/source-dictionary-self-test.py | fixture runner | local | Holds validator output used to assert audit-mode and baseline-fallback behavior. | baseline mode self-test |
+| record_output | variable | scripts/source-dictionary-self-test.py | fixture runner | local | Holds expected command-line refusal output while definition discovery remains pending. | baseline safety self-test |
+| baseline_head | variable | scripts/source-dictionary-self-test.py | fixture runner | local | Holds a committed fixture head used as synthetic trusted comprehensive baseline authority. | incremental scope self-test |

@@ -103,6 +103,44 @@ Directory-local checks may be used during editing. Deterministic fixtures must
 prove positive, attention, strict-failure, stale, duplicate, ownership, and
 excluded-tree behavior before the checker joins `scripts/check.sh`.
 
+## Comprehensive and incremental audits
+
+Definition-completeness checking uses an explicit trusted-baseline model.
+
+Normal `check` is the fast development path. Once a trusted comprehensive
+baseline exists, definition discovery examines only relevant paths changed
+since that baseline commit. The delta includes committed changes after the
+baseline plus staged, unstaged, and untracked work. Cheap dictionary structural
+validation remains repository-wide.
+
+`check --long` explicitly ignores the incremental shortcut and selects the
+entire current clean-generation definition scope. If the saved baseline is
+missing, `UNSET`, unresolvable, or no longer an ancestor of current `HEAD`,
+normal `check` safely falls back to comprehensive scope rather than claiming
+incremental coverage it cannot prove.
+
+The machine-readable baseline authority is:
+
+    runtime/SOURCE_DICTIONARY_STATE.env
+
+`LAST_LONG_PASS_COMMIT` identifies the source commit most recently proven by a
+genuine comprehensive project-definition audit. `UNSET` means no such trusted
+baseline has been established.
+
+A comprehensive check never advances that authority implicitly. After
+definition discovery is implemented, a clean passing comprehensive audit may
+explicitly request baseline advancement with:
+
+    python3 scripts/source-dictionary.py check --long --require-complete --record-baseline
+
+The command records the audited clean `HEAD` in the state file; that state-file
+change is then reviewed and committed normally.
+
+Until project-definition discovery is implemented and a genuine comprehensive
+audit passes, `DEFINITION_DISCOVERY_STATUS` remains `PENDING`,
+`LAST_LONG_PASS_COMMIT` remains `UNSET`, and baseline recording is refused by
+the tool itself.
+
 ## Retrofit completion
 
 The clean-generation retrofit is complete only when every in-scope refreshed

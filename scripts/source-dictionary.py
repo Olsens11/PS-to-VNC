@@ -2,14 +2,16 @@
 """File synopsis:
 Validate and aggregate directory-owned PS-to-VNC symbol dictionaries.
 
-This tool owns clean-generation dictionary validation and deterministic views;
-it does not define product symbols or include historical/pre-refresh source.
+This tool owns clean-generation dictionary validation, trusted comprehensive
+audit scope, incremental Git-delta scope, and deterministic dictionary views.
+It does not define product symbols or include historical/pre-refresh source.
 """
 
 from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +22,10 @@ EXCLUDED_PARTS = {"baseline", "evidence", "working", "build", ".git"}
 PLACEHOLDERS = {"todo", "tbd", "unknown", "placeholder", "describe me"}
 HEADER = ("Name", "Kind", "File", "Owner", "Scope", "Description", "Context")
 COVERAGE_STATES = {"IN_PROGRESS", "COMPLETE"}
+STATE_PATH = Path("runtime/SOURCE_DICTIONARY_STATE.env")
+STATE_VERSION = "1"
+BASELINE_UNSET = "UNSET"
+DEFINITION_DISCOVERY_STATUS = "PENDING"
 
 
 class DictionaryError(RuntimeError):
@@ -93,6 +99,168 @@ def parse_dictionary(path: Path, root: Path) -> tuple[str, str, list[Entry]]:
     if directory != expected:
         raise DictionaryError(f"{path}: DIRECTORY={directory}, expected {expected}")
     return directory, coverage, entries
+
+
+def run_git(
+    root: Path,
+    *arguments: str,
+    check: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    """Run one Git query without changing repository state."""
+    completed = subprocess.run(
+        ["git", "-C", str(root), *arguments],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if check and completed.returncode != 0:
+        detail = completed.stderr.strip() or completed.stdout.strip()
+        raise DictionaryError(
+            f"git {' '.join(arguments)} failed"
+            + (f": {detail}" if detail else "")
+        )
+    return completed
+
+
+def read_long_pass_baseline(root: Path) -> str:
+    """Read and validate the trusted comprehensive-audit baseline."""
+    state_path = root / STATE_PATH
+    if not state_path.is_file():
+        return BASELINE_UNSET
+
+    fields: dict[str, str] = {}
+    for line in state_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            raise DictionaryError(
+                f"{STATE_PATH}: malformed state line {line!r}"
+            )
+        key, value = line.split("=", 1)
+        if not key or key in fields:
+            raise DictionaryError(
+                f"{STATE_PATH}: invalid or duplicate field {key!r}"
+            )
+        fields[key] = value
+
+    version = fields.get("SOURCE_DICTIONARY_STATE_VERSION")
+    if version != STATE_VERSION:
+        raise DictionaryError(
+            f"{STATE_PATH}: SOURCE_DICTIONARY_STATE_VERSION="
+            f"{version!r}, expected {STATE_VERSION}"
+        )
+
+    baseline = fields.get("LAST_LONG_PASS_COMMIT")
+    if not baseline:
+        raise DictionaryError(
+            f"{STATE_PATH}: missing LAST_LONG_PASS_COMMIT"
+        )
+
+    return baseline
+
+
+def changed_paths_since_baseline(
+    root: Path,
+    baseline: str,
+) -> set[Path]:
+    """Return committed plus index, worktree, and untracked path changes."""
+    paths: set[Path] = set()
+
+    commands = (
+        ("diff", "--name-only", "-z", f"{baseline}..HEAD", "--"),
+        ("diff", "--cached", "--name-only", "-z", "--"),
+        ("diff", "--name-only", "-z", "--"),
+        ("ls-files", "--others", "--exclude-standard", "-z"),
+    )
+
+    for command in commands:
+        completed = run_git(root, *command)
+        for value in completed.stdout.split("\0"):
+            if value:
+                paths.add(Path(value))
+
+    return paths
+
+
+def is_definition_source_path(path: Path) -> bool:
+    """Identify source languages currently covered by clean-file discovery."""
+    return path.suffix in {".c", ".h", ".py", ".sh"}
+
+
+def resolve_definition_scope(
+    root: Path,
+    force_long: bool,
+) -> tuple[str, str, str, set[Path]]:
+    """Choose comprehensive or trusted-baseline incremental source scope."""
+    baseline = read_long_pass_baseline(root)
+
+    if force_long:
+        return "LONG", baseline, "EXPLICIT_LONG", clean_files(root)
+
+    if baseline == BASELINE_UNSET:
+        return (
+            "LONG_FALLBACK",
+            baseline,
+            "NO_TRUSTED_LONG_PASS",
+            clean_files(root),
+        )
+
+    commit_probe = run_git(
+        root,
+        "cat-file",
+        "-e",
+        f"{baseline}^{{commit}}",
+        check=False,
+    )
+    if commit_probe.returncode != 0:
+        return (
+            "LONG_FALLBACK",
+            baseline,
+            "BASELINE_COMMIT_UNRESOLVABLE",
+            clean_files(root),
+        )
+
+    ancestor_probe = run_git(
+        root,
+        "merge-base",
+        "--is-ancestor",
+        baseline,
+        "HEAD",
+        check=False,
+    )
+    if ancestor_probe.returncode != 0:
+        return (
+            "LONG_FALLBACK",
+            baseline,
+            "BASELINE_NOT_ANCESTOR",
+            clean_files(root),
+        )
+
+    changed = changed_paths_since_baseline(root, baseline)
+    candidates = {
+        path for path in changed
+        if is_definition_source_path(path)
+    }
+
+    return "INCREMENTAL", baseline, "TRUSTED_BASELINE", candidates
+
+
+def write_long_pass_baseline(root: Path, commit: str) -> None:
+    """Record one explicitly proven comprehensive dictionary-audit commit."""
+    state_path = root / STATE_PATH
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(
+        "\n".join(
+            (
+                f"SOURCE_DICTIONARY_STATE_VERSION={STATE_VERSION}",
+                f"LAST_LONG_PASS_COMMIT={commit}",
+                "",
+            )
+        ),
+        encoding="utf-8",
+    )
 
 
 def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str, str, Path, list[Entry]]], set[Path], list[str]]:
@@ -199,18 +367,80 @@ def main() -> int:
         action="store_true",
         help="exit nonzero when ordinary dictionary-maintenance findings exist",
     )
+    parser.add_argument(
+        "--long",
+        action="store_true",
+        help="audit the complete clean-generation source scope",
+    )
+    parser.add_argument(
+        "--record-baseline",
+        action="store_true",
+        help="record clean HEAD after a passing comprehensive audit",
+    )
     args = parser.parse_args()
+
+    if args.command != "check" and (args.long or args.record_baseline):
+        parser.error("--long and --record-baseline apply only to check")
+
+    if args.record_baseline and not args.long:
+        parser.error("--record-baseline requires --long")
+
+    if args.record_baseline and not args.require_complete:
+        parser.error("--record-baseline requires --require-complete")
+
+    if (
+        args.record_baseline
+        and DEFINITION_DISCOVERY_STATUS != "READY"
+    ):
+        parser.error(
+            "--record-baseline is unavailable until "
+            "project-definition discovery is implemented"
+        )
+
     try:
+        root = args.root.resolve()
         dictionaries, _, attention = validate(
-            args.root.resolve(),
+            root,
             args.require_complete,
         )
+
+        check_mode = None
+        baseline = None
+        baseline_reason = None
+        definition_scope: set[Path] = set()
+
+        if args.command == "check":
+            (
+                check_mode,
+                baseline,
+                baseline_reason,
+                definition_scope,
+            ) = resolve_definition_scope(root, args.long)
+
+            print(f"SOURCE_DICTIONARY_CHECK_MODE={check_mode}")
+            print(f"SOURCE_DICTIONARY_BASELINE={baseline}")
+            print(f"SOURCE_DICTIONARY_BASELINE_REASON={baseline_reason}")
+            print(f"DEFINITION_SCOPE_COUNT={len(definition_scope)}")
+            print(
+                "DEFINITION_DISCOVERY_STATUS="
+                f"{DEFINITION_DISCOVERY_STATUS}"
+            )
+
+            if check_mode == "INCREMENTAL":
+                for path in sorted(definition_scope):
+                    print(f"DEFINITION_SCOPE_PATH={path.as_posix()}")
 
         if attention:
             if args.command == "check":
                 for finding in attention:
                     print(finding)
                 print(f"ATTENTION_COUNT={len(attention)}")
+                if args.record_baseline:
+                    print(
+                        "SOURCE_DICTIONARY_BASELINE_RECORD="
+                        "REFUSED_ATTENTION"
+                    )
+                    return 1
                 if args.strict:
                     print("SOURCE_DICTIONARIES=FAIL_STRICT")
                     return 1
@@ -229,6 +459,29 @@ def main() -> int:
                 return 1
 
         if args.command == "check":
+            if args.record_baseline:
+                status = run_git(
+                    root,
+                    "status",
+                    "--porcelain=v1",
+                    "--untracked-files=all",
+                )
+                if status.stdout:
+                    raise DictionaryError(
+                        "--record-baseline requires a clean working tree"
+                    )
+
+                head = run_git(
+                    root,
+                    "rev-parse",
+                    "HEAD",
+                ).stdout.strip()
+
+                write_long_pass_baseline(root, head)
+                print(
+                    f"SOURCE_DICTIONARY_BASELINE_RECORDED={head}"
+                )
+
             print("SOURCE_DICTIONARIES=PASS")
             return 0
         rendered = (

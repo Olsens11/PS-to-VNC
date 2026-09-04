@@ -175,6 +175,7 @@ Decision records:
 Machine-readable development-system state:
 
 - `runtime/DEVELOPMENT_SYSTEM.env`
+- `runtime/SOURCE_DICTIONARY_STATE.env` — trusted comprehensive source-dictionary audit baseline authority.
 
 Checks:
 

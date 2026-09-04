@@ -25,12 +25,18 @@ def run(
     command: str = "check",
     require_complete: bool = False,
     strict: bool = False,
+    long: bool = False,
+    record_baseline: bool = False,
 ) -> str:
     arguments = ["python3", str(TOOL), command, "--root", str(root)]
     if require_complete:
         arguments.append("--require-complete")
     if strict:
         arguments.append("--strict")
+    if long:
+        arguments.append("--long")
+    if record_baseline:
+        arguments.append("--record-baseline")
     completed = subprocess.run(
         arguments,
         check=False,
@@ -65,7 +71,43 @@ static int packet_count;
     row = "| packet_count | variable | src/net/io.c | io.c | private | Counts completed packets for this fixture. | fixture |\n"
     write(root, "src/net/SYMBOLS.md", dictionary(row))
 
-    assert "SOURCE_DICTIONARIES=PASS" in run(root, 0)
+    output = run(root, 0)
+    assert "SOURCE_DICTIONARIES=PASS" in output
+    assert "SOURCE_DICTIONARY_CHECK_MODE=LONG_FALLBACK" in output
+    assert "SOURCE_DICTIONARY_BASELINE=UNSET" in output
+    assert (
+        "SOURCE_DICTIONARY_BASELINE_REASON=NO_TRUSTED_LONG_PASS"
+        in output
+    )
+    assert "DEFINITION_DISCOVERY_STATUS=PENDING" in output
+
+    output = run(root, 0, long=True)
+    assert "SOURCE_DICTIONARY_CHECK_MODE=LONG" in output
+    assert "SOURCE_DICTIONARY_BASELINE_REASON=EXPLICIT_LONG" in output
+    assert "DEFINITION_DISCOVERY_STATUS=PENDING" in output
+
+    record_output = run(
+        root,
+        2,
+        require_complete=True,
+        long=True,
+        record_baseline=True,
+    )
+    assert (
+        "--record-baseline is unavailable until "
+        "project-definition discovery is implemented"
+        in record_output
+    )
+
+    write(
+        root,
+        "runtime/SOURCE_DICTIONARY_STATE.env",
+        "SOURCE_DICTIONARY_STATE_VERSION=999\n"
+        "LAST_LONG_PASS_COMMIT=UNSET\n",
+    )
+    assert "SOURCE_DICTIONARY_STATE_VERSION" in run(root, 1)
+    (root / "runtime/SOURCE_DICTIONARY_STATE.env").unlink()
+
     assert "INCOMPLETE_DICTIONARY_COVERAGE=src/net" in run(
         root, 0, require_complete=True
     )
@@ -129,5 +171,120 @@ static int packet_count;
     (root / "src/net/extra.c").unlink()
     write(root, "evidence/old.c", source.replace("packet_count", "historical_count"))
     assert "SOURCE_DICTIONARIES=PASS" in run(root, 0)
+
+with tempfile.TemporaryDirectory() as temporary:
+    root = Path(temporary)
+
+    source = """/*
+ * File synopsis:
+ * Git baseline fixture source.
+ */
+static int packet_count;
+"""
+    row = (
+        "| packet_count | variable | src/net/io.c | io.c | private | "
+        "Counts completed packets for this fixture. | fixture |\n"
+    )
+
+    write(root, "src/net/io.c", source)
+    write(
+        root,
+        "src/net/SYMBOLS.md",
+        dictionary(row, coverage="COMPLETE"),
+    )
+    write(
+        root,
+        "runtime/SOURCE_DICTIONARY_STATE.env",
+        "SOURCE_DICTIONARY_STATE_VERSION=1\n"
+        "LAST_LONG_PASS_COMMIT=UNSET\n",
+    )
+
+    subprocess.run(
+        ["git", "init", "-q"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "PS-to-VNC Self Test"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(
+        [
+            "git",
+            "config",
+            "user.email",
+            "self-test@example.invalid",
+        ],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "add", "."],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-q", "-m", "fixture"],
+        cwd=root,
+        check=True,
+    )
+
+    baseline_head = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        text=True,
+    ).strip()
+
+    write(
+        root,
+        "runtime/SOURCE_DICTIONARY_STATE.env",
+        "SOURCE_DICTIONARY_STATE_VERSION=1\n"
+        f"LAST_LONG_PASS_COMMIT={baseline_head}\n",
+    )
+
+    subprocess.run(
+        ["git", "add", "runtime/SOURCE_DICTIONARY_STATE.env"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-q", "-m", "trusted baseline state"],
+        cwd=root,
+        check=True,
+    )
+
+    write(
+        root,
+        "src/net/io.c",
+        source + "\n/* changed after trusted baseline */\n",
+    )
+
+    output = run(root, 0)
+    assert "SOURCE_DICTIONARY_CHECK_MODE=INCREMENTAL" in output
+    assert (
+        "SOURCE_DICTIONARY_BASELINE_REASON=TRUSTED_BASELINE"
+        in output
+    )
+    assert "DEFINITION_SCOPE_COUNT=1" in output
+    assert "DEFINITION_SCOPE_PATH=src/net/io.c" in output
+    assert "DEFINITION_DISCOVERY_STATUS=PENDING" in output
+
+    write(
+        root,
+        "runtime/SOURCE_DICTIONARY_STATE.env",
+        "SOURCE_DICTIONARY_STATE_VERSION=1\n"
+        "LAST_LONG_PASS_COMMIT="
+        "0000000000000000000000000000000000000000\n",
+    )
+
+    output = run(root, 0)
+    assert "SOURCE_DICTIONARY_CHECK_MODE=LONG_FALLBACK" in output
+    assert (
+        "SOURCE_DICTIONARY_BASELINE_REASON="
+        "BASELINE_COMMIT_UNRESOLVABLE"
+        in output
+    )
+
 
 print("SOURCE_DICTIONARY_SELF_TEST=PASS")
