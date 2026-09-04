@@ -165,6 +165,7 @@ Development-system policy:
 - `docs/development/tooling.md`
 - `docs/development/lessons-learned.md`
 - `docs/development/source-naming-and-symbols.md`
+- `docs/development/source-dictionary-validator.md`
 
 Decision records:
 

@@ -87,6 +87,9 @@ outputs.
 
 - `development/source-naming-and-symbols.md` — naming, file-orientation, and
   complete source-symbol dictionary policy.
+- `development/source-dictionary-validator.md` — validator implementation,
+  language-aware discovery, maintenance-drift behavior, trusted-baseline
+  contract, and deferred exact-instance ignore design.
 - `development/README.md`
 - `development/documentation.md`
 - `development/testing.md`

@@ -92,6 +92,11 @@ The current development-system dependency authority for these adapters is
 recorded in `runtime/DEVELOPMENT_SYSTEM.env`. The validator performs its own
 fail-closed executable/version checks where a dependency contract is required.
 
+The validator's implementation history, language adapters, maintenance-drift
+contract, trusted-baseline behavior, and deliberately deferred exact-instance
+ignore design are recorded in
+`docs/development/source-dictionary-validator.md`.
+
 ## Clean-generation scope and exclusions
 
 Required scope:
