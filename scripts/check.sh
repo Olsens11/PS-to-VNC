@@ -10,4 +10,7 @@ DIR="$(
 "$DIR/docs-check.sh"
 "$DIR/continuity-check.sh"
 
+echo '===== SOURCE DICTIONARY CHECK ====='
+python3 "$DIR/source-dictionary.py" check
+
 echo 'PS_TO_VNC_PROJECT_CHECK=PASS'

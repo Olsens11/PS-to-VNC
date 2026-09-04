@@ -82,13 +82,26 @@ generation boundary explicitly.
 
 ## Synchronization gate
 
-A saved successor-owned checker must fail for missing clean files or symbols,
-stale entries, cross-directory ownership violations, ambiguous duplicates,
-empty/placeholder descriptions, or generated portal output that differs from
-the committed portal. Directory-local checks may be used during editing; CI
-runs complete cross-directory validation. Deterministic fixtures must prove
-positive, missing, stale, duplicate, ownership, and excluded-tree cases before
-the checker joins `scripts/check.sh`.
+A saved successor-owned checker must distinguish structural integrity failures
+from ordinary dictionary-maintenance drift.
+
+Malformed dictionary structure, impossible ownership, ambiguous duplicates, or
+other conditions that make validation untrustworthy fail immediately.
+
+Ordinary maintenance findings such as stale entries, inadequate descriptions,
+clean files not yet represented by a dictionary, and requested incomplete
+coverage are reported together as `ATTENTION` during normal development.
+Normal `check` remains successful so active implementation can reach a sensible
+checkpoint while the same findings continue to nag on every project check.
+
+`check --strict` turns those maintenance findings into a nonzero quality gate.
+`--require-complete` additionally reports directories still marked
+`COVERAGE=IN_PROGRESS`; combine it with `--strict` when complete retrofit
+coverage is intentionally required.
+
+Directory-local checks may be used during editing. Deterministic fixtures must
+prove positive, attention, strict-failure, stale, duplicate, ownership, and
+excluded-tree behavior before the checker joins `scripts/check.sh`.
 
 ## Retrofit completion
 

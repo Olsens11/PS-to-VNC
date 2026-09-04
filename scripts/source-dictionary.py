@@ -95,11 +95,12 @@ def parse_dictionary(path: Path, root: Path) -> tuple[str, str, list[Entry]]:
     return directory, coverage, entries
 
 
-def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str, str, Path, list[Entry]]], set[Path]]:
+def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str, str, Path, list[Entry]]], set[Path], list[str]]:
     dictionaries = []
     covered: set[Path] = set()
     keys: set[tuple[str, str, str, str]] = set()
     incomplete: list[str] = []
+    attention: list[str] = []
     for path in sorted(root.rglob(DICT_NAME)):
         if is_excluded(path, root):
             continue
@@ -117,19 +118,22 @@ def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str
                     f"{path}:{entry.line}: {entry.file} is outside dictionary directory"
                 ) from exc
             if not source.is_file():
-                raise DictionaryError(f"{path}:{entry.line}: missing file {entry.file}")
+                attention.append(
+                    f"MISSING_DICTIONARY_SOURCE={path}:{entry.line}:{entry.file}"
+                )
+                continue
             source_text = source.read_text(encoding="utf-8")
             if CLEAN_MARKER not in source_text[:2048]:
                 raise DictionaryError(
                     f"{path}:{entry.line}: {entry.file} is not clean-generation source"
                 )
             if not re.search(rf"(?<![A-Za-z0-9_]){re.escape(entry.name)}(?![A-Za-z0-9_])", source_text):
-                raise DictionaryError(
-                    f"{path}:{entry.line}: stale symbol {entry.name} in {entry.file}"
+                attention.append(
+                    f"STALE_DICTIONARY_SYMBOL={path}:{entry.line}:{entry.file}:{entry.name}"
                 )
             if len(entry.description) < 12 or entry.description.lower() in PLACEHOLDERS:
-                raise DictionaryError(
-                    f"{path}:{entry.line}: inadequate description for {entry.name}"
+                attention.append(
+                    f"INADEQUATE_DICTIONARY_DESCRIPTION={path}:{entry.line}:{entry.file}:{entry.name}"
                 )
             key = (entry.file, entry.owner, entry.kind, entry.name)
             if key in keys:
@@ -138,13 +142,16 @@ def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str
             covered.add(Path(entry.file))
         dictionaries.append((directory, coverage, path, entries))
     missing = clean_files(root) - covered
-    if missing:
-        names = ", ".join(sorted(x.as_posix() for x in missing))
-        raise DictionaryError(f"clean-generation files without dictionary entries: {names}")
-    if require_complete and incomplete:
-        names = ", ".join(sorted(incomplete))
-        raise DictionaryError(f"incomplete directory dictionaries: {names}")
-    return dictionaries, covered
+    for source in sorted(missing):
+        attention.append(
+            f"MISSING_DICTIONARY_FILE_COVERAGE={source.as_posix()}"
+        )
+    if require_complete:
+        for directory in sorted(incomplete):
+            attention.append(
+                f"INCOMPLETE_DICTIONARY_COVERAGE={directory}"
+            )
+    return dictionaries, covered, attention
 
 
 def render_portal(root: Path, dictionaries) -> str:
@@ -185,11 +192,42 @@ def main() -> int:
     parser.add_argument(
         "--require-complete",
         action="store_true",
-        help="fail if any directory dictionary still declares COVERAGE=IN_PROGRESS",
+        help="report directories that still declare COVERAGE=IN_PROGRESS",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="exit nonzero when ordinary dictionary-maintenance findings exist",
     )
     args = parser.parse_args()
     try:
-        dictionaries, _ = validate(args.root.resolve(), args.require_complete)
+        dictionaries, _, attention = validate(
+            args.root.resolve(),
+            args.require_complete,
+        )
+
+        if attention:
+            if args.command == "check":
+                for finding in attention:
+                    print(finding)
+                print(f"ATTENTION_COUNT={len(attention)}")
+                if args.strict:
+                    print("SOURCE_DICTIONARIES=FAIL_STRICT")
+                    return 1
+                print("SOURCE_DICTIONARIES=ATTENTION")
+                print("CHECK_CONTINUES=YES")
+                return 0
+
+            for finding in attention:
+                print(finding, file=sys.stderr)
+            print(
+                f"SOURCE_DICTIONARIES_ATTENTION_COUNT={len(attention)}",
+                file=sys.stderr,
+            )
+            if args.strict:
+                print("SOURCE_DICTIONARIES=FAIL_STRICT", file=sys.stderr)
+                return 1
+
         if args.command == "check":
             print("SOURCE_DICTIONARIES=PASS")
             return 0

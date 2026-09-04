@@ -76,7 +76,7 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | PLACEHOLDERS | constant | scripts/source-dictionary.py | dictionary validator | private | Defines inadequate description values that always fail validation. | dictionary description quality |
 | HEADER | constant | scripts/source-dictionary.py | dictionary validator | private | Defines the exact ordered Markdown columns required for symbol entries. | dictionary format contract |
 | COVERAGE_STATES | constant | scripts/source-dictionary.py | dictionary validator | private | Defines the only coverage claims accepted from a directory-owned dictionary. | dictionary completeness gate |
-| DictionaryError | type | scripts/source-dictionary.py | dictionary validator | private | Represents a fail-closed dictionary format, ownership, or coverage violation. | dictionary validation |
+| DictionaryError | type | scripts/source-dictionary.py | dictionary validator | private | Represents a structural dictionary failure that makes validation results untrustworthy. | dictionary integrity |
 | Entry | type | scripts/source-dictionary.py | dictionary validator | private | Holds one parsed symbol description together with its source dictionary location. | dictionary validation |
 | name | field | scripts/source-dictionary.py | Entry | private | Stores the exact project-defined symbol name described by an entry. | dictionary schema |
 | kind | field | scripts/source-dictionary.py | Entry | private | Stores the symbol category used to disambiguate definitions. | dictionary schema |
@@ -110,13 +110,14 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | cells | variable | scripts/source-dictionary.py | parse_dictionary | local | Holds normalized Markdown cells for a header or symbol row. | dictionary format contract |
 | allowed | variable | scripts/source-dictionary.py | parse_dictionary | local | Formats accepted coverage states for an invalid-state diagnostic. | validation diagnostics |
 | expected | variable | scripts/source-dictionary.py | parse_dictionary | local | Computes the directory metadata value required by dictionary location. | dictionary ownership |
-| validate | function | scripts/source-dictionary.py | dictionary validator | private | Validates metadata, ownership, live references, descriptions, duplicates, clean-file coverage, and optional completeness. | source-naming-and-symbols policy |
+| validate | function | scripts/source-dictionary.py | dictionary validator | private | Validates structural integrity while collecting ordinary dictionary-maintenance findings for deterministic reporting. | source-naming-and-symbols policy |
 | root | parameter | scripts/source-dictionary.py | validate | local | Supplies repository authority for complete validation. | dictionary validation |
-| require_complete | parameter | scripts/source-dictionary.py | validate | local | Requests failure when any directory still declares incomplete coverage. | dictionary completeness gate |
+| require_complete | parameter | scripts/source-dictionary.py | validate | local | Requests attention findings for directories that still declare incomplete coverage. | dictionary completeness gate |
 | dictionaries | variable | scripts/source-dictionary.py | validate | local | Accumulates parsed directory dictionaries for views and result reporting. | dictionary validation |
 | covered | variable | scripts/source-dictionary.py | validate | local | Tracks clean files represented by at least one valid dictionary entry. | dictionary file coverage |
 | keys | variable | scripts/source-dictionary.py | validate | local | Tracks compound entry identities used to reject ambiguous duplicates. | dictionary uniqueness |
-| incomplete | variable | scripts/source-dictionary.py | validate | local | Collects directories whose coverage claim is not COMPLETE. | dictionary completeness gate |
+| incomplete | variable | scripts/source-dictionary.py | validate | local | Collects directories whose coverage claim is not COMPLETE for optional attention reporting. | dictionary completeness gate |
+| attention | variable | scripts/source-dictionary.py | validate | local | Collects deterministic nonfatal maintenance findings discovered during validation. | validation diagnostics |
 | path | variable | scripts/source-dictionary.py | validate | local | Holds each discovered dictionary path during deterministic validation. | dictionary validation |
 | directory | variable | scripts/source-dictionary.py | validate | local | Holds the parsed owner directory for the current dictionary. | dictionary ownership |
 | coverage | variable | scripts/source-dictionary.py | validate | local | Holds the parsed completeness state for the current dictionary. | dictionary completeness gate |
@@ -125,8 +126,7 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | source | variable | scripts/source-dictionary.py | validate | local | Resolves the defining source file referenced by the current entry. | dictionary ownership |
 | source_text | variable | scripts/source-dictionary.py | validate | local | Holds defining source text used to reject stale symbol names. | stale-entry detection |
 | key | variable | scripts/source-dictionary.py | validate | local | Holds the compound identity used for duplicate-entry rejection. | dictionary uniqueness |
-| missing | variable | scripts/source-dictionary.py | validate | local | Holds clean-generation files that have no valid dictionary entry. | dictionary file coverage |
-| names | variable | scripts/source-dictionary.py | validate | local | Formats missing or incomplete directory names for deterministic diagnostics. | validation diagnostics |
+| missing | variable | scripts/source-dictionary.py | validate | local | Holds clean-generation files that receive maintenance attention because no dictionary entry represents them yet. | dictionary file coverage |
 | render_portal | function | scripts/source-dictionary.py | dictionary generator | private | Produces lightweight directory navigation with coverage state and symbol counts. | generated dictionary portal |
 | root | parameter | scripts/source-dictionary.py | render_portal | local | Supplies repository authority for relative dictionary links. | generated dictionary portal |
 | dictionaries | parameter | scripts/source-dictionary.py | render_portal | local | Supplies validated dictionary records for deterministic rendering. | generated dictionary portal |
@@ -144,12 +144,14 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | entries | variable | scripts/source-dictionary.py | render_aggregate | local | Supplies the symbol rows rendered for one directory. | generated dictionary aggregate |
 | entry | variable | scripts/source-dictionary.py | render_aggregate | local | Holds the current sorted symbol entry being rendered. | generated dictionary aggregate |
 | values | variable | scripts/source-dictionary.py | render_aggregate | local | Holds escaped cell values for the current aggregate table row. | generated dictionary aggregate |
-| main | function | scripts/source-dictionary.py | dictionary command line | private | Parses the requested operation, invokes validation, and reports a fail-closed result. | dictionary tooling entry point |
+| main | function | scripts/source-dictionary.py | dictionary command line | private | Parses the requested operation and separates hard integrity failures from soft maintenance attention or strict-gate failure. | dictionary tooling entry point |
 | parser | variable | scripts/source-dictionary.py | main | local | Owns the command-line parser for dictionary operations. | dictionary tooling entry point |
 | args | variable | scripts/source-dictionary.py | main | local | Holds parsed command-line arguments supplied to the tool. | dictionary tooling entry point |
 | dictionaries | variable | scripts/source-dictionary.py | main | local | Holds validated dictionaries returned for checking or rendering. | dictionary tooling entry point |
+| attention | variable | scripts/source-dictionary.py | main | local | Holds maintenance findings returned by validation for normal or strict result handling. | dictionary tooling entry point |
+| finding | variable | scripts/source-dictionary.py | main | local | Holds one maintenance finding while producing deterministic operator diagnostics. | validation diagnostics |
 | rendered | variable | scripts/source-dictionary.py | main | local | Holds generated portal or aggregate Markdown before output. | deterministic generation |
-| exc | variable | scripts/source-dictionary.py | main | local | Holds a validation exception while formatting the machine-readable failure. | fail-closed validation |
+| exc | variable | scripts/source-dictionary.py | main | local | Holds a structural validation exception while formatting the hard-failure diagnostic. | dictionary integrity |
 | TOOL | constant | scripts/source-dictionary-self-test.py | dictionary self-test | private | Resolves the validator executable exercised by disposable regression fixtures. | dictionary tooling self-test |
 | write | function | scripts/source-dictionary-self-test.py | dictionary self-test | private | Creates one fixture file and any required parent directories. | dictionary tooling self-test |
 | root | parameter | scripts/source-dictionary-self-test.py | write | local | Supplies the disposable fixture repository root. | dictionary tooling self-test |
@@ -160,7 +162,8 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | root | parameter | scripts/source-dictionary-self-test.py | run | local | Supplies the disposable fixture repository root passed to validation. | dictionary tooling self-test |
 | expected | parameter | scripts/source-dictionary-self-test.py | run | local | Supplies the expected validator process exit status. | dictionary tooling self-test |
 | command | parameter | scripts/source-dictionary-self-test.py | run | local | Selects check, portal, or aggregate behavior for the fixture run. | dictionary tooling self-test |
-| require_complete | parameter | scripts/source-dictionary-self-test.py | run | local | Selects strict completeness enforcement for the fixture run. | dictionary completeness self-test |
+| require_complete | parameter | scripts/source-dictionary-self-test.py | run | local | Requests incomplete-coverage attention findings for the fixture run. | dictionary completeness self-test |
+| strict | parameter | scripts/source-dictionary-self-test.py | run | local | Selects whether fixture maintenance findings must produce a nonzero strict-gate result. | dictionary strict-mode self-test |
 | arguments | variable | scripts/source-dictionary-self-test.py | run | local | Builds the exact subprocess argument vector for the validator invocation. | dictionary tooling self-test |
 | completed | variable | scripts/source-dictionary-self-test.py | run | local | Holds the completed validator subprocess result for assertion and output inspection. | dictionary tooling self-test |
 | dictionary | function | scripts/source-dictionary-self-test.py | dictionary self-test | private | Builds fixture dictionary text with an explicit coverage state. | dictionary tooling self-test |
