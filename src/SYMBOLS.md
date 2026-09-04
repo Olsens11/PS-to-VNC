@@ -139,6 +139,25 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | pstvnc_framebuffer_write_rect | function declaration | src/framebuffer.h | desktop framebuffer interface | public | Declares bounded rectangle copying into CPU framebuffer storage. | framebuffer rectangle writes |
 | pstvnc_framebuffer_clear_dirty | function declaration | src/framebuffer.h | desktop framebuffer interface | public | Declares reset of dirty presentation state. | framebuffer dirty state |
 | pstvnc_framebuffer_get_dirty | function declaration | src/framebuffer.h | desktop framebuffer interface | public | Declares inspection of the current dirty bounding rectangle. | framebuffer dirty state |
+| framebuffer | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_clear_dirty | prototype | Supplies mutable framebuffer dirty-state ownership. | framebuffer dirty state |
+| framebuffer | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_get_dirty | prototype | Supplies the framebuffer whose dirty state is inspected. | framebuffer dirty state |
+| rect | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_get_dirty | prototype | Receives a copy of the current dirty bounding rectangle. | framebuffer dirty state |
+| framebuffer | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_init | prototype | Supplies the framebuffer value whose metadata is initialized. | desktop framebuffer lifecycle |
+| pixel_capacity | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_init | prototype | Gives available pixel storage capacity independent of logical geometry. | desktop framebuffer lifecycle |
+| pixels | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_init | prototype | Supplies caller-owned CPU pixel storage without asserting content authority. | desktop framebuffer lifecycle |
+| framebuffer | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_invalidate | prototype | Supplies the framebuffer whose authority is revoked. | failure semantics |
+| framebuffer | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_mark_valid | prototype | Supplies the initialized framebuffer to promote after session proof. | authoritative framebuffer semantics |
+| framebuffer | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_pixel_count | prototype | Supplies geometry used to compute the logical pixel count. | desktop framebuffer lifecycle |
+| framebuffer | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_set_geometry | prototype | Supplies the framebuffer whose logical geometry is changed. | desktop framebuffer lifecycle |
+| height | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_set_geometry | prototype | Gives the requested nonzero logical height. | desktop framebuffer lifecycle |
+| width | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_set_geometry | prototype | Gives the requested nonzero logical width. | desktop framebuffer lifecycle |
+| framebuffer | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_write_rect | prototype | Supplies destination framebuffer storage and geometry. | framebuffer rectangle writes |
+| height | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_write_rect | prototype | Gives destination rectangle height. | framebuffer rectangle writes |
+| source | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_write_rect | prototype | Points to source pixels that will be copied into framebuffer storage. | framebuffer rectangle writes |
+| source_stride | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_write_rect | prototype | Gives source row stride and must cover the requested width. | framebuffer rectangle writes |
+| width | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_write_rect | prototype | Gives destination rectangle width. | framebuffer rectangle writes |
+| x | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_write_rect | prototype | Gives destination rectangle left coordinate. | framebuffer rectangle writes |
+| y | prototype parameter | src/framebuffer.h | pstvnc_framebuffer_write_rect | prototype | Gives destination rectangle top coordinate. | framebuffer rectangle writes |
 | main | function | src/main.c | process entry | process | Delegates product lifecycle to the coordinator and always converges on OSDSYS. | CLEAN_ARCHITECTURE: Startup lifecycle |
 | argc | parameter | src/main.c | main | process | Receives process argument count but is intentionally unused by the clean baseline. | process entry |
 | argv | parameter | src/main.c | main | process | Receives process argument vector but is intentionally unused by the clean baseline. | process entry |
@@ -260,6 +279,33 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | blue_shift | field | src/rfb.h | pstvnc_rfb_server_init | public | Stores server-advertised blue component bit shift. | RFB ServerInit |
 | name_length | field | src/rfb.h | pstvnc_rfb_server_init | public | Stores the declared byte length of the following desktop name. | RFB ServerInit |
 | pstvnc_rfb_server_init_t | type | src/rfb.h | RFB wire interface | public | Names parsed ServerInit metadata used by synchronized session state. | RFB wire contract |
+| pstvnc_rfb_build_client_version | function declaration | src/rfb.h | RFB wire interface | public | Declares construction of the fixed client RFB protocol-version banner. | ISSUE7_MINIMAL_CORE: RFB connection and wire contract |
+| pstvnc_rfb_build_framebuffer_update_request | function declaration | src/rfb.h | RFB wire interface | public | Declares construction of a framebuffer-update request for one explicit rectangle and incremental/full mode. | RFB wire contract |
+| pstvnc_rfb_build_set_encodings_raw | function declaration | src/rfb.h | RFB wire interface | public | Declares construction of the SetEncodings request selecting Raw encoding only. | Raw-only Issue #7 baseline |
+| pstvnc_rfb_build_set_pixel_format_gs555 | function declaration | src/rfb.h | RFB wire interface | public | Declares construction of the SetPixelFormat request for the clean GS555 framebuffer contract. | fixed GS-friendly pixel format |
+| pstvnc_rfb_choose_security_none | function declaration | src/rfb.h | RFB wire interface | public | Declares selection of RFB None security from the server-advertised security-type list. | Issue #7 security baseline |
+| pstvnc_rfb_client_init_shared | function declaration | src/rfb.h | RFB wire interface | public | Declares the ClientInit shared-desktop flag used by the clean RFB connection. | Issue #7 RFB baseline |
+| pstvnc_rfb_parse_protocol_version | function declaration | src/rfb.h | RFB wire interface | public | Declares validation and parsing of one RFB protocol-version banner into its major and minor components. | ISSUE7_MINIMAL_CORE: RFB connection and wire contract |
+| pstvnc_rfb_parse_server_init | function declaration | src/rfb.h | RFB wire interface | public | Declares decoding of the fixed ServerInit header into typed server framebuffer metadata. | ISSUE7_MINIMAL_CORE: RFB connection and wire contract |
+| pstvnc_rfb_security_result_ok | function declaration | src/rfb.h | RFB wire interface | public | Declares interpretation of the four-byte RFB SecurityResult field as success or failure. | Issue #7 security baseline |
+| out | prototype parameter | src/rfb.h | pstvnc_rfb_build_client_version | prototype | Receives the exact fixed-length client protocol banner. | RFB wire contract |
+| height | prototype parameter | src/rfb.h | pstvnc_rfb_build_framebuffer_update_request | prototype | Gives requested rectangle height. | RFB update requests |
+| incremental | prototype parameter | src/rfb.h | pstvnc_rfb_build_framebuffer_update_request | prototype | Selects full versus incremental server update semantics. | RFB update requests |
+| out | prototype parameter | src/rfb.h | pstvnc_rfb_build_framebuffer_update_request | prototype | Receives the fixed-size FramebufferUpdateRequest bytes. | RFB wire contract |
+| width | prototype parameter | src/rfb.h | pstvnc_rfb_build_framebuffer_update_request | prototype | Gives requested rectangle width. | RFB update requests |
+| x | prototype parameter | src/rfb.h | pstvnc_rfb_build_framebuffer_update_request | prototype | Gives requested rectangle left coordinate. | RFB update requests |
+| y | prototype parameter | src/rfb.h | pstvnc_rfb_build_framebuffer_update_request | prototype | Gives requested rectangle top coordinate. | RFB update requests |
+| out | prototype parameter | src/rfb.h | pstvnc_rfb_build_set_encodings_raw | prototype | Receives the fixed Raw-only SetEncodings wire message. | Raw-only Issue #7 baseline |
+| out | prototype parameter | src/rfb.h | pstvnc_rfb_build_set_pixel_format_gs555 | prototype | Receives the fixed SetPixelFormat wire message. | fixed GS-friendly pixel format |
+| choice | prototype parameter | src/rfb.h | pstvnc_rfb_choose_security_none | prototype | Receives the selected None security type on success. | Issue #7 security baseline |
+| count | prototype parameter | src/rfb.h | pstvnc_rfb_choose_security_none | prototype | Gives the exact number of advertised security type bytes. | RFB wire contract |
+| types | prototype parameter | src/rfb.h | pstvnc_rfb_choose_security_none | prototype | Supplies the server-advertised security type list. | RFB wire contract |
+| banner | prototype parameter | src/rfb.h | pstvnc_rfb_parse_protocol_version | prototype | Supplies the exact server protocol banner bytes to validate. | RFB wire contract |
+| major | prototype parameter | src/rfb.h | pstvnc_rfb_parse_protocol_version | prototype | Receives the parsed protocol major version. | RFB wire contract |
+| minor | prototype parameter | src/rfb.h | pstvnc_rfb_parse_protocol_version | prototype | Receives the parsed protocol minor version. | RFB wire contract |
+| bytes | prototype parameter | src/rfb.h | pstvnc_rfb_parse_server_init | prototype | Supplies the fixed-size ServerInit header bytes. | RFB wire contract |
+| out | prototype parameter | src/rfb.h | pstvnc_rfb_parse_server_init | prototype | Receives parsed server geometry and pixel-format metadata. | RFB wire contract |
+| result | prototype parameter | src/rfb.h | pstvnc_rfb_security_result_ok | prototype | Supplies the four network-order SecurityResult bytes. | RFB wire contract |
 | PSTVNC_RFB_IO_H | include guard | src/rfb_io.h | RFB transport interface | file | Prevents repeated inclusion of exact I/O seam declarations. | clean source interface |
 | pstvnc_rfb_io_read_exact | function declaration | src/rfb_io.h | RFB transport seam | platform | Requires the transport to deliver an exact protocol byte count or fail. | RFB framing across TCP |
 | socket_fd | parameter | src/rfb_io.h | pstvnc_rfb_io_read_exact | platform | Identifies the connected socket from which exact bytes are required. | RFB framing across TCP |
@@ -426,3 +472,14 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | pstvnc_rfb_session_request_update | function declaration | src/rfb_session.h | RFB session interface | public | Declares synchronized full-desktop update requests. | Issue #7 live loop |
 | pstvnc_rfb_session_receive_initial_frame | function declaration | src/rfb_session.h | RFB session interface | public | Declares strict initial-frame receive and authority publication. | initial authoritative Raw frame proof |
 | pstvnc_rfb_session_receive_update | function declaration | src/rfb_session.h | RFB session interface | public | Declares ordinary update receive against an already authoritative framebuffer. | Issue #7 live loop |
+| session | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_init | prototype | Supplies the session object to reset to NEW state. | RFB session lifecycle |
+| framebuffer | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_receive_initial_frame | prototype | Supplies framebuffer storage whose authority remains revoked until proof succeeds. | initial authoritative Raw frame proof |
+| session | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_receive_initial_frame | prototype | Supplies the session awaiting its first complete framebuffer. | initial authoritative Raw frame proof |
+| framebuffer | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_receive_update | prototype | Supplies the currently authoritative framebuffer to update or invalidate on failure. | authoritative framebuffer semantics |
+| session | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_receive_update | prototype | Supplies the synchronized READY session. | Issue #7 live loop |
+| incremental | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_request_update | prototype | Selects ordinary incremental service versus a nonincremental request. | Issue #7 live loop |
+| session | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_request_update | prototype | Supplies the READY session and validated server geometry. | Issue #7 live loop |
+| expected_height | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_start | prototype | Gives the only acceptable server framebuffer height for this milestone. | fixed 704x462 baseline |
+| expected_width | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_start | prototype | Gives the only acceptable server framebuffer width for this milestone. | fixed 704x462 baseline |
+| session | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_start | prototype | Supplies session storage that becomes owner of synchronized protocol state. | RFB session lifecycle |
+| socket_fd | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_start | prototype | Supplies the already-connected VNC socket descriptor. | RFB session lifecycle |
