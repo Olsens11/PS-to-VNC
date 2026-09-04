@@ -6,7 +6,7 @@ COVERAGE=COMPLETE
 
 This directory owns the application coordinator, authoritative framebuffer,
 minimal diagnostics transport, display conversion, direct libpad pad
-acquisition, and RFB wire/session core.
+acquisition, pure remote-mouse response policy, and RFB wire/session core.
 The inventory below covers the clean-generation symbols defined directly in
 this directory. Historical/adopted subdirectories retain their own dictionaries.
 
@@ -161,6 +161,158 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | main | function | src/main.c | process entry | process | Delegates product lifecycle to the coordinator and always converges on OSDSYS. | CLEAN_ARCHITECTURE: Startup lifecycle |
 | argc | parameter | src/main.c | main | process | Receives process argument count but is intentionally unused by the clean baseline. | process entry |
 | argv | parameter | src/main.c | main | process | Receives process argument vector but is intentionally unused by the clean baseline. | process entry |
+
+| MOUSE_ANALOG_DEADZONE | macro | src/mouse.c | mouse response policy | file | Defines the centered raw-stick deadzone below which analog pointer or wheel motion is suppressed. | Test11K qualified analog response |
+| MOUSE_ANALOG_HALF_RAW | macro | src/mouse.c | mouse response policy | file | Marks the low-range analog response point through which the qualified curve remains deliberately shallow. | Test11K qualified analog response |
+| MOUSE_ANALOG_KNEE_RAW | macro | src/mouse.c | mouse response policy | file | Marks the analog response knee where the shallow low/mid curve rejoins the final acceleration region. | Test11K qualified analog response |
+| MOUSE_ANALOG_MAX_RAW | macro | src/mouse.c | mouse response policy | file | Names the maximum signed raw stick magnitude used to cap analog response calculations. | Test11K qualified analog response |
+| MOUSE_ANALOG_CURVE_ONE | macro | src/mouse.c | mouse response policy | file | Defines unity in the Q12 response-curve scale used by pointer and wheel calculations. | Test11K qualified analog response |
+| MOUSE_ANALOG_CURVE_KNEE | macro | src/mouse.c | mouse response policy | file | Defines the qualified Q12 response value reached at the analog acceleration knee. | Test11K qualified analog response |
+| MOUSE_DPAD_ACCEL_START_TICKS | macro | src/mouse.c | mouse response policy | file | Defines the approximately one-second 60 Hz hold point where D-pad precision motion begins continuous acceleration. | Test11K qualified D-pad response |
+| MOUSE_DPAD_ACCEL_RAMP_TICKS | macro | src/mouse.c | mouse response policy | file | Defines the approximately 1.5-second 60 Hz ramp from D-pad precision speed to maximum pointer speed. | Test11K qualified D-pad response |
+| MOUSE_DPAD_BASE_VELOCITY_Q8 | macro | src/mouse.c | mouse response policy | file | Defines the fractional Q8 base velocity used when accelerated D-pad motion begins. | Test11K qualified D-pad response |
+| MOUSE_DPAD_MAX_VELOCITY_Q8 | macro | src/mouse.c | mouse response policy | file | Defines the six-pixel-per-poll Q8 ceiling shared by accelerated D-pad pointer motion. | Test11K qualified D-pad response |
+| MOUSE_DPAD_WHEEL_REPEAT_POLLS | macro | src/mouse.c | mouse response policy | file | Defines the fixed repeat countdown used for held Triangle-plus-D-pad wheel input. | Test11K qualified D-pad response |
+| reset_dpad_motion | function | src/mouse.c | mouse response | file | Clears D-pad hold identity, timing, and fractional pointer motion so no prior D-pad gesture can resume across an ownership boundary. | Issue #38: pure mouse boundary |
+| mouse | parameter | src/mouse.c | reset_dpad_motion | local | Supplies the persistent pure mouse state operated on by this function. | B07 stale-state invalidation |
+| reset_analog_motion | function | src/mouse.c | mouse response | file | Clears fractional analog pointer motion so a partial pre-boundary pixel cannot emerge after a later stick gesture. | Issue #38: pure mouse boundary |
+| mouse | parameter | src/mouse.c | reset_analog_motion | local | Supplies the persistent pure mouse state operated on by this function. | B07 stale-state invalidation |
+| analog_speed_curve_q12 | function | src/mouse.c | mouse response | file | Maps raw stick magnitude through the qualified shallow-low-range and accelerated-high-range response curve. | Issue #38: pure mouse boundary |
+| raw_magnitude | parameter | src/mouse.c | analog_speed_curve_q12 | local | Supplies one absolute centered-stick magnitude for response-curve evaluation. | B07 qualified analog pointer response |
+| usable | variable | src/mouse.c | analog_speed_curve_q12 | local | Stores deadzone-adjusted analog magnitude used by the response curve. | B07 qualified analog pointer response |
+| knee_usable | variable | src/mouse.c | analog_speed_curve_q12 | local | Stores the deadzone-adjusted magnitude of the qualified analog response knee. | B07 qualified analog pointer response |
+| max_usable | variable | src/mouse.c | analog_speed_curve_q12 | local | Stores the deadzone-adjusted maximum analog magnitude. | B07 qualified analog pointer response |
+| curve | variable | src/mouse.c | analog_speed_curve_q12 | local | Stores the current Q12 response-curve value. | B07 qualified analog pointer response |
+| scale_q12 | variable | src/mouse.c | analog_speed_curve_q12 | local | Stores the Q12 low-range scale used to keep shallow stick travel deliberately slow. | B07 qualified analog pointer response |
+| stick_velocity_q8 | function | src/mouse.c | mouse response | file | Converts one raw centered stick axis into signed fractional Q8 pointer velocity. | Issue #38: pure mouse boundary |
+| value | parameter | src/mouse.c | stick_velocity_q8 | local | Supplies one native unsigned raw stick-axis value centered at 128. | B07 qualified analog pointer response |
+| displacement | variable | src/mouse.c | stick_velocity_q8 | local | Stores signed raw stick displacement from the native center value 128. | B07 qualified analog pointer response |
+| sign | variable | src/mouse.c | stick_velocity_q8 | local | Stores the sign of the current centered stick displacement. | B07 qualified analog pointer response |
+| raw | variable | src/mouse.c | stick_velocity_q8 | local | Stores the absolute or reconstructed raw magnitude used by the current response calculation. | B07 qualified analog pointer response |
+| curve | variable | src/mouse.c | stick_velocity_q8 | local | Stores the current Q12 response-curve value. | B07 qualified analog pointer response |
+| velocity | variable | src/mouse.c | stick_velocity_q8 | local | Stores the current signed or unsigned fractional Q8 movement velocity. | B07 qualified analog pointer response |
+| drain_q8 | function | src/mouse.c | mouse response | file | Extracts whole pixels from one signed Q8 accumulator while preserving the remaining fractional motion. | Issue #38: pure mouse boundary |
+| accumulator | parameter | src/mouse.c | drain_q8 | local | Supplies the signed Q8 motion accumulator from which whole pixels are drained. | B07 qualified analog pointer response |
+| pixels | variable | src/mouse.c | drain_q8 | local | Accumulates whole pixels drained from one signed Q8 motion accumulator. | B07 qualified analog pointer response |
+| dpad_hold_velocity_q8 | function | src/mouse.c | mouse response | file | Computes progressive D-pad hold velocity after the precision phase using the qualified analog-shaped acceleration curve. | Issue #38: pure mouse boundary |
+| hold_ticks | parameter | src/mouse.c | dpad_hold_velocity_q8 | local | Supplies the elapsed approximately 60 Hz sample count for the current D-pad hold. | B07 qualified D-pad pointer response |
+| elapsed | variable | src/mouse.c | dpad_hold_velocity_q8 | local | Stores the number of D-pad hold samples elapsed beyond the acceleration threshold. | B07 qualified D-pad pointer response |
+| raw | variable | src/mouse.c | dpad_hold_velocity_q8 | local | Stores the absolute or reconstructed raw magnitude used by the current response calculation. | B07 qualified D-pad pointer response |
+| curve | variable | src/mouse.c | dpad_hold_velocity_q8 | local | Stores the current Q12 response-curve value. | B07 qualified D-pad pointer response |
+| apply_dpad_pointer | function | src/mouse.c | mouse response | file | Applies fresh-step, delayed-repeat, and accelerated D-pad pointer behavior to one mouse sample. | Issue #38: pure mouse boundary |
+| mouse | parameter | src/mouse.c | apply_dpad_pointer | local | Supplies the persistent pure mouse state operated on by this function. | B07 qualified D-pad pointer response |
+| directions | parameter | src/mouse.c | apply_dpad_pointer | local | Supplies the current mouse-domain directional bit mask. | B07 qualified D-pad pointer response |
+| dx | parameter | src/mouse.c | apply_dpad_pointer | local | Supplies the horizontal pixel-displacement accumulator updated by this response helper. | B07 qualified D-pad pointer response |
+| dy | parameter | src/mouse.c | apply_dpad_pointer | local | Supplies the vertical pixel-displacement accumulator updated by this response helper. | B07 qualified D-pad pointer response |
+| do_step | variable | src/mouse.c | apply_dpad_pointer | local | Records whether the current D-pad sample emits the immediate or delayed two-pixel precision step. | B07 qualified D-pad pointer response |
+| velocity | variable | src/mouse.c | apply_dpad_pointer | local | Stores the current signed or unsigned fractional Q8 movement velocity. | B07 qualified D-pad pointer response |
+| apply_analog_pointer | function | src/mouse.c | mouse response | file | Accumulates qualified left-stick pointer velocity and emits whole-pixel displacement for one sample. | Issue #38: pure mouse boundary |
+| mouse | parameter | src/mouse.c | apply_analog_pointer | local | Supplies the persistent pure mouse state operated on by this function. | B07 qualified analog pointer response |
+| stick_x | parameter | src/mouse.c | apply_analog_pointer | local | Supplies the native unsigned horizontal left-stick sample. | B07 qualified analog pointer response |
+| stick_y | parameter | src/mouse.c | apply_analog_pointer | local | Supplies the native unsigned vertical left-stick sample. | B07 qualified analog pointer response |
+| dx | parameter | src/mouse.c | apply_analog_pointer | local | Supplies the horizontal pixel-displacement accumulator updated by this response helper. | B07 qualified analog pointer response |
+| dy | parameter | src/mouse.c | apply_analog_pointer | local | Supplies the vertical pixel-displacement accumulator updated by this response helper. | B07 qualified analog pointer response |
+| vx | variable | src/mouse.c | apply_analog_pointer | local | Stores horizontal analog pointer velocity in signed Q8 units. | B07 qualified analog pointer response |
+| vy | variable | src/mouse.c | apply_analog_pointer | local | Stores vertical analog pointer velocity in signed Q8 units. | B07 qualified analog pointer response |
+| wheel_direction_for_dpad | function | src/mouse.c | mouse response | file | Resolves routed D-pad directions into one wheel direction with qualified vertical precedence for diagonals. | Issue #38: pure mouse boundary |
+| directions | parameter | src/mouse.c | wheel_direction_for_dpad | local | Supplies the current mouse-domain directional bit mask. | B07 scroll semantics / Issue #38 wheel behavior |
+| wheel_direction_for_stick | function | src/mouse.c | mouse response | file | Resolves left-stick displacement into one dominant-axis analog wheel direction and magnitude. | Issue #38: pure mouse boundary |
+| stick_x | parameter | src/mouse.c | wheel_direction_for_stick | local | Supplies the native unsigned horizontal left-stick sample. | B07 scroll semantics / Issue #38 wheel behavior |
+| stick_y | parameter | src/mouse.c | wheel_direction_for_stick | local | Supplies the native unsigned vertical left-stick sample. | B07 scroll semantics / Issue #38 wheel behavior |
+| magnitude | parameter | src/mouse.c | wheel_direction_for_stick | local | Receives or supplies the dominant analog deflection magnitude used for wheel timing. | B07 scroll semantics / Issue #38 wheel behavior |
+| x | variable | src/mouse.c | wheel_direction_for_stick | local | Stores centered horizontal stick displacement for dominant-axis wheel selection. | B07 scroll semantics / Issue #38 wheel behavior |
+| y | variable | src/mouse.c | wheel_direction_for_stick | local | Stores centered vertical stick displacement for dominant-axis wheel selection. | B07 scroll semantics / Issue #38 wheel behavior |
+| absolute_x | variable | src/mouse.c | wheel_direction_for_stick | local | Stores absolute horizontal stick displacement for dominant-axis comparison. | B07 scroll semantics / Issue #38 wheel behavior |
+| absolute_y | variable | src/mouse.c | wheel_direction_for_stick | local | Stores absolute vertical stick displacement for dominant-axis comparison. | B07 scroll semantics / Issue #38 wheel behavior |
+| wheel_repeat_delay | function | src/mouse.c | mouse response | file | Converts analog wheel deflection magnitude into the qualified variable wheel-repeat countdown. | Issue #38: pure mouse boundary |
+| magnitude | parameter | src/mouse.c | wheel_repeat_delay | local | Receives or supplies the dominant analog deflection magnitude used for wheel timing. | B07 scroll semantics / Issue #38 wheel behavior |
+| curve | variable | src/mouse.c | wheel_repeat_delay | local | Stores the current Q12 response-curve value. | B07 scroll semantics / Issue #38 wheel behavior |
+| clicks_per_second_x10 | variable | src/mouse.c | wheel_repeat_delay | local | Stores analog wheel repeat rate in tenths of a notch per second. | B07 scroll semantics / Issue #38 wheel behavior |
+| interval_polls | variable | src/mouse.c | wheel_repeat_delay | local | Stores the rounded approximately 60 Hz sample interval between analog wheel notches. | B07 scroll semantics / Issue #38 wheel behavior |
+| clamp_position | function | src/mouse.c | mouse response | file | Clamps the persistent cursor position to the current logical remote desktop. | Issue #38: pure mouse boundary |
+| mouse | parameter | src/mouse.c | clamp_position | local | Supplies the persistent pure mouse state operated on by this function. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_init | function | src/mouse.c | mouse state | public | Declares initialization of pure mouse state for the current logical remote desktop. | Issue #38: pure mouse boundary |
+| mouse | parameter | src/mouse.c | pstvnc_mouse_init | local | Supplies the persistent pure mouse state operated on by this function. | Issue #38: pure mouse boundary |
+| width | parameter | src/mouse.c | pstvnc_mouse_init | local | Supplies the logical remote desktop width in pixels. | Issue #38: pure mouse boundary |
+| height | parameter | src/mouse.c | pstvnc_mouse_init | local | Supplies the logical remote desktop height in pixels. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_reset_derived | function | src/mouse.c | mouse state | public | Declares the hard-boundary reset that preserves remote cursor and click state while forgetting controller-derived response history. | Issue #38: pure mouse boundary |
+| mouse | parameter | src/mouse.c | pstvnc_mouse_reset_derived | local | Supplies the persistent pure mouse state operated on by this function. | B07 stale-state invalidation |
+| pstvnc_mouse_update | function | src/mouse.c | mouse state | public | Declares advancement of pure semantic mouse state from one already-routed input sample. | Issue #38: pure mouse boundary |
+| mouse | parameter | src/mouse.c | pstvnc_mouse_update | local | Supplies the persistent pure mouse state operated on by this function. | Issue #38: pure mouse boundary |
+| input | parameter | src/mouse.c | pstvnc_mouse_update | local | Supplies one already-routed mouse-domain input sample. | Issue #38: pure mouse boundary |
+| update | parameter | src/mouse.c | pstvnc_mouse_update | local | Receives the semantic mouse result produced for this sample. | Issue #38: pure mouse boundary |
+| old_x | variable | src/mouse.c | pstvnc_mouse_update | local | Snapshots cursor X before the current sample so pointer-state change can be detected. | Issue #38: pure mouse boundary |
+| old_y | variable | src/mouse.c | pstvnc_mouse_update | local | Snapshots cursor Y before the current sample so pointer-state change can be detected. | Issue #38: pure mouse boundary |
+| old_click_buttons | variable | src/mouse.c | pstvnc_mouse_update | local | Snapshots ordinary click-button state before the current sample so publication changes can be detected. | Issue #38: pure mouse boundary |
+| dx | variable | src/mouse.c | pstvnc_mouse_update | local | Stores the local `dx` intermediate used by `pstvnc_mouse_update` while evaluating the current mouse sample. | Issue #38: pure mouse boundary |
+| dy | variable | src/mouse.c | pstvnc_mouse_update | local | Stores the local `dy` intermediate used by `pstvnc_mouse_update` while evaluating the current mouse sample. | Issue #38: pure mouse boundary |
+| wheel_direction | variable | src/mouse.c | pstvnc_mouse_update | local | Stores the semantic wheel direction selected for the current sample. | Issue #38: pure mouse boundary |
+| wheel_repeat_delay_polls | variable | src/mouse.c | pstvnc_mouse_update | local | Stores the repeat countdown selected for the current wheel source and magnitude. | Issue #38: pure mouse boundary |
+| wheel_magnitude | variable | src/mouse.c | pstvnc_mouse_update | local | Stores dominant analog wheel deflection magnitude for variable repeat timing. | Issue #38: pure mouse boundary |
+| wheel_mode_toggled | variable | src/mouse.c | pstvnc_mouse_update | local | Records that the current L3 press changed analog wheel mode and therefore owns this stick sample. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_H | macro | src/mouse.h | mouse interface | file | Prevents repeated inclusion of the pure remote-mouse interface. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_DIRECTION_UP | macro | src/mouse.h | mouse interface | public | Defines the mouse-domain upward directional bit supplied by higher-level input routing. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_DIRECTION_DOWN | macro | src/mouse.h | mouse interface | public | Defines the mouse-domain downward directional bit supplied by higher-level input routing. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_DIRECTION_LEFT | macro | src/mouse.h | mouse interface | public | Defines the mouse-domain left directional bit supplied by higher-level input routing. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_DIRECTION_RIGHT | macro | src/mouse.h | mouse interface | public | Defines the mouse-domain right directional bit supplied by higher-level input routing. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_DIRECTION_MASK | macro | src/mouse.h | mouse interface | public | Combines all mouse-domain directional bits accepted by D-pad pointer and wheel interpretation. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_BUTTON_LCLICK | macro | src/mouse.h | mouse interface | public | Defines the semantic ordinary left mouse-button bit independent of RFB wire serialization. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_BUTTON_RCLICK | macro | src/mouse.h | mouse interface | public | Defines the semantic ordinary right mouse-button bit independent of RFB wire serialization. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_BUTTON_MASK | macro | src/mouse.h | mouse interface | public | Combines the semantic ordinary mouse-button bits accepted by the pure mouse state machine. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_dpad_mode | enum | src/mouse.h | mouse interface | public | Defines whether the routed D-pad is unavailable to the mouse, owns pointer motion, or owns wheel motion. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_DPAD_NONE | enum value | src/mouse.h | pstvnc_mouse_dpad_mode | public | States that the current D-pad sample belongs to another responsibility and must not affect mouse behavior. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_DPAD_POINTER | enum value | src/mouse.h | pstvnc_mouse_dpad_mode | public | States that the current D-pad sample controls remote cursor movement. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_DPAD_WHEEL | enum value | src/mouse.h | pstvnc_mouse_dpad_mode | public | States that the current D-pad sample controls remote wheel direction. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_dpad_mode_t | type | src/mouse.h | mouse interface | public | Names the routed D-pad ownership mode consumed by one mouse input sample. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_wheel_direction | enum | src/mouse.h | mouse interface | public | Defines the semantic wheel directions emitted by the pure mouse state machine. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_WHEEL_NONE | enum value | src/mouse.h | pstvnc_mouse_wheel_direction | public | States that no semantic wheel notch is emitted for the current mouse sample. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_WHEEL_UP | enum value | src/mouse.h | pstvnc_mouse_wheel_direction | public | Represents one upward semantic remote wheel notch. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_WHEEL_DOWN | enum value | src/mouse.h | pstvnc_mouse_wheel_direction | public | Represents one downward semantic remote wheel notch. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_WHEEL_LEFT | enum value | src/mouse.h | pstvnc_mouse_wheel_direction | public | Represents one leftward semantic remote wheel notch. | Issue #38: pure mouse boundary |
+| PSTVNC_MOUSE_WHEEL_RIGHT | enum value | src/mouse.h | pstvnc_mouse_wheel_direction | public | Represents one rightward semantic remote wheel notch. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_wheel_direction_t | type | src/mouse.h | mouse interface | public | Names one semantic remote wheel direction or the absence of a wheel event. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_input | structure | src/mouse.h | mouse interface | public | Defines one already-routed mouse-domain input sample independent of libpad and higher-level action arbitration. | Issue #38: pure mouse boundary |
+| dpad_mode | field | src/mouse.h | pstvnc_mouse_input | public | States which mouse responsibility, if any, owns the routed D-pad for this sample. | Issue #38: pure mouse boundary |
+| dpad_directions | field | src/mouse.h | pstvnc_mouse_input | public | Carries the active mouse-domain D-pad direction bits for this sample. | Issue #38: pure mouse boundary |
+| stick_available | field | src/mouse.h | pstvnc_mouse_input | public | States whether valid raw left-stick data is currently available to mouse interpretation. | Issue #38: pure mouse boundary |
+| stick_x | field | src/mouse.h | pstvnc_mouse_input | public | Carries the native unsigned horizontal left-stick sample when analog input is available. | Issue #38: pure mouse boundary |
+| stick_y | field | src/mouse.h | pstvnc_mouse_input | public | Carries the native unsigned vertical left-stick sample when analog input is available. | Issue #38: pure mouse boundary |
+| wheel_click_pressed | field | src/mouse.h | pstvnc_mouse_input | public | Carries one routed L3 press edge used to toggle analog wheel mode. | Issue #38: L3 click-to-toggle analog wheel mode |
+| click_buttons | field | src/mouse.h | pstvnc_mouse_input | public | Carries the currently held semantic ordinary mouse-button mask. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_input_t | type | src/mouse.h | mouse interface | public | Names the already-routed mouse-domain sample consumed by the pure mouse state machine. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_update | structure | src/mouse.h | mouse interface | public | Declares advancement of pure semantic mouse state from one already-routed input sample. | Issue #38: pure mouse boundary |
+| pointer_changed | field | src/mouse.h | pstvnc_mouse_update | public | States that cursor position or ordinary click-button state changed and should be published remotely. | Issue #38: pure mouse boundary |
+| cursor_x | field | src/mouse.h | pstvnc_mouse_update | public | Reports the current clamped logical remote cursor X coordinate. | Issue #38: pure mouse boundary |
+| cursor_y | field | src/mouse.h | pstvnc_mouse_update | public | Reports the current clamped logical remote cursor Y coordinate. | Issue #38: pure mouse boundary |
+| click_buttons | field | src/mouse.h | pstvnc_mouse_update | public | Reports the current semantic ordinary remote mouse-button state. | Issue #38: pure mouse boundary |
+| wheel_direction | field | src/mouse.h | pstvnc_mouse_update | public | Reports exactly one semantic wheel notch direction or NONE for this sample. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_update_t | type | src/mouse.h | mouse interface | public | Names the semantic remote-mouse update returned to a higher-level event publisher. | Issue #38: pure mouse boundary |
+| pstvnc_mouse | structure | src/mouse.h | mouse interface | public | Defines persistent pure mouse state including cursor authority and controller-derived response history. | Issue #38: pure mouse boundary |
+| width | field | src/mouse.h | pstvnc_mouse | public | Stores the authoritative logical desktop width used for cursor clamping. | Issue #38: pure mouse boundary |
+| height | field | src/mouse.h | pstvnc_mouse | public | Stores the authoritative logical desktop height used for cursor clamping. | Issue #38: pure mouse boundary |
+| cursor_x | field | src/mouse.h | pstvnc_mouse | public | Stores the authoritative logical remote cursor X position. | Issue #38: pure mouse boundary |
+| cursor_y | field | src/mouse.h | pstvnc_mouse | public | Stores the authoritative logical remote cursor Y position. | Issue #38: pure mouse boundary |
+| click_buttons | field | src/mouse.h | pstvnc_mouse | public | Stores the authoritative currently published ordinary remote mouse-button state. | Issue #38: pure mouse boundary |
+| wheel_mode_enabled | field | src/mouse.h | pstvnc_mouse | public | Records whether the Issue 38 L3 toggle currently routes the left stick to analog wheel behavior. | Issue #38: L3 click-to-toggle analog wheel mode |
+| dpad_hold_direction | field | src/mouse.h | pstvnc_mouse | public | Stores the exact D-pad direction combination currently owning one pointer-hold gesture. | Issue #38: pure mouse boundary |
+| dpad_hold_ticks | field | src/mouse.h | pstvnc_mouse | public | Counts approximately 60 Hz samples in the current D-pad hold gesture. | Issue #38: pure mouse boundary |
+| dpad_x_q8 | field | src/mouse.h | pstvnc_mouse | public | Accumulates fractional Q8 horizontal D-pad pointer motion across samples. | Issue #38: pure mouse boundary |
+| dpad_y_q8 | field | src/mouse.h | pstvnc_mouse | public | Accumulates fractional Q8 vertical D-pad pointer motion across samples. | Issue #38: pure mouse boundary |
+| analog_x_q8 | field | src/mouse.h | pstvnc_mouse | public | Accumulates fractional Q8 horizontal analog pointer motion across samples. | Issue #38: pure mouse boundary |
+| analog_y_q8 | field | src/mouse.h | pstvnc_mouse | public | Accumulates fractional Q8 vertical analog pointer motion across samples. | Issue #38: pure mouse boundary |
+| last_wheel_direction | field | src/mouse.h | pstvnc_mouse | public | Stores the prior active wheel direction used to distinguish a fresh direction from held repeat. | Issue #38: pure mouse boundary |
+| wheel_repeat_countdown | field | src/mouse.h | pstvnc_mouse | public | Stores the remaining sample countdown before a held wheel direction may emit another notch. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_t | type | src/mouse.h | mouse interface | public | Names the persistent pure remote-mouse state object. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_init | function declaration | src/mouse.h | mouse interface | public | Declares initialization of pure mouse state for the current logical remote desktop. | Issue #38: pure mouse boundary |
+| mouse | prototype parameter | src/mouse.h | pstvnc_mouse_init | prototype | Supplies the persistent pure mouse state operated on by this function. | Issue #38: pure mouse boundary |
+| width | prototype parameter | src/mouse.h | pstvnc_mouse_init | prototype | Supplies the logical remote desktop width in pixels. | Issue #38: pure mouse boundary |
+| height | prototype parameter | src/mouse.h | pstvnc_mouse_init | prototype | Supplies the logical remote desktop height in pixels. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_reset_derived | function declaration | src/mouse.h | mouse interface | public | Declares the hard-boundary reset that preserves remote cursor and click state while forgetting controller-derived response history. | Issue #38: pure mouse boundary |
+| mouse | prototype parameter | src/mouse.h | pstvnc_mouse_reset_derived | prototype | Supplies the persistent pure mouse state operated on by this function. | Issue #38: pure mouse boundary |
+| pstvnc_mouse_update | function declaration | src/mouse.h | mouse interface | public | Declares advancement of pure semantic mouse state from one already-routed input sample. | Issue #38: pure mouse boundary |
+| mouse | prototype parameter | src/mouse.h | pstvnc_mouse_update | prototype | Supplies the persistent pure mouse state operated on by this function. | Issue #38: pure mouse boundary |
+| input | prototype parameter | src/mouse.h | pstvnc_mouse_update | prototype | Supplies one already-routed mouse-domain input sample. | Issue #38: pure mouse boundary |
+| update | prototype parameter | src/mouse.h | pstvnc_mouse_update | prototype | Receives the semantic mouse result produced for this sample. | Issue #38: pure mouse boundary |
 | libpad_ready | variable | src/pad.c | pad lifecycle | file static | Records whether PS-to-VNC currently owns initialized process-wide libpad state. | ADR 0002: direct libpad ownership |
 | pad_state_is_readable | function | src/pad.c | pad acquisition | file | Reports whether one native libpad state permits ordinary controller observation. | libpad state machine |
 | state | parameter | src/pad.c | pad_state_is_readable | function | Supplies the native PAD_STATE_* value to classify. | libpad state machine |

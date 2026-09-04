@@ -16,6 +16,7 @@ unit: \
 	$(BUILD_DIR)/rfb_initial_coverage_test \
 	$(BUILD_DIR)/rfb_async_framing_test \
 	$(BUILD_DIR)/display_test \
+	$(BUILD_DIR)/mouse_test \
 	$(BUILD_DIR)/app_test
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/video_mode_test
@@ -26,6 +27,7 @@ unit: \
 	./$(BUILD_DIR)/rfb_initial_coverage_test
 	./$(BUILD_DIR)/rfb_async_framing_test
 	./$(BUILD_DIR)/display_test
+	./$(BUILD_DIR)/mouse_test
 	./$(BUILD_DIR)/app_test
 
 $(BUILD_DIR):
@@ -152,6 +154,16 @@ $(BUILD_DIR)/display_test: \
 		unit/display_test.c \
 		../src/display.c \
 		../src/framebuffer.c \
+		-o $@
+
+$(BUILD_DIR)/mouse_test: \
+	unit/mouse_test.c \
+	../src/mouse.c \
+	../src/mouse.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/mouse_test.c \
+		../src/mouse.c \
 		-o $@
 
 $(BUILD_DIR)/app_test: \
