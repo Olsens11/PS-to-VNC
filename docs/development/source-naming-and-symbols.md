@@ -158,16 +158,17 @@ excluded-tree behavior before the checker joins `scripts/check.sh`.
 Definition-completeness checking uses an explicit trusted-baseline model.
 
 Normal `check` is the fast development path. Once a trusted comprehensive
-baseline exists, definition discovery examines only relevant paths changed
-since that baseline commit. The delta includes committed changes after the
-baseline plus staged, unstaged, and untracked work. Cheap dictionary structural
-validation remains repository-wide.
+baseline exists, definition discovery examines only relevant product-source
+paths changed since that baseline commit. The delta includes committed changes
+after the baseline plus staged, unstaged, and untracked work. Cheap dictionary
+structural validation remains comprehensive across participating product
+dictionaries.
 
 `check --long` explicitly ignores the incremental shortcut and selects the
-entire current clean-generation definition scope. If the saved baseline is
+entire current product-source definition scope. If the saved baseline is
 missing, `UNSET`, unresolvable, or no longer an ancestor of current `HEAD`,
-normal `check` safely falls back to comprehensive scope rather than claiming
-incremental coverage it cannot prove.
+normal `check` safely falls back to comprehensive product scope rather than
+claiming incremental coverage it cannot prove.
 
 The machine-readable baseline authority is:
 
@@ -177,9 +178,9 @@ The machine-readable baseline authority is:
 genuine comprehensive project-definition audit. `UNSET` means no such trusted
 baseline has been established.
 
-A comprehensive check never advances that authority implicitly. After
-definition discovery is implemented, a clean passing comprehensive audit may
-explicitly request baseline advancement with:
+A comprehensive check never advances that authority implicitly. A clean,
+passing comprehensive product-source audit may explicitly request baseline
+advancement with:
 
     python3 scripts/source-dictionary.py check --long --require-complete --record-baseline
 

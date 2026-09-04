@@ -2,9 +2,10 @@
 """File synopsis:
 Validate and aggregate directory-owned PS-to-VNC symbol dictionaries.
 
-This tool owns clean-generation dictionary validation, trusted comprehensive
-audit scope, incremental Git-delta scope, and deterministic dictionary views.
-It does not define product symbols or include historical/pre-refresh source.
+This tool owns product-source dictionary validation, trusted comprehensive
+audit scope, incremental Git-delta scope, and deterministic product dictionary
+views. It does not define product symbols or include historical/pre-refresh
+source in the enforced completeness boundary.
 """
 
 from __future__ import annotations
@@ -2357,10 +2358,10 @@ def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str
                 continue
             source_text = source.read_text(encoding="utf-8")
 
-            # C/Python/shell source carries the explicit clean-generation
-            # synopsis marker. Maintained Makefile/.mk infrastructure enters
-            # clean scope through is_make_source_path(), because the adopted
-            # clean build/test Make sources predate that marker convention.
+            # Product C/Python/shell source carries the explicit
+            # clean-generation synopsis marker. Product Makefile/.mk source
+            # may use the Make-specific membership rule instead. Non-product
+            # dictionaries have already been excluded above.
             if (
                 CLEAN_MARKER not in source_text[:2048]
                 and not is_make_source_path(Path(entry.file))
@@ -2394,8 +2395,8 @@ def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str
 
 def render_portal(root: Path, dictionaries) -> str:
     lines = [
-        "# Clean Source Symbol Dictionaries", "",
-        "This portal is generated from directory-owned `SYMBOLS.md` files.", "",
+        "# Product Source Symbol Dictionaries", "",
+        "This portal is generated from participating product `SYMBOLS.md` files.", "",
         "| Directory | Dictionary | Coverage | Symbols |", "|---|---|---|---:|",
     ]
     for directory, coverage, path, entries in dictionaries:
@@ -2407,8 +2408,8 @@ def render_portal(root: Path, dictionaries) -> str:
 
 
 def render_aggregate(dictionaries) -> str:
-    lines = ["# Comprehensive Clean Source Symbol Index", "",
-             "Generated from directory-owned dictionaries; do not edit here.", ""]
+    lines = ["# Comprehensive Product Source Symbol Index", "",
+             "Generated from participating product dictionaries; do not edit here.", ""]
     for directory, coverage, _path, entries in dictionaries:
         lines += [f"## `{directory}`", "", f"Coverage: `{coverage}`", "",
                   "| Name | Kind | File | Owner | Scope | Description | Context |",
@@ -2440,7 +2441,7 @@ def main() -> int:
     parser.add_argument(
         "--long",
         action="store_true",
-        help="audit the complete clean-generation source scope",
+        help="audit the complete product-source definition scope",
     )
     parser.add_argument(
         "--record-baseline",

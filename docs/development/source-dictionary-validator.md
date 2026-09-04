@@ -162,8 +162,10 @@ Shell discovery uses the `shfmt` Bash AST.
 The adapter discovers project-maintained shell functions and bindings while
 excluding ordinary external shell/environment vocabulary.
 
-Supported binding forms include the shell constructs actually used by the
-current clean-generation tooling.
+The shell adapter was originally built around the constructs used by the
+clean-generation development tooling. That tooling is now outside product
+dictionary completeness, while the adapter itself remains implemented and
+self-tested for any future product-source shell surface.
 
 Dynamic or unsupported binding grammar fails closed rather than being
 misclassified.
@@ -236,11 +238,32 @@ A later source tree enters scope only through an explicit product-ownership
 decision. This positive-root model prevents newly added development tooling
 from silently becoming product dictionary debt.
 
+### Scope evolution
+
+The validator did not always use this narrow product-only boundary.
+
+During its build-out, the dictionary policy deliberately covered the broader
+clean-generation development surface, including build, test, qualification,
+and development-tool source. That broader scope was real and is preserved in
+the repository history and in some retained non-product dictionaries.
+
+After the checker and language adapters were substantially implemented, the
+project clarified the dictionary's intended purpose: document and maintain an
+understandable index of the product itself, rather than recursively cataloging
+the workshop used to build and test it.
+
+The enforced completeness boundary was therefore deliberately narrowed to
+explicit product-source roots. This was a policy evolution, not a correction
+claiming that the earlier repository-wide behavior never existed. Existing
+tool, test, and build dictionaries may remain as useful orientation material,
+but they no longer participate in product completeness, strict validation,
+generated product views, or trusted product baselines.
+
 ## Comprehensive and incremental discovery
 
 Definition discovery supports a trusted long-pass baseline.
 
-`check --long` always performs comprehensive clean-generation discovery.
+`check --long` always performs comprehensive product-source discovery.
 
 Normal `check` may use an incremental source scope only after a trusted
 comprehensive baseline has been explicitly established.

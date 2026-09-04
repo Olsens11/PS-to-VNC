@@ -1,6 +1,6 @@
-# Clean Source Symbol Dictionaries
+# Product Source Symbol Dictionaries
 
-This portal is generated from directory-owned `SYMBOLS.md` files.
+This portal is generated from participating product `SYMBOLS.md` files.
 
 | Directory | Dictionary | Coverage | Symbols |
 |---|---|---|---:|
