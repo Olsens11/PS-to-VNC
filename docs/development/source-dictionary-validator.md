@@ -3,8 +3,8 @@
 ## Status
 
     VALIDATOR_STATUS=ACTIVE
-    DEFINITION_DISCOVERY_STATUS=PENDING
-    TRUSTED_LONG_BASELINE=UNSET
+    DEFINITION_DISCOVERY_STATUS=READY
+    TRUSTED_LONG_BASELINE=RUNTIME_STATE_AUTHORITY
     IGNORE_REGISTRY_STATUS=DEFERRED_UNTIL_USEFUL
 
 This document records the current design, significant evolution, and deliberate
@@ -184,9 +184,9 @@ the repository.
 
 Known external/toolchain Make vocabulary is explicitly excluded.
 
-Current maintained `Makefile` and `.mk` build/test infrastructure enters the
-clean-generation dictionary boundary even though those files predate the
-C/Python/shell `File synopsis:` convention.
+The Make adapter remains implemented and self-tested for any Make source that
+is deliberately placed under a product-source root. Repository build/test
+Makefiles outside product source do not participate in dictionary completeness.
 
 ## Duplicate dictionary integrity
 
@@ -274,13 +274,14 @@ A comprehensive check never advances the baseline implicitly.
 Baseline recording is explicit and requires the appropriate comprehensive,
 complete, clean-worktree conditions.
 
-At the time of this document:
+Current readiness is:
 
-    DEFINITION_DISCOVERY_STATUS=PENDING
-    LAST_LONG_PASS_COMMIT=UNSET
+    DEFINITION_DISCOVERY_STATUS=READY
 
-Those values must remain unchanged until the complete retrofit and genuine
-comprehensive gate are intentionally finished.
+The exact `LAST_LONG_PASS_COMMIT` is intentionally not duplicated in this
+document. `runtime/SOURCE_DICTIONARY_STATE.env` is the machine-readable
+authority for the currently trusted comprehensive baseline; `UNSET` there
+means no baseline has yet been recorded.
 
 ## Discovery dependencies
 
@@ -397,7 +398,9 @@ Until evidence demonstrates a real defect:
   proves it useful;
 - prioritize product development over further validator refinement.
 
-The remaining product dictionary retrofit can proceed incrementally and does
-not need to block unrelated clean-reconstruction implementation.
+The maintained product dictionary retrofit is complete. Future product-source
+changes use the trusted comprehensive baseline for incremental discovery while
+`--long` remains available for explicit full revalidation.
 
-Development-tool dictionaries are intentionally outside that retrofit.
+Development-tool dictionaries remain intentionally outside the product
+completeness boundary.

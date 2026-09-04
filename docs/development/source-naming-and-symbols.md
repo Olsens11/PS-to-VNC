@@ -7,7 +7,7 @@
     PRE_REFRESH_RETROFIT_REQUIRED=NO
     SYMBOL_DICTIONARY=REQUIRED
     COMPLETENESS_GATE=REQUIRED
-    CURRENT_RETROFIT_STATUS=IN_PROGRESS
+    CURRENT_RETROFIT_STATUS=COMPLETE
 
 Clean-reconstruction PS-to-VNC source must be understandable both where a name
 appears and from one canonical lookup surface. The boundary begins with the
@@ -186,10 +186,11 @@ explicitly request baseline advancement with:
 The command records the audited clean `HEAD` in the state file; that state-file
 change is then reviewed and committed normally.
 
-Until project-definition discovery is implemented and a genuine comprehensive
-audit passes, `DEFINITION_DISCOVERY_STATUS` remains `PENDING`,
-`LAST_LONG_PASS_COMMIT` remains `UNSET`, and baseline recording is refused by
-the tool itself.
+Project-definition discovery is now implemented and
+`DEFINITION_DISCOVERY_STATUS` is `READY`. The exact trusted comprehensive
+baseline, including whether one has yet been established, is recorded only in
+`runtime/SOURCE_DICTIONARY_STATE.env`. Baseline advancement remains explicit
+and requires a clean passing comprehensive audit.
 
 ## Retrofit completion
 
@@ -200,3 +201,8 @@ synchronization gate and project checks pass, and any PT_LOAD-changing rename
 remains hardware-pending until qualification.
 
 Policy creation alone is not retrofit completion.
+
+The current maintained product-source retrofit is complete: every in-scope
+product definition is represented, all participating product dictionaries
+declare complete coverage, and the comprehensive strict audit passes without
+maintenance findings.

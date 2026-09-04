@@ -124,23 +124,25 @@ static int packet_count;
         "SOURCE_DICTIONARY_BASELINE_REASON=NO_TRUSTED_LONG_PASS"
         in output
     )
-    assert "DEFINITION_DISCOVERY_STATUS=PENDING" in output
+    assert "DEFINITION_DISCOVERY_STATUS=READY" in output
 
     output = run(root, 0, long=True)
     assert "SOURCE_DICTIONARY_CHECK_MODE=LONG" in output
     assert "SOURCE_DICTIONARY_BASELINE_REASON=EXPLICIT_LONG" in output
-    assert "DEFINITION_DISCOVERY_STATUS=PENDING" in output
+    assert "DEFINITION_DISCOVERY_STATUS=READY" in output
 
+    # READY discovery permits baseline recording in principle, but this
+    # deliberately incomplete fixture must refuse advancement because
+    # --require-complete produces maintenance attention.
     record_output = run(
         root,
-        2,
+        1,
         require_complete=True,
         long=True,
         record_baseline=True,
     )
     assert (
-        "--record-baseline is unavailable until "
-        "project-definition discovery is implemented"
+        "SOURCE_DICTIONARY_BASELINE_RECORD=REFUSED_ATTENTION"
         in record_output
     )
 
@@ -665,7 +667,7 @@ static int packet_count;
     )
     assert "DEFINITION_SCOPE_COUNT=1" in output
     assert "DEFINITION_SCOPE_PATH=src/net/io.c" in output
-    assert "DEFINITION_DISCOVERY_STATUS=PENDING" in output
+    assert "DEFINITION_DISCOVERY_STATUS=READY" in output
 
     write(
         root,
