@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+# PS-to-VNC current development-continuity consistency check.
+#
+# This tool validates the active repository-centered development contract:
+# canonical entry points, current human/machine state, development policy, and
+# bootstrap/tool-reuse rules.
+#
+# Completed migration stages, M4 hardware history, and legacy TestKit topology
+# are historical/evidence responsibilities and are deliberately not re-audited
+# here.
+
 set -euo pipefail
 
 ROOT="$(
@@ -11,11 +21,117 @@ cd "$ROOT"
 
 echo '===== DEVELOPMENT CONTINUITY CHECK ====='
 
+
+fail()
+{
+    local error="$1"
+    shift
+
+    echo "ERROR=$error"
+
+    while [ "$#" -gt 0 ]
+    do
+        echo "$1"
+        shift
+    done
+
+    exit 40
+}
+
+
+require_file()
+{
+    local path="$1"
+
+    test -f "$path" ||
+        fail \
+            "MISSING_CONTINUITY_FILE:$path" \
+            "REQUIRED_ACTION=Restore or deliberately update the current continuity contract."
+}
+
+
+get_env()
+{
+    local file="$1"
+    local key="$2"
+    local count
+
+    count="$(
+        awk -F= -v key="$key" \
+            '$1==key{n++} END{print n+0}' \
+            "$file"
+    )"
+
+    if [ "$count" -ne 1 ]; then
+        fail \
+            "INVALID_MACHINE_STATE_FIELD:$file:$key" \
+            "MATCH_COUNT=$count" \
+            "REQUIRED_ACTION=Keep exactly one authoritative value for this current-state field."
+    fi
+
+    awk -F= -v key="$key" \
+        '$1==key{sub(/^[^=]*=/,""); print}' \
+        "$file"
+}
+
+
+require_env()
+{
+    local file="$1"
+    local key="$2"
+    local expected="$3"
+    local actual
+
+    actual="$(get_env "$file" "$key")"
+
+    if [ "$actual" != "$expected" ]; then
+        fail \
+            "MACHINE_STATE_MISMATCH:$file:$key" \
+            "EXPECTED=$expected" \
+            "ACTUAL=$actual"
+    fi
+}
+
+
+require_status_field()
+{
+    local field="$1"
+    local value
+
+    value="$(get_env runtime/PROJECT_STATE.env "$field")"
+
+    grep -Fq "${field}=${value}" docs/status.md ||
+        fail \
+            "CURRENT_STATUS_MIRROR_MISSING:$field" \
+            "EXPECTED=${field}=${value}" \
+            "REQUIRED_ACTION=Reconcile runtime/PROJECT_STATE.env with docs/status.md; do not promote historical-only fields into current status."
+}
+
+
+require_text()
+{
+    local needle="$1"
+    local file="$2"
+    local label="$3"
+
+    grep -Fq "$needle" "$file" ||
+        fail \
+            "CONTINUITY_RULE_MISSING:$label" \
+            "FILE=$file" \
+            "EXPECTED_TEXT=$needle"
+}
+
+
+echo
+echo '===== CURRENT CONTINUITY SURFACES ====='
+
 required=(
     AGENTS.md
     CONTRIBUTING.md
     docs/README.md
     docs/status.md
+    docs/PROJECT_INTENT.md
+    docs/CLEAN_ARCHITECTURE.md
     docs/development/README.md
     docs/development/documentation.md
     docs/development/testing.md
@@ -25,57 +141,37 @@ required=(
     docs/adr/0001-development-continuity-baseline.md
     runtime/DEVELOPMENT_SYSTEM.env
     runtime/PROJECT_STATE.env
+    scripts/check.sh
+    scripts/docs-check.sh
+    scripts/continuity-check.sh
 )
 
 for path in "${required[@]}"
 do
-    test -f "$path"
+    require_file "$path"
+    echo "PRESENT=$path"
 done
 
-get_env()
-{
-    local file="$1"
-    local key="$2"
+echo 'CURRENT_CONTINUITY_SURFACES=PASS'
 
-    local count
-    count="$(
-        awk -F= -v key="$key" \
-            '$1==key{n++} END{print n+0}' \
-            "$file"
-    )"
 
-    test "$count" -eq 1
+echo
+echo '===== CURRENT PROJECT STATE CONTRACT ====='
 
-    awk -F= -v key="$key" \
-        '$1==key{sub(/^[^=]*=/,""); print}' \
-        "$file"
-}
-
-MIG='runtime/MIGRATION_STATE.env'
-M4='runtime/M4_SOURCE_AUTHORITY.env'
-DEV='runtime/DEVELOPMENT_SYSTEM.env'
 PROJECT='runtime/PROJECT_STATE.env'
 
-test "$(get_env "$PROJECT" PROJECT_NAME)" = 'PS-to-VNC'
-test "$(get_env "$PROJECT" PROJECT_STATE_ROLE)" = 'CURRENT'
-
-test "$(get_env "$PROJECT" MACHINE_CURRENT_STATE)" = \
-    'runtime/PROJECT_STATE.env'
-
-test "$(get_env "$PROJECT" HUMAN_CURRENT_STATE)" = \
-    'docs/status.md'
-
-test "$(get_env "$PROJECT" MIGRATION_STATE_ROLE)" = \
-    'HISTORICAL_REFERENCE'
-
-test "$(get_env "$PROJECT" EXPLORATORY_MIGRATION_STATE)" = \
-    'runtime/MIGRATION_STATE.env'
+require_env "$PROJECT" PROJECT_NAME 'PS-to-VNC'
+require_env "$PROJECT" PROJECT_STATE_ROLE 'CURRENT'
+require_env "$PROJECT" PROJECT_INTENT 'docs/PROJECT_INTENT.md'
+require_env "$PROJECT" HUMAN_CURRENT_STATE 'docs/status.md'
+require_env "$PROJECT" MACHINE_CURRENT_STATE 'runtime/PROJECT_STATE.env'
+require_env "$PROJECT" CLEAN_ARCHITECTURE 'docs/CLEAN_ARCHITECTURE.md'
+require_env "$PROJECT" MIGRATION_STATE_ROLE 'HISTORICAL_REFERENCE'
 
 for field in \
     PHASE \
     MACHINE_CURRENT_STATE \
     MIGRATION_STATE_ROLE \
-    RECONCILED_MAIN \
     REFERENCE_PRESERVATION \
     SEMANTIC_AUDIT \
     CLEAN_PS2_RECONSTRUCTION \
@@ -84,131 +180,103 @@ for field in \
     NEXT_ACTION \
     BLOCKED_BY
 do
-    value="$(get_env "$PROJECT" "$field")"
-    grep -q "${field}=${value}" docs/status.md
+    require_status_field "$field"
 done
 
-test "$(get_env "$PROJECT" EXPLORATORY_FINAL_SOURCE_HEAD)" = \
-    "$(get_env "$MIG" CURRENT_SOURCE_HEAD)"
-
-test "$(get_env "$PROJECT" EXPLORATORY_FINAL_HARDWARE_HEAD)" = \
-    "$(get_env "$M4" M4I_FINAL_HARDWARE_HEAD)"
-
-test "$(get_env "$PROJECT" EXPLORATORY_FINAL_ELF_SHA256)" = \
-    "$(get_env "$MIG" LAST_VALIDATED_WORKING_ELF_SHA256)"
-
-test "$(get_env "$PROJECT" EXPLORATORY_FINAL_PT_LOAD_SHA256)" = \
-    "$(get_env "$M4" LAST_VALIDATED_PT_LOAD_SHA256)"
-
-test "$(get_env "$PROJECT" EXPLORATORY_FORMER_NEXT_ACTION)" = \
-    "$(get_env "$MIG" NEXT_ACTION)"
-
 echo 'CURRENT_PROJECT_STATE_MIRROR=PASS'
-echo 'EXPLORATORY_STATE_PRESERVATION=PASS'
 
-test "$(get_env "$DEV" SESSION_BOOTSTRAP)" = 'AGENTS.md'
-test "$(get_env "$DEV" DOCS_ROUTER)" = 'docs/README.md'
-test "$(get_env "$DEV" HUMAN_CURRENT_STATE)" = 'docs/status.md'
 
-test "$(get_env "$DEV" MACHINE_CURRENT_STATE)" = \
-    'runtime/PROJECT_STATE.env'
+echo
+echo '===== DEVELOPMENT SYSTEM CONTRACT ====='
 
-test "$(get_env "$DEV" HISTORICAL_MIGRATION_STATE)" = \
-    'runtime/MIGRATION_STATE.env'
+DEV='runtime/DEVELOPMENT_SYSTEM.env'
 
-test "$(get_env "$DEV" CANONICAL_TOOL_REUSE)" = 'REQUIRED'
-test "$(get_env "$DEV" REAL_PROJECT_AGITATION)" = 'ENABLED'
+require_env "$DEV" DEVELOPMENT_SYSTEM_STATUS 'ACTIVE'
+require_env "$DEV" SESSION_BOOTSTRAP 'AGENTS.md'
+require_env "$DEV" CONTRIBUTING_GUIDE 'CONTRIBUTING.md'
+require_env "$DEV" DOCS_ROUTER 'docs/README.md'
+require_env "$DEV" HUMAN_CURRENT_STATE 'docs/status.md'
+require_env "$DEV" MACHINE_CURRENT_STATE 'runtime/PROJECT_STATE.env'
+require_env "$DEV" DEVELOPMENT_POLICY 'docs/development/README.md'
+require_env "$DEV" DOCUMENTATION_POLICY 'docs/development/documentation.md'
+require_env "$DEV" TESTING_POLICY 'docs/development/testing.md'
+require_env "$DEV" TOOLING_POLICY 'docs/development/tooling.md'
+require_env "$DEV" LESSONS_LEARNED 'docs/development/lessons-learned.md'
+require_env "$DEV" DECISION_RECORD_ROOT 'docs/adr'
+require_env "$DEV" CURRENT_PROJECT_ADAPTER 'PS-to-VNC'
+require_env "$DEV" REAL_PROJECT_AGITATION 'ENABLED'
+require_env "$DEV" CANONICAL_TOOL_REUSE 'REQUIRED'
+require_env "$DEV" PORTABLE_FRAMEWORK_STATUS 'EMBEDDED_NOT_EXTRACTED'
+require_env "$DEV" LEGACY_TESTKIT_INHERITANCE 'RETIRED'
 
 echo 'DEVELOPMENT_SYSTEM_CONTRACT=PASS'
 
-M4_SOURCE_COMMIT="$(
-    get_env "$M4" CURRENT_SOURCE_COMMIT
-)"
 
-MIG_SOURCE_COMMIT="$(
-    get_env "$MIG" CURRENT_SOURCE_HEAD
-)"
+echo
+echo '===== BOOTSTRAP RULES ====='
 
-test "$M4_SOURCE_COMMIT" = \
-    "$MIG_SOURCE_COMMIT"
+require_text \
+    'scripts/resume-state.sh' \
+    AGENTS.md \
+    RESUME_TOOL
 
-M4_HW_HEAD="$(
-    get_env "$M4" M4I_FINAL_HARDWARE_HEAD
-)"
+require_text \
+    'scripts/check.sh' \
+    AGENTS.md \
+    PROJECT_CHECK
 
-test "$(
-    get_env "$M4" CURRENT_HARDWARE_AUTHORITY_COMMIT
-)" = "$M4_HW_HEAD"
+require_text \
+    'uncommitted work' \
+    AGENTS.md \
+    DIRTY_STATE_PROTECTION
 
-git cat-file -e "$M4_HW_HEAD^{commit}"
+require_text \
+    'canonical saved' \
+    AGENTS.md \
+    CANONICAL_TOOL_REUSE
 
-test "$(
-    get_env "$M4" LAST_DIRECT_HARDWARE_AUTHORITY
-)" = 'M4I-FINAL'
+require_text \
+    'last proven result' \
+    AGENTS.md \
+    TEST_CONTINUITY
 
-test "$(
-    get_env "$M4" LAST_DIRECT_HARDWARE_RESULT
-)" = 'M4I_FINAL_PASS_MACHINE_AND_PHYSICAL'
-
-test "$(
-    get_env "$M4" NEXT_ACTION
-)" = "$(
-    get_env "$MIG" NEXT_ACTION
-)"
-
-test "$(
-    get_env "$M4" BLOCKED_BY
-)" = "$(
-    get_env "$MIG" BLOCKED_BY
-)"
-
-if [ "$(
-    get_env "$M4" CURRENT_WORKING_ELF_STATUS
-)" = 'HARDWARE_QUALIFIED' ]
-then
-    test "$(
-        get_env "$M4" CURRENT_WORKING_ELF_SHA256
-    )" = "$(
-        get_env "$MIG" LAST_VALIDATED_WORKING_ELF_SHA256
-    )"
-
-    test "$(
-        get_env "$M4" CURRENT_WORKING_PT_LOAD_SHA256
-    )" = "$(
-        get_env "$M4" LAST_VALIDATED_PT_LOAD_SHA256
-    )"
-
-    test "$(
-        get_env "$M4" CURRENT_HARDWARE_QUALIFICATION
-    )" = 'PASS_MACHINE_AND_PHYSICAL'
-fi
-
-test "$(
-    get_env "$M4" M4I_FINAL_HARDWARE_QUALIFIED
-)" = 'YES'
-
-echo 'M4_CURRENT_AUTHORITY_COHERENCE=PASS'
-
-
-grep -q 'scripts/resume-state.sh' AGENTS.md
-grep -q 'scripts/check.sh' AGENTS.md
-grep -q 'uncommitted work' AGENTS.md
-grep -q 'canonical saved' AGENTS.md
-grep -q 'last proven result' AGENTS.md
-grep -q 'next intended test' AGENTS.md
+require_text \
+    'next intended test' \
+    AGENTS.md \
+    TEST_CONTINUITY
 
 echo 'BOOTSTRAP_RULES=PASS'
 
-grep -q 'PS2VNC' docs/development/README.md
-grep -q 'PS-to-VNC' docs/development/README.md
-grep -q 'Real-project agitation' docs/development/README.md
 
-echo 'AGITATION_MODEL=PASS'
+echo
+echo '===== DEVELOPMENT MODEL ====='
 
-grep -q '/home/ps2/ps2vnc/scripts/testkit/' \
-    docs/development/tooling.md
+require_text \
+    'PS2VNC' \
+    docs/development/README.md \
+    PROJECT_HISTORY
 
-echo 'LEGACY_TESTKIT_ROUTING=PASS'
+require_text \
+    'PS-to-VNC' \
+    docs/development/README.md \
+    CURRENT_PROJECT
+
+require_text \
+    'Real-project agitation' \
+    docs/development/README.md \
+    REAL_PROJECT_AGITATION
+
+require_text \
+    'must not depend on their checkout' \
+    docs/development/tooling.md \
+    LEGACY_TESTKIT_RETIREMENT
+
+echo 'DEVELOPMENT_MODEL=PASS'
+echo 'LEGACY_TESTKIT_INHERITANCE=RETIRED'
+
+
+echo
+echo '===== DIFF INTEGRITY ====='
 
 git diff --check -- \
     AGENTS.md \
@@ -218,6 +286,12 @@ git diff --check -- \
     docs/development \
     docs/adr \
     runtime/DEVELOPMENT_SYSTEM.env \
+    runtime/PROJECT_STATE.env \
     scripts/continuity-check.sh
 
+echo 'CONTINUITY_DIFF_INTEGRITY=PASS'
+
+
+echo
+echo '===== FINAL ====='
 echo 'DEVELOPMENT_CONTINUITY_CHECK=PASS'

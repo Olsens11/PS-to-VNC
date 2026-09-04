@@ -96,7 +96,7 @@ Every migration stage must update both:
 A stage must leave an explicit `NEXT_ACTION`.
 
 Stage M(n+1) must not begin while M(n) is still recorded as incomplete or
-while `scripts/migration-check.sh` fails.
+while the preceding migration stage remains recorded as incomplete.
 
 Every source-changing migration command should verify the stage and repository
 authority it expects before performing the mutation.

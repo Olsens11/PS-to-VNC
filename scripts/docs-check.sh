@@ -29,13 +29,20 @@ done
 echo
 echo '===== DOCUMENT INDEX ====='
 
+# docs/README.md is the curated documentation router. docs/INDEX.md has a
+# different job: it is the exhaustive inventory that makes every Markdown
+# document mechanically discoverable, including historical/reference material.
+#
+# Report the complete missing set in one pass so the operator can repair the
+# index coherently instead of discovering missing entries one at a time.
+UNINDEXED_DOCUMENTS=()
+
 while IFS= read -r FILE
 do
     [ "$FILE" = 'docs/INDEX.md' ] && continue
 
     if ! grep -Fq "$FILE" docs/INDEX.md; then
-        echo "ERROR=UNINDEXED_DOCUMENT:$FILE"
-        exit 30
+        UNINDEXED_DOCUMENTS+=("$FILE")
     fi
 done < <(
     find docs \
@@ -44,6 +51,21 @@ done < <(
         -print |
     sort
 )
+
+if [ "${#UNINDEXED_DOCUMENTS[@]}" -ne 0 ]; then
+    for FILE in "${UNINDEXED_DOCUMENTS[@]}"
+    do
+        echo "UNINDEXED_DOCUMENT=$FILE"
+    done
+
+    echo "ERROR=DOCUMENT_INDEX_INCOMPLETE"
+    echo "MISSING_DOCUMENT_COUNT=${#UNINDEXED_DOCUMENTS[@]}"
+    echo "INDEX=docs/INDEX.md"
+    echo "INDEX_ROLE=EXHAUSTIVE_DOCUMENT_INVENTORY"
+    echo "REQUIRED_ACTION=Add each UNINDEXED_DOCUMENT to docs/INDEX.md in the appropriate section."
+    echo "NOTE=docs/README.md is the curated current-authority router; docs/INDEX.md is the exhaustive inventory."
+    exit 30
+fi
 
 echo 'ALL_DOCUMENTS_INDEXED=PASS'
 
@@ -54,14 +76,8 @@ grep -Fq 'START_HERE.md' docs/INDEX.md
 grep -Fq 'docs/MIGRATION_STATE.md' docs/INDEX.md
 grep -Fq 'runtime/MIGRATION_STATE.env' docs/INDEX.md
 grep -Fq 'scripts/resume-state.sh' docs/INDEX.md
-grep -Fq 'scripts/migration-check.sh' docs/INDEX.md
 
 echo 'RECOVERY_REFERENCES=PASS'
-
-echo
-echo '===== MIGRATION COHERENCE ====='
-
-scripts/migration-check.sh
 
 echo
 echo '===== FINAL ====='

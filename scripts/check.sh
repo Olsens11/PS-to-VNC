@@ -7,7 +7,6 @@ DIR="$(
     pwd
 )"
 
-"$DIR/migration-check.sh"
 "$DIR/docs-check.sh"
 "$DIR/continuity-check.sh"
 

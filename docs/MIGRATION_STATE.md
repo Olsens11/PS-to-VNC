@@ -166,7 +166,6 @@ A fresh conversation should begin with:
 Then run:
 
     scripts/resume-state.sh
-    scripts/migration-check.sh
     scripts/docs-check.sh
 
 The repository, not conversational memory, determines where development

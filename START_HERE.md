@@ -36,14 +36,13 @@ Read these files in order:
 8. docs/MODULARIZATION.md
 9. docs/reference/FILE_AND_SERVICE_MAP.md
 
-Then run these commands:
+From the current PS-to-VNC worktree, run:
 
-    cd /home/ps2/PS-to-VNC
     scripts/resume-state.sh
-    scripts/migration-check.sh
-    scripts/docs-check.sh
+    scripts/check.sh
 
-Do not perform a project mutation until those checks pass.
+Do not perform a project mutation until the current project check has been
+reviewed.
 
 `runtime/MIGRATION_STATE.env` remains the preserved authority for the completed
 exploratory migration/normalization history. It is not the current clean-
@@ -52,17 +51,12 @@ reconstruction roadmap. Current project direction is carried by
 
 ## Repository safety boundary
 
-Historical repository:
+The historical PS2VNC repository and preserved legacy material are
+read-only historical authority. Current development must not depend on that
+repository being checked out at any particular filesystem location.
 
-    /home/ps2/ps2vnc
-
-This is read-only historical authority.
-
-Current successor repository:
-
-    /home/ps2/PS-to-VNC
-
-All new development occurs here.
+Current successor development occurs in the selected PS-to-VNC Git
+worktree. Current tooling must not depend on a historical checkout path.
 
 ## Migration-stage rule
 

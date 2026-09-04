@@ -222,12 +222,12 @@ Repository authority remains more important than conversation memory.
 
 ## Frozen safety boundary
 
-Historical repository:
+The historical PS2VNC repository and preserved legacy material remain
+immutable reference authority. Frozen B4A and successor-era evidence must not
+be destroyed or silently rewritten by clean reconstruction work.
 
-    /home/ps2/ps2vnc
-
-It remains immutable reference authority. Frozen B4A and successor-era evidence
-must not be destroyed or silently rewritten by clean reconstruction work.
+Current tooling must not depend on a historical checkout being present at any
+particular filesystem location.
 
 ## Next action
 

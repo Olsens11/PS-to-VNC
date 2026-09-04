@@ -17,10 +17,6 @@ This is the canonical build authority.
 
     scripts/resume-state.sh
 
-### Migration consistency
-
-    scripts/migration-check.sh
-
 ### Existing documentation consistency
 
     scripts/docs-check.sh
@@ -111,20 +107,16 @@ Reusable shell helpers must pass shell syntax validation and the relevant
 TestKit self-test before they are trusted for an operational run. A tool failure
 is development-infrastructure evidence, not a DUT failure.
 
-The legacy `/home/ps2/ps2vnc` repository is immutable historical authority.
-New reusable helpers belong to PS-to-VNC and may delegate to the legacy
-TestKit without modifying it.
+The historical PS2VNC repository and TestKit remain reference/evidence
+authority only. Current PS-to-VNC tooling must not depend on their checkout
+location or executable presence.
 
 ## Cross-tool path boundaries
 
-A reusable tool that delegates file operands to another tool which may change
-its working directory must normalize those operands to absolute paths before
-delegation.
-
-This is especially important when successor tooling calls immutable legacy
-TestKit utilities from another repository. Relative paths are caller context;
-they must not be allowed to acquire a different meaning after the delegated
-tool changes directories.
+A reusable tool that passes file operands across a process or tool boundary
+where the working directory may change must normalize those operands before
+delegation. Relative paths belong to the caller's repository context and must
+not silently acquire a different meaning downstream.
 
 Relevant self-tests must exercise relative caller paths as well as absolute
 paths.
@@ -176,8 +168,8 @@ files and requires idempotent second execution.
 
 ## M4 authority-state checker
 
-`migration-check.sh` and the disposable M4 hardware-checkpoint activation
-self-test share the same fail-closed state contract:
+The disposable M4 hardware-checkpoint activation self-test uses the
+following fail-closed historical authority-state contract:
 
     scripts/testkit/m4-authority-state-check.py
 
@@ -245,26 +237,6 @@ The active regression authority is:
 The apparatus self-test is non-hardware-facing: it uses loopback UDP only and
 must not contact FTP, require sudo, or touch the PS2. Operational arming remains
 an explicit operator action.
-
-## Git authority on review branches
-
-The canonical project checks must be usable before a pull request is merged.
-
-For a published repository, `scripts/migration-check.sh` therefore recognizes
-two Git-authority classes:
-
-- the default branch must track and exactly match `origin/main`;
-- a development/review branch must track the same-named branch on `origin`,
-  contain the current `origin/main`, and must not be behind or divergent from
-  its upstream.
-
-A development branch may contain local commits ahead of its published upstream.
-This allows the canonical checks to validate a proposed commit before it is
-pushed.
-
-This is not permission for arbitrary detached or untracked development state.
-Missing upstreams, stale branches that do not contain current `origin/main`,
-branches behind their upstream, and divergent histories fail closed.
 
 ## Current project state versus migration history
 

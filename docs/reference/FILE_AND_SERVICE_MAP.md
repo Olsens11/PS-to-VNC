@@ -69,7 +69,7 @@ That authority changes only through a later documented stage.
 | Machine-readable migration state | `runtime/MIGRATION_STATE.env` |
 | Human-readable migration state | `docs/MIGRATION_STATE.md` |
 | Recovery summary command | `scripts/resume-state.sh` |
-| Migration coherence gate | `scripts/migration-check.sh` |
+| Current project coherence gate | `scripts/check.sh` |
 | Documentation coherence gate | `scripts/docs-check.sh` |
 
 These locations move in lockstep with implementation authority.
@@ -86,7 +86,7 @@ agree with the actual source tree.
 | Machine-readable M0 build authority | `runtime/M0_BUILD_AUTHORITY.env` |
 | Frozen B4A implementation | `baseline/frozen-b4a/` |
 
-The old `/home/ps2/ps2vnc/build/` directory is historical evidence only and is
+The preserved legacy build material is historical evidence only and is
 not PS-to-VNC build authority.
 
 ## M0D writable authority
