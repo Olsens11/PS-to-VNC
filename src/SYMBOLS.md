@@ -5,7 +5,8 @@ GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
 This directory owns the application coordinator, authoritative framebuffer,
-minimal diagnostics transport, display conversion, and RFB wire/session core.
+minimal diagnostics transport, display conversion, direct libpad pad
+acquisition, and RFB wire/session core.
 The inventory below covers the clean-generation symbols defined directly in
 this directory. Historical/adopted subdirectories retain their own dictionaries.
 
@@ -141,6 +142,60 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | main | function | src/main.c | process entry | process | Delegates product lifecycle to the coordinator and always converges on OSDSYS. | CLEAN_ARCHITECTURE: Startup lifecycle |
 | argc | parameter | src/main.c | main | process | Receives process argument count but is intentionally unused by the clean baseline. | process entry |
 | argv | parameter | src/main.c | main | process | Receives process argument vector but is intentionally unused by the clean baseline. | process entry |
+| libpad_ready | variable | src/pad.c | pad lifecycle | file static | Records whether PS-to-VNC currently owns initialized process-wide libpad state. | ADR 0002: direct libpad ownership |
+| pad_state_is_readable | function | src/pad.c | pad acquisition | file | Reports whether one native libpad state permits ordinary controller observation. | libpad state machine |
+| state | parameter | src/pad.c | pad_state_is_readable | function | Supplies the native PAD_STATE_* value to classify. | libpad state machine |
+| wait_for_pad_settle | function | src/pad.c | pad acquisition | file | Waits through transient libpad command/search states until the endpoint is readable, disconnected, or failed. | OPL/PS2SDK pad practice |
+| pad | parameter | src/pad.c | wait_for_pad_settle | function | Supplies the owned endpoint whose native libpad state is observed. | pad lifecycle |
+| state | variable | src/pad.c | wait_for_pad_settle | local | Stores each native libpad state observed while waiting for a settled endpoint. | libpad state machine |
+| invalidate_observation | function | src/pad.c | physical pad history | file | Clears the latest sample and immediate history so an ownership boundary cannot manufacture input edges. | stale-state invalidation |
+| pad | parameter | src/pad.c | invalidate_observation | function | Supplies the pad instance whose physical observation continuity is revoked. | stale-state invalidation |
+| configure_controller_mode | function | src/pad.c | pad acquisition | file | Detects DualShock capability and deterministically requests locked analog mode when the controller supports it. | ADR 0002; OPL pad practice |
+| pad | parameter | src/pad.c | configure_controller_mode | function | Supplies the connected endpoint whose native libpad operating mode is configured. | controller mode negotiation |
+| state | variable | src/pad.c | configure_controller_mode | local | Stores settled native libpad state before and after any mode request. | controller mode negotiation |
+| modes | variable | src/pad.c | configure_controller_mode | local | Stores the controller mode-table entry count reported by libpad. | controller capability discovery |
+| i | variable | src/pad.c | configure_controller_mode | local | Iterates native libpad mode-table entries while searching for DualShock support. | controller capability discovery |
+| pstvnc_pad_init | function | src/pad.c | pad lifecycle | public | Initializes process-wide libpad ownership exactly once for PS-to-VNC. | ADR 0002: direct libpad ownership |
+| pstvnc_pad_shutdown | function | src/pad.c | pad lifecycle | public | Ends owned process-wide libpad state after endpoint users have been closed. | pad lifecycle |
+| pstvnc_pad_open | function | src/pad.c | pad lifecycle | public | Opens one explicit libpad port/slot endpoint using its instance-owned aligned DMA buffer. | physical pad endpoint ownership |
+| pad | parameter | src/pad.c | pstvnc_pad_open | function | Supplies storage that becomes the owned PS-to-VNC pad endpoint instance. | physical pad endpoint ownership |
+| port | parameter | src/pad.c | pstvnc_pad_open | function | Selects the native libpad controller port to open. | libpad port/slot addressing |
+| slot | parameter | src/pad.c | pstvnc_pad_open | function | Selects the native libpad slot within the chosen controller port. | libpad port/slot addressing |
+| pstvnc_pad_poll | function | src/pad.c | pad acquisition | public | Produces one latest native controller sample and immediate active-high press/release masks when readable. | Issue #38 minimal physical pad foundation |
+| pad | parameter | src/pad.c | pstvnc_pad_poll | function | Supplies the opened endpoint whose physical controller state is polled. | physical pad endpoint ownership |
+| state | variable | src/pad.c | pstvnc_pad_poll | local | Stores the current native libpad endpoint state used to accept readable samples or invalidate continuity across unavailable states. | libpad state machine |
+| configuration_result | variable | src/pad.c | pstvnc_pad_poll | local | Stores whether current-connection controller-mode preparation succeeded, disconnected, or failed. | controller mode negotiation |
+| sample | variable | src/pad.c | pstvnc_pad_poll | local | Holds one freshly cleared native padButtonStatus so short pad packets cannot retain stale tail fields. | libpad padRead semantics |
+| sample_length | variable | src/pad.c | pstvnc_pad_poll | local | Stores the exact byte count copied by the current successful padRead call. | libpad padRead semantics |
+| new_buttons_down | variable | src/pad.c | pstvnc_pad_poll | local | Stores the newest active-high 16-bit physical PAD_* button mask after libpad active-low inversion. | immediate physical pad state |
+| required_button_bytes | variable | src/pad.c | pstvnc_pad_poll | local | Computes the minimum returned sample length required before the btns field is trusted. | libpad variable-length sample safety |
+| pstvnc_pad_close | function | src/pad.c | pad lifecycle | public | Closes one libpad endpoint and invalidates all physical history associated with that ownership. | pad lifecycle |
+| pad | parameter | src/pad.c | pstvnc_pad_close | function | Supplies the opened pad instance whose endpoint ownership is released. | pad lifecycle |
+| PSTVNC_PAD_H | include-guard macro | src/pad.h | pad interface | header | Prevents repeated inclusion of the direct-libpad PS-to-VNC pad interface. | clean source interface |
+| pstvnc_pad | structure | src/pad.h | pad interface | public | Defines one PS-to-VNC-owned libpad endpoint plus only its immediate physical observation state. | ADR 0002: pad boundary |
+| port | field | src/pad.h | pstvnc_pad | public | Stores the native libpad port identifying this physical endpoint. | libpad port/slot addressing |
+| slot | field | src/pad.h | pstvnc_pad | public | Stores the native libpad slot identifying this physical endpoint. | libpad port/slot addressing |
+| state | field | src/pad.h | pstvnc_pad | public | Stores the latest native PAD_STATE_* value observed for this endpoint. | libpad state machine |
+| opened | field | src/pad.h | pstvnc_pad | public | Records whether this instance currently owns an opened libpad port/slot endpoint. | pad lifecycle |
+| connection_configured | field | src/pad.h | pstvnc_pad | public | Records whether mode negotiation has completed for the current physical connection epoch. | controller mode negotiation |
+| history_valid | field | src/pad.h | pstvnc_pad | public | Records whether buttons_down has a continuous prior sample suitable for deriving physical edges. | immediate physical pad history |
+| sample_length | field | src/pad.h | pstvnc_pad | public | Stores the exact leading-byte count in buttons supplied by the latest accepted padRead sample. | libpad variable-length sample semantics |
+| buttons | field | src/pad.h | pstvnc_pad | public | Stores the latest accepted native libpad padButtonStatus without a replacement controller representation. | ADR 0002: native libpad representation |
+| buttons_down | field | src/pad.h | pstvnc_pad | public | Stores the current active-high physical PAD_* button mask derived from native active-low btns. | immediate physical pad state |
+| buttons_pressed | field | src/pad.h | pstvnc_pad | public | Stores buttons newly observed down relative to the immediately preceding valid physical sample. | immediate physical pad history |
+| buttons_released | field | src/pad.h | pstvnc_pad | public | Stores buttons newly observed up relative to the immediately preceding valid physical sample. | immediate physical pad history |
+| dma_buffer | field | src/pad.h | pstvnc_pad | public | Provides the 256-byte 64-byte-aligned caller-owned DMA region required by current libpad for this endpoint. | libpad padPortOpen contract |
+| pstvnc_pad_t | type | src/pad.h | pad interface | public | Names one owned physical libpad endpoint instance without replacing libpad controller vocabulary. | ADR 0002: pad boundary |
+| pstvnc_pad_init | function declaration | src/pad.h | pad interface | public | Declares process-wide PS-to-VNC libpad initialization. | pad lifecycle |
+| pstvnc_pad_shutdown | function declaration | src/pad.h | pad interface | public | Declares release of process-wide PS-to-VNC libpad ownership. | pad lifecycle |
+| pstvnc_pad_open | function declaration | src/pad.h | pad interface | public | Declares opening one explicit native libpad port/slot endpoint. | physical pad endpoint ownership |
+| pad | prototype parameter | src/pad.h | pstvnc_pad_open | prototype | Names the pad instance storage populated by the public open operation. | clean source interface |
+| port | prototype parameter | src/pad.h | pstvnc_pad_open | prototype | Names the native libpad port argument in the public open contract. | libpad port/slot addressing |
+| slot | prototype parameter | src/pad.h | pstvnc_pad_open | prototype | Names the native libpad slot argument in the public open contract. | libpad port/slot addressing |
+| pstvnc_pad_poll | function declaration | src/pad.h | pad interface | public | Declares one physical libpad observation attempt with immediate edge derivation. | Issue #38 minimal physical pad foundation |
+| pad | prototype parameter | src/pad.h | pstvnc_pad_poll | prototype | Names the opened pad instance supplied to the public polling operation. | clean source interface |
+| pstvnc_pad_close | function declaration | src/pad.h | pad interface | public | Declares release of one owned libpad endpoint and its immediate history. | pad lifecycle |
+| pad | prototype parameter | src/pad.h | pstvnc_pad_close | prototype | Names the pad instance supplied to the public close operation. | clean source interface |
 | read_be16 | function | src/rfb.c | RFB wire format | file | Decodes one unsigned 16-bit big-endian RFB field without side effects. | RFB wire contract |
 | bytes | parameter | src/rfb.c | read_be16 | local | Points to the two network-order bytes to decode. | RFB wire contract |
 | read_be32 | function | src/rfb.c | RFB wire format | file | Decodes one unsigned 32-bit big-endian RFB field without side effects. | RFB wire contract |

@@ -1,6 +1,7 @@
 /*
  * File synopsis:
- * Owns deterministic IOP bootstrap and the final OSDSYS system-menu exit path.
+ * Owns deterministic IOP bootstrap, base controller-service module loading,
+ * and the final OSDSYS system-menu exit path.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "PS2 system and
  * private-Ethernet platform seam"; docs/CLEAN_ARCHITECTURE.md, "PS2 platform
@@ -15,6 +16,11 @@
 #include <sifrpc.h>
 
 #include "ps2_system.h"
+
+extern unsigned char SIO2MAN_irx[];
+extern unsigned int size_SIO2MAN_irx;
+extern unsigned char PADMAN_irx[];
+extern unsigned int size_PADMAN_irx;
 
 int pstvnc_ps2_system_prepare_iop(void)
 {
@@ -42,6 +48,31 @@ int pstvnc_ps2_system_prepare_iop(void)
         return -1;
 
     if (sbv_patch_enable_lmb() < 0)
+        return -1;
+
+    /*
+     * Controller services are part of the deterministic IOP foundation rather
+     * than pad interpretation. SIO2MAN owns the serial-controller transport
+     * used by PADMAN, so its load order must precede PADMAN.
+     *
+     * Both images come from the pinned PS2SDK build instead of inheriting ROM
+     * or launcher module state. The pad owner can therefore use ordinary
+     * libpad against one known controller-service pair.
+     */
+    if (SifExecModuleBuffer(
+            SIO2MAN_irx,
+            size_SIO2MAN_irx,
+            0,
+            NULL,
+            NULL) < 0)
+        return -1;
+
+    if (SifExecModuleBuffer(
+            PADMAN_irx,
+            size_PADMAN_irx,
+            0,
+            NULL,
+            NULL) < 0)
         return -1;
 
     return 0;

@@ -20,15 +20,18 @@ EE_OBJS = \
 	$(BUILD_DIR)/framebuffer.o \
 	$(BUILD_DIR)/rfb_session.o \
 	$(BUILD_DIR)/display.o \
+	$(BUILD_DIR)/pad.o \
 	$(BUILD_DIR)/ps2_system.o \
 	$(BUILD_DIR)/ps2_network.o \
 	$(BUILD_DIR)/ps2_graphics.o \
+	$(BUILD_DIR)/SIO2MAN_irx.o \
+	$(BUILD_DIR)/PADMAN_irx.o \
 	$(BUILD_DIR)/DEV9_irx.o \
 	$(BUILD_DIR)/NETMAN_irx.o \
 	$(BUILD_DIR)/SMAP_irx.o
 
 EE_INCS = -Isrc -Isrc/platform -I$(GSKIT)/include
-EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
+EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman -lpad $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
 
 .PHONY: all clean
 
@@ -68,6 +71,9 @@ $(BUILD_DIR)/rfb_session.o: src/rfb_session.c src/rfb_session.h src/rfb.h src/rf
 $(BUILD_DIR)/display.o: src/display.c src/display.h src/framebuffer.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
+$(BUILD_DIR)/pad.o: src/pad.c src/pad.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
 $(BUILD_DIR)/ps2_system.o: src/platform/ps2_system.c src/platform/ps2_system.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
@@ -77,6 +83,12 @@ $(BUILD_DIR)/ps2_network.o: src/platform/ps2_network.c src/platform/ps2_network.
 $(BUILD_DIR)/ps2_graphics.o: src/platform/ps2_graphics.c src/platform/ps2_graphics.h src/display.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
+$(GEN_DIR)/SIO2MAN_irx.c: $(PS2SDK)/iop/irx/freesio2.irx | $(GEN_DIR)
+	bin2c $< $@ SIO2MAN_irx
+
+$(GEN_DIR)/PADMAN_irx.c: $(PS2SDK)/iop/irx/freepad.irx | $(GEN_DIR)
+	bin2c $< $@ PADMAN_irx
+
 $(GEN_DIR)/DEV9_irx.c: $(PS2SDK)/iop/irx/ps2dev9.irx | $(GEN_DIR)
 	bin2c $< $@ DEV9_irx
 
@@ -85,6 +97,12 @@ $(GEN_DIR)/NETMAN_irx.c: $(PS2SDK)/iop/irx/netman.irx | $(GEN_DIR)
 
 $(GEN_DIR)/SMAP_irx.c: $(PS2SDK)/iop/irx/smap.irx | $(GEN_DIR)
 	bin2c $< $@ SMAP_irx
+
+$(BUILD_DIR)/SIO2MAN_irx.o: $(GEN_DIR)/SIO2MAN_irx.c | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/PADMAN_irx.o: $(GEN_DIR)/PADMAN_irx.c | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/DEV9_irx.o: $(GEN_DIR)/DEV9_irx.c | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@

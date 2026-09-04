@@ -4,7 +4,8 @@ DIRECTORY=src/platform
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns genuinely PS2-specific system, Ethernet, and GS mechanisms.
+This directory owns genuinely PS2-specific system, controller-service
+bootstrap, Ethernet, and GS mechanisms.
 The clean Issue #7 platform surface is limited to the six `ps2_*.[ch]` files
 listed below; no retained historical platform module is silently included.
 
@@ -86,8 +87,12 @@ listed below; no retained historical platform module is silently included.
 | pstvnc_ps2_network_connect_vnc | function declaration | src/platform/ps2_network.h | PS2 network interface | public | Declares connection to the fixed PS2-facing VNC endpoint. | private-Ethernet platform seam |
 | pstvnc_ps2_network_close | function declaration | src/platform/ps2_network.h | PS2 network interface | public | Declares socket close plus invalidation of any transport buffer owned by that socket. | private-Ethernet platform seam |
 | socket_fd | prototype parameter | src/platform/ps2_network.h | pstvnc_ps2_network_close | prototype | Names the socket descriptor being closed in the public network contract. | private-Ethernet platform seam |
-| pstvnc_ps2_system_prepare_iop | function | src/platform/ps2_system.c | PS2 system | public | Resets and synchronizes the IOP, initializes RPC/loadfile/heap support, and enables module loading. | CLEAN_ARCHITECTURE: PS2 platform mechanisms |
+| SIO2MAN_irx | external symbol declaration | src/platform/ps2_system.c | embedded controller modules | linker seam | Names the linked embedded SIO2MAN IOP image loaded before PADMAN during deterministic system bootstrap. | PS2 controller-service foundation |
+| size_SIO2MAN_irx | external symbol declaration | src/platform/ps2_system.c | embedded controller modules | linker seam | Names the linked byte size of the embedded SIO2MAN IOP image. | PS2 controller-service foundation |
+| PADMAN_irx | external symbol declaration | src/platform/ps2_system.c | embedded controller modules | linker seam | Names the linked embedded PADMAN IOP image loaded after SIO2MAN during deterministic system bootstrap. | PS2 controller-service foundation |
+| size_PADMAN_irx | external symbol declaration | src/platform/ps2_system.c | embedded controller modules | linker seam | Names the linked byte size of the embedded PADMAN IOP image. | PS2 controller-service foundation |
+| pstvnc_ps2_system_prepare_iop | function | src/platform/ps2_system.c | PS2 system | public | Resets and synchronizes the IOP, initializes RPC/loadfile/heap support, enables memory module loading, and establishes embedded SIO2MAN/PADMAN controller services. | CLEAN_ARCHITECTURE: PS2 platform mechanisms |
 | pstvnc_ps2_system_exit_to_menu | function | src/platform/ps2_system.c | PS2 system | public | Transfers control to OSDSYS and parks the thread if that transfer unexpectedly returns. | CLEAN_ARCHITECTURE: Startup lifecycle |
 | PSTVNC_PS2_SYSTEM_H | include-guard macro | src/platform/ps2_system.h | PS2 system interface | header | Prevents duplicate inclusion of the clean PS2 system-lifecycle interface. | PS2 platform mechanisms |
-| pstvnc_ps2_system_prepare_iop | function declaration | src/platform/ps2_system.h | PS2 system interface | public | Declares deterministic IOP preparation required before loading product modules. | CLEAN_ARCHITECTURE: PS2 platform mechanisms |
+| pstvnc_ps2_system_prepare_iop | function declaration | src/platform/ps2_system.h | PS2 system interface | public | Declares deterministic IOP preparation and embedded SIO2MAN/PADMAN controller-service establishment before feature initialization. | CLEAN_ARCHITECTURE: PS2 platform mechanisms |
 | pstvnc_ps2_system_exit_to_menu | function declaration | src/platform/ps2_system.h | PS2 system interface | public | Declares final convergence on OSDSYS with no valid product continuation. | CLEAN_ARCHITECTURE: Startup lifecycle |
