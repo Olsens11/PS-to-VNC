@@ -64,6 +64,34 @@ variables, shell functions and maintained variables, and project-owned Make
 targets and variables. Repeated uses and third-party names are not separate
 project symbols.
 
+### Definition-discovery adapters
+
+Project-definition completeness is discovered from language structure rather
+than by treating every identifier use as a project symbol.
+
+- C and C headers use Universal Ctags JSON records and map only definition
+  kinds owned by PS-to-VNC. Library, compiler, libc, and PS2SDK names that are
+  merely referenced are not dictionary candidates.
+- Python uses the standard-library AST. Named lexical owners are qualified;
+  anonymous lambda and comprehension scopes use location-independent semantic
+  fingerprints plus deterministic same-fingerprint occurrence numbers.
+  Unsupported ownership forms fail closed rather than being guessed.
+- Shell uses the `shfmt` Bash AST for functions and maintained bindings.
+  Unsupported dynamic binding grammar fails closed.
+- Make uses Universal Ctags for targets plus a deliberately small deterministic
+  parser for project-owned variable definitions. Toolchain and conventional
+  external Make variables are excluded explicitly.
+
+Anonymous Python owner identities must remain safe inside the validator's
+colon-delimited diagnostics. They therefore contain neither source-coordinate
+identity nor literal colon delimiters. Repeated syntactically identical
+anonymous scopes under one lexical owner are distinguished by deterministic
+occurrence number.
+
+The current development-system dependency authority for these adapters is
+recorded in `runtime/DEVELOPMENT_SYSTEM.env`. The validator performs its own
+fail-closed executable/version checks where a dependency contract is required.
+
 ## Clean-generation scope and exclusions
 
 Required scope:

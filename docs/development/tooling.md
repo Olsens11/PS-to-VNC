@@ -29,6 +29,35 @@ This is the canonical build authority.
 
     scripts/check.sh
 
+### Source-symbol dictionary validation
+
+    scripts/source-dictionary.py
+    scripts/source-dictionary-self-test.py
+
+The source-dictionary validator separates dictionary structural integrity from
+ordinary maintenance drift. Structural ambiguity or unsupported discovery
+semantics fail closed. Normal maintenance drift reports `ATTENTION` while
+`check --strict` makes that drift blocking.
+
+Definition discovery is language-aware:
+
+- Universal Ctags supplies C/C-header definition records and Make targets;
+- Python's standard-library AST supplies Python lexical definitions;
+- `shfmt` supplies Bash structure;
+- a narrow deterministic Make parser supplements Ctags for project-owned
+  variable assignments.
+
+The live development-system records the tested/required discovery tool
+identities in `runtime/DEVELOPMENT_SYSTEM.env`. Do not silently substitute
+Exuberant Ctags for Universal Ctags or a different `shfmt` version when the
+validator's checked contract requires the recorded tool.
+
+Definition-discovery readiness and trusted comprehensive-audit authority are
+separate concerns. `DEFINITION_DISCOVERY_STATUS` remains `PENDING` and
+`LAST_LONG_PASS_COMMIT` remains `UNSET` until the complete clean-generation
+dictionary retrofit has passed the genuine comprehensive gate described by
+`docs/development/source-naming-and-symbols.md`.
+
 ## Hardware TestKit
 
 Canonical TestKit operator guide:
