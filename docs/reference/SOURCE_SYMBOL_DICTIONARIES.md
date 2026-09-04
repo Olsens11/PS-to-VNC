@@ -4,6 +4,7 @@ This portal is generated from directory-owned `SYMBOLS.md` files.
 
 | Directory | Dictionary | Coverage | Symbols |
 |---|---|---|---:|
+| `mk` | [`mk/SYMBOLS.md`](../../mk/SYMBOLS.md) | COMPLETE | 32 |
 | `scripts` | [`scripts/SYMBOLS.md`](../../scripts/SYMBOLS.md) | COMPLETE | 219 |
 | `scripts/testkit` | [`scripts/testkit/SYMBOLS.md`](../../scripts/testkit/SYMBOLS.md) | IN_PROGRESS | 77 |
 | `src` | [`src/SYMBOLS.md`](../../src/SYMBOLS.md) | COMPLETE | 414 |
