@@ -83,7 +83,7 @@ Recovery command:
 
 Consistency gate:
 
-`scripts/migration-check.sh`
+`scripts/check.sh`
 
 The next source-changing operation must establish the expected migration state
 before mutation.

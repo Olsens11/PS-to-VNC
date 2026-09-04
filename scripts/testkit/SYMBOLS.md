@@ -5,8 +5,13 @@ GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=IN_PROGRESS
 
 This directory contains retained historical TestKit/M4 tooling plus
-successor-owned clean qualification tooling. Issue #7 deployment and observer
-apparatus is now successor-owned; the former frozen-legacy compatibility bridge
+successor-owned clean development tooling. The canonical operator-facing tool
+catalog and usage guide is `scripts/testkit/README.md`; this file is the
+implementation symbol dictionary and is not a replacement for that guide.
+
+Generic PS2 ELF deployment is separate from Issue-specific qualification
+policy; Issue #7 owns its manifest/observer/evaluator apparatus and consumes
+the generic deployment evidence. The former frozen-legacy compatibility bridge
 is retired. Only deliberately adopted clean-generation files receive the clean
 `File synopsis:` marker and enter this dictionary.
 
@@ -51,11 +56,36 @@ is retired. Only deliberately adopted clean-generation files receive the clean
 | fields | function | scripts/testkit/successor-identity-compat-self-test.py | successor identity compatibility | private | Locates and decodes the identity fields from one sealed stamped ELF fixture. | successor identity compatibility |
 | run | function | scripts/testkit/successor-identity-compat-self-test.py | successor identity compatibility | private | Runs the successor identity command and fails if the subprocess does not succeed. | successor identity compatibility |
 | main | function | scripts/testkit/successor-identity-compat-self-test.py | successor identity compatibility | command line | Proves byte-exact fixture reproduction plus restamp and overlong-ID fail-closed behavior. | successor identity compatibility |
+| DEFAULT_FTP_HOST | constant | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | module | Defines the established private-link PS2 FTP host used when the caller does not override it. | deployment mechanics |
+| DEFAULT_FTP_PORT | constant | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | module | Defines the established PS2 FTP control port used when the caller does not override it. | deployment mechanics |
+| DEFAULT_ROLLING_PATH | constant | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | module | Defines the stable FreeMcBoot/wLaunchELF launch target `/mass/0/PS2VNC.ELF`. | deployment mechanics |
+| UNIQUE_PREFIX | constant | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | module | Defines the deterministic archival filename prefix for unique deployed ELFs. | deployment mechanics |
+| TEST_ID_RE | constant | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | module | Restricts test identifiers to filename-safe deterministic values. | deployment safety |
+| SHA256_RE | constant | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | module | Validates optional caller-supplied SHA-256 identity expectations. | deployment safety |
+| REMOTE_NAME_RE | constant | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | module | Confines writable FTP targets to simple filenames under PS2 mass:/0. | deployment safety |
+| DeploymentError | exception type | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | module | Represents a fail-closed repository, identity, transfer, collision, readback, or evidence error. | deployment mechanics |
+| sha256_file | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Streams one ELF/readback/evidence file and returns its lowercase SHA-256 identity. | deployment identity |
+| run_git | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Performs read-only Git queries used to validate the caller-selected DUT repository. | repository context |
+| resolve_repository | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Resolves explicit `--repo` or current-working-directory Git context and labels its source. | repository context |
+| resolve_local_path | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Resolves relative ELF/evidence operands against the selected DUT repository. | repository context |
+| repository_metadata | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Records informative repository head/branch identity without imposing qualification policy. | repository context |
+| validate_test_id | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Validates the caller's deterministic archival test identifier. | deployment safety |
+| validate_remote_path | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Prevents deployment outside simple `/mass/0` filenames. | deployment safety |
+| validate_expected_identity | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Computes local ELF SHA-256/bytes and enforces optional expected identity values before FTP. | deployment identity |
+| curl_executable | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Selects normal curl while permitting a fake executable only under explicit self-test mode. | transfer mechanics |
+| ftp_url | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Constructs one FTP URL from validated deployment inputs. | transfer mechanics |
+| run_curl | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Performs one bounded noninteractive FTP operation and reports useful failure detail. | transfer mechanics |
+| ensure_unique_remote_absent | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Probes the deterministic archival target and refuses silent overwrite of an existing unique ELF. | archival safety |
+| default_evidence_path | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Chooses the generated DUT-repository evidence path when the caller does not supply one. | deployment evidence |
+| validate_evidence_path | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Refuses to overwrite an existing deployment-evidence record. | deployment evidence |
+| write_evidence | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Atomically records repository context, exact dual readbacks, and the fact that deployment is not hardware execution. | deployment evidence |
+| build_parser | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | private | Defines the generic repository/ELF/test/evidence/FTP/dry-run/authorization command interface. | command line |
+| main | function | scripts/testkit/deploy-elf.py | generic PS2 ELF deployment | command line | Plans or executes one exact unique-plus-rolling deployment without experiment-specific qualification policy. | deployment mechanics |
+| cleanup | function | scripts/testkit/deploy-elf-self-test.sh | generic deployment regression | local helper | Removes only the disposable fake-FTP deployment fixture after the regression test. | development tooling |
 | issue7_validate_manifest_current | function | scripts/testkit/issue7-apparatus-common.sh | Issue #7 apparatus contract | shared shell helper | Validates that one DUT manifest names the exact current committed Issue #7 source and qualified PS2IP authority. | hardware qualification |
 | issue7_pid_owned | function | scripts/testkit/issue7-apparatus-common.sh | observer ownership | shared shell helper | Proves a live process is the run-specific successor UDP observer before any signal may be sent to it. | fail-closed cleanup |
 | issue7_pcap_owned | function | scripts/testkit/issue7-apparatus-common.sh | observer ownership | shared shell helper | Proves a systemd unit owns the expected run-specific tcpdump capture before it may be stopped. | fail-closed cleanup |
 | cleanup_error | function | scripts/testkit/issue7-arm-observers.sh | observer arming | local trap handler | Cleans only observers started by a failed arming transaction and preserves an apparatus-failure marker. | hardware apparatus |
-| MANIFEST | variable | scripts/testkit/issue7-deploy-elf.sh | exact DUT deployment | script scope | Names the committed successor DUT manifest whose stamped ELF identity governs FTP deployment and readback. | hardware deployment |
 | stop_udp | function | scripts/testkit/issue7-stop-observers.sh | observer shutdown | local helper | Stops the UDP observer only after proving run ownership and fails closed if ownership changes. | evidence preservation |
 | now_iso | function | scripts/testkit/issue7-udp-observer.py | UDP evidence receiver | module helper | Returns an offset-aware timestamp for one received runtime diagnostic datagram. | machine evidence |
 | main | function | scripts/testkit/issue7-udp-observer.py | UDP evidence receiver | command line | Receives UDP diagnostics and writes ordered timestamped JSONL without interpreting or controlling the DUT. | machine evidence |

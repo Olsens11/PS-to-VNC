@@ -243,7 +243,7 @@ fail without mutating their inputs.
 `scripts/testkit/prepare-hardware-elf.sh` now uses those successor-owned tools,
 verifies the result, repeats stamping from the pristine input to prove
 determinism, and records both whole-ELF and PT_LOAD effects. Routine identity
-preparation no longer depends on `/home/ps2/ps2vnc/scripts/testkit`.
+preparation no longer depends on the legacy TestKit checkout.
 
 This does **not** abolish the separate frozen-legacy hardware/apparatus bridge.
 Deployment/observer mechanics that genuinely rely on historical apparatus remain

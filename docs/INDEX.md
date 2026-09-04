@@ -23,6 +23,7 @@ This is the canonical entry point for current PS-to-VNC documentation.
 
 ## Architecture
 
+- `docs/CLEAN_ARCHITECTURE.md` — current clean-reconstruction architecture authority.
 - `docs/architecture/ARCHITECTURE.md` — current/historical subsystem architecture reference.
 
 ## Reference
@@ -31,6 +32,8 @@ This is the canonical entry point for current PS-to-VNC documentation.
   source, evidence and responsibilities currently reside.
 - `docs/reference/PRESERVATION_STATUS.md` — completed exploratory-reference
   preservation scope and disposition.
+- `docs/reference/SOURCE_SYMBOL_DICTIONARIES.md` — generated portal for
+  directory-owned clean-source symbol dictionaries.
 
 ## Semantic audit
 
@@ -38,6 +41,31 @@ This is the canonical entry point for current PS-to-VNC documentation.
   maturity model.
 - `docs/audit/BEHAVIORAL_INVENTORY.md` — complete product behavior inventory
   and current audit status.
+- `docs/audit/B07_B09_INPUT_KEYBOARD_LOCAL_UI.md` — detailed controller,
+  keyboard, and local-UI behavior audit.
+- `docs/audit/B10_B11_CONFIGURATION_RECOVERY_MANAGEMENT.md` — detailed
+  configuration, recovery, and management behavior audit.
+- `docs/audit/B12_B14_DIAGNOSTICS_PI_DEVELOPMENT_INFRASTRUCTURE.md` — detailed
+  diagnostics, Pi companion, and development-infrastructure audit.
+- `docs/audit/SOURCE_RESPONSIBILITY_MAP.md` — historical implementation,
+  ownership, and coupling map.
+- `docs/audit/HISTORICAL_LESSONS.md` — durable lessons recovered from prior
+  experiments and failures.
+- `docs/audit/CROSS_DOMAIN_SYNTHESIS.md` — cross-domain responsibility and
+  architecture synthesis.
+- `docs/audit/CROSS_DOMAIN_STATE_INTERFACES.md` — explicit state ownership,
+  interfaces, and concurrency seams.
+- `docs/audit/REBUILD_READY_PROMOTION.md` — promotion record establishing
+  rebuild-ready audit maturity.
+
+## Reconstruction
+
+- `docs/reconstruction/ISSUE7_MINIMAL_CORE.md` — clean Issue #7 minimal-core
+  reconstruction contract and implementation boundary.
+- `docs/reconstruction/ISSUE7_DUT_MANIFEST.md` — Issue #7 DUT identity and
+  manifest contract.
+- `docs/reconstruction/ISSUE7_HARDWARE_QUALIFICATION.md` — Issue #7 hardware
+  qualification procedure and evidence contract.
 
 ## Documentation contract
 
@@ -59,8 +87,8 @@ explicitly adopted into the new design.
 - `START_HERE.md` — mandatory recovery entry point after context loss.
 - `docs/MIGRATION_STATE.md` — human-readable migration authority.
 - `runtime/MIGRATION_STATE.env` — machine-readable migration authority.
-- `scripts/resume-state.sh` — reconstruct current migration state.
-- `scripts/migration-check.sh` — prove migration/source/document coherence.
+- `scripts/resume-state.sh` — report current and preserved historical state.
+- `scripts/check.sh` — run current project consistency checks.
 
 A fresh conversation begins with `START_HERE.md`, not conversational memory.
 
@@ -136,6 +164,7 @@ Development-system policy:
 - `docs/development/testing.md`
 - `docs/development/tooling.md`
 - `docs/development/lessons-learned.md`
+- `docs/development/source-naming-and-symbols.md`
 
 Decision records:
 

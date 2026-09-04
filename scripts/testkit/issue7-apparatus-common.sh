@@ -3,9 +3,12 @@
 # File synopsis:
 # Shared fail-closed contracts for the successor Issue #7 hardware apparatus.
 #
-# These helpers own project-specific deployment/capture constants and observer
-# ownership checks. They do not implement product recovery or historical M4
-# freeze/sampler behavior.
+# These helpers own Issue #7 observer/capture constants, current-manifest
+# validation, and observer ownership checks. Generic ELF deployment is a
+# separate TestKit responsibility.
+#
+# They do not implement product recovery or historical M4 freeze/sampler
+# behavior.
 
 ISSUE7_ROOT="$(
     cd "$(dirname "${BASH_SOURCE[0]}")/../.." &&
@@ -17,7 +20,6 @@ ISSUE7_EXPECTED_REPOSITORY='Olsens11/PS-to-VNC'
 ISSUE7_EXPECTED_PS2IP_SHA256='b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74'
 
 ISSUE7_PS2_HOST='192.168.50.2'
-ISSUE7_PS2_FTP_PORT='21'
 ISSUE7_PI_PRIVATE_IP='192.168.50.1'
 ISSUE7_UDP_PORT='5999'
 ISSUE7_PCAP_INTERFACE='eth0'
@@ -173,7 +175,6 @@ SCRIPTS_TESTKIT_VERIFY_ELF_IDENTITY_SH_SHA256 scripts/testkit/verify-elf-identit
 SCRIPTS_TESTKIT_ISSUE7_DUT_MANIFEST_PY_SHA256 scripts/testkit/issue7-dut-manifest.py
 SCRIPTS_TESTKIT_ISSUE7_APPARATUS_COMMON_SH_SHA256 scripts/testkit/issue7-apparatus-common.sh
 SCRIPTS_TESTKIT_ISSUE7_ARM_OBSERVERS_SH_SHA256 scripts/testkit/issue7-arm-observers.sh
-SCRIPTS_TESTKIT_ISSUE7_DEPLOY_ELF_SH_SHA256 scripts/testkit/issue7-deploy-elf.sh
 SCRIPTS_TESTKIT_ISSUE7_STOP_OBSERVERS_SH_SHA256 scripts/testkit/issue7-stop-observers.sh
 SCRIPTS_TESTKIT_ISSUE7_UDP_OBSERVER_PY_SHA256 scripts/testkit/issue7-udp-observer.py
 SCRIPTS_TESTKIT_ISSUE7_RESULT_PY_SHA256 scripts/testkit/issue7-result.py
