@@ -31,23 +31,45 @@ This is the canonical build authority.
 
 ## Hardware TestKit
 
-Issue #7 hardware qualification is now owned directly by PS-to-VNC.
+Generic PS2 ELF deployment is owned by:
 
-Canonical successor tooling:
+    scripts/testkit/deploy-elf.py
+    scripts/testkit/deploy-elf-self-test.sh
+
+The deployer has one narrow job: take one exact caller-selected ELF, preserve
+the same bytes under a deterministic unique `/mass/0` filename, replace the
+stable `/mass/0/PS2VNC.ELF` launch target with those same bytes, read both
+targets back, and require matching SHA256 and byte counts.
+
+Normal deployment always writes both the unique archival target and the rolling
+launch target. Live FTP requires `--operator-authorized`; `--dry-run` guarantees
+no FTP contact. `--repo <DUT-worktree>` is the normal operator interface when
+the canonical tool and the DUT are different worktrees. Relative ELF and
+evidence operands resolve against that selected DUT repository.
+
+The generic deployer does not build, stamp, launch, observe, qualify, inspect an
+Issue-specific manifest, require an Issue-specific branch, or own hardware-test
+policy.
+
+Issue #7 hardware qualification remains directly owned by PS-to-VNC through:
 
     scripts/testkit/prepare-hardware-elf.sh
     scripts/testkit/issue7-dut-manifest.py
     scripts/testkit/issue7-arm-observers.sh
-    scripts/testkit/issue7-deploy-elf.sh
     scripts/testkit/issue7-stop-observers.sh
     scripts/testkit/issue7-result.py
     scripts/testkit/issue7-apparatus-self-test.sh
 
-The apparatus deliberately keeps the Issue #7 evidence contract narrow:
+Issue #7 arms and validates its own observation apparatus, then invokes the
+generic deployer with the exact stamped-ELF identity and writes the generic
+deployment evidence as that run's `deployment.json`. Its evaluator consumes
+the byte-exact deployment/readback evidence without making deployment mechanics
+Issue-specific.
+
+The Issue #7 apparatus deliberately keeps its qualification contract narrow:
 
 - exact committed source/DUT identity;
 - stamped ELF verification;
-- unique and rolling FTP deployment with byte-exact readback;
 - ordered UDP runtime identity and startup-stage capture;
 - PS2-facing packet capture;
 - run-owned observer shutdown;
@@ -58,7 +80,7 @@ It does not inherit the historical M4 automatic freeze/capture machinery and it
 does not perform automatic silent-stall recovery.
 
 The PS2VNC TestKit remains historical mechanism/evidence authority. It is not a
-live runtime dependency of Issue #7 qualification. The former
+live runtime dependency of current qualification. The former
 `legacy-hardware-bridge.py` compatibility path is retired.
 
 ## Tool promotion

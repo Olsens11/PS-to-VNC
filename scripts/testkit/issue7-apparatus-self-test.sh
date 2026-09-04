@@ -19,7 +19,6 @@ cd "$ROOT"
 
 COMMON='scripts/testkit/issue7-apparatus-common.sh'
 ARM='scripts/testkit/issue7-arm-observers.sh'
-DEPLOY='scripts/testkit/issue7-deploy-elf.sh'
 STOP='scripts/testkit/issue7-stop-observers.sh'
 UDP='scripts/testkit/issue7-udp-observer.py'
 RESULT='scripts/testkit/issue7-result.py'
@@ -27,7 +26,6 @@ RESULT='scripts/testkit/issue7-result.py'
 for script in \
     "$COMMON" \
     "$ARM" \
-    "$DEPLOY" \
     "$STOP" \
     "$0"
 do

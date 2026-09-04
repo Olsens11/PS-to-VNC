@@ -181,17 +181,40 @@ wrong display path.
 
 ## Canonical successor apparatus
 
-The corrected qualification uses only successor-owned tools:
+Issue #7 qualification uses successor-owned observation/evaluation tools:
 
     scripts/testkit/issue7-arm-observers.sh
-    scripts/testkit/issue7-deploy-elf.sh
     scripts/testkit/issue7-stop-observers.sh
     scripts/testkit/issue7-result.py
+
+Exact ELF transfer is intentionally delegated to the project-generic deployment
+mechanic:
+
+    scripts/testkit/deploy-elf.py
 
 Arming starts the UDP 5999 observer and PS2-facing packet capture before
 deployment. The capture has a hard safety timeout but no automatic DUT recovery
 or silent-stall masking. Observer shutdown is ownership-checked and hashes raw
 run evidence before interpretation.
+
+The generic deployer is invoked only after the Issue #7 apparatus is armed. It
+does not inspect the Issue #7 manifest or observer state. Issue #7 supplies the
+exact stamped ELF, test ID, expected SHA256/byte count, DUT worktree, and the
+armed run's absolute `deployment.json` evidence path.
+
+A live invocation therefore has the shape:
+
+    python3 scripts/testkit/deploy-elf.py \
+        --repo <ISSUE7_DUT_WORKTREE> \
+        --elf <STAMPED_ELF> \
+        --test-id <HARDWARE_TEST_ID> \
+        --expected-sha256 <HARDWARE_STAMPED_ELF_SHA256> \
+        --expected-bytes <HARDWARE_STAMPED_ELF_BYTES> \
+        --evidence <RUN>/deployment.json \
+        --operator-authorized
+
+A dry-run uses the same identity inputs with `--dry-run` instead of
+`--operator-authorized` and performs no FTP contact.
 
 ## Suggested test sequence
 
@@ -204,8 +227,10 @@ run evidence before interpretation.
    intended private address.
 7. Arm UDP identity/stage and PS2-facing packet observers with
    `issue7-arm-observers.sh`.
-8. Deploy the exact stamped ELF with `issue7-deploy-elf.sh` and require both FTP
-   readback hashes to match.
+8. Deploy the exact stamped ELF with the generic `deploy-elf.py`, explicitly
+   selecting the Issue #7 DUT worktree and manifest-derived test ID/SHA256/byte
+   count, writing evidence to `<RUN>/deployment.json`, and require both FTP
+   readback identities to match.
 9. Launch the exact DUT on the PS2.
 10. Wait for identity and ordered startup-stage evidence.
 11. Record the initial physical 480p desktop result.

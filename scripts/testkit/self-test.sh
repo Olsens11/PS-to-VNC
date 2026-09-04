@@ -169,6 +169,10 @@ echo '[SELFTEST] runtime identity message serialization'
 echo 'CHECKPOINT_ACTIVATION_SELF_TEST=SEPARATE_SCOPE'
 echo 'LEGACY_HARDWARE_BRIDGE=RETIRED'
 
+echo '[SELFTEST] generic PS2 ELF deployment'
+./scripts/testkit/deploy-elf-self-test.sh
+echo 'GENERIC_PS2_ELF_DEPLOYMENT_SELF_TEST=PASS'
+
 echo '[SELFTEST] successor Issue #7 hardware apparatus'
 ./scripts/testkit/issue7-apparatus-self-test.sh
 echo 'ISSUE7_HARDWARE_APPARATUS_SELF_TEST=PASS'
