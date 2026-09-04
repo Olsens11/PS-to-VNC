@@ -22,6 +22,16 @@ from pathlib import Path
 
 CLEAN_MARKER = "File synopsis:"
 DICT_NAME = "SYMBOLS.md"
+
+# Dictionary completeness is a product-source concern. Development tools,
+# TestKit, tests, build machinery, and retained evidence may keep useful
+# dictionaries of their own, but they do not enter the product completeness
+# gate merely because they live in this repository.
+#
+# Add another root only when that tree deliberately becomes maintained
+# PS-to-VNC product source.
+PRODUCT_SOURCE_ROOTS = (Path("src"),)
+
 EXCLUDED_PARTS = {"baseline", "evidence", "working", "build", ".git"}
 PLACEHOLDERS = {"todo", "tbd", "unknown", "placeholder", "describe me"}
 HEADER = ("Name", "Kind", "File", "Owner", "Scope", "Description", "Context")
@@ -103,32 +113,50 @@ def is_excluded(path: Path, root: Path) -> bool:
     return any(part in EXCLUDED_PARTS for part in path.relative_to(root).parts)
 
 
+def is_product_path(path: Path) -> bool:
+    """Return whether one repository-relative path belongs to product source."""
+    return any(
+        path == product_root
+        or product_root in path.parents
+        for product_root in PRODUCT_SOURCE_ROOTS
+    )
+
+
 def is_make_source_path(path: Path) -> bool:
     """Identify maintained Makefile and .mk source paths."""
     return path.name == "Makefile" or path.suffix == ".mk"
 
 
 def clean_files(root: Path) -> set[Path]:
+    """Return maintained product files subject to dictionary completeness."""
     result: set[Path] = set()
-    for pattern in ("*.c", "*.h", "*.py", "*.sh", "*.mk", "Makefile"):
-        for path in root.rglob(pattern):
-            if is_excluded(path, root) or not path.is_file():
-                continue
 
-            source_text = path.read_text(
-                encoding="utf-8",
-                errors="strict",
-            )
+    for product_root in PRODUCT_SOURCE_ROOTS:
+        scan_root = root / product_root
 
-            # C/Python/shell clean-generation membership remains explicitly
-            # marked. Current non-excluded Make sources are build/test
-            # infrastructure adopted by the clean reconstruction and therefore
-            # enter the same definition-completeness boundary.
-            if (
-                CLEAN_MARKER in source_text[:2048]
-                or is_make_source_path(path)
-            ):
-                result.add(path.relative_to(root))
+        if not scan_root.is_dir():
+            continue
+
+        for pattern in ("*.c", "*.h", "*.py", "*.sh", "*.mk", "Makefile"):
+            for path in scan_root.rglob(pattern):
+                if is_excluded(path, root) or not path.is_file():
+                    continue
+
+                source_text = path.read_text(
+                    encoding="utf-8",
+                    errors="strict",
+                )
+
+                # Product C/Python/shell membership remains explicitly marked.
+                # The Make adapter is retained and self-tested, but repository
+                # build/test Makefiles outside a product root do not enter
+                # dictionary completeness.
+                if (
+                    CLEAN_MARKER in source_text[:2048]
+                    or is_make_source_path(path)
+                ):
+                    result.add(path.relative_to(root))
+
     return result
 
 
@@ -315,8 +343,12 @@ def resolve_definition_scope(
 
     changed = changed_paths_since_baseline(root, baseline)
     candidates = {
-        path for path in changed
-        if is_definition_source_path(path)
+        path
+        for path in changed
+        if (
+            is_product_path(path)
+            and is_definition_source_path(path)
+        )
     }
 
     return "INCREMENTAL", baseline, "TRUSTED_BASELINE", candidates
@@ -2278,6 +2310,15 @@ def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str
     for path in sorted(root.rglob(DICT_NAME)):
         if is_excluded(path, root):
             continue
+
+        relative_dictionary = path.relative_to(root)
+
+        # Tool/test/build dictionaries may remain as optional orientation
+        # material, but only product-root dictionaries participate in
+        # structural/maintenance completeness and generated product views.
+        if not is_product_path(relative_dictionary):
+            continue
+
         directory, coverage, entries = parse_dictionary(path, root)
         if coverage != "COMPLETE":
             incomplete.append(directory)

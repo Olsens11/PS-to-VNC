@@ -248,6 +248,55 @@ static int packet_count;
     write(root, "evidence/old.c", source.replace("packet_count", "historical_count"))
     assert "SOURCE_DICTIONARIES=PASS" in run(root, 0)
 
+    # Development machinery is deliberately outside the product-symbol
+    # completeness boundary even when it carries a clean-generation synopsis.
+    write(
+        root,
+        "scripts/tool.py",
+        """#!/usr/bin/env python3
+\\"\\"\\"File synopsis:
+Development-tool scope fixture.
+\\"\\"\\"
+tool_value = 1
+""",
+    )
+    write(
+        root,
+        "scripts/testkit/helper.sh",
+        """#!/usr/bin/env bash
+# File synopsis:
+# TestKit scope fixture.
+helper_value=1
+""",
+    )
+    write(
+        root,
+        "tests/unit/helper_test.c",
+        """/*
+ * File synopsis:
+ * Unit-test scope fixture.
+ */
+static int test_value;
+""",
+    )
+    write(
+        root,
+        "mk/helper.mk",
+        """TOOL_BUILD_DIR = .tool-build
+
+tool-target:
+\t@true
+""",
+    )
+
+    tool_scope_output = run(root, 0, long=True)
+
+    assert "scripts/tool.py" not in tool_scope_output
+    assert "scripts/testkit/helper.sh" not in tool_scope_output
+    assert "tests/unit/helper_test.c" not in tool_scope_output
+    assert "mk/helper.mk" not in tool_scope_output
+    assert "SOURCE_DICTIONARIES=PASS" in tool_scope_output
+
 with tempfile.TemporaryDirectory() as temporary:
     root = Path(temporary)
 
@@ -1355,24 +1404,24 @@ project-specific:
 	@echo target-specific
 """
 
-    rows = """| PROJECT_DIR | variable | mk/Makefile | make fixture | private | Stores the project-owned output directory used by the Make fixture. | fixture |
-| PROJECT_APPEND | variable | mk/Makefile | make fixture | private | Exercises append-assignment discovery for a project-owned Make variable. | fixture |
-| PROJECT_OVERRIDE | variable | mk/Makefile | make fixture | private | Exercises prefixed simple-assignment discovery for a project-owned Make variable. | fixture |
-| PROJECT_BLOCK | variable | mk/Makefile | make fixture | private | Exercises GNU Make define-block discovery. | fixture |
-| PROJECT_TARGET_SPECIFIC | variable | mk/Makefile | make fixture | private | Exercises target-specific Make variable discovery. | fixture |
-| all | target | mk/Makefile | make fixture | private | Names the fixture aggregate target. | fixture |
-| $(PROJECT_DIR)/artifact | target | mk/Makefile | make fixture | private | Names the fixture artifact target. | fixture |
-| project-specific | target | mk/Makefile | make fixture | private | Names the fixture target carrying target-specific state. | fixture |
+    rows = """| PROJECT_DIR | variable | src/net/Makefile | make fixture | private | Stores the project-owned output directory used by the Make fixture. | fixture |
+| PROJECT_APPEND | variable | src/net/Makefile | make fixture | private | Exercises append-assignment discovery for a project-owned Make variable. | fixture |
+| PROJECT_OVERRIDE | variable | src/net/Makefile | make fixture | private | Exercises prefixed simple-assignment discovery for a project-owned Make variable. | fixture |
+| PROJECT_BLOCK | variable | src/net/Makefile | make fixture | private | Exercises GNU Make define-block discovery. | fixture |
+| PROJECT_TARGET_SPECIFIC | variable | src/net/Makefile | make fixture | private | Exercises target-specific Make variable discovery. | fixture |
+| all | target | src/net/Makefile | make fixture | private | Names the fixture aggregate target. | fixture |
+| $(PROJECT_DIR)/artifact | target | src/net/Makefile | make fixture | private | Names the fixture artifact target. | fixture |
+| project-specific | target | src/net/Makefile | make fixture | private | Names the fixture target carrying target-specific state. | fixture |
 """
 
-    write(root, "mk/Makefile", source)
+    write(root, "src/net/Makefile", source)
     write(
         root,
-        "mk/SYMBOLS.md",
+        "src/net/SYMBOLS.md",
         dictionary(
             rows,
             coverage="COMPLETE",
-            directory="mk",
+            directory="src/net",
         ),
     )
 
@@ -1395,20 +1444,20 @@ project-specific:
         ), output
 
     reduced_rows = rows.replace(
-        "| PROJECT_APPEND | variable | mk/Makefile | make fixture | private | Exercises append-assignment discovery for a project-owned Make variable. | fixture |\n",
+        "| PROJECT_APPEND | variable | src/net/Makefile | make fixture | private | Exercises append-assignment discovery for a project-owned Make variable. | fixture |\n",
         "",
     ).replace(
-        "| project-specific | target | mk/Makefile | make fixture | private | Names the fixture target carrying target-specific state. | fixture |\n",
+        "| project-specific | target | src/net/Makefile | make fixture | private | Names the fixture target carrying target-specific state. | fixture |\n",
         "",
     )
 
     write(
         root,
-        "mk/SYMBOLS.md",
+        "src/net/SYMBOLS.md",
         dictionary(
             reduced_rows,
             coverage="COMPLETE",
-            directory="mk",
+            directory="src/net",
         ),
     )
 
@@ -1416,13 +1465,13 @@ project-specific:
 
     assert (
         "MISSING_DICTIONARY_SYMBOL="
-        "mk/Makefile:PROJECT_APPEND:variable:-:"
+        "src/net/Makefile:PROJECT_APPEND:variable:-:"
         in output
     ), output
 
     assert (
         "MISSING_DICTIONARY_SYMBOL="
-        "mk/Makefile:project-specific:target:-:"
+        "src/net/Makefile:project-specific:target:-:"
         in output
     ), output
 
@@ -1435,17 +1484,17 @@ with tempfile.TemporaryDirectory() as temporary:
 $(PROJECT_DYNAMIC) := value
 """
 
-    rows = """| sentinel | target | mk/Makefile | make fixture | private | Keeps the structural dictionary nonempty while unsupported syntax is tested. | fixture |
+    rows = """| sentinel | target | src/net/Makefile | make fixture | private | Keeps the structural dictionary nonempty while unsupported syntax is tested. | fixture |
 """
 
-    write(root, "mk/Makefile", source)
+    write(root, "src/net/Makefile", source)
     write(
         root,
-        "mk/SYMBOLS.md",
+        "src/net/SYMBOLS.md",
         dictionary(
             rows,
             coverage="COMPLETE",
-            directory="mk",
+            directory="src/net",
         ),
     )
 

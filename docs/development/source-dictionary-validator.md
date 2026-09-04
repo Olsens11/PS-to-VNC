@@ -12,8 +12,8 @@ limits of `scripts/source-dictionary.py`.
 
 The validator exists to answer a narrow question:
 
-> What project-defined names in current clean-generation source are not
-> represented by the directory-owned source symbol dictionaries?
+> What project-defined names in current maintained product source are not
+> represented by the directory-owned product symbol dictionaries?
 
 It is not an identifier linter, source-code indexer for third-party names, or a
 requirement to document every token that appears in source.
@@ -202,31 +202,39 @@ path that is currently missing.
 
 A missing source does not count as covered source.
 
-## Clean-generation scope
+## Product-source scope
 
-The validator is intended only for current clean-generation ownership.
+Dictionary completeness is intentionally narrower than the repository's
+clean-generation development surface.
 
-Explicit excluded path components currently include retained areas such as:
+The current product-source root is:
 
-- `baseline`;
-- `evidence`;
-- `working`;
-- generated `build` output;
-- `.git`.
+    src/
 
-C, Python, and shell files normally enter discovery through the clean-source
-`File synopsis:` marker.
+Only dictionaries and discovered definitions beneath an explicitly declared
+product-source root participate in completeness, strict coverage, trusted
+baseline scope, and generated product-symbol views.
 
-Maintained Make sources use the Make-specific clean-scope rule described above.
+The following are intentionally outside that boundary:
 
-The policy is broader than any one hard-coded path list: frozen evidence,
-pre-refresh implementation examples, provenance material, generated output, and
-third-party source do not become dictionary obligations merely because they are
-retained in the repository.
+- `scripts/`, including this validator;
+- `scripts/testkit/` and qualification/deployment tooling;
+- validator/tooling self-tests;
+- `tests/`;
+- `mk/` and other build machinery;
+- retained evidence, baselines, provenance, and historical/reference source.
 
-A retained source file enters dictionary scope only when the clean
-reconstruction deliberately adopts or rewrites it as maintained current
-source.
+Those areas can keep useful dictionaries as optional documentation, but the
+product checker does not require them to be complete and does not use them to
+establish a trusted product-symbol baseline.
+
+C, Python, shell, and Make discovery adapters remain implemented and
+self-tested. An adapter becomes relevant to completeness only when matching
+source actually belongs to an explicitly declared product-source root.
+
+A later source tree enters scope only through an explicit product-ownership
+decision. This positive-root model prevents newly added development tooling
+from silently becoming product dictionary debt.
 
 ## Comprehensive and incremental discovery
 
@@ -389,5 +397,7 @@ Until evidence demonstrates a real defect:
   proves it useful;
 - prioritize product development over further validator refinement.
 
-The remaining dictionary retrofit can proceed incrementally and does not need
-to block unrelated clean-reconstruction implementation.
+The remaining product dictionary retrofit can proceed incrementally and does
+not need to block unrelated clean-reconstruction implementation.
+
+Development-tool dictionaries are intentionally outside that retrofit.

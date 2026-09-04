@@ -99,19 +99,36 @@ ignore design are recorded in
 
 ## Clean-generation scope and exclusions
 
-Required scope:
+Required scope is maintained PS-to-VNC product source.
 
-- product source newly written for the clean reconstruction;
-- tests newly written for that clean source;
-- build, qualification, and development tools newly written to support it;
-- every later capability added to the refreshed product generation.
+The current product-source root is:
 
-Do not retrofit frozen PS2VNC/B4A, sealed evidence, migration-era normalization
-source, retained pre-refresh modules, provenance snapshots, generated output, or
-third-party interfaces merely because they remain present in this repository.
+    src/
+
+A later source tree enters the completeness boundary only when the project
+explicitly adopts that tree as maintained product source.
+
+Development machinery is deliberately outside required symbol-dictionary
+completeness. This includes:
+
+- `scripts/`, including the dictionary validator itself;
+- `scripts/testkit/` and other qualification/deployment tooling;
+- validator and tooling self-tests;
+- `tests/`;
+- `mk/` and other build-system implementation;
+- frozen PS2VNC/B4A and sealed evidence;
+- migration-era normalization source;
+- retained pre-refresh implementation examples;
+- provenance snapshots and generated output;
+- third-party interfaces.
+
+Such areas may retain useful human-written symbol dictionaries, but their
+presence does not make them part of the product completeness gate or generated
+product-symbol portal.
+
 A retained module enters scope only when the clean reconstruction deliberately
 adopts or rewrites it as current product source. The dictionary records this
-generation boundary explicitly.
+product-ownership boundary explicitly.
 
 ## Synchronization gate
 
