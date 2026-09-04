@@ -5,12 +5,15 @@ GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=IN_PROGRESS
 
 This directory contains retained historical TestKit/M4 tooling plus
-successor-owned clean development tooling. Generic PS2 ELF deployment is
-separate from Issue-specific qualification policy; Issue #7 owns its
-manifest/observer/evaluator apparatus and consumes the generic deployment
-evidence. The former frozen-legacy compatibility bridge is retired. Only
-deliberately adopted clean-generation files receive the clean `File synopsis:`
-marker and enter this dictionary.
+successor-owned clean development tooling. The canonical operator-facing tool
+catalog and usage guide is `scripts/testkit/README.md`; this file is the
+implementation symbol dictionary and is not a replacement for that guide.
+
+Generic PS2 ELF deployment is separate from Issue-specific qualification
+policy; Issue #7 owns its manifest/observer/evaluator apparatus and consumes
+the generic deployment evidence. The former frozen-legacy compatibility bridge
+is retired. Only deliberately adopted clean-generation files receive the clean
+`File synopsis:` marker and enter this dictionary.
 
 | Name | Kind | File | Owner | Scope | Description | Context |
 |---|---|---|---|---|---|---|

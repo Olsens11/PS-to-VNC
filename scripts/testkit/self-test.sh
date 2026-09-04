@@ -8,6 +8,95 @@ ROOT="$(
 
 cd "$ROOT"
 
+echo '[SELFTEST] exhaustive TestKit operator documentation catalog'
+
+python3 - \
+    "$ROOT/scripts/testkit" \
+    "$ROOT/scripts/testkit/README.md" <<'PYDOC'
+from pathlib import Path
+import re
+import sys
+
+
+directory = Path(sys.argv[1])
+readme = Path(sys.argv[2])
+
+if not readme.is_file():
+    raise SystemExit(
+        f"TestKit operator README missing: {readme}"
+    )
+
+text = readme.read_text(
+    encoding="utf-8",
+)
+
+begin_marker = "<!-- TESTKIT_CATALOG_BEGIN -->"
+end_marker = "<!-- TESTKIT_CATALOG_END -->"
+
+if text.count(begin_marker) != 1:
+    raise SystemExit(
+        "TestKit catalog begin marker count is not 1"
+    )
+
+if text.count(end_marker) != 1:
+    raise SystemExit(
+        "TestKit catalog end marker count is not 1"
+    )
+
+catalog = text.split(
+    begin_marker,
+    1,
+)[1].split(
+    end_marker,
+    1,
+)[0]
+
+documented = re.findall(
+    r"^\| `([^`]+)` \|",
+    catalog,
+    flags=re.MULTILINE,
+)
+
+actual = sorted(
+    path.name
+    for path in directory.iterdir()
+    if path.is_file()
+)
+
+if len(documented) != len(set(documented)):
+    duplicates = sorted(
+        name
+        for name in set(documented)
+        if documented.count(name) > 1
+    )
+    raise SystemExit(
+        "duplicate TestKit catalog entries: "
+        + ", ".join(duplicates)
+    )
+
+documented_sorted = sorted(documented)
+
+if documented_sorted != actual:
+    missing = sorted(
+        set(actual) - set(documented_sorted)
+    )
+    stale = sorted(
+        set(documented_sorted) - set(actual)
+    )
+
+    raise SystemExit(
+        "TestKit README catalog mismatch; "
+        f"missing={missing} stale={stale}"
+    )
+
+print(
+    f"TESTKIT_DOCUMENTED_FILE_COUNT={len(actual)}"
+)
+print(
+    "TESTKIT_DOCUMENTATION_CATALOG=PASS"
+)
+PYDOC
+
 PREP="$ROOT/scripts/testkit/prepare-hardware-elf.sh"
 PT="$ROOT/scripts/testkit/pt-load-fingerprint.sh"
 STAMP="$ROOT/scripts/testkit/stamp-elf-identity.sh"

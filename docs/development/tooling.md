@@ -31,6 +31,18 @@ This is the canonical build authority.
 
 ## Hardware TestKit
 
+Canonical TestKit operator guide:
+
+    scripts/testkit/README.md
+
+That README is the exhaustive front door for choosing and invoking TestKit
+tools. Its complete file catalog is mechanically checked by
+`scripts/testkit/self-test.sh`.
+
+Implementation-level symbol ownership remains in:
+
+    scripts/testkit/SYMBOLS.md
+
 Generic PS2 ELF deployment is owned by:
 
     scripts/testkit/deploy-elf.py
