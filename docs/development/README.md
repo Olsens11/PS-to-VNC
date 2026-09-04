@@ -13,6 +13,74 @@ A fresh development session should be able to determine from the repository:
 - which tools are canonical;
 - how to continue the active experiment safely.
 
+## Clean reconstruction development frame
+
+Development continuity includes recovering the architectural reasoning that
+governs new work, not merely the current branch, build, and experiment.
+
+Before designing product structure, read:
+
+- `../PROJECT_INTENT.md`;
+- `../CLEAN_ARCHITECTURE.md`.
+
+The essential working model is:
+
+1. design the product from responsibilities, ownership, and stable interfaces;
+2. reconstruct it from the smallest useful executable upward;
+3. treat the Issue #7 minimal core as a proven chassis rather than a future
+   monolith;
+4. add later behavior as coherent feature families around that chassis;
+5. keep each feature's actual mechanism with the owner that understands it;
+6. keep the application coordinator focused on lifecycle, routing, and genuine
+   cross-domain orchestration;
+7. preserve historical lessons and qualified mechanisms without copying
+   historical source organization;
+8. prefer explicit composition and the least-powerful mechanism that clearly
+   expresses the real requirement;
+9. make boundaries sufficiently complete for known near-term growth without
+   speculatively implementing later-stage behavior;
+10. judge modularity by understandable ownership and local reworkability, not
+    by file count.
+
+"Smallest useful" therefore means the smallest coherent and growth-capable
+boundary. A foundation is too narrow when the next already-known reconstruction
+stage must immediately replace it merely to attach its own responsibility. A
+foundation is too broad when it implements policy or abstraction for behavior
+that has not yet earned a requirement.
+
+The desired reconstruction pattern is skeleton first, then meat on the bones:
+establish durable owners, lifecycle, value types, and seams; prove each with
+real behavior; then deepen each family without moving its internal mechanisms
+up into the application chassis or sideways into unrelated domains.
+
+## Source-writing contract
+
+Development continuity also includes understanding how new clean product code
+is supposed to be written.
+
+The normative policy is:
+
+    source-naming-and-symbols.md
+
+A fresh collaborator designing or reviewing `src/` should know before changing
+it that:
+
+- project-defined names communicate their role and every
+  correctness-relevant distinction;
+- maintained C source/header files carry a synopsis describing responsibility,
+  ownership, exclusions, and documentary context;
+- comments explain non-obvious invariants, authority, ordering, failure
+  consequences, hardware assumptions, and rationale rather than restating
+  syntax;
+- directory-owned symbol dictionaries provide canonical lookup and completeness
+  without relieving source names and control flow of their readability burden;
+- source should be understandable end-to-end by reading the owning module and
+  its narrow interfaces;
+- names, comments, module boundaries, and dictionaries work together so future
+  rework does not require reconstructing intent from conversation history.
+
+These are architecture and continuity requirements rather than optional style.
+
 ## Two-layer model
 
 ### Portable continuity layer

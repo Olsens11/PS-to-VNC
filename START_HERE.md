@@ -26,15 +26,19 @@ The repository is authoritative.
 
 Read these files in order:
 
-1. START_HERE.md
-2. docs/PROJECT_INTENT.md
-3. runtime/PROJECT_STATE.env
-4. docs/status.md
-5. runtime/MIGRATION_STATE.env
-6. docs/MIGRATION_STATE.md
-7. docs/PROJECT_STATE.md
-8. docs/MODULARIZATION.md
-9. docs/reference/FILE_AND_SERVICE_MAP.md
+1. `START_HERE.md`
+2. `AGENTS.md`
+3. `docs/PROJECT_INTENT.md`
+4. `docs/CLEAN_ARCHITECTURE.md`
+5. `docs/development/README.md`
+6. `docs/development/source-naming-and-symbols.md`
+7. `runtime/PROJECT_STATE.env`
+8. `docs/status.md`
+9. `runtime/MIGRATION_STATE.env`
+10. `docs/MIGRATION_STATE.md`
+11. `docs/PROJECT_STATE.md`
+12. `docs/MODULARIZATION.md`
+13. `docs/reference/FILE_AND_SERVICE_MAP.md`
 
 From the current PS-to-VNC worktree, run:
 
@@ -43,6 +47,23 @@ From the current PS-to-VNC worktree, run:
 
 Do not perform a project mutation until the current project check has been
 reviewed.
+
+For clean reconstruction work, recovering current state is not enough. A fresh
+session must also recover the project's design contract before proposing source
+structure:
+
+- `docs/PROJECT_INTENT.md` explains the reconstruction ethos;
+- `docs/CLEAN_ARCHITECTURE.md` defines current ownership and dependency
+  direction;
+- `docs/development/source-naming-and-symbols.md` defines how clean product
+  source is named, oriented, commented, and indexed;
+- `AGENTS.md` summarizes the non-negotiable design and source-writing rules that
+  should be active during ordinary development.
+
+The Issue #7 core is intentionally a minimal proven chassis. Later stages grow
+coherent responsibility families around it. Do not infer that the application
+coordinator should absorb each new feature merely because it activates or
+routes that feature.
 
 `runtime/MIGRATION_STATE.env` remains the preserved authority for the completed
 exploratory migration/normalization history. It is not the current clean-
