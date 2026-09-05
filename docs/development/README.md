@@ -58,9 +58,10 @@ up into the application chassis or sideways into unrelated domains.
 Development continuity also includes understanding how new clean product code
 is supposed to be written.
 
-The normative policy is:
+The normative source-readability and topology policies are:
 
     source-naming-and-symbols.md
+    source-topology.md
 
 A fresh collaborator designing or reviewing `src/` should know before changing
 it that:
@@ -74,6 +75,12 @@ it that:
   syntax;
 - directory-owned symbol dictionaries provide canonical lookup and completeness
   without relieving source names and control flow of their readability burden;
+- clean product files are placed with their owning responsibility according to
+  `source-topology.md`; the application root is not a generic landing zone for
+  new feature modules;
+- a new clean source directory is an explicit architectural/topology change and
+  carries its local dictionary, documentation, build/test paths, and continuity
+  gate with it;
 - source should be understandable end-to-end by reading the owning module and
   its narrow interfaces;
 - names, comments, module boundaries, and dictionaries work together so future

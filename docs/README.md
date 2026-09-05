@@ -83,10 +83,19 @@ Current durable audit surfaces:
 `CLEAN_ARCHITECTURE.md` is the promoted design authority derived from these audit
 outputs.
 
+## Reconstruction checkpoints
+
+- `reconstruction/2026-09-05_SOURCE_TOPOLOGY_ADOPTION.md` — chronological
+  record of the domain-directory topology adopted during Issue #39 closeout,
+  including dictionary counts and qualification-transfer evidence.
+
 ## Development process
 
 - `development/source-naming-and-symbols.md` — naming, file-orientation, and
   complete source-symbol dictionary policy.
+- `development/source-topology.md` — current clean-product directory ownership,
+  root-source rule, local-dictionary rule, and requirements for adding/moving
+  product domains.
 - `development/source-dictionary-validator.md` — validator implementation,
   language-aware discovery, maintenance-drift behavior, trusted-baseline
   contract, and deferred exact-instance ignore design.

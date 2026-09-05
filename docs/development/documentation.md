@@ -24,6 +24,12 @@ Chronological migration detail belongs in migration/history records and Git.
 
 Do not turn the current-state handoff into an ever-growing historical ledger.
 
+When current source topology changes, update the living architecture/source map
+and create or update a chronological reconstruction/decision record that states
+when the change actually occurred. Do not edit older planning or empirical
+records to imply that a later directory structure existed at the time of the
+older work.
+
 ## Architecture versus decisions
 
 Architecture describes the intended current model.

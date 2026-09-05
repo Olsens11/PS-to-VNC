@@ -44,6 +44,13 @@ grouped by defining file and owner so local names remain near their context.
 Moving a symbol between directories moves its canonical description as part of
 the same change.
 
+Clean product file placement is governed by
+`docs/development/source-topology.md`. The domain-directory topology was adopted
+on 2026-09-05; it is a forward/current policy, not a claim that the repository
+always had that shape. New feature-family files do not accumulate directly in
+`src/`. A new clean product directory must be an earned responsibility boundary
+and must receive its own `SYMBOLS.md` in the same change.
+
 The lightweight generated portal is:
 
     docs/reference/SOURCE_SYMBOL_DICTIONARIES.md

@@ -20,15 +20,17 @@ changes:
 5. read `docs/development/README.md`;
 6. before proposing or writing clean product source, read
    `docs/development/source-naming-and-symbols.md`;
-7. read ADR, audit, testing, runbook, and reference material relevant to the
+7. before adding, moving, or reorganizing clean product files or directories,
+   read `docs/development/source-topology.md`;
+8. read ADR, audit, testing, runbook, and reference material relevant to the
    active subsystem;
-8. inspect:
+9. inspect:
    - current branch;
    - recent Git history;
    - `git status`;
    - staged changes;
    - relevant unstaged and untracked work;
-9. run:
+10. run:
    - `scripts/resume-state.sh`
    - `scripts/check.sh`
 
@@ -111,6 +113,29 @@ Before designing or reviewing clean source, preserve these working rules:
   syntax;
 - source dictionaries supplement readable code; they do not replace readable
   code;
+- clean product files live with the responsibility that owns them; `src/`
+  itself is reserved for the executable entry point and application
+  coordinator rather than becoming a catch-all feature directory;
+- each clean product directory owns its companion `SYMBOLS.md`; creating a new
+  clean domain directory requires deliberate topology/documentation/build/test
+  integration in the same change;
+- `scripts/check-issue7-linked-reproducibility.sh` is a historical Issue #7
+  **stage-local** mechanism, not a general current-stage regression check; when
+  encountered outside the exact final Issue #7 source authority it must perform
+  no build, report `SKIPPED` / `NOT_APPLICABLE`, and return success so unrelated
+  workflows continue; when actual Issue #7 reproducibility evidence is required
+  from a later stage, use
+  `scripts/check-historical-issue7-reproducibility.sh`, and never add
+  current-stage objects to the historical Issue #7 object set;
+- **Generalize portability; preserve purpose.** Making a tool independent of a
+  particular worktree path, host path, or execution directory does not broaden
+  the stage, subsystem, or evidence purpose for which that tool was designed;
+- before invoking a development, test, qualification, or historical-analysis
+  tool, identify why that tool was selected, what specific claim or uncertainty
+  its result is intended to address, and why it is applicable to the current
+  source stage, subsystem, environment, and task; presence in `scripts/`, a
+  `SYMBOLS.md` entry, executable status, or ability to run is not by itself a
+  reason to execute a tool;
 - choose symbol names so a reader can readily understand the operation and
   ownership from ordinary source reading without repeatedly consulting an
   external index;

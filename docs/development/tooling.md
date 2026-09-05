@@ -13,6 +13,114 @@ The development rule is:
 
 This is the canonical build authority.
 
+### Tool selection: inventory is not invocation
+
+Generalize portability; preserve purpose.
+
+A tool may be made independent of a fixed worktree path, host path, temporary
+directory, or execution location without changing the narrow job for which it
+was designed.
+
+Use this decision sequence before execution:
+
+    inventory -> applicability -> evidence need -> invocation
+
+**Inventory** answers what tools exist and what they do. `scripts/SYMBOLS.md`
+and executable-file discovery are inventory/orientation surfaces; neither is a
+run list.
+
+**Applicability** asks whether the tool's original stage, subsystem,
+environment, and evidence contract match the current task.
+
+**Evidence need** asks what concrete uncertainty or claim the invocation will
+resolve. A test is not useful merely because another PASS can be collected.
+
+**Invocation** happens only after the preceding questions have concrete
+answers.
+
+Therefore:
+
+- do not run a development or qualification tool merely because it exists;
+- do not infer current-stage applicability from executable status or
+  location-independent behavior;
+- do not broaden a narrow historical or stage-specific tool merely to make it
+  usable everywhere;
+- when a new current-stage check is actually needed, define that purpose
+  explicitly rather than silently repurposing an older tool.
+
+This prevents both wrong-context failures and unnecessary qualification work.
+
+### Historical stage reproducibility from a later checkout
+
+Some build tools are deliberately **stage-local**.
+
+The important example is:
+
+    scripts/check-issue7-linked-reproducibility.sh
+
+Its applicability contract is:
+
+| Checkout | Result |
+|---|---|
+| exact final Issue #7 authority | run the real two-build proof; PASS or FAIL |
+| current tool, any checkout other than exact final Issue #7 authority | successful no-op; `SKIPPED` / `NOT_APPLICABLE` |
+
+Outside Issue #7 the stage-local tool must perform no build and return success
+so a broad later-stage verification workflow is not interrupted merely because
+it encountered an irrelevant historical-stage check.
+
+A successful skip is deliberately machine-distinct from a successful
+reproducibility proof:
+
+    ISSUE7_LINKED_REPRODUCIBILITY=SKIPPED
+
+versus:
+
+    ISSUE7_LINKED_REPRODUCIBILITY=PASS
+
+Therefore generic workflows may accept the skip and continue, but a task that
+specifically requires Issue #7 evidence must not treat exit status zero alone as
+proof.
+
+For an actual Issue #7 proof from a later checkout use:
+
+    scripts/check-historical-issue7-reproducibility.sh
+
+That wrapper exports exact historical authority
+`d94c9280035e288ccbec692ea21e89d3ffb4ffec` and requires the recorded whole-ELF
+and PT_LOAD identities.
+
+Do not broaden the historical Issue #7 object set with newer-stage objects to
+make the old stage-local build operate on current source.
+
+The detailed 2026-09-05 discovery and repair history belongs in
+`docs/reconstruction/2026-09-05_SOURCE_TOPOLOGY_ADOPTION.md`. The living
+tooling rule here is intentionally narrower: preserve the stage-specific
+purpose, make accidental out-of-stage use harmless where practical, and use the
+explicit historical wrapper when genuine Issue #7 evidence is requested.
+
+### Issue #7 strict PS2 translation-unit compile
+
+    scripts/check-clean-ps2-compile.sh
+
+Despite the historical filename, this is an Issue #7 stage-specific compile
+checker. Its explicit translation-unit set is part of that original stage
+contract; it is not a current-source discovery mechanism and should not be
+expanded with later input/UI modules merely because those modules now exist.
+
+Run it when Issue #7 strict translation-unit evidence is actually required.
+If a later stage needs an equivalent all-current-source strict compile proof,
+select or define that later-stage check deliberately and state the evidence need
+rather than silently redefining this tool.
+
+The checker requires the R5900/PS2SDK/gsKit toolchain in its execution
+environment. The normal development Pi does not currently install that
+cross-compiler directly on the host, so a direct host invocation may correctly
+report `PS2 compiler not found`. When this Issue #7 check is applicable,
+canonical execution uses the pinned PS2Dev container associated with the
+reproducible Issue #7 build/CI contract. A missing host compiler is therefore
+an environment/apparatus condition, not a source failure.
+
 ### Resume
 
     scripts/resume-state.sh
@@ -34,6 +142,22 @@ This is the canonical build authority.
     scripts/source-dictionary.py
     scripts/source-dictionary-self-test.py
 
+### Clean source topology / generated-portal consistency
+
+The current topology policy is:
+
+    docs/development/source-topology.md
+
+`scripts/continuity-check.sh` enforces the current clean-domain directory set,
+the narrow root-source allowlist, same-directory `SYMBOLS.md` ownership,
+per-file dictionary coverage, and byte-exact agreement between the committed
+lightweight portal and `source-dictionary.py portal`.
+
+Because `scripts/check.sh` invokes the continuity checker, ordinary project
+checking detects accidental source-tree flattening, an unacknowledged new clean
+domain, a clean file with no local dictionary coverage, or a stale
+dictionary-count portal.
+
 The source-dictionary validator separates dictionary structural integrity from
 ordinary maintenance drift. Structural ambiguity or unsupported discovery
 semantics fail closed. Normal maintenance drift reports `ATTENTION` while
@@ -53,10 +177,10 @@ Exuberant Ctags for Universal Ctags or a different `shfmt` version when the
 validator's checked contract requires the recorded tool.
 
 Definition-discovery readiness and trusted comprehensive-audit authority are
-separate concerns. `DEFINITION_DISCOVERY_STATUS` remains `PENDING` and
-`LAST_LONG_PASS_COMMIT` remains `UNSET` until the complete clean-generation
-dictionary retrofit has passed the genuine comprehensive gate described by
-`docs/development/source-naming-and-symbols.md`.
+separate concerns. Definition discovery is now `READY`. The exact trusted
+comprehensive baseline is intentionally not duplicated here; its sole
+machine-readable authority is `runtime/SOURCE_DICTIONARY_STATE.env`. A new
+baseline is recorded only after a clean, passing long/complete audit.
 
 ## Hardware TestKit
 
@@ -280,6 +404,28 @@ When repository cleanliness is itself a checked invariant, do not use
 Use Python `compile()` on source text in memory instead. This validates syntax
 without changing the filesystem and avoids contaminating exact dirty-state
 preconditions.
+
+## Atomic text replacement and executable file modes
+
+An atomic text updater that writes a new temporary file and then renames or
+`os.replace()`s it over an existing tracked file must preserve the original
+filesystem mode explicitly.
+
+Creating replacement bytes correctly is not sufficient for an executable tool:
+a fresh temporary file normally receives ordinary non-executable permissions.
+Replacing a tracked `100755` shell tool with that inode can therefore leave the
+script text correct while silently changing Git mode to `100644` and causing a
+later direct invocation to fail with `Permission denied`.
+
+For an existing file, a reusable atomic updater should capture the original mode
+before replacement and apply that mode to the temporary/replacement file before
+the rename, or restore it immediately as part of the same transaction. Tool
+validation must include executable-mode checks when executable files are among
+the mutation targets.
+
+This requirement was reinforced by the 2026-09-05 source-topology continuity
+hardening pass, where documentation content was correct but atomic replacement
+temporarily stripped the executable bit from two maintained shell tools.
 
 ## Issue #7 apparatus provenance and boundary
 

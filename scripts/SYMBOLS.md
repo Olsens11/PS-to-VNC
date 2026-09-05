@@ -4,10 +4,28 @@ DIRECTORY=scripts
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns the clean Issue #7 linked-build/compile verification tools
-and the hierarchical source-dictionary tooling. Migration-era and historical
-scripts in this directory remain deliberately outside the clean-generation
-scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
+This directory owns the clean Issue #7 linked-build/compile verification tools,
+the current-safe historical-stage reproducibility wrapper, and the hierarchical
+source-dictionary tooling. Migration-era and historical scripts in this
+directory remain deliberately outside the clean-generation scope. Successor
+TestKit tooling is owned separately by `scripts/testkit`.
+
+This dictionary is an inventory and orientation surface, not an execution
+manifest. A tool's presence here documents what it is; it does not establish
+that the tool is applicable to the current task or should be invoked.
+
+**Issue #7 operational note:** `check-issue7-linked-reproducibility.sh` is
+stage-local. Outside exact Issue #7 authority it intentionally reports
+`SKIPPED` / `NOT_APPLICABLE`, performs no build, and returns success so an
+unrelated workflow continues.
+
+When a later-stage task actually requires Issue #7 reproducibility evidence,
+use `check-historical-issue7-reproducibility.sh` and require its genuine PASS
+result.
+
+`SKIPPED` is not equivalent to `PASS`. Never broaden the historical Issue #7
+object set merely to make current-stage source link through the old stage-local
+build.
 
 | Name | Kind | File | Owner | Scope | Description | Context |
 |---|---|---|---|---|---|---|
@@ -230,3 +248,17 @@ scope. Successor TestKit tooling is owned separately by `scripts/testkit`.
 | output | variable | scripts/source-dictionary-self-test.py | fixture runner | local | Holds validator output used to assert audit-mode and baseline-fallback behavior. | baseline mode self-test |
 | record_output | variable | scripts/source-dictionary-self-test.py | fixture runner | local | Holds expected command-line refusal output while definition discovery remains pending. | baseline safety self-test |
 | baseline_head | variable | scripts/source-dictionary-self-test.py | fixture runner | local | Holds a committed fixture head used as synthetic trusted comprehensive baseline authority. | incremental scope self-test |
+| ROOT | variable | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Resolves the current repository root whose object database supplies the pinned historical source snapshot. | stage-specific reproducibility |
+| ISSUE7_SOURCE_COMMIT | constant | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Pins the exact final Issue #7 source authority used for isolated historical reproduction. | historical source authority |
+| EXPECTED_ELF_SHA | constant | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Pins the recorded pristine whole-ELF identity that the historical Issue #7 build must reproduce. | reproducible linked build |
+| EXPECTED_PT_LOAD_SHA | constant | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Pins the recorded pristine Issue #7 PT_LOAD digest required for qualification continuity. | PT_LOAD evidence |
+| EXPECTED_PT_LOAD_BYTES | constant | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Pins the recorded pristine Issue #7 PT_LOAD byte count. | PT_LOAD evidence |
+| TMP | variable | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Owns the disposable historical source snapshot, build output, and verification evidence. | isolated historical build |
+| SNAP | variable | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Names the disposable repository tree exported from the pinned Issue #7 source commit. | isolated historical build |
+| cleanup | function | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | private | Removes the isolated historical snapshot and build evidence on shell exit. | build hygiene |
+| ELF | variable | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Names the canonical Issue #7 ELF produced inside the pinned historical snapshot. | reproducible linked build |
+| ACTUAL_ELF_SHA | variable | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Holds the reproduced historical Issue #7 whole-ELF SHA256 for exact authority comparison. | reproducible linked build |
+| ACTUAL_PT_LOAD_SHA | variable | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Holds the reproduced historical Issue #7 PT_LOAD SHA256 for exact authority comparison. | PT_LOAD evidence |
+| ACTUAL_PT_LOAD_BYTES | variable | scripts/check-historical-issue7-reproducibility.sh | historical Issue7 wrapper | file | Holds the reproduced historical Issue #7 PT_LOAD byte count for exact authority comparison. | PT_LOAD evidence |
+| ISSUE7_STAGE_LOCAL_SOURCE_AUTHORITY | constant | scripts/check-issue7-linked-reproducibility.sh | Issue7 linked reproducibility | file | Pins the exact final Issue #7 source authority at which the stage-local two-build proof is applicable. | stage applicability |
+| CURRENT_SOURCE_COMMIT | variable | scripts/check-issue7-linked-reproducibility.sh | Issue7 linked reproducibility | file | Holds the checkout's current commit so the stage-local tool can distinguish a real Issue #7 proof from a non-applicable later-stage invocation. | stage applicability |

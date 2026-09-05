@@ -1,5 +1,36 @@
 # PS-to-VNC Roadmap
 
+## Current clean-reconstruction roadmap — 2026-09-05
+
+The migration/extraction roadmap below remains historical. The active
+clean-reconstruction ladder is now:
+
+1. Issue #38 — controller/input semantic foundation — **COMPLETE**.
+2. Issue #39 — keyboard/OSK/local foreground foundation — **COMPLETE**.
+3. Pre-#40 Pi desktop prerequisite — establish a reproducible dedicated VNC
+   session with known session/window-manager ownership, a visible launchable
+   terminal, and a deterministic PS2-only route to that terminal.
+4. Issue #40 — minimal Pi management/config transport seam.
+5. Issue #41 — configuration, persistence, bindings, and settings.
+6. Issue #27 — display modes and safe-area/calibration work.
+7. Issue #25 — recovery/Refresh/provider behavior.
+8. Issue #33 — profiling.
+9. Issue #28 — compression/performance.
+
+Later planned families include Issue #30 companion desktop maturation, Issue #31
+routing, Issue #24 storage/import, Issue #32 bootstrap/reproducibility, Issue #26
+Wayland/provider work, Issues #34/#35 media work, and Issue #36 1.0 integration.
+
+The pre-#40 desktop prerequisite is intentionally smaller than Issue #30. It
+exists because management/config work needs a defined reproducible companion
+desktop target rather than the temporary TigerVNC/Openbox qualification fixture.
+
+## Historical migration roadmap
+
+The sections below preserve the roadmap that governed the earlier
+behavior-preserving migration. They are historical project records, not the
+current next-action authority.
+
 ## Immediate
 
 ### M0 — establish successor working baseline

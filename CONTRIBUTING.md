@@ -52,6 +52,16 @@ file-level orientation, and remain synchronized with the canonical generated
 source-symbol dictionary. Retained pre-refresh source is outside this retrofit
 until deliberately adopted into the clean product.
 
+Clean product file placement is additionally governed by:
+
+    docs/development/source-topology.md
+
+Do not add feature-family source directly to `src/` merely because the
+application coordinator invokes it. Add the file to its existing owning domain,
+or deliberately establish a new responsibility directory with its local
+`SYMBOLS.md`, documentation, build/test integration, and topology gate updated
+in the same change.
+
 ## Architecture decisions
 
 Use `docs/adr/` for durable decisions whose rationale should survive the code

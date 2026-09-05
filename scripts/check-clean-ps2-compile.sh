@@ -17,6 +17,8 @@ CC="$PS2DEV/ee/bin/mips64r5900el-ps2-elf-gcc"
 
 if [ ! -x "$CC" ]; then
     echo "PS2 compiler not found: $CC" >&2
+    echo 'REQUIRED_CONTEXT=PINNED_PS2DEV_CONTAINER_OR_EQUIVALENT_HOST_TOOLCHAIN' >&2
+    echo 'CLASSIFICATION=DEVELOPMENT_ENVIRONMENT_PRECONDITION' >&2
     exit 1
 fi
 

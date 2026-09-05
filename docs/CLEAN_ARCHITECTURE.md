@@ -504,7 +504,15 @@ for reconstruction and must itself be justified/qualified when undertaken.
 
 ---
 
-## 13. Initial source shape
+## 13. Source-shape evolution
+
+### Initial planning shape — historical proposal
+
+The original clean-reconstruction architecture proposed starting small with the
+following mostly-flat candidate shape. This records the planning state that
+existed before the clean implementation grew through Issues #7, #38, and #39.
+It is not the current file-location map and is intentionally retained here so
+the later topology is not projected backward into earlier history.
 
 Start small:
 
@@ -537,8 +545,65 @@ use of libpad; it is not a replacement controller API. A broader `input.c`
 remains available when semantic routing or another earned input responsibility
 requires it.
 
+### Current clean source topology — adopted 2026-09-05
+
+By Issue #39 closeout the implementation had earned several coherent
+responsibility families. On 2026-09-05 those files were reorganized into the
+following current topology:
+
+    src/
+        main.c
+        app.c / app.h
+        SYMBOLS.md
+        diagnostics/
+            diagnostics.c / diagnostics.h
+            identity.c / identity.h
+            SYMBOLS.md
+        display/
+            display.c / display.h
+            SYMBOLS.md
+        framebuffer/
+            framebuffer.c / framebuffer.h
+            SYMBOLS.md
+        input/
+            controller.h
+            input.c / input.h
+            input_runtime.c / input_runtime.h
+            keyboard.c / keyboard.h
+            mouse.c / mouse.h
+            pad.c / pad.h
+            SYMBOLS.md
+        platform/
+            ps2_system.c / ps2_system.h
+            ps2_network.c / ps2_network.h
+            ps2_graphics.c / ps2_graphics.h
+            SYMBOLS.md
+        rfb/
+            rfb.c / rfb.h
+            rfb_io.h
+            rfb_session.c / rfb_session.h
+            SYMBOLS.md
+        ui/
+            local_controller.c / local_controller.h
+            local_ui.c / local_ui.h
+            local_ui_presentation.c / local_ui_presentation.h
+            osk.c / osk.h
+            osk_render.c / osk_render.h
+            SYMBOLS.md
+
+`src/config/` and `src/video/` contain retained pre-refresh source and are not
+current clean-generation ownership merely because those historical paths still
+exist. Future deliberate adoption or replacement must follow the same topology
+and dictionary rules.
+
 The architecture does **not** require this exact file count. It requires the
-ownership contract above.
+ownership contract above. New responsibility directories are allowed when
+earned, but they are deliberate architecture changes rather than accidental
+growth at the root.
+
+The normative forward file-placement policy is
+`development/source-topology.md`. The chronological adoption record is
+`reconstruction/2026-09-05_SOURCE_TOPOLOGY_ADOPTION.md`.
 
 See `adr/0002-use-libpad-directly-reference-opl.md`.
 

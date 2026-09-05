@@ -15,8 +15,8 @@ preserved evidence, and Git.
     REFERENCE_PRESERVATION=COMPLETE
     SEMANTIC_AUDIT=COMPLETE
     CLEAN_ARCHITECTURE=REBUILD_READY
-    CLEAN_PS2_RECONSTRUCTION=NOT_STARTED
-    PI_REPRODUCIBILITY_PACKAGE=NOT_STARTED
+    CLEAN_PS2_RECONSTRUCTION=ISSUE39_STAGE2_COMPLETE
+    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_MINIMUM_DESKTOP_PENDING
 
 The reconstruction principle remains:
 
@@ -148,10 +148,43 @@ result tooling. The former successor-to-legacy TestKit bridge is retired; the
 historical TestKit remains evidence/reference authority rather than a live
 dependency.
 
+## Clean reconstruction checkpoint — 2026-09-05
+
+Issue #39 is closed as completed. The clean PS2 reconstruction now includes the
+qualified minimal core, Stage-1 controller/pointer semantics, and Stage-2
+keyboard/OSK/local-foreground foundation.
+
+    CURRENT_RECONSTRUCTION_STAGE=POST_ISSUE39_PRE_ISSUE40_PI_DESKTOP_PREREQUISITE
+    ISSUE39_STATUS=CLOSED_COMPLETED
+    ISSUE39_CLOSEOUT_HEAD=5d67c60fc273500f7f3b7082e2c2f7b9b7ce389c
+    ISSUE39_TOPOLOGY_COMMIT=0b3e20c7c4840073618a1bb487d554bc3309d057
+    SOURCE_TOPOLOGY_ADOPTED_DATE=2026-09-05
+    SOURCE_TOPOLOGY_POLICY=docs/development/source-topology.md
+    SOURCE_TOPOLOGY_RECORD=docs/reconstruction/2026-09-05_SOURCE_TOPOLOGY_ADOPTION.md
+
+The domain-directory reorganization occurred during Issue #39 closeout on
+2026-09-05. It is not retroactively attributed to Issue #7, Stage #38, the
+semantic audit, or the earlier migration work.
+
+The topology qualification build reproduced twice at one fixed build path and
+retained the exact HW2-qualified loadable payload:
+
+    ISSUE39_HW2_PT_LOAD_SHA256=512f5220c2be2c001c8641975c2045b3eb2319b4d384a0a311906e012944b85b
+    ISSUE39_HW2_PT_LOAD_BYTES=403080
+
+The live dictionary counts are generated from directory-owned `SYMBOLS.md`
+files and are not duplicated as permanent machine-state invariants. The
+2026-09-05 adoption snapshot contained 1,595 product symbol entries.
+
+Before Issue #40 begins, the project has a deliberate Pi-side prerequisite:
+establish the minimum reproducible terminal-capable VNC desktop target. The
+previous ad-hoc `:1` desktop remains a qualification fixture rather than clean
+companion authority.
+
 ## Pi companion boundary
 
-The Pi behavior is `REBUILD_READY`, while exact clean-platform package adoption
-remains implementation work under GitHub Issue #5.
+The Pi behavior is `REBUILD_READY`, but the reproducible companion environment
+needed by later management/config work is not yet established.
 
 The clean companion remains a normal supported Raspberry Pi OS plus narrowly
 product-specific state/services:
@@ -193,12 +226,12 @@ These remain valid historical/empirical authorities. Former planned
 
 ## Reconstruction progress
 
-Planning indicators:
+Current indicators:
 
     REFERENCE_PRESERVATION=100_PERCENT
     SEMANTIC_AUDIT=100_PERCENT
-    CLEAN_PS2_RECONSTRUCTION=0_PERCENT
-    PI_REPRODUCIBILITY_PACKAGE=0_PERCENT
+    CLEAN_PS2_RECONSTRUCTION=ISSUE39_STAGE2_COMPLETE
+    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_MINIMUM_DESKTOP_PENDING
     GITHUB_RECONCILIATION=100_PERCENT
 
 The previous `OVERALL_ARCHITECTURAL_NORMALIZATION` percentage remains historical
@@ -231,14 +264,16 @@ particular filesystem location.
 
 ## Next action
 
-    NEXT_ACTION=BEGIN_ISSUES_5_AND_7_IN_PARALLEL
+    NEXT_ACTION=ESTABLISH_MINIMUM_REPRODUCIBLE_TERMINAL_CAPABLE_PI_DESKTOP_BEFORE_ISSUE40
     BLOCKED_BY=NONE
+    ISSUE40_BLOCKED_BY=MINIMUM_REPRODUCIBLE_PI_DESKTOP_TARGET_NOT_YET_ESTABLISHED
 
-Parallel next workstreams:
+This prerequisite is intentionally smaller than the later companion-desktop
+maturation work. Minimum success is a known reproducible VNC session with known
+session/window-manager ownership, a visible launchable terminal, and a
+deterministic PS2-only route to that terminal.
 
-- GitHub Issue #5 — establish the clean Pi baseline/dependency ledger and first
-  reproducible companion contract;
-- GitHub Issue #7 — construct the smallest clean PS2/Pi Ethernet + RFB core in
-  the promoted architecture.
+Issue #40 remains deliberately unopened as the active implementation step until
+that target exists.
 
 Current machine-readable authority is `runtime/PROJECT_STATE.env`.

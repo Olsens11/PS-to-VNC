@@ -9,7 +9,9 @@
 > CANONICAL_DOCS_ROUTER=docs/README.md
 
 
-This is the canonical entry point for current PS-to-VNC documentation.
+This file remains the exhaustive compatibility inventory for PS-to-VNC
+documentation. The current curated documentation entry point is
+`docs/README.md`.
 
 ## Project
 
@@ -66,6 +68,9 @@ This is the canonical entry point for current PS-to-VNC documentation.
   manifest contract.
 - `docs/reconstruction/ISSUE7_HARDWARE_QUALIFICATION.md` — Issue #7 hardware
   qualification procedure and evidence contract.
+- `docs/reconstruction/2026-09-05_SOURCE_TOPOLOGY_ADOPTION.md` — dated record
+  of the clean domain-directory/source-dictionary topology adoption during
+  Issue #39 closeout.
 
 ## Documentation contract
 
@@ -165,6 +170,7 @@ Development-system policy:
 - `docs/development/tooling.md`
 - `docs/development/lessons-learned.md`
 - `docs/development/source-naming-and-symbols.md`
+- `docs/development/source-topology.md`
 - `docs/development/source-dictionary-validator.md`
 
 Decision records:

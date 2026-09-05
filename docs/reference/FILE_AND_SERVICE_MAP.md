@@ -8,8 +8,8 @@ Update it whenever canonical code ownership or file location changes.
 
 | Role | Location | Mutable by PS-to-VNC work? |
 |---|---|---|
-| Historical PS2VNC authority | `/home/ps2/ps2vnc` | No |
-| Current PS-to-VNC development | `/home/ps2/PS-to-VNC` | Yes |
+| Historical PS2VNC authority | `/home/ps2/ps2vnc` when present | No |
+| Current PS-to-VNC development | Git repository `Olsens11/PS-to-VNC`; selected worktree path is not authority | Yes |
 
 ## Historical backup
 
@@ -30,7 +30,40 @@ SHA256:
 | Dependency analysis | `baseline/analysis/B4A-dependency-map/` | immutable analysis reference |
 | Baseline identity | `baseline/IDENTITY.env` | project provenance |
 
-## Working source
+## Current clean reconstruction source — adopted 2026-09-05
+
+Current maintained clean product source is rooted at:
+
+    src/
+
+Current responsibility locations are:
+
+| Responsibility | Current location |
+|---|---|
+| Executable entry / application coordination | `src/main.c`, `src/app.c`, `src/app.h` |
+| Controller/input/keyboard/mouse | `src/input/` |
+| Local foreground / OSK / local presentation | `src/ui/` |
+| RFB wire/session | `src/rfb/` |
+| Authoritative desktop framebuffer | `src/framebuffer/` |
+| Platform-neutral display conversion | `src/display/` |
+| Diagnostics/runtime identity | `src/diagnostics/` |
+| PS2-specific system/network/graphics mechanisms | `src/platform/` |
+| Local product symbol authorities | each active directory's `SYMBOLS.md` |
+| Generated dictionary portal | `docs/reference/SOURCE_SYMBOL_DICTIONARIES.md` |
+| Source-placement policy | `docs/development/source-topology.md` |
+| Topology adoption history | `docs/reconstruction/2026-09-05_SOURCE_TOPOLOGY_ADOPTION.md` |
+
+Only `main.c`, `app.c`, and `app.h` are current clean C/H source directly in
+`src/`. Feature families belong in their owning responsibility directories.
+
+`src/config/` and `src/video/` contain retained pre-refresh source. Their
+presence is historical/reference state and does not make them current clean
+domains until the clean reconstruction deliberately adopts or replaces them.
+
+## Historical bootstrap working-source snapshot
+
+> **Historical snapshot:** the wording below records repository bootstrap state
+> before M0. It is intentionally retained and is not current source authority.
 
 Current working source:
 
@@ -43,7 +76,8 @@ location.
 
 | Responsibility | Location |
 |---|---|
-| Documentation entry point | `docs/INDEX.md` |
+| Documentation entry point | `docs/README.md` |
+| Exhaustive compatibility document inventory | `docs/INDEX.md` |
 | Current project state | `docs/PROJECT_STATE.md` |
 | Modularization ledger | `docs/MODULARIZATION.md` |
 | Architecture | `docs/architecture/ARCHITECTURE.md` |

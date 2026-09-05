@@ -204,6 +204,23 @@ path that is currently missing.
 
 A missing source does not count as covered source.
 
+## Directory-local ownership after the 2026-09-05 topology adoption
+
+During Issue #39 closeout the clean product was reorganized from the earlier
+mostly-flat `src/` implementation into earned responsibility directories. That
+was a dated repository change, not a retroactive description of earlier work.
+
+The validator now treats directory ownership as structural authority: an entry
+in one `SYMBOLS.md` may describe only a source file directly in that
+dictionary's directory. A parent dictionary cannot absorb definitions from a
+child directory. The disposable validator self-test includes this failure case.
+
+The separate current file-placement policy is
+`docs/development/source-topology.md`. `scripts/continuity-check.sh` verifies
+that the active clean-source directory set, root-source allowlist, per-file
+local dictionary coverage, and generated portal agree with that adopted
+topology.
+
 ## Product-source scope
 
 Dictionary completeness is intentionally narrower than the repository's
