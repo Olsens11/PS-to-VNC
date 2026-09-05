@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "../display.h"
+#include "display.h"
 #include "ps2_graphics.h"
 
 static GSGLOBAL *display;

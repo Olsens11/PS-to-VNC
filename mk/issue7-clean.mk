@@ -34,7 +34,7 @@ EE_OBJS = \
 
 EE_OBJS += $(EXTRA_EE_OBJS)
 
-EE_INCS = -Isrc -Isrc/platform -I$(GSKIT)/include
+EE_INCS = -Isrc -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -I$(GSKIT)/include
 EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman -lpad $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
 
 .PHONY: all clean
@@ -54,61 +54,61 @@ $(EE_BIN): $(PS2IP_LIB) | $(BUILD_DIR)
 $(BUILD_DIR)/main.o: src/main.c src/app.h src/platform/ps2_system.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics.h src/display.h src/framebuffer.h src/input.h src/input_runtime.h src/local_ui_presentation.h src/local_ui.h src/osk.h src/osk_render.h src/mouse.h src/pad.h src/rfb_session.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h src/controller.h src/local_controller.h | $(BUILD_DIR)
+$(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics/diagnostics.h src/display/display.h src/framebuffer/framebuffer.h src/input/input.h src/input/input_runtime.h src/ui/local_ui_presentation.h src/ui/local_ui.h src/ui/osk.h src/ui/osk_render.h src/input/mouse.h src/input/pad.h src/rfb/rfb_session.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h src/input/controller.h src/ui/local_controller.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/diagnostics.o: src/diagnostics.c src/diagnostics.h | $(BUILD_DIR)
+$(BUILD_DIR)/diagnostics.o: src/diagnostics/diagnostics.c src/diagnostics/diagnostics.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/diagnostics_identity.o: src/diagnostics/identity.c src/diagnostics/identity.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/rfb.o: src/rfb.c src/rfb.h | $(BUILD_DIR)
+$(BUILD_DIR)/rfb.o: src/rfb/rfb.c src/rfb/rfb.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/framebuffer.o: src/framebuffer.c src/framebuffer.h | $(BUILD_DIR)
+$(BUILD_DIR)/framebuffer.o: src/framebuffer/framebuffer.c src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/rfb_session.o: src/rfb_session.c src/rfb_session.h src/rfb.h src/rfb_io.h src/framebuffer.h | $(BUILD_DIR)
+$(BUILD_DIR)/rfb_session.o: src/rfb/rfb_session.c src/rfb/rfb_session.h src/rfb/rfb.h src/rfb/rfb_io.h src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/display.o: src/display.c src/display.h src/framebuffer.h | $(BUILD_DIR)
+$(BUILD_DIR)/display.o: src/display/display.c src/display/display.h src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/input.o: src/input.c src/input.h src/mouse.h | $(BUILD_DIR)
+$(BUILD_DIR)/input.o: src/input/input.c src/input/input.h src/input/mouse.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/mouse.o: src/mouse.c src/mouse.h | $(BUILD_DIR)
+$(BUILD_DIR)/mouse.o: src/input/mouse.c src/input/mouse.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/input_runtime.o: src/input_runtime.c src/input_runtime.h src/input.h src/controller.h src/mouse.h src/pad.h | $(BUILD_DIR)
+$(BUILD_DIR)/input_runtime.o: src/input/input_runtime.c src/input/input_runtime.h src/input/input.h src/input/controller.h src/input/mouse.h src/input/pad.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/keyboard.o: src/keyboard.c src/keyboard.h | $(BUILD_DIR)
+$(BUILD_DIR)/keyboard.o: src/input/keyboard.c src/input/keyboard.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/local_ui.o: src/local_ui.c src/local_ui.h | $(BUILD_DIR)
+$(BUILD_DIR)/local_ui.o: src/ui/local_ui.c src/ui/local_ui.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/osk.o: src/osk.c src/osk.h src/keyboard.h | $(BUILD_DIR)
+$(BUILD_DIR)/osk.o: src/ui/osk.c src/ui/osk.h src/input/keyboard.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/osk_render.o: src/osk_render.c src/osk_render.h src/osk.h | $(BUILD_DIR)
+$(BUILD_DIR)/osk_render.o: src/ui/osk_render.c src/ui/osk_render.h src/ui/osk.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/local_ui_presentation.o: src/local_ui_presentation.c src/local_ui_presentation.h src/local_ui.h src/osk.h src/osk_render.h src/display.h | $(BUILD_DIR)
+$(BUILD_DIR)/local_ui_presentation.o: src/ui/local_ui_presentation.c src/ui/local_ui_presentation.h src/ui/local_ui.h src/ui/osk.h src/ui/osk_render.h src/display/display.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/pad.o: src/pad.c src/pad.h | $(BUILD_DIR)
+$(BUILD_DIR)/pad.o: src/input/pad.c src/input/pad.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/ps2_system.o: src/platform/ps2_system.c src/platform/ps2_system.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/ps2_network.o: src/platform/ps2_network.c src/platform/ps2_network.h src/rfb_io.h | $(BUILD_DIR)
+$(BUILD_DIR)/ps2_network.o: src/platform/ps2_network.c src/platform/ps2_network.h src/rfb/rfb_io.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/ps2_graphics.o: src/platform/ps2_graphics.c src/platform/ps2_graphics.h src/display.h | $(BUILD_DIR)
+$(BUILD_DIR)/ps2_graphics.o: src/platform/ps2_graphics.c src/platform/ps2_graphics.h src/display/display.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(GEN_DIR)/SIO2MAN_irx.c: $(PS2SDK)/iop/irx/freesio2.irx | $(GEN_DIR)

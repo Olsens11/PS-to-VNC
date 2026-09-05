@@ -169,6 +169,33 @@ static int packet_count;
     assert "SOURCE_DICTIONARIES=PASS" in run(
         root, 0, require_complete=True, strict=True
     )
+
+    # A parent dictionary must not absorb a clean source file from a child
+    # directory. The child owns its own canonical dictionary authority.
+    write(root, "src/net/sub/io.c", source)
+    write(
+        root,
+        "src/net/SYMBOLS.md",
+        dictionary(
+            row.replace(
+                "src/net/io.c",
+                "src/net/sub/io.c",
+            ),
+            coverage="COMPLETE",
+        ),
+    )
+    assert (
+        "is not defined directly in dictionary directory"
+        in run(root, 1)
+    )
+    (root / "src/net/sub/io.c").unlink()
+    (root / "src/net/sub").rmdir()
+    write(
+        root,
+        "src/net/SYMBOLS.md",
+        dictionary(row, coverage="COMPLETE"),
+    )
+
     portal_a = run(root, 0, "portal")
     portal_b = run(root, 0, "portal")
     assert portal_a == portal_b

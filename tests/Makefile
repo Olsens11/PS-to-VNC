@@ -1,7 +1,7 @@
 CC ?= cc
 CFLAGS ?=
 
-COMMON_CFLAGS = -O2 -std=c99 -Wall -Wextra -Werror -pedantic
+COMMON_CFLAGS = -O2 -std=c99 -Wall -Wextra -Werror -pedantic -I../src -I../src/input -I../src/ui -I../src/rfb -I../src/framebuffer -I../src/display -I../src/diagnostics -I../src/platform
 BUILD_DIR = .build
 
 .PHONY: unit clean
@@ -75,226 +75,226 @@ $(BUILD_DIR)/video_mode_test: \
 
 $(BUILD_DIR)/rfb_wire_test: \
 	unit/rfb_wire_test.c \
-	../src/rfb.c \
-	../src/rfb.h | $(BUILD_DIR)
+	../src/rfb/rfb.c \
+	../src/rfb/rfb.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/rfb_wire_test.c \
-		../src/rfb.c \
+		../src/rfb/rfb.c \
 		-o $@
 
 $(BUILD_DIR)/framebuffer_test: \
 	unit/framebuffer_test.c \
-	../src/framebuffer.c \
-	../src/framebuffer.h | $(BUILD_DIR)
+	../src/framebuffer/framebuffer.c \
+	../src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/framebuffer_test.c \
-		../src/framebuffer.c \
+		../src/framebuffer/framebuffer.c \
 		-o $@
 
 $(BUILD_DIR)/rfb_session_test: \
 	unit/rfb_session_test.c \
-	../src/rfb.c \
-	../src/rfb.h \
-	../src/rfb_io.h \
-	../src/rfb_session.c \
-	../src/rfb_session.h \
-	../src/framebuffer.c \
-	../src/framebuffer.h | $(BUILD_DIR)
+	../src/rfb/rfb.c \
+	../src/rfb/rfb.h \
+	../src/rfb/rfb_io.h \
+	../src/rfb/rfb_session.c \
+	../src/rfb/rfb_session.h \
+	../src/framebuffer/framebuffer.c \
+	../src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/rfb_session_test.c \
-		../src/rfb_session.c \
-		../src/rfb.c \
-		../src/framebuffer.c \
+		../src/rfb/rfb_session.c \
+		../src/rfb/rfb.c \
+		../src/framebuffer/framebuffer.c \
 		-o $@
 
 $(BUILD_DIR)/rfb_initial_frame_test: \
 	unit/rfb_initial_frame_test.c \
-	../src/rfb.c \
-	../src/rfb.h \
-	../src/rfb_io.h \
-	../src/rfb_session.c \
-	../src/rfb_session.h \
-	../src/framebuffer.c \
-	../src/framebuffer.h | $(BUILD_DIR)
+	../src/rfb/rfb.c \
+	../src/rfb/rfb.h \
+	../src/rfb/rfb_io.h \
+	../src/rfb/rfb_session.c \
+	../src/rfb/rfb_session.h \
+	../src/framebuffer/framebuffer.c \
+	../src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/rfb_initial_frame_test.c \
-		../src/rfb_session.c \
-		../src/rfb.c \
-		../src/framebuffer.c \
+		../src/rfb/rfb_session.c \
+		../src/rfb/rfb.c \
+		../src/framebuffer/framebuffer.c \
 		-o $@
 
 $(BUILD_DIR)/rfb_initial_coverage_test: \
 	unit/rfb_initial_coverage_test.c \
-	../src/rfb.c \
-	../src/rfb.h \
-	../src/rfb_io.h \
-	../src/rfb_session.c \
-	../src/rfb_session.h \
-	../src/framebuffer.c \
-	../src/framebuffer.h | $(BUILD_DIR)
+	../src/rfb/rfb.c \
+	../src/rfb/rfb.h \
+	../src/rfb/rfb_io.h \
+	../src/rfb/rfb_session.c \
+	../src/rfb/rfb_session.h \
+	../src/framebuffer/framebuffer.c \
+	../src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/rfb_initial_coverage_test.c \
-		../src/rfb_session.c \
-		../src/rfb.c \
-		../src/framebuffer.c \
+		../src/rfb/rfb_session.c \
+		../src/rfb/rfb.c \
+		../src/framebuffer/framebuffer.c \
 		-o $@
 
 $(BUILD_DIR)/rfb_async_framing_test: \
 	unit/rfb_async_framing_test.c \
-	../src/rfb.c \
-	../src/rfb.h \
-	../src/rfb_io.h \
-	../src/rfb_session.c \
-	../src/rfb_session.h \
-	../src/framebuffer.c \
-	../src/framebuffer.h | $(BUILD_DIR)
+	../src/rfb/rfb.c \
+	../src/rfb/rfb.h \
+	../src/rfb/rfb_io.h \
+	../src/rfb/rfb_session.c \
+	../src/rfb/rfb_session.h \
+	../src/framebuffer/framebuffer.c \
+	../src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/rfb_async_framing_test.c \
-		../src/rfb_session.c \
-		../src/rfb.c \
-		../src/framebuffer.c \
+		../src/rfb/rfb_session.c \
+		../src/rfb/rfb.c \
+		../src/framebuffer/framebuffer.c \
 		-o $@
 
 $(BUILD_DIR)/display_test: \
 	unit/display_test.c \
-	../src/display.c \
-	../src/display.h \
-	../src/framebuffer.c \
-	../src/framebuffer.h | $(BUILD_DIR)
+	../src/display/display.c \
+	../src/display/display.h \
+	../src/framebuffer/framebuffer.c \
+	../src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/display_test.c \
-		../src/display.c \
-		../src/framebuffer.c \
+		../src/display/display.c \
+		../src/framebuffer/framebuffer.c \
 		-o $@
 
 $(BUILD_DIR)/mouse_test: \
 	unit/mouse_test.c \
-	../src/mouse.c \
-	../src/mouse.h | $(BUILD_DIR)
+	../src/input/mouse.c \
+	../src/input/mouse.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/mouse_test.c \
-		../src/mouse.c \
+		../src/input/mouse.c \
 		-o $@
 
 $(BUILD_DIR)/keyboard_test: \
 	unit/keyboard_test.c \
-	../src/keyboard.c \
-	../src/keyboard.h | $(BUILD_DIR)
+	../src/input/keyboard.c \
+	../src/input/keyboard.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/keyboard_test.c \
-		../src/keyboard.c \
+		../src/input/keyboard.c \
 		-o $@
 
 $(BUILD_DIR)/local_ui_test: \
 	unit/local_ui_test.c \
-	../src/local_ui.c \
-	../src/local_ui.h | $(BUILD_DIR)
+	../src/ui/local_ui.c \
+	../src/ui/local_ui.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/local_ui_test.c \
-		../src/local_ui.c \
+		../src/ui/local_ui.c \
 		-o $@
 
 $(BUILD_DIR)/osk_test: \
 	unit/osk_test.c \
-	../src/osk.c \
-	../src/osk.h \
-	../src/keyboard.h | $(BUILD_DIR)
+	../src/ui/osk.c \
+	../src/ui/osk.h \
+	../src/input/keyboard.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/osk_test.c \
-		../src/osk.c \
+		../src/ui/osk.c \
 		-o $@
 
 $(BUILD_DIR)/osk_render_test: \
 	unit/osk_render_test.c \
-	../src/osk_render.c \
-	../src/osk_render.h \
-	../src/osk.c \
-	../src/osk.h \
-	../src/keyboard.h | $(BUILD_DIR)
+	../src/ui/osk_render.c \
+	../src/ui/osk_render.h \
+	../src/ui/osk.c \
+	../src/ui/osk.h \
+	../src/input/keyboard.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/osk_render_test.c \
-		../src/osk_render.c \
-		../src/osk.c \
+		../src/ui/osk_render.c \
+		../src/ui/osk.c \
 		-o $@
 
 $(BUILD_DIR)/local_ui_presentation_test: \
 	unit/local_ui_presentation_test.c \
-	../src/local_ui_presentation.c \
-	../src/local_ui_presentation.h \
-	../src/local_ui.c \
-	../src/local_ui.h \
-	../src/osk.c \
-	../src/osk.h \
-	../src/osk_render.c \
-	../src/osk_render.h \
-	../src/display.h | $(BUILD_DIR)
+	../src/ui/local_ui_presentation.c \
+	../src/ui/local_ui_presentation.h \
+	../src/ui/local_ui.c \
+	../src/ui/local_ui.h \
+	../src/ui/osk.c \
+	../src/ui/osk.h \
+	../src/ui/osk_render.c \
+	../src/ui/osk_render.h \
+	../src/display/display.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/local_ui_presentation_test.c \
-		../src/local_ui_presentation.c \
-		../src/local_ui.c \
-		../src/osk.c \
-		../src/osk_render.c \
+		../src/ui/local_ui_presentation.c \
+		../src/ui/local_ui.c \
+		../src/ui/osk.c \
+		../src/ui/osk_render.c \
 		-o $@
 
 $(BUILD_DIR)/input_test: \
 	unit/input_test.c \
-	../src/input.c \
-	../src/input.h \
-	../src/keyboard.h \
-	../src/mouse.h | $(BUILD_DIR)
+	../src/input/input.c \
+	../src/input/input.h \
+	../src/input/keyboard.h \
+	../src/input/mouse.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/input_test.c \
-		../src/input.c \
+		../src/input/input.c \
 		-o $@
 
 $(BUILD_DIR)/controller_event_test: \
 	unit/controller_event_test.c \
-	../src/input.c \
-	../src/input.h \
-	../src/controller.h \
-	../src/mouse.h \
-	../src/keyboard.h | $(BUILD_DIR)
+	../src/input/input.c \
+	../src/input/input.h \
+	../src/input/controller.h \
+	../src/input/mouse.h \
+	../src/input/keyboard.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/controller_event_test.c \
-		../src/input.c \
+		../src/input/input.c \
 		-o $@
 
 $(BUILD_DIR)/local_controller_test: \
 	unit/local_controller_test.c \
-	../src/local_controller.c \
-	../src/local_controller.h \
-	../src/controller.h \
-	../src/local_ui.h | $(BUILD_DIR)
+	../src/ui/local_controller.c \
+	../src/ui/local_controller.h \
+	../src/input/controller.h \
+	../src/ui/local_ui.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/local_controller_test.c \
-		../src/local_controller.c \
+		../src/ui/local_controller.c \
 		-o $@
 
 $(BUILD_DIR)/osk_direct_test: \
 	unit/osk_direct_test.c \
-	../src/osk.c \
-	../src/osk.h \
-	../src/keyboard.h | $(BUILD_DIR)
+	../src/ui/osk.c \
+	../src/ui/osk.h \
+	../src/input/keyboard.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/osk_direct_test.c \
-		../src/osk.c \
+		../src/ui/osk.c \
 		-o $@
 
 $(BUILD_DIR)/app_test: \
@@ -302,42 +302,42 @@ $(BUILD_DIR)/app_test: \
 	support/libpad.h \
 	../src/app.c \
 	../src/app.h \
-	../src/diagnostics.h \
-	../src/display.h \
-	../src/framebuffer.h \
-	../src/input.h \
-	../src/input_runtime.h \
-	../src/keyboard.c \
-	../src/keyboard.h \
-	../src/controller.h \
-	../src/local_controller.c \
-	../src/local_controller.h \
-	../src/local_ui.c \
-	../src/local_ui.h \
-	../src/local_ui_presentation.c \
-	../src/local_ui_presentation.h \
-	../src/mouse.h \
-	../src/osk.c \
-	../src/osk.h \
-	../src/osk_render.c \
-	../src/osk_render.h \
-	../src/pad.h \
+	../src/diagnostics/diagnostics.h \
+	../src/display/display.h \
+	../src/framebuffer/framebuffer.h \
+	../src/input/input.h \
+	../src/input/input_runtime.h \
+	../src/input/keyboard.c \
+	../src/input/keyboard.h \
+	../src/input/controller.h \
+	../src/ui/local_controller.c \
+	../src/ui/local_controller.h \
+	../src/ui/local_ui.c \
+	../src/ui/local_ui.h \
+	../src/ui/local_ui_presentation.c \
+	../src/ui/local_ui_presentation.h \
+	../src/input/mouse.h \
+	../src/ui/osk.c \
+	../src/ui/osk.h \
+	../src/ui/osk_render.c \
+	../src/ui/osk_render.h \
+	../src/input/pad.h \
 	../src/platform/ps2_graphics.h \
 	../src/platform/ps2_network.h \
 	../src/platform/ps2_system.h \
-	../src/rfb.h \
-	../src/rfb_session.h | $(BUILD_DIR)
+	../src/rfb/rfb.h \
+	../src/rfb/rfb_session.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-Isupport \
 		-I../src \
 		unit/app_test.c \
 		../src/app.c \
-		../src/keyboard.c \
-		../src/local_controller.c \
-		../src/local_ui.c \
-		../src/local_ui_presentation.c \
-		../src/osk.c \
-		../src/osk_render.c \
+		../src/input/keyboard.c \
+		../src/ui/local_controller.c \
+		../src/ui/local_ui.c \
+		../src/ui/local_ui_presentation.c \
+		../src/ui/osk.c \
+		../src/ui/osk_render.c \
 		-o $@
 
 clean:

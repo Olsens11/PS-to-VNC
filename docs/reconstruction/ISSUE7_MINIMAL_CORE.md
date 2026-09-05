@@ -54,9 +54,9 @@ The startup session implements the audited RFB 3.8 sequence:
 The qualified wire pixel format remains 16 bpp / depth 15, little-endian,
 true-color, max 31/31/31, with shifts 0/5/10.
 
-`src/rfb.c` / `src/rfb.h` own pure wire parsing/serialization.
-`src/rfb_session.c` / `src/rfb_session.h` own synchronized session behavior.
-`src/rfb_io.h` is the deliberately tiny exact-read/exact-write platform seam.
+`src/rfb/rfb.c` / `src/rfb/rfb.h` own pure wire parsing/serialization.
+`src/rfb/rfb_session.c` / `src/rfb/rfb_session.h` own synchronized session behavior.
+`src/rfb/rfb_io.h` is the deliberately tiny exact-read/exact-write platform seam.
 
 The session owns full-desktop FramebufferUpdateRequest transmission through
 `pstvnc_rfb_session_request_update()`. Application policy chooses full versus
@@ -64,7 +64,7 @@ incremental service; it does not construct or write RFB wire messages itself.
 
 ## Owned authoritative framebuffer
 
-`src/framebuffer.c` / `src/framebuffer.h` own caller-provided 16-bit storage,
+`src/framebuffer/framebuffer.c` / `src/framebuffer/framebuffer.h` own caller-provided 16-bit storage,
 logical geometry, validity, per-update dirty state, and the dirty bounding
 rectangle.
 
@@ -119,7 +119,7 @@ concurrency requires them.
 
 ## Fixed Standard 480p presentation
 
-`src/display.c` converts one valid authoritative 704x462 RFB framebuffer into a
+`src/display/display.c` converts one valid authoritative 704x462 RFB framebuffer into a
 separate GS16 presentation buffer. The remote framebuffer remains unchanged.
 B5:G5:R5 already matches GS CT16 color bits; presentation locally sets A1.
 
@@ -162,8 +162,8 @@ presentation image.
 
 ## Clean diagnostics and deterministic runtime identity
 
-The first clean milestone has a deliberately small `src/diagnostics.c` /
-`src/diagnostics.h` transport. It owns only the optional UDP socket/destination
+The first clean milestone has a deliberately small `src/diagnostics/diagnostics.c` /
+`src/diagnostics/diagnostics.h` transport. It owns only the optional UDP socket/destination
 and caller-supplied diagnostic datagram transport to `192.168.50.1:5999`.
 Product state and failure policy remain owned by the application/subsystems.
 

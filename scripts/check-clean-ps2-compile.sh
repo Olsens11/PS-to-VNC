@@ -49,6 +49,12 @@ COMMON_FLAGS=(
     -Wextra
     -Werror
     -I"$ROOT/src"
+    -I"$ROOT/src/input"
+    -I"$ROOT/src/ui"
+    -I"$ROOT/src/rfb"
+    -I"$ROOT/src/framebuffer"
+    -I"$ROOT/src/display"
+    -I"$ROOT/src/diagnostics"
     -I"$ROOT/src/platform"
     -I"$PS2SDK/ee/include"
     -I"$PS2SDK/common/include"
@@ -58,12 +64,12 @@ COMMON_FLAGS=(
 SOURCES=(
     src/main.c
     src/app.c
-    src/diagnostics.c
+    src/diagnostics/diagnostics.c
     src/diagnostics/identity.c
-    src/rfb.c
-    src/framebuffer.c
-    src/rfb_session.c
-    src/display.c
+    src/rfb/rfb.c
+    src/framebuffer/framebuffer.c
+    src/rfb/rfb_session.c
+    src/display/display.c
     src/platform/ps2_system.c
     src/platform/ps2_network.c
     src/platform/ps2_graphics.c

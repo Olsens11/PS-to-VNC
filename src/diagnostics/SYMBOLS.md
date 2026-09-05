@@ -4,13 +4,29 @@ DIRECTORY=src/diagnostics
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-Only `identity.c` and `identity.h` are adopted into the clean Issue #7 linked
-core. Retained pre-refresh `debug.*` and `report.*` modules deliberately remain
-outside clean-generation scope; they do not carry the required `File synopsis:`
-marker and are not indexed here.
+This directory owns clean-generation diagnostic transport and exact runtime identity. `diagnostics.c/.h` and `identity.c/.h` participate in clean product source. Retained pre-refresh `debug.*` and `report.*` remain outside clean-generation scope because they do not carry the required `File synopsis:` marker.
+
+The inventory below covers clean-generation symbols defined directly in this directory.
 
 | Name | Kind | File | Owner | Scope | Description | Context |
 |---|---|---|---|---|---|---|
+| PSTVNC_DIAGNOSTICS_HOST_IPV4 | macro | src/diagnostics/diagnostics.c | diagnostics transport | file | Names the fixed private-link Pi address that receives observer datagrams. | ISSUE7_MINIMAL_CORE: Clean diagnostics |
+| PSTVNC_DIAGNOSTICS_UDP_PORT | macro | src/diagnostics/diagnostics.c | diagnostics transport | file | Names the fixed UDP port used by the qualification observer stream. | ISSUE7_MINIMAL_CORE: Clean diagnostics |
+| diagnostics_socket | variable | src/diagnostics/diagnostics.c | diagnostics transport | file | Owns the optional UDP socket or records that no diagnostics socket exists. | clean diagnostics ownership |
+| diagnostics_address | variable | src/diagnostics/diagnostics.c | diagnostics transport | file | Stores the fixed sockaddr used for best-effort diagnostic datagrams. | clean diagnostics ownership |
+| pstvnc_diagnostics_init | function | src/diagnostics/diagnostics.c | diagnostics transport | public | Opens and configures the optional UDP diagnostics transport to the Pi. | ISSUE7_MINIMAL_CORE: Clean diagnostics |
+| pstvnc_diagnostics_is_ready | function | src/diagnostics/diagnostics.c | diagnostics transport | public | Reports whether the optional diagnostics socket is currently owned. | clean diagnostics ownership |
+| pstvnc_diagnostics_send | function | src/diagnostics/diagnostics.c | diagnostics transport | public | Sends one caller-owned diagnostic payload as one UDP observer datagram. | ISSUE7_MINIMAL_CORE: Clean diagnostics |
+| data | parameter | src/diagnostics/diagnostics.c | pstvnc_diagnostics_send | local | Points to caller-owned diagnostic bytes without transferring state ownership. | clean diagnostics |
+| length | parameter | src/diagnostics/diagnostics.c | pstvnc_diagnostics_send | local | Gives the exact payload byte count for one diagnostic datagram. | clean diagnostics |
+| pstvnc_diagnostics_shutdown | function | src/diagnostics/diagnostics.c | diagnostics transport | public | Releases optional diagnostics resources and restores the uninitialized baseline. | application coordinator cleanup |
+| PSTVNC_DIAGNOSTICS_H | include guard | src/diagnostics/diagnostics.h | diagnostics transport interface | file | Prevents repeated inclusion of the diagnostics transport declarations. | clean source interface |
+| pstvnc_diagnostics_init | function declaration | src/diagnostics/diagnostics.h | diagnostics transport interface | public | Declares optional diagnostics transport initialization. | clean diagnostics |
+| pstvnc_diagnostics_is_ready | function declaration | src/diagnostics/diagnostics.h | diagnostics transport interface | public | Declares readiness inspection for the optional diagnostics transport. | clean diagnostics |
+| pstvnc_diagnostics_send | function declaration | src/diagnostics/diagnostics.h | diagnostics transport interface | public | Declares best-effort transmission of one caller-owned diagnostic datagram. | clean diagnostics |
+| data | parameter | src/diagnostics/diagnostics.h | pstvnc_diagnostics_send | public | Declares the diagnostic payload pointer accepted by the transport seam. | clean diagnostics |
+| length | parameter | src/diagnostics/diagnostics.h | pstvnc_diagnostics_send | public | Declares the diagnostic payload byte count accepted by the transport seam. | clean diagnostics |
+| pstvnc_diagnostics_shutdown | function declaration | src/diagnostics/diagnostics.h | diagnostics transport interface | public | Declares release of optional diagnostics transport resources. | application coordinator cleanup |
 | pstvnc_identity_bounded_length | function | src/diagnostics/identity.c | runtime identity formatter | file | Returns a bounded visible string length or a sentinel when no terminator exists in range. | deterministic runtime identity |
 | text | parameter | src/diagnostics/identity.c | pstvnc_identity_bounded_length | function | Supplies the candidate NUL-terminated text whose bounded length is being validated. | deterministic runtime identity |
 | limit | parameter | src/diagnostics/identity.c | pstvnc_identity_bounded_length | function | Sets the maximum number of visible bytes accepted before reporting overflow. | deterministic runtime identity |

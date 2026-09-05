@@ -2327,12 +2327,18 @@ def validate(root: Path, require_complete: bool = False) -> tuple[list[tuple[str
             raise DictionaryError(f"{path}: dictionary has no entries")
         for entry in entries:
             source = root / entry.file
-            try:
-                source.relative_to(path.parent)
-            except ValueError as exc:
+
+            # Policy authority is directory-local, not ancestor-local. A
+            # dictionary documents only definitions physically owned by its
+            # own directory; descendants must maintain their own SYMBOLS.md.
+            if (
+                Path(entry.file).parent
+                != path.parent.relative_to(root)
+            ):
                 raise DictionaryError(
-                    f"{path}:{entry.line}: {entry.file} is outside dictionary directory"
-                ) from exc
+                    f"{path}:{entry.line}: {entry.file} is not defined "
+                    "directly in dictionary directory"
+                )
 
             # Dictionary identity is structural metadata. Validate it before
             # source-existence drift so duplicate rows remain a hard failure

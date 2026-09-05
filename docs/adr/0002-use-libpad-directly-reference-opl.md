@@ -51,7 +51,7 @@ minimal core merely because OPL implements them.
 
 ### PS-to-VNC owns application-specific use, not a translation API
 
-The first pad-facing source responsibility is `src/pad.c` / `src/pad.h`.
+The first pad-facing source responsibility is `src/input/pad.c` / `src/input/pad.h`.
 
 A project-owned instance may use the conventional project type name
 `pstvnc_pad_t`, with one instance corresponding to one libpad `(port, slot)`

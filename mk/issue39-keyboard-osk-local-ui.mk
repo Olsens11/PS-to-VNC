@@ -21,8 +21,8 @@ EXTRA_EE_OBJS := \
 include mk/issue7-clean.mk
 
 $(BUILD_DIR)/local_controller.o: \
-	src/local_controller.c \
-	src/local_controller.h \
-	src/controller.h \
-	src/local_ui.h | $(BUILD_DIR)
+	src/ui/local_controller.c \
+	src/ui/local_controller.h \
+	src/input/controller.h \
+	src/ui/local_ui.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@

@@ -21,7 +21,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "../rfb_io.h"
+#include "rfb_io.h"
 #include "ps2_network.h"
 
 extern unsigned char DEV9_irx[];
