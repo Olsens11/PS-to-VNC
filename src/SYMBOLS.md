@@ -6,7 +6,8 @@ COVERAGE=COMPLETE
 
 This directory owns the application coordinator, authoritative framebuffer,
 minimal diagnostics transport, display conversion, direct libpad pad
-acquisition, pure remote-mouse response policy, and RFB wire/session core.
+acquisition, ordinary semantic input-event FIFO, pure remote-mouse response
+policy, and RFB wire/session core.
 The inventory below covers the clean-generation symbols defined directly in
 this directory. Historical/adopted subdirectories retain their own dictionaries.
 
@@ -162,6 +163,51 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | argc | parameter | src/main.c | main | process | Receives process argument count but is intentionally unused by the clean baseline. | process entry |
 | argv | parameter | src/main.c | main | process | Receives process argument vector but is intentionally unused by the clean baseline. | process entry |
 
+| input_event_type_is_valid | function | src/input.c | semantic input event queue | file | Validates whether an event discriminator names a semantic input payload family currently implemented by the clean input boundary. | ISSUE38 semantic event envelope |
+| event_type | parameter | src/input.c | input_event_type_is_valid | local | Supplies the semantic event discriminator to validate without inspecting payload contents. | semantic event envelope validation |
+| pstvnc_input_queue_init | function | src/input.c | semantic input event queue | public | Initializes one ordinary semantic input FIFO to the empty state. | ISSUE38 ordinary event queue |
+| queue | parameter | src/input.c | pstvnc_input_queue_init | local | Supplies the FIFO object whose indices and accepted-event count are initialized. | semantic input queue lifecycle |
+| pstvnc_input_queue_discard_all | function | src/input.c | semantic input event queue | public | Establishes a hard empty-queue boundary so previously accepted ordinary input cannot emerge afterward. | ISSUE38 ownership/context boundary |
+| queue | parameter | src/input.c | pstvnc_input_queue_discard_all | local | Supplies the FIFO whose accepted ordinary semantic events are discarded. | semantic input queue boundary |
+| pstvnc_input_queue_event_count | function | src/input.c | semantic input event queue | public | Reports how many accepted semantic events are currently waiting for consumption. | ISSUE38 ordinary event queue |
+| queue | parameter | src/input.c | pstvnc_input_queue_event_count | local | Supplies the FIFO whose current accepted-event count is inspected. | semantic input queue observation |
+| pstvnc_input_queue_push | function | src/input.c | semantic input event queue | public | Atomically appends one valid complete semantic event when bounded FIFO capacity remains. | ISSUE38 producer boundary |
+| queue | parameter | src/input.c | pstvnc_input_queue_push | local | Supplies the FIFO that receives the complete semantic event. | semantic input producer boundary |
+| event | parameter | src/input.c | pstvnc_input_queue_push | local | Supplies the caller-owned typed semantic event to copy into FIFO storage. | semantic input producer boundary |
+| pstvnc_input_queue_pop | function | src/input.c | semantic input event queue | public | Removes and copies the oldest accepted semantic event while preserving FIFO ordering. | ISSUE38 consumer boundary |
+| queue | parameter | src/input.c | pstvnc_input_queue_pop | local | Supplies the FIFO from which the oldest accepted event is consumed. | semantic input consumer boundary |
+| event | parameter | src/input.c | pstvnc_input_queue_pop | local | Receives a complete copy of the oldest accepted semantic event. | semantic input consumer boundary |
+| PSTVNC_INPUT_H | macro | src/input.h | semantic input interface | file | Prevents repeated inclusion of the semantic input event and FIFO declarations. | clean source interface |
+| PSTVNC_INPUT_EVENT_QUEUE_CAPACITY | macro | src/input.h | semantic input event queue | public | Defines the bounded 256-entry capacity retained from the historically qualified controller producer/consumer depth. | ISSUE38 ordinary event queue |
+| pstvnc_input_event_type | enum | src/input.h | semantic input interface | public | Defines the discriminator vocabulary for semantic input payload families that have actually been reconstructed. | ISSUE38 semantic event envelope |
+| PSTVNC_INPUT_EVENT_NONE | enum value | src/input.h | pstvnc_input_event_type | public | Marks an event envelope as invalid or unfinished so zero initialization cannot create executable semantic work. | semantic event validation |
+| PSTVNC_INPUT_EVENT_MOUSE_UPDATE | enum value | src/input.h | pstvnc_input_event_type | public | Identifies an ordinary semantic event whose payload is one remote-mouse update. | ISSUE38 first earned payload family |
+| pstvnc_input_event_type_t | type | src/input.h | semantic input interface | public | Names the semantic event discriminator type used by the application-routable input envelope. | ISSUE38 semantic event envelope |
+| pstvnc_input_event_payload | structure | src/input.h | semantic input interface | public | Defines typed payload storage for semantic input events without generic byte buffers, casts, or callback machinery. | ISSUE38 growth-capable event seam |
+| mouse_update | field | src/input.h | pstvnc_input_event_payload | public | Stores the first earned semantic payload family: one complete remote-mouse update. | ISSUE38 mouse semantic payload |
+| pstvnc_input_event_payload_t | type | src/input.h | semantic input interface | public | Names the typed semantic-event payload storage used by the event envelope. | ISSUE38 semantic event envelope |
+| pstvnc_input_event | structure | src/input.h | semantic input interface | public | Defines one complete application-routable semantic input event as a discriminator plus typed payload. | ISSUE38 semantic event envelope |
+| type | field | src/input.h | pstvnc_input_event | public | Identifies which implemented semantic payload family is present in the event envelope. | semantic event routing |
+| payload | field | src/input.h | pstvnc_input_event | public | Carries the complete typed semantic value associated with the event discriminator. | semantic event routing |
+| pstvnc_input_event_t | type | src/input.h | semantic input interface | public | Names one complete semantic input event transferred from input production toward application routing. | ISSUE38 semantic event path |
+| pstvnc_input_queue | structure | src/input.h | semantic input event queue | public | Defines the pure bounded FIFO state used to transfer ordinary semantic input events in accepted order. | ISSUE38 ordinary event queue |
+| event_storage | field | src/input.h | pstvnc_input_queue | public | Stores the fixed-capacity array of accepted semantic event envelopes. | semantic input FIFO storage |
+| read_index | field | src/input.h | pstvnc_input_queue | public | Identifies the storage slot containing the oldest accepted event available for consumption. | semantic input FIFO ordering |
+| write_index | field | src/input.h | pstvnc_input_queue | public | Identifies the next free storage slot used when a new semantic event is accepted. | semantic input FIFO ordering |
+| event_count | field | src/input.h | pstvnc_input_queue | public | Records the number of accepted semantic events currently live in FIFO storage. | semantic input FIFO authority |
+| pstvnc_input_queue_t | type | src/input.h | semantic input event queue | public | Names the pure bounded ordinary semantic-event FIFO state object. | ISSUE38 ordinary event queue |
+| pstvnc_input_queue_init | function declaration | src/input.h | semantic input interface | public | Declares initialization of an empty ordinary semantic-event FIFO. | ISSUE38 ordinary event queue |
+| queue | prototype parameter | src/input.h | pstvnc_input_queue_init | public | Declares the FIFO object initialized by the semantic input queue interface. | semantic input queue lifecycle |
+| pstvnc_input_queue_discard_all | function declaration | src/input.h | semantic input interface | public | Declares explicit discard of every currently queued ordinary semantic event. | ISSUE38 hard input boundary |
+| queue | prototype parameter | src/input.h | pstvnc_input_queue_discard_all | public | Declares the FIFO whose pre-boundary ordinary events are discarded. | semantic input queue boundary |
+| pstvnc_input_queue_event_count | function declaration | src/input.h | semantic input interface | public | Declares inspection of the number of accepted semantic events awaiting consumption. | ISSUE38 ordinary event queue |
+| queue | prototype parameter | src/input.h | pstvnc_input_queue_event_count | public | Declares the FIFO whose accepted-event count is inspected. | semantic input queue observation |
+| pstvnc_input_queue_push | function declaration | src/input.h | semantic input interface | public | Declares atomic publication of one complete typed semantic event into the bounded FIFO. | ISSUE38 producer boundary |
+| queue | prototype parameter | src/input.h | pstvnc_input_queue_push | public | Declares the FIFO receiving one complete semantic event. | semantic input producer boundary |
+| event | prototype parameter | src/input.h | pstvnc_input_queue_push | public | Declares the caller-owned complete semantic event offered for publication. | semantic input producer boundary |
+| pstvnc_input_queue_pop | function declaration | src/input.h | semantic input interface | public | Declares FIFO consumption of the oldest accepted semantic input event. | ISSUE38 consumer boundary |
+| queue | prototype parameter | src/input.h | pstvnc_input_queue_pop | public | Declares the FIFO from which the oldest accepted event is consumed. | semantic input consumer boundary |
+| event | prototype parameter | src/input.h | pstvnc_input_queue_pop | public | Declares destination storage receiving the oldest complete semantic event. | semantic input consumer boundary |
 | MOUSE_ANALOG_DEADZONE | macro | src/mouse.c | mouse response policy | file | Defines the centered raw-stick deadzone below which analog pointer or wheel motion is suppressed. | Test11K qualified analog response |
 | MOUSE_ANALOG_HALF_RAW | macro | src/mouse.c | mouse response policy | file | Marks the low-range analog response point through which the qualified curve remains deliberately shallow. | Test11K qualified analog response |
 | MOUSE_ANALOG_KNEE_RAW | macro | src/mouse.c | mouse response policy | file | Marks the analog response knee where the shallow low/mid curve rejoins the final acceleration region. | Test11K qualified analog response |

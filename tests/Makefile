@@ -17,6 +17,7 @@ unit: \
 	$(BUILD_DIR)/rfb_async_framing_test \
 	$(BUILD_DIR)/display_test \
 	$(BUILD_DIR)/mouse_test \
+	$(BUILD_DIR)/input_test \
 	$(BUILD_DIR)/app_test
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/video_mode_test
@@ -28,6 +29,7 @@ unit: \
 	./$(BUILD_DIR)/rfb_async_framing_test
 	./$(BUILD_DIR)/display_test
 	./$(BUILD_DIR)/mouse_test
+	./$(BUILD_DIR)/input_test
 	./$(BUILD_DIR)/app_test
 
 $(BUILD_DIR):
@@ -164,6 +166,17 @@ $(BUILD_DIR)/mouse_test: \
 		-I../src \
 		unit/mouse_test.c \
 		../src/mouse.c \
+		-o $@
+
+$(BUILD_DIR)/input_test: \
+	unit/input_test.c \
+	../src/input.c \
+	../src/input.h \
+	../src/mouse.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/input_test.c \
+		../src/input.c \
 		-o $@
 
 $(BUILD_DIR)/app_test: \
