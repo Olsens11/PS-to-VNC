@@ -181,16 +181,23 @@ $(BUILD_DIR)/input_test: \
 
 $(BUILD_DIR)/app_test: \
 	unit/app_test.c \
+	support/libpad.h \
 	../src/app.c \
 	../src/app.h \
 	../src/diagnostics.h \
 	../src/display.h \
 	../src/framebuffer.h \
+	../src/input.h \
+	../src/input_runtime.h \
+	../src/mouse.h \
+	../src/pad.h \
 	../src/platform/ps2_graphics.h \
 	../src/platform/ps2_network.h \
 	../src/platform/ps2_system.h \
+	../src/rfb.h \
 	../src/rfb_session.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Isupport \
 		-I../src \
 		unit/app_test.c \
 		../src/app.c \

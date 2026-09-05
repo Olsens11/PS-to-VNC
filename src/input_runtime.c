@@ -128,7 +128,17 @@ static int input_runtime_left_stick_is_available(
         offsetof(struct padButtonStatus, ljoy_v) +
         sizeof(pad->buttons.ljoy_v);
 
-    return (size_t)pad->sample_length >= required_bytes;
+    /*
+     * Packet length proves only that the native fields were copied. The
+     * joystick bytes are meaningful only when this current libpad sample
+     * identifies itself as DualShock analog data.
+     *
+     * In particular, a disconnect/reacquisition transition must never turn
+     * zero-filled non-analog joystick bytes into maximum up-left movement.
+     */
+    return
+        (size_t)pad->sample_length >= required_bytes &&
+        (pad->buttons.mode >> 4) == PAD_TYPE_DUALSHOCK;
 }
 
 static void input_runtime_build_mouse_input(

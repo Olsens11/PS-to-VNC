@@ -1,19 +1,23 @@
 /*
  * File synopsis:
  * Owns deterministic IOP bootstrap, base controller-service module loading,
- * and the final OSDSYS system-menu exit path.
+ * bounded application-thread delay mechanics, and the final OSDSYS system-menu
+ * exit path.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "PS2 system and
  * private-Ethernet platform seam"; docs/CLEAN_ARCHITECTURE.md, "PS2 platform
  * mechanisms".
  */
 
+#include <delaythread.h>
 #include <iopcontrol.h>
 #include <iopheap.h>
 #include <kernel.h>
 #include <loadfile.h>
 #include <sbv_patches.h>
 #include <sifrpc.h>
+
+#include <limits.h>
 
 #include "ps2_system.h"
 
@@ -76,6 +80,20 @@ int pstvnc_ps2_system_prepare_iop(void)
         return -1;
 
     return 0;
+}
+
+int pstvnc_ps2_system_delay_us(unsigned int microseconds)
+{
+    if (microseconds > (unsigned int)INT_MAX)
+        return -1;
+
+    if (microseconds == 0)
+        return 0;
+
+    return
+        DelayThread((int)microseconds) < 0
+        ? -1
+        : 0;
 }
 
 void pstvnc_ps2_system_exit_to_menu(void)

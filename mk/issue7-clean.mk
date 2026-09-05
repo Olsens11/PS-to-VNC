@@ -9,7 +9,9 @@ GEN_DIR = $(BUILD_DIR)/generated
 DEP_DIR = $(BUILD_DIR)/deps
 
 PS2IP_LIB = $(DEP_DIR)/libps2ip_mtu1458_wscale128.a
-EE_BIN = $(BUILD_DIR)/PS-to-VNC-Issue7.ELF
+EE_BIN ?= $(BUILD_DIR)/PS-to-VNC-Issue7.ELF
+
+EXTRA_EE_OBJS ?=
 
 EE_OBJS = \
 	$(BUILD_DIR)/main.o \
@@ -29,6 +31,8 @@ EE_OBJS = \
 	$(BUILD_DIR)/DEV9_irx.o \
 	$(BUILD_DIR)/NETMAN_irx.o \
 	$(BUILD_DIR)/SMAP_irx.o
+
+EE_OBJS += $(EXTRA_EE_OBJS)
 
 EE_INCS = -Isrc -Isrc/platform -I$(GSKIT)/include
 EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman -lpad $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
@@ -50,7 +54,7 @@ $(EE_BIN): $(PS2IP_LIB) | $(BUILD_DIR)
 $(BUILD_DIR)/main.o: src/main.c src/app.h src/platform/ps2_system.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics.h src/display.h src/framebuffer.h src/rfb_session.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h | $(BUILD_DIR)
+$(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics.h src/display.h src/framebuffer.h src/input.h src/input_runtime.h src/mouse.h src/pad.h src/rfb_session.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/diagnostics.o: src/diagnostics.c src/diagnostics.h | $(BUILD_DIR)
@@ -69,6 +73,15 @@ $(BUILD_DIR)/rfb_session.o: src/rfb_session.c src/rfb_session.h src/rfb.h src/rf
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/display.o: src/display.c src/display.h src/framebuffer.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/input.o: src/input.c src/input.h src/mouse.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/mouse.o: src/mouse.c src/mouse.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/input_runtime.o: src/input_runtime.c src/input_runtime.h src/input.h src/mouse.h src/pad.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/pad.o: src/pad.c src/pad.h | $(BUILD_DIR)
