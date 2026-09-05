@@ -41,6 +41,13 @@ int pstvnc_rfb_io_read_exact(int socket_fd, void *buffer, size_t count)
     return 0;
 }
 
+int pstvnc_rfb_io_poll_receive(int socket_fd)
+{
+    (void)socket_fd;
+
+    return input_pos < input_size ? 1 : 0;
+}
+
 int pstvnc_rfb_io_write_exact(
     int socket_fd,
     const void *buffer,

@@ -27,6 +27,19 @@ typedef enum pstvnc_rfb_session_state {
     PSTVNC_RFB_SESSION_FAILED
 } pstvnc_rfb_session_state_t;
 
+/*
+ * Result of one nonblocking live-session receive-service attempt.
+ *
+ * IDLE is a normal scheduling result: no byte of the next server message was
+ * consumed, the session remains READY, and application/main may service other
+ * work before trying again.
+ */
+typedef enum pstvnc_rfb_session_receive_result {
+    PSTVNC_RFB_SESSION_RECEIVE_FAILED = -1,
+    PSTVNC_RFB_SESSION_RECEIVE_IDLE = 0,
+    PSTVNC_RFB_SESSION_RECEIVE_UPDATE = 1
+} pstvnc_rfb_session_receive_result_t;
+
 typedef enum pstvnc_rfb_session_error {
     PSTVNC_RFB_SESSION_ERROR_NONE = 0,
     PSTVNC_RFB_SESSION_ERROR_IO,
@@ -96,6 +109,23 @@ int pstvnc_rfb_session_receive_initial_frame(
     pstvnc_framebuffer_t *framebuffer);
 
 int pstvnc_rfb_session_receive_update(
+    pstvnc_rfb_session_t *session,
+    pstvnc_framebuffer_t *framebuffer);
+
+/*
+ * Service one live framebuffer response without blocking while the server is
+ * idle.
+ *
+ * The session may return IDLE only at a complete server-message boundary,
+ * before consuming the first byte of the next server message. Once a message
+ * begins, exact protocol reads complete that message before another benign
+ * scheduling yield is permitted.
+ *
+ * This keeps RFB framing authoritative while allowing application/main to
+ * publish controller input between idle receive attempts.
+ */
+pstvnc_rfb_session_receive_result_t
+pstvnc_rfb_session_try_receive_update(
     pstvnc_rfb_session_t *session,
     pstvnc_framebuffer_t *framebuffer);
 

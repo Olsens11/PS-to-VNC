@@ -24,6 +24,16 @@
  */
 static uint8_t initial_frame_coverage[PSTVNC_RFB_INITIAL_COVERAGE_BYTES];
 
+/*
+ * Internal receive result. Failure deliberately remains zero so existing
+ * fail()/fail_frame() helpers can return directly from parser error paths.
+ */
+typedef enum pstvnc_rfb_receive_update_result {
+    PSTVNC_RFB_RECEIVE_UPDATE_FAILED = 0,
+    PSTVNC_RFB_RECEIVE_UPDATE_COMPLETE = 1,
+    PSTVNC_RFB_RECEIVE_UPDATE_IDLE = 2
+} pstvnc_rfb_receive_update_result_t;
+
 static uint32_t read_be32(const uint8_t bytes[4])
 {
     return ((uint32_t)bytes[0] << 24) |
@@ -206,10 +216,12 @@ static int read_raw_row(
     return 1;
 }
 
-static int receive_framebuffer_update(
+static pstvnc_rfb_receive_update_result_t
+receive_framebuffer_update(
     pstvnc_rfb_session_t *session,
     pstvnc_framebuffer_t *framebuffer,
-    int require_full)
+    int require_full,
+    int allow_idle)
 {
     /*
      * Bell, clipboard, and color-map messages may legally arrive before the
@@ -220,8 +232,34 @@ static int receive_framebuffer_update(
     for (;;) {
         uint8_t message_type;
 
+        /*
+         * Responsive live operation may yield only before consuming the first
+         * byte of a complete server message. pstvnc_rfb_io_poll_receive() may
+         * prefetch bytes into transport-owned buffering, but that does not
+         * advance protocol parsing.
+         *
+         * Once message_type is consumed, every exact read belonging to that
+         * server message remains blocking/atomic. We never return IDLE from the
+         * middle of a header, payload, rectangle, or Raw row.
+         */
+        if (allow_idle) {
+            int receive_ready =
+                pstvnc_rfb_io_poll_receive(session->socket_fd);
+
+            if (receive_ready < 0)
+                return (pstvnc_rfb_receive_update_result_t)fail_frame(
+                    session,
+                    framebuffer,
+                    PSTVNC_RFB_SESSION_ERROR_IO);
+
+            if (receive_ready == 0) {
+                session->error = PSTVNC_RFB_SESSION_ERROR_NONE;
+                return PSTVNC_RFB_RECEIVE_UPDATE_IDLE;
+            }
+        }
+
         if (!read_exact(session->socket_fd, &message_type, 1))
-            return fail_frame(
+            return (pstvnc_rfb_receive_update_result_t)fail_frame(
                 session,
                 framebuffer,
                 PSTVNC_RFB_SESSION_ERROR_IO);
@@ -237,14 +275,14 @@ static int receive_framebuffer_update(
                     session->socket_fd,
                     cut_header,
                     sizeof(cut_header)))
-                return fail_frame(
+                return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
                     PSTVNC_RFB_SESSION_ERROR_IO);
 
             text_length = read_be32(&cut_header[3]);
             if (!discard_exact(session->socket_fd, text_length))
-                return fail_frame(
+                return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
                     PSTVNC_RFB_SESSION_ERROR_IO);
@@ -261,7 +299,7 @@ static int receive_framebuffer_update(
                     session->socket_fd,
                     color_header,
                     sizeof(color_header)))
-                return fail_frame(
+                return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
                     PSTVNC_RFB_SESSION_ERROR_IO);
@@ -270,7 +308,7 @@ static int receive_framebuffer_update(
             payload_length = (uint32_t)color_count * 6u;
 
             if (!discard_exact(session->socket_fd, payload_length))
-                return fail_frame(
+                return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
                     PSTVNC_RFB_SESSION_ERROR_IO);
@@ -293,7 +331,7 @@ static int receive_framebuffer_update(
 
                 if (framebuffer_pixels >
                     PSTVNC_RFB_SESSION_MAX_FRAME_PIXELS)
-                    return fail_frame(
+                    return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_COVERAGE);
@@ -306,7 +344,7 @@ static int receive_framebuffer_update(
                     session->socket_fd,
                     update_header,
                     sizeof(update_header)))
-                return fail_frame(
+                return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
                     PSTVNC_RFB_SESSION_ERROR_IO);
@@ -315,7 +353,7 @@ static int receive_framebuffer_update(
             pstvnc_framebuffer_clear_dirty(framebuffer);
 
             if (require_full && rectangle_count == 0)
-                return fail_frame(
+                return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
                     PSTVNC_RFB_SESSION_ERROR_EMPTY_UPDATE);
@@ -335,7 +373,7 @@ static int receive_framebuffer_update(
                         session->socket_fd,
                         rectangle_header,
                         sizeof(rectangle_header)))
-                    return fail_frame(
+                    return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_IO);
@@ -347,7 +385,7 @@ static int receive_framebuffer_update(
                 encoding = read_be32(&rectangle_header[8]);
 
                 if (encoding != (uint32_t)PSTVNC_RFB_ENCODING_RAW)
-                    return fail_frame(
+                    return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_UNSUPPORTED_ENCODING);
@@ -359,7 +397,7 @@ static int receive_framebuffer_update(
                         height,
                         framebuffer->width,
                         framebuffer->height))
-                    return fail_frame(
+                    return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_RECTANGLE_BOUNDS);
@@ -372,14 +410,14 @@ static int receive_framebuffer_update(
                         width,
                         height,
                         &covered_pixels))
-                    return fail_frame(
+                    return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_COVERAGE);
 
                 for (row = 0; row < height; row++) {
                     if (!read_raw_row(session, width))
-                        return fail_frame(
+                        return (pstvnc_rfb_receive_update_result_t)fail_frame(
                             session,
                             framebuffer,
                             PSTVNC_RFB_SESSION_ERROR_IO);
@@ -393,7 +431,7 @@ static int receive_framebuffer_update(
                             1,
                             session->row_scratch,
                             width))
-                        return fail_frame(
+                        return (pstvnc_rfb_receive_update_result_t)fail_frame(
                             session,
                             framebuffer,
                             PSTVNC_RFB_SESSION_ERROR_RECTANGLE_BOUNDS);
@@ -409,29 +447,29 @@ static int receive_framebuffer_update(
                  * must pass before framebuffer.valid becomes authoritative.
                  */
                 if (total_pixel_bytes != required_pixel_bytes)
-                    return fail_frame(
+                    return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_SIZE);
 
                 if (covered_pixels != framebuffer_pixels)
-                    return fail_frame(
+                    return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_COVERAGE);
 
                 if (!pstvnc_framebuffer_mark_valid(framebuffer))
-                    return fail_frame(
+                    return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
                         PSTVNC_RFB_SESSION_ERROR_FULL_FRAME_COVERAGE);
             }
 
             session->error = PSTVNC_RFB_SESSION_ERROR_NONE;
-            return 1;
+            return PSTVNC_RFB_RECEIVE_UPDATE_COMPLETE;
         }
 
-        return fail_frame(
+        return (pstvnc_rfb_receive_update_result_t)fail_frame(
             session,
             framebuffer,
             PSTVNC_RFB_SESSION_ERROR_UNSUPPORTED_SERVER_MESSAGE);
@@ -655,7 +693,11 @@ int pstvnc_rfb_session_receive_initial_frame(
 
     pstvnc_framebuffer_invalidate(framebuffer);
 
-    if (!receive_framebuffer_update(session, framebuffer, 1))
+    if (receive_framebuffer_update(
+            session,
+            framebuffer,
+            1,
+            0) != PSTVNC_RFB_RECEIVE_UPDATE_COMPLETE)
         return 0;
 
     session->state = PSTVNC_RFB_SESSION_READY;
@@ -677,5 +719,45 @@ int pstvnc_rfb_session_receive_update(
             framebuffer,
             PSTVNC_RFB_SESSION_ERROR_ROW_WIDTH);
 
-    return receive_framebuffer_update(session, framebuffer, 0);
+    return receive_framebuffer_update(
+        session,
+        framebuffer,
+        0,
+        0) == PSTVNC_RFB_RECEIVE_UPDATE_COMPLETE;
+}
+
+pstvnc_rfb_session_receive_result_t
+pstvnc_rfb_session_try_receive_update(
+    pstvnc_rfb_session_t *session,
+    pstvnc_framebuffer_t *framebuffer)
+{
+    pstvnc_rfb_receive_update_result_t result;
+
+    if (!framebuffer_matches_session(session, framebuffer) ||
+        session->state != PSTVNC_RFB_SESSION_READY ||
+        !framebuffer->valid)
+        return PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+
+    if (framebuffer->width > PSTVNC_RFB_SESSION_MAX_ROW_PIXELS) {
+        (void)fail_frame(
+            session,
+            framebuffer,
+            PSTVNC_RFB_SESSION_ERROR_ROW_WIDTH);
+
+        return PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    }
+
+    result = receive_framebuffer_update(
+        session,
+        framebuffer,
+        0,
+        1);
+
+    if (result == PSTVNC_RFB_RECEIVE_UPDATE_IDLE)
+        return PSTVNC_RFB_SESSION_RECEIVE_IDLE;
+
+    if (result != PSTVNC_RFB_RECEIVE_UPDATE_COMPLETE)
+        return PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+
+    return PSTVNC_RFB_SESSION_RECEIVE_UPDATE;
 }

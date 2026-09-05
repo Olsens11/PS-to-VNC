@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <errno.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -240,6 +241,52 @@ int pstvnc_rfb_io_read_exact(
     }
 
     return 0;
+}
+
+int pstvnc_rfb_io_poll_receive(int socket_fd)
+{
+    int received;
+
+    if (socket_fd < 0)
+        return -1;
+
+    if (rfb_rx_socket != socket_fd)
+        reset_rfb_rx(socket_fd);
+
+    /*
+     * Bytes already prefetched for exact RFB reads are immediately available.
+     * Do not perform another socket receive until those bytes are consumed.
+     */
+    if (rfb_rx_pos < rfb_rx_end)
+        return 1;
+
+    /*
+     * This is the live-loop scheduling seam recovered from the qualified
+     * historical behavior: the sole main-thread socket owner may ask whether
+     * server data exists without sleeping inside recv().
+     *
+     * A successful recv() becomes ordinary buffered exact-read input. EAGAIN
+     * and EWOULDBLOCK are scheduling facts, not protocol failures.
+     */
+    received = recv(
+        socket_fd,
+        rfb_rx_buffer,
+        sizeof(rfb_rx_buffer),
+        MSG_DONTWAIT);
+
+    if (received > 0) {
+        rfb_rx_pos = 0;
+        rfb_rx_end = (size_t)received;
+        return 1;
+    }
+
+    if (received == 0)
+        return -1;
+
+    if (errno == EAGAIN || errno == EWOULDBLOCK)
+        return 0;
+
+    return -1;
 }
 
 int pstvnc_rfb_io_write_exact(
