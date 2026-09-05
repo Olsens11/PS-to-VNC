@@ -555,8 +555,88 @@ static void test_explicit_derived_reset(void)
     assert(update.cursor_x == 1001);
 }
 
+
+static void test_published_state_rebase(void)
+{
+    pstvnc_mouse_t mouse;
+    pstvnc_mouse_input_t input;
+    pstvnc_mouse_update_t update;
+
+    assert(pstvnc_mouse_init(&mouse, 640u, 480u));
+
+    memset(&input, 0, sizeof(input));
+
+    /*
+     * Deliberately advance local interpreted state away from the state the
+     * application will later declare authoritative.
+     */
+    input.dpad_mode = PSTVNC_MOUSE_DPAD_POINTER;
+    input.dpad_directions = PSTVNC_MOUSE_DIRECTION_RIGHT;
+    input.click_buttons = PSTVNC_MOUSE_BUTTON_LCLICK;
+
+    assert(pstvnc_mouse_update(&mouse, &input, &update));
+    assert(mouse.click_buttons == PSTVNC_MOUSE_BUTTON_LCLICK);
+
+    memset(&input, 0, sizeof(input));
+    input.wheel_click_pressed = 1;
+
+    assert(pstvnc_mouse_update(&mouse, &input, &update));
+    assert(mouse.wheel_mode_enabled != 0);
+
+    /*
+     * Rebase replaces unpublished local pointer state with the exact state
+     * application/main says was successfully published to the remote peer.
+     */
+    assert(
+        pstvnc_mouse_rebase_published_state(
+            &mouse,
+            100u,
+            120u,
+            PSTVNC_MOUSE_BUTTON_RCLICK));
+
+    assert(mouse.cursor_x == 100);
+    assert(mouse.cursor_y == 120);
+    assert(mouse.click_buttons == PSTVNC_MOUSE_BUTTON_RCLICK);
+
+    assert(mouse.wheel_mode_enabled == 0);
+    assert(mouse.dpad_hold_direction == 0);
+    assert(mouse.dpad_hold_ticks == 0u);
+    assert(mouse.dpad_x_q8 == 0);
+    assert(mouse.dpad_y_q8 == 0);
+    assert(mouse.analog_x_q8 == 0);
+    assert(mouse.analog_y_q8 == 0);
+    assert(mouse.last_wheel_direction == PSTVNC_MOUSE_WHEEL_NONE);
+    assert(mouse.wheel_repeat_countdown == 0u);
+
+    /*
+     * Invalid authoritative state must not partially mutate the interpreter.
+     */
+    assert(
+        !pstvnc_mouse_rebase_published_state(
+            &mouse,
+            640u,
+            120u,
+            0));
+
+    assert(mouse.cursor_x == 100);
+    assert(mouse.cursor_y == 120);
+    assert(mouse.click_buttons == PSTVNC_MOUSE_BUTTON_RCLICK);
+
+    assert(
+        !pstvnc_mouse_rebase_published_state(
+            &mouse,
+            100u,
+            120u,
+            (unsigned char)0x80u));
+
+    assert(mouse.cursor_x == 100);
+    assert(mouse.cursor_y == 120);
+    assert(mouse.click_buttons == PSTVNC_MOUSE_BUTTON_RCLICK);
+}
+
 int main(void)
 {
+    test_published_state_rebase();
     test_init_and_validation();
     test_dpad_precision_and_direction_change();
     test_dpad_acceleration_and_wheel_boundary();

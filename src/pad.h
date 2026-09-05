@@ -78,6 +78,22 @@ int pstvnc_pad_open(
     int slot);
 
 int pstvnc_pad_poll(pstvnc_pad_t *pad);
+
+/*
+ * End the current physical-controller connection epoch without closing the
+ * libpad endpoint.
+ *
+ * This revokes both controller-mode configuration authority and the remembered
+ * sample/edge history. The next usable connection must therefore negotiate or
+ * verify its mode and establish a fresh physical baseline before publishing
+ * ordinary controller facts.
+ *
+ * This is the pad owner's hard stale-state boundary used by disconnect,
+ * explicit libpad ownership handoff, and similar lifecycle transitions.
+ */
+void pstvnc_pad_invalidate_connection_epoch(
+    pstvnc_pad_t *pad);
+
 void pstvnc_pad_close(pstvnc_pad_t *pad);
 
 #endif

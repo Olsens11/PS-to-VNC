@@ -26,8 +26,18 @@ static int pad_state_is_readable(int state)
     return state == PAD_STATE_STABLE || state == PAD_STATE_FINDCTP1;
 }
 
-static void invalidate_observation(pstvnc_pad_t *pad)
+void pstvnc_pad_invalidate_connection_epoch(pstvnc_pad_t *pad)
 {
+    if (pad == NULL)
+        return;
+
+    /*
+     * Mode configuration and physical observation history belong to the same
+     * connection epoch. A caller invalidates that epoch as one operation rather
+     * than reaching into pad internals to reset individual lifecycle fields.
+     */
+    pad->connection_configured = 0;
+
     /*
      * A connection/ownership boundary destroys continuity with the preceding
      * sample. Clearing history prevents a button already held on reacquisition
@@ -212,8 +222,7 @@ int pstvnc_pad_poll(pstvnc_pad_t *pad)
          * continuity and allow a later readable state to begin a fresh
          * connection epoch.
          */
-        pad->connection_configured = 0;
-        invalidate_observation(pad);
+        pstvnc_pad_invalidate_connection_epoch(pad);
         return 0;
     }
 
@@ -224,8 +233,7 @@ int pstvnc_pad_poll(pstvnc_pad_t *pad)
         configuration_result = configure_controller_mode(pad);
 
         if (configuration_result < 0) {
-            pad->connection_configured = 0;
-            invalidate_observation(pad);
+            pstvnc_pad_invalidate_connection_epoch(pad);
             return -1;
         }
 
@@ -296,7 +304,6 @@ void pstvnc_pad_close(pstvnc_pad_t *pad)
     (void)padPortClose(pad->port, pad->slot);
 
     pad->opened = 0;
-    pad->connection_configured = 0;
     pad->state = PAD_STATE_DISCONN;
-    invalidate_observation(pad);
+    pstvnc_pad_invalidate_connection_epoch(pad);
 }

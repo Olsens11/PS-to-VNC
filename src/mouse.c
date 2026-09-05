@@ -482,6 +482,39 @@ void pstvnc_mouse_reset_derived(
     mouse->wheel_repeat_countdown = 0;
 }
 
+int pstvnc_mouse_rebase_published_state(
+    pstvnc_mouse_t *mouse,
+    unsigned int published_cursor_x,
+    unsigned int published_cursor_y,
+    unsigned char published_click_buttons)
+{
+    if (mouse == NULL ||
+        mouse->width == 0 ||
+        mouse->height == 0 ||
+        published_cursor_x >= mouse->width ||
+        published_cursor_y >= mouse->height ||
+        (published_click_buttons &
+         (unsigned char)~PSTVNC_MOUSE_BUTTON_MASK) != 0)
+        return 0;
+
+    /*
+     * Application/main owns the distinction between semantic input that was
+     * merely produced and pointer state that was successfully published over
+     * RFB. Rebase is the explicit synchronization point between those owners.
+     *
+     * Reset derived history first so no pre-boundary fraction, acceleration,
+     * wheel mode, direction, or repeat countdown survives the authoritative
+     * state replacement.
+     */
+    pstvnc_mouse_reset_derived(mouse);
+
+    mouse->cursor_x = (int)published_cursor_x;
+    mouse->cursor_y = (int)published_cursor_y;
+    mouse->click_buttons = published_click_buttons;
+
+    return 1;
+}
+
 int pstvnc_mouse_update(
     pstvnc_mouse_t *mouse,
     const pstvnc_mouse_input_t *input,

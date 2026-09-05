@@ -111,15 +111,21 @@ typedef struct pstvnc_mouse_update {
 } pstvnc_mouse_update_t;
 
 /*
- * Persistent mouse state.
+ * Persistent mouse-interpreter state.
  *
- * Cursor position and click state are durable remote-mouse state.
+ * Cursor position and click state are the durable pointer state produced by
+ * local input interpretation. They may temporarily be newer than the pointer
+ * state application/main has successfully published to the remote RFB peer.
  *
  * Wheel mode persists across ordinary samples, but it and the fractional
  * movement/repeat fields are controller-derived interpretation history.
  * pstvnc_mouse_reset_derived() deliberately clears that history at a hard
- * ownership/context boundary without silently changing remote cursor position
- * or click-button state.
+ * ownership/context boundary without silently changing the interpreter's
+ * current cursor position or click-button state.
+ *
+ * pstvnc_mouse_rebase_published_state() is the explicit boundary used when
+ * application/main must replace that local interpreted state with its own
+ * authoritative last-successfully-published remote pointer state.
  */
 typedef struct pstvnc_mouse {
     unsigned int width;
@@ -150,11 +156,37 @@ int pstvnc_mouse_init(
 
 /*
  * Forget controller-derived motion, repeat, and wheel-mode history at a hard
- * ownership/context boundary. Cursor position and current remote click-button
- * state remain authoritative.
+ * ownership/context boundary while preserving the interpreter's current
+ * durable cursor and click-button state.
+ *
+ * This function does not claim that preserved state has already been published
+ * remotely. Use pstvnc_mouse_rebase_published_state() when application/main
+ * needs to reconcile the interpreter with last-successfully-published state.
  */
 void pstvnc_mouse_reset_derived(
     pstvnc_mouse_t *mouse);
+
+/*
+ * Rebase the interpreter's durable pointer state to application-owned,
+ * successfully published remote state at a hard ownership boundary.
+ *
+ * The input worker can advance its local mouse interpretation before queued
+ * events are actually serialized by application/main. If those unpublished
+ * events are discarded, their cursor/button state must not survive and emerge
+ * after the boundary.
+ *
+ * This operation therefore replaces cursor/button state with the caller's
+ * authoritative published values and clears all controller-derived motion,
+ * repeat, and wheel-mode history.
+ *
+ * Returns 1 on success and 0 for invalid dimensions, coordinates, button bits,
+ * or arguments.
+ */
+int pstvnc_mouse_rebase_published_state(
+    pstvnc_mouse_t *mouse,
+    unsigned int published_cursor_x,
+    unsigned int published_cursor_y,
+    unsigned char published_click_buttons);
 
 int pstvnc_mouse_update(
     pstvnc_mouse_t *mouse,
