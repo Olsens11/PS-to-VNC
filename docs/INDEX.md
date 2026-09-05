@@ -60,6 +60,20 @@ documentation. The current curated documentation entry point is
 - `docs/audit/REBUILD_READY_PROMOTION.md` — promotion record establishing
   rebuild-ready audit maturity.
 
+## Raspberry Pi companion
+
+- `docs/pi/README.md` — finalized clean Pi-companion authority and router.
+- `docs/pi/BASELINE.md` — virgin supported-OS Pi baseline.
+- `docs/pi/DEPENDENCY_LEDGER.md` — Pi dependency/adoption ledger.
+- `docs/pi/PROVISIONING.md` — tracked foundation provisioning contract.
+- `docs/pi/RFB_ACTIVATION_RESEARCH.md` — preserved pre-qualification endpoint
+  lifecycle research.
+- `docs/pi/RFB_SOCKET_ACTIVATION.md` — adopted systemd socket-activation
+  lifecycle and hardware qualification.
+- `docs/pi/TIGERVNC_PACKAGE_AUTHORITY.md` — TigerVNC package/provider authority.
+- `docs/pi/TIGERVNC_SESSION.md` — qualified bare TigerVNC provider/session
+  contract.
+
 ## Reconstruction
 
 - `docs/reconstruction/ISSUE7_MINIMAL_CORE.md` — clean Issue #7 minimal-core

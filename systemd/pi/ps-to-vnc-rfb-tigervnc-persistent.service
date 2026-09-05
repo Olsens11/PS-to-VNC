@@ -1,0 +1,20 @@
+[Unit]
+Description=PS-to-VNC persistent TigerVNC RFB provider control
+Documentation=https://github.com/Olsens11/PS-to-VNC/blob/pi/issue5-rfb-socket-activation-candidate/docs/pi/RFB_SOCKET_ACTIVATION.md
+After=NetworkManager.service
+Conflicts=ps-to-vnc-rfb.socket
+
+[Service]
+Type=simple
+User=ps2
+Group=ps2
+WorkingDirectory=/home/ps2
+UMask=0077
+ExecStart=/usr/bin/Xtigervnc :1 -geometry 704x462 -depth 16 -pixelformat RGB565 -rfbport 5900 -interface 192.168.50.1 -localhost=0 -SecurityTypes None -AcceptSetDesktopSize=0 -UseIPv6=0 -nolisten tcp -Log *:syslog:30
+
+# Optional conventional fallback/control, not the selected runtime lifecycle.
+# Do not enable it alongside ps-to-vnc-rfb.socket. Its conditional comparison was
+# not required after socket activation passed the lifecycle qualification gates.
+
+[Install]
+WantedBy=multi-user.target

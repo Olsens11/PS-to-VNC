@@ -83,6 +83,26 @@ Current durable audit surfaces:
 `CLEAN_ARCHITECTURE.md` is the promoted design authority derived from these audit
 outputs.
 
+## Raspberry Pi companion
+
+The finalized Issue #5 Pi foundation has been carried forward into the current
+reconstruction without reconstructing it from live-machine folklore.
+
+- `pi/README.md` — canonical Pi-companion router and finalized Issue #5
+  foundation authority;
+- `pi/PROVISIONING.md` — clean supported-OS provisioning contract;
+- `pi/TIGERVNC_SESSION.md` — qualified bare TigerVNC provider contract;
+- `pi/RFB_SOCKET_ACTIVATION.md` — adopted systemd socket lifecycle and hardware
+  qualification record.
+
+The finalized tracked source authority carried forward is
+`e909ffc97563d678e87a7d8cf9febfdd452fe7b9`. Its hardware-qualification
+evidence head is `b40f422a760a0b7b6f2ab41699c5e72fda83bb83`.
+
+The qualified Issue #5 provider intentionally ends at a bare framebuffer.
+Window-manager/session contents are a later layer and must be documented as new
+work rather than rewritten into Issue #5 history.
+
 ## Reconstruction checkpoints
 
 - `reconstruction/2026-09-05_SOURCE_TOPOLOGY_ADOPTION.md` — chronological

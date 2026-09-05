@@ -86,14 +86,39 @@ location.
 | Legacy relationship | `docs/LEGACY_HANDOFF.md` |
 | Project identity | `docs/PROJECT_IDENTITY.md` |
 
-## Runtime services
+## Raspberry Pi companion and runtime services — Issue #5 authority carried forward 2026-09-05
 
-Historical currently deployed PS2VNC runtime remains external to this
-successor repository during bootstrap.
+The current reconstruction now carries the finalized clean Issue #5 Pi
+foundation from source authority
+`e909ffc97563d678e87a7d8cf9febfdd452fe7b9`.
 
-PS-to-VNC does not yet own or deploy a runtime service.
+Hardware qualification for the adopted RFB lifecycle is preserved at evidence
+head `b40f422a760a0b7b6f2ab41699c5e72fda83bb83`.
 
-That authority changes only through a later documented stage.
+| Responsibility | Current tracked location |
+|---|---|
+| Pi companion authority/router | `docs/pi/README.md` |
+| Clean Pi provisioning | `docs/pi/PROVISIONING.md`, `scripts/pi/` |
+| PS2 private-link provisioning | `scripts/pi/configure-ps2-link.sh` |
+| Generic PS2-facing RFB listener | `systemd/pi/ps-to-vnc-rfb.socket` |
+| Current replaceable RFB provider | `systemd/pi/ps-to-vnc-rfb-tigervnc.service` |
+| Optional mutually exclusive provider control | `systemd/pi/ps-to-vnc-rfb-tigervnc-persistent.service` |
+| RFB lifecycle installer/stager | `scripts/pi/install-rfb-activation-units.sh` |
+| Qualified lifecycle record | `docs/pi/RFB_SOCKET_ACTIVATION.md` |
+| Qualified provider/session record | `docs/pi/TIGERVNC_SESSION.md` |
+
+The selected runtime lifecycle is systemd socket activation with packaged
+Xtigervnc as the current replaceable provider. The persistent provider remains
+an optional control/fallback rather than the selected runtime.
+
+The tracked NetworkManager no-carrier candidate under `config/pi/` is preserved
+as rejected Issue #5 evidence and is not part of the selected installed
+configuration.
+
+Issue #5 deliberately qualified only the bare RFB framebuffer/provider layer.
+The minimum Openbox/terminal session being established before Issue #40 is new
+subsequent work and must remain distinguishable from the completed Issue #5
+qualification.
 
 ## Migration recovery authority
 
