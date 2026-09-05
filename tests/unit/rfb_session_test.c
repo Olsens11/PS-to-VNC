@@ -20,6 +20,7 @@ static size_t input_size;
 static size_t input_pos;
 static unsigned char output[1024];
 static size_t output_size;
+static int force_write_failure;
 
 static void script_reset(void)
 {
@@ -28,6 +29,7 @@ static void script_reset(void)
     input_size = 0;
     input_pos = 0;
     output_size = 0;
+    force_write_failure = 0;
 }
 
 static void append_input(
@@ -63,6 +65,9 @@ int pstvnc_rfb_io_write_exact(
     size_t count)
 {
     (void)socket_fd;
+
+    if (force_write_failure)
+        return -1;
 
     if (output_size + count > sizeof(output))
         return -1;
@@ -211,6 +216,106 @@ static void test_live_update_request(void)
     CHECK(output_size == 0);
 }
 
+
+static void test_pointer_event_send(void)
+{
+    static const unsigned char expected[6] = {
+        5,
+        0x04,
+        0x02, 0xbf,
+        0x01, 0xcd
+    };
+    pstvnc_rfb_session_t session;
+
+    script_reset();
+    pstvnc_rfb_session_init(&session);
+
+    session.socket_fd = 7;
+    session.state = PSTVNC_RFB_SESSION_READY;
+    session.server_init.width = 704;
+    session.server_init.height = 462;
+
+    CHECK(
+        pstvnc_rfb_session_send_pointer_event(
+            &session,
+            PSTVNC_RFB_POINTER_BUTTON_RIGHT,
+            703,
+            461));
+
+    CHECK(output_size == sizeof(expected));
+    CHECK(memcmp(output, expected, sizeof(expected)) == 0);
+    CHECK(session.state == PSTVNC_RFB_SESSION_READY);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
+
+    /*
+     * Session geometry is the final wire-side guard. Invalid coordinates must
+     * produce no bytes and must not convert a healthy session into failure.
+     */
+    script_reset();
+
+    CHECK(
+        !pstvnc_rfb_session_send_pointer_event(
+            &session,
+            0,
+            704,
+            461));
+
+    CHECK(
+        !pstvnc_rfb_session_send_pointer_event(
+            &session,
+            0,
+            703,
+            462));
+
+    CHECK(output_size == 0);
+    CHECK(session.state == PSTVNC_RFB_SESSION_READY);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
+
+    script_reset();
+    session.state = PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME;
+
+    CHECK(
+        !pstvnc_rfb_session_send_pointer_event(
+            &session,
+            0,
+            100,
+            100));
+
+    CHECK(output_size == 0);
+
+    CHECK(
+        !pstvnc_rfb_session_send_pointer_event(
+            NULL,
+            0,
+            0,
+            0));
+
+    /*
+     * A transport failure is a session failure, matching the existing
+     * FramebufferUpdateRequest send contract.
+     */
+    script_reset();
+    pstvnc_rfb_session_init(&session);
+
+    session.socket_fd = 7;
+    session.state = PSTVNC_RFB_SESSION_READY;
+    session.server_init.width = 704;
+    session.server_init.height = 462;
+
+    force_write_failure = 1;
+
+    CHECK(
+        !pstvnc_rfb_session_send_pointer_event(
+            &session,
+            PSTVNC_RFB_POINTER_BUTTON_LEFT,
+            100,
+            100));
+
+    CHECK(output_size == 0);
+    CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_IO);
+}
+
 static void test_none_missing(void)
 {
     static const unsigned char banner[12] = "RFB 003.008\n";
@@ -302,6 +407,7 @@ int main(void)
 {
     test_success();
     test_live_update_request();
+    test_pointer_event_send();
     test_none_missing();
     test_server_rejection();
     test_geometry_mismatch();

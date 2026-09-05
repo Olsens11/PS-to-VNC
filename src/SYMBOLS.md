@@ -598,6 +598,11 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | y | parameter | src/rfb.c | pstvnc_rfb_build_framebuffer_update_request | local | Gives requested rectangle top coordinate. | RFB update requests |
 | width | parameter | src/rfb.c | pstvnc_rfb_build_framebuffer_update_request | local | Gives requested rectangle width. | RFB update requests |
 | height | parameter | src/rfb.c | pstvnc_rfb_build_framebuffer_update_request | local | Gives requested rectangle height. | RFB update requests |
+| pstvnc_rfb_build_pointer_event | function | src/rfb.c | RFB wire format | public | Builds one exact six-byte RFB PointerEvent from an already-mapped native RFB button mask and logical coordinates. | Issue #38 pointer publication |
+| out | parameter | src/rfb.c | pstvnc_rfb_build_pointer_event | local | Receives the exact six-byte PointerEvent wire message. | Issue #38 pointer publication |
+| button_mask | parameter | src/rfb.c | pstvnc_rfb_build_pointer_event | local | Supplies native RFB button-mask vocabulary without semantic input interpretation. | Issue #38 pointer publication |
+| x | parameter | src/rfb.c | pstvnc_rfb_build_pointer_event | local | Gives the logical remote pointer X coordinate encoded big-endian on the wire. | Issue #38 pointer publication |
+| y | parameter | src/rfb.c | pstvnc_rfb_build_pointer_event | local | Gives the logical remote pointer Y coordinate encoded big-endian on the wire. | Issue #38 pointer publication |
 | PSTVNC_RFB_H | include guard | src/rfb.h | RFB wire interface | file | Prevents repeated inclusion of pure RFB wire declarations. | clean source interface |
 | PSTVNC_RFB_PROTOCOL_VERSION_SIZE | macro | src/rfb.h | RFB wire interface | public | Names the exact byte length of an RFB version banner. | RFB wire contract |
 | PSTVNC_RFB_SERVER_INIT_SIZE | macro | src/rfb.h | RFB wire interface | public | Names the fixed byte length of the ServerInit header before desktop name. | RFB wire contract |
@@ -648,6 +653,19 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | bytes | prototype parameter | src/rfb.h | pstvnc_rfb_parse_server_init | prototype | Supplies the fixed-size ServerInit header bytes. | RFB wire contract |
 | out | prototype parameter | src/rfb.h | pstvnc_rfb_parse_server_init | prototype | Receives parsed server geometry and pixel-format metadata. | RFB wire contract |
 | result | prototype parameter | src/rfb.h | pstvnc_rfb_security_result_ok | prototype | Supplies the four network-order SecurityResult bytes. | RFB wire contract |
+| PSTVNC_RFB_POINTER_EVENT_SIZE | macro | src/rfb.h | RFB wire interface | public | Names the exact six-byte RFB PointerEvent message size. | Issue #38 pointer publication |
+| PSTVNC_RFB_POINTER_BUTTON_LEFT | macro | src/rfb.h | RFB wire interface | public | Names native RFB button 1, conventionally the left pointer button. | RFB PointerEvent vocabulary |
+| PSTVNC_RFB_POINTER_BUTTON_MIDDLE | macro | src/rfb.h | RFB wire interface | public | Names native RFB button 2, conventionally the middle pointer button. | RFB PointerEvent vocabulary |
+| PSTVNC_RFB_POINTER_BUTTON_RIGHT | macro | src/rfb.h | RFB wire interface | public | Names native RFB button 3, conventionally the right pointer button. | RFB PointerEvent vocabulary |
+| PSTVNC_RFB_POINTER_WHEEL_UP | macro | src/rfb.h | RFB wire interface | public | Names the adopted native RFB button-4 mask used for one wheel-up press. | RFB PointerEvent vocabulary |
+| PSTVNC_RFB_POINTER_WHEEL_DOWN | macro | src/rfb.h | RFB wire interface | public | Names the adopted native RFB button-5 mask used for one wheel-down press. | RFB PointerEvent vocabulary |
+| PSTVNC_RFB_POINTER_WHEEL_LEFT | macro | src/rfb.h | RFB wire interface | public | Names the adopted native RFB button-6 mask used for one wheel-left press. | RFB PointerEvent vocabulary |
+| PSTVNC_RFB_POINTER_WHEEL_RIGHT | macro | src/rfb.h | RFB wire interface | public | Names the adopted native RFB button-7 mask used for one wheel-right press. | RFB PointerEvent vocabulary |
+| pstvnc_rfb_build_pointer_event | function declaration | src/rfb.h | RFB wire interface | public | Declares pure construction of one already-mapped native RFB PointerEvent. | Issue #38 pointer publication |
+| out | prototype parameter | src/rfb.h | pstvnc_rfb_build_pointer_event | public | Declares destination storage for the exact six-byte PointerEvent. | Issue #38 pointer publication |
+| button_mask | prototype parameter | src/rfb.h | pstvnc_rfb_build_pointer_event | public | Declares the already-mapped native RFB button mask accepted by the wire helper. | Issue #38 pointer publication |
+| x | prototype parameter | src/rfb.h | pstvnc_rfb_build_pointer_event | public | Declares the logical remote pointer X coordinate. | Issue #38 pointer publication |
+| y | prototype parameter | src/rfb.h | pstvnc_rfb_build_pointer_event | public | Declares the logical remote pointer Y coordinate. | Issue #38 pointer publication |
 | PSTVNC_RFB_IO_H | include guard | src/rfb_io.h | RFB transport interface | file | Prevents repeated inclusion of exact I/O seam declarations. | clean source interface |
 | pstvnc_rfb_io_read_exact | function declaration | src/rfb_io.h | RFB transport seam | platform | Requires the transport to deliver an exact protocol byte count or fail. | RFB framing across TCP |
 | socket_fd | parameter | src/rfb_io.h | pstvnc_rfb_io_read_exact | platform | Identifies the connected socket from which exact bytes are required. | RFB framing across TCP |
@@ -771,6 +789,12 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | pstvnc_rfb_session_receive_update | function | src/rfb_session.c | RFB session | public | Receives one ordinary update only when session and framebuffer authority are already valid. | Issue #7 live loop |
 | session | parameter | src/rfb_session.c | pstvnc_rfb_session_receive_update | local | Supplies the synchronized READY session. | Issue #7 live loop |
 | framebuffer | parameter | src/rfb_session.c | pstvnc_rfb_session_receive_update | local | Supplies the currently authoritative framebuffer to update or invalidate on failure. | authoritative framebuffer semantics |
+| pstvnc_rfb_session_send_pointer_event | function | src/rfb_session.c | RFB session | public | Serializes and sends one already-mapped PointerEvent only through a valid READY session and in-bounds negotiated geometry. | Issue #38 main-thread RFB pointer publication |
+| session | parameter | src/rfb_session.c | pstvnc_rfb_session_send_pointer_event | local | Supplies the synchronized READY RFB session that exclusively owns socket transmission. | Issue #38 main-thread RFB pointer publication |
+| button_mask | parameter | src/rfb_session.c | pstvnc_rfb_session_send_pointer_event | local | Supplies an already-mapped native RFB button mask; semantic input mapping remains outside the session. | Issue #38 main-thread RFB pointer publication |
+| x | parameter | src/rfb_session.c | pstvnc_rfb_session_send_pointer_event | local | Gives the pointer X coordinate validated against negotiated server width before transmission. | Issue #38 main-thread RFB pointer publication |
+| y | parameter | src/rfb_session.c | pstvnc_rfb_session_send_pointer_event | local | Gives the pointer Y coordinate validated against negotiated server height before transmission. | Issue #38 main-thread RFB pointer publication |
+| message | variable | src/rfb_session.c | pstvnc_rfb_session_send_pointer_event | local | Buffers one exact serialized PointerEvent before the session's exact write. | Issue #38 main-thread RFB pointer publication |
 | PSTVNC_RFB_SESSION_H | include guard | src/rfb_session.h | RFB session interface | file | Prevents repeated inclusion of RFB session state and lifecycle declarations. | clean source interface |
 | PSTVNC_RFB_SESSION_TEXT_MAX | macro | src/rfb_session.h | RFB session interface | public | Bounds retained desktop and server-rejection diagnostic text. | bounded RFB session storage |
 | PSTVNC_RFB_SESSION_MAX_ROW_PIXELS | macro | src/rfb_session.h | RFB session interface | public | Bounds the reusable Raw decode row scratch capacity. | bounded RFB session storage |
@@ -825,3 +849,8 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | expected_width | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_start | prototype | Gives the only acceptable server framebuffer width for this milestone. | fixed 704x462 baseline |
 | session | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_start | prototype | Supplies session storage that becomes owner of synchronized protocol state. | RFB session lifecycle |
 | socket_fd | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_start | prototype | Supplies the already-connected VNC socket descriptor. | RFB session lifecycle |
+| pstvnc_rfb_session_send_pointer_event | function declaration | src/rfb_session.h | RFB session interface | public | Declares READY-session transmission of one already-mapped native RFB PointerEvent. | Issue #38 main-thread RFB pointer publication |
+| session | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_send_pointer_event | public | Declares the synchronized READY session that owns PointerEvent transmission. | Issue #38 main-thread RFB pointer publication |
+| button_mask | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_send_pointer_event | public | Declares the already-mapped native RFB button mask supplied by application routing. | Issue #38 main-thread RFB pointer publication |
+| x | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_send_pointer_event | public | Declares the logical remote pointer X coordinate to validate and publish. | Issue #38 main-thread RFB pointer publication |
+| y | prototype parameter | src/rfb_session.h | pstvnc_rfb_session_send_pointer_event | public | Declares the logical remote pointer Y coordinate to validate and publish. | Issue #38 main-thread RFB pointer publication |

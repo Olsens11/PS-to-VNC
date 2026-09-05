@@ -75,6 +75,22 @@ int pstvnc_rfb_session_request_update(
     pstvnc_rfb_session_t *session,
     int incremental);
 
+/*
+ * Serialize and send one already-mapped native RFB PointerEvent through the
+ * main-thread-owned READY session.
+ *
+ * This is a transport/wire boundary only. The caller owns semantic-to-RFB
+ * button mapping, wheel press/release policy, and the distinction between
+ * locally interpreted, queued, and successfully published pointer state.
+ *
+ * Coordinates must lie inside the negotiated server desktop.
+ */
+int pstvnc_rfb_session_send_pointer_event(
+    pstvnc_rfb_session_t *session,
+    uint8_t button_mask,
+    uint16_t x,
+    uint16_t y);
+
 int pstvnc_rfb_session_receive_initial_frame(
     pstvnc_rfb_session_t *session,
     pstvnc_framebuffer_t *framebuffer);

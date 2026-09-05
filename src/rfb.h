@@ -18,9 +18,30 @@
 #define PSTVNC_RFB_SET_PIXEL_FORMAT_SIZE 20u
 #define PSTVNC_RFB_SET_ENCODINGS_RAW_SIZE 8u
 #define PSTVNC_RFB_FRAMEBUFFER_REQUEST_SIZE 10u
+#define PSTVNC_RFB_POINTER_EVENT_SIZE 6u
 
 #define PSTVNC_RFB_SECURITY_NONE 1u
 #define PSTVNC_RFB_ENCODING_RAW 0
+
+/*
+ * Native RFB PointerEvent button-mask bits.
+ *
+ * These are protocol vocabulary, deliberately distinct from the semantic mouse
+ * button vocabulary in mouse.h. In particular, semantic right-click is not
+ * assumed to have the same bit value as RFB button 3.
+ *
+ * Historical qualified PS-to-VNC behavior uses RFB buttons 4-7 as wheel
+ * up/down/left/right respectively. A wheel notch is represented by sending the
+ * wheel bit and then sending the ordinary held-button mask again at the same
+ * coordinates.
+ */
+#define PSTVNC_RFB_POINTER_BUTTON_LEFT        0x01u
+#define PSTVNC_RFB_POINTER_BUTTON_MIDDLE      0x02u
+#define PSTVNC_RFB_POINTER_BUTTON_RIGHT       0x04u
+#define PSTVNC_RFB_POINTER_WHEEL_UP           0x08u
+#define PSTVNC_RFB_POINTER_WHEEL_DOWN         0x10u
+#define PSTVNC_RFB_POINTER_WHEEL_LEFT         0x20u
+#define PSTVNC_RFB_POINTER_WHEEL_RIGHT        0x40u
 
 typedef struct pstvnc_rfb_server_init {
     uint16_t width;
@@ -72,5 +93,18 @@ void pstvnc_rfb_build_framebuffer_update_request(
     uint16_t y,
     uint16_t width,
     uint16_t height);
+
+/*
+ * Build one exact six-byte RFB PointerEvent.
+ *
+ * button_mask is already native RFB protocol vocabulary. This pure wire helper
+ * does not know controller mappings, semantic mouse bits, wheel policy, or
+ * application publication state.
+ */
+void pstvnc_rfb_build_pointer_event(
+    uint8_t out[PSTVNC_RFB_POINTER_EVENT_SIZE],
+    uint8_t button_mask,
+    uint16_t x,
+    uint16_t y);
 
 #endif

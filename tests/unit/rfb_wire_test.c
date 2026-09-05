@@ -174,6 +174,45 @@ static void test_framebuffer_request(void)
         sizeof(incremental_expected));
 }
 
+
+static void test_pointer_event(void)
+{
+    static const unsigned char expected[6] = {
+        5,
+        0x24,
+        0x01, 0x23,
+        0x04, 0x56
+    };
+    unsigned char actual[PSTVNC_RFB_POINTER_EVENT_SIZE];
+
+    /*
+     * Keep the protocol vocabulary explicit. The right button is RFB button 3,
+     * while wheel-left is RFB button 6.
+     */
+    CHECK(PSTVNC_RFB_POINTER_BUTTON_LEFT == 0x01u);
+    CHECK(PSTVNC_RFB_POINTER_BUTTON_MIDDLE == 0x02u);
+    CHECK(PSTVNC_RFB_POINTER_BUTTON_RIGHT == 0x04u);
+    CHECK(PSTVNC_RFB_POINTER_WHEEL_UP == 0x08u);
+    CHECK(PSTVNC_RFB_POINTER_WHEEL_DOWN == 0x10u);
+    CHECK(PSTVNC_RFB_POINTER_WHEEL_LEFT == 0x20u);
+    CHECK(PSTVNC_RFB_POINTER_WHEEL_RIGHT == 0x40u);
+
+    memset(actual, 0xa5, sizeof(actual));
+
+    pstvnc_rfb_build_pointer_event(
+        actual,
+        (uint8_t)(
+            PSTVNC_RFB_POINTER_BUTTON_RIGHT |
+            PSTVNC_RFB_POINTER_WHEEL_LEFT),
+        0x0123u,
+        0x0456u);
+
+    check_bytes(
+        actual,
+        expected,
+        sizeof(expected));
+}
+
 int main(void)
 {
     test_protocol_version();
@@ -183,6 +222,7 @@ int main(void)
     test_set_pixel_format();
     test_set_raw_encoding();
     test_framebuffer_request();
+    test_pointer_event();
 
     if (failures != 0) {
         fprintf(stderr, "rfb_wire_test: %d failure(s)\n", failures);

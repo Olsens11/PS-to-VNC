@@ -196,3 +196,25 @@ void pstvnc_rfb_build_framebuffer_update_request(
     write_be16(&out[6], width);
     write_be16(&out[8], height);
 }
+
+void pstvnc_rfb_build_pointer_event(
+    uint8_t out[PSTVNC_RFB_POINTER_EVENT_SIZE],
+    uint8_t button_mask,
+    uint16_t x,
+    uint16_t y)
+{
+    /*
+     * RFB 3.x client-to-server PointerEvent:
+     *
+     *   byte 0     message type 5
+     *   byte 1     native RFB button mask
+     *   bytes 2-3  X position, big endian
+     *   bytes 4-5  Y position, big endian
+     *
+     * No semantic-input interpretation belongs in this layer.
+     */
+    out[0] = 5;
+    out[1] = button_mask;
+    write_be16(&out[2], x);
+    write_be16(&out[4], y);
+}

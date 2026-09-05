@@ -595,6 +595,50 @@ int pstvnc_rfb_session_request_update(
     return 1;
 }
 
+int pstvnc_rfb_session_send_pointer_event(
+    pstvnc_rfb_session_t *session,
+    uint8_t button_mask,
+    uint16_t x,
+    uint16_t y)
+{
+    uint8_t message[PSTVNC_RFB_POINTER_EVENT_SIZE];
+
+    /*
+     * Input publication is permitted only after the initial authoritative
+     * desktop has completed and the session is READY.
+     *
+     * Keep geometry validation at the session boundary even though the mouse
+     * interpreter also clamps coordinates. The RFB owner should never put an
+     * out-of-desktop pointer coordinate on the wire merely because another
+     * domain was expected to validate it first.
+     */
+    if (session == NULL ||
+        session->socket_fd < 0 ||
+        session->state != PSTVNC_RFB_SESSION_READY ||
+        session->server_init.width == 0 ||
+        session->server_init.height == 0 ||
+        x >= session->server_init.width ||
+        y >= session->server_init.height)
+        return 0;
+
+    pstvnc_rfb_build_pointer_event(
+        message,
+        button_mask,
+        x,
+        y);
+
+    if (!write_exact(
+            session->socket_fd,
+            message,
+            sizeof(message)))
+        return fail(
+            session,
+            PSTVNC_RFB_SESSION_ERROR_IO);
+
+    session->error = PSTVNC_RFB_SESSION_ERROR_NONE;
+    return 1;
+}
+
 int pstvnc_rfb_session_receive_initial_frame(
     pstvnc_rfb_session_t *session,
     pstvnc_framebuffer_t *framebuffer)
