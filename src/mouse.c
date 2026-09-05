@@ -459,7 +459,7 @@ int pstvnc_mouse_init(
     return 1;
 }
 
-void pstvnc_mouse_reset_derived(
+void pstvnc_mouse_reset_transient_history(
     pstvnc_mouse_t *mouse)
 {
     if (mouse == NULL)
@@ -468,18 +468,25 @@ void pstvnc_mouse_reset_derived(
     reset_dpad_motion(mouse);
     reset_analog_motion(mouse);
 
-    /*
-     * A hard mouse-state boundary also leaves analog wheel mode. Cursor
-     * position and current remote click-button state remain authoritative,
-     * but no pre-boundary mode, fractional motion, or repeat history may
-     * resume afterward.
-     */
-    mouse->wheel_mode_enabled = 0;
-
     mouse->last_wheel_direction =
         PSTVNC_MOUSE_WHEEL_NONE;
 
     mouse->wheel_repeat_countdown = 0;
+}
+
+void pstvnc_mouse_reset_derived(
+    pstvnc_mouse_t *mouse)
+{
+    if (mouse == NULL)
+        return;
+
+    /*
+     * A true hard physical/ownership boundary leaves persistent analog-wheel
+     * mode as well as transient response history. Cursor position and current
+     * remote click-button state remain authoritative.
+     */
+    pstvnc_mouse_reset_transient_history(mouse);
+    mouse->wheel_mode_enabled = 0;
 }
 
 int pstvnc_mouse_rebase_published_state(

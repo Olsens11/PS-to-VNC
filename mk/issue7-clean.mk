@@ -54,7 +54,7 @@ $(EE_BIN): $(PS2IP_LIB) | $(BUILD_DIR)
 $(BUILD_DIR)/main.o: src/main.c src/app.h src/platform/ps2_system.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics.h src/display.h src/framebuffer.h src/input.h src/input_runtime.h src/mouse.h src/pad.h src/rfb_session.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h | $(BUILD_DIR)
+$(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics.h src/display.h src/framebuffer.h src/input.h src/input_runtime.h src/local_ui_presentation.h src/local_ui.h src/osk.h src/osk_render.h src/mouse.h src/pad.h src/rfb_session.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h src/controller.h src/local_controller.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/diagnostics.o: src/diagnostics.c src/diagnostics.h | $(BUILD_DIR)
@@ -81,7 +81,22 @@ $(BUILD_DIR)/input.o: src/input.c src/input.h src/mouse.h | $(BUILD_DIR)
 $(BUILD_DIR)/mouse.o: src/mouse.c src/mouse.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/input_runtime.o: src/input_runtime.c src/input_runtime.h src/input.h src/mouse.h src/pad.h | $(BUILD_DIR)
+$(BUILD_DIR)/input_runtime.o: src/input_runtime.c src/input_runtime.h src/input.h src/controller.h src/mouse.h src/pad.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/keyboard.o: src/keyboard.c src/keyboard.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/local_ui.o: src/local_ui.c src/local_ui.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/osk.o: src/osk.c src/osk.h src/keyboard.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/osk_render.o: src/osk_render.c src/osk_render.h src/osk.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/local_ui_presentation.o: src/local_ui_presentation.c src/local_ui_presentation.h src/local_ui.h src/osk.h src/osk_render.h src/display.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/pad.o: src/pad.c src/pad.h | $(BUILD_DIR)

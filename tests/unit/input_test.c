@@ -35,6 +35,21 @@ static pstvnc_input_event_t make_mouse_event(
     return event;
 }
 
+static pstvnc_input_event_t make_keyboard_tap_event(
+    uint32_t keysym,
+    unsigned int modifiers)
+{
+    pstvnc_input_event_t event;
+
+    memset(&event, 0, sizeof(event));
+
+    event.type = PSTVNC_INPUT_EVENT_KEYBOARD_TAP;
+    event.payload.keyboard_tap.keysym = keysym;
+    event.payload.keyboard_tap.modifiers = modifiers;
+
+    return event;
+}
+
 static void test_initial_state_is_empty(void)
 {
     pstvnc_input_queue_t queue;
@@ -99,6 +114,46 @@ static void test_one_typed_event_round_trips(void)
         PSTVNC_MOUSE_WHEEL_NONE);
 
     assert(pstvnc_input_queue_event_count(&queue) == 0u);
+}
+
+static void test_keyboard_tap_event_round_trips(void)
+{
+    pstvnc_input_queue_t queue;
+    pstvnc_input_event_t input_event;
+    pstvnc_input_event_t output_event;
+
+    pstvnc_input_queue_init(&queue);
+
+    input_event =
+        make_keyboard_tap_event(
+            0x0000ff09u,
+            PSTVNC_KEYBOARD_MODIFIER_SHIFT |
+            PSTVNC_KEYBOARD_MODIFIER_CTRL);
+
+    assert(
+        pstvnc_input_queue_push(
+            &queue,
+            &input_event));
+
+    assert(
+        pstvnc_input_queue_pop(
+            &queue,
+            &output_event));
+
+    assert(
+        output_event.type ==
+        PSTVNC_INPUT_EVENT_KEYBOARD_TAP);
+
+    assert(
+        output_event.payload.keyboard_tap.keysym ==
+        0x0000ff09u);
+
+    assert(
+        output_event.payload.keyboard_tap.modifiers ==
+        (
+            PSTVNC_KEYBOARD_MODIFIER_SHIFT |
+            PSTVNC_KEYBOARD_MODIFIER_CTRL
+        ));
 }
 
 static void test_queue_preserves_payload_without_interpreting_it(void)
@@ -466,6 +521,7 @@ int main(void)
 {
     test_initial_state_is_empty();
     test_one_typed_event_round_trips();
+    test_keyboard_tap_event_round_trips();
     test_queue_preserves_payload_without_interpreting_it();
     test_fifo_order_is_preserved();
     test_full_queue_rejects_new_event_without_mutation();

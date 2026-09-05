@@ -117,11 +117,13 @@ typedef struct pstvnc_mouse_update {
  * local input interpretation. They may temporarily be newer than the pointer
  * state application/main has successfully published to the remote RFB peer.
  *
- * Wheel mode persists across ordinary samples, but it and the fractional
- * movement/repeat fields are controller-derived interpretation history.
- * pstvnc_mouse_reset_derived() deliberately clears that history at a hard
- * ownership/context boundary without silently changing the interpreter's
- * current cursor position or click-button state.
+ * Wheel mode is a persistent interaction mode selected by the user through
+ * the L3 wheel-click toggle. Fractional movement and repeat fields are
+ * transient controller-derived response history.
+ *
+ * pstvnc_mouse_reset_transient_history() clears only transient response
+ * history. pstvnc_mouse_reset_derived() additionally leaves persistent wheel
+ * mode at a true hard physical/ownership boundary.
  *
  * pstvnc_mouse_rebase_published_state() is the explicit boundary used when
  * application/main must replace that local interpreted state with its own
@@ -155,13 +157,26 @@ int pstvnc_mouse_init(
     unsigned int height);
 
 /*
- * Forget controller-derived motion, repeat, and wheel-mode history at a hard
- * ownership/context boundary while preserving the interpreter's current
- * durable cursor and click-button state.
+ * Forget transient controller-derived movement, fractional, direction, and
+ * repeat history while preserving persistent wheel mode and durable
+ * cursor/button state.
  *
- * This function does not claim that preserved state has already been published
- * remotely. Use pstvnc_mouse_rebase_published_state() when application/main
- * needs to reconcile the interpreter with last-successfully-published state.
+ * Use this when interpretation pauses without losing physical controller
+ * continuity, such as temporary local-foreground ownership.
+ */
+void pstvnc_mouse_reset_transient_history(
+    pstvnc_mouse_t *mouse);
+
+/*
+ * Establish a true hard mouse-state boundary.
+ *
+ * This performs the transient-history reset above and additionally leaves
+ * persistent analog-wheel mode. Durable cursor and click-button state remain
+ * unchanged.
+ *
+ * This function does not claim that preserved pointer state has already been
+ * published remotely. Use pstvnc_mouse_rebase_published_state() when
+ * application/main must reconcile it with last-successfully-published state.
  */
 void pstvnc_mouse_reset_derived(
     pstvnc_mouse_t *mouse);

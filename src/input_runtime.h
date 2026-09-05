@@ -12,6 +12,7 @@
  *   - one ordinary pstvnc_input_queue_t;
  *   - the semaphore protecting that queue across producer/consumer threads;
  *   - cooperative thread shutdown;
+ *   - a mouse-interpretation suspension seam that keeps libpad polling live;
  *   - the explicit libpad ownership-handoff request/acknowledgement seam.
  *
  * This interface does not serialize RFB, touch the VNC socket, own UI/display
@@ -103,6 +104,35 @@ typedef struct pstvnc_input_runtime {
     int physical_sample_active;
 
     volatile int stop_requested;
+
+    /*
+     * Mouse-interpretation suspension is distinct from libpad handoff.
+     *
+     * Application/main requests suspension. The controller worker acknowledges
+     * only after pre-boundary queued input has been discarded and transient
+     * controller-derived mouse response history has been reset.
+     *
+     * While acknowledged, the worker continues polling the physical controller
+     * but does not mutate pstvnc_mouse_t. If physical continuity is lost during
+     * that interval, the worker records the hard-boundary fact separately and
+     * applies the ordinary hard mouse reset before interpretation can resume.
+     *
+     * Application/main must explicitly reconcile the frozen mouse interpreter
+     * with its exact successfully-published remote pointer state before resume.
+     */
+    volatile int mouse_interpretation_suspend_requested;
+    volatile int mouse_interpretation_suspended;
+    volatile int suspended_mouse_state_rebased;
+
+    /*
+     * Worker-owned fact for the currently acknowledged mouse-suspension epoch.
+     *
+     * A physical controller continuity loss is a true hard mouse boundary, but
+     * the worker must not mutate pstvnc_mouse_t while application/main owns the
+     * suspended rebase interval. Record the loss here and apply the hard reset
+     * before withdrawing the suspension acknowledgement.
+     */
+    int suspended_physical_continuity_lost;
 
     /*
      * Explicit libpad ownership handoff:
@@ -219,6 +249,61 @@ pstvnc_input_runtime_last_error(
  * pointer state and call pstvnc_input_runtime_rebase_published_mouse_state()
  * before returning libpad ownership.
  */
+/*
+ * Establish a synchronous mouse-interpretation suspension boundary while the
+ * controller worker retains libpad ownership and continues physical polling.
+ *
+ * Success proves:
+ *
+ *   - pre-boundary queued semantic input has been discarded;
+ *   - transient mouse movement/repeat/fractional history has been reset
+ *     without suspension itself revoking persistent analog-wheel mode;
+ *   - the worker will not advance pstvnc_mouse_t while suspension remains
+ *     requested;
+ *   - ordinary libpad polling continues;
+ *   - any later physical-continuity loss is remembered for this suspension
+ *     epoch and cannot allow pre-loss persistent mouse mode to resume.
+ *
+ * Durable cursor/button state is deliberately not guessed at this boundary.
+ * Application/main owns the last successfully-published remote pointer state.
+ */
+int pstvnc_input_runtime_suspend_mouse_interpretation(
+    pstvnc_input_runtime_t *runtime);
+
+/*
+ * Reconcile the suspended mouse interpreter to application/main's exact
+ * successfully-published remote pointer state.
+ *
+ * Local foreground entry must first publish any necessary remote click release
+ * at the frozen coordinates. Accordingly, this suspension boundary accepts
+ * only a neutral published click state.
+ *
+ * This pointer-state reconciliation does not itself revoke the persistent
+ * analog-wheel mode selected before local foreground ownership.
+ */
+int pstvnc_input_runtime_rebase_suspended_mouse_state(
+    pstvnc_input_runtime_t *runtime,
+    unsigned int published_cursor_x,
+    unsigned int published_cursor_y,
+    unsigned char published_click_buttons);
+
+/*
+ * Resume mouse interpretation after the higher-level foreground owner has
+ * proven its physical-release quarantine complete.
+ *
+ * This function deliberately does not know which controller buttons belong to
+ * any local UI. Product meaning remains above input_runtime.
+ *
+ * Before acknowledgement withdrawal, the worker applies the ordinary hard
+ * mouse reset if physical continuity was lost at any point during this
+ * suspension epoch.
+ *
+ * Success includes acknowledgement withdrawal, so the completed suspension
+ * epoch cannot be mistaken for a later request.
+ */
+int pstvnc_input_runtime_resume_mouse_interpretation(
+    pstvnc_input_runtime_t *runtime);
+
 int pstvnc_input_runtime_request_pad_handoff(
     pstvnc_input_runtime_t *runtime);
 

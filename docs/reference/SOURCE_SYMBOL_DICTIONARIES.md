@@ -4,9 +4,9 @@ This portal is generated from participating product `SYMBOLS.md` files.
 
 | Directory | Dictionary | Coverage | Symbols |
 |---|---|---|---:|
-| `src` | [`src/SYMBOLS.md`](../../src/SYMBOLS.md) | COMPLETE | 471 |
+| `src` | [`src/SYMBOLS.md`](../../src/SYMBOLS.md) | COMPLETE | 1426 |
 | `src/diagnostics` | [`src/diagnostics/SYMBOLS.md`](../../src/diagnostics/SYMBOLS.md) | COMPLETE | 52 |
-| `src/platform` | [`src/platform/SYMBOLS.md`](../../src/platform/SYMBOLS.md) | COMPLETE | 85 |
+| `src/platform` | [`src/platform/SYMBOLS.md`](../../src/platform/SYMBOLS.md) | COMPLETE | 117 |
 
 Generate the comprehensive view with:
 

@@ -32,7 +32,9 @@ static int input_event_type_is_valid(
     pstvnc_input_event_type_t event_type)
 {
     switch (event_type) {
+    case PSTVNC_INPUT_EVENT_CONTROLLER_STATE:
     case PSTVNC_INPUT_EVENT_MOUSE_UPDATE:
+    case PSTVNC_INPUT_EVENT_KEYBOARD_TAP:
         return 1;
 
     case PSTVNC_INPUT_EVENT_NONE:

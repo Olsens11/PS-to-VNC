@@ -5,7 +5,8 @@ GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
 This directory owns genuinely PS2-specific system, controller-service
-bootstrap, Ethernet, and GS mechanisms.
+bootstrap, Ethernet, and GS mechanisms, including desktop-plus-local-overlay
+presentation.
 The clean Issue #7 platform surface is limited to the six `ps2_*.[ch]` files
 listed below; no retained historical platform module is silently included.
 
@@ -13,12 +14,8 @@ listed below; no retained historical platform module is silently included.
 |---|---|---|---|---|---|---|
 | display | variable | src/platform/ps2_graphics.c | PS2 graphics | file static | Owns the gsKit global display instance used by the fixed Standard 480p presentation path. | fixed Standard 480p presentation |
 | desktop_texture | variable | src/platform/ps2_graphics.c | PS2 graphics | file static | Owns the reusable gsKit texture descriptor for the complete 704x462 desktop upload. | fixed Standard 480p presentation |
-| texture_configured | variable | src/platform/ps2_graphics.c | PS2 graphics | file static | Records whether the reusable desktop texture has received its one-time VRAM allocation. | fixed Standard 480p presentation |
-| configure_texture | function | src/platform/ps2_graphics.c | PS2 graphics | file | Initializes the desktop texture descriptor and allocates its persistent GS VRAM address. | fixed Standard 480p presentation |
-| gs_pixels | parameter | src/platform/ps2_graphics.c | configure_texture | function | Points at the caller-owned GS16 pixel buffer initially attached to the texture descriptor. | fixed Standard 480p presentation |
 | pstvnc_ps2_graphics_init | function | src/platform/ps2_graphics.c | PS2 graphics | public | Initializes dmaKit, gsKit, and the fixed Standard 480p presentation state exactly once. | ISSUE7_MINIMAL_CORE: Fixed Standard 480p presentation |
 | pstvnc_ps2_graphics_present | function | src/platform/ps2_graphics.c | PS2 graphics | public | Uploads and presents one complete coherent 704x462 GS16 desktop, then synchronizes the flip. | fixed Standard 480p presentation |
-| gs_pixels | parameter | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | function | Points at the complete prepared GS16 desktop that must remain stable through synchronized presentation. | fixed Standard 480p presentation |
 | pixel_count | parameter | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | function | Supplies the caller pixel count, which must exactly equal the fixed display pixel count. | fixed Standard 480p presentation |
 | clear_color | constant | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | local | Holds the opaque black GS clear color used before drawing the desktop texture. | fixed Standard 480p presentation |
 | texture_color | constant | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | local | Holds the neutral GS texture modulation color used to preserve uploaded desktop pixels. | fixed Standard 480p presentation |
@@ -26,7 +23,6 @@ listed below; no retained historical platform module is silently included.
 | PSTVNC_PS2_GRAPHICS_H | include-guard macro | src/platform/ps2_graphics.h | PS2 graphics interface | header | Prevents duplicate inclusion of the narrow clean PS2 graphics interface. | PS2 platform mechanisms |
 | pstvnc_ps2_graphics_init | function declaration | src/platform/ps2_graphics.h | PS2 graphics interface | public | Declares initialization of dmaKit and the fixed hardware-proven Standard 480p GS instance. | fixed Standard 480p presentation |
 | pstvnc_ps2_graphics_present | function declaration | src/platform/ps2_graphics.h | PS2 graphics interface | public | Declares complete upload, draw, execution, and synchronized flip of GS pixels. | CLEAN_ARCHITECTURE: PS2 platform mechanisms |
-| gs_pixels | prototype parameter | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_present | prototype | Names the caller-owned GS16 desktop pointer in the public presentation contract. | fixed Standard 480p presentation |
 | pixel_count | prototype parameter | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_present | prototype | Names the exact desktop pixel-count argument in the public presentation contract. | fixed Standard 480p presentation |
 | pstvnc_ps2_graphics_shutdown | function declaration | src/platform/ps2_graphics.h | PS2 graphics interface | public | Declares release and reset of clean PS2 graphics ownership. | PS2 platform mechanisms |
 | DEV9_irx | external symbol declaration | src/platform/ps2_network.c | embedded network modules | linker seam | Names the linked embedded DEV9 IOP module image loaded first during Ethernet startup. | private-Ethernet platform seam |
@@ -103,3 +99,33 @@ listed below; no retained historical platform module is silently included.
 | microseconds | parameter | src/platform/ps2_system.c | pstvnc_ps2_system_delay_us | function | Supplies the requested EE-thread delay interval in microseconds. | Issue #38 responsive RFB scheduling |
 | pstvnc_ps2_system_delay_us | function declaration | src/platform/ps2_system.h | PS2 system interface | public | Declares the narrow PS2 thread-delay platform seam used by responsive application polling. | Issue #38 responsive RFB scheduling |
 | microseconds | prototype parameter | src/platform/ps2_system.h | pstvnc_ps2_system_delay_us | prototype | Names the requested microsecond delay in the public PS2 system interface. | Issue #38 responsive RFB scheduling |
+| desktop_texture_configured | variable | src/platform/ps2_graphics.c | PS2 graphics | file | Stores desktop texture configured state owned by PS2 graphics. | Issue #39: local overlay presentation |
+| local_overlay_texture | variable | src/platform/ps2_graphics.c | PS2 graphics | file | Stores local overlay texture state owned by PS2 graphics. | Issue #39: local overlay presentation |
+| local_overlay_texture_configured | variable | src/platform/ps2_graphics.c | PS2 graphics | file | Stores local overlay texture configured state owned by PS2 graphics. | Issue #39: local overlay presentation |
+| local_overlay_width | variable | src/platform/ps2_graphics.c | PS2 graphics | file | Stores local overlay width state owned by PS2 graphics. | Issue #39: local overlay presentation |
+| local_overlay_height | variable | src/platform/ps2_graphics.c | PS2 graphics | file | Stores local overlay height state owned by PS2 graphics. | Issue #39: local overlay presentation |
+| configure_desktop_texture | function | src/platform/ps2_graphics.c | PS2 graphics | file | Configures desktop texture. | Issue #39: local overlay presentation |
+| desktop_pixels | parameter | src/platform/ps2_graphics.c | configure_desktop_texture | local | Supplies desktop pixels to configure_desktop_texture. | Issue #39: local overlay presentation |
+| local_overlay_is_valid | function | src/platform/ps2_graphics.c | PS2 graphics | file | Implements local overlay is valid. | Issue #39: local overlay presentation |
+| overlay | parameter | src/platform/ps2_graphics.c | local_overlay_is_valid | local | Supplies overlay to local_overlay_is_valid. | Issue #39: local overlay presentation |
+| expected_pixels | variable | src/platform/ps2_graphics.c | local_overlay_is_valid | local | Stores expected pixels while local_overlay_is_valid runs. | Issue #39: local overlay presentation |
+| configure_local_overlay_texture | function | src/platform/ps2_graphics.c | PS2 graphics | file | Configures local overlay texture. | Issue #39: local overlay presentation |
+| overlay | parameter | src/platform/ps2_graphics.c | configure_local_overlay_texture | local | Supplies overlay to configure_local_overlay_texture. | Issue #39: local overlay presentation |
+| desktop_pixels | parameter | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | local | Supplies desktop pixels to pstvnc_ps2_graphics_present. | Issue #39: local overlay presentation |
+| desktop_pixel_count | parameter | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | local | Supplies desktop pixel count to pstvnc_ps2_graphics_present. | Issue #39: local overlay presentation |
+| local_overlay | parameter | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | local | Supplies local overlay to pstvnc_ps2_graphics_present. | Issue #39: local overlay presentation |
+| x0 | variable | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | local | Stores x0 while pstvnc_ps2_graphics_present runs. | Issue #39: local overlay presentation |
+| y0 | variable | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | local | Stores y0 while pstvnc_ps2_graphics_present runs. | Issue #39: local overlay presentation |
+| x1 | variable | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | local | Stores x1 while pstvnc_ps2_graphics_present runs. | Issue #39: local overlay presentation |
+| y1 | variable | src/platform/ps2_graphics.c | pstvnc_ps2_graphics_present | local | Stores y1 while pstvnc_ps2_graphics_present runs. | Issue #39: local overlay presentation |
+| pstvnc_ps2_graphics_overlay | structure | src/platform/ps2_graphics.h | PS2 graphics interface | public | Defines the state carried by ps2 graphics overlay. | Issue #39: local overlay presentation |
+| pixels | field | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_overlay | public | Stores pixels within ps2 graphics overlay. | Issue #39: local overlay presentation |
+| pixel_count | field | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_overlay | public | Stores pixel count within ps2 graphics overlay. | Issue #39: local overlay presentation |
+| width | field | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_overlay | public | Stores width within ps2 graphics overlay. | Issue #39: local overlay presentation |
+| height | field | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_overlay | public | Stores height within ps2 graphics overlay. | Issue #39: local overlay presentation |
+| x | field | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_overlay | public | Stores x within ps2 graphics overlay. | Issue #39: local overlay presentation |
+| y | field | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_overlay | public | Stores y within ps2 graphics overlay. | Issue #39: local overlay presentation |
+| pstvnc_ps2_graphics_overlay_t | type | src/platform/ps2_graphics.h | PS2 graphics interface | public | Names the ps2 graphics overlay t value type. | Issue #39: local overlay presentation |
+| desktop_pixels | prototype parameter | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_present | prototype | Declares the desktop pixels argument accepted by pstvnc_ps2_graphics_present. | Issue #39: local overlay presentation |
+| desktop_pixel_count | prototype parameter | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_present | prototype | Declares the desktop pixel count argument accepted by pstvnc_ps2_graphics_present. | Issue #39: local overlay presentation |
+| local_overlay | prototype parameter | src/platform/ps2_graphics.h | pstvnc_ps2_graphics_present | prototype | Declares the local overlay argument accepted by pstvnc_ps2_graphics_present. | Issue #39: local overlay presentation |

@@ -519,6 +519,74 @@ static void test_derived_reset_preserves_remote_pointer_state(void)
     assert(update.cursor_y == cursor_y);
 }
 
+static void test_transient_history_reset_preserves_wheel_mode(void)
+{
+    pstvnc_mouse_t mouse;
+    pstvnc_mouse_input_t input = neutral_input();
+
+    assert(pstvnc_mouse_init(&mouse, 640u, 480u));
+
+    /*
+     * Enter the user-selected persistent analog-wheel mode normally.
+     */
+    input.wheel_click_pressed = 1;
+    (void)sample(&mouse, &input);
+
+    assert(mouse.wheel_mode_enabled);
+
+    /*
+     * Seed every transient response-history family so the test proves that
+     * preserving the mode does not accidentally preserve stale motion/repeat
+     * state.
+     */
+    mouse.dpad_hold_direction =
+        PSTVNC_MOUSE_DIRECTION_RIGHT;
+    mouse.dpad_hold_ticks = 7u;
+    mouse.dpad_x_q8 = 11;
+    mouse.dpad_y_q8 = -13;
+
+    mouse.analog_x_q8 = 17;
+    mouse.analog_y_q8 = -19;
+
+    mouse.last_wheel_direction =
+        PSTVNC_MOUSE_WHEEL_DOWN;
+    mouse.wheel_repeat_countdown = 3u;
+
+    mouse.cursor_x = 123;
+    mouse.cursor_y = 234;
+    mouse.click_buttons =
+        PSTVNC_MOUSE_BUTTON_LCLICK;
+
+    pstvnc_mouse_reset_transient_history(&mouse);
+
+    /*
+     * Foreground-style suspension preserves durable interaction state.
+     */
+    assert(mouse.wheel_mode_enabled);
+    assert(mouse.cursor_x == 123);
+    assert(mouse.cursor_y == 234);
+    assert(
+        mouse.click_buttons ==
+        PSTVNC_MOUSE_BUTTON_LCLICK);
+
+    /*
+     * But no pre-boundary movement or repeat history may resume.
+     */
+    assert(mouse.dpad_hold_direction == 0);
+    assert(mouse.dpad_hold_ticks == 0u);
+    assert(mouse.dpad_x_q8 == 0);
+    assert(mouse.dpad_y_q8 == 0);
+    assert(mouse.analog_x_q8 == 0);
+    assert(mouse.analog_y_q8 == 0);
+
+    assert(
+        mouse.last_wheel_direction ==
+        PSTVNC_MOUSE_WHEEL_NONE);
+
+    assert(mouse.wheel_repeat_countdown == 0u);
+}
+
+
 static void test_explicit_derived_reset(void)
 {
     pstvnc_mouse_t mouse;
@@ -646,6 +714,7 @@ int main(void)
     test_wheel_click_toggles_analog_wheel();
     test_dpad_wheel_beats_analog_wheel();
     test_derived_reset_preserves_remote_pointer_state();
+    test_transient_history_reset_preserves_wheel_mode();
     test_explicit_derived_reset();
 
     puts("MOUSE_TEST=PASS");

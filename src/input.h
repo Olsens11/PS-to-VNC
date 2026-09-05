@@ -12,10 +12,10 @@
  * mouse update. That result can then be placed in this ordinary event stream.
  * The application-side consumer decides where the semantic event is routed.
  *
- * Mouse updates are the first payload family earned by Issue #38. The envelope
- * is deliberately capable of receiving additional typed payload members when a
- * later reconstruction stage earns a real semantic event family; no unused
- * keyboard/UI/action vocabulary is declared in advance.
+ * Mouse updates were the first payload family earned by Issue #38. Issue #39
+ * adds a compact keyboard-tap intent plus platform-neutral physical-controller
+ * state facts needed by foreground routing. Controller facts remain physical
+ * observations only; no OSK/UI action vocabulary is embedded in this queue.
  *
  * Context:
  *   docs/PROJECT_INTENT.md, composition and complexity hierarchy;
@@ -26,6 +26,8 @@
 #ifndef PSTVNC_INPUT_H
 #define PSTVNC_INPUT_H
 
+#include "controller.h"
+#include "keyboard.h"
 #include "mouse.h"
 
 /*
@@ -50,7 +52,9 @@
  */
 typedef enum pstvnc_input_event_type {
     PSTVNC_INPUT_EVENT_NONE = 0,
-    PSTVNC_INPUT_EVENT_MOUSE_UPDATE
+    PSTVNC_INPUT_EVENT_CONTROLLER_STATE,
+    PSTVNC_INPUT_EVENT_MOUSE_UPDATE,
+    PSTVNC_INPUT_EVENT_KEYBOARD_TAP
 } pstvnc_input_event_type_t;
 
 /*
@@ -60,11 +64,14 @@ typedef enum pstvnc_input_event_type {
  * generic byte buffer, casts, allocation, callback registry, or message-bus
  * abstraction. Each future payload remains an ordinary readable C value.
  *
- * Only mouse_update exists today because it is the only ordinary semantic
- * payload earned by the current reconstruction stage.
+ * Each payload family is an ordinary typed value. Physical controller facts,
+ * mouse updates, and logical keyboard taps remain distinct so application-side
+ * routing never has to infer which ownership layer produced a value.
  */
 typedef union pstvnc_input_event_payload {
+    pstvnc_controller_state_t controller_state;
     pstvnc_mouse_update_t mouse_update;
+    pstvnc_keyboard_tap_t keyboard_tap;
 } pstvnc_input_event_payload_t;
 
 /*

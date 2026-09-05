@@ -633,6 +633,42 @@ int pstvnc_rfb_session_request_update(
     return 1;
 }
 
+int pstvnc_rfb_session_send_key_event(
+    pstvnc_rfb_session_t *session,
+    int down,
+    uint32_t keysym)
+{
+    uint8_t message[PSTVNC_RFB_KEY_EVENT_SIZE];
+
+    /*
+     * Keyboard publication, like pointer publication, is legal only after the
+     * initial authoritative desktop has completed and the session is READY.
+     *
+     * Key meaning is intentionally not validated here. The session accepts the
+     * complete native 32-bit X11 keysym space and owns only its RFB encoding.
+     */
+    if (session == NULL ||
+        session->socket_fd < 0 ||
+        session->state != PSTVNC_RFB_SESSION_READY)
+        return 0;
+
+    pstvnc_rfb_build_key_event(
+        message,
+        down,
+        keysym);
+
+    if (!write_exact(
+            session->socket_fd,
+            message,
+            sizeof(message)))
+        return fail(
+            session,
+            PSTVNC_RFB_SESSION_ERROR_IO);
+
+    session->error = PSTVNC_RFB_SESSION_ERROR_NONE;
+    return 1;
+}
+
 int pstvnc_rfb_session_send_pointer_event(
     pstvnc_rfb_session_t *session,
     uint8_t button_mask,

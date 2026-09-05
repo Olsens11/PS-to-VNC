@@ -224,6 +224,91 @@ static void test_live_update_request(void)
 }
 
 
+static void test_key_event_send(void)
+{
+    static const unsigned char expected[16] = {
+        4, 1, 0, 0,
+        0x00, 0x00, 0xff, 0x0d,
+        4, 0, 0, 0,
+        0x00, 0x00, 0xff, 0x0d
+    };
+
+    pstvnc_rfb_session_t session;
+
+    script_reset();
+    pstvnc_rfb_session_init(&session);
+
+    session.socket_fd = 7;
+    session.state = PSTVNC_RFB_SESSION_READY;
+    session.server_init.width = 704;
+    session.server_init.height = 462;
+
+    CHECK(
+        pstvnc_rfb_session_send_key_event(
+            &session,
+            1,
+            0x0000ff0du));
+
+    CHECK(
+        pstvnc_rfb_session_send_key_event(
+            &session,
+            0,
+            0x0000ff0du));
+
+    CHECK(output_size == sizeof(expected));
+    CHECK(memcmp(output, expected, sizeof(expected)) == 0);
+    CHECK(session.state == PSTVNC_RFB_SESSION_READY);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
+
+    /*
+     * Input publication before READY is rejected without emitting bytes and
+     * without manufacturing an unrelated session failure.
+     */
+    script_reset();
+    session.state = PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME;
+
+    CHECK(
+        !pstvnc_rfb_session_send_key_event(
+            &session,
+            1,
+            0x00000061u));
+
+    CHECK(output_size == 0);
+    CHECK(
+        session.state ==
+        PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME);
+
+    CHECK(
+        !pstvnc_rfb_session_send_key_event(
+            NULL,
+            1,
+            0x00000061u));
+
+    /*
+     * Once an exact KeyEvent write is attempted, transport failure is a real
+     * synchronized-session failure just like PointerEvent publication.
+     */
+    script_reset();
+    pstvnc_rfb_session_init(&session);
+
+    session.socket_fd = 7;
+    session.state = PSTVNC_RFB_SESSION_READY;
+    session.server_init.width = 704;
+    session.server_init.height = 462;
+
+    force_write_failure = 1;
+
+    CHECK(
+        !pstvnc_rfb_session_send_key_event(
+            &session,
+            1,
+            0x00000061u));
+
+    CHECK(output_size == 0);
+    CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_IO);
+}
+
 static void test_pointer_event_send(void)
 {
     static const unsigned char expected[6] = {
@@ -414,6 +499,7 @@ int main(void)
 {
     test_success();
     test_live_update_request();
+    test_key_event_send();
     test_pointer_event_send();
     test_none_missing();
     test_server_rejection();

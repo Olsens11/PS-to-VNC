@@ -175,6 +175,60 @@ static void test_framebuffer_request(void)
 }
 
 
+static void test_key_event(void)
+{
+    static const unsigned char enter_down[8] = {
+        4, 1, 0, 0,
+        0x00, 0x00, 0xff, 0x0d
+    };
+
+    static const unsigned char enter_up[8] = {
+        4, 0, 0, 0,
+        0x00, 0x00, 0xff, 0x0d
+    };
+
+    static const unsigned char unicode_down[8] = {
+        4, 1, 0, 0,
+        0x01, 0x00, 0x00, 0xe9
+    };
+
+    unsigned char actual[PSTVNC_RFB_KEY_EVENT_SIZE];
+
+    memset(actual, 0xa5, sizeof(actual));
+    pstvnc_rfb_build_key_event(
+        actual,
+        1,
+        0x0000ff0du);
+    check_bytes(
+        actual,
+        enter_down,
+        sizeof(enter_down));
+
+    memset(actual, 0xa5, sizeof(actual));
+    pstvnc_rfb_build_key_event(
+        actual,
+        0,
+        0x0000ff0du);
+    check_bytes(
+        actual,
+        enter_up,
+        sizeof(enter_up));
+
+    /*
+     * Preserve all 32 keysym bits. Nonzero down values are normalized to the
+     * protocol's one-byte boolean flag rather than copied verbatim.
+     */
+    memset(actual, 0xa5, sizeof(actual));
+    pstvnc_rfb_build_key_event(
+        actual,
+        7,
+        0x010000e9u);
+    check_bytes(
+        actual,
+        unicode_down,
+        sizeof(unicode_down));
+}
+
 static void test_pointer_event(void)
 {
     static const unsigned char expected[6] = {
@@ -222,6 +276,7 @@ int main(void)
     test_set_pixel_format();
     test_set_raw_encoding();
     test_framebuffer_request();
+    test_key_event();
     test_pointer_event();
 
     if (failures != 0) {

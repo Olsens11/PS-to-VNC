@@ -176,6 +176,117 @@ static void input_runtime_build_mouse_input(
         mouse_input->click_buttons |= PSTVNC_MOUSE_BUTTON_RCLICK;
 }
 
+static uint16_t input_runtime_map_native_buttons(
+    uint16_t native_buttons)
+{
+    uint16_t project_buttons = 0;
+
+    /*
+     * Native controller vocabulary terminates here. Higher layers receive only
+     * project-owned physical facts.
+     */
+    if (native_buttons & PAD_SELECT)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_SELECT;
+    if (native_buttons & PAD_L3)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_L3;
+    if (native_buttons & PAD_R3)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_R3;
+    if (native_buttons & PAD_START)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_START;
+
+    if (native_buttons & PAD_UP)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_UP;
+    if (native_buttons & PAD_RIGHT)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_RIGHT;
+    if (native_buttons & PAD_DOWN)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_DOWN;
+    if (native_buttons & PAD_LEFT)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_LEFT;
+
+    if (native_buttons & PAD_L2)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_L2;
+    if (native_buttons & PAD_R2)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_R2;
+    if (native_buttons & PAD_L1)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_L1;
+    if (native_buttons & PAD_R1)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_R1;
+
+    if (native_buttons & PAD_TRIANGLE)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_TRIANGLE;
+    if (native_buttons & PAD_CIRCLE)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_CIRCLE;
+    if (native_buttons & PAD_CROSS)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_CROSS;
+    if (native_buttons & PAD_SQUARE)
+        project_buttons |= PSTVNC_CONTROLLER_BUTTON_SQUARE;
+
+    return project_buttons;
+}
+
+static int input_runtime_publish_controller_state(
+    pstvnc_input_runtime_t *runtime,
+    const pstvnc_controller_state_t *controller_state)
+{
+    pstvnc_input_event_t event;
+    int pushed;
+
+    if (runtime == NULL ||
+        controller_state == NULL)
+        return 0;
+
+    /*
+     * Ordinary desktop operation only requires transition-bearing controller
+     * facts plus the authoritative first sample of a connection epoch.
+     *
+     * While mouse interpretation is suspended, publish every trustworthy
+     * physical state. The suspension entry boundary intentionally discards
+     * queued pre-boundary work; complete post-boundary state guarantees that a
+     * release cannot disappear in that discard and strand local quarantine.
+     */
+    if (!runtime->mouse_interpretation_suspended &&
+        !controller_state->connection_epoch_started &&
+        controller_state->buttons_pressed == 0 &&
+        controller_state->buttons_released == 0)
+        return 1;
+
+    memset(&event, 0, sizeof(event));
+
+    event.type =
+        PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
+
+    event.payload.controller_state =
+        *controller_state;
+
+    if (WaitSema(runtime->event_queue_sema_id) < 0) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_WAIT);
+        return 0;
+    }
+
+    pushed =
+        pstvnc_input_queue_push(
+            &runtime->event_queue,
+            &event);
+
+    if (SignalSema(runtime->event_queue_sema_id) < 0) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_SIGNAL);
+        return 0;
+    }
+
+    if (!pushed) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_FULL);
+        return 0;
+    }
+
+    return 1;
+}
+
 static int input_runtime_publish_mouse_update(
     pstvnc_input_runtime_t *runtime,
     const pstvnc_mouse_update_t *mouse_update)
@@ -228,8 +339,51 @@ static int input_runtime_publish_mouse_update(
 static int input_runtime_process_pad_sample(
     pstvnc_input_runtime_t *runtime)
 {
+    pstvnc_controller_state_t controller_state;
     pstvnc_mouse_input_t mouse_input;
     pstvnc_mouse_update_t mouse_update;
+
+    /*
+     * Publish trustworthy controller state before any mouse interpretation from
+     * the same physical sample.
+     *
+     * Main can therefore consume a foreground-transition fact, establish the
+     * synchronized mouse-suspension boundary, and cause any still-queued
+     * same-sample pointer work to be discarded before remote publication.
+     */
+    memset(&controller_state, 0, sizeof(controller_state));
+
+    controller_state.buttons_down =
+        input_runtime_map_native_buttons(
+            runtime->pad.buttons_down);
+
+    controller_state.buttons_pressed =
+        input_runtime_map_native_buttons(
+            runtime->pad.buttons_pressed);
+
+    controller_state.buttons_released =
+        input_runtime_map_native_buttons(
+            runtime->pad.buttons_released);
+
+    controller_state.connection_epoch_started =
+        runtime->physical_sample_active ? 0 : 1;
+
+    if (!input_runtime_publish_controller_state(
+            runtime,
+            &controller_state))
+        return 0;
+
+    /*
+     * Physical acquisition remains live during a local-controller foreground.
+     * Suspension applies only to mouse interpretation.
+     *
+     * A trustworthy sample still proves physical continuity, but none of its
+     * D-pad, stick, click, wheel, or repeat meaning may advance pstvnc_mouse_t.
+     */
+    if (runtime->mouse_interpretation_suspended) {
+        runtime->physical_sample_active = 1;
+        return 1;
+    }
 
     input_runtime_build_mouse_input(
         &runtime->pad,
@@ -265,8 +419,24 @@ static int input_runtime_handle_physical_loss(
         return 1;
 
     /*
-     * A physical-continuity loss invalidates fractional motion, repeat state,
-     * and persistent analog-wheel mode immediately.
+     * Application/main owns the frozen mouse interpreter during an acknowledged
+     * suspension epoch. The worker must therefore not mutate pstvnc_mouse_t
+     * concurrently with the application's authoritative pointer rebase.
+     *
+     * A physical-continuity loss is still a true hard boundary. Record that
+     * fact immediately and revoke the physical sample epoch; the worker will
+     * apply the ordinary hard mouse reset before suspension acknowledgement is
+     * withdrawn.
+     */
+    if (runtime->mouse_interpretation_suspended) {
+        runtime->physical_sample_active = 0;
+        runtime->suspended_physical_continuity_lost = 1;
+        return 1;
+    }
+
+    /*
+     * Outside suspension there is no competing mouse owner, so physical loss
+     * applies the existing hard reset immediately.
      *
      * Cursor position remains authoritative. The following neutral mouse sample
      * changes click state to zero; when a button was remotely held this creates
@@ -292,6 +462,55 @@ static int input_runtime_handle_physical_loss(
     return input_runtime_publish_mouse_update(
         runtime,
         &mouse_update);
+}
+
+static int input_runtime_enter_mouse_interpretation_suspension(
+    pstvnc_input_runtime_t *runtime)
+{
+    /*
+     * Queued mouse interpretation may be newer than the pointer state
+     * application/main successfully published. No pre-boundary semantic work
+     * may emerge after another foreground takes controller ownership.
+     */
+    if (WaitSema(runtime->event_queue_sema_id) < 0) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_WAIT);
+        return 0;
+    }
+
+    pstvnc_input_queue_discard_all(
+        &runtime->event_queue);
+
+    if (SignalSema(runtime->event_queue_sema_id) < 0) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_SIGNAL);
+        return 0;
+    }
+
+    /*
+     * Preserve durable cursor/button state and the user's persistent analog-
+     * wheel mode while invalidating transient movement, repeat, fractional,
+     * direction, and wheel-repeat history immediately.
+     *
+     * Physical controller continuity remains live during this suspension, so
+     * foreground ownership alone is not a reason to revoke the selected mode.
+     */
+    pstvnc_mouse_reset_transient_history(
+        &runtime->mouse);
+
+    /*
+     * A controller event capable of opening local foreground normally arrives
+     * inside an active physical sample epoch. Preserve that fact explicitly so
+     * even an abnormal suspension request without continuity fails toward the
+     * hard-reset side of the contract.
+     */
+    runtime->suspended_physical_continuity_lost =
+        runtime->physical_sample_active ? 0 : 1;
+
+    runtime->suspended_mouse_state_rebased = 0;
+    return 1;
 }
 
 static int input_runtime_enter_pad_handoff(
@@ -362,6 +581,42 @@ static void input_runtime_controller_thread(
          * it. Once no command is pending, acknowledgement occurs immediately
          * before the next possible libpad access.
          */
+        /*
+         * Mouse interpretation and physical controller acquisition are
+         * separate ownership questions.
+         *
+         * Suspension clears pre-boundary semantic work and mouse-derived
+         * history, then acknowledges. The worker continues through this loop
+         * and reaches pstvnc_pad_poll() normally.
+         */
+        if (runtime->mouse_interpretation_suspend_requested) {
+            if (!runtime->mouse_interpretation_suspended) {
+                if (!input_runtime_enter_mouse_interpretation_suspension(
+                        runtime))
+                    break;
+
+                runtime->mouse_interpretation_suspended = 1;
+            }
+
+        } else if (runtime->mouse_interpretation_suspended) {
+            /*
+             * Application/main has withdrawn the request only after completing
+             * its authoritative suspended-state rebase and release quarantine.
+             *
+             * If physical continuity broke anywhere during that suspension
+             * epoch, apply the true hard mouse boundary now, before dropping the
+             * acknowledgement that allows interpretation to resume.
+             */
+            if (runtime->suspended_physical_continuity_lost) {
+                pstvnc_mouse_reset_derived(
+                    &runtime->mouse);
+            }
+
+            runtime->suspended_physical_continuity_lost = 0;
+            runtime->mouse_interpretation_suspended = 0;
+            runtime->suspended_mouse_state_rebased = 0;
+        }
+
         if (runtime->pad_handoff_requested &&
             !runtime->pad.dualshock_mode_request_pending) {
 
@@ -443,6 +698,8 @@ static void input_runtime_controller_thread(
         }
     }
 
+    runtime->suspended_physical_continuity_lost = 0;
+    runtime->mouse_interpretation_suspended = 0;
     runtime->pad_handoff_acknowledged = 0;
 
     ExitThread();
@@ -478,6 +735,12 @@ static int input_runtime_stop_controller_thread(
 
             runtime->controller_thread_id = -1;
             runtime->controller_thread_started = 0;
+
+            runtime->mouse_interpretation_suspend_requested = 0;
+            runtime->mouse_interpretation_suspended = 0;
+            runtime->suspended_mouse_state_rebased = 0;
+            runtime->suspended_physical_continuity_lost = 0;
+
             runtime->pad_handoff_requested = 0;
             runtime->pad_handoff_acknowledged = 0;
 
@@ -565,6 +828,12 @@ int pstvnc_input_runtime_start(
         return -1;
 
     runtime->stop_requested = 0;
+
+    runtime->mouse_interpretation_suspend_requested = 0;
+    runtime->mouse_interpretation_suspended = 0;
+    runtime->suspended_mouse_state_rebased = 0;
+    runtime->suspended_physical_continuity_lost = 0;
+
     runtime->pad_handoff_requested = 0;
     runtime->pad_handoff_acknowledged = 0;
     runtime->handoff_published_state_rebased = 0;
@@ -718,6 +987,151 @@ pstvnc_input_runtime_last_error(
     return runtime->worker_error;
 }
 
+int pstvnc_input_runtime_suspend_mouse_interpretation(
+    pstvnc_input_runtime_t *runtime)
+{
+    unsigned int wait_step;
+
+    if (runtime == NULL ||
+        !runtime->initialized ||
+        !runtime->controller_thread_started)
+        return -1;
+
+    if (runtime->worker_error !=
+        PSTVNC_INPUT_RUNTIME_ERROR_NONE)
+        return -1;
+
+    /*
+     * Mouse suspension and temporary libpad handoff are distinct, mutually
+     * exclusive ownership epochs.
+     */
+    if (runtime->mouse_interpretation_suspend_requested ||
+        runtime->mouse_interpretation_suspended ||
+        runtime->pad_handoff_requested ||
+        runtime->pad_handoff_acknowledged)
+        return -1;
+
+    runtime->suspended_mouse_state_rebased = 0;
+    runtime->mouse_interpretation_suspend_requested = 1;
+
+    for (wait_step = 0;
+         wait_step < INPUT_RUNTIME_LIFECYCLE_WAIT_STEPS;
+         wait_step++) {
+
+        if (runtime->worker_error !=
+            PSTVNC_INPUT_RUNTIME_ERROR_NONE)
+            return -1;
+
+        if (runtime->mouse_interpretation_suspended)
+            return 0;
+
+        if (DelayThread(
+                INPUT_RUNTIME_LIFECYCLE_WAIT_STEP_US) < 0)
+            return -1;
+    }
+
+    /*
+     * Fail closed. Leave the request asserted because the worker may still
+     * establish the boundary after the caller's proof window expires.
+     */
+    return -1;
+}
+
+int pstvnc_input_runtime_rebase_suspended_mouse_state(
+    pstvnc_input_runtime_t *runtime,
+    unsigned int published_cursor_x,
+    unsigned int published_cursor_y,
+    unsigned char published_click_buttons)
+{
+    int wheel_mode_enabled;
+
+    if (runtime == NULL ||
+        !runtime->initialized ||
+        !runtime->controller_thread_started ||
+        !runtime->mouse_interpretation_suspend_requested ||
+        !runtime->mouse_interpretation_suspended)
+        return -1;
+
+    /*
+     * A local-controller foreground must not leave an ordinary remote mouse
+     * button logically held behind it.
+     */
+    if (published_click_buttons != 0)
+        return -1;
+
+    /*
+     * pstvnc_mouse_rebase_published_state() is also used for true hard
+     * ownership boundaries and therefore deliberately clears wheel mode.
+     *
+     * A local-foreground suspension is narrower: application/main is
+     * authoritative only for the published cursor/button state. Preserve the
+     * current persistent wheel-mode selection across that reconciliation.
+     *
+     * While suspension acknowledgement is asserted, the worker never mutates
+     * pstvnc_mouse_t. Physical loss is recorded separately and its hard reset is
+     * deferred until the worker processes resume. The save/rebase/restore
+     * sequence is therefore race-free, and a recorded continuity loss will
+     * still clear the mode before interpretation resumes.
+     */
+    wheel_mode_enabled =
+        runtime->mouse.wheel_mode_enabled;
+
+    if (!pstvnc_mouse_rebase_published_state(
+            &runtime->mouse,
+            published_cursor_x,
+            published_cursor_y,
+            published_click_buttons))
+        return -1;
+
+    runtime->mouse.wheel_mode_enabled =
+        wheel_mode_enabled;
+
+    runtime->suspended_mouse_state_rebased = 1;
+    return 0;
+}
+
+int pstvnc_input_runtime_resume_mouse_interpretation(
+    pstvnc_input_runtime_t *runtime)
+{
+    unsigned int wait_step;
+
+    if (runtime == NULL ||
+        !runtime->initialized ||
+        !runtime->controller_thread_started ||
+        !runtime->mouse_interpretation_suspend_requested ||
+        !runtime->mouse_interpretation_suspended ||
+        !runtime->suspended_mouse_state_rebased)
+        return -1;
+
+    if (runtime->worker_error !=
+        PSTVNC_INPUT_RUNTIME_ERROR_NONE)
+        return -1;
+
+    runtime->mouse_interpretation_suspend_requested = 0;
+
+    for (wait_step = 0;
+         wait_step < INPUT_RUNTIME_LIFECYCLE_WAIT_STEPS;
+         wait_step++) {
+
+        if (runtime->worker_error !=
+            PSTVNC_INPUT_RUNTIME_ERROR_NONE)
+            return -1;
+
+        if (!runtime->mouse_interpretation_suspended)
+            return 0;
+
+        if (DelayThread(
+                INPUT_RUNTIME_LIFECYCLE_WAIT_STEP_US) < 0)
+            return -1;
+    }
+
+    /*
+     * The request remains withdrawn, but an unproven acknowledgement
+     * withdrawal is still a real failure.
+     */
+    return -1;
+}
+
 int pstvnc_input_runtime_request_pad_handoff(
     pstvnc_input_runtime_t *runtime)
 {
@@ -737,7 +1151,9 @@ int pstvnc_input_runtime_request_pad_handoff(
      * the previous epoch. Otherwise a lingering acknowledgement could be
      * mistaken for acknowledgement of a newly issued request.
      */
-    if (runtime->pad_handoff_requested ||
+    if (runtime->mouse_interpretation_suspend_requested ||
+        runtime->mouse_interpretation_suspended ||
+        runtime->pad_handoff_requested ||
         runtime->pad_handoff_acknowledged)
         return -1;
 

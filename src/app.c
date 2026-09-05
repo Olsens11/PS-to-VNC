@@ -1,7 +1,8 @@
 /*
  * File synopsis:
  * Runs the application coordinator: ordered startup, semantic controller-input
- * routing, main-thread RFB publication, responsive framebuffer service,
+ * routing, main-thread pointer/keyboard RFB publication, responsive framebuffer
+ * service,
  * presentation, failure policy, and owned cleanup. Subsystems retain their own
  * private mechanisms.
  *
@@ -18,6 +19,9 @@
 #include "display.h"
 #include "framebuffer.h"
 #include "input_runtime.h"
+#include "local_controller.h"
+#include "local_ui_presentation.h"
+#include "keyboard.h"
 #include "platform/ps2_graphics.h"
 #include "platform/ps2_network.h"
 #include "platform/ps2_system.h"
@@ -38,6 +42,10 @@ static uint16_t remote_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
     __attribute__((aligned(128)));
 static uint16_t gs_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
     __attribute__((aligned(128)));
+static uint16_t local_overlay_pixels[
+    PSTVNC_OSK_SURFACE_PIXEL_COUNT]
+    __attribute__((aligned(128)));
+
 
 /*
  * Application-owned pointer state that is known to have completed publication
@@ -202,17 +210,544 @@ static int publish_semantic_mouse_update(
     return 1;
 }
 
-static int service_semantic_input_events(
-    pstvnc_input_runtime_t *input_runtime,
+static int publish_semantic_keyboard_tap(
+    pstvnc_rfb_session_t *session,
+    const pstvnc_keyboard_tap_t *keyboard_tap)
+{
+    pstvnc_keyboard_sequence_t sequence;
+    unsigned int event_index;
+
+    if (session == NULL || keyboard_tap == NULL)
+        return 0;
+
+    /*
+     * Keyboard semantics own the expansion from one compact logical tap into a
+     * complete balanced native key sequence. Application/main owns the
+     * cross-domain side effect of publishing that already-resolved sequence.
+     */
+    if (!pstvnc_keyboard_build_tap_sequence(
+            keyboard_tap->keysym,
+            keyboard_tap->modifiers,
+            &sequence))
+        return 0;
+
+    if (sequence.event_count == 0 ||
+        sequence.event_count >
+            PSTVNC_KEYBOARD_SEQUENCE_MAX_EVENTS)
+        return 0;
+
+    for (event_index = 0;
+         event_index < sequence.event_count;
+         event_index++) {
+
+        /*
+         * K1 makes any attempted exact-write failure fail the synchronized RFB
+         * session closed. Stop immediately rather than pretending the logical
+         * tap completed or attempting cleanup writes through a failed session.
+         */
+        if (!pstvnc_rfb_session_send_key_event(
+                session,
+                sequence.events[event_index].down,
+                sequence.events[event_index].keysym))
+            return 0;
+    }
+
+    return 1;
+}
+
+
+/*
+ * Present the current authoritative remote desktop with the current PS2-local
+ * foreground surface, if any.
+ *
+ * remote_frame_changed means framebuffer authority advanced and the cached
+ * desktop presentation pixels must be rebuilt first.
+ *
+ * Local presentation acknowledgement occurs only after the platform reports a
+ * successful complete frame. This allows a local dirty generation to wake and
+ * redraw independently while RFB itself is idle.
+ */
+static int present_current_application_frame(
+    const pstvnc_framebuffer_t *framebuffer,
+    int remote_frame_changed,
+    pstvnc_local_ui_t *local_ui,
+    const pstvnc_osk_t *osk)
+{
+    pstvnc_local_ui_presentation_t
+        local_presentation;
+
+    pstvnc_ps2_graphics_overlay_t
+        platform_overlay;
+
+    const pstvnc_ps2_graphics_overlay_t
+        *platform_overlay_ptr = NULL;
+
+    if (framebuffer == NULL ||
+        local_ui == NULL ||
+        osk == NULL ||
+        !framebuffer->valid)
+        return 0;
+
+    if (remote_frame_changed) {
+        if (!pstvnc_display_prepare_gs16(
+                framebuffer,
+                gs_pixels,
+                PSTVNC_DISPLAY_PIXEL_COUNT))
+            return 0;
+    }
+
+    if (!pstvnc_local_ui_prepare_presentation(
+            local_ui,
+            osk,
+            local_overlay_pixels,
+            PSTVNC_OSK_SURFACE_PIXEL_COUNT,
+            &local_presentation))
+        return 0;
+
+    if (local_presentation.overlay_visible) {
+        platform_overlay.pixels =
+            local_presentation.overlay_pixels;
+
+        platform_overlay.pixel_count =
+            local_presentation.overlay_pixel_count;
+
+        platform_overlay.width =
+            local_presentation.overlay_width;
+
+        platform_overlay.height =
+            local_presentation.overlay_height;
+
+        platform_overlay.x =
+            local_presentation.overlay_x;
+
+        platform_overlay.y =
+            local_presentation.overlay_y;
+
+        platform_overlay_ptr =
+            &platform_overlay;
+    }
+
+    if (pstvnc_ps2_graphics_present(
+            gs_pixels,
+            PSTVNC_DISPLAY_PIXEL_COUNT,
+            platform_overlay_ptr) < 0)
+        return 0;
+
+    if (pstvnc_local_ui_needs_present(
+            local_ui)) {
+
+        if (!pstvnc_local_ui_mark_presented(
+                local_ui,
+                local_presentation.generation))
+            return 0;
+    }
+
+    return 1;
+}
+
+static int neutralize_published_pointer_for_local_foreground(
     pstvnc_rfb_session_t *session,
     app_published_pointer_state_t *published_pointer)
 {
-    if (pstvnc_input_runtime_last_error(input_runtime) !=
+    if (session == NULL ||
+        published_pointer == NULL ||
+        published_pointer->cursor_x > UINT16_MAX ||
+        published_pointer->cursor_y > UINT16_MAX)
+        return 0;
+
+    if (published_pointer->click_buttons == 0)
+        return 1;
+
+    /*
+     * Local foreground ownership must never hide an ordinary remote mouse
+     * button that is still logically held.
+     *
+     * Publish exactly one neutral pointer at the last coordinates proven to
+     * have reached the remote peer. No cursor movement or synthetic wakeup is
+     * manufactured.
+     */
+    if (!pstvnc_rfb_session_send_pointer_event(
+            session,
+            0,
+            (uint16_t)published_pointer->cursor_x,
+            (uint16_t)published_pointer->cursor_y))
+        return 0;
+
+    published_pointer->click_buttons = 0;
+    return 1;
+}
+
+static int apply_osk_activation_result(
+    pstvnc_rfb_session_t *session,
+    pstvnc_local_ui_t *local_ui,
+    const pstvnc_osk_activation_t *activation)
+{
+    if (session == NULL ||
+        local_ui == NULL ||
+        activation == NULL)
+        return 0;
+
+    if (activation->local_state_changed) {
+        if (!pstvnc_local_ui_mark_local_change(
+                local_ui))
+            return 0;
+    }
+
+    if (activation->produced_keyboard_tap) {
+        if (!publish_semantic_keyboard_tap(
+                session,
+                &activation->keyboard_tap))
+            return 0;
+    }
+
+    return 1;
+}
+
+static int open_osk_foreground(
+    pstvnc_input_runtime_t *input_runtime,
+    pstvnc_rfb_session_t *session,
+    app_published_pointer_state_t *published_pointer,
+    pstvnc_local_ui_t *local_ui,
+    pstvnc_osk_t *osk,
+    int *mouse_interpretation_suspended)
+{
+    if (input_runtime == NULL ||
+        session == NULL ||
+        published_pointer == NULL ||
+        local_ui == NULL ||
+        osk == NULL ||
+        mouse_interpretation_suspended == NULL)
+        return 0;
+
+    if (local_ui->foreground !=
+            PSTVNC_LOCAL_UI_FOREGROUND_DESKTOP ||
+        pstvnc_local_ui_input_is_quarantined(
+            local_ui) ||
+        *mouse_interpretation_suspended)
+        return 0;
+
+    /*
+     * Establish the worker-side boundary before changing foreground state.
+     *
+     * Success proves that stale queued mouse work is gone, mouse-derived
+     * acceleration/repeat/wheel history is reset, and physical controller
+     * polling remains live.
+     */
+    if (pstvnc_input_runtime_suspend_mouse_interpretation(
+            input_runtime) < 0)
+        return 0;
+
+    *mouse_interpretation_suspended = 1;
+
+    /*
+     * If an ordinary click was remotely held, neutralize it at the exact frozen
+     * coordinates before rebasing the suspended interpreter.
+     */
+    if (!neutralize_published_pointer_for_local_foreground(
+            session,
+            published_pointer))
+        return 0;
+
+    if (pstvnc_input_runtime_rebase_suspended_mouse_state(
+            input_runtime,
+            published_pointer->cursor_x,
+            published_pointer->cursor_y,
+            published_pointer->click_buttons) < 0)
+        return 0;
+
+    pstvnc_osk_reset_for_open(osk);
+
+    if (!pstvnc_local_ui_open_osk(
+            local_ui))
+        return 0;
+
+    return 1;
+}
+
+static int apply_local_controller_action(
+    pstvnc_input_runtime_t *input_runtime,
+    pstvnc_rfb_session_t *session,
+    app_published_pointer_state_t *published_pointer,
+    pstvnc_local_ui_t *local_ui,
+    pstvnc_osk_t *osk,
+    int *mouse_interpretation_suspended,
+    pstvnc_local_controller_action_t action)
+{
+    pstvnc_osk_activation_t activation;
+
+    if (input_runtime == NULL ||
+        session == NULL ||
+        published_pointer == NULL ||
+        local_ui == NULL ||
+        osk == NULL ||
+        mouse_interpretation_suspended == NULL)
+        return 0;
+
+    switch (action) {
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_OPEN_OSK:
+            return open_osk_foreground(
+                input_runtime,
+                session,
+                published_pointer,
+                local_ui,
+                osk,
+                mouse_interpretation_suspended);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_MOVE_LEFT:
+            if (!pstvnc_osk_move_horizontal(
+                    osk,
+                    -1))
+                return 0;
+
+            return pstvnc_local_ui_mark_local_change(
+                local_ui);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_MOVE_RIGHT:
+            if (!pstvnc_osk_move_horizontal(
+                    osk,
+                    1))
+                return 0;
+
+            return pstvnc_local_ui_mark_local_change(
+                local_ui);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_MOVE_UP:
+            if (!pstvnc_osk_move_vertical(
+                    osk,
+                    -1))
+                return 0;
+
+            return pstvnc_local_ui_mark_local_change(
+                local_ui);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_MOVE_DOWN:
+            if (!pstvnc_osk_move_vertical(
+                    osk,
+                    1))
+                return 0;
+
+            return pstvnc_local_ui_mark_local_change(
+                local_ui);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_TOGGLE_SHIFT:
+            if (!pstvnc_osk_toggle_shift_modifier(
+                    osk))
+                return 0;
+
+            return pstvnc_local_ui_mark_local_change(
+                local_ui);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_ACTIVATE_SELECTED:
+            if (!pstvnc_osk_activate_selected(
+                    osk,
+                    &activation))
+                return 0;
+
+            return apply_osk_activation_result(
+                session,
+                local_ui,
+                &activation);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_BACKSPACE:
+            if (!pstvnc_osk_activate_direct_key(
+                    osk,
+                    PSTVNC_KEYBOARD_KEYSYM_BACKSPACE,
+                    &activation))
+                return 0;
+
+            return apply_osk_activation_result(
+                session,
+                local_ui,
+                &activation);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_ENTER:
+            if (!pstvnc_osk_activate_direct_key(
+                    osk,
+                    PSTVNC_KEYBOARD_KEYSYM_ENTER,
+                    &activation))
+                return 0;
+
+            return apply_osk_activation_result(
+                session,
+                local_ui,
+                &activation);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_TAB:
+            if (!pstvnc_osk_activate_direct_key(
+                    osk,
+                    PSTVNC_KEYBOARD_KEYSYM_TAB,
+                    &activation))
+                return 0;
+
+            return apply_osk_activation_result(
+                session,
+                local_ui,
+                &activation);
+
+        case PSTVNC_LOCAL_CONTROLLER_ACTION_CLOSE_OSK:
+            if (local_ui->foreground !=
+                PSTVNC_LOCAL_UI_FOREGROUND_OSK)
+                return 0;
+
+            /*
+             * Modifier state is not allowed to survive a close. The disappearing
+             * overlay itself advances local generation, so a separate hidden
+             * modifier-only generation is unnecessary here.
+             */
+            (void)pstvnc_osk_clear_modifiers(osk);
+
+            return pstvnc_local_ui_close_osk(
+                local_ui);
+
+        default:
+            return 0;
+    }
+}
+
+static int service_controller_state(
+    pstvnc_input_runtime_t *input_runtime,
+    pstvnc_rfb_session_t *session,
+    app_published_pointer_state_t *published_pointer,
+    pstvnc_local_controller_t *local_controller,
+    pstvnc_local_ui_t *local_ui,
+    pstvnc_osk_t *osk,
+    int *mouse_interpretation_suspended,
+    const pstvnc_controller_state_t *controller_state)
+{
+    pstvnc_local_controller_result_t result;
+    unsigned int action_index;
+
+    if (input_runtime == NULL ||
+        session == NULL ||
+        published_pointer == NULL ||
+        local_controller == NULL ||
+        local_ui == NULL ||
+        osk == NULL ||
+        mouse_interpretation_suspended == NULL ||
+        controller_state == NULL)
+        return 0;
+
+    if (!pstvnc_local_controller_route(
+            local_controller,
+            local_ui->foreground,
+            pstvnc_local_ui_input_is_quarantined(
+                local_ui),
+            controller_state,
+            &result))
+        return 0;
+
+    for (action_index = 0;
+         action_index < result.action_count;
+         action_index++) {
+
+        if (!apply_local_controller_action(
+                input_runtime,
+                session,
+                published_pointer,
+                local_ui,
+                osk,
+                mouse_interpretation_suspended,
+                result.actions[action_index]))
+            return 0;
+    }
+
+    /*
+     * Physical release is the only evidence that can complete a local
+     * transition quarantine. No timer or sleep substitutes for this proof.
+     *
+     * Entry quarantine completion merely activates OSK controls; it does not
+     * resume the mouse because OSK still owns foreground.
+     *
+     * Exit quarantine completion likewise does not immediately resume here.
+     * Main first proves that the overlay-removal generation was successfully
+     * presented, then resumes through resume_desktop_mouse_if_ready().
+     */
+    if (pstvnc_local_ui_input_is_quarantined(
+            local_ui) &&
+        pstvnc_local_controller_release_is_proven(
+            local_controller)) {
+
+        if (!pstvnc_local_ui_complete_input_quarantine(
+                local_ui))
+            return 0;
+    }
+
+    return 1;
+}
+
+static int resume_desktop_mouse_if_ready(
+    pstvnc_input_runtime_t *input_runtime,
+    const pstvnc_local_ui_t *local_ui,
+    int *mouse_interpretation_suspended)
+{
+    if (input_runtime == NULL ||
+        local_ui == NULL ||
+        mouse_interpretation_suspended == NULL)
+        return 0;
+
+    if (!*mouse_interpretation_suspended)
+        return 1;
+
+    /*
+     * OSK foreground always owns the controller while visible.
+     */
+    if (local_ui->foreground !=
+        PSTVNC_LOCAL_UI_FOREGROUND_DESKTOP)
+        return 1;
+
+    /*
+     * A close gesture cannot leak into desktop ownership.
+     */
+    if (pstvnc_local_ui_input_is_quarantined(
+            local_ui))
+        return 1;
+
+    /*
+     * Do not resume pointer interpretation while an already-closed OSK bitmap
+     * is still physically the last presented local generation.
+     *
+     * This makes the visual and input ownership boundary literal: desktop mouse
+     * interpretation resumes only after the no-overlay generation has
+     * successfully reached presentation.
+     */
+    if (pstvnc_local_ui_needs_present(
+            local_ui))
+        return 1;
+
+    if (pstvnc_input_runtime_resume_mouse_interpretation(
+            input_runtime) < 0)
+        return 0;
+
+    *mouse_interpretation_suspended = 0;
+    return 1;
+}
+
+static int service_semantic_input_events(
+    pstvnc_input_runtime_t *input_runtime,
+    pstvnc_rfb_session_t *session,
+    app_published_pointer_state_t *published_pointer,
+    pstvnc_local_controller_t *local_controller,
+    pstvnc_local_ui_t *local_ui,
+    pstvnc_osk_t *osk,
+    int *mouse_interpretation_suspended)
+{
+    if (input_runtime == NULL ||
+        session == NULL ||
+        published_pointer == NULL ||
+        local_controller == NULL ||
+        local_ui == NULL ||
+        osk == NULL ||
+        mouse_interpretation_suspended == NULL)
+        return 0;
+
+    if (pstvnc_input_runtime_last_error(
+            input_runtime) !=
         PSTVNC_INPUT_RUNTIME_ERROR_NONE)
         return 0;
 
     for (;;) {
         pstvnc_input_event_t event;
+
         int pop_result =
             pstvnc_input_runtime_pop_event(
                 input_runtime,
@@ -224,23 +759,58 @@ static int service_semantic_input_events(
         if (pop_result == 0)
             break;
 
-        if (event.type != PSTVNC_INPUT_EVENT_MOUSE_UPDATE)
-            return 0;
+        switch (event.type) {
+            case PSTVNC_INPUT_EVENT_CONTROLLER_STATE:
+                if (!service_controller_state(
+                        input_runtime,
+                        session,
+                        published_pointer,
+                        local_controller,
+                        local_ui,
+                        osk,
+                        mouse_interpretation_suspended,
+                        &event.payload.controller_state))
+                    return 0;
+                break;
 
-        if (!publish_semantic_mouse_update(
-                session,
-                &event.payload.mouse_update,
-                published_pointer))
-            return 0;
+            case PSTVNC_INPUT_EVENT_MOUSE_UPDATE:
+                /*
+                 * K8B proves a successful suspension boundary discards stale
+                 * queued mouse work and suppresses new mouse interpretation.
+                 * Seeing mouse semantic work after main has recorded that
+                 * boundary is therefore a contract violation, not something to
+                 * silently publish or hide.
+                 */
+                if (*mouse_interpretation_suspended)
+                    return 0;
+
+                if (!publish_semantic_mouse_update(
+                        session,
+                        &event.payload.mouse_update,
+                        published_pointer))
+                    return 0;
+                break;
+
+            case PSTVNC_INPUT_EVENT_KEYBOARD_TAP:
+                if (!publish_semantic_keyboard_tap(
+                        session,
+                        &event.payload.keyboard_tap))
+                    return 0;
+                break;
+
+            case PSTVNC_INPUT_EVENT_NONE:
+            default:
+                return 0;
+        }
     }
 
     /*
      * A producer failure can race with the final queue-empty observation.
-     * Re-check after draining so queue exhaustion/pad failure cannot be hidden
-     * behind a superficially complete set of older events.
+     * Re-check after draining.
      */
     return
-        pstvnc_input_runtime_last_error(input_runtime) ==
+        pstvnc_input_runtime_last_error(
+            input_runtime) ==
         PSTVNC_INPUT_RUNTIME_ERROR_NONE;
 }
 
@@ -261,6 +831,9 @@ int pstvnc_app_run(void)
     static pstvnc_input_runtime_t input_runtime;
 
     pstvnc_framebuffer_t framebuffer;
+    pstvnc_local_controller_t local_controller;
+    pstvnc_local_ui_t local_ui;
+    pstvnc_osk_t osk;
     pstvnc_rfb_session_t session;
     app_published_pointer_state_t published_pointer;
 
@@ -268,6 +841,7 @@ int pstvnc_app_run(void)
     int graphics_ready = 0;
     int diagnostics_ready = 0;
     int input_runtime_ready = 0;
+    int mouse_interpretation_suspended = 0;
 
     /*
      * The coordinator owns ordering and failure policy. Each subsystem owns its
@@ -322,6 +896,12 @@ int pstvnc_app_run(void)
         gs_ready,
         sizeof(gs_ready) - 1u);
 
+    pstvnc_local_controller_init(
+        &local_controller);
+
+    pstvnc_local_ui_init(&local_ui);
+    pstvnc_osk_reset_for_open(&osk);
+
     pstvnc_rfb_session_init(&session);
 
     if (!pstvnc_rfb_session_start(
@@ -341,15 +921,11 @@ int pstvnc_app_run(void)
             &framebuffer))
         goto fail;
 
-    if (!pstvnc_display_prepare_gs16(
+    if (!present_current_application_frame(
             &framebuffer,
-            gs_pixels,
-            PSTVNC_DISPLAY_PIXEL_COUNT))
-        goto fail;
-
-    if (pstvnc_ps2_graphics_present(
-            gs_pixels,
-            PSTVNC_DISPLAY_PIXEL_COUNT) < 0)
+            1,
+            &local_ui,
+            &osk))
         goto fail;
 
     send_diagnostic_literal(
@@ -416,7 +992,38 @@ int pstvnc_app_run(void)
         if (!service_semantic_input_events(
                 &input_runtime,
                 &session,
-                &published_pointer))
+                &published_pointer,
+                &local_controller,
+                &local_ui,
+                &osk,
+                &mouse_interpretation_suspended))
+            goto fail;
+
+        /*
+         * Local-only visual changes are not coupled to remote framebuffer
+         * damage. When a future foreground action marks local UI dirty, main
+         * can present it immediately even while RFB receive is idle.
+         */
+        if (pstvnc_local_ui_needs_present(
+                &local_ui)) {
+
+            if (!present_current_application_frame(
+                    &framebuffer,
+                    0,
+                    &local_ui,
+                    &osk))
+                goto fail;
+        }
+
+        /*
+         * Resume only after any desktop/no-overlay generation is successfully
+         * presented. Until this point the physical screen may still contain the
+         * OSK bitmap even though logical foreground has already returned.
+         */
+        if (!resume_desktop_mouse_if_ready(
+                &input_runtime,
+                &local_ui,
+                &mouse_interpretation_suspended))
             goto fail;
 
         receive_result =
@@ -451,15 +1058,11 @@ int pstvnc_app_run(void)
             goto fail;
 
         if (framebuffer.dirty) {
-            if (!pstvnc_display_prepare_gs16(
+            if (!present_current_application_frame(
                     &framebuffer,
-                    gs_pixels,
-                    PSTVNC_DISPLAY_PIXEL_COUNT))
-                goto fail;
-
-            if (pstvnc_ps2_graphics_present(
-                    gs_pixels,
-                    PSTVNC_DISPLAY_PIXEL_COUNT) < 0)
+                    1,
+                    &local_ui,
+                    &osk))
                 goto fail;
         }
 

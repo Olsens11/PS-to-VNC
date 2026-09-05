@@ -89,6 +89,19 @@ int pstvnc_rfb_session_request_update(
     int incremental);
 
 /*
+ * Serialize and send one native RFB KeyEvent through the main-thread-owned
+ * READY session.
+ *
+ * This boundary owns only session validity, exact wire serialization, and
+ * transport failure. The caller owns X11 keysym choice, logical tap/modifier
+ * sequencing, OSK state, and controller/action meaning.
+ */
+int pstvnc_rfb_session_send_key_event(
+    pstvnc_rfb_session_t *session,
+    int down,
+    uint32_t keysym);
+
+/*
  * Serialize and send one already-mapped native RFB PointerEvent through the
  * main-thread-owned READY session.
  *

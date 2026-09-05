@@ -18,6 +18,7 @@
 #define PSTVNC_RFB_SET_PIXEL_FORMAT_SIZE 20u
 #define PSTVNC_RFB_SET_ENCODINGS_RAW_SIZE 8u
 #define PSTVNC_RFB_FRAMEBUFFER_REQUEST_SIZE 10u
+#define PSTVNC_RFB_KEY_EVENT_SIZE 8u
 #define PSTVNC_RFB_POINTER_EVENT_SIZE 6u
 
 #define PSTVNC_RFB_SECURITY_NONE 1u
@@ -93,6 +94,19 @@ void pstvnc_rfb_build_framebuffer_update_request(
     uint16_t y,
     uint16_t width,
     uint16_t height);
+
+/*
+ * Build one exact eight-byte RFB KeyEvent.
+ *
+ * down selects explicit key-down (nonzero) or key-up (zero) state.
+ * keysym is already native X11 keysym vocabulary supplied by the keyboard
+ * responsibility; this wire layer does not interpret printable characters,
+ * modifiers, OSK state, or controller bindings.
+ */
+void pstvnc_rfb_build_key_event(
+    uint8_t out[PSTVNC_RFB_KEY_EVENT_SIZE],
+    int down,
+    uint32_t keysym);
 
 /*
  * Build one exact six-byte RFB PointerEvent.

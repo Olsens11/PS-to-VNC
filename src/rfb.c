@@ -36,6 +36,14 @@ static void write_be16(uint8_t *bytes, uint16_t value)
     bytes[1] = (uint8_t)(value & 0xffu);
 }
 
+static void write_be32(uint8_t *bytes, uint32_t value)
+{
+    bytes[0] = (uint8_t)((value >> 24) & 0xffu);
+    bytes[1] = (uint8_t)((value >> 16) & 0xffu);
+    bytes[2] = (uint8_t)((value >> 8) & 0xffu);
+    bytes[3] = (uint8_t)(value & 0xffu);
+}
+
 int pstvnc_rfb_parse_protocol_version(
     const uint8_t banner[PSTVNC_RFB_PROTOCOL_VERSION_SIZE],
     unsigned int *major,
@@ -195,6 +203,28 @@ void pstvnc_rfb_build_framebuffer_update_request(
     write_be16(&out[4], y);
     write_be16(&out[6], width);
     write_be16(&out[8], height);
+}
+
+void pstvnc_rfb_build_key_event(
+    uint8_t out[PSTVNC_RFB_KEY_EVENT_SIZE],
+    int down,
+    uint32_t keysym)
+{
+    /*
+     * RFB 3.x client-to-server KeyEvent:
+     *
+     *   byte 0     message type 4
+     *   byte 1     explicit down/up flag
+     *   bytes 2-3  padding
+     *   bytes 4-7  X11 keysym, big endian
+     *
+     * X11 keysym meaning belongs above this pure wire boundary.
+     */
+    out[0] = 4;
+    out[1] = down ? 1u : 0u;
+    out[2] = 0;
+    out[3] = 0;
+    write_be32(&out[4], keysym);
 }
 
 void pstvnc_rfb_build_pointer_event(
