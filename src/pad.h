@@ -26,6 +26,20 @@ typedef struct pstvnc_pad {
 
     int opened;
     int connection_configured;
+
+    /*
+     * padSetMainMode() starts an asynchronous PADMAN request. A successful
+     * request is remembered here so later pstvnc_pad_poll() calls can observe
+     * PAD_STATE_EXECCMD without blocking, then verify DualShock mode when the
+     * endpoint becomes readable again.
+     *
+     * Keeping this transition across ordinary polls is important once the pad
+     * is owned by a controller thread: no single physical-acquisition call may
+     * hide indefinitely inside a mode-settle loop and prevent an ownership or
+     * shutdown boundary from being reached.
+     */
+    int dualshock_mode_request_pending;
+
     int history_valid;
 
     /*

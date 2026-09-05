@@ -362,14 +362,10 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | libpad_ready | variable | src/pad.c | pad lifecycle | file static | Records whether PS-to-VNC currently owns initialized process-wide libpad state. | ADR 0002: direct libpad ownership |
 | pad_state_is_readable | function | src/pad.c | pad acquisition | file | Reports whether one native libpad state permits ordinary controller observation. | libpad state machine |
 | state | parameter | src/pad.c | pad_state_is_readable | function | Supplies the native PAD_STATE_* value to classify. | libpad state machine |
-| wait_for_pad_settle | function | src/pad.c | pad acquisition | file | Waits through transient libpad command/search states until the endpoint is readable, disconnected, or failed. | OPL/PS2SDK pad practice |
-| pad | parameter | src/pad.c | wait_for_pad_settle | function | Supplies the owned endpoint whose native libpad state is observed. | pad lifecycle |
-| state | variable | src/pad.c | wait_for_pad_settle | local | Stores each native libpad state observed while waiting for a settled endpoint. | libpad state machine |
 | invalidate_observation | function | src/pad.c | physical pad history | file | Clears the latest sample and immediate history so an ownership boundary cannot manufacture input edges. | stale-state invalidation |
 | pad | parameter | src/pad.c | invalidate_observation | function | Supplies the pad instance whose physical observation continuity is revoked. | stale-state invalidation |
-| configure_controller_mode | function | src/pad.c | pad acquisition | file | Detects DualShock capability and deterministically requests locked analog mode when the controller supports it. | ADR 0002; OPL pad practice |
+| configure_controller_mode | function | src/pad.c | physical pad acquisition | file | Advances digital/DualShock controller-mode negotiation by at most one bounded libpad step per poll and verifies a completed asynchronous DualShock request before publishing the connection as configured. | ADR0002 libpad mode handling; ISSUE38 controller ownership |
 | pad | parameter | src/pad.c | configure_controller_mode | function | Supplies the connected endpoint whose native libpad operating mode is configured. | controller mode negotiation |
-| state | variable | src/pad.c | configure_controller_mode | local | Stores settled native libpad state before and after any mode request. | controller mode negotiation |
 | modes | variable | src/pad.c | configure_controller_mode | local | Stores the controller mode-table entry count reported by libpad. | controller capability discovery |
 | i | variable | src/pad.c | configure_controller_mode | local | Iterates native libpad mode-table entries while searching for DualShock support. | controller capability discovery |
 | pstvnc_pad_init | function | src/pad.c | pad lifecycle | public | Initializes process-wide libpad ownership exactly once for PS-to-VNC. | ADR 0002: direct libpad ownership |
@@ -395,6 +391,7 @@ this directory. Historical/adopted subdirectories retain their own dictionaries.
 | state | field | src/pad.h | pstvnc_pad | public | Stores the latest native PAD_STATE_* value observed for this endpoint. | libpad state machine |
 | opened | field | src/pad.h | pstvnc_pad | public | Records whether this instance currently owns an opened libpad port/slot endpoint. | pad lifecycle |
 | connection_configured | field | src/pad.h | pstvnc_pad | public | Records whether mode negotiation has completed for the current physical connection epoch. | controller mode negotiation |
+| dualshock_mode_request_pending | field | src/pad.h | pstvnc_pad | public | Records that padSetMainMode() successfully started an asynchronous DualShock lock request whose completion must be verified by a later readable poll. | ISSUE38 bounded libpad ownership lifecycle |
 | history_valid | field | src/pad.h | pstvnc_pad | public | Records whether buttons_down has a continuous prior sample suitable for deriving physical edges. | immediate physical pad history |
 | sample_length | field | src/pad.h | pstvnc_pad | public | Stores the exact leading-byte count in buttons supplied by the latest accepted padRead sample. | libpad variable-length sample semantics |
 | buttons | field | src/pad.h | pstvnc_pad | public | Stores the latest accepted native libpad padButtonStatus without a replacement controller representation. | ADR 0002: native libpad representation |

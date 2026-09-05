@@ -26,27 +26,6 @@ static int pad_state_is_readable(int state)
     return state == PAD_STATE_STABLE || state == PAD_STATE_FINDCTP1;
 }
 
-static int wait_for_pad_settle(pstvnc_pad_t *pad)
-{
-    int state;
-
-    /*
-     * Mode-changing libpad requests temporarily publish EXECCMD while PADMAN
-     * performs the operation. The established PS2SDK/OPL pattern is to wait
-     * until the endpoint is readable again. DISCONN and ERROR are terminal for
-     * this attempt so a disappearing or failed pad cannot trap us here forever.
-     */
-    for (;;) {
-        state = padGetState(pad->port, pad->slot);
-        pad->state = state;
-
-        if (pad_state_is_readable(state) ||
-            state == PAD_STATE_DISCONN ||
-            state == PAD_STATE_ERROR)
-            return state;
-    }
-}
-
 static void invalidate_observation(pstvnc_pad_t *pad)
 {
     /*
@@ -59,27 +38,57 @@ static void invalidate_observation(pstvnc_pad_t *pad)
     pad->buttons_down = 0;
     pad->buttons_pressed = 0;
     pad->buttons_released = 0;
+
+    /*
+     * A pending mode command belongs to the connection epoch that issued it.
+     * Once physical continuity is revoked, a later readable controller must
+     * negotiate from its own current libpad state rather than inheriting an
+     * unfinished request from the previous epoch.
+     */
+    pad->dualshock_mode_request_pending = 0;
     pad->history_valid = 0;
 }
 
 static int configure_controller_mode(pstvnc_pad_t *pad)
 {
-    int state;
     int modes;
     int i;
 
-    state = wait_for_pad_settle(pad);
-    if (state == PAD_STATE_DISCONN ||
-        state == PAD_STATE_ERROR)
-        return 0;
+    /*
+     * padSetMainMode() is an asynchronous libpad/PADMAN operation.
+     *
+     * Mature PS2 code commonly waits synchronously for PAD_STATE_EXECCMD to
+     * finish. PS-to-VNC deliberately does not do that here. Issue #38 gives
+     * controller acquisition an externally coordinated owner thread, so one
+     * call to pstvnc_pad_poll() must always return to that owner.
+     *
+     * A successful mode request is therefore completed across ordinary polls:
+     *
+     *   readable -> padSetMainMode() -> return
+     *   EXECCMD  -> later polls return without reading
+     *   readable -> verify requested mode -> configured
+     *
+     * This preserves the native libpad mechanism while keeping shutdown and
+     * future libpad handoff boundaries reachable without a timeout or forced
+     * thread termination.
+     */
+    if (pad->dualshock_mode_request_pending) {
+        if (padInfoMode(
+                pad->port,
+                pad->slot,
+                PAD_MODECURID,
+                0) != PAD_TYPE_DUALSHOCK)
+            return -1;
 
-    if (!pad_state_is_readable(state))
-        return -1;
+        pad->dualshock_mode_request_pending = 0;
+        pad->connection_configured = 1;
+        return 1;
+    }
 
     /*
      * A zero mode-table count is the conventional digital-pad case. Digital
      * controllers remain valid button sources; analog mode is requested only
-     * when libpad says the endpoint actually advertises DualShock capability.
+     * when libpad says the endpoint advertises DualShock capability.
      */
     modes = padInfoMode(
         pad->port,
@@ -94,10 +103,14 @@ static int configure_controller_mode(pstvnc_pad_t *pad)
                     pad->slot,
                     PAD_MODETABLE,
                     i) == PAD_TYPE_DUALSHOCK) {
+
                 /*
-                 * PS-to-VNC needs deterministic analog-stick availability.
-                 * Locking DualShock mode prevents the controller's mode button
-                 * from silently changing the physical data contract at runtime.
+                 * Lock DualShock mode so the controller's mode button cannot
+                 * silently change the physical sample contract at runtime.
+                 *
+                 * Do not wait here for PADMAN to finish the request. The
+                 * pending flag above lets later polls finish this same
+                 * negotiation without blocking the controller owner.
                  */
                 if (padSetMainMode(
                         pad->port,
@@ -106,22 +119,8 @@ static int configure_controller_mode(pstvnc_pad_t *pad)
                         PAD_MMODE_LOCK) <= 0)
                     return -1;
 
-                state = wait_for_pad_settle(pad);
-                if (state == PAD_STATE_DISCONN ||
-                    state == PAD_STATE_ERROR)
-                    return 0;
-
-                if (!pad_state_is_readable(state))
-                    return -1;
-
-                if (padInfoMode(
-                        pad->port,
-                        pad->slot,
-                        PAD_MODECURID,
-                        0) != PAD_TYPE_DUALSHOCK)
-                    return -1;
-
-                break;
+                pad->dualshock_mode_request_pending = 1;
+                return 0;
             }
         }
     }
@@ -224,11 +223,19 @@ int pstvnc_pad_poll(pstvnc_pad_t *pad)
     if (!pad->connection_configured) {
         configuration_result = configure_controller_mode(pad);
 
-        if (configuration_result <= 0) {
+        if (configuration_result < 0) {
             pad->connection_configured = 0;
             invalidate_observation(pad);
-            return configuration_result;
+            return -1;
         }
+
+        /*
+         * Zero means a valid asynchronous mode request is still in progress.
+         * No trustworthy sample is published until a later readable poll has
+         * verified the requested controller mode.
+         */
+        if (configuration_result == 0)
+            return 0;
     }
 
     /*
