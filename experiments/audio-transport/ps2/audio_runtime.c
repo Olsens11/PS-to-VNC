@@ -15,6 +15,7 @@
 #include <loadfile.h>
 
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 extern unsigned char AUDSRV_irx[];
@@ -35,6 +36,82 @@ static void audio_exp_record_error(
         runtime->error = error;
 }
 
+/*
+ * Experiment-only audio-worker breadcrumb.
+ *
+ * Wire format in the transport telemetry reserved word:
+ *
+ *   31..24  0xA1 diagnostic identity
+ *   23..16  audio worker stage
+ *   15..8   pstvnc_audio_exp_error_t
+ *   7..0    rolling stage-generation counter
+ *
+ * The generation is intentionally only eight bits. It exists to distinguish
+ * an actively revisiting stage from a worker frozen at one stage; wraparound
+ * is harmless.
+ */
+typedef enum audio_exp_diag_stage {
+    AUDIO_EXP_DIAG_THREAD_ENTER       = 0x01,
+    AUDIO_EXP_DIAG_AUDSRV_READY       = 0x02,
+    AUDIO_EXP_DIAG_FORMAT_READY       = 0x03,
+    AUDIO_EXP_DIAG_VOLUME_READY       = 0x04,
+
+    AUDIO_EXP_DIAG_LOOP_TOP           = 0x10,
+    AUDIO_EXP_DIAG_STOP_REQUESTED     = 0x11,
+    AUDIO_EXP_DIAG_READ_ENTER         = 0x12,
+    AUDIO_EXP_DIAG_READ_IDLE          = 0x13,
+    AUDIO_EXP_DIAG_DELAY_ENTER        = 0x14,
+    AUDIO_EXP_DIAG_DELAY_RETURN       = 0x15,
+    AUDIO_EXP_DIAG_READ_DATA          = 0x16,
+
+    AUDIO_EXP_DIAG_WAIT_ENTER         = 0x20,
+    AUDIO_EXP_DIAG_WAIT_RETURN        = 0x21,
+    AUDIO_EXP_DIAG_PLAY_ENTER         = 0x22,
+    AUDIO_EXP_DIAG_PLAY_RETURN        = 0x23,
+    AUDIO_EXP_DIAG_RECORDED           = 0x24,
+
+    AUDIO_EXP_DIAG_TRANSPORT_ERROR    = 0x30,
+    AUDIO_EXP_DIAG_WAIT_ERROR         = 0x31,
+    AUDIO_EXP_DIAG_PLAY_ERROR         = 0x32,
+    AUDIO_EXP_DIAG_DELAY_ERROR        = 0x33,
+
+    AUDIO_EXP_DIAG_AUDSRV_INIT_ERROR  = 0x40,
+    AUDIO_EXP_DIAG_FORMAT_ERROR       = 0x41,
+    AUDIO_EXP_DIAG_VOLUME_ERROR       = 0x42,
+
+    AUDIO_EXP_DIAG_STOP_AUDIO_ENTER   = 0x50,
+    AUDIO_EXP_DIAG_STOP_AUDIO_RETURN  = 0x51,
+    AUDIO_EXP_DIAG_QUIT_ENTER         = 0x52,
+    AUDIO_EXP_DIAG_QUIT_RETURN        = 0x53,
+    AUDIO_EXP_DIAG_EXIT_THREAD        = 0x54
+} audio_exp_diag_stage_t;
+
+static void audio_exp_publish_diag(
+    pstvnc_audio_exp_runtime_t *runtime,
+    uint8_t *generation,
+    audio_exp_diag_stage_t stage)
+{
+    uint32_t diagnostic_word;
+
+    if (runtime == NULL ||
+        runtime->transport == NULL ||
+        generation == NULL)
+        return;
+
+    *generation =
+        (uint8_t)(*generation + 1u);
+
+    diagnostic_word =
+        0xA1000000u |
+        (((uint32_t)stage & 0xffu) << 16) |
+        (((uint32_t)runtime->error & 0xffu) << 8) |
+        (uint32_t)(*generation);
+
+    pstvnc_transport_runtime_set_diagnostic_word(
+        runtime->transport,
+        diagnostic_word);
+}
+
 static void audio_exp_thread(void *argument)
 {
     pstvnc_audio_exp_runtime_t *runtime =
@@ -46,12 +123,30 @@ static void audio_exp_thread(void *argument)
         AUDIO_EXP_CHUNK_BYTES
     ];
 
+    uint8_t diagnostic_generation = 0;
+
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_THREAD_ENTER);
+
     if (audsrv_init() != 0) {
         audio_exp_record_error(
             runtime,
             PSTVNC_AUDIO_EXP_ERROR_AUDSRV_INIT);
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_AUDSRV_INIT_ERROR);
+
         goto done;
     }
+
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_AUDSRV_READY);
 
     format.freq =
         PSTVNC_TRANSPORT_PS2_AUDIO_RATE;
@@ -63,20 +158,61 @@ static void audio_exp_thread(void *argument)
         audio_exp_record_error(
             runtime,
             PSTVNC_AUDIO_EXP_ERROR_AUDSRV_FORMAT);
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_FORMAT_ERROR);
+
         goto quit_audio;
     }
+
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_FORMAT_READY);
 
     if (audsrv_set_volume(100) != 0) {
         audio_exp_record_error(
             runtime,
             PSTVNC_AUDIO_EXP_ERROR_AUDSRV_VOLUME);
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_VOLUME_ERROR);
+
         goto quit_audio;
     }
 
-    while (!runtime->stop_requested) {
-        size_t bytes_read = 0;
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_VOLUME_READY);
 
-        int read_result =
+    for (;;) {
+        size_t bytes_read = 0;
+        int read_result;
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_LOOP_TOP);
+
+        if (runtime->stop_requested) {
+            audio_exp_publish_diag(
+                runtime,
+                &diagnostic_generation,
+                AUDIO_EXP_DIAG_STOP_REQUESTED);
+            break;
+        }
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_READ_ENTER);
+
+        read_result =
             pstvnc_transport_runtime_audio_read(
                 runtime->transport,
                 audio_bytes,
@@ -90,21 +226,57 @@ static void audio_exp_thread(void *argument)
                     PSTVNC_AUDIO_EXP_ERROR_TRANSPORT);
             }
 
+            audio_exp_publish_diag(
+                runtime,
+                &diagnostic_generation,
+                AUDIO_EXP_DIAG_TRANSPORT_ERROR);
+
             break;
         }
 
         if (read_result == 0) {
+            audio_exp_publish_diag(
+                runtime,
+                &diagnostic_generation,
+                AUDIO_EXP_DIAG_READ_IDLE);
+
+            audio_exp_publish_diag(
+                runtime,
+                &diagnostic_generation,
+                AUDIO_EXP_DIAG_DELAY_ENTER);
+
             if (DelayThread(
                     AUDIO_EXP_IDLE_DELAY_US) < 0) {
 
                 audio_exp_record_error(
                     runtime,
                     PSTVNC_AUDIO_EXP_ERROR_DELAY);
+
+                audio_exp_publish_diag(
+                    runtime,
+                    &diagnostic_generation,
+                    AUDIO_EXP_DIAG_DELAY_ERROR);
+
                 break;
             }
 
+            audio_exp_publish_diag(
+                runtime,
+                &diagnostic_generation,
+                AUDIO_EXP_DIAG_DELAY_RETURN);
+
             continue;
         }
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_READ_DATA);
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_WAIT_ENTER);
 
         if (audsrv_wait_audio(
                 (int)bytes_read) != 0) {
@@ -112,8 +284,24 @@ static void audio_exp_thread(void *argument)
             audio_exp_record_error(
                 runtime,
                 PSTVNC_AUDIO_EXP_ERROR_WAIT);
+
+            audio_exp_publish_diag(
+                runtime,
+                &diagnostic_generation,
+                AUDIO_EXP_DIAG_WAIT_ERROR);
+
             break;
         }
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_WAIT_RETURN);
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_PLAY_ENTER);
 
         if (audsrv_play_audio(
                 (const char *)audio_bytes,
@@ -122,19 +310,61 @@ static void audio_exp_thread(void *argument)
             audio_exp_record_error(
                 runtime,
                 PSTVNC_AUDIO_EXP_ERROR_PLAY);
+
+            audio_exp_publish_diag(
+                runtime,
+                &diagnostic_generation,
+                AUDIO_EXP_DIAG_PLAY_ERROR);
+
             break;
         }
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_PLAY_RETURN);
 
         pstvnc_transport_runtime_record_audio_played(
             runtime->transport,
             bytes_read);
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_RECORDED);
     }
 
 quit_audio:
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_STOP_AUDIO_ENTER);
+
     (void)audsrv_stop_audio();
+
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_STOP_AUDIO_RETURN);
+
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_QUIT_ENTER);
+
     (void)audsrv_quit();
 
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_QUIT_RETURN);
+
 done:
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_EXIT_THREAD);
+
     ExitThread();
 }
 

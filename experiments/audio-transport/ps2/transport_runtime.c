@@ -381,7 +381,7 @@ static int transport_runtime_send_telemetry(
     PUT32(84, runtime->stats.audio_chunks_played);
     PUT32(88, runtime->stats.audio_bytes_played);
 
-    PUT32(92, 0);
+    PUT32(92, runtime->diagnostic_word);
 
 #undef PUT32
 
@@ -1198,6 +1198,16 @@ int pstvnc_transport_runtime_audio_read(
 
     *bytes_read = take;
     return 1;
+}
+
+void pstvnc_transport_runtime_set_diagnostic_word(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t diagnostic_word)
+{
+    if (runtime == NULL)
+        return;
+
+    runtime->diagnostic_word = diagnostic_word;
 }
 
 void pstvnc_transport_runtime_record_audio_played(

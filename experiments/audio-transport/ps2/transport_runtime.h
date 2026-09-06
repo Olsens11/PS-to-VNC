@@ -90,6 +90,16 @@ typedef struct pstvnc_transport_runtime {
     volatile int stop_requested;
     volatile pstvnc_transport_runtime_error_t error;
 
+    /*
+     * Experiment-only diagnostic breadcrumb.
+     *
+     * Telemetry word 23 was reserved by protocol version 1. The transport
+     * never branches on this value; diagnostic producers may publish a
+     * machine-readable observation through it without changing transport
+     * policy or queue behavior.
+     */
+    volatile uint32_t diagnostic_word;
+
     uint32_t next_send_sequence;
     uint32_t expected_receive_sequence;
 
@@ -145,6 +155,10 @@ int pstvnc_transport_runtime_audio_read(
     void *buffer,
     size_t buffer_capacity,
     size_t *bytes_read);
+
+void pstvnc_transport_runtime_set_diagnostic_word(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t diagnostic_word);
 
 void pstvnc_transport_runtime_record_audio_played(
     pstvnc_transport_runtime_t *runtime,
