@@ -279,5 +279,6 @@ The runtime-proven coexistence boundary is:
 The exact tracked supervisor reproduced this boundary on an isolated 704x462
 RGB565 Xtigervnc display.
 
-The service is not yet staged into the live filesystem, daemon-reloaded,
-enabled, started, or hardware-qualified on real `:1`.
+The candidate files are staged byte-exact in the live filesystem. The systemd
+manager has not been daemon-reloaded; the desktop service is not enabled or
+started and has not yet been hardware-qualified on real `:1`.

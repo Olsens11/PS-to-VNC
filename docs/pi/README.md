@@ -206,5 +206,6 @@ The exact tracked session supervisor reproduced this architecture on an isolated
 704x462 RGB565 X display while the normal Raspberry Pi Wayland desktop remained
 active.
 
-The desktop layer remains `EVALUATING` until the committed candidate is staged
-and qualified on the real `:1` provider.
+The committed candidate is now staged byte-exact in its production filesystem
+locations but remains `EVALUATING`: systemd has not been daemon-reloaded and the
+desktop has not yet been qualified on the real `:1` provider.

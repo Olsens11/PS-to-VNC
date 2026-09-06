@@ -184,3 +184,39 @@ comment-only wording, but its effective directives must remain identical and it
 must not be active or enabled.
 
 Any effective directive difference remains a hard failure.
+
+## Live staging checkpoint
+
+The runtime-proven candidate was staged into its intended production filesystem
+locations from repository authority:
+
+    70e51f0f1e233fd7c5ac3b50a37e0cd4c1e68542
+
+The staged state is:
+
+    STAGE_STATUS=STAGED_NOT_RELOADED
+    BYTE_IDENTITY=PASS
+    MODE_IDENTITY=PASS
+    INSTALLER_VERIFY=PASS
+    SYSTEMD_DAEMON_RELOAD=NO
+    DESKTOP_SERVICE_ENABLED=NO
+    DESKTOP_SERVICE_STARTED=NO
+    REAL_DISPLAY1_MUTATION=NO
+
+The files now exist under `/etc/ps-to-vnc/desktop/`,
+`/usr/lib/ps-to-vnc/`, and `/etc/systemd/system/`, but systemd has not been
+asked to reload the new unit.
+
+The existing qualified Xtigervnc `:1` provider and the pre-existing manually
+owned Openbox process therefore remain the active real-display fixture.
+
+The initial post-stage verifier failure was not a permission failure. The
+installer requested mode strings such as `0644`, while `stat -c %a` reports
+the equivalent representation `644`. Independent inspection proved all staged
+modes correct. The verifier now normalizes that representation before
+comparison.
+
+Do not restage merely because of that historical false negative.
+
+The next consequential boundary is a separately designed controlled systemd
+activation transaction.

@@ -434,6 +434,8 @@ verify_file()
     }
 
     local actual_mode
+    local normalized_expected_mode
+    local normalized_actual_mode
 
     actual_mode="$(
         stat \
@@ -441,13 +443,29 @@ verify_file()
             "$target"
     )"
 
-    [ "$actual_mode" = "$expected_mode" ] || {
-        echo "ERROR: wrong installed mode on $target: $actual_mode" >&2
+    normalized_expected_mode="$expected_mode"
+    normalized_actual_mode="$actual_mode"
+
+    while [ "${#normalized_expected_mode}" -gt 1 ] && \
+          [ "${normalized_expected_mode#0}" != "$normalized_expected_mode" ]
+    do
+        normalized_expected_mode="${normalized_expected_mode#0}"
+    done
+
+    while [ "${#normalized_actual_mode}" -gt 1 ] && \
+          [ "${normalized_actual_mode#0}" != "$normalized_actual_mode" ]
+    do
+        normalized_actual_mode="${normalized_actual_mode#0}"
+    done
+
+    [ "$normalized_actual_mode" = "$normalized_expected_mode" ] || {
+        echo "ERROR: wrong installed mode on $target: actual=$actual_mode expected=$expected_mode" >&2
         exit 42
     }
 
     echo "INSTALLED_IDENTITY=PASS|$target"
     echo "INSTALLED_SHA256=$(sha256sum "$target" | awk '{print $1}')"
+    echo "INSTALLED_MODE=PASS|$target|EXPECTED=$normalized_expected_mode|ACTUAL=$normalized_actual_mode"
 }
 
 

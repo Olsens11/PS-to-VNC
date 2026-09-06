@@ -264,7 +264,7 @@ particular filesystem location.
 
 ## Next action
 
-    NEXT_ACTION=STAGE_COMMITTED_MINIMUM_OPENBOX_LXPANEL_PI_DESKTOP_WITHOUT_DAEMON_RELOAD_ENABLE_OR_START
+    NEXT_ACTION=DESIGN_CONTROLLED_REAL_DISPLAY1_SYSTEMD_ACTIVATION_TRANSACTION
     BLOCKED_BY=NONE
     ISSUE40_BLOCKED_BY=MINIMUM_REPRODUCIBLE_PI_DESKTOP_NOT_YET_REAL_DISPLAY1_QUALIFIED
 
@@ -287,7 +287,7 @@ Current machine-readable authority is `runtime/PROJECT_STATE.env`.
     PI_MINIMUM_DESKTOP_PHYSICAL_WAYLAND_COEXISTENCE=PASS
     PI_MINIMUM_DESKTOP_DEDICATED_UNIX_USER_REQUIRED=NO_EVIDENCE
     PI_MINIMUM_DESKTOP_REAL_DISPLAY1_STATUS=NOT_YET_APPLIED
-    PI_MINIMUM_DESKTOP_SYSTEMD_STATUS=NOT_YET_INSTALLED
+    PI_MINIMUM_DESKTOP_SYSTEMD_STATUS=STAGED_NOT_RELOADED
     ISSUE40_BLOCKED_BY=MINIMUM_REPRODUCIBLE_PI_DESKTOP_NOT_YET_REAL_DISPLAY1_QUALIFIED
 
 The stock Raspberry Pi `lxpanel-pi` profile fails when the dedicated X11
@@ -303,8 +303,10 @@ working session boundary on a temporary 704x462 depth-16 RGB565 Xtigervnc
 display with Openbox owning the window manager and `lxpanel-pi` exposing the
 expected 704x36 panel.
 
-Next: commit this tested candidate, then stage those committed bytes onto the Pi
-without daemon-reload, enable, start, or real-`:1` replacement.
+The committed desktop candidate is now staged byte-for-byte in its production
+filesystem locations. The systemd manager has not been daemon-reloaded, the
+desktop unit is neither enabled nor started, and the existing real `:1`
+provider/Openbox fixture remains unchanged.
 
 ### Issue #5 live/final-source authority distinction
 
@@ -321,3 +323,25 @@ qualification.
 
 The pre-Issue40 desktop installer now fails closed on effective directive
 differences while recognizing that exact qualified live-provider provenance.
+### Minimum desktop live staging checkpoint
+
+    PI_MINIMUM_DESKTOP_STAGE_STATUS=STAGED_NOT_RELOADED
+    PI_MINIMUM_DESKTOP_STAGE_ORIGIN_COMMIT=70e51f0f1e233fd7c5ac3b50a37e0cd4c1e68542
+    PI_MINIMUM_DESKTOP_STAGE_BYTE_IDENTITY=PASS
+    PI_MINIMUM_DESKTOP_STAGE_MODE_IDENTITY=PASS
+    PI_MINIMUM_DESKTOP_STAGE_VERIFY=PASS
+    PI_MINIMUM_DESKTOP_STAGE_DAEMON_RELOAD=NO
+    PI_MINIMUM_DESKTOP_STAGE_ENABLED=NO
+    PI_MINIMUM_DESKTOP_STAGE_STARTED=NO
+    PI_MINIMUM_DESKTOP_STAGE_REAL_DISPLAY1_MUTATION=NO
+
+All seven staged files independently matched their tracked source bytes and
+intended `0644`/`0755` permissions.
+
+The first installer verification attempt produced a false negative because the
+verifier compared the requested text `0644` against `stat -c %a` output `644`.
+The permission itself was correct. The verifier now normalizes leading-zero
+representation and the already-staged files pass verification without being
+restaged.
+
+No service-owned runtime, state, or cache directory exists at this checkpoint.
