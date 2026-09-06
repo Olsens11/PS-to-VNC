@@ -32,6 +32,23 @@
 #define PSTVNC_TRANSPORT_HEADER_SIZE 16u
 #define PSTVNC_TRANSPORT_MAX_PAYLOAD 8192u
 
+/*
+ * Fixed v1 control payload sizes.
+ *
+ * HELLO advertises PS2 mechanism and physical-capacity facts.
+ * CREDIT grants one increment of newly available receiver capacity.
+ * TELEMETRY is a Pi-requested snapshot; the Pi controls request cadence.
+ */
+#define PSTVNC_TRANSPORT_HELLO_PAYLOAD_SIZE      24u
+#define PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE      4u
+#define PSTVNC_TRANSPORT_TELEMETRY_PAYLOAD_SIZE  96u
+#define PSTVNC_TRANSPORT_TELEMETRY_VERSION        1u
+
+#define PSTVNC_TRANSPORT_CAP_RFB                 (1u << 0)
+#define PSTVNC_TRANSPORT_CAP_AUDIO_PCM_S16       (1u << 1)
+#define PSTVNC_TRANSPORT_CAP_RECEIVER_CREDIT     (1u << 2)
+#define PSTVNC_TRANSPORT_CAP_TELEMETRY_SNAPSHOT  (1u << 3)
+
 typedef enum pstvnc_transport_frame_kind {
     PSTVNC_TRANSPORT_FRAME_HELLO = 1,
     PSTVNC_TRANSPORT_FRAME_CONFIG = 2,
