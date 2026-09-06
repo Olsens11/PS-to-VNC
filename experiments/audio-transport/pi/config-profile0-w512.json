@@ -1,0 +1,67 @@
+{
+  "listen_host": "192.168.50.1",
+  "listen_port": 5902,
+
+  "rfb_host": "127.0.0.1",
+  "rfb_port": 5903,
+
+  "rfb_quantum": 8192,
+  "audio_quantum": 4096,
+
+  "rfb_weight": 12,
+  "audio_weight": 6,
+
+  "rfb_policy_window": 32768,
+  "audio_policy_window": 524288,
+
+  "rfb_host_buffer": 524288,
+  "audio_host_buffer": 262144,
+
+  "telemetry_interval_seconds": 1.0,
+
+  "audio_rate": 48000,
+  "audio_channels": 2,
+  "audio_sample_bytes": 2,
+
+  "mirror_sink_volume": false,
+
+  "ps2_profile": {
+    "profile_id": 0,
+
+    "rfb_queue_capacity": 32768,
+    "audio_queue_capacity": 524288,
+
+    "rfb_credit_batch_bytes": 4096,
+    "audio_credit_batch_bytes": 4096,
+
+    "rfb_credit_flush_on_empty": 1,
+    "audio_credit_flush_on_empty": 1,
+
+    "audio_start_mode": 2,
+    "audio_start_target_bytes": 524288,
+    "audio_start_delay_us": 3000000,
+
+    "audio_chunk_bytes": 4096,
+
+    "audio_idle_delay_us": 1000,
+    "rfb_empty_delay_us": 1000,
+
+    "audio_thread_priority": 65,
+    "audio_thread_stack_size": 16384,
+
+    "receiver_thread_priority": 63,
+    "receiver_thread_stack_size": 16384,
+
+    "audio_rate": 48000,
+    "audio_channels": 2,
+    "audio_bits": 16,
+    "audio_volume": 100,
+
+    "max_data_payload": 8192,
+
+    "socket_receive_buffer_bytes": 0,
+    "socket_send_buffer_bytes": 0,
+
+    "queue_allocation_order": 0
+  }
+}

@@ -22,11 +22,15 @@ PROTOCOL_TEST := \
 QUEUE_TEST := \
 	$(HOST_BUILD_DIR)/test_transport_queue
 
+CONFIG_TEST := \
+	$(HOST_BUILD_DIR)/test_transport_config
+
 .PHONY: host-test host-clean
 
-host-test: $(PROTOCOL_TEST) $(QUEUE_TEST)
+host-test: $(PROTOCOL_TEST) $(QUEUE_TEST) $(CONFIG_TEST)
 	./$(PROTOCOL_TEST)
 	./$(QUEUE_TEST)
+	./$(CONFIG_TEST)
 	@echo "AUDIO_TRANSPORT_HOST_TESTS=PASS"
 
 $(HOST_BUILD_DIR):
@@ -50,6 +54,19 @@ $(QUEUE_TEST): \
 		-I$(COMMON_DIR) \
 		$(COMMON_DIR)/transport_queue.c \
 		$(TEST_DIR)/test_transport_queue.c \
+		-o $@
+
+$(CONFIG_TEST): \
+	$(COMMON_DIR)/transport_protocol.c \
+	$(COMMON_DIR)/transport_protocol.h \
+	$(COMMON_DIR)/transport_config.c \
+	$(COMMON_DIR)/transport_config.h \
+	$(TEST_DIR)/test_transport_config.c | $(HOST_BUILD_DIR)
+	$(HOST_CC) $(HOST_CFLAGS) \
+		-I$(COMMON_DIR) \
+		$(COMMON_DIR)/transport_protocol.c \
+		$(COMMON_DIR)/transport_config.c \
+		$(TEST_DIR)/test_transport_config.c \
 		-o $@
 
 host-clean:
