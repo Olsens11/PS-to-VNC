@@ -305,3 +305,19 @@ expected 704x36 panel.
 
 Next: commit this tested candidate, then stage those committed bytes onto the Pi
 without daemon-reload, enable, start, or real-`:1` replacement.
+
+### Issue #5 live/final-source authority distinction
+
+    ISSUE5_LIVE_ACTIVE_PROVIDER_AUTHORITY=B40F_HARDWARE_QUALIFIED_BYTES
+    ISSUE5_LIVE_ACTIVE_PROVIDER_SHA256=990261225ee6b57519bd708ea70c5b771fe592e76bd77dbb064c1ec1b2fea26b
+    ISSUE5_FINAL_SOURCE_AUTHORITY=e909ffc97563d678e87a7d8cf9febfdd452fe7b9
+    ISSUE5_LIVE_VS_FINAL_SOURCE_VARIANCE=COMMENTS_ONLY
+    ISSUE5_LIVE_VS_FINAL_EFFECTIVE_DIRECTIVES=IDENTICAL
+
+The live provider is not classified as operational drift. It retains the exact
+provider bytes used by the preserved Issue #5 hardware qualification. The later
+final source authority changed only comments to describe the completed
+qualification.
+
+The pre-Issue40 desktop installer now fails closed on effective directive
+differences while recognizing that exact qualified live-provider provenance.

@@ -229,34 +229,127 @@ load_and_verify_provenance()
 }
 
 
-require_qualified_issue5_foundation()
+canonicalize_systemd_unit()
 {
-    local source
-    local target
-
-    while IFS='|' read -r source target
-    do
-        [ -f "$source" ] || {
-            echo "ERROR: qualified tracked source absent: $source" >&2
-            exit 20
+    awk '
+        /^[[:space:]]*#/ { next }
+        /^[[:space:]]*$/ { next }
+        {
+            sub(/[[:space:]]+$/, "")
+            print
         }
+    ' "$1"
+}
 
-        [ -f "$target" ] || {
-            echo "ERROR: qualified installed unit absent: $target" >&2
-            exit 21
+
+canonicalize_installed_systemd_unit()
+{
+    cat "$1" |
+    awk '
+        /^[[:space:]]*#/ { next }
+        /^[[:space:]]*$/ { next }
+        {
+            sub(/[[:space:]]+$/, "")
+            print
         }
+    '
+}
 
-        cmp -s "$source" "$target" || {
-            echo "ERROR: installed Issue5 unit differs from tracked authority: $target" >&2
+
+require_effective_unit_identity()
+{
+    local source="$1"
+    local target="$2"
+    local role="$3"
+
+    [ -f "$source" ] || {
+        echo "ERROR: qualified tracked source absent: $source" >&2
+        exit 20
+    }
+
+    [ -f "$target" ] || {
+        echo "ERROR: qualified installed unit absent: $target" >&2
+        exit 21
+    }
+
+    if cmp -s "$source" "$target"
+    then
+        echo "QUALIFIED_ISSUE5_IDENTITY=BYTE_EXACT|ROLE=$role|TARGET=$target"
+        return
+    fi
+
+    diff \
+        -u \
+        <(canonicalize_systemd_unit "$source") \
+        <(canonicalize_installed_systemd_unit "$target") \
+        >/dev/null \
+        || {
+            echo "ERROR: installed Issue5 effective directives differ: $target" >&2
             exit 22
         }
 
-        echo "QUALIFIED_ISSUE5_IDENTITY=PASS|$target"
-    done <<__PS2VNC_ISSUE5_IDENTITY_EOF__
-$QUALIFIED_SOCKET_SOURCE|$QUALIFIED_SOCKET_DEST
-$QUALIFIED_PROVIDER_SOURCE|$QUALIFIED_PROVIDER_DEST
-$QUALIFIED_PERSISTENT_SOURCE|$QUALIFIED_PERSISTENT_DEST
-__PS2VNC_ISSUE5_IDENTITY_EOF__
+    echo "QUALIFIED_ISSUE5_IDENTITY=COMMENT_ONLY_VARIANCE|ROLE=$role|TARGET=$target"
+}
+
+
+require_qualified_issue5_foundation()
+{
+    local live_provider_sha
+
+    require_effective_unit_identity \
+        "$QUALIFIED_SOCKET_SOURCE" \
+        "$QUALIFIED_SOCKET_DEST" \
+        SOCKET
+
+    if ! cmp -s \
+            "$QUALIFIED_PROVIDER_SOURCE" \
+            "$QUALIFIED_PROVIDER_DEST"
+    then
+        live_provider_sha="$(
+            sha256sum "$QUALIFIED_PROVIDER_DEST" |
+            awk '{print $1}'
+        )"
+
+        [ "$live_provider_sha" = '990261225ee6b57519bd708ea70c5b771fe592e76bd77dbb064c1ec1b2fea26b' ] || {
+            echo 'ERROR: non-current live provider is not the exact hardware-qualified Issue5 file.' >&2
+            echo "LIVE_PROVIDER_SHA256=$live_provider_sha" >&2
+            exit 23
+        }
+
+        echo 'QUALIFIED_ISSUE5_ACTIVE_PROVIDER_PROVENANCE=B40F_HARDWARE_QUALIFIED_BYTES'
+    fi
+
+    require_effective_unit_identity \
+        "$QUALIFIED_PROVIDER_SOURCE" \
+        "$QUALIFIED_PROVIDER_DEST" \
+        ACTIVE_PROVIDER
+
+    if systemctl \
+           is-active \
+           --quiet \
+           ps-to-vnc-rfb-tigervnc-persistent.service \
+           2>/dev/null
+    then
+        echo 'ERROR: persistent Issue5 fallback is unexpectedly active.' >&2
+        exit 24
+    fi
+
+    if systemctl \
+           is-enabled \
+           --quiet \
+           ps-to-vnc-rfb-tigervnc-persistent.service \
+           2>/dev/null
+    then
+        echo 'ERROR: persistent Issue5 fallback is unexpectedly enabled.' >&2
+        exit 25
+    fi
+
+    require_effective_unit_identity \
+        "$QUALIFIED_PERSISTENT_SOURCE" \
+        "$QUALIFIED_PERSISTENT_DEST" \
+        INACTIVE_PERSISTENT_CONTROL
+
+    echo 'QUALIFIED_ISSUE5_FOUNDATION=PASS'
 }
 
 

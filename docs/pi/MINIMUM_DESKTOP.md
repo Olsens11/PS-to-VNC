@@ -145,3 +145,42 @@ proves:
 10. provider reactivation recreates the desktop without SSH intervention.
 
 The real `:1` provider is not changed merely by preparing this candidate.
+
+## Issue #5 installed-byte authority nuance
+
+The live Issue #5 socket-activated provider may legitimately differ
+byte-for-byte from the finalized tracked unit while remaining the exact
+hardware-qualified runtime authority.
+
+The qualification chronology is:
+
+    b40f422a760a0b7b6f2ab41699c5e72fda83bb83
+        exact provider bytes used during hardware qualification
+
+    e909ffc97563d678e87a7d8cf9febfdd452fe7b9
+        finalized Issue #5 source authority
+
+The finalized source changed only comments describing the result of the
+qualification. Its effective systemd directives and provider `ExecStart` are
+unchanged.
+
+The live provider observed during the pre-Issue40 desktop prerequisite retained
+the exact `b40f422a...` hardware-qualified bytes:
+
+    SHA256=990261225ee6b57519bd708ea70c5b771fe592e76bd77dbb064c1ec1b2fea26b
+
+Therefore the desktop installer does not weaken the Issue #5 boundary to
+arbitrary live differences.
+
+It accepts:
+
+1. exact current tracked bytes; or
+2. for the active provider only, the exact known hardware-qualified SHA above
+   when its non-comment effective systemd directives are identical to the
+   finalized tracked source.
+
+The inactive persistent comparison/control unit may also retain earlier
+comment-only wording, but its effective directives must remain identical and it
+must not be active or enabled.
+
+Any effective directive difference remains a hard failure.
