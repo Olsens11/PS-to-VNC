@@ -259,6 +259,187 @@ The PS2 endpoint should primarily:
 
 ---
 
+## Host-Driven Experimental Policy — v0
+
+The first PS2 transport ELF should provide a stable, deliberately generic
+experimental substrate.
+
+Whenever practical, choices about scheduling, pacing, queue utilization,
+channel priority, batching, flow-control policy, and test behavior should
+remain controllable from the Raspberry Pi so they can be changed repeatedly
+without rebuilding or redeploying the PS2 ELF.
+
+The governing distinction is:
+
+    PS2 = mechanism
+    Pi  = experimental policy
+
+The PS2 should implement the mechanisms that are fundamental to safely
+receiving and consuming transport work:
+
+- versioned transport framing;
+- capability negotiation;
+- logical-channel demultiplexing;
+- bounded receive queues;
+- the narrow adapter into the existing RFB consumer;
+- the narrow adapter into the audio consumer;
+- control-message reception;
+- truthful capacity and credit reporting;
+- sequence and progress accounting;
+- health telemetry;
+- validation of lengths, channels, versions, and safe operating bounds.
+
+The Pi should own policy that we expect to tune repeatedly:
+
+- transmission quantum;
+- aggregate outstanding-work ceiling;
+- per-channel policy ceilings;
+- scheduling algorithm;
+- channel weights;
+- pacing interval;
+- batching behavior;
+- queue target levels;
+- audio service interval;
+- RFB service interval;
+- telemetry interval;
+- experimental policy profiles.
+
+A change to those Pi-side policy choices should not normally require a new PS2
+ELF.
+
+### Capability Negotiation
+
+The PS2 endpoint should advertise what it actually supports rather than
+requiring the Pi to infer behavior from build history.
+
+The initial capability exchange should be able to describe information such
+as:
+
+- transport protocol version;
+- PS2 experimental build identity;
+- supported logical channels;
+- maximum accepted transport payload;
+- physical RFB queue capacity;
+- physical audio queue capacity;
+- control/telemetry capabilities;
+- supported audio formats;
+- optional feature flags.
+
+Future PS2 ELFs may advertise additional capabilities such as MPEG-2 without
+changing the meaning of existing capabilities.
+
+### Physical Capacity Versus Experimental Policy
+
+Physical capacity and experimental policy must remain distinct.
+
+For example, if the PS2 truthfully reports that 12288 bytes are free in an
+RFB receive buffer, the Pi may still choose an experimental policy that allows
+only 4096 bytes of RFB work to remain outstanding.
+
+Conceptually:
+
+    actual PS2 capacity
+            |
+       reported credit
+            |
+      Pi policy ceiling
+            |
+      permitted workload
+
+The PS2 must not falsify capacity merely to implement an experiment.
+
+The Pi may deliberately use less than the available capacity while exploring
+the stability/performance frontier.
+
+### Runtime Configuration
+
+Where practical, experimental policy should be changeable through the
+CONTROL channel after connection establishment.
+
+Representative tunable policy may include:
+
+    RFB quantum
+    audio quantum
+    aggregate window
+    channel weights
+    pacing interval
+    scheduling mode
+    telemetry interval
+
+The exact command set should remain small and versioned.
+
+The goal is not to create a scripting engine or transport virtual machine.
+
+Use fixed mechanisms with broad, safe parameters.
+
+### Telemetry First
+
+The first experimental ELF should expose substantially more structured
+telemetry than the final product is expected to need.
+
+Useful initial observations include:
+
+- total transport frames received;
+- total transport bytes received;
+- last valid transport sequence;
+- RFB bytes enqueued;
+- RFB bytes consumed;
+- current RFB queue occupancy;
+- RFB queue high-water mark;
+- audio bytes enqueued;
+- audio bytes consumed;
+- current audio queue occupancy;
+- audio queue high-water mark;
+- audio underflow count;
+- control messages received;
+- malformed-frame count;
+- invalid-length count;
+- invalid-channel count;
+- credit-policy violations;
+- main/application heartbeat;
+- RFB consumer heartbeat;
+- audio consumer heartbeat.
+
+Telemetry should be machine-readable on the Pi and should preserve subsystem
+boundaries.
+
+The objective is to turn failures into evidence about which boundary stopped
+making progress.
+
+### Experimental Distillation
+
+The experimental framework is not automatically the future product
+implementation.
+
+Once repeated tests identify which mechanisms materially improve stability or
+performance, preserve those mechanisms and discard unnecessary experimental
+machinery.
+
+A useful outcome may therefore be:
+
+    experiment mechanism        eventual decision
+    --------------------        -----------------
+    receiver credits            preserve
+    bounded queues              preserve
+    channel framing             preserve
+    scheduler policy knobs      reduce to defaults/config
+    excessive telemetry         retain useful subset
+    unused scheduler modes      discard
+    unnecessary checks          discard if evidence supports it
+
+Permanent integration should be the distillation of experimental evidence,
+not a wholesale import of the experiment.
+
+### Governing Principle
+
+Maximize experimental freedom on the Pi.
+
+Minimize experimental machinery on the PS2.
+
+Preserve only mechanisms that evidence shows are necessary.
+
+---
+
 ## Research Precedents / Borrowed Design Principles
 
 This experiment is intentionally informed by existing remote-display,
@@ -558,3 +739,17 @@ The initial synthesis is intentionally conservative: preserve existing RFB
 and PCM payload semantics, add bounded multiplexing and observability, and
 treat the first TCP backend as an experimental substrate rather than a final
 wire-protocol decision.
+
+### v0.2 — host-driven experimental policy
+
+Established the rule that the first PS2 experimental transport implementation
+should provide stable mechanisms while scheduling and tuning policy remain
+primarily Pi-side.
+
+Added capability negotiation, truthful receiver-capacity reporting,
+runtime-configurable policy ceilings, structured subsystem telemetry, and the
+requirement that later product integration preserve only experimentally
+justified mechanisms.
+
+The purpose is to allow many controlled Pi-side experiments against one known
+PS2 ELF before additional experimental binaries are introduced.
