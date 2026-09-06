@@ -24,6 +24,18 @@ extern unsigned int size_AUDSRV_irx;
 #define AUDIO_EXP_CHUNK_BYTES         4096u
 #define AUDIO_EXP_THREAD_PRIORITY     65
 #define AUDIO_EXP_IDLE_DELAY_US       1000u
+
+/*
+ * Test-only startup reservoir fill.
+ *
+ * 512 KiB at 192000 PCM bytes/second represents about 2.73 seconds.
+ * Hold the consumer for 3 seconds after audsrv setup so the transport
+ * receiver can actually populate the enlarged queue before playback starts.
+ *
+ * This is experimental setup, not proposed product playback policy.
+ */
+#define AUDIO_EXP_STARTUP_PREFILL_US  3000000u
+
 #define AUDIO_EXP_STOP_WAIT_STEP_US   1000u
 #define AUDIO_EXP_STOP_WAIT_STEPS     3000u
 
@@ -55,6 +67,8 @@ typedef enum audio_exp_diag_stage {
     AUDIO_EXP_DIAG_AUDSRV_READY       = 0x02,
     AUDIO_EXP_DIAG_FORMAT_READY       = 0x03,
     AUDIO_EXP_DIAG_VOLUME_READY       = 0x04,
+    AUDIO_EXP_DIAG_PREFILL_ENTER      = 0x05,
+    AUDIO_EXP_DIAG_PREFILL_RETURN     = 0x06,
 
     AUDIO_EXP_DIAG_LOOP_TOP           = 0x10,
     AUDIO_EXP_DIAG_STOP_REQUESTED     = 0x11,
@@ -189,6 +203,37 @@ static void audio_exp_thread(void *argument)
         runtime,
         &diagnostic_generation,
         AUDIO_EXP_DIAG_VOLUME_READY);
+
+    /*
+     * Deliberately prefill the enlarged experimental audio reservoir before
+     * the consumer begins draining it. Without this pause, merely increasing
+     * capacity would not prove anything: a real-time producer and real-time
+     * consumer would begin together and the extra capacity could remain empty.
+     */
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_PREFILL_ENTER);
+
+    if (DelayThread(
+            AUDIO_EXP_STARTUP_PREFILL_US) < 0) {
+
+        audio_exp_record_error(
+            runtime,
+            PSTVNC_AUDIO_EXP_ERROR_DELAY);
+
+        audio_exp_publish_diag(
+            runtime,
+            &diagnostic_generation,
+            AUDIO_EXP_DIAG_DELAY_ERROR);
+
+        goto quit_audio;
+    }
+
+    audio_exp_publish_diag(
+        runtime,
+        &diagnostic_generation,
+        AUDIO_EXP_DIAG_PREFILL_RETURN);
 
     for (;;) {
         size_t bytes_read = 0;
