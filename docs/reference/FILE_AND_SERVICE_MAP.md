@@ -251,3 +251,33 @@ longer means every writable source file is byte-identical to B4A.
 
 The operational ELF is generated/ignored. The committed evidence ELF is the
 durable binary authority.
+
+## Pre-Issue40 minimum desktop candidate
+
+This layer is subsequent to and distinct from the completed Issue #5 RFB
+qualification.
+
+| Responsibility | Tracked location |
+|---|---|
+| Candidate contract / qualification gate | `docs/pi/MINIMUM_DESKTOP.md` |
+| Panel package provenance | `config/pi/desktop/PANEL_PROVENANCE.env` |
+| Project-owned Openbox configuration | `config/pi/desktop/openbox/rc.xml` |
+| Project-owned Openbox recovery menu | `config/pi/desktop/openbox/menu.xml` |
+| Stock Raspberry Pi lxpanel-pi profile | `config/pi/desktop/xdg/lxpanel-pi/` |
+| Desktop contents supervisor | `scripts/pi/run-desktop-session.sh` |
+| Fail-closed stage/verify/remove tool | `scripts/pi/install-minimum-desktop.sh` |
+| Desktop systemd ownership candidate | `systemd/pi/ps-to-vnc-desktop.service` |
+
+The runtime-proven coexistence boundary is:
+
+    same ps2 Unix user
+    + independent X display
+    + private XDG_RUNTIME_DIR
+    + private DBus
+    = Openbox + stock lxpanel-pi coexist with physical Wayland desktop
+
+The exact tracked supervisor reproduced this boundary on an isolated 704x462
+RGB565 Xtigervnc display.
+
+The service is not yet staged into the live filesystem, daemon-reloaded,
+enabled, started, or hardware-qualified on real `:1`.

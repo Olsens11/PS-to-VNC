@@ -16,7 +16,7 @@ preserved evidence, and Git.
     SEMANTIC_AUDIT=COMPLETE
     CLEAN_ARCHITECTURE=REBUILD_READY
     CLEAN_PS2_RECONSTRUCTION=ISSUE39_STAGE2_COMPLETE
-    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_MINIMUM_DESKTOP_PENDING
+    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_MINIMUM_DESKTOP_RUNTIME_PROVEN_CANDIDATE
 
 The reconstruction principle remains:
 
@@ -231,7 +231,7 @@ Current indicators:
     REFERENCE_PRESERVATION=100_PERCENT
     SEMANTIC_AUDIT=100_PERCENT
     CLEAN_PS2_RECONSTRUCTION=ISSUE39_STAGE2_COMPLETE
-    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_MINIMUM_DESKTOP_PENDING
+    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_MINIMUM_DESKTOP_RUNTIME_PROVEN_CANDIDATE
     GITHUB_RECONCILIATION=100_PERCENT
 
 The previous `OVERALL_ARCHITECTURAL_NORMALIZATION` percentage remains historical
@@ -264,9 +264,9 @@ particular filesystem location.
 
 ## Next action
 
-    NEXT_ACTION=ESTABLISH_MINIMUM_REPRODUCIBLE_TERMINAL_CAPABLE_PI_DESKTOP_BEFORE_ISSUE40
+    NEXT_ACTION=STAGE_COMMITTED_MINIMUM_OPENBOX_LXPANEL_PI_DESKTOP_WITHOUT_DAEMON_RELOAD_ENABLE_OR_START
     BLOCKED_BY=NONE
-    ISSUE40_BLOCKED_BY=MINIMUM_REPRODUCIBLE_PI_DESKTOP_TARGET_NOT_YET_ESTABLISHED
+    ISSUE40_BLOCKED_BY=MINIMUM_REPRODUCIBLE_PI_DESKTOP_NOT_YET_REAL_DISPLAY1_QUALIFIED
 
 This prerequisite is intentionally smaller than the later companion-desktop
 maturation work. Minimum success is a known reproducible VNC session with known
@@ -277,3 +277,31 @@ Issue #40 remains deliberately unopened as the active implementation step until
 that target exists.
 
 Current machine-readable authority is `runtime/PROJECT_STATE.env`.
+
+## Pre-Issue40 Pi desktop prerequisite — 2026-09-05
+
+    PI_MINIMUM_DESKTOP_ARCHITECTURE=OPENBOX_LXPANEL_PI
+    PI_MINIMUM_DESKTOP_SESSION_ISOLATION=PRIVATE_RUNTIME_PRIVATE_DBUS
+    PI_MINIMUM_DESKTOP_TEMP_RGB565_PROOF=PASS
+    PI_MINIMUM_DESKTOP_TRACKED_SUPERVISOR_PROOF=PASS
+    PI_MINIMUM_DESKTOP_PHYSICAL_WAYLAND_COEXISTENCE=PASS
+    PI_MINIMUM_DESKTOP_DEDICATED_UNIX_USER_REQUIRED=NO_EVIDENCE
+    PI_MINIMUM_DESKTOP_REAL_DISPLAY1_STATUS=NOT_YET_APPLIED
+    PI_MINIMUM_DESKTOP_SYSTEMD_STATUS=NOT_YET_INSTALLED
+    ISSUE40_BLOCKED_BY=MINIMUM_REPRODUCIBLE_PI_DESKTOP_NOT_YET_REAL_DISPLAY1_QUALIFIED
+
+The stock Raspberry Pi `lxpanel-pi` profile fails when the dedicated X11
+desktop reuses the physical `ps2` graphical session's runtime resources.
+
+A private DBus alone was insufficient.
+
+A private XDG runtime plus a private DBus passed while the physical
+`labwc`/`wf-panel-pi` Wayland desktop remained active.
+
+The exact tracked `scripts/pi/run-desktop-session.sh` then reproduced that
+working session boundary on a temporary 704x462 depth-16 RGB565 Xtigervnc
+display with Openbox owning the window manager and `lxpanel-pi` exposing the
+expected 704x36 panel.
+
+Next: commit this tested candidate, then stage those committed bytes onto the Pi
+without daemon-reload, enable, start, or real-`:1` replacement.

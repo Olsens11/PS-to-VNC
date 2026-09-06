@@ -1,0 +1,58 @@
+[Unit]
+Description=PS-to-VNC dedicated Openbox and lxpanel-pi desktop
+Documentation=file:///home/ps2/src/PS-to-VNC/docs/pi/MINIMUM_DESKTOP.md
+
+# Issue #5 remains the authority for the RFB provider itself.
+# This desktop is a dependent layer and does not pull the provider in alone.
+Requisite=ps-to-vnc-rfb-tigervnc.service
+BindsTo=ps-to-vnc-rfb-tigervnc.service
+After=ps-to-vnc-rfb-tigervnc.service
+
+[Service]
+Type=simple
+User=ps2
+Group=ps2
+WorkingDirectory=/home/ps2
+UMask=0077
+
+# This is the key isolation boundary proven experimentally on 2026-09-05.
+RuntimeDirectory=ps-to-vnc-desktop
+RuntimeDirectoryMode=0700
+
+StateDirectory=ps-to-vnc-desktop
+CacheDirectory=ps-to-vnc-desktop
+
+Environment=HOME=/home/ps2
+Environment=DISPLAY=:1
+Environment=XDG_SESSION_TYPE=x11
+Environment=XDG_CURRENT_DESKTOP=LXDE
+Environment=DESKTOP_SESSION=ps-to-vnc
+Environment=GDK_BACKEND=x11
+
+Environment=XDG_RUNTIME_DIR=/run/ps-to-vnc-desktop
+Environment=XDG_CONFIG_HOME=/var/lib/ps-to-vnc-desktop/config
+Environment=XDG_CONFIG_DIRS=/etc/ps-to-vnc/desktop/xdg:/etc/xdg
+Environment=XDG_DATA_HOME=/var/lib/ps-to-vnc-desktop/data
+Environment=XDG_DATA_DIRS=/home/ps2/.local/share:/usr/local/share:/usr/share/raspi-ui-overrides:/usr/share:/usr/share/gdm:/var/lib/menu-xdg
+Environment=XDG_CACHE_HOME=/var/cache/ps-to-vnc-desktop
+Environment=XDG_STATE_HOME=/var/lib/ps-to-vnc-desktop/state
+
+Environment=XDG_MENU_PREFIX=rpd-
+Environment=SAL_USE_VCLPLUGIN=gtk3
+Environment=QT_QPA_PLATFORMTHEME=qt5ct
+
+# Never inherit or reuse the physical Wayland session's bus/display identity.
+UnsetEnvironment=DBUS_SESSION_BUS_ADDRESS
+UnsetEnvironment=WAYLAND_DISPLAY
+
+# dbus-run-session supplies one private bus shared by Openbox, lxpanel-pi and
+# applications launched from this PS2-facing desktop.
+ExecStart=/usr/bin/dbus-run-session -- /usr/lib/ps-to-vnc/run-desktop-session.sh
+
+Restart=no
+KillMode=control-group
+TimeoutStopSec=5
+
+[Install]
+# Enabling this unit attaches it to the already-qualified Issue #5 provider.
+WantedBy=ps-to-vnc-rfb-tigervnc.service

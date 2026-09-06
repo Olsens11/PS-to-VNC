@@ -94,6 +94,8 @@ reconstruction without reconstructing it from live-machine folklore.
 - `pi/TIGERVNC_SESSION.md` — qualified bare TigerVNC provider contract;
 - `pi/RFB_SOCKET_ACTIVATION.md` — adopted systemd socket lifecycle and hardware
   qualification record.
+- `pi/MINIMUM_DESKTOP.md` — runtime-proven pre-Issue40 Openbox + lxpanel-pi
+  candidate and private-session isolation contract.
 
 The finalized tracked source authority carried forward is
 `e909ffc97563d678e87a7d8cf9febfdd452fe7b9`. Its hardware-qualification

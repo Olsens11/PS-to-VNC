@@ -73,6 +73,8 @@ documentation. The current curated documentation entry point is
 - `docs/pi/TIGERVNC_PACKAGE_AUTHORITY.md` — TigerVNC package/provider authority.
 - `docs/pi/TIGERVNC_SESSION.md` — qualified bare TigerVNC provider/session
   contract.
+- `docs/pi/MINIMUM_DESKTOP.md` — post-Issue5 pre-Issue40 Openbox +
+  lxpanel-pi desktop candidate, session-isolation proof, and promotion gate.
 
 ## Reconstruction
 

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+PS-to-VNC dedicated X11 session fallback menu.
+
+lxpanel-pi is the primary launcher/taskbar surface. The Openbox root menu is
+kept deliberately small as a recovery path if the panel is unavailable.
+-->
+
+<openbox_menu
+    xmlns="http://openbox.org/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <menu id="root-menu" label="PS-to-VNC">
+    <item label="Terminal">
+      <action name="Execute">
+        <execute>/usr/bin/lxterminal --no-remote</execute>
+      </action>
+    </item>
+  </menu>
+
+</openbox_menu>

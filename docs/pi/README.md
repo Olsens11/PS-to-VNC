@@ -185,3 +185,26 @@ provider. The persistent unit remains an optional mutually exclusive fallback.
 The qualified provider supplies a bare virtual framebuffer, not the finished
 user desktop. Selecting and qualifying any window manager, panel, or other
 session contents is the next separate Pi layer.
+
+## Post-Issue #5 desktop layer
+
+Issue #5 deliberately ended at the qualified bare RFB framebuffer/provider.
+
+The current pre-Issue40 desktop prerequisite is documented in:
+
+    MINIMUM_DESKTOP.md
+
+The evaluated architecture is:
+
+    Xtigervnc :1
+      -> private XDG runtime
+      -> private DBus session
+      -> Openbox
+      -> lxpanel-pi
+
+The exact tracked session supervisor reproduced this architecture on an isolated
+704x462 RGB565 X display while the normal Raspberry Pi Wayland desktop remained
+active.
+
+The desktop layer remains `EVALUATING` until the committed candidate is staged
+and qualified on the real `:1` provider.
