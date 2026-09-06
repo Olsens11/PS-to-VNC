@@ -62,6 +62,113 @@ class InstrumentedMuxSession(base.MuxSession):
         self.enqueue_block_events = 0
         self.send_block_events = 0
 
+        self.last_audio_credit_received = None
+        self.last_audio_credit_gap_seconds = 0.0
+        self.max_audio_credit_gap_seconds = 0.0
+
+        self.audio_credit_receipts = 0
+        self.audio_credit_bytes_received_total = 0
+        self.audio_credit_gap_events = 0
+
+        audio_channel = self.channels[
+            base.CHANNEL_AUDIO
+        ]
+
+        original_audio_add_credit = (
+            audio_channel.add_credit
+        )
+
+        def add_audio_credit_with_timing(
+            amount: int,
+        ) -> None:
+            now = time.monotonic()
+
+            original_audio_add_credit(amount)
+
+            with self.diag_lock:
+                previous = (
+                    self.last_audio_credit_received
+                )
+
+                if previous is None:
+                    gap = 0.0
+                else:
+                    gap = now - previous
+
+                self.last_audio_credit_received = now
+                self.last_audio_credit_gap_seconds = gap
+
+                if (
+                    gap
+                    > self.max_audio_credit_gap_seconds
+                ):
+                    self.max_audio_credit_gap_seconds = (
+                        gap
+                    )
+
+                self.audio_credit_receipts += 1
+                self.audio_credit_bytes_received_total += (
+                    amount
+                )
+
+                if (
+                    previous is not None
+                    and gap >= 0.100
+                ):
+                    self.audio_credit_gap_events += 1
+                    event_number = (
+                        self.audio_credit_gap_events
+                    )
+                else:
+                    event_number = 0
+
+                total_receipts = (
+                    self.audio_credit_receipts
+                )
+
+                total_bytes = (
+                    self.audio_credit_bytes_received_total
+                )
+
+            if event_number:
+                telemetry = self.last_telemetry
+
+                self.diag_event(
+                    "AUDIO_CREDIT_GAP",
+                    event_number=event_number,
+                    duration_ms=round(
+                        gap * 1000.0,
+                        3,
+                    ),
+                    credit_bytes=amount,
+                    credit_receipts=total_receipts,
+                    credit_bytes_total=total_bytes,
+                    available_credit=(
+                        audio_channel.available_credit
+                    ),
+                    outstanding=(
+                        audio_channel.outstanding
+                    ),
+                    ps2_credit_bytes_sent=(
+                        telemetry.get(
+                            "audio_credit_bytes_sent"
+                        )
+                        if telemetry is not None
+                        else None
+                    ),
+                    ps2_audio_queue=(
+                        telemetry.get(
+                            "audio_queue_current"
+                        )
+                        if telemetry is not None
+                        else None
+                    ),
+                )
+
+        audio_channel.add_credit = (
+            add_audio_credit_with_timing
+        )
+
     def diag_event(self, name: str, **fields) -> None:
         event = {
             "event": name,
@@ -454,6 +561,31 @@ class InstrumentedMuxSession(base.MuxSession):
                 ),
                 "send_block_events": (
                     send_events
+                ),
+                "ms_since_audio_credit": (
+                    self.age_ms(
+                        now,
+                        self.last_audio_credit_received,
+                    )
+                ),
+                "last_audio_credit_gap_ms": round(
+                    self.last_audio_credit_gap_seconds
+                    * 1000.0,
+                    3,
+                ),
+                "max_audio_credit_gap_ms": round(
+                    self.max_audio_credit_gap_seconds
+                    * 1000.0,
+                    3,
+                ),
+                "audio_credit_receipts": (
+                    self.audio_credit_receipts
+                ),
+                "audio_credit_bytes_received_total": (
+                    self.audio_credit_bytes_received_total
+                ),
+                "audio_credit_gap_events": (
+                    self.audio_credit_gap_events
                 ),
                 "ps2_audio_queue": (
                     ps2_audio_queue
