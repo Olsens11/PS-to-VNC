@@ -1,0 +1,27 @@
+{
+  "listen_host": "192.168.50.1",
+  "listen_port": 5902,
+
+  "rfb_host": "127.0.0.1",
+  "rfb_port": 5903,
+
+  "rfb_quantum": 8192,
+  "audio_quantum": 4096,
+
+  "rfb_weight": 12,
+  "audio_weight": 4,
+
+  "rfb_policy_window": 32768,
+  "audio_policy_window": 16384,
+
+  "rfb_host_buffer": 524288,
+  "audio_host_buffer": 262144,
+
+  "telemetry_interval_seconds": 1.0,
+
+  "audio_rate": 48000,
+  "audio_channels": 2,
+  "audio_sample_bytes": 2,
+
+  "mirror_sink_volume": true
+}
