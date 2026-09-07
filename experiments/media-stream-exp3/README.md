@@ -212,3 +212,54 @@ pseudo-instruction expansion, and no multi-instruction expansion occurred.
 This ELF was initially a build-only preflight. The next operation rebuilds the
 same target from committed source authority and requires exact ELF SHA/byte
 reproduction before hardware deployment.
+
+### SMS assembly-core first-picture hardware result — PASS
+
+Authority:
+- EXP3 commit:
+  `ab88f0432edc0d343fb116bebd84f86cc770a641`
+- ELF SHA-256:
+  `9d3c5726fb3310851cea539115c4db324ad229a08c6701cbed9fc5cbc6e3b56f`
+- ELF bytes:
+  `10241688`
+- archival path:
+  `/mass/0/PS2VNC-exp3-sms-core-one-picture-9d3c5726.ELF`
+
+Observed hardware sequence:
+
+- an initial black screen with a thin green line appeared before the experiment
+  color stages; the operator notes the same transition when FMCB launches
+  wLaunchELF 4.43x_ISR, so it is treated separately from the MPEG-stage
+  contract;
+- CYAN;
+- YELLOW;
+- ORANGE;
+- GREEN, persistent.
+
+The GREEN state is entered only after `MPEG_Picture()` returns nonzero.
+The test deliberately sleeps on GREEN.
+
+Result:
+
+`SMS_FIRST_MPEG_PICTURE_DECODE=PASS`
+
+This is the first hardware-proven complete MPEG-2 picture decode in EXP3.
+
+Controlled A/B conclusion:
+
+The modern PS2SDK libmpeg control remained ORANGE indefinitely inside the
+first `MPEG_Picture()` call.
+
+The pinned mature SMS assembly libmpeg implementation returned successfully
+from that same call while preserving:
+- the bit-identical one-picture harness;
+- the bit-identical MPEG elementary stream;
+- the same 2048-byte TO_IPU feed callback;
+- the same normal aligned picture buffer contract.
+
+Therefore the observed first-picture failure tracks with the modern PS2SDK
+libmpeg implementation/build lineage rather than those shared external
+contracts.
+
+The next increment does not attempt continuous playback. It presents this one
+already-proven decoded picture through GS.
