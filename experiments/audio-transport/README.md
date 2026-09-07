@@ -1402,3 +1402,130 @@ laboratory ELF. RFB/audio queues, worker buffers, and experimental stacks are
 runtime allocated from the Pi-supplied profile with no artificial queue-size
 ceiling. Profile 0 reproduces the known W512 operating point and appeared
 behaviorally unchanged on its first hardware regression launch.
+
+---
+
+<a id="MEDIA_STREAM_EXP3_HANDOFF_2026_09_06"></a>
+## MEDIA_STREAM_EXP3_HANDOFF_2026_09_06
+
+### 2026-09-06 — configurable transport profiles and media-path handoff
+
+The configurable EXP2 transport established a stable audio baseline and
+separated several candidate explanations for clunky full-motion RFB display.
+
+#### Profile 1 — control
+
+PS2 mechanism:
+- RFB queue: 32 KiB
+- audio queue: 512 KiB
+- audio startup: 256 KiB occupancy target
+
+Pi scheduler:
+- RFB weight: 12
+- audio weight: 6
+- RFB quantum: 8192 bytes
+- audio quantum: 4096 bytes
+
+Observed:
+- audio remained good and sustained approximately 192000 bytes/sec;
+- maximized YouTube video was clunky and visibly out of sync with audio;
+- RFB queue was generally small rather than chronically full;
+- cumulative eight-minute control run remained healthy.
+
+#### Profile 2 — larger RFB reservoir
+
+Only effective RFB reservoir/window changed from 32 KiB to 128 KiB.
+
+Observed:
+- no subjective video improvement;
+- one audio shudder occurred;
+- the run later entered a terminal network-side freeze/stuck-audio state;
+- the larger RFB queue was genuinely exercised, reaching approximately
+  122 KiB high water.
+
+This profile therefore did not support insufficient RFB queue capacity as the
+cause of the ordinary video clunkiness.
+
+#### Profile 3 — RFB scheduler weight 16
+
+Only scheduler RFB weight changed from 12 to 16.
+
+Observed:
+- audio remained good;
+- operator reported the video looked somewhat better than Profile 1;
+- brief stop/continue behavior remained;
+- telemetry was clean;
+- RFB queue remained small and drained to zero.
+
+This was a modest subjective improvement without evidence of a queue-capacity
+problem.
+
+#### Profile 4 — RFB scheduler weight 24
+
+Only scheduler RFB weight changed from 16 to 24.
+
+Observed:
+- audio remained good;
+- video was approximately the same as Profile 3:
+  stop/start behavior remained and motion was still not quite smooth;
+- no further subjective benefit was obtained by increasing RFB scheduler
+  weight;
+- 30-second telemetry remained clean.
+
+Representative Profile 4 reading:
+- audio playback: approximately 191930 bytes/sec;
+- RFB consumption: approximately 1.835 MB/sec;
+- total mux payload: approximately 2.026 MB/sec;
+- RFB queue maximum during the reading: approximately 8.3 KiB;
+- RFB queue end: zero;
+- runtime error: zero.
+
+#### RFB source-cadence observation
+
+A simultaneous 60-second localhost capture between the mux and the isolated
+RFB provider on port 5903 showed:
+
+- upstream RFB payload rate: approximately 1.679 MB/sec;
+- PS2 RFB consumption: approximately 1.679 MB/sec;
+- PS2 audio playback: approximately 191946 bytes/sec;
+- PS2 RFB queue start/end: zero;
+- RFB queue lifetime high water: approximately 25 KiB;
+- three upstream RFB silences of at least one second;
+- maximum observed upstream silence: approximately 1.577 seconds.
+
+The PS2 therefore consumed RFB essentially as quickly as the mux received it
+during this sample. Increasing queue size or scheduler weight is not indicated
+as the next path for solving full-motion video smoothness.
+
+Because ordinary RFB framebuffer updates are request-driven, the observed
+5903 silences do not by themselves distinguish between:
+1. late framebuffer-update requests from the PS2 client; and
+2. delayed replies from the RFB provider.
+
+That distinction can still be investigated for normal desktop responsiveness.
+
+### Media architecture direction
+
+Full-motion video is no longer treated as a requirement that must be solved by
+the normal RFB framebuffer path.
+
+The next isolated experiment will investigate a persistent media architecture:
+
+- RFB remains the interactive desktop display path.
+- Audio remains continuously active.
+- MPEG-2 video becomes available as an optional full-motion display path.
+- Audio and MPEG-2 video ultimately share one media timeline for A/V
+  synchronization.
+- The existing dedicated-link mux remains the transport foundation.
+- transport channel 4, already reserved as MPEG2, is the intended experimental
+  video channel.
+
+Development must proceed incrementally:
+
+1. prove standalone PS2SDK libmpeg decode/display on the exact PS2/toolchain;
+2. feed raw MPEG-2 video through the existing mux;
+3. run continuous audio and MPEG-2 video simultaneously;
+4. establish common timestamps / playback timing;
+5. add explicit RFB-versus-MPEG display ownership and switching.
+
+EXP2 remains preserved as the evidence-bearing configurable transport baseline.
