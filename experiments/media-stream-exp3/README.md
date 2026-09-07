@@ -263,3 +263,44 @@ contracts.
 
 The next increment does not attempt continuous playback. It presents this one
 already-proven decoded picture through GS.
+
+### SMS first-picture GS presentation hardware result — PASS
+
+Authority:
+- EXP3 commit:
+  `ad438fb9ba139b77c7f7c2f1da7b09b2c8b23451`
+- qualified display-source SHA-256:
+  `f5c726434ed5ec6c14c3b291fb73e4a69e3baeb9fe9cc379307530a3f36e5d5d`
+
+Observed hardware result:
+
+The experiment progressed through CYAN, YELLOW, ORANGE, GREEN, and BLUE,
+then displayed a coherent decoded MPEG test-pattern picture.
+
+The visible picture contained:
+- vertical red, green, yellow, blue, purple, and cyan columns;
+- a black timecode area showing approximately `00:00:00:000`;
+- a diagonal rainbow-gradient stripe;
+- a diagonal series of cyan squares;
+- a textured checkerboard pattern in the lower-right region;
+- a small vertical gray rectangle near the lower portion of the green field.
+
+The image was spatially coherent across many 16x16 macroblock boundaries.
+
+Result:
+
+`SMS_FIRST_PICTURE_GS_PRESENTATION=PASS`
+
+This proves the complete one-picture path:
+
+MPEG elementary stream
+-> TO_IPU DMA
+-> SMS MPEG decoder / IPU
+-> RGBA32 16x16 macroblocks
+-> GIF source-chain transfer
+-> GS texture memory
+-> textured sprite
+-> visible decoded picture.
+
+The next increment retains this qualified path and repeats only
+decode/upload/draw for a bounded total of 60 pictures.
