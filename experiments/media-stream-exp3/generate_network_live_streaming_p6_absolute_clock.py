@@ -274,9 +274,10 @@ int main(void)
         "P6 timing report",
     )
 
-    if text.count("exp3_p6_wait_for_picture(") != 3:
+    if text.count("exp3_p6_wait_for_picture(") != 4:
         raise SystemExit(
-            "P6 expected scheduler definition plus two call sites"
+            "P6 expected one explanatory mention, scheduler definition, "
+            "and two call sites"
         )
 
     if text.count("P6 absolute-clock diagnostic") != 1:
