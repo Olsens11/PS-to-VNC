@@ -30,6 +30,7 @@ P12 encode contract:
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 
 import network_live_stream_server as live
@@ -149,6 +150,8 @@ def _p12_popen(*args, **kwargs):
         return _ORIGINAL_POPEN(*args, **kwargs)
 
     shaped = _p12_capture_command(list(command))
+
+    print(f"P12_FFMPEG_COMMAND={shlex.join(shaped)}", flush=True)
 
     if args:
         new_args = (shaped, *args[1:])
