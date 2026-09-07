@@ -134,30 +134,76 @@ def main() -> int:
         "remove fixed picture ceiling",
     )
 
-    text = once(
-        text,
-        '            "expected=%d "\n',
-        '            "coded_producer=%u "\n',
-        "EOF print label",
-    )
-    text = once(
-        text,
-        "            EXP3_EXPECTED_PICTURES,\n",
-        "            (unsigned int)stream_runtime.producer_picture_starts,\n",
-        "EOF producer count",
-    )
+    eof_format_old = '''            "expected=%d "
+            "decoded=%d "
+            "displayed=%d "
+            "last_pts=%lld "
+            "stream_exhausted=%d "
+            "eof_flag=%d "
+            "feed_calls=%u "
+            "payload_bytes=%u "
+            "dma_bytes=%u "
+            "sequence_callbacks=%u "
+            "width=%u "
+            "height=%u\\n",
+            EXP3_EXPECTED_PICTURES,
+            pictures_decoded,
+'''
+
+    eof_format_new = '''            "coded_producer=%u "
+            "decoded=%d "
+            "displayed=%d "
+            "last_pts=%lld "
+            "stream_exhausted=%d "
+            "eof_flag=%d "
+            "feed_calls=%u "
+            "payload_bytes=%u "
+            "dma_bytes=%u "
+            "sequence_callbacks=%u "
+            "width=%u "
+            "height=%u\\n",
+            (unsigned int)stream_runtime.producer_picture_starts,
+            pictures_decoded,
+'''
 
     text = once(
         text,
-        '            "coded_expected=%d "\n',
-        '            "coded_producer=%u "\n',
-        "characterization print label",
+        eof_format_old,
+        eof_format_new,
+        "EOF producer diagnostic",
     )
+
+    characterization_old = '''            "coded_expected=%d "
+            "returned=%d "
+            "displayed=%d "
+            "last_pts=%lld "
+            "stream_exhausted=%d "
+            "eof_flag=%d "
+            "feed_calls=%u "
+            "payload_bytes=%u "
+            "dma_bytes=%u\\n",
+            EXP3_EXPECTED_PICTURES,
+            pictures_decoded,
+'''
+
+    characterization_new = '''            "coded_producer=%u "
+            "returned=%d "
+            "displayed=%d "
+            "last_pts=%lld "
+            "stream_exhausted=%d "
+            "eof_flag=%d "
+            "feed_calls=%u "
+            "payload_bytes=%u "
+            "dma_bytes=%u\\n",
+            (unsigned int)stream_runtime.producer_picture_starts,
+            pictures_decoded,
+'''
+
     text = once(
         text,
-        "            EXP3_EXPECTED_PICTURES,\n",
-        "            (unsigned int)stream_runtime.producer_picture_starts,\n",
-        "characterization producer count",
+        characterization_old,
+        characterization_new,
+        "characterization producer diagnostic",
     )
 
     terminal_start = '''        /*
