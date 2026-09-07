@@ -63,3 +63,28 @@ The MPEG decode/display mechanism is intentionally derived from the PS2SDK
 EXP3 changes the input mechanism and adds diagnostic state only. The eventual
 network implementation will replace the embedded input with the reserved
 MPEG2 transport channel.
+
+### Reference-derived one-picture smoke — first hardware result
+
+Authority:
+- EXP3 commit: `6ea2ea17686be29f9b57f33a55b6372b339c227b`
+- ELF SHA-256: `e99085a9087207d04e3fcaaed94cfb429d5a7298b47d098d5f395f9d80b51d60`
+- ELF bytes: `9028116`
+- stream SHA-256: `5f207fca420c15794cfebb18e858c0cd8aa8f7c632c901d2dfe60696d1997f3f`
+
+Observed PS2 hardware sequence:
+
+`CYAN -> YELLOW -> ORANGE -> ORANGE indefinitely`
+
+Interpretation:
+- standalone graph chassis passed;
+- explicit IPU/DMAC reset returned;
+- `MPEG_Initialize()` returned successfully;
+- failure boundary moved into the first `MPEG_Picture()` operation;
+- no green first-picture-success state and no red decoder-return state were reached.
+
+Post-test source comparison found that this probe returned an uncached
+`0x2xxxxxxx` alias from its libmpeg sequence callback. That behavior had been
+inferred from Sony retail `sceMpegGetPicture`, but both the PS2SDK libmpeg
+sample and SMS use ordinary aligned EE pointers with the open-source libmpeg
+decoder. The next run corrects only that decoder-output address contract.

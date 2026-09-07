@@ -111,8 +111,10 @@ extern const unsigned char _binary_test_bin_end[];
  * The decoder output buffer is deliberately BSS rather than embedded file
  * content. The first smoke stream is known to be 704x480 or smaller.
  *
- * The uncached EE alias is returned to libmpeg, following the same memory
- * coherency principle visible in mature PS2 MPEG implementations.
+ * IMPORTANT:
+ * Return the ordinary aligned EE pointer to PS2SDK libmpeg. This matches both
+ * the PS2SDK libmpeg sample and SMS. The previous experiment incorrectly
+ * imported the uncached-output convention from Sony's different sceMpeg API.
  */
 static unsigned char s_picture_buffer[EXP3_PICTURE_BYTES]
     __attribute__((aligned(64)));
@@ -128,13 +130,6 @@ static unsigned char s_feed_buffer[EXP3_FEED_BYTES]
 static unsigned int exp3_physical_address(const void *pointer)
 {
     return ((unsigned int)pointer) & 0x1FFFFFFFu;
-}
-
-static void *exp3_uncached_alias(void *pointer)
-{
-    return (void *)(
-        exp3_physical_address(pointer) |
-        0x20000000u);
 }
 
 static void exp3_show_color(
@@ -403,8 +398,8 @@ static int exp3_feed_ipu(void *user_data)
  * Called by libmpeg after it has parsed the sequence header.
  *
  * For this first proof we use one fixed, 64-byte-aligned BSS area sized for
- * the known 704x480 smoke stream. Return its uncached alias to eliminate a
- * decoded-output cache-coherency ambiguity from this stage.
+ * the known 704x480 smoke stream. The ordinary aligned pointer is returned,
+ * exactly as expected by the PS2SDK libmpeg sample and SMS.
  */
 static void *exp3_sequence_init(
     void *user_data,
@@ -451,17 +446,16 @@ static void *exp3_sequence_init(
     }
 
     /*
-     * The BSS backing store is already initialized in main memory.
-     * Synchronize its cached alias before handing the uncached alias to the
-     * decoder hardware path.
+     * Flush any cached initialization state before libmpeg/IPU writes decoded
+     * output. The actual pointer handed to libmpeg remains the normal aligned
+     * EE address; libmpeg owns the required DMA operations internally.
      */
     SyncDCache(
         s_picture_buffer,
         s_picture_buffer +
             required_bytes);
 
-    return exp3_uncached_alias(
-        s_picture_buffer);
+    return s_picture_buffer;
 }
 
 int main(void)
