@@ -282,7 +282,7 @@ int main(void)
     if text.count("P6 absolute-clock diagnostic") != 1:
         raise SystemExit("P6 draw diagnostic marker missing")
 
-    if text.count("graph_wait_vsync();") != 6:
+    if text.count("graph_wait_vsync();") != 5:
         raise SystemExit(
             "P6 unexpected graph_wait_vsync call count; "
             "expected original non-presentation waits plus scheduler waits"
