@@ -116,3 +116,99 @@ The remaining experimental divergence from the PS2SDK libmpeg sample is the
 input callback. This revision replaces the custom 64 KiB direct-register feed
 with the PS2SDK sample's own DMA-channel initialization, wait, and normal-DMA
 submission model using 2048-byte staging blocks.
+
+### Canonical PS2SDK-feed one-picture result
+
+Authority:
+- EXP3 commit: `7eca3a09e229fd8f615c97b319e0190c9b0fdba3`
+- ELF SHA-256: `beb979c29ae84fb4c0bf81d5a5a27cbe2e4761a67089a1e41fcfcf668939e884`
+- ELF bytes: `9027988`
+- MPEG stream SHA-256:
+  `5f207fca420c15794cfebb18e858c0cd8aa8f7c632c901d2dfe60696d1997f3f`
+
+This revision used the PS2SDK sample input model:
+- 2048-byte staging blocks;
+- `dma_channel_wait(DMA_CHANNEL_toIPU, 0)`;
+- `dma_channel_send_normal()`;
+- normal aligned decoded-picture pointer;
+- no `dma_wait_fast()` in the decoder path.
+
+Observed hardware result:
+
+The display appeared to proceed directly to ORANGE and remained ORANGE
+indefinitely. No GREEN first-picture-success state and no RED decoder-return
+state were observed.
+
+Therefore the first `MPEG_Picture()` call still failed to return after both
+major external libmpeg contracts were aligned with the PS2SDK sample.
+
+The next controlled A/B keeps the harness and MPEG stream bit-identical while
+replacing modern PS2SDK libmpeg with the mature SMS implementation from pinned
+SMS commit `c1898094725ad750ec20e10cc148b39d7c8a9c65`.
+
+### SMS A/B preflight — rejected G0 build
+
+A preliminary SMS-core ELF was successfully assembled and linked:
+
+- SHA-256:
+  `19bb512dbab3b0741d18ff4e57b98b5a35aeed5fa0045adfb9b7619daec67168`
+- bytes: `9022116`
+
+This ELF was NOT deployed or hardware-tested.
+
+Reason for rejection:
+
+The first isolated SMS target inherited the current PS2SDK sample `-G0`
+compiler setting instead of SMS's historical small-data build settings.
+The modern assembler consequently reported many expanded pseudo-instructions,
+including expansions occurring inside MIPS branch delay slots.
+
+SMS's own build uses `-G8192 -mgpopt`. Because the assembly core deliberately
+places symbolic memory operations in delay slots, changing the small-data
+model can change instruction expansion and therefore execution semantics.
+
+The upstream SMS source remains byte-identical. The corrected A/B compiles
+only the SMS decoder objects with the historical small-data settings while
+the control harness remains bit-identical.
+
+### SMS assembly-core build preflight — PASS
+
+The pinned mature SMS MPEG decoder was compiled against the current EXP3
+one-picture harness without modifying any SMS decoder source.
+
+SMS source authority:
+- repository: `ps2homebrew/SMS`
+- commit: `c1898094725ad750ec20e10cc148b39d7c8a9c65`
+
+Control invariants:
+- one-picture harness remained bit-identical;
+- MPEG elementary stream remained bit-identical;
+- system PS2SDK `-lmpeg` was not linked;
+- SMS `libmpeg.c` and `libmpeg_core.S` supplied the public/core decoder symbols.
+
+Required decoder-object build model:
+- `-G8192`
+- `-mgpopt`
+- `-mno-abicalls`
+
+The explicit `-mno-abicalls` is required with the modern compiler because
+small-data `-G` accesses cannot be compiled in ABICALLS mode.
+
+Successful preflight:
+- ELF SHA-256:
+  `9d3c5726fb3310851cea539115c4db324ad229a08c6701cbed9fc5cbc6e3b56f`
+- ELF bytes: `10241688`
+- ABICALL/small-data errors: `0`
+- multi-instruction macro expansions: `0`
+- branch-delay-slot macro expansions: `0`
+- assembler `$at` diagnostics: `213`
+- mixed ABICALL/non-ABICALL static-link diagnostics: `3`
+- final MPEG symbol resolution: PASS
+- SMS `.sdata` / `.sbss` sections: present
+
+The `$at` messages are retained as build evidence. They did not correspond to
+pseudo-instruction expansion, and no multi-instruction expansion occurred.
+
+This ELF was initially a build-only preflight. The next operation rebuilds the
+same target from committed source authority and requires exact ELF SHA/byte
+reproduction before hardware deployment.
