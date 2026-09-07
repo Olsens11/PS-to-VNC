@@ -79,6 +79,16 @@ def main() -> int:
 #define EXP3_P6B_CLOCK_TELEMETRY_IP   "192.168.50.1"
 #define EXP3_P6B_CLOCK_TELEMETRY_PORT 5999
 
+/*
+ * The experiment makefile retains the product link contract
+ * -Wl,--wrap=sendto, but this isolated harness intentionally does not link the
+ * diagnostics identity object that normally defines __wrap_sendto(). Calling
+ * sendto() here would therefore become an unresolved __wrap_sendto reference.
+ * GNU ld's matching __real_sendto alias explicitly names the underlying SDK
+ * socket function while preserving the existing linker contract unchanged.
+ */
+extern __typeof__(sendto) __real_sendto;
+
 static void exp3_p6b_send_clock_telemetry(
     const Exp3DecoderState *state)
 {
@@ -132,7 +142,7 @@ static void exp3_p6b_send_clock_telemetry(
         return;
     }
 
-    sent = sendto(
+    sent = __real_sendto(
         socket_fd,
         payload,
         (size_t)payload_length,
@@ -191,6 +201,15 @@ static void exp3_p6b_send_clock_telemetry(
         if text.count("graph_wait_vsync();") != 5:
             raise SystemExit("P6B unexpectedly changed P6 VSYNC call sites")
 
+        if text.count("extern __typeof__(sendto) __real_sendto;") != 1:
+            raise SystemExit("P6B real-sendto linker alias missing")
+
+        if text.count("sent = __real_sendto(") != 1:
+            raise SystemExit("P6B telemetry must call __real_sendto exactly once")
+
+        if "sent = sendto(" in text:
+            raise SystemExit("P6B telemetry unexpectedly calls wrapped sendto")
+
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(text)
 
@@ -201,6 +220,7 @@ static void exp3_p6b_send_clock_telemetry(
 
         print(f"P6B_OUTPUT={output}")
         print(f"P6B_OUTPUT_BLOB={generated_blob}")
+        print("P6B_SENDTO_PATH=__real_sendto")
         print("P6B_GENERATION=PASS")
 
     finally:
