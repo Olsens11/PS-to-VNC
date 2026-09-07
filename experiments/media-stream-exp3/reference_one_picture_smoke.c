@@ -77,7 +77,7 @@
 #define EXP3_PICTURE_BYTES \
     (EXP3_VIDEO_MAX_WIDTH * EXP3_VIDEO_MAX_HEIGHT * 4)
 
-#define EXP3_FEED_BYTES 65536
+#define EXP3_FEED_BYTES 2048
 
 #define EXP3_DMAC_START 0x00000100u
 
@@ -120,17 +120,17 @@ static unsigned char s_picture_buffer[EXP3_PICTURE_BYTES]
     __attribute__((aligned(64)));
 
 /*
- * Network/mux input later will not necessarily arrive at DMA-safe alignment.
- * For this isolated proof, stage each input block into a known 64-byte-aligned
- * buffer, round the DMA length to 16 bytes, and zero-pad only the final tail.
+ * PS2SDK's libmpeg sample feeds 2048-byte normal TO_IPU DMA blocks.
+ *
+ * Our embedded source section is not relied upon for DMA alignment. Instead,
+ * each block is copied into this known 64-byte-aligned staging buffer and is
+ * submitted through PS2SDK's own dma_channel_send_normal() helper.
+ *
+ * The final partial block is rounded only to the required 16-byte DMA
+ * boundary and zero-padded.
  */
 static unsigned char s_feed_buffer[EXP3_FEED_BYTES]
     __attribute__((aligned(64)));
-
-static unsigned int exp3_physical_address(const void *pointer)
-{
-    return ((unsigned int)pointer) & 0x1FFFFFFFu;
-}
 
 static void exp3_show_color(
     packet_t *packet,
@@ -276,13 +276,16 @@ static void exp3_reference_ipu_reset(void)
 /*
  * libmpeg data callback.
  *
- * The callback may be called repeatedly while MPEG_Picture is executing.
- * Every transfer:
- *   - waits for the previous TO_IPU transfer to finish;
- *   - copies payload into a 64-byte-aligned staging area;
- *   - zero-pads to a 16-byte DMA boundary;
- *   - synchronizes that CPU-written staging buffer;
- *   - submits its physical EE address directly to DMAC channel 4.
+ * This intentionally follows the PS2SDK libmpeg sample's transport contract:
+ *
+ *   dma_channel_wait(DMA_CHANNEL_toIPU, 0)
+ *   dma_channel_send_normal(DMA_CHANNEL_toIPU, ..., qwc, 0, 0)
+ *
+ * PS2SDK's helper performs the cache synchronization, clears channel status,
+ * programs MADR/QWC, and starts the normal DMA transfer.
+ *
+ * The sample uses 2048-byte blocks. We retain that exact normal block size.
+ * Only the final short block is rounded to a 16-byte DMA boundary.
  */
 static int exp3_feed_ipu(void *user_data)
 {
@@ -320,10 +323,6 @@ static int exp3_feed_ipu(void *user_data)
         (payload_bytes + 15u) &
         ~15u;
 
-    /*
-     * EXP3_FEED_BYTES itself is 16-byte aligned, so dma_bytes can exceed the
-     * buffer size only if that constant is later changed incorrectly.
-     */
     if (
         dma_bytes >
         EXP3_FEED_BYTES
@@ -346,48 +345,36 @@ static int exp3_feed_ipu(void *user_data)
             dma_bytes - payload_bytes);
     }
 
-    SyncDCache(
-        s_feed_buffer,
-        s_feed_buffer + dma_bytes);
-
     /*
-     * SMS-style ordinary channel ownership:
-     * wait on the actual TO_IPU channel busy bit, not CP condition state.
+     * Exact PS2SDK libmpeg sample ownership model:
+     * wait the TO_IPU channel and submit a normal DMA transfer.
      */
-    while (
-        *R_EE_D4_CHCR &
-        EXP3_DMAC_START
+    if (
+        dma_channel_wait(
+            DMA_CHANNEL_toIPU,
+            0) != 0
     ) {
-        /* wait for previous TO_IPU DMA */
+        return 0;
     }
 
     dma_qwc =
         dma_bytes >> 4;
 
-    *R_EE_D4_MADR =
-        exp3_physical_address(
-            s_feed_buffer);
-
-    *R_EE_D4_QWC =
-        dma_qwc;
-
-    EE_SYNCL();
-
-    /*
-     * 0x101:
-     *   STR = 1
-     *   normal mode
-     *   memory -> device direction
-     */
-    *R_EE_D4_CHCR =
-        0x00000101u;
+    dma_channel_send_normal(
+        DMA_CHANNEL_toIPU,
+        s_feed_buffer,
+        dma_qwc,
+        0,
+        0);
 
     state->stream_cursor +=
         payload_bytes;
 
     state->feed_calls += 1;
+
     state->payload_bytes_submitted +=
         payload_bytes;
+
     state->dma_bytes_submitted +=
         dma_bytes;
 
@@ -517,6 +504,14 @@ int main(void)
         packet_init(
             100,
             PACKET_NORMAL);
+
+    /*
+     * PS2SDK libmpeg sample initializes TO_IPU before decoding.
+     */
+    dma_channel_initialize(
+        DMA_CHANNEL_toIPU,
+        NULL,
+        0);
 
     dma_channel_initialize(
         DMA_CHANNEL_GIF,
