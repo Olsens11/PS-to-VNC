@@ -423,9 +423,9 @@ static int exp3_stream_receive_config(
         "queue_capacity=%u "
         "receiver_stack=%u "
         "receiver_priority=%u\n",
-        runtime->queue_capacity,
-        runtime->receiver_thread_stack_size,
-        runtime->receiver_thread_priority);
+        (unsigned int)runtime->queue_capacity,
+        (unsigned int)runtime->receiver_thread_stack_size,
+        (unsigned int)runtime->receiver_thread_priority);
 
     return 1;
 }
@@ -944,7 +944,7 @@ int exp3_mpeg_stream_start(
     printf(
         "EXP3_O2_STREAM_START=PASS "
         "queue_capacity=%u\n",
-        runtime->queue_capacity);
+        (unsigned int)runtime->queue_capacity);
 
     return 1;
 }

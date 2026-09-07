@@ -201,7 +201,7 @@ def main() -> int:
 
     printf(
         "EXP3_O2_STREAM_RUNTIME_READY queue_capacity=%u\n",
-        stream_runtime.queue_capacity);
+        (unsigned int)stream_runtime.queue_capacity);
 
 '''
 
@@ -242,7 +242,7 @@ def main() -> int:
                 stream_exhausted,
                 network_integrity,
                 stream_runtime.error,
-                exp3_mpeg_stream_remaining_bytes(&stream_runtime));
+                (unsigned int)exp3_mpeg_stream_remaining_bytes(&stream_runtime));
         }
 
         exp3_hold_vsyncs(60);
