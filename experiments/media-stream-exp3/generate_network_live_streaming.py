@@ -34,7 +34,7 @@ def region(text: str, start: str, end: str, replacement: str, label: str) -> str
         raise SystemExit(f"{label}: end marker not found")
     if text.find(start, first + 1) >= 0:
         raise SystemExit(f"{label}: start marker not unique")
-    return text[:first] + replacement + text[last:]
+    return text[:first] + replacement + text[last + len(end):]
 
 
 def main() -> int:
