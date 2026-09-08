@@ -2,7 +2,7 @@
 """
 File synopsis:
     Verifies the H1 cumulative build's RFB-I/O ownership seam, resident logical
-    channel mechanics, dormant runtime-resource ownership, and CP2D lifecycle
+    channel mechanics, configurable runtime-resource ownership, and lifecycle
     wrapper before RFB is enabled at runtime.
 
 The check has two layers:
@@ -11,18 +11,19 @@ The check has two layers:
    `rfb_session.c` translation unit is compiled with all three `rfb_io.h`
    symbols mechanically renamed to H1 experiment-owned mux-adapter names, that
    the fail-closed adapter is linked, that the host-tested logical RFB channel
-   mechanics are resident, that the dormant queue/semaphore resource bundle is
-   part of the cumulative PS2 source population, and that the cumulative-only
-   public transport lifecycle is wrapped around renamed inner start/shutdown
+   mechanics are resident, that the queue/semaphore resource bundle is part of
+   the cumulative PS2 source population, and that the cumulative-only public
+   transport lifecycle is wrapped around renamed inner start/shutdown
    definitions.
 2. When `--build-dir` is supplied after a PS2 build, symbol inspection proves
    the actual object ownership for all of those pieces.
 
-This checker does not claim RFB runtime support. CONFIG still rejects
-`rfb_mode=ON`, the adapter remains fail closed, and receiver DATA dispatch,
-channel-1 CREDIT/DATA, and Pi bridge behavior remain absent.
+CONFIG v4 carries explicit RFB queue/credit vocabulary, but this checker still
+does not claim RFB runtime support. CONFIG rejects `rfb_mode=ON`, the adapter
+remains fail closed, and receiver DATA dispatch, channel-1 CREDIT/DATA, and Pi
+bridge behavior remain absent.
 
-Context: RFB_MUX_INTEGRATION_PREP.md and RFB_MUX_PREP_CHECKPOINTS.md.
+Context: RFB_MUX_INTEGRATION_PREP.md and RFB_CREDIT_POLICY_DECISION.md.
 """
 
 from __future__ import annotations
@@ -162,6 +163,11 @@ def check_source() -> None:
     )
     require_text(
         lifecycle_c,
+        "runtime->config.rfb_queue_capacity",
+        "lifecycle_configurable_rfb_capacity",
+    )
+    require_text(
+        lifecycle_c,
         "pstvnc_h1_rfb_runtime_resources_release(",
         "lifecycle_resource_release",
     )
@@ -177,15 +183,24 @@ def check_source() -> None:
     if adapter_c.count("return -1;") < 3:
         fail("adapter_is_not_fail_closed_before_runtime_binding")
 
-    # The dormant bundle must retain the evidence-based capacity and an OFF
-    # path that succeeds without creating a queue. This guards against turning
-    # lifecycle wiring into implicit channel activation.
+    # 32768 remains the evidence-based default/reference, but CONFIG v4 now
+    # deliberately makes actual allocation capacity a caller-selected value.
+    require_text(
+        channel_h,
+        "PSTVNC_H1_RFB_QUEUE_REFERENCE_BYTES 32768u",
+        "evidence_based_rfb_reference_capacity",
+    )
     require_text(
         resources_c,
-        "PSTVNC_H1_RFB_QUEUE_REFERENCE_BYTES",
-        "evidence_based_rfb_capacity",
+        "malloc((size_t)queue_capacity)",
+        "configurable_rfb_allocation",
     )
     require_text(resources_c, "if (!enabled)", "disabled_noop_branch")
+    require_text(
+        resources_c,
+        "queue_capacity == 0u",
+        "disabled_zero_capacity_contract",
+    )
 
     print("H1_RFB_MUX_SEAM_SOURCE=PASS")
 
@@ -301,7 +316,7 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Verify the H1 cumulative RFB parser, logical channel, dormant "
+            "Verify the H1 cumulative RFB parser, logical channel, configurable "
             "resource ownership, and cumulative lifecycle wrapper without "
             "claiming live RFB support."
         )
