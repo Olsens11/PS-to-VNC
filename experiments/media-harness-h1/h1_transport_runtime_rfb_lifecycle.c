@@ -1,17 +1,16 @@
 /*
  * File synopsis:
  * Wraps the cumulative H1 transport start/shutdown lifecycle with ownership of
- * the already-prepared logical RFB channel-1 resource bundle.
+ * the prepared logical RFB channel-1 resource bundle.
  *
- * This checkpoint establishes only lifecycle ownership. The underlying H1
- * transport implementation still owns the one physical PSTV socket, sole recv()
- * thread, send semaphore, AUDIO/MPEG behavior, CONFIG exchange, and all live
- * frame dispatch. CONFIG still rejects RFB ON, so activation currently resolves
- * to the explicit OFF no-op. No RFB credit, DATA dispatch, mux I/O adapter, Pi
- * bridge, parser, or presentation behavior is enabled here.
+ * CONFIG v4 now carries explicit RFB queue/credit policy. This lifecycle wrapper
+ * consumes the queue-capacity field when RFB is eventually enabled, while the
+ * underlying H1 transport implementation still owns the one physical PSTV
+ * socket, sole recv() thread, send semaphore, AUDIO/MPEG behavior, CONFIG
+ * exchange, and live frame dispatch. The current validator still rejects RFB ON,
+ * so activation remains an explicit OFF no-op in valid sessions.
  *
- * Context: RFB_MUX_INTEGRATION_PREP.md, P2;
- * RFB_MUX_CP2C_DORMANT_RUNTIME_RESOURCES.md.
+ * Context: RFB_MUX_INTEGRATION_PREP.md, P2; RFB_CREDIT_POLICY_DECISION.md.
  */
 
 #include "h1_transport_runtime.h"
@@ -31,6 +30,7 @@ int pstvnc_h1_transport_start(
     pstvnc_h1_transport_runtime_t *runtime)
 {
     int enabled;
+    uint32_t queue_capacity;
 
     if (runtime == NULL)
         return -1;
@@ -48,9 +48,11 @@ int pstvnc_h1_transport_start(
     pstvnc_h1_rfb_runtime_resources_init(&runtime->rfb_resources);
 
     enabled = runtime->config.rfb_mode == PSTVNC_H1_RFB_ON_RESERVED;
+    queue_capacity = enabled ? runtime->config.rfb_queue_capacity : 0u;
     if (!pstvnc_h1_rfb_runtime_resources_activate(
             &runtime->rfb_resources,
-            enabled)) {
+            enabled,
+            queue_capacity)) {
         (void)pstvnc_h1_transport_shutdown_inner(runtime);
         (void)pstvnc_h1_rfb_runtime_resources_release(
             &runtime->rfb_resources);
