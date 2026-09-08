@@ -76,6 +76,37 @@ The first hardware sequence is:
 5. H1 combined PCM + MPEG session on the same physical mux;
 6. only then begin automated parameter sweeps.
 
+## Reusable operator / optimization tool
+
+`h1_tool.py` is the canonical human-facing control surface for H1 testing. It
+wraps the current cumulative runner rather than reimplementing transport or
+media behavior.
+
+It provides:
+
+- `knobs` -- list every adjustable field, current profile default and meaning;
+- `show` -- resolve modifiers without starting hardware;
+- `run` -- execute one parameterized resident-H1 session; and
+- `sweep` -- generate and execute repeatable multi-parameter batches with a
+  recorded plan, per-case evidence/logs and machine-readable results.
+
+Frequently used settings have friendly switches such as `--audio-priority`,
+`--capture`, `--encode`, `--draw`, and `--media-rect`. Every current/future H1
+profile field remains reachable through `--set NAME=INTEGER`, while sweeps use
+`--vary NAME=V1,V2,...`.
+
+The CLI is intentionally self-documenting:
+
+```sh
+python3 experiments/media-harness-h1/h1_tool.py --help
+python3 experiments/media-harness-h1/h1_tool.py run --help
+python3 experiments/media-harness-h1/h1_tool.py sweep --help
+python3 experiments/media-harness-h1/h1_tool.py knobs \
+    --profile P11_COMPAT_PLUS_PCM
+```
+
+See `H1_TOOL_GUIDE.md` for the compact operator guide.
+
 ## Future hybrid media-object composition note
 
 The 2026-09-08 geometry experiments motivated a future model in which media is
