@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
 File synopsis:
-    Verifies the H1 cumulative build's RFB-I/O ownership seam and resident
-    logical-channel preparation before RFB is enabled at runtime.
+    Verifies the H1 cumulative build's RFB-I/O ownership seam, resident logical
+    channel mechanics, and dormant runtime-resource preparation before RFB is
+    enabled at runtime.
 
 The check has two layers:
 
 1. Source/build-rule inspection proves that the through-Issue-39
    `rfb_session.c` translation unit is compiled with all three `rfb_io.h`
    symbols mechanically renamed to H1 experiment-owned mux-adapter names, that
-   the fail-closed adapter is linked, and that the host-tested logical RFB
-   channel mechanics are also part of the cumulative PS2 source population.
+   the fail-closed adapter is linked, that the host-tested logical RFB channel
+   mechanics are resident, and that the dormant queue/semaphore resource bundle
+   is also part of the cumulative PS2 source population.
 2. When `--build-dir` is supplied after a PS2 build, symbol inspection proves
-   that `rfb_session39.o` has unresolved references to the H1 mux names rather
-   than the direct socket names, `h1_rfb_mux_io.o` defines those H1 names, and
-   `h1_rfb_channel.o` contains the expected logical-channel implementation.
+   the actual object ownership for all of those pieces.
 
 This checker does not claim RFB runtime support. CONFIG still rejects
-`rfb_mode=ON`, and the adapter remains fail closed until a later checkpoint
-binds the resident channel mechanics to H1's live receiver/send owners.
+`rfb_mode=ON`, the adapter remains fail closed, and the dormant resource bundle
+is not yet called by H1 startup/receiver/send paths.
 
 Context: RFB_MUX_INTEGRATION_PREP.md and RFB_MUX_PREP_CHECKPOINTS.md.
 """
@@ -36,6 +36,9 @@ ADAPTER_C = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_mux_io.c"
 ADAPTER_H = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_mux_io.h"
 CHANNEL_C = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_channel.c"
 CHANNEL_H = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_channel.h"
+RESOURCES_C = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_runtime_resources.c"
+RESOURCES_H = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_runtime_resources.h"
+CONFIG_C = ROOT / "experiments" / "media-harness-h1" / "h1_config.c"
 
 DIRECT_NAMES = (
     "pstvnc_rfb_io_read_exact",
@@ -55,6 +58,11 @@ CHANNEL_NAMES = (
     "pstvnc_h1_rfb_channel_take_credit",
     "pstvnc_h1_rfb_channel_write_logical",
 )
+RESOURCE_NAMES = (
+    "pstvnc_h1_rfb_runtime_resources_init",
+    "pstvnc_h1_rfb_runtime_resources_activate",
+    "pstvnc_h1_rfb_runtime_resources_release",
+)
 
 
 def fail(message: str) -> None:
@@ -73,13 +81,22 @@ def check_source() -> None:
     adapter_h = ADAPTER_H.read_text(encoding="utf-8")
     channel_c = CHANNEL_C.read_text(encoding="utf-8")
     channel_h = CHANNEL_H.read_text(encoding="utf-8")
+    resources_c = RESOURCES_C.read_text(encoding="utf-8")
+    resources_h = RESOURCES_H.read_text(encoding="utf-8")
+    config_c = CONFIG_C.read_text(encoding="utf-8")
 
     require_text(make_text, "$(BUILD_DIR)/h1_rfb_mux_io.o", "adapter_object")
     require_text(make_text, "$(BUILD_DIR)/h1_rfb_channel.o", "channel_object")
+    require_text(make_text, "$(BUILD_DIR)/h1_rfb_runtime_resources.o", "resources_object")
     require_text(
         make_text,
         "experiments/media-harness-h1/h1_rfb_channel.c",
         "channel_build_rule",
+    )
+    require_text(
+        make_text,
+        "experiments/media-harness-h1/h1_rfb_runtime_resources.c",
+        "resources_build_rule",
     )
 
     for direct, mux in zip(DIRECT_NAMES, MUX_NAMES, strict=True):
@@ -95,11 +112,30 @@ def check_source() -> None:
         require_text(channel_c, f"{name}(", "channel_definition")
         require_text(channel_h, f"{name}(", "channel_declaration")
 
-    # The adapter remains deliberately fail closed. This prevents a future
-    # reader from mistaking resident channel mechanics for completed live
-    # channel-1 transport support.
+    for name in RESOURCE_NAMES:
+        require_text(resources_c, f"{name}(", "resource_definition")
+        require_text(resources_h, f"{name}(", "resource_declaration")
+
+    # Preparation remains fail closed: CONFIG still rejects RFB ON and the mux
+    # adapter still cannot carry bytes. Resident resources are therefore not a
+    # claim of operational channel-1 transport.
+    require_text(
+        config_c,
+        "config->rfb_mode != PSTVNC_H1_RFB_OFF",
+        "rfb_config_gate",
+    )
     if adapter_c.count("return -1;") < 3:
         fail("adapter_is_not_fail_closed_before_runtime_binding")
+
+    # The dormant bundle must retain the evidence-based capacity and an OFF
+    # path that succeeds without creating a queue. This is a source-level guard
+    # against accidentally turning CP2C into implicit activation.
+    require_text(
+        resources_c,
+        "PSTVNC_H1_RFB_QUEUE_REFERENCE_BYTES",
+        "evidence_based_rfb_capacity",
+    )
+    require_text(resources_c, "if (!enabled)", "disabled_noop_branch")
 
     print("H1_RFB_MUX_SEAM_SOURCE=PASS")
 
@@ -143,8 +179,9 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
     rfb_object = build_dir / "rfb_session39.o"
     adapter_object = build_dir / "h1_rfb_mux_io.o"
     channel_object = build_dir / "h1_rfb_channel.o"
+    resources_object = build_dir / "h1_rfb_runtime_resources.o"
 
-    for path in (rfb_object, adapter_object, channel_object):
+    for path in (rfb_object, adapter_object, channel_object, resources_object):
         if not path.is_file():
             fail(f"missing_build_object:{path}")
 
@@ -152,6 +189,7 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
     rfb_undefined = nm_output(nm, rfb_object, True)
     adapter_defined = nm_output(nm, adapter_object, False)
     channel_defined = nm_output(nm, channel_object, False)
+    resources_defined = nm_output(nm, resources_object, False)
 
     for direct in DIRECT_NAMES:
         if direct in rfb_undefined:
@@ -167,6 +205,10 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
         if name not in channel_defined:
             fail(f"channel_object_missing_definition:{name}")
 
+    for name in RESOURCE_NAMES:
+        if name not in resources_defined:
+            fail(f"resources_object_missing_definition:{name}")
+
     print(f"H1_RFB_MUX_SEAM_OBJECTS=PASS nm={nm}")
 
 
@@ -174,8 +216,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Verify the H1 cumulative RFB parser is bound to the experiment-owned "
-            "mux I/O seam and that logical RFB channel mechanics are resident "
-            "without claiming live RFB support."
+            "mux I/O seam and that logical RFB channel/resource preparation is "
+            "resident without claiming live RFB support."
         )
     )
     parser.add_argument(
@@ -183,8 +225,9 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help=(
             "optional PS2 build directory containing rfb_session39.o, "
-            "h1_rfb_mux_io.o, and h1_rfb_channel.o; when omitted only "
-            "source/build-rule checks run"
+            "h1_rfb_mux_io.o, h1_rfb_channel.o, and "
+            "h1_rfb_runtime_resources.o; when omitted only source/build-rule "
+            "checks run"
         ),
     )
     parser.add_argument(
