@@ -30,7 +30,7 @@ the reference architecture.
 
 ## Configuration philosophy
 
-Every connection carries one complete CONFIG v2 profile from the Pi. The PS2
+Every connection carries one complete CONFIG v3 profile from the Pi. The PS2
 ACKs the exact accepted bytes only after structurally validating the profile
 and successfully allocating requested runtime resources.
 
