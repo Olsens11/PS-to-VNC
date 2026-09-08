@@ -13,17 +13,24 @@ evidence.
       boundary rather than changing parser semantics.
 - [x] Choose the existing 32768-byte direct-RFB prefetch capacity as the initial
       evidence-based queue reference, not an arbitrary larger buffer.
-- [ ] Add H1 mux-backed `pstvnc_rfb_io_*` adapter for the cumulative H1 build.
-- [ ] Add host/build test proving exactly one H1 RFB-I/O implementation is linked.
+- [x] Bind the cumulative H1 RFB-session translation unit to experiment-owned
+      mux-adapter symbol names while leaving clean parser source unchanged.
+- [x] Add source/object build checks proving the cumulative RFB session resolves
+      to the H1 adapter names rather than direct VNC socket I/O.
+- [x] Establish a pinned-toolchain CI build/fingerprint path and preserve each
+      resulting candidate ELF explicitly as unqualified.
+- [ ] Replace CP1 fail-closed adapter bodies with real channel-1 queue reads and
+      serialized logical writes.
 - [ ] Add channel-1 queue/credit accounting that is inert when RFB is OFF.
 - [ ] Add channel-1 logical write fragmentation through H1's existing send lock.
 - [ ] Add Pi raw-byte VNC<->PSTV channel-1 bridge.
 - [ ] Add RFB channel telemetry/counters without disturbing existing AUDIO/MPEG
       scheduler behavior.
 - [ ] Add RFB-only H1 profile and make `h1_tool.py --rfb on` operational for it.
-- [ ] Build with the pinned PS2 toolchain and record whole-ELF/PT_LOAD identity.
-- [ ] Keep all AUDIO/MPEG known-good profiles byte/behavior compatible where
-      RFB remains OFF.
+- [ ] Rebuild/fingerprint the final pre-hardware candidate after all repository
+      preparation changes are complete.
+- [ ] Keep all AUDIO/MPEG known-good profiles behavior-compatible where RFB
+      remains OFF; any changed PT_LOAD remains hardware-pending until qualified.
 
 ## Hardware/operator gate
 
