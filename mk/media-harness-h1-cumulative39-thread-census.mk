@@ -20,6 +20,14 @@
 # H1 transport experiment: wrapping all sendto calls would be a transport-side
 # behavior change even when product diagnostics are unused. The ordinary
 # diagnostics module itself remains available and inert until explicitly used.
+#
+# RFB mux preparation rule:
+#   The clean through-Issue-39 RFB parser/session source remains mechanically
+#   unchanged. In this H1-only cumulative target its three rfb_io.h calls are
+#   preprocessor-renamed to experiment-owned mux adapter symbols. CP1 deliberately
+#   links fail-closed adapter bodies while rfb_mode=ON is still rejected. This
+#   prevents accidental fallback to the direct VNC socket implementation before
+#   logical channel 1 has its own queue/credit bridge.
 
 BUILD_DIR ?= build/experiments/media-harness-h1-cumulative39-thread-census/ps2
 EE_BIN ?= $(BUILD_DIR)/PS2VNC-H1-Cumulative39-ThreadCensus.ELF
@@ -40,6 +48,7 @@ EXTRA_EE_OBJS := \
 	$(BUILD_DIR)/rfb39.o \
 	$(BUILD_DIR)/framebuffer39.o \
 	$(BUILD_DIR)/rfb_session39.o \
+	$(BUILD_DIR)/h1_rfb_mux_io.o \
 	$(BUILD_DIR)/display39.o \
 	$(BUILD_DIR)/input39.o \
 	$(BUILD_DIR)/mouse39.o \
@@ -84,7 +93,17 @@ $(BUILD_DIR)/rfb_session39.o: \
 	src/rfb/rfb_session.h \
 	src/rfb/rfb.h \
 	src/rfb/rfb_io.h \
-	src/framebuffer/framebuffer.h | $(BUILD_DIR)
+	src/framebuffer/framebuffer.h \
+	experiments/media-harness-h1/h1_rfb_mux_io.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) \
+		-Dpstvnc_rfb_io_read_exact=pstvnc_h1_rfb_mux_io_read_exact \
+		-Dpstvnc_rfb_io_poll_receive=pstvnc_h1_rfb_mux_io_poll_receive \
+		-Dpstvnc_rfb_io_write_exact=pstvnc_h1_rfb_mux_io_write_exact \
+		-c $< -o $@
+
+$(BUILD_DIR)/h1_rfb_mux_io.o: \
+	experiments/media-harness-h1/h1_rfb_mux_io.c \
+	experiments/media-harness-h1/h1_rfb_mux_io.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/display39.o: \
