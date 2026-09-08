@@ -12,7 +12,8 @@
  * new runnable priority into the scheduler topology being measured.
  *
  * diagnostic_word packing while media is active:
- *   bits 31..28 = 0xC census marker
+ *   bits 31..28 = census marker / known role
+ *                 0xC other, 0xD H1 audio, 0xE H1 receiver
  *   bits 27..20 = EE thread ID
  *   bits 19..14 = thread status
  *   bits 13..7  = initial priority
@@ -37,7 +38,9 @@ void pstvnc_h1_transport_record_audio_played(
     pstvnc_h1_transport_runtime_t *runtime,
     size_t byte_count);
 
-#define H1_CENSUS_MARKER 0xC0000000u
+#define H1_CENSUS_MARKER_OTHER 0xC0000000u
+#define H1_CENSUS_MARKER_AUDIO 0xD0000000u
+#define H1_CENSUS_MARKER_RECEIVER 0xE0000000u
 #define H1_CENSUS_HOLD_CHUNKS 64u
 
 static uint32_t s_h1_census_session_id;
@@ -45,10 +48,11 @@ static unsigned int s_h1_census_next_thread_id = 1u;
 static unsigned int s_h1_census_hold_chunks;
 
 static uint32_t h1_census_pack(
+    uint32_t marker,
     unsigned int thread_id,
     const ee_thread_status_t *status)
 {
-    return H1_CENSUS_MARKER |
+    return marker |
         (((uint32_t)thread_id & 0xffu) << 20) |
         (((uint32_t)status->status & 0x3fu) << 14) |
         (((uint32_t)status->initial_priority & 0x7fu) << 7) |
@@ -58,28 +62,36 @@ static uint32_t h1_census_pack(
 static void h1_census_emit_next(pstvnc_h1_transport_runtime_t *transport)
 {
     unsigned int attempt;
+    int audio_thread_id = GetThreadId();
 
     for (attempt = 0u; attempt < (MAX_THREADS - 1u); ++attempt) {
         ee_thread_status_t status;
         unsigned int thread_id = s_h1_census_next_thread_id;
+        uint32_t marker = H1_CENSUS_MARKER_OTHER;
 
         s_h1_census_next_thread_id++;
         if (s_h1_census_next_thread_id >= MAX_THREADS)
             s_h1_census_next_thread_id = 1u;
 
         memset(&status, 0, sizeof(status));
-        if (ReferThreadStatus((int)thread_id, &status) >= 0) {
-            pstvnc_h1_transport_set_diagnostic_word(
-                transport,
-                h1_census_pack(thread_id, &status));
-            return;
-        }
+        if (ReferThreadStatus((int)thread_id, &status) < 0)
+            continue;
+
+        if ((int)thread_id == audio_thread_id)
+            marker = H1_CENSUS_MARKER_AUDIO;
+        else if ((int)thread_id == transport->receiver_thread_id)
+            marker = H1_CENSUS_MARKER_RECEIVER;
+
+        pstvnc_h1_transport_set_diagnostic_word(
+            transport,
+            h1_census_pack(marker, thread_id, &status));
+        return;
     }
 
-    /* Marker + thread ID 255 + zero fields means no valid thread was found. */
+    /* OTHER marker + thread ID 255 + zero fields means no valid thread found. */
     pstvnc_h1_transport_set_diagnostic_word(
         transport,
-        H1_CENSUS_MARKER | (0xffu << 20));
+        H1_CENSUS_MARKER_OTHER | (0xffu << 20));
 }
 
 void pstvnc_h1_thread_census_record_audio_played(
