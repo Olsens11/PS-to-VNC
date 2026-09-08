@@ -88,7 +88,58 @@ What CP1 does **not** prove:
 The produced ELF is intentionally preserved as **unqualified** CI evidence only.
 No deployment or hardware claim is authorized by this checkpoint.
 
-Next permitted checkpoint: add the dedicated channel-1 RFB queue/credit and
-serialized logical-write mechanics while preserving `rfb_mode=OFF` inertness;
-keep CONFIG RFB=ON gated until those mechanics and their host/build checks are
-complete.
+## CP2A — logical RFB channel mechanics isolated and host-tested
+
+Status: COMPLETE — HOST VERIFIED, NOT RUNTIME-WIRED, NOT HARDWARE QUALIFIED
+
+Commits:
+
+    826a4130c1a55702f5ee7455a856929fd8138138  h1: add testable RFB channel mechanics
+    b9665290eb44c4f465bdb91d7d1612ab625a16cd  h1: implement testable RFB channel mechanics
+    956427caf74a7fcb58f8036f2f5b677a54649c59  h1: test RFB channel mechanics
+    5de62aa3eca1c8dc027cdd05653e1efc99ce8faf  ci: test H1 RFB channel mechanics
+
+What changed:
+
+- Added an experiment-owned, platform-neutral logical RFB channel component.
+- Queue storage remains caller-owned; the component itself performs no
+  allocation, socket I/O, semaphore/thread work, CONFIG activation, or RFB
+  parsing.
+- The only accepted queue capacity is the already-recorded 32768-byte direct-RFB
+  precedent; this checkpoint does not enlarge it.
+- Inbound DATA is all-or-nothing queued and independently counted.
+- Consumed bytes accumulate exact receiver credit for the runtime to return.
+- Outbound logical RFB writes are fragmented at a caller-provided maximum
+  payload and handed to a sender callback in exact byte order.
+- Partial sender failure fails the logical write rather than reporting success.
+
+Verification:
+
+    workflow=H1 RFB mux preparation checks
+    run=34230117829
+    result=PASS
+    host_rfb_channel_test=PASS
+    existing_rfb_mux_seam_check=PASS
+    pinned_ps2_build=PASS
+
+The host test proves queue ordering, high-water accounting, consumed-byte
+credit, exact outbound fragmentation, and fail-closed partial-send behavior.
+The cumulative PS2 build also remains green, but this new component is not yet
+linked into the live H1 runtime, so no PT_LOAD/runtime qualification claim is
+made from CP2A.
+
+What remains unproven:
+
+- H1 receiver-thread dispatch of PSTV channel-1 DATA into this queue;
+- semaphore ownership around the queue;
+- actual CREDIT frames on channel 1;
+- actual serialized channel-1 DATA writes through H1's existing send lock;
+- adapter binding/read/poll behavior;
+- Pi VNC bridge behavior;
+- `rfb_mode=ON` activation or any hardware behavior.
+
+Next permitted checkpoint: wire this tested component into the H1 transport
+runtime while keeping CONFIG `rfb_mode=ON` rejected. The runtime integration
+must create RFB-specific resources only when RFB is enabled, use the existing
+single receiver and send-lock owners, and add build/host checks before the
+activation gate is relaxed.
