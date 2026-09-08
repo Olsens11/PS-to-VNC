@@ -143,3 +143,67 @@ runtime while keeping CONFIG `rfb_mode=ON` rejected. The runtime integration
 must create RFB-specific resources only when RFB is enabled, use the existing
 single receiver and send-lock owners, and add build/host checks before the
 activation gate is relaxed.
+
+## CP2B — logical RFB channel mechanics resident in the pinned PS2 build
+
+Status: COMPLETE — BUILD VERIFIED, STILL NOT LIVE-RUNTIME-WIRED, NOT HARDWARE QUALIFIED
+
+Commits:
+
+    8e6ddad3219ee2eff768a3e29745850e9c9e1204  h1: link RFB channel mechanics into cumulative prep build
+    197b7a80f741a493ee13be876352e1902c3ec585  h1: verify resident RFB channel mechanics object
+
+What changed:
+
+- The host-tested `h1_rfb_channel.c` component is now compiled and linked into
+  the cumulative through-Issue-39 H1 preparation ELF.
+- The existing seam checker now requires the resident `h1_rfb_channel.o` object
+  and verifies the expected queue/credit/fragment function definitions in the
+  actual PS2 object.
+- The fail-closed mux adapter remains unchanged and `rfb_mode=ON` remains
+  rejected. No RFB queue storage, semaphore, receiver dispatch, credit frame,
+  or channel-1 send is activated by this checkpoint.
+- No queue capacity changed; the channel component still accepts only the
+  recorded 32768-byte reference capacity.
+
+Verification:
+
+    workflow=H1 RFB mux preparation checks
+    run=34241770439
+    result=PASS
+    host_preflight=PASS
+    host_rfb_channel_test=PASS
+    source_seam=PASS
+    object_seam=PASS
+    pinned_ps2_build=PASS
+    ELF_SHA256=200dc880f15495dd31866f65c2ac082070e6f964a6620e57efcab6ddbd5bf0a0
+    PT_LOAD_SHA256=00574addb8a96e350db14046ce1acca013d25d59cb196f47104109e9be8d7262
+    PT_LOAD_BYTES=480532
+    ARTIFACT=h1-rfb-mux-prep-unqualified-elf
+
+What CP2B proves:
+
+- The exact logical RFB channel implementation already proven by host tests also
+  compiles and links under the pinned PS2 toolchain in the resident H1 source
+  population.
+- Future live runtime wiring can reference this component without first changing
+  the cumulative ELF's source population again.
+
+What CP2B does **not** prove:
+
+- H1 transport runtime resource ownership for RFB;
+- receiver-thread channel-1 dispatch;
+- channel-1 CREDIT or DATA transmission;
+- mux-adapter read/poll/write operation;
+- Pi bridge behavior;
+- `RFB=ON` activation;
+- any real-PS2 behavior of this changed PT_LOAD.
+
+The recorded ELF remains an **unqualified** build artifact only.
+
+Next permitted checkpoint: add the RFB-specific resource/lifecycle and
+receiver/send integration inside `h1_transport_runtime` while continuing to
+reject `rfb_mode=ON`. That checkpoint must preserve the sole physical `recv()`
+owner and existing send semaphore, allocate no RFB queue while RFB is OFF, and
+must not activate the mux adapter until those runtime mechanics are separately
+verified.
