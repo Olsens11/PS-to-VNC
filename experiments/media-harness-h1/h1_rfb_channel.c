@@ -2,9 +2,10 @@
  * File synopsis:
  * Implements queue, credit, and outbound-fragment mechanics for H1 logical RFB.
  *
- * No physical socket I/O occurs here. The future H1 runtime integration will
- * hold the appropriate queue/send semaphore around these operations and will
- * translate each outbound fragment into one channel-1 PSTV DATA frame.
+ * No physical socket I/O occurs here. The H1 runtime holds the appropriate
+ * queue/send semaphore around these operations and translates each outbound
+ * fragment into one channel-1 PSTV DATA frame. Queue capacity is supplied by
+ * the caller so CONFIG v4 can vary it without changing this component.
  *
  * Context: RFB_MUX_INTEGRATION_PREP.md, P2.
  */
@@ -26,8 +27,8 @@ int pstvnc_h1_rfb_channel_init(
     uint8_t *storage,
     size_t storage_bytes)
 {
-    if (channel == NULL || storage == NULL ||
-        storage_bytes != PSTVNC_H1_RFB_QUEUE_REFERENCE_BYTES)
+    if (channel == NULL || storage == NULL || storage_bytes == 0u ||
+        storage_bytes > 0xffffffffu)
         return 0;
 
     memset(channel, 0, sizeof(*channel));
