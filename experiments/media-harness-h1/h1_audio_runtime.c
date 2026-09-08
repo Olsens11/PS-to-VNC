@@ -144,18 +144,18 @@ static void h1_audio_thread(void *argument)
 
     if (audsrv_set_format(&format) != 0) {
         h1_audio_record_error(runtime, PSTVNC_H1_AUDIO_ERROR_AUDSRV_FORMAT);
-        goto quit_audio;
+        goto stop_audio;
     }
 
     if (audsrv_set_volume((int)config->audio_volume) != 0) {
         h1_audio_record_error(runtime, PSTVNC_H1_AUDIO_ERROR_AUDSRV_VOLUME);
-        goto quit_audio;
+        goto stop_audio;
     }
 
     if (h1_audio_wait_start_policy(runtime, config) < 0) {
         if (!runtime->stop_requested)
             h1_audio_record_error(runtime, PSTVNC_H1_AUDIO_ERROR_DELAY);
-        goto quit_audio;
+        goto stop_audio;
     }
 
     clock_result = pstvnc_h1_media_clock_wait_offset(
@@ -167,11 +167,11 @@ static void h1_audio_thread(void *argument)
     if (clock_result < 0) {
         if (!runtime->stop_requested)
             h1_audio_record_error(runtime, PSTVNC_H1_AUDIO_ERROR_CLOCK);
-        goto quit_audio;
+        goto stop_audio;
     }
 
     if (clock_result == 0)
-        goto quit_audio;
+        goto stop_audio;
 
     for (;;) {
         size_t bytes_read = 0u;
@@ -223,9 +223,15 @@ static void h1_audio_thread(void *argument)
             bytes_read);
     }
 
-quit_audio:
+stop_audio:
+    /*
+     * AUDSRV belongs to the resident ELF lifetime, not the connection/session
+     * lifetime. PS2SDK audsrv_quit() dismantles EE and IOP synchronization,
+     * callback, playback-thread, and SPU-DMA state without making a later
+     * audsrv_init() reconstruct that state reliably. Keep the service alive
+     * across H1 sessions and only stop/mute the current stream here.
+     */
     (void)audsrv_stop_audio();
-    (void)audsrv_quit();
 
 done:
     runtime->finished = 1;
