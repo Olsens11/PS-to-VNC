@@ -1,17 +1,21 @@
 /*
  * File synopsis:
- * Defines H1's one-socket mux runtime for logical AUDIO and MPEG2 channels.
+ * Defines H1's one-socket mux runtime for logical AUDIO and MPEG2 channels,
+ * plus the dormant ownership slot for prepared RFB channel-1 resources.
  *
  * One EE receiver thread is the sole recv() owner. Audio and MPEG bytes land in
  * separate runtime-allocated queues and receive independent credits. The Pi
  * owns scheduling between channels; the PS2 exposes truthful capacity and
- * consumption.
+ * consumption. RFB resources are embedded here for lifecycle ownership only;
+ * CONFIG still rejects RFB ON and no channel-1 dispatch/credit/send path is
+ * activated by this checkpoint.
  */
 
 #ifndef PSTVNC_MEDIA_HARNESS_H1_TRANSPORT_RUNTIME_H
 #define PSTVNC_MEDIA_HARNESS_H1_TRANSPORT_RUNTIME_H
 
 #include "h1_config.h"
+#include "h1_rfb_runtime_resources.h"
 #include "transport_protocol.h"
 #include "transport_queue.h"
 
@@ -121,6 +125,13 @@ typedef struct pstvnc_h1_transport_runtime {
 
     uint8_t *audio_queue_storage;
     uint8_t *mpeg_queue_storage;
+
+    /*
+     * Experiment-owned RFB channel-1 resources live with the one-socket H1
+     * transport owner. They remain inactive while the current CONFIG validator
+     * accepts only PSTVNC_H1_RFB_OFF.
+     */
+    pstvnc_h1_rfb_runtime_resources_t rfb_resources;
 
     void *receiver_thread_stack_allocation;
     unsigned char *receiver_thread_stack;
