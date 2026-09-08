@@ -35,9 +35,14 @@ u64 pstvnc_h1_media_clock_deadline(
     int32_t offset_us,
     u64 additional_ticks);
 
+/*
+ * Returns 1 when the requested presentation deadline is reached, 0 when the
+ * optional stop flag becomes true, and -1 on DelayThread failure.
+ */
 int pstvnc_h1_media_clock_wait_offset(
     pstvnc_h1_media_clock_t *clock,
     int32_t offset_us,
-    uint32_t poll_us);
+    uint32_t poll_us,
+    const volatile int *stop_requested);
 
 #endif
