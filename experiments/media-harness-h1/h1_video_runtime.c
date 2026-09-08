@@ -127,6 +127,36 @@ static void *h1_video_allocate_aligned64(
     return (void *)address;
 }
 
+/*
+ * Establish the GS drawing environment required by the MPEG presentation
+ * packets. This is renderer initialization, not diagnostic presentation, so
+ * it must run regardless of whether visible stage markers are enabled.
+ */
+static void h1_video_setup_environment(void)
+{
+    qword_t *q;
+
+    if (!s_h1_chassis.initialized || s_h1_chassis.stage_packet == NULL)
+        return;
+
+    dma_channel_wait(DMA_CHANNEL_GIF, 0);
+
+    q = s_h1_chassis.stage_packet->data;
+    q = draw_setup_environment(
+        q,
+        0,
+        &s_h1_chassis.frame,
+        &s_h1_chassis.z);
+
+    dma_channel_send_normal(
+        DMA_CHANNEL_GIF,
+        s_h1_chassis.stage_packet->data,
+        q - s_h1_chassis.stage_packet->data,
+        0,
+        0);
+    dma_channel_wait(DMA_CHANNEL_GIF, 0);
+}
+
 static void h1_video_show_color(int red, int green, int blue)
 {
     qword_t *q;
@@ -864,6 +894,13 @@ int pstvnc_h1_video_run_session(
         h1_video_record_error(&session, PSTVNC_H1_VIDEO_ERROR_ALLOCATION);
         goto done;
     }
+
+    /*
+     * MPEG draw packets depend on this GS state. Stage markers may add
+     * diagnostic clears, but enabling diagnostics must never be required for
+     * ordinary presentation.
+     */
+    h1_video_setup_environment();
 
     h1_video_stage(config, 0, 160, 160, 1u);
 
