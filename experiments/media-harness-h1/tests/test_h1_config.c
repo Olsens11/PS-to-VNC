@@ -1,10 +1,13 @@
 /*
  * File synopsis:
- * Host-side structural tests for H1 CONFIG v2.
+ * Host-side structural tests for H1 CONFIG v3.
  *
  * These tests intentionally include aggressive queue sizes to guard the H1
  * rule that the configuration layer must not substitute a guessed safe
  * capacity ceiling for actual PS2 allocation/hardware evidence.
+ *
+ * CONFIG v3 also proves the explicit RFB-off seam and 16-pixel-grid MPEG
+ * encode/presentation geometry used by cumulative integration.
  */
 
 #include "h1_config.h"
@@ -32,6 +35,7 @@ static pstvnc_h1_config_t p11_video_profile(void)
 
     c.audio_mode = PSTVNC_H1_AUDIO_OFF;
     c.video_mode = PSTVNC_H1_VIDEO_MPEG2_ES;
+    c.rfb_mode = PSTVNC_H1_RFB_OFF;
 
     c.audio_queue_capacity = 0u;
     c.mpeg_queue_capacity = 524288u;
@@ -71,12 +75,14 @@ static pstvnc_h1_config_t p11_video_profile(void)
     c.video_pixel_mode = PSTVNC_H1_VIDEO_RGB16;
     c.video_max_width = 704u;
     c.video_max_height = 480u;
+    c.video_encode_width = 608u;
+    c.video_encode_height = 416u;
     c.video_draw_width = 640u;
     c.video_draw_height = 512u;
     c.video_draw_x = 0u;
     c.video_draw_y = 0u;
-    c.video_stage_markers = 1u;
-    c.video_stage_hold_vsyncs = 30u;
+    c.video_stage_markers = 0u;
+    c.video_stage_hold_vsyncs = 0u;
     c.video_ipu_reset_each_session = 1u;
     c.video_drop_enabled = 0u;
     c.video_drop_threshold_milliframes = 0u;
@@ -87,7 +93,7 @@ static pstvnc_h1_config_t p11_video_profile(void)
     c.socket_receive_buffer_bytes = 0u;
     c.socket_send_buffer_bytes = 0u;
     c.queue_allocation_order = PSTVNC_H1_ALLOCATE_MPEG_FIRST;
-    c.media_epoch_lead_us = 250000u;
+    c.media_epoch_lead_us = 0u;
 
     return c;
 }
@@ -166,6 +172,18 @@ int main(void)
 
     c = combined_pcm_profile();
     c.video_max_width = 703u;
+    assert(!pstvnc_h1_config_validate(&c));
+
+    c = combined_pcm_profile();
+    c.video_encode_width = 610u;
+    assert(!pstvnc_h1_config_validate(&c));
+
+    c = combined_pcm_profile();
+    c.video_draw_x = 1u;
+    assert(!pstvnc_h1_config_validate(&c));
+
+    c = combined_pcm_profile();
+    c.rfb_mode = PSTVNC_H1_RFB_ON_RESERVED;
     assert(!pstvnc_h1_config_validate(&c));
 
     c = p11_video_profile();
