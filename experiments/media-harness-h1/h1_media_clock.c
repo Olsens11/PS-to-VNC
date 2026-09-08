@@ -55,8 +55,6 @@ void pstvnc_h1_media_clock_arm_now(
         h1_clock_us_to_ticks_u64(clock->lead_us);
 
     clock->epoch_tick = epoch;
-
-    /* Publish the complete 64-bit epoch before publishing armed=1. */
     EE_SYNCL();
     clock->armed = 1;
     EE_SYNCL();
@@ -100,7 +98,8 @@ u64 pstvnc_h1_media_clock_deadline(
 int pstvnc_h1_media_clock_wait_offset(
     pstvnc_h1_media_clock_t *clock,
     int32_t offset_us,
-    uint32_t poll_us)
+    uint32_t poll_us,
+    const volatile int *stop_requested)
 {
     u64 deadline;
 
@@ -111,6 +110,9 @@ int pstvnc_h1_media_clock_wait_offset(
         poll_us = 1u;
 
     while (!clock->armed) {
+        if (stop_requested != 0 && *stop_requested)
+            return 0;
+
         if (DelayThread(poll_us) < 0)
             return -1;
     }
@@ -121,13 +123,18 @@ int pstvnc_h1_media_clock_wait_offset(
         0u);
 
     for (;;) {
-        u64 now = GetTimerSystemTime();
+        u64 now;
         u64 remaining;
         u64 remaining_us;
         uint32_t delay_us;
 
-        if (now >= deadline)
+        if (stop_requested != 0 && *stop_requested)
             return 0;
+
+        now = GetTimerSystemTime();
+
+        if (now >= deadline)
+            return 1;
 
         remaining = deadline - now;
         remaining_us =
