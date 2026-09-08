@@ -22,6 +22,11 @@
 #define PSTVNC_H1_CONFIG_VERSION 2u
 #define PSTVNC_H1_CONFIG_ACK_FLAG 0x01u
 
+/* Same capability identity used by configurable Audio Transport EXP2. */
+#ifndef PSTVNC_TRANSPORT_CAP_CONFIG_DYNAMIC
+#define PSTVNC_TRANSPORT_CAP_CONFIG_DYNAMIC (1u << 4)
+#endif
+
 /* H1-specific HELLO capability bits. */
 #define PSTVNC_H1_CAP_MEDIA_MUX_DYNAMIC (1u << 5)
 #define PSTVNC_H1_CAP_MPEG2_ES          (1u << 6)
