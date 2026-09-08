@@ -8,18 +8,19 @@ P11_COMPAT_VIDEO_ONLY proves the resident/mux/config machinery with audio
 disabled. P11_COMPAT_PLUS_PCM adds the known 48 kHz / 16-bit / stereo PCM path
 on the same physical PSTV mux.
 
-CONFIG v3 establishes the cumulative-build seams used by later integration:
-RFB is explicitly OFF in the current media/census sessions, and MPEG encode and
-GS draw geometry are independent 16-pixel-grid parameters. The through-Issue-39
-modules may be linked into the ELF while remaining inactive until a later
-session profile deliberately enables them.
+CONFIG v3 establishes cumulative-build seams used by later integration: RFB is
+explicitly OFF in the current media/census sessions, and MPEG encode and GS draw
+geometry are independent 16-pixel-grid parameters. The through-Issue-39 modules
+may be linked into the ELF while remaining inactive until a later session
+profile deliberately enables them.
 
-The Pi also retains explicit X11 capture geometry as test-harness metadata. It
-is intentionally not duplicated onto the PS2 wire because only the Pi consumes
-it. Historical P11-compatible profiles can therefore keep full-desktop capture
-scaled to 608x416, while future cumulative profiles can make the capture and
-presentation rectangles identical so the MPEG patch comes from and returns to
-the same desktop location.
+The Pi also retains active desktop and X11 capture geometry as test-harness
+metadata. Neither is duplicated onto the H1 media wire because only the Pi
+capture side consumes them today. 704x462 is therefore merely the current
+qualified Issue-39 desktop default, not a permanent architectural maximum.
+Future safe-area/display work can change desktop_width/desktop_height while the
+same MPEG x/y/width/height contract continues to operate in active desktop
+coordinates.
 
 Presentation offsets are signed microseconds on the Pi and encoded as raw
 32-bit two's-complement field values on the wire. Queue sizes and other
@@ -95,9 +96,11 @@ FIELD_IDS = {
     "video_encode_height": 56,
 }
 
-# Pi-owned capture parameters are recorded in profiles/evidence but are not
-# serialized to the PS2 because X11 capture is exclusively a Pi responsibility.
+# Pi-owned session/capture parameters are recorded in profiles/evidence but are
+# not serialized to the PS2 H1 media transport.
 PI_ONLY_FIELDS = {
+    "desktop_width",
+    "desktop_height",
     "video_capture_x",
     "video_capture_y",
     "video_capture_width",
@@ -122,8 +125,8 @@ VIDEO_RGB16 = 0
 ALLOCATE_AUDIO_FIRST = 0
 ALLOCATE_MPEG_FIRST = 1
 
-VIDEO_SOURCE_WIDTH = 704
-VIDEO_SOURCE_HEIGHT = 462
+CURRENT_DESKTOP_WIDTH = 704
+CURRENT_DESKTOP_HEIGHT = 462
 
 
 def _p11_compat_video_only() -> dict[str, int]:
@@ -174,12 +177,16 @@ def _p11_compat_video_only() -> dict[str, int]:
         "video_draw_height": 512,
         "video_draw_x": 0,
         "video_draw_y": 0,
+        # Current qualified desktop; intentionally session metadata rather than
+        # a permanent platform constant.
+        "desktop_width": CURRENT_DESKTOP_WIDTH,
+        "desktop_height": CURRENT_DESKTOP_HEIGHT,
         # Historical P11/H1 capture remains full-desktop then scaled. Future
-        # cumulative profiles can set these equal to the presentation rectangle.
+        # cumulative profiles can set these equal to the MPEG presentation rect.
         "video_capture_x": 0,
         "video_capture_y": 0,
-        "video_capture_width": VIDEO_SOURCE_WIDTH,
-        "video_capture_height": VIDEO_SOURCE_HEIGHT,
+        "video_capture_width": CURRENT_DESKTOP_WIDTH,
+        "video_capture_height": CURRENT_DESKTOP_HEIGHT,
         # Historical H1 diagnostic color cycles remain available by override,
         # but ordinary video/media qualification no longer displays them.
         "video_stage_markers": 0,
@@ -193,10 +200,7 @@ def _p11_compat_video_only() -> dict[str, int]:
         "socket_receive_buffer_bytes": 0,
         "socket_send_buffer_bytes": 0,
         "queue_allocation_order": ALLOCATE_MPEG_FIRST,
-        # P11 armed its epoch at the first real VSYNC with no artificial lead.
         "media_epoch_lead_us": 0,
-        # Through-Issue-39 RFB/input/UI code may be present in cumulative ELFs,
-        # but it remains intentionally inactive during the current H1 tests.
         "rfb_mode": RFB_OFF,
     }
 
@@ -217,8 +221,7 @@ def _p11_compat_plus_pcm() -> dict[str, int]:
             "audio_start_delay_us": 0,
             "audio_chunk_bytes": 4096,
             "audio_idle_delay_us": 1000,
-            # Keep the historical EXP2 value as profile authority. Priority
-            # experiments deliberately override this field (8 is known-good).
+            # Historical EXP2 authority; priority experiments override this.
             "audio_thread_priority": 65,
             "audio_thread_stack_size": 16384,
             "audio_rate": 48000,
@@ -284,17 +287,21 @@ def validate_profile_shape(profile: Mapping[str, int]) -> None:
         elif value < 0 or value > 0xFFFFFFFF:
             raise ValueError(f"{key} is outside uint32 range")
 
+    desktop_width = int(profile["desktop_width"])
+    desktop_height = int(profile["desktop_height"])
     capture_x = int(profile["video_capture_x"])
     capture_y = int(profile["video_capture_y"])
     capture_width = int(profile["video_capture_width"])
     capture_height = int(profile["video_capture_height"])
 
+    if desktop_width <= 0 or desktop_height <= 0:
+        raise ValueError("active desktop geometry must be non-empty")
     if capture_width <= 0 or capture_height <= 0:
         raise ValueError("video capture rectangle must be non-empty")
-    if capture_x + capture_width > VIDEO_SOURCE_WIDTH:
-        raise ValueError("video capture rectangle exceeds desktop width")
-    if capture_y + capture_height > VIDEO_SOURCE_HEIGHT:
-        raise ValueError("video capture rectangle exceeds desktop height")
+    if capture_x + capture_width > desktop_width:
+        raise ValueError("video capture rectangle exceeds active desktop width")
+    if capture_y + capture_height > desktop_height:
+        raise ValueError("video capture rectangle exceeds active desktop height")
 
 
 def build_config_payload(profile: Mapping[str, int]) -> bytes:
@@ -330,8 +337,10 @@ def self_test() -> None:
     assert video["video_encode_height"] == 416
     assert video["video_draw_width"] == 640
     assert video["video_draw_height"] == 512
-    assert video["video_capture_width"] == VIDEO_SOURCE_WIDTH
-    assert video["video_capture_height"] == VIDEO_SOURCE_HEIGHT
+    assert video["desktop_width"] == CURRENT_DESKTOP_WIDTH
+    assert video["desktop_height"] == CURRENT_DESKTOP_HEIGHT
+    assert video["video_capture_width"] == CURRENT_DESKTOP_WIDTH
+    assert video["video_capture_height"] == CURRENT_DESKTOP_HEIGHT
     assert video["video_stage_markers"] == 0
     assert video["rfb_mode"] == RFB_OFF
     assert video["media_epoch_lead_us"] == 0
@@ -343,6 +352,7 @@ def self_test() -> None:
     assert combined["audio_bits"] == 16
     assert combined["audio_chunk_bytes"] == 4096
 
+    # Same-location future composition example within today's desktop geometry.
     same_location = resolve_profile(
         "P11_COMPAT_PLUS_PCM",
         3,
