@@ -8,7 +8,7 @@ physical transport or media scheduler:
 
     1. the qualified joint-prefill 1:1 AUDIO/MPEG scheduler;
     2. EE-thread census decoding through existing telemetry;
-    3. profile-driven X11 MPEG capture geometry.
+    3. profile-driven active-desktop and X11 MPEG capture geometry.
 
 The capture rectangle is Pi-owned test metadata. The MPEG encoder receives only
 that desktop rectangle, then scales it to the configured 16x16-grid encode
@@ -16,9 +16,9 @@ size. Future cumulative RFB+MPEG profiles can set capture x/y/width/height equal
 to video_draw_x/y/width/height so the MPEG patch is captured from and presented
 at the same logical desktop location.
 
-Historical P11-compatible profiles remain reproducible because their default
-capture rectangle is the complete 704x462 desktop and their encode rectangle is
-608x416.
+The active desktop size itself is profile metadata rather than a hard platform
+constant. Today's qualified default is 704x462; future safe-area/display work
+can change desktop_width/desktop_height without changing this capture contract.
 """
 
 from __future__ import annotations
@@ -29,12 +29,10 @@ import h1_mux_server_thread_census_diag as census
 
 base = census.base
 
-VIDEO_SOURCE_WIDTH = 704
-VIDEO_SOURCE_HEIGHT = 462
-VIDEO_SOURCE_SIZE = f"{VIDEO_SOURCE_WIDTH}x{VIDEO_SOURCE_HEIGHT}"
-
 
 def _video_command_profiled(self: base.H1Session) -> list[str]:
+    desktop_width = int(self.profile["desktop_width"])
+    desktop_height = int(self.profile["desktop_height"])
     capture_x = int(self.profile["video_capture_x"])
     capture_y = int(self.profile["video_capture_y"])
     capture_width = int(self.profile["video_capture_width"])
@@ -42,13 +40,15 @@ def _video_command_profiled(self: base.H1Session) -> list[str]:
     encode_width = int(self.profile["video_encode_width"])
     encode_height = int(self.profile["video_encode_height"])
 
+    if desktop_width <= 0 or desktop_height <= 0:
+        raise base.ProtocolError("active desktop geometry must be non-empty")
     if capture_width <= 0 or capture_height <= 0:
         raise base.ProtocolError("MPEG capture rectangle must be non-empty")
     if capture_x < 0 or capture_y < 0:
         raise base.ProtocolError("MPEG capture origin must be non-negative")
-    if capture_x + capture_width > VIDEO_SOURCE_WIDTH:
+    if capture_x + capture_width > desktop_width:
         raise base.ProtocolError("MPEG capture rectangle exceeds desktop width")
-    if capture_y + capture_height > VIDEO_SOURCE_HEIGHT:
+    if capture_y + capture_height > desktop_height:
         raise base.ProtocolError("MPEG capture rectangle exceeds desktop height")
     if encode_width <= 0 or encode_height <= 0:
         raise base.ProtocolError("MPEG encode rectangle must be non-empty")
@@ -65,6 +65,8 @@ def _video_command_profiled(self: base.H1Session) -> list[str]:
         "H1_CUMULATIVE39_VIDEO_LAYOUT="
         + json.dumps(
             {
+                "desktop_width": desktop_width,
+                "desktop_height": desktop_height,
                 "capture_x": capture_x,
                 "capture_y": capture_y,
                 "capture_width": capture_width,
@@ -92,7 +94,7 @@ def _video_command_profiled(self: base.H1Session) -> list[str]:
         "-framerate",
         base.VIDEO_RATE,
         "-video_size",
-        VIDEO_SOURCE_SIZE,
+        f"{desktop_width}x{desktop_height}",
         "-i",
         self.display,
         "-t",
