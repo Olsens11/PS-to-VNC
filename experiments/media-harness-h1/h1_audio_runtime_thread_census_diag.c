@@ -46,6 +46,7 @@ void pstvnc_h1_transport_record_audio_played(
 static uint32_t s_h1_census_session_id;
 static unsigned int s_h1_census_next_thread_id = 1u;
 static unsigned int s_h1_census_hold_chunks;
+static unsigned int s_h1_census_phase;
 
 static uint32_t h1_census_pack(
     uint32_t marker,
@@ -59,10 +60,94 @@ static uint32_t h1_census_pack(
         ((uint32_t)status->current_priority & 0x7fu);
 }
 
+static int h1_census_status_is_documented(int status)
+{
+    switch (status) {
+        case THS_RUN:
+        case THS_READY:
+        case THS_WAIT:
+        case THS_SUSPEND:
+        case THS_WAITSUSPEND:
+        case THS_DORMANT:
+            return 1;
+
+        default:
+            return 0;
+    }
+}
+
+static int h1_census_emit_thread(
+    pstvnc_h1_transport_runtime_t *transport,
+    int lookup_thread_id,
+    unsigned int reported_thread_id,
+    uint32_t marker)
+{
+    ee_thread_status_t status;
+
+    memset(&status, 0, sizeof(status));
+
+    /*
+     * The EE API documents only RUN/READY/WAIT/SUSPEND/WAITSUSPEND/DORMANT
+     * as thread states. A successful-looking lookup that leaves status zero
+     * is therefore not accepted as a census record.
+     */
+    if (ReferThreadStatus(lookup_thread_id, &status) < 0)
+        return 0;
+
+    if (!h1_census_status_is_documented(status.status))
+        return 0;
+
+    pstvnc_h1_transport_set_diagnostic_word(
+        transport,
+        h1_census_pack(
+            marker,
+            reported_thread_id,
+            &status));
+
+    return 1;
+}
+
 static void h1_census_emit_next(pstvnc_h1_transport_runtime_t *transport)
 {
     unsigned int attempt;
     int audio_thread_id = GetThreadId();
+
+    /*
+     * Self-validation comes first. TH_SELF asks the EE kernel about the
+     * currently executing audio worker while we still report its real ID.
+     * This should produce RUN and proves the status ABI before enumeration.
+     */
+    if (s_h1_census_phase == 0u) {
+        s_h1_census_phase = 1u;
+
+        if (audio_thread_id > 0 &&
+            audio_thread_id < MAX_THREADS &&
+            h1_census_emit_thread(
+                transport,
+                TH_SELF,
+                (unsigned int)audio_thread_id,
+                H1_CENSUS_MARKER_AUDIO))
+            return;
+    }
+
+    /*
+     * Next sample the already-known mux receiver directly. This establishes
+     * the second H1-owned thread before scanning anonymous kernel/library IDs.
+     */
+    if (s_h1_census_phase == 1u) {
+        int receiver_thread_id = transport->receiver_thread_id;
+
+        s_h1_census_phase = 2u;
+
+        if (receiver_thread_id > 0 &&
+            receiver_thread_id < MAX_THREADS &&
+            h1_census_emit_thread(
+                transport,
+                receiver_thread_id,
+                (unsigned int)receiver_thread_id,
+                H1_CENSUS_MARKER_RECEIVER))
+            return;
+    }
 
     for (attempt = 0u; attempt < (MAX_THREADS - 1u); ++attempt) {
         ee_thread_status_t status;
@@ -74,7 +159,11 @@ static void h1_census_emit_next(pstvnc_h1_transport_runtime_t *transport)
             s_h1_census_next_thread_id = 1u;
 
         memset(&status, 0, sizeof(status));
+
         if (ReferThreadStatus((int)thread_id, &status) < 0)
+            continue;
+
+        if (!h1_census_status_is_documented(status.status))
             continue;
 
         if ((int)thread_id == audio_thread_id)
@@ -88,7 +177,10 @@ static void h1_census_emit_next(pstvnc_h1_transport_runtime_t *transport)
         return;
     }
 
-    /* OTHER marker + thread ID 255 + zero fields means no valid thread found. */
+    /*
+     * OTHER + ID 255 + zero fields is retained as the explicit sentinel for
+     * no documented thread state found during a complete table pass.
+     */
     pstvnc_h1_transport_set_diagnostic_word(
         transport,
         H1_CENSUS_MARKER_OTHER | (0xffu << 20));
@@ -111,6 +203,7 @@ void pstvnc_h1_thread_census_record_audio_played(
         s_h1_census_session_id = config->session_id;
         s_h1_census_next_thread_id = 1u;
         s_h1_census_hold_chunks = 0u;
+        s_h1_census_phase = 0u;
     }
 
     if (s_h1_census_hold_chunks != 0u) {
