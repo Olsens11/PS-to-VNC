@@ -1,14 +1,14 @@
 /*
  * File synopsis:
  * Defines H1's complete connection-scoped media profile for one physical PSTV
- * transport carrying independently configurable PCM audio and MPEG-2 video,
- * plus a reserved RFB presentation toggle for later integration.
+ * transport carrying independently configurable RFB, PCM audio, and MPEG-2
+ * logical channels.
  *
  * H1 is a laboratory harness. Queue sizes, buffer depths, delays, feed sizes,
- * priorities, presentation offsets, and video layout are requested by the Pi
- * for every session. Validation rejects only contradictory, unrepresentable,
- * or API-impossible settings; it deliberately does not impose guessed safe
- * ceilings.
+ * priorities, presentation offsets, and channel credit policy are requested by
+ * the Pi for every session. Validation rejects only contradictory,
+ * unrepresentable, or API-impossible settings; it deliberately does not impose
+ * guessed safe ceilings.
  *
  * The existing Audio Transport EXP2 and qualified EXP3/P11 sources remain
  * unchanged. This is an H1-specific descendant.
@@ -20,7 +20,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define PSTVNC_H1_CONFIG_VERSION 3u
+#define PSTVNC_H1_CONFIG_VERSION 4u
 #define PSTVNC_H1_CONFIG_ACK_FLAG 0x01u
 
 /* Qualified H1 GS output surface and macroblock/layout grid. */
@@ -40,9 +40,8 @@
 
 /*
  * audio_mode deliberately reserves the two compressed-audio architectures we
- * intend to compare later. This first H1 implementation accepts OFF and PCM;
- * future descendants may enable the reserved values without renumbering the
- * experiment vocabulary.
+ * intend to compare later. This H1 implementation accepts OFF and PCM; future
+ * descendants may enable the reserved values without renumbering vocabulary.
  */
 typedef enum pstvnc_h1_audio_mode {
     PSTVNC_H1_AUDIO_OFF = 0,
@@ -57,9 +56,9 @@ typedef enum pstvnc_h1_video_mode {
 } pstvnc_h1_video_mode_t;
 
 /*
- * RFB is deliberately represented in the connection-scoped profile now so a
- * later combined desktop/media build can turn it on without inventing another
- * ELF fork. The current H1 implementation accepts OFF only; ON is reserved.
+ * CONFIG v4 gives RFB the same explicit queue/credit vocabulary as AUDIO and
+ * MPEG. The current activation checkpoint may still reject ON until live
+ * channel-1 dispatch/bridge behavior is separately build-verified.
  */
 typedef enum pstvnc_h1_rfb_mode {
     PSTVNC_H1_RFB_OFF = 0,
@@ -164,10 +163,16 @@ typedef enum pstvnc_h1_config_field {
 
     PSTVNC_H1_FIELD_RFB_MODE = 54,
     PSTVNC_H1_FIELD_VIDEO_ENCODE_WIDTH = 55,
-    PSTVNC_H1_FIELD_VIDEO_ENCODE_HEIGHT = 56
+    PSTVNC_H1_FIELD_VIDEO_ENCODE_HEIGHT = 56,
+
+    PSTVNC_H1_FIELD_RFB_QUEUE_CAPACITY = 57,
+    PSTVNC_H1_FIELD_RFB_CREDIT_BATCH_BYTES = 58,
+    PSTVNC_H1_FIELD_RFB_CREDIT_FLUSH_ON_EMPTY = 59,
+    PSTVNC_H1_FIELD_RFB_CREDIT_RETURN_ENABLED = 60,
+    PSTVNC_H1_FIELD_RFB_INITIAL_CREDIT_BYTES = 61
 } pstvnc_h1_config_field_t;
 
-#define PSTVNC_H1_CONFIG_FIELD_COUNT 56u
+#define PSTVNC_H1_CONFIG_FIELD_COUNT 61u
 
 typedef struct pstvnc_h1_config {
     uint32_t version;
@@ -180,15 +185,20 @@ typedef struct pstvnc_h1_config {
 
     uint32_t audio_queue_capacity;
     uint32_t mpeg_queue_capacity;
+    uint32_t rfb_queue_capacity;
 
     uint32_t audio_credit_batch_bytes;
     uint32_t mpeg_credit_batch_bytes;
+    uint32_t rfb_credit_batch_bytes;
     uint32_t audio_credit_flush_on_empty;
     uint32_t mpeg_credit_flush_on_empty;
+    uint32_t rfb_credit_flush_on_empty;
     uint32_t audio_credit_return_enabled;
     uint32_t mpeg_credit_return_enabled;
+    uint32_t rfb_credit_return_enabled;
     uint32_t audio_initial_credit_bytes;
     uint32_t mpeg_initial_credit_bytes;
+    uint32_t rfb_initial_credit_bytes;
 
     uint32_t audio_start_mode;
     uint32_t audio_start_target_bytes;
