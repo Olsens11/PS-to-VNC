@@ -124,6 +124,7 @@ static void h1_audio_thread(void *argument)
         (pstvnc_h1_audio_runtime_t *)argument;
     const pstvnc_h1_config_t *config;
     struct audsrv_fmt_t format;
+    int clock_result;
 
     config = pstvnc_h1_transport_config(runtime->transport);
 
@@ -157,14 +158,20 @@ static void h1_audio_thread(void *argument)
         goto quit_audio;
     }
 
-    if (pstvnc_h1_media_clock_wait_offset(
-            runtime->clock,
-            pstvnc_h1_config_audio_offset_us(config),
-            config->audio_idle_delay_us) < 0) {
+    clock_result = pstvnc_h1_media_clock_wait_offset(
+        runtime->clock,
+        pstvnc_h1_config_audio_offset_us(config),
+        config->audio_idle_delay_us,
+        &runtime->stop_requested);
+
+    if (clock_result < 0) {
         if (!runtime->stop_requested)
             h1_audio_record_error(runtime, PSTVNC_H1_AUDIO_ERROR_CLOCK);
         goto quit_audio;
     }
+
+    if (clock_result == 0)
+        goto quit_audio;
 
     for (;;) {
         size_t bytes_read = 0u;
