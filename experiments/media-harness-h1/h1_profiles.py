@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
 File synopsis:
-    Named Pi-side CONFIG v3 profiles for the resident H1 media harness.
+    Named Pi-side CONFIG v4 profiles for the resident H1 media harness.
 
 The first two profiles intentionally share the qualified P11 video mechanisms.
 P11_COMPAT_VIDEO_ONLY proves the resident/mux/config machinery with audio
 disabled. P11_COMPAT_PLUS_PCM adds the known 48 kHz / 16-bit / stereo PCM path
 on the same physical PSTV mux.
 
-CONFIG v3 establishes cumulative-build seams used by later integration: RFB is
-explicitly OFF in the current media/census sessions, and MPEG encode and GS draw
-geometry are independent 16-pixel-grid parameters. The through-Issue-39 modules
-may be linked into the ELF while remaining inactive until a later session
-profile deliberately enables them.
+CONFIG v4 adds explicit RFB queue/credit fields so channel-1 experiments can use
+the same session-level control philosophy as AUDIO and MPEG. RFB is still OFF in
+the current qualified media/census profiles until live channel-1 dispatch and
+the Pi bridge are independently build-verified.
 
 The Pi also retains active desktop and X11 capture geometry as test-harness
 metadata. Neither is duplicated onto the H1 media wire because only the Pi
@@ -33,8 +32,8 @@ import copy
 import struct
 from typing import Mapping
 
-CONFIG_VERSION = 3
-CONFIG_FIELD_COUNT = 56
+CONFIG_VERSION = 4
+CONFIG_FIELD_COUNT = 61
 CONFIG_PAYLOAD_BYTES = 8 + CONFIG_FIELD_COUNT * 8
 
 FIELD_IDS = {
@@ -94,6 +93,11 @@ FIELD_IDS = {
     "rfb_mode": 54,
     "video_encode_width": 55,
     "video_encode_height": 56,
+    "rfb_queue_capacity": 57,
+    "rfb_credit_batch_bytes": 58,
+    "rfb_credit_flush_on_empty": 59,
+    "rfb_credit_return_enabled": 60,
+    "rfb_initial_credit_bytes": 61,
 }
 
 # Pi-owned session/capture parameters are recorded in profiles/evidence but are
@@ -202,6 +206,12 @@ def _p11_compat_video_only() -> dict[str, int]:
         "queue_allocation_order": ALLOCATE_MPEG_FIRST,
         "media_epoch_lead_us": 0,
         "rfb_mode": RFB_OFF,
+        # RFB-OFF is truly inert in the current qualified media profiles.
+        "rfb_queue_capacity": 0,
+        "rfb_credit_batch_bytes": 0,
+        "rfb_credit_flush_on_empty": 0,
+        "rfb_credit_return_enabled": 0,
+        "rfb_initial_credit_bytes": 0,
     }
 
 
@@ -343,6 +353,11 @@ def self_test() -> None:
     assert video["video_capture_height"] == CURRENT_DESKTOP_HEIGHT
     assert video["video_stage_markers"] == 0
     assert video["rfb_mode"] == RFB_OFF
+    assert video["rfb_queue_capacity"] == 0
+    assert video["rfb_credit_batch_bytes"] == 0
+    assert video["rfb_credit_flush_on_empty"] == 0
+    assert video["rfb_credit_return_enabled"] == 0
+    assert video["rfb_initial_credit_bytes"] == 0
     assert video["media_epoch_lead_us"] == 0
     assert video["audio_mode"] == AUDIO_OFF
 
@@ -352,10 +367,28 @@ def self_test() -> None:
     assert combined["audio_bits"] == 16
     assert combined["audio_chunk_bytes"] == 4096
 
+    # The operator-selected future RFB policy can already be represented by the
+    # profile vocabulary even while the PS2 activation gate remains closed.
+    rfb_candidate = resolve_profile(
+        "P11_COMPAT_VIDEO_ONLY",
+        3,
+        {
+            "rfb_mode": RFB_ON_RESERVED,
+            "rfb_queue_capacity": 32768,
+            "rfb_credit_batch_bytes": 8192,
+            "rfb_credit_flush_on_empty": 1,
+            "rfb_credit_return_enabled": 1,
+            "rfb_initial_credit_bytes": 32768,
+        },
+    )
+    assert rfb_candidate["rfb_queue_capacity"] == 32768
+    assert rfb_candidate["rfb_credit_batch_bytes"] == 8192
+    assert rfb_candidate["rfb_initial_credit_bytes"] == 32768
+
     # Same-location future composition example within today's desktop geometry.
     same_location = resolve_profile(
         "P11_COMPAT_PLUS_PCM",
-        3,
+        4,
         {
             "video_capture_x": 160,
             "video_capture_y": 32,
@@ -376,17 +409,23 @@ def self_test() -> None:
 
     shifted = resolve_profile(
         "P11_COMPAT_PLUS_PCM",
-        4,
+        5,
         {"audio_presentation_offset_us": -43000},
     )
     payload = build_config_payload(shifted)
     assert len(payload) == CONFIG_PAYLOAD_BYTES
-    assert payload[-16:] == struct.pack(
-        ">IIII",
-        55,
-        608,
-        56,
-        416,
+    assert payload[-40:] == struct.pack(
+        ">IIIIIIIIII",
+        57,
+        0,
+        58,
+        0,
+        59,
+        0,
+        60,
+        0,
+        61,
+        0,
     )
 
     print("H1_PI_PROFILES_SELF_TEST=PASS")
