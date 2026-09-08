@@ -8,9 +8,9 @@
  * queue/credit consistency, format alignment, and mechanisms the current H1
  * implementation can actually represent.
  *
- * MPEG encode and draw dimensions are explicit session parameters. Encode
- * dimensions and the GS draw viewport are constrained to the 16-pixel grid so
- * later RFB composition can reserve the same rectangle without ambiguity.
+ * CONFIG v4 carries explicit RFB queue/credit policy alongside AUDIO/MPEG so
+ * channel-1 transport optimization does not require hidden constants or a new
+ * ELF for every queue/credit trial.
  */
 
 #include "h1_config.h"
@@ -200,6 +200,21 @@ static int h1_set_field(
         case PSTVNC_H1_FIELD_VIDEO_ENCODE_HEIGHT:
             config->video_encode_height = value;
             break;
+        case PSTVNC_H1_FIELD_RFB_QUEUE_CAPACITY:
+            config->rfb_queue_capacity = value;
+            break;
+        case PSTVNC_H1_FIELD_RFB_CREDIT_BATCH_BYTES:
+            config->rfb_credit_batch_bytes = value;
+            break;
+        case PSTVNC_H1_FIELD_RFB_CREDIT_FLUSH_ON_EMPTY:
+            config->rfb_credit_flush_on_empty = value;
+            break;
+        case PSTVNC_H1_FIELD_RFB_CREDIT_RETURN_ENABLED:
+            config->rfb_credit_return_enabled = value;
+            break;
+        case PSTVNC_H1_FIELD_RFB_INITIAL_CREDIT_BYTES:
+            config->rfb_initial_credit_bytes = value;
+            break;
         default:
             return 0;
     }
@@ -337,7 +352,10 @@ int pstvnc_h1_config_validate(
         config->version != PSTVNC_H1_CONFIG_VERSION)
         return 0;
 
-    /* This build owns PCM and MPEG-2 ES; RFB ON remains reserved. */
+    /*
+     * CONFIG v4 carries RFB policy, but this checkpoint still keeps the live
+     * RFB activation gate closed until channel-1 dispatch/bridge is verified.
+     */
     if (config->audio_mode > PSTVNC_H1_AUDIO_PCM ||
         config->video_mode > PSTVNC_H1_VIDEO_MPEG2_ES ||
         config->rfb_mode != PSTVNC_H1_RFB_OFF)
@@ -349,8 +367,10 @@ int pstvnc_h1_config_validate(
 
     if (config->audio_credit_flush_on_empty > 1u ||
         config->mpeg_credit_flush_on_empty > 1u ||
+        config->rfb_credit_flush_on_empty > 1u ||
         config->audio_credit_return_enabled > 1u ||
-        config->mpeg_credit_return_enabled > 1u)
+        config->mpeg_credit_return_enabled > 1u ||
+        config->rfb_credit_return_enabled > 1u)
         return 0;
 
     if (config->audio_mode == PSTVNC_H1_AUDIO_PCM) {
@@ -472,7 +492,8 @@ int pstvnc_h1_config_validate(
 
         /*
          * The GS viewport is the future RFB exclusion rectangle. Keeping all
-         * four edges on the same 16-pixel grid makes later composition exact.
+         * four edges on the same 16-pixel grid makes current H1 composition
+         * experiments exact; semantic media geometry is defined separately.
          */
         if (config->video_draw_width == 0u ||
             config->video_draw_height == 0u ||
@@ -499,6 +520,18 @@ int pstvnc_h1_config_validate(
             config->video_encode_height != 0u)
             return 0;
     }
+
+    /*
+     * RFB remains OFF-gated at this checkpoint. All RFB transport-policy fields
+     * must therefore be inert as well; later activation will validate the same
+     * relationships as the selected policy before accepting ON.
+     */
+    if (config->rfb_queue_capacity != 0u ||
+        config->rfb_credit_batch_bytes != 0u ||
+        config->rfb_credit_flush_on_empty != 0u ||
+        config->rfb_credit_return_enabled != 0u ||
+        config->rfb_initial_credit_bytes != 0u)
+        return 0;
 
     if (!h1_validate_thread(
             config->receiver_thread_priority,
