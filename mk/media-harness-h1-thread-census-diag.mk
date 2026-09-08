@@ -3,6 +3,11 @@
 # This is a separate experimental ELF. It preserves the H1 media harness and
 # links the diagnostic audio translation unit that includes the canonical audio
 # runtime while sampling EE thread status after successful audio handoffs.
+#
+# EXTRA_EE_* seams deliberately allow a cumulative diagnostic ELF to link
+# already-qualified product modules without starting them. This lets the same
+# resident binary grow through the reconstruction frontier while the current
+# media/census session keeps those modules genuinely inactive.
 
 BUILD_DIR ?= build/experiments/media-harness-h1-thread-census/ps2
 
@@ -15,6 +20,10 @@ SMS_INC = $(SMS_VENDOR)/include
 SMS_SRC = $(SMS_VENDOR)/src
 
 PS2IP_LIB = baseline/frozen-b4a/libps2ip_mtu1458_wscale128.a
+
+EXTRA_EE_OBJS ?=
+EXTRA_EE_INCS ?=
+EXTRA_EE_LIBS ?=
 
 SMS_DECODER_CFLAGS = \
 	-D_EE \
@@ -30,7 +39,8 @@ EE_INCS += \
 	-Iexperiments/media-harness-h1 \
 	-Iexperiments/audio-transport/common \
 	-Isrc/platform \
-	-Isrc/rfb
+	-Isrc/rfb \
+	$(EXTRA_EE_INCS)
 
 EE_OBJS = \
 	$(BUILD_DIR)/h1_main.o \
@@ -52,6 +62,8 @@ EE_OBJS = \
 	$(BUILD_DIR)/SMAP_irx_h1.o \
 	$(BUILD_DIR)/AUDSRV_irx_h1.o
 
+EE_OBJS += $(EXTRA_EE_OBJS)
+
 EE_LIBS = \
 	-laudsrv \
 	-ldraw \
@@ -61,7 +73,8 @@ EE_LIBS = \
 	$(PS2IP_LIB) \
 	-lpatches \
 	-lc \
-	-lpacket
+	-lpacket \
+	$(EXTRA_EE_LIBS)
 
 .PHONY: all clean
 
