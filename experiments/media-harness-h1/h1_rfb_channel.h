@@ -1,12 +1,12 @@
 /*
  * File synopsis:
- * Defines the experiment-owned logical RFB channel mechanics that will sit
- * between H1's sole PSTV receiver/sender and the unchanged clean RFB session.
+ * Defines the experiment-owned logical RFB channel mechanics that sit between
+ * H1's sole PSTV receiver/sender and the unchanged clean RFB session.
  *
  * This module owns byte-queue accounting, immediate consumed-byte credit
  * accounting, and fragmentation of outbound logical RFB bytes. It deliberately
  * owns no socket, thread, semaphore, CONFIG activation, or RFB protocol parsing.
- * The H1 transport runtime will provide those mechanisms at a later checkpoint.
+ * Queue storage/capacity are caller-owned so H1 CONFIG can tune them per session.
  *
  * Context: RFB_MUX_INTEGRATION_PREP.md, P2.
  */
@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Evidence-based starting capacity: matches the qualified direct-RFB prefetch. */
+/* Evidence-based default only; CONFIG v4 may request another capacity. */
 #define PSTVNC_H1_RFB_QUEUE_REFERENCE_BYTES 32768u
 
 typedef int (*pstvnc_h1_rfb_fragment_sender_t)(
