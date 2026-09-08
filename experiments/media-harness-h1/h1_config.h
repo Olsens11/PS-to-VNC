@@ -1,13 +1,14 @@
 /*
  * File synopsis:
  * Defines H1's complete connection-scoped media profile for one physical PSTV
- * transport carrying PCM audio and MPEG-2 video as independent logical
- * channels.
+ * transport carrying independently configurable PCM audio and MPEG-2 video,
+ * plus a reserved RFB presentation toggle for later integration.
  *
  * H1 is a laboratory harness. Queue sizes, buffer depths, delays, feed sizes,
- * priorities and presentation offsets are requested by the Pi for every
- * session. Validation rejects only contradictory, unrepresentable, or API-
- * impossible settings; it deliberately does not impose guessed safe ceilings.
+ * priorities, presentation offsets, and video layout are requested by the Pi
+ * for every session. Validation rejects only contradictory, unrepresentable,
+ * or API-impossible settings; it deliberately does not impose guessed safe
+ * ceilings.
  *
  * The existing Audio Transport EXP2 and qualified EXP3/P11 sources remain
  * unchanged. This is an H1-specific descendant.
@@ -19,8 +20,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define PSTVNC_H1_CONFIG_VERSION 2u
+#define PSTVNC_H1_CONFIG_VERSION 3u
 #define PSTVNC_H1_CONFIG_ACK_FLAG 0x01u
+
+/* Qualified H1 GS output surface and macroblock/layout grid. */
+#define PSTVNC_H1_OUTPUT_WIDTH 640u
+#define PSTVNC_H1_OUTPUT_HEIGHT 512u
+#define PSTVNC_H1_VIDEO_GRID 16u
 
 /* Same capability identity used by configurable Audio Transport EXP2. */
 #ifndef PSTVNC_TRANSPORT_CAP_CONFIG_DYNAMIC
@@ -49,6 +55,16 @@ typedef enum pstvnc_h1_video_mode {
     PSTVNC_H1_VIDEO_OFF = 0,
     PSTVNC_H1_VIDEO_MPEG2_ES = 1
 } pstvnc_h1_video_mode_t;
+
+/*
+ * RFB is deliberately represented in the connection-scoped profile now so a
+ * later combined desktop/media build can turn it on without inventing another
+ * ELF fork. The current H1 implementation accepts OFF only; ON is reserved.
+ */
+typedef enum pstvnc_h1_rfb_mode {
+    PSTVNC_H1_RFB_OFF = 0,
+    PSTVNC_H1_RFB_ON_RESERVED = 1
+} pstvnc_h1_rfb_mode_t;
 
 typedef enum pstvnc_h1_audio_start_mode {
     PSTVNC_H1_AUDIO_START_IMMEDIATE = 0,
@@ -144,10 +160,14 @@ typedef enum pstvnc_h1_config_field {
     PSTVNC_H1_FIELD_SOCKET_RECEIVE_BUFFER_BYTES = 50,
     PSTVNC_H1_FIELD_SOCKET_SEND_BUFFER_BYTES = 51,
     PSTVNC_H1_FIELD_QUEUE_ALLOCATION_ORDER = 52,
-    PSTVNC_H1_FIELD_MEDIA_EPOCH_LEAD_US = 53
+    PSTVNC_H1_FIELD_MEDIA_EPOCH_LEAD_US = 53,
+
+    PSTVNC_H1_FIELD_RFB_MODE = 54,
+    PSTVNC_H1_FIELD_VIDEO_ENCODE_WIDTH = 55,
+    PSTVNC_H1_FIELD_VIDEO_ENCODE_HEIGHT = 56
 } pstvnc_h1_config_field_t;
 
-#define PSTVNC_H1_CONFIG_FIELD_COUNT 53u
+#define PSTVNC_H1_CONFIG_FIELD_COUNT 56u
 
 typedef struct pstvnc_h1_config {
     uint32_t version;
@@ -156,6 +176,7 @@ typedef struct pstvnc_h1_config {
     uint32_t session_id;
     uint32_t audio_mode;
     uint32_t video_mode;
+    uint32_t rfb_mode;
 
     uint32_t audio_queue_capacity;
     uint32_t mpeg_queue_capacity;
@@ -195,6 +216,8 @@ typedef struct pstvnc_h1_config {
     uint32_t video_pixel_mode;
     uint32_t video_max_width;
     uint32_t video_max_height;
+    uint32_t video_encode_width;
+    uint32_t video_encode_height;
     uint32_t video_draw_width;
     uint32_t video_draw_height;
     uint32_t video_draw_x;
