@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
 File synopsis:
-    Named Pi-side CONFIG v2 profiles for the resident H1 media harness.
+    Named Pi-side CONFIG v3 profiles for the resident H1 media harness.
 
-The first two profiles intentionally share the exact qualified P11 video
-mechanisms. P11_COMPAT_VIDEO_ONLY proves the new resident/mux/config machinery
-with audio disabled. P11_COMPAT_PLUS_PCM changes only the addition of the
-known 48 kHz / 16-bit / stereo PCM audio path on the same physical PSTV mux.
+The first two profiles intentionally share the qualified P11 video mechanisms.
+P11_COMPAT_VIDEO_ONLY proves the resident/mux/config machinery with audio
+disabled. P11_COMPAT_PLUS_PCM adds the known 48 kHz / 16-bit / stereo PCM path
+on the same physical PSTV mux.
+
+CONFIG v3 also establishes the cumulative-build seams used by later integration:
+RFB is explicitly OFF in the current media/census sessions, and MPEG encode and
+GS draw geometry are independent 16-pixel-grid parameters. The through-Issue-39
+modules may be linked into the ELF while remaining inactive until a later
+session profile deliberately enables them.
 
 Presentation offsets are signed microseconds on the Pi and encoded as raw
 32-bit two's-complement field values on the wire. Queue sizes and other
@@ -19,8 +25,8 @@ import copy
 import struct
 from typing import Mapping
 
-CONFIG_VERSION = 2
-CONFIG_FIELD_COUNT = 53
+CONFIG_VERSION = 3
+CONFIG_FIELD_COUNT = 56
 CONFIG_PAYLOAD_BYTES = 8 + CONFIG_FIELD_COUNT * 8
 
 FIELD_IDS = {
@@ -77,6 +83,9 @@ FIELD_IDS = {
     "socket_send_buffer_bytes": 51,
     "queue_allocation_order": 52,
     "media_epoch_lead_us": 53,
+    "rfb_mode": 54,
+    "video_encode_width": 55,
+    "video_encode_height": 56,
 }
 
 SIGNED_FIELDS = {
@@ -88,6 +97,8 @@ AUDIO_OFF = 0
 AUDIO_PCM = 1
 VIDEO_OFF = 0
 VIDEO_MPEG2_ES = 1
+RFB_OFF = 0
+RFB_ON_RESERVED = 1
 AUDIO_START_IMMEDIATE = 0
 AUDIO_START_TARGET = 1
 VIDEO_SCHED_ABSOLUTE = 0
@@ -97,7 +108,7 @@ ALLOCATE_MPEG_FIRST = 1
 
 
 def _p11_compat_video_only() -> dict[str, int]:
-    """Return the exact effective P11-compatible H1 video profile."""
+    """Return the P11-compatible H1 video profile with stage colors disabled."""
 
     return {
         "profile_id": 0,
@@ -138,12 +149,16 @@ def _p11_compat_video_only() -> dict[str, int]:
         "video_pixel_mode": VIDEO_RGB16,
         "video_max_width": 704,
         "video_max_height": 480,
+        "video_encode_width": 608,
+        "video_encode_height": 416,
         "video_draw_width": 640,
         "video_draw_height": 512,
         "video_draw_x": 0,
         "video_draw_y": 0,
-        "video_stage_markers": 1,
-        "video_stage_hold_vsyncs": 30,
+        # Historical H1 diagnostic color cycles remain available by override,
+        # but ordinary video/media qualification no longer displays them.
+        "video_stage_markers": 0,
+        "video_stage_hold_vsyncs": 0,
         "video_ipu_reset_each_session": 1,
         "video_drop_enabled": 0,
         "video_drop_threshold_milliframes": 0,
@@ -155,6 +170,9 @@ def _p11_compat_video_only() -> dict[str, int]:
         "queue_allocation_order": ALLOCATE_MPEG_FIRST,
         # P11 armed its epoch at the first real VSYNC with no artificial lead.
         "media_epoch_lead_us": 0,
+        # Through-Issue-39 RFB/input/UI code may be present in cumulative ELFs,
+        # but it remains intentionally inactive during the current H1 tests.
+        "rfb_mode": RFB_OFF,
     }
 
 
@@ -174,6 +192,8 @@ def _p11_compat_plus_pcm() -> dict[str, int]:
             "audio_start_delay_us": 0,
             "audio_chunk_bytes": 4096,
             "audio_idle_delay_us": 1000,
+            # Keep the historical EXP2 value as profile authority. Priority
+            # experiments deliberately override this field (8 is known-good).
             "audio_thread_priority": 65,
             "audio_thread_stack_size": 16384,
             "audio_rate": 48000,
@@ -268,6 +288,12 @@ def self_test() -> None:
     assert video["mpeg_feed_bytes"] == 2048
     assert video["video_fps_num"] == 30000
     assert video["video_fps_den"] == 1001
+    assert video["video_encode_width"] == 608
+    assert video["video_encode_height"] == 416
+    assert video["video_draw_width"] == 640
+    assert video["video_draw_height"] == 512
+    assert video["video_stage_markers"] == 0
+    assert video["rfb_mode"] == RFB_OFF
     assert video["media_epoch_lead_us"] == 0
     assert video["audio_mode"] == AUDIO_OFF
 
@@ -284,7 +310,13 @@ def self_test() -> None:
     )
     payload = build_config_payload(shifted)
     assert len(payload) == CONFIG_PAYLOAD_BYTES
-    assert payload[-8:] == struct.pack(">II", 53, 0)
+    assert payload[-16:] == struct.pack(
+        ">IIII",
+        55,
+        608,
+        56,
+        416,
+    )
 
     print("H1_PI_PROFILES_SELF_TEST=PASS")
 
