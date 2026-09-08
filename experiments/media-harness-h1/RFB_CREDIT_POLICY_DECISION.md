@@ -1,10 +1,11 @@
 # H1 RFB channel-1 credit policy decision packet
 
-Status: **DECISION REQUIRED BEFORE LIVE CHANNEL-1 DISPATCH**
+Status: **DECIDED — CANDIDATE A SELECTED BY OPERATOR 2026-09-08**
 
 This record resolves the evidence and choices around the only policy ambiguity
-left after CP2D. It deliberately does **not** activate RFB, change CONFIG wire
-format, alter PT_LOAD, or select a policy on David's behalf.
+left after CP2D. David explicitly selected the fully configurable policy: RFB is
+not exempt from H1's per-channel credit controls and must retain enough runtime
+knobs to support thorough hardware optimization without rebuilding the ELF.
 
 ## Invariants already decided
 
@@ -16,7 +17,7 @@ The following are not part of this decision:
 - outbound RFB bytes use H1's existing serialized send owner;
 - through-Issue-39 RFB parser/session semantics remain unchanged;
 - RFB queue storage is independent from AUDIO and MPEG;
-- first controlled RFB queue capacity remains 32768 bytes, matching the
+- first controlled RFB queue capacity starts at 32768 bytes, matching the
   through-Issue-39 direct-RFB receive-prefetch precedent;
 - queue exhaustion is an observable failure, not permission to silently grow
   the queue;
@@ -38,10 +39,7 @@ to the full queue capacity. MPEG uses an 8192-byte return batch and flushes on
 empty. PCM uses a 4096-byte return batch and flushes on empty. Both return
 credit as bytes are consumed rather than merely as DATA frames arrive.
 
-RFB has no equivalent CONFIG fields today. CP2D therefore stopped before live
-channel-1 dispatch rather than inheriting AUDIO or MPEG policy implicitly.
-
-## Candidate A — explicit RFB CONFIG knobs
+## Selected policy — explicit RFB CONFIG knobs
 
 Add RFB counterparts to the existing H1 credit vocabulary:
 
@@ -51,7 +49,11 @@ Add RFB counterparts to the existing H1 credit vocabulary:
     rfb_credit_return_enabled
     rfb_initial_credit_bytes
 
-Recommended first RFB-only profile values if this candidate is selected:
+These are session/profile parameters, not hidden RFB constants. They must be
+visible through `h1_profiles.py`, the CONFIG wire payload, `h1_tool.py knobs`,
+raw `--set`, and `sweep --vary` just like the existing AUDIO/MPEG controls.
+
+First RFB-only profile values:
 
     rfb_queue_capacity=32768
     rfb_initial_credit_bytes=32768
@@ -59,87 +61,60 @@ Recommended first RFB-only profile values if this candidate is selected:
     rfb_credit_batch_bytes=8192
     rfb_credit_flush_on_empty=1
 
-Why 8192 is the leading starting value rather than a claim of an optimum:
+The 32768-byte starting queue is evidence-based from the qualified direct-RFB
+prefetch path. The 8192-byte batch is a controlled first hypothesis because it
+matches current `max_data_payload`, is one quarter of the starting queue, and
+matches the MPEG return batch. Flush-on-empty avoids stranding credit after a
+small interactive update. None of these defaults are claims of optimal or
+required hardware values; the point of making them CONFIG knobs is to test that
+rather than assume it.
 
-- it equals H1's current `max_data_payload` in the known profiles;
-- it is one quarter of the 32768-byte RFB queue;
-- it matches the current MPEG return batch;
-- flush-on-empty prevents a small interactive RFB update from waiting forever
-  merely because it did not accumulate a full batch;
-- it avoids returning one CREDIT frame for every tiny parser read.
+## Validation contract
 
-Advantages:
+When RFB is OFF:
 
-- matches H1's laboratory/configuration philosophy;
-- makes queue/credit behavior visible in `h1_tool.py knobs` and sweeps;
-- lets hardware evidence change batching without another ELF;
-- avoids hidden RFB-specific constants.
+- `rfb_queue_capacity` and `rfb_initial_credit_bytes` must be zero;
+- no RFB queue allocation, semaphore, DATA dispatch, CREDIT, or parser activity
+  may occur.
 
-Costs:
+When RFB is ON:
 
-- changes CONFIG wire version/field count and both Pi/PS2 profile codecs;
-- expands validation and test surface before the first RFB-only run;
-- the first candidate values remain hypotheses until hardware evidence exists.
+- queue capacity must be at least `max_data_payload` and representable by the
+  allocator/runtime;
+- initial credit may not exceed queue capacity;
+- if credit return is enabled, batch bytes must be nonzero and no larger than
+  queue capacity;
+- `rfb_credit_flush_on_empty` and `rfb_credit_return_enabled` are boolean;
+- no arbitrary upper queue ceiling should be added beyond representability and
+  allocation success; failed allocation is evidence;
+- queue exhaustion remains an explicit failure/telemetry event, never an
+  implicit request to enlarge the queue.
 
-## Candidate B — fixed first-milestone credit policy
+## Why this was selected
 
-Keep CONFIG unchanged for the first RFB-only milestone and compile the same
-starting values into the H1 RFB experiment runtime:
+The H1 build is a laboratory control surface. RFB must not become a special
+case with hidden transport policy while AUDIO and MPEG remain independently
+tunable. Making the RFB queue and credit policy explicit lets later hardware
+sweeps distinguish transport scheduling, queue pressure, parser consumption,
+and presentation behavior without another source/ELF change for every trial.
 
-    queue=32768
-    initial_credit=32768
-    return_enabled=1
-    batch=8192
-    flush_on_empty=1
+This also preserves the operator-tool goal established earlier in the session:
+routine testing should be declarative and reproducible rather than a mountain
+of bespoke commands.
 
-Advantages:
+## Next implementation checkpoint
 
-- smallest wire-protocol change surface;
-- fastest route to testing the mux adapter itself;
-- isolates RFB transport integration from CONFIG-vocabulary expansion.
+1. Expand H1 CONFIG/profile vocabulary with the five selected RFB fields.
+2. Preserve RFB-OFF inertness and keep `rfb_mode=ON` rejected until the expanded
+   wire/profile/runtime plumbing is build-verified.
+3. Make dormant RFB resource allocation consume `rfb_queue_capacity` rather
+   than a compile-time-only capacity.
+4. Wire channel-1 DATA dispatch, consumed-byte credit batching/flush, and
+   outbound channel-1 DATA through the existing H1 owners.
+5. Activate the mux-backed RFB I/O adapter and Pi VNC bridge.
+6. Only then advertise RFB capability and accept `rfb_mode=ON` for the first
+   RFB-only hardware milestone.
 
-Costs:
-
-- H1's RFB credit policy becomes less observable/configurable than AUDIO/MPEG;
-- tuning requires another ELF/source change;
-- risks turning provisional laboratory values into hidden accidental policy.
-
-## Candidate C — no RFB receiver credit
-
-Do not select this for the first controlled integration without contrary
-evidence. The Pi could otherwise outrun the finite 32768-byte PS2 logical queue,
-and queue-full behavior would become dependent on TCP/socket backpressure at a
-layer that no longer directly represents RFB consumption.
-
-This would weaken the reason the mux has per-channel credit in the first place.
-
-## Recommendation awaiting operator decision
-
-**Candidate A is the stronger long-term H1 design.** It keeps RFB symmetric with
-the existing independently tunable AUDIO/MPEG logical channels and gives later
-hardware tests a clean way to distinguish a bad credit policy from a transport
-or parser defect.
-
-For the first values, use the evidence-based 32768-byte queue, full-queue
-initial credit, enabled return, 8192-byte batching, and flush-on-empty. These
-are controlled starting values, not claims about the PS2's required queue or
-optimal batching.
-
-If minimizing the number of variables in the very first RFB-over-mux hardware
-run is more important than tunability, Candidate B is defensible, but it should
-be explicitly labeled temporary and graduated to CONFIG knobs before hybrid
-RFB+media optimization begins.
-
-## What remains blocked until the decision
-
-Do not yet:
-
-- accept `rfb_mode=ON` in CONFIG;
-- advertise live RFB capability in HELLO;
-- dispatch channel-1 DATA into the resident RFB queue;
-- emit channel-1 CREDIT;
-- activate the mux-backed RFB adapter;
-- create the Pi VNC bridge as an operationally enabled path.
-
-Repository work that does not depend on the selected policy may continue, but
-those activation steps must not infer a credit contract implicitly.
+The first hardware test remains RFB only: AUDIO OFF, MPEG OFF. Hybrid graphics
+presentation is still deferred until RFB-over-mux transport is independently
+qualified.
