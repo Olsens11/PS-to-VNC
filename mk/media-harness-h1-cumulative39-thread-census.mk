@@ -28,9 +28,10 @@
 #   links fail-closed adapter bodies while rfb_mode=ON is still rejected. CP2B
 #   links the host-tested logical RFB channel mechanics into the resident source
 #   population. CP2C additionally links dormant queue/semaphore ownership for
-#   that channel, but does not bind it to CONFIG/startup/receiver/send paths or
-#   relax the CONFIG gate. This keeps preparation visible to the pinned PS2 build
-#   without creating runtime behavior prematurely.
+#   that channel. CP2D wraps only this cumulative build's transport start/shutdown
+#   lifecycle so that bundle has a concrete owner while CONFIG still rejects RFB
+#   ON. Receiver dispatch, credit policy, channel-1 DATA, adapter activation, and
+#   Pi bridge behavior remain disabled.
 
 BUILD_DIR ?= build/experiments/media-harness-h1-cumulative39-thread-census/ps2
 EE_BIN ?= $(BUILD_DIR)/PS2VNC-H1-Cumulative39-ThreadCensus.ELF
@@ -54,6 +55,7 @@ EXTRA_EE_OBJS := \
 	$(BUILD_DIR)/h1_rfb_mux_io.o \
 	$(BUILD_DIR)/h1_rfb_channel.o \
 	$(BUILD_DIR)/h1_rfb_runtime_resources.o \
+	$(BUILD_DIR)/h1_transport_runtime_rfb_lifecycle.o \
 	$(BUILD_DIR)/display39.o \
 	$(BUILD_DIR)/input39.o \
 	$(BUILD_DIR)/mouse39.o \
@@ -75,6 +77,17 @@ EXTRA_EE_LIBS := \
 	-lgskit \
 	-ldmakit \
 	-lpad
+
+#
+# CP2D lifecycle seam:
+#   Rename only the original cumulative H1 transport lifecycle definitions to
+#   inner names. The wrapper below retains the public API and surrounds that
+#   unchanged implementation with dormant RFB-resource init/activate/release.
+#   Other H1 targets are unaffected by these target-specific flags.
+#
+$(BUILD_DIR)/h1_transport_runtime.o: EE_CFLAGS += \
+	-Dpstvnc_h1_transport_start=pstvnc_h1_transport_start_inner \
+	-Dpstvnc_h1_transport_shutdown=pstvnc_h1_transport_shutdown_inner
 
 include mk/media-harness-h1-thread-census-diag.mk
 
@@ -121,6 +134,12 @@ $(BUILD_DIR)/h1_rfb_runtime_resources.o: \
 	experiments/media-harness-h1/h1_rfb_runtime_resources.c \
 	experiments/media-harness-h1/h1_rfb_runtime_resources.h \
 	experiments/media-harness-h1/h1_rfb_channel.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/h1_transport_runtime_rfb_lifecycle.o: \
+	experiments/media-harness-h1/h1_transport_runtime_rfb_lifecycle.c \
+	experiments/media-harness-h1/h1_transport_runtime.h \
+	experiments/media-harness-h1/h1_rfb_runtime_resources.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/display39.o: \
