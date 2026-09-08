@@ -2,17 +2,24 @@
 #
 # Purpose:
 #   Produce one resident diagnostic ELF containing the clean reconstruction
-#   modules completed through Issue #39 plus the current H1 AUDIO/MPEG harness.
+#   subsystem implementations completed through Issue #39 plus the current H1
+#   AUDIO/MPEG harness.
 #
 # Runtime contract for the first hardware census:
 #   - H1 AUDIO/MPEG path is active according to CONFIG;
 #   - RFB/input/OSK/local-UI modules are linked but not started;
 #   - therefore the exact same binary can later activate those subsystems
-#     deliberately without changing the code population being diagnosed.
+#     deliberately without changing their source population.
 #
-# This file intentionally reuses the H1 thread-census build rather than copying
-# media/runtime rules. The clean product modules keep their own source files and
-# boundaries; this makefile only composes them into the cumulative executable.
+# The old Issue-39 app.c coordinator is intentionally NOT linked. It owns fixed
+# desktop-sized static presentation buffers and startup policy that would be
+# live ELF state even while RFB is disabled. H1 remains the resident coordinator
+# and will instantiate each clean module only when its session toggle is ON.
+#
+# Likewise the Issue-7/39 deterministic sendto wrapper is not linked into this
+# H1 transport experiment: wrapping all sendto calls would be a transport-side
+# behavior change even when product diagnostics are unused. The ordinary
+# diagnostics module itself remains available and inert until explicitly used.
 
 BUILD_DIR ?= build/experiments/media-harness-h1-cumulative39-thread-census/ps2
 EE_BIN ?= $(BUILD_DIR)/PS2VNC-H1-Cumulative39-ThreadCensus.ELF
@@ -29,9 +36,7 @@ EXTRA_EE_INCS := \
 	-I$(GSKIT)/include
 
 EXTRA_EE_OBJS := \
-	$(BUILD_DIR)/app39.o \
 	$(BUILD_DIR)/diagnostics39.o \
-	$(BUILD_DIR)/diagnostics_identity39.o \
 	$(BUILD_DIR)/rfb39.o \
 	$(BUILD_DIR)/framebuffer39.o \
 	$(BUILD_DIR)/rfb_session39.o \
@@ -48,48 +53,20 @@ EXTRA_EE_OBJS := \
 	$(BUILD_DIR)/pad39.o \
 	$(BUILD_DIR)/ps2_graphics39.o
 
-# Preserve the qualified Issue #39 link requirements. The H1 build already
-# supplies the shared PS2 system/network objects and embedded SIO2/PAD/DEV9/
+# Preserve the qualified libraries required by the linked clean modules. H1
+# already supplies shared PS2 system/network objects and embedded SIO2/PAD/DEV9/
 # NETMAN/SMAP modules, so those are deliberately not duplicated here.
 EXTRA_EE_LIBS := \
 	-L$(GSKIT)/lib \
 	-lgskit \
 	-ldmakit \
-	-lpad \
-	-Wl,--wrap=sendto
+	-lpad
 
 include mk/media-harness-h1-thread-census-diag.mk
-
-$(BUILD_DIR)/app39.o: \
-	src/app.c \
-	src/app.h \
-	src/diagnostics/diagnostics.h \
-	src/display/display.h \
-	src/framebuffer/framebuffer.h \
-	src/input/input.h \
-	src/input/input_runtime.h \
-	src/ui/local_ui_presentation.h \
-	src/ui/local_ui.h \
-	src/ui/osk.h \
-	src/ui/osk_render.h \
-	src/input/mouse.h \
-	src/input/pad.h \
-	src/rfb/rfb_session.h \
-	src/platform/ps2_graphics.h \
-	src/platform/ps2_network.h \
-	src/platform/ps2_system.h \
-	src/input/controller.h \
-	src/ui/local_controller.h | $(BUILD_DIR)
-	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/diagnostics39.o: \
 	src/diagnostics/diagnostics.c \
 	src/diagnostics/diagnostics.h | $(BUILD_DIR)
-	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
-
-$(BUILD_DIR)/diagnostics_identity39.o: \
-	src/diagnostics/identity.c \
-	src/diagnostics/identity.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/rfb39.o: \
