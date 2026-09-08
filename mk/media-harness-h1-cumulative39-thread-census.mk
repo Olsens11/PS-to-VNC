@@ -26,10 +26,11 @@
 #   unchanged. In this H1-only cumulative target its three rfb_io.h calls are
 #   preprocessor-renamed to experiment-owned mux adapter symbols. CP1 deliberately
 #   links fail-closed adapter bodies while rfb_mode=ON is still rejected. CP2B
-#   also links the host-tested logical RFB channel mechanics into the resident
-#   source population, but does not yet bind those mechanics to live H1 runtime
-#   resources or relax the CONFIG gate. This keeps channel-1 preparation visible
-#   to the pinned PS2 build without creating runtime behavior prematurely.
+#   links the host-tested logical RFB channel mechanics into the resident source
+#   population. CP2C additionally links dormant queue/semaphore ownership for
+#   that channel, but does not bind it to CONFIG/startup/receiver/send paths or
+#   relax the CONFIG gate. This keeps preparation visible to the pinned PS2 build
+#   without creating runtime behavior prematurely.
 
 BUILD_DIR ?= build/experiments/media-harness-h1-cumulative39-thread-census/ps2
 EE_BIN ?= $(BUILD_DIR)/PS2VNC-H1-Cumulative39-ThreadCensus.ELF
@@ -52,6 +53,7 @@ EXTRA_EE_OBJS := \
 	$(BUILD_DIR)/rfb_session39.o \
 	$(BUILD_DIR)/h1_rfb_mux_io.o \
 	$(BUILD_DIR)/h1_rfb_channel.o \
+	$(BUILD_DIR)/h1_rfb_runtime_resources.o \
 	$(BUILD_DIR)/display39.o \
 	$(BUILD_DIR)/input39.o \
 	$(BUILD_DIR)/mouse39.o \
@@ -113,6 +115,12 @@ $(BUILD_DIR)/h1_rfb_channel.o: \
 	experiments/media-harness-h1/h1_rfb_channel.c \
 	experiments/media-harness-h1/h1_rfb_channel.h \
 	experiments/audio-transport/common/transport_queue.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/h1_rfb_runtime_resources.o: \
+	experiments/media-harness-h1/h1_rfb_runtime_resources.c \
+	experiments/media-harness-h1/h1_rfb_runtime_resources.h \
+	experiments/media-harness-h1/h1_rfb_channel.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/display39.o: \
