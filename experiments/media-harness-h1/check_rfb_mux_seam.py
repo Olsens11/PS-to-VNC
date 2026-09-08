@@ -225,6 +225,16 @@ def nm_output(nm: str, path: Path, undefined_only: bool) -> str:
     return result.stdout
 
 
+def nm_symbols(output: str) -> set[str]:
+    """Return exact symbol tokens from ordinary nm or nm -u output."""
+    symbols: set[str] = set()
+    for line in output.splitlines():
+        fields = line.split()
+        if fields:
+            symbols.add(fields[-1])
+    return symbols
+
+
 def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
     rfb_object = build_dir / "rfb_session39.o"
     adapter_object = build_dir / "h1_rfb_mux_io.o"
@@ -245,13 +255,13 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
             fail(f"missing_build_object:{path}")
 
     nm = discover_nm(nm_explicit)
-    rfb_undefined = nm_output(nm, rfb_object, True)
-    adapter_defined = nm_output(nm, adapter_object, False)
-    channel_defined = nm_output(nm, channel_object, False)
-    resources_defined = nm_output(nm, resources_object, False)
-    transport_defined = nm_output(nm, transport_object, False)
-    lifecycle_defined = nm_output(nm, lifecycle_object, False)
-    lifecycle_undefined = nm_output(nm, lifecycle_object, True)
+    rfb_undefined = nm_symbols(nm_output(nm, rfb_object, True))
+    adapter_defined = nm_symbols(nm_output(nm, adapter_object, False))
+    channel_defined = nm_symbols(nm_output(nm, channel_object, False))
+    resources_defined = nm_symbols(nm_output(nm, resources_object, False))
+    transport_defined = nm_symbols(nm_output(nm, transport_object, False))
+    lifecycle_defined = nm_symbols(nm_output(nm, lifecycle_object, False))
+    lifecycle_undefined = nm_symbols(nm_output(nm, lifecycle_object, True))
 
     for direct in DIRECT_NAMES:
         if direct in rfb_undefined:
