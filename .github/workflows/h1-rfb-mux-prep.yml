@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify H1 CONFIG v4 profiles
+        run: python3 experiments/media-harness-h1/h1_profiles.py
       - name: Verify H1 RFB mux seam source ownership
         run: python3 experiments/media-harness-h1/check_rfb_mux_seam.py
       - name: Test H1 logical RFB channel mechanics
@@ -32,6 +34,11 @@ jobs:
           python3 experiments/media-harness-h1/h1_tool.py run --help >/dev/null
           python3 experiments/media-harness-h1/h1_tool.py sweep --help >/dev/null
           python3 experiments/media-harness-h1/h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM >/dev/null
+          python3 experiments/media-harness-h1/h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM | grep -q rfb_queue_capacity
+          python3 experiments/media-harness-h1/h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM | grep -q rfb_credit_batch_bytes
+          python3 experiments/media-harness-h1/h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM | grep -q rfb_credit_flush_on_empty
+          python3 experiments/media-harness-h1/h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM | grep -q rfb_credit_return_enabled
+          python3 experiments/media-harness-h1/h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM | grep -q rfb_initial_credit_bytes
 
   ps2-build:
     runs-on: ubuntu-latest
