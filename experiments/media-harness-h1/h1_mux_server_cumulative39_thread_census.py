@@ -19,11 +19,16 @@ at the same logical desktop location.
 The active desktop size itself is profile metadata rather than a hard platform
 constant. Today's qualified default is 704x462; future safe-area/display work
 can change desktop_width/desktop_height without changing this capture contract.
+
+Every decoded census sample is accumulated by EE thread ID. At session exit the
+runner prints one stable sorted line per observed thread, including known H1
+role, initial/current priorities, observed scheduler states, and sample count.
 """
 
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import h1_mux_server_thread_census_diag as census
 
@@ -131,6 +136,86 @@ def _video_command_profiled(self: base.H1Session) -> list[str]:
 
 
 base.H1Session.video_command = _video_command_profiled
+
+_original_parse_telemetry = base.H1Session._parse_telemetry
+_original_run = base.H1Session.run
+
+
+def _parse_telemetry_collecting(
+    self: base.H1Session,
+    payload: bytes,
+) -> dict[str, Any]:
+    result = _original_parse_telemetry(self, payload)
+
+    thread_id = result.get("census_thread_id")
+    if thread_id is None:
+        return result
+
+    records = getattr(self, "cumulative39_census_records", None)
+    if records is None:
+        records = {}
+        self.cumulative39_census_records = records
+
+    thread_id = int(thread_id)
+    record = records.get(thread_id)
+    if record is None:
+        record = {
+            "role": str(result.get("census_role", "OTHER")),
+            "initial_priorities": set(),
+            "current_priorities": set(),
+            "states": set(),
+            "samples": 0,
+        }
+        records[thread_id] = record
+
+    role = str(result.get("census_role", "OTHER"))
+    if role != "OTHER":
+        record["role"] = role
+
+    record["initial_priorities"].add(int(result["census_initial_priority"]))
+    record["current_priorities"].add(int(result["census_current_priority"]))
+    record["states"].add(str(result["census_status_name"]))
+    record["samples"] += 1
+    return result
+
+
+def _print_census_summary(self: base.H1Session) -> None:
+    records = getattr(self, "cumulative39_census_records", {})
+    print("H1_CUMULATIVE39_CENSUS_BEGIN", flush=True)
+
+    for thread_id in sorted(records):
+        record = records[thread_id]
+        initial = ",".join(str(value) for value in sorted(record["initial_priorities"]))
+        current = ",".join(str(value) for value in sorted(record["current_priorities"]))
+        states = ",".join(sorted(record["states"]))
+        print(
+            "H1_CENSUS_THREAD "
+            f"id={thread_id} "
+            f"role={record['role']} "
+            f"initial_priority={initial} "
+            f"current_priority={current} "
+            f"states={states} "
+            f"samples={record['samples']}",
+            flush=True,
+        )
+
+    print(
+        f"H1_CUMULATIVE39_CENSUS_COUNT={len(records)}",
+        flush=True,
+    )
+    print("H1_CUMULATIVE39_CENSUS_END", flush=True)
+
+
+def _run_with_census_summary(self: base.H1Session) -> None:
+    self.cumulative39_census_records = {}
+    try:
+        return _original_run(self)
+    finally:
+        _print_census_summary(self)
+
+
+base.H1Session._parse_telemetry = _parse_telemetry_collecting
+base.H1Session.run = _run_with_census_summary
 
 
 if __name__ == "__main__":
