@@ -75,3 +75,19 @@ The first hardware sequence is:
 4. H1 PCM-audio-only compatibility session;
 5. H1 combined PCM + MPEG session on the same physical mux;
 6. only then begin automated parameter sweeps.
+
+## Future hybrid media-object composition note
+
+The 2026-09-08 geometry experiments motivated a future model in which media is
+represented as a semantic desktop object attached to a host window rather than
+as a macroblock-aligned MPEG rectangle. The concept includes generic dynamic-
+region discovery, exact host-relative media geometry, codec-only padding,
+optional shape/visibility masks for rounded corners, and eventual compositor
+layering of RFB -> MPEG media object -> local cursor/OSK.
+
+This is a design note only; it is not current implemented behavior and does not
+begin Issue #40.
+
+See `MEDIA_OBJECT_COMPOSITION_NOTES.md` for the full rationale and proposed
+separation between detection, host attachment, semantic geometry, codec
+surfaces and presentation.
