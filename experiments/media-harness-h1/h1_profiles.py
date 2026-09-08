@@ -8,11 +8,18 @@ P11_COMPAT_VIDEO_ONLY proves the resident/mux/config machinery with audio
 disabled. P11_COMPAT_PLUS_PCM adds the known 48 kHz / 16-bit / stereo PCM path
 on the same physical PSTV mux.
 
-CONFIG v3 also establishes the cumulative-build seams used by later integration:
+CONFIG v3 establishes the cumulative-build seams used by later integration:
 RFB is explicitly OFF in the current media/census sessions, and MPEG encode and
 GS draw geometry are independent 16-pixel-grid parameters. The through-Issue-39
 modules may be linked into the ELF while remaining inactive until a later
 session profile deliberately enables them.
+
+The Pi also retains explicit X11 capture geometry as test-harness metadata. It
+is intentionally not duplicated onto the PS2 wire because only the Pi consumes
+it. Historical P11-compatible profiles can therefore keep full-desktop capture
+scaled to 608x416, while future cumulative profiles can make the capture and
+presentation rectangles identical so the MPEG patch comes from and returns to
+the same desktop location.
 
 Presentation offsets are signed microseconds on the Pi and encoded as raw
 32-bit two's-complement field values on the wire. Queue sizes and other
@@ -88,6 +95,15 @@ FIELD_IDS = {
     "video_encode_height": 56,
 }
 
+# Pi-owned capture parameters are recorded in profiles/evidence but are not
+# serialized to the PS2 because X11 capture is exclusively a Pi responsibility.
+PI_ONLY_FIELDS = {
+    "video_capture_x",
+    "video_capture_y",
+    "video_capture_width",
+    "video_capture_height",
+}
+
 SIGNED_FIELDS = {
     "audio_presentation_offset_us",
     "video_presentation_offset_us",
@@ -105,6 +121,9 @@ VIDEO_SCHED_ABSOLUTE = 0
 VIDEO_RGB16 = 0
 ALLOCATE_AUDIO_FIRST = 0
 ALLOCATE_MPEG_FIRST = 1
+
+VIDEO_SOURCE_WIDTH = 704
+VIDEO_SOURCE_HEIGHT = 462
 
 
 def _p11_compat_video_only() -> dict[str, int]:
@@ -155,6 +174,12 @@ def _p11_compat_video_only() -> dict[str, int]:
         "video_draw_height": 512,
         "video_draw_x": 0,
         "video_draw_y": 0,
+        # Historical P11/H1 capture remains full-desktop then scaled. Future
+        # cumulative profiles can set these equal to the presentation rectangle.
+        "video_capture_x": 0,
+        "video_capture_y": 0,
+        "video_capture_width": VIDEO_SOURCE_WIDTH,
+        "video_capture_height": VIDEO_SOURCE_HEIGHT,
         # Historical H1 diagnostic color cycles remain available by override,
         # but ordinary video/media qualification no longer displays them.
         "video_stage_markers": 0,
@@ -229,7 +254,8 @@ def resolve_profile(
     profile["session_id"] = int(session_id)
 
     if overrides:
-        unknown = set(overrides) - (set(FIELD_IDS) | {"profile_id"})
+        allowed = set(FIELD_IDS) | PI_ONLY_FIELDS | {"profile_id"}
+        unknown = set(overrides) - allowed
         if unknown:
             raise ValueError(f"unknown H1 override fields: {sorted(unknown)}")
         for key, value in overrides.items():
@@ -240,7 +266,7 @@ def resolve_profile(
 
 
 def validate_profile_shape(profile: Mapping[str, int]) -> None:
-    expected = set(FIELD_IDS) | {"profile_id"}
+    expected = set(FIELD_IDS) | PI_ONLY_FIELDS | {"profile_id"}
     actual = set(profile)
 
     if actual != expected:
@@ -257,6 +283,18 @@ def validate_profile_shape(profile: Mapping[str, int]) -> None:
                 raise ValueError(f"{key} is outside int32 range")
         elif value < 0 or value > 0xFFFFFFFF:
             raise ValueError(f"{key} is outside uint32 range")
+
+    capture_x = int(profile["video_capture_x"])
+    capture_y = int(profile["video_capture_y"])
+    capture_width = int(profile["video_capture_width"])
+    capture_height = int(profile["video_capture_height"])
+
+    if capture_width <= 0 or capture_height <= 0:
+        raise ValueError("video capture rectangle must be non-empty")
+    if capture_x + capture_width > VIDEO_SOURCE_WIDTH:
+        raise ValueError("video capture rectangle exceeds desktop width")
+    if capture_y + capture_height > VIDEO_SOURCE_HEIGHT:
+        raise ValueError("video capture rectangle exceeds desktop height")
 
 
 def build_config_payload(profile: Mapping[str, int]) -> bytes:
@@ -292,6 +330,8 @@ def self_test() -> None:
     assert video["video_encode_height"] == 416
     assert video["video_draw_width"] == 640
     assert video["video_draw_height"] == 512
+    assert video["video_capture_width"] == VIDEO_SOURCE_WIDTH
+    assert video["video_capture_height"] == VIDEO_SOURCE_HEIGHT
     assert video["video_stage_markers"] == 0
     assert video["rfb_mode"] == RFB_OFF
     assert video["media_epoch_lead_us"] == 0
@@ -303,9 +343,30 @@ def self_test() -> None:
     assert combined["audio_bits"] == 16
     assert combined["audio_chunk_bytes"] == 4096
 
-    shifted = resolve_profile(
+    same_location = resolve_profile(
         "P11_COMPAT_PLUS_PCM",
         3,
+        {
+            "video_capture_x": 160,
+            "video_capture_y": 32,
+            "video_capture_width": 320,
+            "video_capture_height": 240,
+            "video_encode_width": 320,
+            "video_encode_height": 240,
+            "video_draw_x": 160,
+            "video_draw_y": 32,
+            "video_draw_width": 320,
+            "video_draw_height": 240,
+        },
+    )
+    assert same_location["video_capture_x"] == same_location["video_draw_x"]
+    assert same_location["video_capture_y"] == same_location["video_draw_y"]
+    assert same_location["video_capture_width"] == same_location["video_draw_width"]
+    assert same_location["video_capture_height"] == same_location["video_draw_height"]
+
+    shifted = resolve_profile(
+        "P11_COMPAT_PLUS_PCM",
+        4,
         {"audio_presentation_offset_us": -43000},
     )
     payload = build_config_payload(shifted)
