@@ -1,12 +1,16 @@
 /*
  * File synopsis:
- * Decodes and structurally validates H1's complete muxed audio/video profile.
+ * Decodes and structurally validates H1's complete muxed media profile.
  *
  * Experimental capacities and latency values are not clamped to known-good
  * ranges. Allocation success and hardware behavior are the experimental
  * authority. Validation is limited to wire completeness, API representation,
  * queue/credit consistency, format alignment, and mechanisms the current H1
  * implementation can actually represent.
+ *
+ * MPEG encode and draw dimensions are explicit session parameters. Encode
+ * dimensions and the GS draw viewport are constrained to the 16-pixel grid so
+ * later RFB composition can reserve the same rectangle without ambiguity.
  */
 
 #include "h1_config.h"
@@ -187,6 +191,15 @@ static int h1_set_field(
         case PSTVNC_H1_FIELD_MEDIA_EPOCH_LEAD_US:
             config->media_epoch_lead_us = value;
             break;
+        case PSTVNC_H1_FIELD_RFB_MODE:
+            config->rfb_mode = value;
+            break;
+        case PSTVNC_H1_FIELD_VIDEO_ENCODE_WIDTH:
+            config->video_encode_width = value;
+            break;
+        case PSTVNC_H1_FIELD_VIDEO_ENCODE_HEIGHT:
+            config->video_encode_height = value;
+            break;
         default:
             return 0;
     }
@@ -310,6 +323,11 @@ static int h1_validate_thread(
     return 1;
 }
 
+static int h1_is_grid_value(uint32_t value)
+{
+    return (value % PSTVNC_H1_VIDEO_GRID) == 0u;
+}
+
 int pstvnc_h1_config_validate(
     const pstvnc_h1_config_t *config)
 {
@@ -319,9 +337,10 @@ int pstvnc_h1_config_validate(
         config->version != PSTVNC_H1_CONFIG_VERSION)
         return 0;
 
-    /* This H1 implementation currently owns PCM and MPEG-2 ES only. */
+    /* This build owns PCM and MPEG-2 ES; RFB ON remains reserved. */
     if (config->audio_mode > PSTVNC_H1_AUDIO_PCM ||
-        config->video_mode > PSTVNC_H1_VIDEO_MPEG2_ES)
+        config->video_mode > PSTVNC_H1_VIDEO_MPEG2_ES ||
+        config->rfb_mode != PSTVNC_H1_RFB_OFF)
         return 0;
 
     if (config->max_data_payload == 0u ||
@@ -433,25 +452,40 @@ int pstvnc_h1_config_validate(
             PSTVNC_H1_VIDEO_RGB32)
             return 0;
 
-        /*
-         * The qualified GS uploader is macroblock-oriented. Multiples of 16
-         * are therefore an implementation shape requirement, not a guessed
-         * performance limit.
-         */
+        /* Decoder allocation bounds remain macroblock-oriented. */
         if (config->video_max_width == 0u ||
             config->video_max_height == 0u ||
-            (config->video_max_width % 16u) != 0u ||
-            (config->video_max_height % 16u) != 0u ||
+            !h1_is_grid_value(config->video_max_width) ||
+            !h1_is_grid_value(config->video_max_height) ||
             config->video_max_width > H1_CONFIG_SIGNED_INT_MAX ||
             config->video_max_height > H1_CONFIG_SIGNED_INT_MAX)
             return 0;
 
+        /* Pi-side MPEG encode dimensions must be a grid shape we can decode. */
+        if (config->video_encode_width == 0u ||
+            config->video_encode_height == 0u ||
+            !h1_is_grid_value(config->video_encode_width) ||
+            !h1_is_grid_value(config->video_encode_height) ||
+            config->video_encode_width > config->video_max_width ||
+            config->video_encode_height > config->video_max_height)
+            return 0;
+
+        /*
+         * The GS viewport is the future RFB exclusion rectangle. Keeping all
+         * four edges on the same 16-pixel grid makes later composition exact.
+         */
         if (config->video_draw_width == 0u ||
             config->video_draw_height == 0u ||
-            config->video_draw_width > H1_CONFIG_SIGNED_INT_MAX ||
-            config->video_draw_height > H1_CONFIG_SIGNED_INT_MAX ||
-            config->video_draw_x > H1_CONFIG_SIGNED_INT_MAX ||
-            config->video_draw_y > H1_CONFIG_SIGNED_INT_MAX)
+            !h1_is_grid_value(config->video_draw_width) ||
+            !h1_is_grid_value(config->video_draw_height) ||
+            !h1_is_grid_value(config->video_draw_x) ||
+            !h1_is_grid_value(config->video_draw_y) ||
+            config->video_draw_width > PSTVNC_H1_OUTPUT_WIDTH ||
+            config->video_draw_height > PSTVNC_H1_OUTPUT_HEIGHT ||
+            config->video_draw_x >
+                PSTVNC_H1_OUTPUT_WIDTH - config->video_draw_width ||
+            config->video_draw_y >
+                PSTVNC_H1_OUTPUT_HEIGHT - config->video_draw_height)
             return 0;
 
         if (config->video_stage_markers > 1u ||
@@ -460,7 +494,9 @@ int pstvnc_h1_config_validate(
             return 0;
     } else {
         if (config->mpeg_queue_capacity != 0u ||
-            config->mpeg_initial_credit_bytes != 0u)
+            config->mpeg_initial_credit_bytes != 0u ||
+            config->video_encode_width != 0u ||
+            config->video_encode_height != 0u)
             return 0;
     }
 
