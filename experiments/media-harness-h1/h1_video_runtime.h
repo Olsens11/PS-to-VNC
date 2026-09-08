@@ -13,6 +13,7 @@
 #include "h1_media_clock.h"
 #include "h1_transport_runtime.h"
 
+#include <delaythread.h>
 #include <stdint.h>
 
 typedef enum pstvnc_h1_video_error {
