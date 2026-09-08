@@ -38,7 +38,7 @@ jobs:
             "$IMAGE" \
             -lc '
               set -eu
-              apk add --no-cache bash make python3 >/dev/null
+              apk add --no-cache bash binutils make python3 >/dev/null
               export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
               make -f mk/media-harness-h1-cumulative39-thread-census.mk
               python3 experiments/media-harness-h1/check_rfb_mux_seam.py \
