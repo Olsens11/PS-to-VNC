@@ -38,8 +38,11 @@ int main(void)
     const unsigned char second[] = {6,7,8};
     const unsigned char logical[] = {10,11,12,13,14,15,16,17,18,19};
 
-    CHECK(!pstvnc_h1_rfb_channel_init(&channel, storage, sizeof(storage) - 1u));
+    CHECK(!pstvnc_h1_rfb_channel_init(&channel, storage, 0u));
+    CHECK(pstvnc_h1_rfb_channel_init(&channel, storage, 1024u));
+    CHECK(channel.queue.capacity == 1024u);
     CHECK(pstvnc_h1_rfb_channel_init(&channel, storage, sizeof(storage)));
+    CHECK(channel.queue.capacity == PSTVNC_H1_RFB_QUEUE_REFERENCE_BYTES);
     CHECK(pstvnc_h1_rfb_channel_poll(&channel) == 0);
     CHECK(pstvnc_h1_rfb_channel_accept_data(&channel, first, sizeof(first)));
     CHECK(pstvnc_h1_rfb_channel_accept_data(&channel, second, sizeof(second)));
