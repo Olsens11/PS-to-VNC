@@ -1,35 +1,38 @@
 #!/usr/bin/env python3
 """
 File synopsis:
-    Canonical operator/debug control surface for the resident H1 media harness.
+    Canonical operator/debug control surface for the resident H1 media/RFB
+    harness.
 
-This tool deliberately does not reimplement H1 transport, media scheduling, or
-validation. It turns the existing profile/configuration surface into a stable
-human-facing CLI and delegates actual sessions to the current cumulative H1
-runner.
+This tool deliberately does not reimplement H1 transport, media scheduling,
+RFB bridging, or validation. It turns the existing profile/configuration surface
+into a stable human-facing CLI and delegates actual sessions to the cumulative
+H1 runner that composes the known media path with the RFB channel-1 bridge.
 
 Goals:
     * preserve discoverable knowledge of every H1 adjustable field;
     * make one-off hardware tests concise and reproducible;
-    * provide friendly switches for frequently changed media geometry/modes;
+    * provide friendly switches for frequently changed media/RFB modes;
     * generate repeatable multi-parameter sweeps without bespoke test scripts;
-    * keep the underlying qualified runner as the behavioral authority.
+    * keep the underlying cumulative runner as the behavioral authority.
 
 Typical use:
     python3 experiments/media-harness-h1/h1_tool.py knobs
     python3 experiments/media-harness-h1/h1_tool.py show --profile P11_COMPAT_PLUS_PCM
     python3 experiments/media-harness-h1/h1_tool.py run --profile P11_COMPAT_PLUS_PCM \
         --audio-priority 8 --media-rect 16,112,432,240 --duration 60
+    python3 experiments/media-harness-h1/h1_tool.py run --profile H1_RFB_ONLY \
+        --duration 30
     python3 experiments/media-harness-h1/h1_tool.py sweep \
         --profile P11_COMPAT_PLUS_PCM --duration 20 \
         --vary audio_thread_priority=2,8,16 \
         --vary mpeg_queue_capacity=262144,524288
 
-The current H1 CONFIG still treats RFB=ON as reserved/not implemented. The
-friendly --rfb switch exposes that field so the operator interface will not
-need redesign when channel-1 RFB activation arrives; current hardware sessions
-will still be rejected by the authoritative H1 validator if an unsupported
-combination is requested.
+H1_RFB_ONLY is the first deliberately unqualified RFB-over-mux hardware profile.
+It keeps AUDIO/MPEG off and exposes the same explicit queue/credit knobs as the
+other logical channels. RFB-OFF media profiles continue through the existing
+qualified media runner path. Hardware-facing RFB claims still require an exact
+candidate ELF and real PS2 qualification.
 """
 
 from __future__ import annotations
@@ -51,7 +54,7 @@ if str(THIS_DIR) not in sys.path:
 
 import h1_profiles as profiles
 
-DEFAULT_RUNNER = THIS_DIR / "h1_mux_server_cumulative39_thread_census.py"
+DEFAULT_RUNNER = THIS_DIR / "h1_mux_server_cumulative39_rfb_bridge.py"
 DEFAULT_DISPLAY = os.environ.get("DISPLAY", ":0.0")
 
 # Operator-facing explanations. Unknown future profile fields remain
@@ -111,9 +114,14 @@ KNOB_HELP = {
     "socket_send_buffer_bytes": "Optional TCP send-buffer request in bytes; 0 leaves platform/default behavior.",
     "queue_allocation_order": "0=allocate AUDIO first, 1=allocate MPEG first.",
     "media_epoch_lead_us": "Lead time in microseconds before the shared media presentation epoch begins.",
-    "rfb_mode": "0=off; 1=reserved RFB-on value (current H1 validator still rejects it).",
+    "rfb_mode": "0=RFB off; 1=RFB on. First hardware authority permits 1 only in the cumulative RFB-only mode.",
     "video_encode_width": "MPEG encoder output width in pixels; current H1 path requires 16-pixel alignment.",
     "video_encode_height": "MPEG encoder output height in pixels; current H1 path requires 16-pixel alignment.",
+    "rfb_queue_capacity": "PS2 EE logical RFB channel-1 queue capacity in bytes; allocated only when RFB is on.",
+    "rfb_credit_batch_bytes": "Consumed RFB bytes accumulated before returning channel-1 receiver credit.",
+    "rfb_credit_flush_on_empty": "0/1: return pending RFB credit immediately when the channel-1 queue empties.",
+    "rfb_credit_return_enabled": "0/1: enable parser-consumed RFB receiver-credit return.",
+    "rfb_initial_credit_bytes": "Initial channel-1 producer credit granted by the PS2; must not exceed RFB queue capacity.",
     "desktop_width": "Pi-owned active desktop width in pixels used for capture geometry validation.",
     "desktop_height": "Pi-owned active desktop height in pixels used for capture geometry validation.",
     "video_capture_x": "Pi X11 source-region X coordinate in active desktop pixels.",
@@ -131,9 +139,11 @@ FRIENDLY_HELP = """Frequently used convenience switches map onto normal profile 
       Select video_mode.
 
   --rfb off|on
-      Select rfb_mode. `on` is intentionally exposed for continuity, but the
-      current H1 PS2 validator still rejects RFB=ON because channel-1 RFB has
-      not yet been activated in this harness.
+      Select rfb_mode. For the first hardware authority, RFB=ON is accepted only
+      in an RFB-only configuration with AUDIO and MPEG off and a valid explicit
+      RFB queue/credit policy. Prefer `--profile H1_RFB_ONLY` as the reproducible
+      starting point. `--rfb on` by itself does not silently zero conflicting
+      media fields; incompatible combinations fail closed.
 
   --audio-priority N
       Set audio_thread_priority. PS2 EE priorities are inverse-numbered:
@@ -183,17 +193,20 @@ conflicting values to the same field, the tool exits rather than guessing.
 
 For the complete field dictionary plus the selected profile's current defaults:
 
-  h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM
+  h1_tool.py knobs --profile H1_RFB_ONLY
 """
 
 RUN_HELP = """RUN executes exactly one session by translating these arguments
-into the existing cumulative H1 runner. It does not rebuild, patch, or upload an
-ELF. The PS2 must already be running a compatible resident H1 ELF and connect to
-the selected --listen/--port.
+into the cumulative H1 runner. It does not rebuild, patch, or upload an ELF. The
+PS2 must already be running a compatible resident H1 ELF and connect to the
+selected --listen/--port.
+
+The default runner supports both the existing RFB-OFF media profiles and the
+first RFB-only channel-1 profile. RFB-only runs use the clean finite-session
+REQUEST/BOUNDARY/COMMIT/COMPLETE quiesce handshake before MEDIA_END.
 
 Use --validate-only first when trying unfamiliar geometry or raw fields. It
-runs profile validation and prints the generated FFmpeg command without waiting
-for PS2 hardware.
+runs profile validation without waiting for PS2 hardware.
 
 Examples:
 
@@ -204,7 +217,14 @@ Examples:
   h1_tool.py run --profile P11_COMPAT_PLUS_PCM --audio-priority 8 \
       --media-rect 16,112,432,240 --duration 60
 
-  # Change a raw field that has no friendly alias
+  # First headless RFB-over-mux hardware profile
+  h1_tool.py run --profile H1_RFB_ONLY --duration 30
+
+  # Change an RFB credit-policy knob without bespoke test code
+  h1_tool.py run --profile H1_RFB_ONLY --duration 30 \
+      --set rfb_credit_batch_bytes=4096
+
+  # Change a raw media field that has no friendly alias
   h1_tool.py run --profile P11_COMPAT_PLUS_PCM \
       --set mpeg_feed_bytes=2048 --set mpeg_queue_capacity=524288
 """
@@ -236,6 +256,10 @@ Examples:
   h1_tool.py sweep --profile P11_COMPAT_PLUS_PCM --duration 20 \
       --vary audio_thread_priority=2,8,16 \
       --vary mpeg_queue_capacity=262144,524288
+
+  # RFB credit-policy batch on one physical PSTV stream
+  h1_tool.py sweep --profile H1_RFB_ONLY --duration 20 \
+      --vary rfb_credit_batch_bytes=4096,8192,16384
 
   # Two paired cases instead of a Cartesian product
   h1_tool.py sweep --profile P11_COMPAT_PLUS_PCM --mode zip \
@@ -515,8 +539,8 @@ def add_profile_arguments(
         "--display",
         default=DEFAULT_DISPLAY,
         help=(
-            "Pi X11 display captured by FFmpeg, e.g. :0.0 or :1; default is "
-            "$DISPLAY when set, otherwise :0.0"
+            "Pi X11 display used by the selected runner, e.g. :0.0 or :1; media "
+            "profiles capture it, while RFB-only uses the upstream VNC stream"
         ),
     )
     parser.add_argument(
@@ -543,8 +567,8 @@ def add_profile_arguments(
         type=Path,
         default=DEFAULT_RUNNER,
         help=(
-            "underlying H1 Python runner; normally leave unchanged so transport, "
-            "scheduler, census and validation stay on current authority"
+            "underlying cumulative H1 Python runner; default supports both RFB-OFF "
+            "media and H1_RFB_ONLY; override only for deliberate apparatus work"
         ),
     )
 
@@ -574,8 +598,8 @@ def add_profile_arguments(
         "--rfb",
         choices=("off", "on"),
         help=(
-            "friendly rfb_mode switch; on maps to reserved value 1 and is still "
-            "rejected by the current H1 PS2 validator"
+            "friendly rfb_mode switch; first hardware authority permits on only "
+            "for a valid RFB-only configuration; prefer --profile H1_RFB_ONLY"
         ),
     )
     parser.add_argument(
@@ -1018,8 +1042,9 @@ def build_parser() -> argparse.ArgumentParser:
         "run",
         help="run one H1 session through the current cumulative runner",
         description=(
-            "Run one resident-H1 session using the current cumulative/census Pi "
-            "runner. This is the normal interactive hardware-test command."
+            "Run one resident-H1 session using the current cumulative Pi runner. "
+            "It preserves the existing media path for RFB-OFF and adds the first "
+            "RFB-only channel-1 bridge/quiesce path."
         ),
         epilog=full_help(RUN_HELP),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1029,8 +1054,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--validate-only",
         action="store_true",
         help=(
-            "validate profile and generated FFmpeg command only; do not listen "
-            "for/connect to PS2 hardware"
+            "validate selected profile/runner setup only; do not listen for or "
+            "connect to PS2 hardware"
         ),
     )
     run.set_defaults(func=run_once)
