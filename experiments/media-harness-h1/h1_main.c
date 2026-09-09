@@ -1,18 +1,21 @@
 /*
  * File synopsis:
- * Resident H1 audio/video media-harness coordinator.
+ * Resident H1 audio/video/RFB transport-harness coordinator.
  *
  * Process lifetime:
- *   once: prepare IOP/network/link and GS/IPU display chassis
- *   loop: fresh PSTV mux connection -> CONFIG -> session -> RESULT -> teardown
+ *   once: prepare IOP/network/link and the qualified H1 video chassis
+ *   loop: fresh PSTV mux connection -> CONFIG -> selected session -> RESULT
  *
- * A failed or completed media session therefore does not require restarting
- * the ELF unless the experiment itself wedges/crashes the PS2. That is the
- * intended boundary-finding behavior for automated H1 batches.
+ * The cumulative RFB-prep build can now instantiate a headless through-Issue-39
+ * RFB parser/session when rfb_mode=ON.  The authoritative CONFIG validator still
+ * rejects that mode at this checkpoint, so qualified media behavior remains the
+ * only reachable runtime.  The RFB branch deliberately owns no GS presentation,
+ * input, pointer, keyboard, OSK, or local-UI behavior yet.
  */
 
 #include "h1_audio_runtime.h"
 #include "h1_media_clock.h"
+#include "h1_rfb_session_runtime.h"
 #include "h1_transport_runtime.h"
 #include "h1_video_runtime.h"
 
@@ -83,6 +86,11 @@ int main(void)
         return 12;
     }
 
+    /*
+     * Preserve the already-qualified resident media chassis for RFB-OFF builds.
+     * The new RFB transport checkpoint does not start another graphics owner;
+     * presentation ownership remains a later, independent change.
+     */
     if (pstvnc_h1_video_chassis_init() < 0) {
         printf("H1_BOOT=VIDEO_CHASSIS_FAIL\n");
         SleepThread();
@@ -96,6 +104,7 @@ int main(void)
         pstvnc_h1_audio_runtime_t audio;
         pstvnc_h1_media_clock_t clock;
         pstvnc_h1_video_result_t video;
+        pstvnc_h1_rfb_session_runtime_t rfb;
         const pstvnc_h1_config_t *config;
         int audio_active = 0;
         int video_result_code = 0;
@@ -104,6 +113,7 @@ int main(void)
 
         memset(&audio, 0, sizeof(audio));
         memset(&video, 0, sizeof(video));
+        pstvnc_h1_rfb_session_runtime_init(&rfb);
 
         printf(
             "H1_WAITING_FOR_SESSION completed=%u\n",
@@ -128,16 +138,32 @@ int main(void)
 
         printf(
             "H1_SESSION_BEGIN id=%u profile=%u audio_mode=%u video_mode=%u "
-            "audio_offset_us=%d video_offset_us=%d epoch_lead_us=%u\n",
+            "rfb_mode=%u audio_offset_us=%d video_offset_us=%d "
+            "epoch_lead_us=%u\n",
             (unsigned int)config->session_id,
             (unsigned int)config->profile_id,
             (unsigned int)config->audio_mode,
             (unsigned int)config->video_mode,
+            (unsigned int)config->rfb_mode,
             (int)pstvnc_h1_config_audio_offset_us(config),
             (int)pstvnc_h1_config_video_offset_us(config),
             (unsigned int)config->media_epoch_lead_us);
 
-        if (config->audio_mode == PSTVNC_H1_AUDIO_PCM) {
+        /*
+         * First RFB-over-mux hardware authority is intentionally RFB-only.
+         * Keeping hybrid combinations rejected here as a second fail-closed
+         * boundary prevents a later CONFIG-gate change from accidentally
+         * starting RFB alongside AUDIO/MPEG before that composition is proven.
+         */
+        if (config->rfb_mode == PSTVNC_H1_RFB_ON_RESERVED &&
+            (config->audio_mode != PSTVNC_H1_AUDIO_OFF ||
+             config->video_mode != PSTVNC_H1_VIDEO_OFF)) {
+            printf("H1_RFB=HYBRID_NOT_ENABLED\n");
+            session_ok = 0;
+        }
+
+        if (session_ok &&
+            config->audio_mode == PSTVNC_H1_AUDIO_PCM) {
             if (pstvnc_h1_audio_load_modules_once() < 0) {
                 printf("H1_AUDIO=MODULE_LOAD_FAIL\n");
                 session_ok = 0;
@@ -156,7 +182,42 @@ int main(void)
         }
 
         if (session_ok &&
-            config->video_mode == PSTVNC_H1_VIDEO_MPEG2_ES) {
+            config->rfb_mode == PSTVNC_H1_RFB_ON_RESERVED) {
+            int rfb_result_code;
+
+            /* RFB-only transport has no media clocked presentation yet. */
+            pstvnc_h1_media_clock_arm_now(&clock);
+
+            rfb_result_code = pstvnc_h1_rfb_session_runtime_run(
+                &rfb,
+                &transport);
+
+            if (rfb_result_code < 0) {
+                printf(
+                    "H1_RFB=FAIL state=%u error=%u handshake=%u initial=%u "
+                    "requests=%u updates=%u idle=%u\n",
+                    (unsigned int)rfb.session.state,
+                    (unsigned int)rfb.session.error,
+                    (unsigned int)rfb.stats.handshake_complete,
+                    (unsigned int)rfb.stats.initial_frame_complete,
+                    (unsigned int)rfb.stats.incremental_requests_sent,
+                    (unsigned int)rfb.stats.incremental_updates_complete,
+                    (unsigned int)rfb.stats.idle_polls);
+                session_ok = 0;
+            } else {
+                printf(
+                    "H1_RFB=PASS handshake=%u initial=%u requests=%u "
+                    "updates=%u idle=%u\n",
+                    (unsigned int)rfb.stats.handshake_complete,
+                    (unsigned int)rfb.stats.initial_frame_complete,
+                    (unsigned int)rfb.stats.incremental_requests_sent,
+                    (unsigned int)rfb.stats.incremental_updates_complete,
+                    (unsigned int)rfb.stats.idle_polls);
+            }
+
+            pstvnc_h1_rfb_session_runtime_shutdown(&rfb);
+        } else if (session_ok &&
+                   config->video_mode == PSTVNC_H1_VIDEO_MPEG2_ES) {
             video_result_code = pstvnc_h1_video_run_session(
                 &transport,
                 &clock,
@@ -212,10 +273,15 @@ int main(void)
             }
         }
 
-        diagnostic_word =
-            0xB1000000u |
-            (((uint32_t)video.error & 0xffu) << 8) |
-            ((uint32_t)pstvnc_h1_audio_last_error(&audio) & 0xffu);
+        if (config->rfb_mode == PSTVNC_H1_RFB_ON_RESERVED) {
+            /* Preserve the RFB parser progress word published by its runtime. */
+            diagnostic_word = transport.diagnostic_word;
+        } else {
+            diagnostic_word =
+                0xB1000000u |
+                (((uint32_t)video.error & 0xffu) << 8) |
+                ((uint32_t)pstvnc_h1_audio_last_error(&audio) & 0xffu);
+        }
 
         pstvnc_h1_transport_set_diagnostic_word(
             &transport,
@@ -242,6 +308,9 @@ int main(void)
             printf("H1_TEARDOWN=AUDIO_FAIL\n");
             session_ok = 0;
         }
+
+        /* Safe even if the RFB branch never became active or already shut down. */
+        pstvnc_h1_rfb_session_runtime_shutdown(&rfb);
 
         if (pstvnc_h1_transport_shutdown(&transport) < 0) {
             printf("H1_TEARDOWN=TRANSPORT_FAIL\n");
