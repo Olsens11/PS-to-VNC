@@ -40,6 +40,8 @@ jobs:
         run: python3 experiments/media-harness-h1/h1_rfb_pi_bridge_test.py
       - name: Test H1 reader-to-RFB bridge integration
         run: python3 experiments/media-harness-h1/h1_rfb_session_adapter_test.py
+      - name: Test cumulative H1 RFB bridge runner composition
+        run: python3 experiments/media-harness-h1/h1_mux_server_cumulative39_rfb_bridge_test.py
       - name: Verify H1 operator control surface remains readable
         run: |
           python3 experiments/media-harness-h1/h1_tool.py --help >/dev/null
