@@ -1,1 +1,3 @@
-RFB mux source preparation should continue on a dedicated branch created from the CP0 checkpoint.
+branch=experiment/h1-rfb-mux-prep
+purpose=H1_RFB_MUX_PREPARATION_ONLY
+issue40_started=NO
