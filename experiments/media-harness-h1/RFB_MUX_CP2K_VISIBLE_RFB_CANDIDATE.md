@@ -1,6 +1,6 @@
 # CP2K — visible RFB-only hardware candidate
 
-Status: **CI READY — HARDWARE UNQUALIFIED**
+Status: **HARDWARE QUALIFIED ON REAL PS2 — see `RFB_MUX_CP2K_HARDWARE_RESULT.md`**
 
 CP2J already hardware-qualified the one-socket RFB transport, channel-1 credit
 policy, unchanged through-Issue-39 parser, authoritative 704x462 CPU framebuffer,
@@ -24,9 +24,10 @@ presenter.
     artifact_id=10089153724
     artifact_zip_sha256=590c6dabe7f5b100d6fe712f5850afe2953fba6be0c7915b5c622e0cb6e944c6
 
-The artifact is intentionally named **unqualified** until the exact PT_LOAD has
-run on real PS2 hardware and the operator confirms that the Pi desktop was
-actually visible and updating on the television.
+The CI artifact retains its original **unqualified** name because that was its
+state when produced. The exact artifact/ELF was subsequently hardware-qualified
+by CP2K HW2; the authoritative physical-run result is recorded in
+`RFB_MUX_CP2K_HARDWARE_RESULT.md`.
 
 ## Runtime contract
 
@@ -99,12 +100,16 @@ The pinned build printed:
 
 ## Hardware qualification gate
 
-The first physical run must use the exact candidate identity above, the existing
-Pi upstream VNC provider, one PSTV socket on port 5902, and the CP2J RFB credit
-values. The operator should create visible desktop activity from the independent
-Windows VNC observer during the finite session.
+The gate below was the pre-run requirement and is now **satisfied by CP2K HW2**.
+The authoritative hardware evidence and exact Pi runtime identity are recorded in
+`RFB_MUX_CP2K_HARDWARE_RESULT.md`.
 
-CP2K may be called hardware-qualified only if all of the following are true:
+The first physical run had to use the exact candidate identity above, the
+existing Pi upstream VNC provider, one PSTV socket on port 5902, and the CP2J RFB
+credit values. The operator generated visible desktop activity from the
+independent Windows VNC observer during the finite session.
+
+CP2K could be called hardware-qualified only if all of the following were true:
 
 - exact deployment/readback identity passes;
 - RFB handshake and initial frame complete;
@@ -115,5 +120,7 @@ CP2K may be called hardware-qualified only if all of the following are true:
 - the operator confirms that the Pi desktop is visibly correct and updating on
   the PS2 television.
 
-A transport PASS without the operator's visible-TV observation is not sufficient
-for CP2K qualification.
+CP2K HW2 satisfied this gate: the exact deployed ELF passed readback, the
+60-second session completed with 244 incremental updates and clean quiescence,
+and the operator confirmed the visible Pi desktop updated on the PS2 television
+while a terminal window was dragged from the independent Windows VNC client.
