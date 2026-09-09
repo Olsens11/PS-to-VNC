@@ -18,6 +18,8 @@ jobs:
         run: python3 experiments/media-harness-h1/h1_profiles.py
       - name: Verify H1 RFB mux seam source ownership
         run: python3 experiments/media-harness-h1/check_rfb_mux_seam.py
+      - name: Verify headless H1 RFB session coordinator source ownership
+        run: python3 experiments/media-harness-h1/check_rfb_session_coordinator.py
       - name: Test H1 logical RFB channel mechanics
         run: |
           cc -std=c99 -Wall -Wextra -Werror \
@@ -73,6 +75,8 @@ jobs:
               export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
               make -f mk/media-harness-h1-cumulative39-thread-census.mk
               python3 experiments/media-harness-h1/check_rfb_mux_seam.py \
+                --build-dir build/experiments/media-harness-h1-cumulative39-thread-census/ps2
+              python3 experiments/media-harness-h1/check_rfb_session_coordinator.py \
                 --build-dir build/experiments/media-harness-h1-cumulative39-thread-census/ps2
               ELF=build/experiments/media-harness-h1-cumulative39-thread-census/ps2/PS2VNC-H1-Cumulative39-ThreadCensus.ELF
               sha256sum "$ELF"
