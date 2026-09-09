@@ -26,12 +26,12 @@
 #   unchanged. In this H1-only cumulative target its three rfb_io.h calls are
 #   preprocessor-renamed to experiment-owned mux adapter symbols. The logical
 #   channel, CONFIG-sized resource bundle, host-tested credit policy, live
-#   channel-1 transport mechanics, adapter binding, and lifecycle cleanup are
-#   linked here. PSTVNC_H1_RFB_MUX_PREP enables only cumulative hooks inside the
-#   existing H1 transport: resource preparation occurs before the sole receiver
-#   starts; channel-1 DATA dispatch and initial/returned CREDIT are wired behind
-#   the still-closed CONFIG RFB-ON gate. No Pi VNC bridge or RFB presentation is
-#   activated by this build rule.
+#   channel-1 transport mechanics, adapter binding, lifecycle cleanup, locked
+#   transport snapshot, and headless RFB session coordinator are linked here.
+#   PSTVNC_H1_RFB_MUX_PREP enables cumulative hooks inside the existing H1
+#   transport. The authoritative CONFIG validator still rejects RFB ON, so the
+#   new parser coordinator remains unreachable until a later explicit gate
+#   checkpoint. No RFB graphics/input presentation is activated here.
 
 BUILD_DIR ?= build/experiments/media-harness-h1-cumulative39-thread-census/ps2
 EE_BIN ?= $(BUILD_DIR)/PS2VNC-H1-Cumulative39-ThreadCensus.ELF
@@ -57,6 +57,8 @@ EXTRA_EE_OBJS := \
 	$(BUILD_DIR)/h1_rfb_credit_policy.o \
 	$(BUILD_DIR)/h1_rfb_runtime_resources.o \
 	$(BUILD_DIR)/h1_rfb_transport_live.o \
+	$(BUILD_DIR)/h1_rfb_transport_snapshot.o \
+	$(BUILD_DIR)/h1_rfb_session_runtime.o \
 	$(BUILD_DIR)/h1_transport_runtime_rfb_lifecycle.o \
 	$(BUILD_DIR)/display39.o \
 	$(BUILD_DIR)/input39.o \
@@ -151,6 +153,23 @@ $(BUILD_DIR)/h1_rfb_transport_live.o: \
 	experiments/media-harness-h1/h1_rfb_credit_policy.h \
 	experiments/media-harness-h1/h1_rfb_mux_io.h \
 	experiments/media-harness-h1/h1_transport_runtime.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/h1_rfb_transport_snapshot.o: \
+	experiments/media-harness-h1/h1_rfb_transport_snapshot.c \
+	experiments/media-harness-h1/h1_rfb_transport_live.h \
+	experiments/media-harness-h1/h1_rfb_channel.h \
+	experiments/media-harness-h1/h1_transport_runtime.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/h1_rfb_session_runtime.o: \
+	experiments/media-harness-h1/h1_rfb_session_runtime.c \
+	experiments/media-harness-h1/h1_rfb_session_runtime.h \
+	experiments/media-harness-h1/h1_rfb_transport_live.h \
+	experiments/media-harness-h1/h1_transport_runtime.h \
+	src/rfb/rfb_session.h \
+	src/framebuffer/framebuffer.h \
+	src/display/display.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/h1_transport_runtime_rfb_lifecycle.o: \
