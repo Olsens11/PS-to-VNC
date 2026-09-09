@@ -2,12 +2,12 @@
 """
 Host integration test for H1Session reader + credit-driven Pi RFB bridge.
 
-This test uses socketpair endpoints only.  It proves that the existing
-H1Session.reader() remains the physical PSTV receive owner while registered RFB
-channel-1 CREDIT/DATA are consumed by the experiment adapter, sequence numbers
-remain globally correct across RFB and ordinary H1 frames, upstream reads stop
-at PS2-granted credit, reverse-direction bytes are exact, and RFB-OFF opens no
-upstream socket.
+Socketpair endpoints prove that the existing H1Session.reader() remains the
+physical PSTV receive owner while registered RFB channel-1 CREDIT/DATA are
+consumed by the experiment adapter, global sequence numbers remain correct,
+upstream reads stop at PS2-granted credit, reverse-direction bytes are exact,
+RFB-OFF opens no upstream socket, and the four zero-length quiesce markers stop
+and join the upstream bridge before COMMIT.
 """
 
 from __future__ import annotations
@@ -51,8 +51,7 @@ def make_session(sock: socket.socket, profile: dict[str, int]) -> base.H1Session
 
 
 def main() -> int:
-    # RFB-OFF must be truly inert on the Pi side: no connector call and no
-    # upstream socket creation merely because the adapter module is available.
+    # RFB-OFF must be truly inert on the Pi side.
     off_h1, off_ps2 = socket.socketpair()
     off_profile = resolve_profile("P11_COMPAT_VIDEO_ONLY", 0x1001)
     off_session = make_session(off_h1, off_profile)
@@ -104,7 +103,6 @@ def main() -> int:
     reader.start()
 
     try:
-        # First prove the normal base reader still handles its own control frames.
         hello_payload = struct.pack(
             ">6I",
             base.REQUIRED_CAPS,
@@ -133,8 +131,6 @@ def main() -> int:
         )
         wait_for(session.config_ack_event.is_set, "base CONFIG ACK dispatch")
 
-        # Upstream VNC bytes may exist, but no channel-1 DATA may leave the Pi
-        # before PS2 grants receiver credit.
         server_bytes = b"abcdefghijklm"
         fake_vnc.sendall(server_bytes)
         fake_ps2.settimeout(0.05)
@@ -146,8 +142,6 @@ def main() -> int:
             fake_ps2.settimeout(None)
         assert unexpected == b""
 
-        # Intercepted sequence 3 is consumed by the adapter, not the base CREDIT
-        # branch.  Exactly eight credited bytes then cross as H1 DATA channel 1.
         send_ps2_frame(
             fake_ps2,
             sequence=3,
@@ -163,8 +157,6 @@ def main() -> int:
         assert outbound.payload == server_bytes[:8]
         assert adapter.bridge.credit == 0
 
-        # Sequence 4 is a normal AUDIO credit.  If the adapter failed to advance
-        # H1's shared RX sequence for sequence 3, this base frame would fail.
         send_ps2_frame(
             fake_ps2,
             sequence=4,
@@ -175,8 +167,6 @@ def main() -> int:
         wait_for(lambda: session.audio.credit == 4, "interleaved base AUDIO credit")
         session.check_reader()
 
-        # Reverse direction: PS2 RFB-client bytes are intercepted on sequence 5
-        # and forwarded exactly to the already-owned upstream VNC socket.
         client_bytes = b"RFBcli"
         send_ps2_frame(
             fake_ps2,
@@ -189,7 +179,6 @@ def main() -> int:
         assert fake_vnc.recv(len(client_bytes)) == client_bytes
         fake_vnc.settimeout(None)
 
-        # Replenishment releases only the remaining five server bytes.
         send_ps2_frame(
             fake_ps2,
             sequence=6,
@@ -204,8 +193,6 @@ def main() -> int:
         assert outbound.payload == server_bytes[8:]
         assert adapter.bridge.credit == 0
 
-        # Another ordinary frame after two intercepted RFB frames proves global
-        # sequence continuity remains with the existing H1 reader authority.
         send_ps2_frame(
             fake_ps2,
             sequence=7,
@@ -227,9 +214,57 @@ def main() -> int:
         assert stats.server_bytes_sent == len(client_bytes)
         assert session.expected_rx_sequence == 8
 
+        # Pi REQUEST: zero-length channel-1 DATA contains no RFB bytes.
+        adapter.request_quiesce()
+        request = base.receive_frame(fake_ps2)
+        assert request.sequence == 3
+        assert request.kind == base.FRAME_DATA
+        assert request.channel == 1
+        assert request.payload == b""
+
+        # PS2 BOUNDARY arrives on the globally next receive sequence. The reader
+        # must stop+join the upstream bridge before emitting Pi COMMIT.
+        send_ps2_frame(
+            fake_ps2,
+            sequence=8,
+            kind=base.FRAME_DATA,
+            channel=1,
+            payload=b"",
+        )
+        assert adapter.quiesce_boundary_event.wait(timeout=2.0)
+
+        commit = base.receive_frame(fake_ps2)
+        assert commit.sequence == 4
+        assert commit.kind == base.FRAME_DATA
+        assert commit.channel == 1
+        assert commit.payload == b""
+        assert adapter.bridge_quiesced
+        assert adapter.quiesce_boundary_received
+        assert adapter.quiesce_commit_sent
+        assert adapter.bridge.thread is not None
+        assert not adapter.bridge.thread.is_alive()
+
+        # Upstream socket shutdown is part of the deterministic boundary->commit
+        # transition, so the VNC peer now observes EOF.
+        fake_vnc.settimeout(1.0)
+        assert fake_vnc.recv(1) == b""
+        fake_vnc.settimeout(None)
+
+        # PS2 COMPLETE closes the four-phase handshake. No RFB parser byte was
+        # invented by any of the zero-length PSTV lifecycle markers.
+        send_ps2_frame(
+            fake_ps2,
+            sequence=9,
+            kind=base.FRAME_DATA,
+            channel=1,
+            payload=b"",
+        )
+        adapter.wait_quiesce_complete(timeout=2.0)
+        assert adapter.quiesce_complete_received
+        assert session.expected_rx_sequence == 10
+        session.check_reader()
+
     finally:
-        # Preserve the intended lifecycle contract: stop the sole physical H1
-        # reader first, then detach/close the logical RFB upstream bridge.
         session.stop_event.set()
         try:
             h1_sock.shutdown(socket.SHUT_RDWR)
