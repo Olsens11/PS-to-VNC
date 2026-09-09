@@ -1,18 +1,18 @@
 /*
  * File synopsis:
- * Wraps the cumulative H1 transport start/shutdown lifecycle with ownership of
- * the prepared logical RFB channel-1 resource bundle.
+ * Wraps cumulative H1 transport lifecycle cleanup for live logical RFB channel 1.
  *
- * CONFIG v4 now carries explicit RFB queue/credit policy. This lifecycle wrapper
- * consumes the queue-capacity field when RFB is eventually enabled, while the
- * underlying H1 transport implementation still owns the one physical PSTV
- * socket, sole recv() thread, send semaphore, AUDIO/MPEG behavior, CONFIG
- * exchange, and live frame dispatch. The current validator still rejects RFB ON,
- * so activation remains an explicit OFF no-op in valid sessions.
+ * Resource preparation no longer occurs after the inner transport returns: the
+ * cumulative h1_transport_runtime.c hook now prepares/binds channel 1 before
+ * CONFIG ACK and before the sole receiver thread starts. This wrapper therefore
+ * owns only failure/normal cleanup after the physical receiver/socket has been
+ * stopped by the unchanged inner shutdown path.
  *
- * Context: RFB_MUX_INTEGRATION_PREP.md, P2; RFB_CREDIT_POLICY_DECISION.md.
+ * CONFIG still rejects RFB ON at this checkpoint, so accepted media sessions
+ * continue to exercise an allocation-free RFB OFF path.
  */
 
+#include "h1_rfb_transport_live.h"
 #include "h1_transport_runtime.h"
 
 /*
@@ -29,37 +29,16 @@ int pstvnc_h1_transport_shutdown_inner(
 int pstvnc_h1_transport_start(
     pstvnc_h1_transport_runtime_t *runtime)
 {
-    int enabled;
-    uint32_t queue_capacity;
+    int result;
 
     if (runtime == NULL)
         return -1;
 
-    if (pstvnc_h1_transport_start_inner(runtime) < 0) {
-        /*
-         * The inner start may have zeroed the whole runtime before failing.
-         * Restore the dormant bundle's explicit inactive sentinel state so a
-         * later public shutdown remains deterministic.
-         */
-        pstvnc_h1_rfb_runtime_resources_init(&runtime->rfb_resources);
-        return -1;
-    }
+    result = pstvnc_h1_transport_start_inner(runtime);
+    if (result < 0)
+        (void)pstvnc_h1_rfb_transport_release(runtime);
 
-    pstvnc_h1_rfb_runtime_resources_init(&runtime->rfb_resources);
-
-    enabled = runtime->config.rfb_mode == PSTVNC_H1_RFB_ON_RESERVED;
-    queue_capacity = enabled ? runtime->config.rfb_queue_capacity : 0u;
-    if (!pstvnc_h1_rfb_runtime_resources_activate(
-            &runtime->rfb_resources,
-            enabled,
-            queue_capacity)) {
-        (void)pstvnc_h1_transport_shutdown_inner(runtime);
-        (void)pstvnc_h1_rfb_runtime_resources_release(
-            &runtime->rfb_resources);
-        return -1;
-    }
-
-    return 0;
+    return result;
 }
 
 int pstvnc_h1_transport_shutdown(
@@ -72,12 +51,11 @@ int pstvnc_h1_transport_shutdown(
         return -1;
 
     /*
-     * Stop the sole physical receiver/socket owner before releasing a logical
-     * channel resource bundle that a later checkpoint may make live.
+     * Stop the sole physical recv()/socket owner first. Only then unbind the
+     * parser adapter and release the logical RFB queue/semaphore bundle.
      */
     transport_result = pstvnc_h1_transport_shutdown_inner(runtime);
-    rfb_result = pstvnc_h1_rfb_runtime_resources_release(
-        &runtime->rfb_resources);
+    rfb_result = pstvnc_h1_rfb_transport_release(runtime);
 
     return transport_result < 0 || !rfb_result ? -1 : 0;
 }
