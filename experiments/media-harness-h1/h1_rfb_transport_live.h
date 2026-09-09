@@ -4,10 +4,9 @@
  * public CONFIG activation gate remains independently controlled.
  *
  * These functions prepare/release the CONFIG-sized RFB queue, accept channel-1
- * DATA from H1's sole physical receiver, return parser-consumed credit, and
- * serialize outbound logical RFB bytes through the existing H1 send path.
- * They own no RFB parsing, framebuffer presentation, input policy, or Pi VNC
- * bridge behavior.
+ * DATA from H1's sole physical receiver, return parser-consumed credit,
+ * serialize outbound logical RFB bytes through the existing H1 send path, and
+ * publish the PS2 phases of the clean RFB quiesce handshake.
  */
 
 #ifndef PSTVNC_MEDIA_HARNESS_H1_RFB_TRANSPORT_LIVE_H
@@ -54,6 +53,15 @@ int pstvnc_h1_rfb_transport_write_exact(
     pstvnc_h1_transport_runtime_t *runtime,
     const void *buffer,
     size_t count);
+
+/*
+ * Publish only PS2-owned quiesce phases: BOUNDARY after a complete RFB protocol
+ * message and COMPLETE after the Pi has committed bridge shutdown and the PS2
+ * has proven no residual channel-1 bytes remain queued.
+ */
+int pstvnc_h1_rfb_transport_send_quiesce_phase(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t phase);
 
 /*
  * Take one semaphore-consistent diagnostic snapshot without exposing mutable
