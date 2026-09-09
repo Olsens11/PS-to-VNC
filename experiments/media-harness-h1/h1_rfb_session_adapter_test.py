@@ -238,9 +238,13 @@ def main() -> int:
         assert commit.kind == base.FRAME_DATA
         assert commit.channel == 1
         assert commit.payload == b""
+
+        # sendall() can make COMMIT visible to the peer a few instructions before
+        # the adapter records its local post-send flag. Wait for that local state
+        # instead of making the test scheduler-sensitive.
+        wait_for(lambda: adapter.quiesce_commit_sent, "local COMMIT state")
         assert adapter.bridge_quiesced
         assert adapter.quiesce_boundary_received
-        assert adapter.quiesce_commit_sent
         assert adapter.bridge.thread is not None
         assert not adapter.bridge.thread.is_alive()
 
