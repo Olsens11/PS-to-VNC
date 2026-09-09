@@ -1,14 +1,14 @@
 /*
  * File synopsis:
  * Runs the unchanged through-Issue-39 RFB session/parser headlessly against H1
- * logical channel 1.
+ * logical channel 1 and owns the PS2 half of clean finite-session quiescence.
  *
- * This checkpoint deliberately stops at CPU framebuffer authority.  It does not
+ * This checkpoint deliberately stops at CPU framebuffer authority. It does not
  * initialize gsKit, the H1 MPEG presenter, controller input, pointer routing,
- * keyboard, OSK, or local UI.  Its purpose is to make the RFB 3.8 handshake,
+ * keyboard, OSK, or local UI. Its purpose is to make the RFB 3.8 handshake,
  * complete initial Raw framebuffer, incremental requests/updates, parser byte
- * consumption, and mux credit behavior observable before presentation ownership
- * is changed.
+ * consumption, mux credit behavior, and protocol-boundary shutdown observable
+ * before presentation ownership is changed.
  */
 
 #include "h1_rfb_session_runtime.h"
@@ -25,6 +25,7 @@
 #include <string.h>
 
 #define H1_RFB_IDLE_DELAY_US 1000u
+#define H1_RFB_QUIESCE_WAIT_US 1000u
 #define H1_RFB_DIAGNOSTIC_MARKER 0xA0000000u
 
 static uint32_t h1_rfb_diagnostic_word(
@@ -32,6 +33,7 @@ static uint32_t h1_rfb_diagnostic_word(
 {
     uint32_t state;
     uint32_t error;
+    uint32_t phase;
     uint32_t updates;
 
     if (runtime == NULL)
@@ -39,9 +41,13 @@ static uint32_t h1_rfb_diagnostic_word(
 
     state = ((uint32_t)runtime->session.state & 0x0fu) << 24;
     error = ((uint32_t)runtime->session.error & 0xffu) << 16;
-    updates = runtime->stats.incremental_updates_complete & 0xffffu;
+    phase =
+        ((runtime->stats.quiesce_boundary_sent != 0u) ? 1u : 0u) << 15 |
+        ((runtime->stats.quiesce_commit_observed != 0u) ? 1u : 0u) << 14 |
+        ((runtime->stats.quiesce_complete_sent != 0u) ? 1u : 0u) << 13;
+    updates = runtime->stats.incremental_updates_complete & 0x1fffu;
 
-    return H1_RFB_DIAGNOSTIC_MARKER | state | error | updates;
+    return H1_RFB_DIAGNOSTIC_MARKER | state | error | phase | updates;
 }
 
 static void h1_rfb_publish_diagnostic(
@@ -92,39 +98,76 @@ static int h1_rfb_prepare_framebuffer(
     return 1;
 }
 
-static int h1_rfb_terminal_state(
-    pstvnc_h1_transport_runtime_t *transport,
-    int *clean_terminal)
+static int h1_rfb_wait_for_commit(
+    pstvnc_h1_rfb_session_runtime_t *runtime,
+    pstvnc_h1_transport_runtime_t *transport)
+{
+    while (transport->rfb_quiesce_commit_received == 0u) {
+        if (pstvnc_h1_transport_last_error(transport) !=
+                PSTVNC_H1_ERROR_NONE ||
+            transport->receiver_done ||
+            transport->stop_requested)
+            return 0;
+
+        h1_rfb_publish_diagnostic(runtime, transport);
+
+        if (DelayThread(H1_RFB_QUIESCE_WAIT_US) < 0)
+            return 0;
+    }
+
+    runtime->stats.quiesce_commit_observed = 1u;
+    h1_rfb_publish_diagnostic(runtime, transport);
+    return 1;
+}
+
+static int h1_rfb_complete_quiesce_at_boundary(
+    pstvnc_h1_rfb_session_runtime_t *runtime,
+    pstvnc_h1_transport_runtime_t *transport)
 {
     pstvnc_h1_rfb_transport_snapshot_t snapshot;
 
-    *clean_terminal = 0;
-
-    if (pstvnc_h1_transport_last_error(transport) !=
-        PSTVNC_H1_ERROR_NONE)
-        return 1;
-
-    if (!transport->receiver_done)
+    if (transport->rfb_quiesce_request_received == 0u)
         return 0;
 
-    if (!transport->end_received)
-        return 1;
+    /*
+     * We are called only between complete RFB server messages. The coordinator
+     * stops issuing framebuffer requests before publishing BOUNDARY, so every
+     * RFB client write preceding this marker is already ordered ahead of it on
+     * the same PSTV send sequence.
+     */
+    if (!pstvnc_h1_rfb_transport_send_quiesce_boundary(transport))
+        return -1;
+
+    runtime->stats.quiesce_boundary_sent = 1u;
+    h1_rfb_publish_diagnostic(runtime, transport);
+
+    /*
+     * On BOUNDARY the Pi shuts down and joins its raw VNC reader before sending
+     * COMMIT. Because all Pi->PS2 PSTV frames share one send lock/sequence, any
+     * final DATA already read by the bridge must appear before COMMIT.
+     */
+    if (!h1_rfb_wait_for_commit(runtime, transport))
+        return -1;
 
     if (!pstvnc_h1_rfb_transport_snapshot(
             transport,
             &snapshot))
-        return 1;
+        return -1;
 
     /*
-     * A finite harness end is clean only after every channel-1 byte already
-     * received before MEDIA_END has been consumed.  If a partial RFB message is
-     * stranded, the parser will enter exact-read and fail rather than allowing
-     * the terminal marker to hide a framing cut.
+     * Conservative first-hardware contract: COMMIT is accepted as a clean RFB
+     * boundary only if no channel-1 bytes remain after every pre-COMMIT DATA
+     * frame has been received. Residual bytes mean the raw bridge had already
+     * crossed into another server message; fail rather than calling that clean.
      */
-    if (snapshot.queue_current != 0u)
-        return 0;
+    if (!snapshot.active || snapshot.queue_current != 0u)
+        return -1;
 
-    *clean_terminal = 1;
+    if (!pstvnc_h1_rfb_transport_send_quiesce_complete(transport))
+        return -1;
+
+    runtime->stats.quiesce_complete_sent = 1u;
+    h1_rfb_publish_diagnostic(runtime, transport);
     return 1;
 }
 
@@ -132,8 +175,6 @@ int pstvnc_h1_rfb_session_runtime_run(
     pstvnc_h1_rfb_session_runtime_t *runtime,
     pstvnc_h1_transport_runtime_t *transport)
 {
-    int clean_terminal;
-
     if (runtime == NULL || transport == NULL ||
         transport->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
         transport->config.audio_mode != PSTVNC_H1_AUDIO_OFF ||
@@ -152,7 +193,7 @@ int pstvnc_h1_rfb_session_runtime_run(
      * The integer handle remains only the existing clean-session identity token.
      * In this cumulative build rfb_session39.o resolves all three rfb_io calls
      * to the H1 mux adapter, which verifies this exact socket identity and then
-     * delegates to logical channel 1.  No second physical recv/send occurs here.
+     * delegates to logical channel 1. No second physical recv/send occurs here.
      */
     if (!pstvnc_rfb_session_start(
             &runtime->session,
@@ -172,6 +213,17 @@ int pstvnc_h1_rfb_session_runtime_run(
     runtime->stats.initial_frame_complete = 1u;
     h1_rfb_publish_diagnostic(runtime, transport);
 
+    /*
+     * Initial-frame completion itself is a protocol boundary. A very early Pi
+     * quiesce request may therefore terminate cleanly here without manufacturing
+     * an unnecessary incremental request.
+     */
+    if (transport->rfb_quiesce_request_received != 0u) {
+        if (h1_rfb_complete_quiesce_at_boundary(runtime, transport) == 1)
+            return 0;
+        goto fail;
+    }
+
     if (!pstvnc_rfb_session_request_update(
             &runtime->session,
             1))
@@ -182,15 +234,11 @@ int pstvnc_h1_rfb_session_runtime_run(
     for (;;) {
         pstvnc_rfb_session_receive_result_t receive_result;
 
-        if (h1_rfb_terminal_state(
-                transport,
-                &clean_terminal)) {
-            if (clean_terminal) {
-                h1_rfb_publish_diagnostic(runtime, transport);
-                return 0;
-            }
+        if (pstvnc_h1_transport_last_error(transport) !=
+                PSTVNC_H1_ERROR_NONE ||
+            transport->receiver_done ||
+            transport->stop_requested)
             goto fail;
-        }
 
         receive_result = pstvnc_rfb_session_try_receive_update(
             &runtime->session,
@@ -221,13 +269,13 @@ int pstvnc_h1_rfb_session_runtime_run(
         h1_rfb_publish_diagnostic(runtime, transport);
 
         /*
-         * Re-check the transport before publishing another incremental request.
-         * A finite harness end can arrive immediately after the update bytes.
+         * This is the decisive safe boundary: the current server message has
+         * been consumed to its exact RFB boundary. If the Pi requested shutdown
+         * at any point while that update was outstanding, stop here and do not
+         * send another framebuffer request.
          */
-        if (h1_rfb_terminal_state(
-                transport,
-                &clean_terminal)) {
-            if (clean_terminal)
+        if (transport->rfb_quiesce_request_received != 0u) {
+            if (h1_rfb_complete_quiesce_at_boundary(runtime, transport) == 1)
                 return 0;
             goto fail;
         }
