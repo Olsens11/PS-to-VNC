@@ -98,6 +98,20 @@ int pstvnc_h1_rfb_runtime_resources_release(
     if (resources == NULL)
         return 0;
 
+    /*
+     * The enclosing H1 runtime is memset() at connection start. If startup
+     * fails before the RFB preparation hook has normalized this embedded bundle,
+     * queue_sema_id is therefore zero rather than our usual -1 sentinel. Treat
+     * a structurally empty/inactive bundle as unowned instead of attempting to
+     * delete semaphore id 0.
+     */
+    if (!resources->active &&
+        resources->queue_storage == NULL &&
+        resources->queue_capacity == 0u) {
+        pstvnc_h1_rfb_runtime_resources_init(resources);
+        return 1;
+    }
+
     if (resources->queue_sema_id >= 0 &&
         DeleteSema(resources->queue_sema_id) < 0)
         result = 0;
