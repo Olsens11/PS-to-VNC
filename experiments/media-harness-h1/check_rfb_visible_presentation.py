@@ -9,6 +9,11 @@ H1 = ROOT / "experiments/media-harness-h1"
 runtime_h = (H1 / "h1_rfb_session_runtime.h").read_text()
 runtime_c = (H1 / "h1_rfb_session_runtime.c").read_text()
 main_c = (H1 / "h1_main_rfb_visible.c").read_text()
+main_entry = (H1 / "h1_main_rfb_visible_entry.c").read_text()
+transport_visible = (H1 / "h1_rfb_transport_live_visible.c").read_text()
+runtime_visible = (H1 / "h1_rfb_session_runtime_visible.c").read_text()
+config_h = (H1 / "h1_config.h").read_text()
+activation_gate = (H1 / "h1_config_rfb_activation_gate.c").read_text()
 makefile = (ROOT / "mk/media-harness-h1-cp2k-visible-rfb.mk").read_text()
 
 required_runtime = [
@@ -50,15 +55,33 @@ for forbidden in [
     if forbidden in main_c:
         raise SystemExit(f"CP2K_VISIBLE_RFB_CONTRACT=FAIL forbidden_main:{forbidden}")
 
-if "H1_MAIN_SOURCE := experiments/media-harness-h1/h1_main_rfb_visible.c" not in makefile:
-    raise SystemExit("CP2K_VISIBLE_RFB_CONTRACT=FAIL build_does_not_select_visible_main")
+if "PSTVNC_H1_RFB_ON_VISIBLE = 2" not in config_h:
+    raise SystemExit("CP2K_VISIBLE_RFB_CONTRACT=FAIL visible_mode_not_reserved")
+if "pstvnc_h1_rfb_mode_is_enabled(config->rfb_mode)" not in activation_gate:
+    raise SystemExit("CP2K_VISIBLE_RFB_CONTRACT=FAIL cumulative_gate_not_mode2_aware")
+
+for name, text in (
+    ("main_entry", main_entry),
+    ("transport_visible", transport_visible),
+    ("runtime_visible", runtime_visible),
+):
+    if "#define PSTVNC_H1_RFB_ON_RESERVED PSTVNC_H1_RFB_ON_VISIBLE" not in text:
+        raise SystemExit(f"CP2K_VISIBLE_RFB_CONTRACT=FAIL missing_mode2_scope:{name}")
+
+if "H1_MAIN_SOURCE := experiments/media-harness-h1/h1_main_rfb_visible_entry.c" not in makefile:
+    raise SystemExit("CP2K_VISIBLE_RFB_CONTRACT=FAIL build_does_not_select_visible_entry")
+if "h1_rfb_transport_live_visible.c" not in makefile:
+    raise SystemExit("CP2K_VISIBLE_RFB_CONTRACT=FAIL visible_transport_wrapper_not_selected")
+if "h1_rfb_session_runtime_visible.c" not in makefile:
+    raise SystemExit("CP2K_VISIBLE_RFB_CONTRACT=FAIL visible_runtime_wrapper_not_selected")
 
 if "include mk/media-harness-h1-cumulative39-thread-census.mk" not in makefile:
     raise SystemExit("CP2K_VISIBLE_RFB_CONTRACT=FAIL build_not_based_on_cp2j_population")
 
 print("CP2K_VISIBLE_RFB_CONTRACT=PASS")
+print("CP2K_RFB_MODE=2_VISIBLE")
 print("CP2K_PRESENTATION=THROUGH_ISSUE39_DISPLAY_AND_PS2_GRAPHICS")
-print("CP2K_RFB_TRANSPORT=EXISTING_CP2J_ONE_SOCKET_CHANNEL1")
+print("CP2K_RFB_TRANSPORT=CP2J_MECHANICS_MECHANICALLY_SCOPED_TO_MODE2")
 print("CP2K_AUDIO=OFF")
 print("CP2K_MPEG=OFF")
 print("CP2K_INPUT=OFF")
