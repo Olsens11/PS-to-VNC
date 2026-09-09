@@ -15,6 +15,11 @@ GEN_DIR = $(BUILD_DIR)/generated
 
 EE_BIN ?= $(BUILD_DIR)/PS2VNC-H1-ThreadCensus.ELF
 
+# Specialized diagnostic descendants may replace only the resident coordinator
+# while retaining this exact source/object population and toolchain authority.
+# The default remains the qualified H1 coordinator.
+H1_MAIN_SOURCE ?= experiments/media-harness-h1/h1_main.c
+
 SMS_VENDOR = experiments/media-stream-exp3/vendor/sms-libmpeg
 SMS_INC = $(SMS_VENDOR)/include
 SMS_SRC = $(SMS_VENDOR)/src
@@ -84,7 +89,7 @@ $(BUILD_DIR) $(GEN_DIR):
 	mkdir -p $@
 
 $(BUILD_DIR)/h1_main.o: \
-	experiments/media-harness-h1/h1_main.c \
+	$(H1_MAIN_SOURCE) \
 	experiments/media-harness-h1/h1_audio_runtime.h \
 	experiments/media-harness-h1/h1_video_runtime.h \
 	experiments/media-harness-h1/h1_transport_runtime.h \
