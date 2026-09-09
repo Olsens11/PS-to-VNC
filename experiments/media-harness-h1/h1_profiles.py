@@ -3,22 +3,25 @@
 File synopsis:
     Named Pi-side CONFIG v4 profiles for the resident H1 media harness.
 
-The first two profiles intentionally share the qualified P11 video mechanisms.
+The first two profiles preserve the qualified P11 media mechanisms.
 P11_COMPAT_VIDEO_ONLY proves the resident/mux/config machinery with audio
 disabled. P11_COMPAT_PLUS_PCM adds the known 48 kHz / 16-bit / stereo PCM path
 on the same physical PSTV mux.
 
-CONFIG v4 adds explicit RFB queue/credit fields so channel-1 experiments can use
-the same session-level control philosophy as AUDIO and MPEG. RFB is still OFF in
-the current qualified media/census profiles until live channel-1 dispatch and
-the Pi bridge are independently build-verified.
+H1_RFB_ONLY is the first deliberately unqualified RFB-over-mux hardware profile.
+It turns AUDIO and MPEG fully off, enables logical RFB channel 1, and starts with
+the operator-selected 32768-byte queue / 8192-byte credit batch policy. Those
+RFB values remain ordinary CONFIG knobs and may be overridden or swept; the
+profile is a reproducible starting point, not a claim that those values are
+universally optimal.
 
+CONFIG v4 gives RFB the same explicit queue/credit vocabulary as AUDIO and MPEG.
 The Pi also retains active desktop and X11 capture geometry as test-harness
 metadata. Neither is duplicated onto the H1 media wire because only the Pi
-capture side consumes them today. 704x462 is therefore merely the current
-qualified Issue-39 desktop default, not a permanent architectural maximum.
-Future safe-area/display work can change desktop_width/desktop_height while the
-same MPEG x/y/width/height contract continues to operate in active desktop
+capture side consumes it today. 704x462 is therefore merely the current
+Issue-39 desktop default, not a permanent architectural maximum. Future
+safe-area/display work can change desktop_width/desktop_height while the same
+MPEG x/y/width/height contract continues to operate in active desktop
 coordinates.
 
 Presentation offsets are signed microseconds on the Pi and encoded as raw
@@ -206,7 +209,7 @@ def _p11_compat_video_only() -> dict[str, int]:
         "queue_allocation_order": ALLOCATE_MPEG_FIRST,
         "media_epoch_lead_us": 0,
         "rfb_mode": RFB_OFF,
-        # RFB-OFF is truly inert in the current qualified media profiles.
+        # RFB-OFF is genuinely inert in the qualified media profiles.
         "rfb_queue_capacity": 0,
         "rfb_credit_batch_bytes": 0,
         "rfb_credit_flush_on_empty": 0,
@@ -245,9 +248,63 @@ def _p11_compat_plus_pcm() -> dict[str, int]:
     return profile
 
 
+def _h1_rfb_only() -> dict[str, int]:
+    """Return the first headless RFB-over-mux hardware-test starting profile."""
+
+    profile = _p11_compat_video_only()
+    profile.update(
+        {
+            "profile_id": 2,
+            "audio_mode": AUDIO_OFF,
+            "video_mode": VIDEO_OFF,
+            # Make every media transport/presentation field visibly inert. The
+            # active cumulative PS2 gate independently requires AUDIO/MPEG OFF.
+            "mpeg_queue_capacity": 0,
+            "mpeg_credit_batch_bytes": 0,
+            "mpeg_credit_flush_on_empty": 0,
+            "mpeg_credit_return_enabled": 0,
+            "mpeg_initial_credit_bytes": 0,
+            "mpeg_start_target_bytes": 0,
+            "mpeg_prefill_wait_us": 0,
+            "mpeg_prefill_max_loops": 0,
+            "mpeg_empty_delay_us": 0,
+            "mpeg_feed_bytes": 0,
+            "video_fps_num": 0,
+            "video_fps_den": 0,
+            "video_scheduler_mode": VIDEO_SCHED_ABSOLUTE,
+            "video_presentation_offset_us": 0,
+            "video_pixel_mode": VIDEO_RGB16,
+            "video_max_width": 0,
+            "video_max_height": 0,
+            "video_encode_width": 0,
+            "video_encode_height": 0,
+            "video_draw_width": 0,
+            "video_draw_height": 0,
+            "video_draw_x": 0,
+            "video_draw_y": 0,
+            "video_stage_markers": 0,
+            "video_stage_hold_vsyncs": 0,
+            "video_ipu_reset_each_session": 0,
+            "video_drop_enabled": 0,
+            "video_drop_threshold_milliframes": 0,
+            "queue_allocation_order": ALLOCATE_AUDIO_FIRST,
+            "rfb_mode": RFB_ON_RESERVED,
+            # Evidence-based first values. They are ordinary CONFIG fields and
+            # remain intentionally sweepable through h1_tool.py.
+            "rfb_queue_capacity": 32768,
+            "rfb_credit_batch_bytes": 8192,
+            "rfb_credit_flush_on_empty": 1,
+            "rfb_credit_return_enabled": 1,
+            "rfb_initial_credit_bytes": 32768,
+        }
+    )
+    return profile
+
+
 PROFILES = {
     "P11_COMPAT_VIDEO_ONLY": _p11_compat_video_only(),
     "P11_COMPAT_PLUS_PCM": _p11_compat_plus_pcm(),
+    "H1_RFB_ONLY": _h1_rfb_only(),
 }
 
 
@@ -337,6 +394,7 @@ def build_config_payload(profile: Mapping[str, int]) -> bytes:
 def self_test() -> None:
     video = resolve_profile("P11_COMPAT_VIDEO_ONLY", 1)
     combined = resolve_profile("P11_COMPAT_PLUS_PCM", 2)
+    rfb = resolve_profile("H1_RFB_ONLY", 3)
 
     assert video["mpeg_queue_capacity"] == 524288
     assert video["mpeg_start_target_bytes"] == 458752
@@ -367,23 +425,18 @@ def self_test() -> None:
     assert combined["audio_bits"] == 16
     assert combined["audio_chunk_bytes"] == 4096
 
-    # The operator-selected future RFB policy can already be represented by the
-    # profile vocabulary even while the PS2 activation gate remains closed.
-    rfb_candidate = resolve_profile(
-        "P11_COMPAT_VIDEO_ONLY",
-        3,
-        {
-            "rfb_mode": RFB_ON_RESERVED,
-            "rfb_queue_capacity": 32768,
-            "rfb_credit_batch_bytes": 8192,
-            "rfb_credit_flush_on_empty": 1,
-            "rfb_credit_return_enabled": 1,
-            "rfb_initial_credit_bytes": 32768,
-        },
-    )
-    assert rfb_candidate["rfb_queue_capacity"] == 32768
-    assert rfb_candidate["rfb_credit_batch_bytes"] == 8192
-    assert rfb_candidate["rfb_initial_credit_bytes"] == 32768
+    assert rfb["profile_id"] == 2
+    assert rfb["audio_mode"] == AUDIO_OFF
+    assert rfb["video_mode"] == VIDEO_OFF
+    assert rfb["mpeg_queue_capacity"] == 0
+    assert rfb["video_encode_width"] == 0
+    assert rfb["video_encode_height"] == 0
+    assert rfb["rfb_mode"] == RFB_ON_RESERVED
+    assert rfb["rfb_queue_capacity"] == 32768
+    assert rfb["rfb_credit_batch_bytes"] == 8192
+    assert rfb["rfb_credit_flush_on_empty"] == 1
+    assert rfb["rfb_credit_return_enabled"] == 1
+    assert rfb["rfb_initial_credit_bytes"] == 32768
 
     # Same-location future composition example within today's desktop geometry.
     same_location = resolve_profile(
@@ -426,6 +479,22 @@ def self_test() -> None:
         0,
         61,
         0,
+    )
+
+    rfb_payload = build_config_payload(rfb)
+    assert len(rfb_payload) == CONFIG_PAYLOAD_BYTES
+    assert rfb_payload[-40:] == struct.pack(
+        ">IIIIIIIIII",
+        57,
+        32768,
+        58,
+        8192,
+        59,
+        1,
+        60,
+        1,
+        61,
+        32768,
     )
 
     print("H1_PI_PROFILES_SELF_TEST=PASS")
