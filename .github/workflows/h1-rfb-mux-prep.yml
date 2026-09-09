@@ -20,6 +20,23 @@ jobs:
         run: python3 experiments/media-harness-h1/check_rfb_mux_seam.py
       - name: Verify headless H1 RFB session coordinator source ownership
         run: python3 experiments/media-harness-h1/check_rfb_session_coordinator.py
+      - name: Test cumulative-only RFB CONFIG activation gate
+        run: |
+          cc -std=c99 -Wall -Wextra -Werror \
+            -Iexperiments/media-harness-h1 \
+            -Iexperiments/audio-transport/common \
+            -Dpstvnc_h1_config_validate=pstvnc_h1_config_validate_inner \
+            -c experiments/media-harness-h1/h1_config.c \
+            -o /tmp/h1_config_rfb_gate_inner.o
+          cc -std=c99 -Wall -Wextra -Werror \
+            -Iexperiments/media-harness-h1 \
+            -Iexperiments/audio-transport/common \
+            /tmp/h1_config_rfb_gate_inner.o \
+            experiments/media-harness-h1/h1_config_rfb_activation_gate.c \
+            experiments/media-harness-h1/h1_config_rfb_activation_gate_test.c \
+            experiments/audio-transport/common/transport_protocol.c \
+            -o /tmp/h1_config_rfb_activation_gate_test
+          /tmp/h1_config_rfb_activation_gate_test
       - name: Test H1 logical RFB channel mechanics
         run: |
           cc -std=c99 -Wall -Wextra -Werror \
@@ -44,6 +61,12 @@ jobs:
         run: python3 experiments/media-harness-h1/h1_rfb_session_adapter_test.py
       - name: Test cumulative H1 RFB bridge runner composition
         run: python3 experiments/media-harness-h1/h1_mux_server_cumulative39_rfb_bridge_test.py
+      - name: Validate first RFB-only operator profile through cumulative bridge runner
+        run: |
+          python3 experiments/media-harness-h1/h1_mux_server_cumulative39_rfb_bridge.py \
+            --profile H1_RFB_ONLY \
+            --duration 1 \
+            --validate-only
       - name: Verify H1 operator control surface remains readable
         run: |
           python3 experiments/media-harness-h1/h1_tool.py --help >/dev/null
@@ -55,6 +78,9 @@ jobs:
           python3 experiments/media-harness-h1/h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM | grep -q rfb_credit_flush_on_empty
           python3 experiments/media-harness-h1/h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM | grep -q rfb_credit_return_enabled
           python3 experiments/media-harness-h1/h1_tool.py knobs --profile P11_COMPAT_PLUS_PCM | grep -q rfb_initial_credit_bytes
+          python3 experiments/media-harness-h1/h1_tool.py knobs --profile H1_RFB_ONLY | grep -q 'rfb_queue_capacity.*32768'
+          python3 experiments/media-harness-h1/h1_tool.py knobs --profile H1_RFB_ONLY | grep -q 'rfb_credit_batch_bytes.*8192'
+          python3 experiments/media-harness-h1/h1_tool.py knobs --profile H1_RFB_ONLY | grep -q 'rfb_initial_credit_bytes.*32768'
 
   ps2-build:
     runs-on: ubuntu-latest
