@@ -33,6 +33,10 @@ int pstvnc_h1_rfb_transport_prepare(
 int pstvnc_h1_rfb_transport_release(
     pstvnc_h1_transport_runtime_t *runtime);
 
+/*
+ * Non-empty DATA is raw RFB. Zero-length DATA is the experiment-local lifecycle
+ * marker used only by the ordered quiesce state machine.
+ */
 int pstvnc_h1_rfb_transport_accept_data(
     pstvnc_h1_transport_runtime_t *runtime,
     const void *payload,
@@ -54,14 +58,13 @@ int pstvnc_h1_rfb_transport_write_exact(
     const void *buffer,
     size_t count);
 
-/*
- * Publish only PS2-owned quiesce phases: BOUNDARY after a complete RFB protocol
- * message and COMPLETE after the Pi has committed bridge shutdown and the PS2
- * has proven no residual channel-1 bytes remain queued.
- */
-int pstvnc_h1_rfb_transport_send_quiesce_phase(
-    pstvnc_h1_transport_runtime_t *runtime,
-    uint32_t phase);
+/* Send the PS2->Pi zero-length channel-1 BOUNDARY marker. */
+int pstvnc_h1_rfb_transport_send_quiesce_boundary(
+    pstvnc_h1_transport_runtime_t *runtime);
+
+/* Send the PS2->Pi zero-length channel-1 COMPLETE marker. */
+int pstvnc_h1_rfb_transport_send_quiesce_complete(
+    pstvnc_h1_transport_runtime_t *runtime);
 
 /*
  * Take one semaphore-consistent diagnostic snapshot without exposing mutable
