@@ -35,6 +35,8 @@ jobs:
             experiments/media-harness-h1/h1_rfb_keyboard_chord_test.c \
             -o /tmp/h1_rfb_keyboard_chord_test
           /tmp/h1_rfb_keyboard_chord_test
+      - name: Verify CP2N real-module visible RFB interaction contract
+        run: python3 experiments/media-harness-h1/check_rfb_visible_interaction.py
       - name: Test cumulative-only RFB CONFIG activation gate
         run: |
           cc -std=c99 -Wall -Wextra -Werror \
@@ -101,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build cumulative H1 RFB-prep, CP2K, CP2L, and CP2M candidates with pinned PS2 toolchain
+      - name: Build cumulative H1 RFB-prep, CP2K, CP2L, CP2M, and CP2N candidates with pinned PS2 toolchain
         env:
           IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
         run: |
@@ -157,6 +159,17 @@ jobs:
               sha256sum "$CP2M_ELF"
               ./scripts/testkit/pt-load-fingerprint.sh "$CP2M_ELF"
               echo H1_CP2M_ELF_END
+
+              make -f mk/media-harness-h1-cp2n-visible-rfb-interaction.mk
+              python3 experiments/media-harness-h1/check_rfb_visible_interaction.py \
+                --build-dir build/experiments/media-harness-h1-cp2n-visible-rfb-interaction/ps2
+              python3 experiments/media-harness-h1/check_rfb_mux_seam.py \
+                --build-dir build/experiments/media-harness-h1-cp2n-visible-rfb-interaction/ps2
+              CP2N_ELF=build/experiments/media-harness-h1-cp2n-visible-rfb-interaction/ps2/PS2VNC-H1-CP2N-VisibleRFBInteraction.ELF
+              echo H1_CP2N_ELF_BEGIN
+              sha256sum "$CP2N_ELF"
+              ./scripts/testkit/pt-load-fingerprint.sh "$CP2N_ELF"
+              echo H1_CP2N_ELF_END
             '
       - name: Preserve unqualified RFB-prep ELF
         uses: actions/upload-artifact@v4
@@ -181,4 +194,10 @@ jobs:
         with:
           name: h1-cp2m-visible-rfb-keyboard-unqualified-elf
           path: build/experiments/media-harness-h1-cp2m-visible-rfb-keyboard/ps2/PS2VNC-H1-CP2M-VisibleRFBKeyboard.ELF
+          if-no-files-found: error
+      - name: Preserve unqualified CP2N visible RFB interaction ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: h1-cp2n-visible-rfb-interaction-unqualified-elf
+          path: build/experiments/media-harness-h1-cp2n-visible-rfb-interaction/ps2/PS2VNC-H1-CP2N-VisibleRFBInteraction.ELF
           if-no-files-found: error
