@@ -1,36 +1,47 @@
-# H1 Resident Media Harness
+# H1 Resident Media / RFB Harness
 
-H1 is the experiment-only resident audio/video harness descended from two
-qualified parents:
+H1 is the experiment-only resident audio/video/RFB harness descended from two
+qualified media parents and the clean through-Issue-39 PS-to-VNC source:
 
-- EXP3/P11 MPEG-2 video playback; and
-- configurable Audio Transport EXP2 PCM playback/mux transport.
+- EXP3/P11 MPEG-2 video playback;
+- configurable Audio Transport EXP2 PCM playback/mux transport; and
+- the clean through-Issue-39 RFB, input, UI, display and platform modules.
 
-The parent sources remain unchanged. H1-specific descendants live here.
+The parent/historical sources remain preserved. H1-specific descendants and
+qualification scaffolding live here.
 
 ## Transport architecture lock
 
 H1 does **not** return to competing PS2-facing TCP sockets.
 
-One physical PSTV TCP connection carries independent logical channels:
+One physical PSTV TCP connection currently carries independent logical channels:
 
-- CONTROL
-- TELEMETRY
-- AUDIO
-- MPEG2
+- channel 0 — CONTROL;
+- channel 1 — RFB;
+- channel 2 — AUDIO;
+- channel 3 — TELEMETRY; and
+- channel 4 — MPEG2.
 
-RFB is intentionally absent from the first media-harness profile so the first
-combined workload isolates audio + MPEG video. RFB can be reintroduced later
-on the same physical mux after the media path is qualified.
+RFB was intentionally absent from the first media-harness profile so the first
+combined workload could isolate audio + MPEG video. It has since been
+reintroduced on logical channel 1 without adding a second physical PS2-facing
+connection. CP2J qualified the headless RFB path, CP2K qualified visible RFB,
+and CP2L qualified visible RFB plus the existing PS2 mouse semantics. CP2N is
+the current CI-qualified, hardware-pending checkpoint that composes the real
+through-Issue-39 local-controller/local-UI/OSK/keyboard path over that same
+mux-backed RFB session.
+
+The current hardware authority remains CP2L until the exact CP2N candidate is
+observed on real PS2 hardware. AUDIO and MPEG remain OFF for the CP2N gate.
 
 This preserves the transport-mux lesson already learned by the audio work. A
 future A/B comparison may change audio *encoding* or place compressed audio in
 an MPEG program stream, but it will not use separate PS2-facing TCP sockets as
-the reference architecture.
+the H1 reference architecture.
 
 ## Configuration philosophy
 
-Every connection carries one complete CONFIG v3 profile from the Pi. The PS2
+Every connection carries one complete CONFIG v4 profile from the Pi. The PS2
 ACKs the exact accepted bytes only after structurally validating the profile
 and successfully allocating requested runtime resources.
 
@@ -46,6 +57,8 @@ Buffering and synchronization are separate variables.
 
 Buffer/resilience controls include independent audio and MPEG queue capacities,
 initial credits, credit batching, startup targets and consumer/feed sizes.
+RFB additionally has an independently configurable queue/credit policy. These
+are consumer-capacity controls, not merely wire-bandwidth knobs.
 
 Presentation controls include independent signed audio/video presentation
 offsets around one shared media epoch. H1 therefore does not use queue prefill
@@ -67,7 +80,7 @@ The first video-only profile reproduces P11's effective settings:
 The first combined profile adds EXP2-compatible 48000 Hz / 16-bit / stereo PCM
 on the AUDIO logical channel while retaining those P11 video settings.
 
-The first hardware sequence is:
+The original media-harness hardware sequence was:
 
 1. old qualified P11 control;
 2. H1 video-only P11-compatible session;
@@ -75,6 +88,9 @@ The first hardware sequence is:
 4. H1 PCM-audio-only compatibility session;
 5. H1 combined PCM + MPEG session on the same physical mux;
 6. only then begin automated parameter sweeps.
+
+Those steps are historical qualification context, not a statement that RFB is
+still absent from H1.
 
 ## Reusable operator / optimization tool
 
@@ -107,6 +123,21 @@ python3 experiments/media-harness-h1/h1_tool.py knobs \
 
 See `H1_TOOL_GUIDE.md` for the compact operator guide.
 
+## Current RFB checkpoint authority
+
+The machine-readable experiment state is `RFB_MUX_PREP_STATUS.env`. The current
+hardware-qualified boundary is CP2L visible RFB plus PS2 mouse input. The exact
+next hardware candidate is documented in
+`RFB_MUX_CP2N_VISIBLE_INTERACTION_CANDIDATE.md`.
+
+CP2N intentionally replaces the wrong-abstraction CP2M transient L1+D-pad
+keyboard experiment as the next proof direction. CP2N composes the existing
+Issue-39 input runtime, local-controller router, local UI, OSK, keyboard builder,
+RFB session API, display conversion and PS2 graphics interfaces. It adds no new
+checkpoint-specific controller gesture. A green CI build is not a hardware
+claim; CP2N remains unqualified until its exact recorded PT_LOAD is exercised on
+the real console and the operator reports the visible interaction behavior.
+
 ## Integration intent
 
 H1 is a proving ground for upgrades to the clean PS-to-VNC program, not an
@@ -124,9 +155,9 @@ mode-specific profiles for future multiple-display-mode support.
 Temporary experiment scaffolding must not become production structure by
 inertia. Before extending user-facing runtime behavior beyond the current
 qualified boundary, read `H1_INTEGRATION_INTENT.md`; it records the required
-surgical-integration direction, cleanup/classification rules, profile philosophy
-and the current hold/reassessment of the experiment-specific CP2M keyboard
-checkpoint.
+surgical-integration direction, cleanup/classification rules, profile philosophy,
+shared-data-transport direction, future bulk-data compatibility constraint,
+naming expectations, and the current disposition of CP2M.
 
 ## Future hybrid media-object composition note
 
