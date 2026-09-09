@@ -4,21 +4,27 @@ File synopsis:
     Attaches the credit-driven Pi RFB byte bridge to the existing H1Session
     receive path without replacing or duplicating the qualified media reader.
 
-The adapter is deliberately experiment-local.  H1Session remains the sole
-owner of the physical PSTV socket and its existing reader thread remains the
-only code path that calls receive_frame() for that socket.  This module installs
-one narrow receive-frame shim which consumes only logical channel-1 RFB frames;
-all other frames are returned unchanged to H1Session.reader().
+H1Session remains the sole owner of the physical PSTV socket and its existing
+reader thread remains the only code path that calls receive_frame() for that
+socket. This module installs one narrow receive-frame shim which consumes only
+logical channel-1 RFB frames; all other frames are returned unchanged to
+H1Session.reader().
 
-For intercepted channel-1 frames the shim performs the same global PSTV receive
-sequence check/increment that H1Session.reader() would otherwise perform before
-routing the frame to the raw-byte bridge.  This lets RFB CREDIT/DATA interleave
-with AUDIO/MPEG/control frames without copying the monolithic reader logic.
+Non-empty channel-1 DATA is always raw RFB bytes. Zero-length channel-1 DATA is
+reserved by this experiment for the ordered clean-shutdown handshake:
+
+    Pi REQUEST -> PS2 BOUNDARY -> Pi COMMIT -> PS2 COMPLETE
+
+No zero-length marker enters the RFB byte stream. On BOUNDARY the Pi shuts down
+and joins the upstream VNC reader before sending COMMIT. Therefore every DATA
+frame already read from VNC is serialized ahead of COMMIT on the same PSTV send
+sequence, giving the PS2 a deterministic point at which it can prove its RFB
+queue is empty before replying COMPLETE.
 
 RFB-OFF is genuinely inert: open_rfb_session_adapter() returns None before
-opening an upstream VNC socket or installing the shim.  RFB-ON is still blocked
-by the PS2 CONFIG validator at the current checkpoint, so this component is
-host-testable preparation only and does not activate hardware behavior.
+opening an upstream VNC socket or installing the shim. RFB-ON remains blocked by
+the PS2 CONFIG validator at the current checkpoint, so this is host/build-tested
+preparation rather than a hardware qualification claim.
 """
 
 from __future__ import annotations
@@ -50,6 +56,15 @@ class H1RfbSessionAdapter:
         self.upstream = upstream
         self.started = False
 
+        self.quiesce_lock = threading.Lock()
+        self.quiesce_requested = False
+        self.quiesce_boundary_received = False
+        self.quiesce_commit_sent = False
+        self.quiesce_complete_received = False
+        self.bridge_quiesced = False
+        self.quiesce_boundary_event = threading.Event()
+        self.quiesce_complete_event = threading.Event()
+
         if int(session.profile["rfb_mode"]) != RFB_ON_RESERVED:
             raise base.ProtocolError("RFB session adapter requires rfb_mode=1")
 
@@ -70,7 +85,64 @@ class H1RfbSessionAdapter:
     def _send_server_data_to_ps2(self, payload: bytes) -> None:
         """Serialize one credited VNC-server fragment as PSTV DATA channel 1."""
 
+        if not payload:
+            raise base.ProtocolError("raw RFB bridge attempted empty DATA")
         self.session.send_frame(base.FRAME_DATA, CHANNEL_RFB, payload)
+
+    def request_quiesce(self) -> None:
+        """Send the Pi->PS2 zero-length REQUEST marker exactly once."""
+
+        with self.quiesce_lock:
+            if not self.started:
+                raise base.ProtocolError("RFB quiesce requested before adapter start")
+            if self.quiesce_requested:
+                raise base.ProtocolError("RFB quiesce request already sent")
+            self.quiesce_requested = True
+
+        self.session.send_frame(base.FRAME_DATA, CHANNEL_RFB, b"")
+
+    def _handle_quiesce_marker(self) -> None:
+        """Interpret PS2->Pi marker phase from strict local handshake state."""
+
+        with self.quiesce_lock:
+            if not self.quiesce_requested:
+                raise base.ProtocolError("RFB quiesce marker arrived before REQUEST")
+            if self.quiesce_complete_received:
+                raise base.ProtocolError("RFB quiesce marker arrived after COMPLETE")
+            boundary = not self.quiesce_boundary_received
+
+        if boundary:
+            # The PS2 has stopped issuing RFB requests at a complete protocol
+            # boundary. Stop the upstream reader now; bridge.stop() joins it, so
+            # any DATA it had already read must be sent before COMMIT below.
+            self.bridge.stop()
+
+            with self.quiesce_lock:
+                self.bridge_quiesced = True
+                self.quiesce_boundary_received = True
+
+            self.quiesce_boundary_event.set()
+
+            # Direction + state identifies this zero-length marker as COMMIT.
+            self.session.send_frame(base.FRAME_DATA, CHANNEL_RFB, b"")
+
+            with self.quiesce_lock:
+                self.quiesce_commit_sent = True
+            return
+
+        with self.quiesce_lock:
+            if not self.quiesce_commit_sent:
+                raise base.ProtocolError("RFB COMPLETE arrived before COMMIT")
+            self.quiesce_complete_received = True
+
+        self.quiesce_complete_event.set()
+
+    def wait_quiesce_complete(self, timeout: float) -> None:
+        if timeout <= 0:
+            raise ValueError("RFB quiesce timeout must be positive")
+        if not self.quiesce_complete_event.wait(timeout=timeout):
+            raise base.ProtocolError("timed out waiting for PS2 RFB quiesce COMPLETE")
+        self.check()
 
     def handle_rfb_frame(self, frame: base.Frame) -> None:
         """Handle one already-sequence-validated PS2->Pi channel-1 frame."""
@@ -89,9 +161,12 @@ class H1RfbSessionAdapter:
 
         if frame.kind == base.FRAME_DATA:
             if not frame.payload:
-                raise base.ProtocolError("empty RFB DATA payload")
+                self._handle_quiesce_marker()
+                return
             if len(frame.payload) > int(self.session.profile["max_data_payload"]):
                 raise base.ProtocolError("RFB DATA exceeds configured max_data_payload")
+            if self.bridge_quiesced:
+                raise base.ProtocolError("RFB client DATA arrived after bridge quiesce")
             self.bridge.accept_client_data(frame.payload)
             return
 
@@ -164,8 +239,8 @@ def _receive_frame_with_rfb_dispatch(sock: socket.socket) -> base.Frame:
 
         adapter.handle_rfb_frame(frame)
         adapter.check()
-        # The channel-1 frame is complete.  Stay on the same H1 reader thread
-        # and receive the next physical PSTV frame for normal base dispatch.
+        # The channel-1 frame is complete. Stay on the same H1 reader thread and
+        # receive the next physical PSTV frame for normal base dispatch.
 
 
 def _install_receive_shim() -> None:
