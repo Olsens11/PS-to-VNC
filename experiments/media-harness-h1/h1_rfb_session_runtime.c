@@ -253,6 +253,23 @@ int pstvnc_h1_rfb_session_runtime_run(
 
             h1_rfb_publish_diagnostic(runtime, transport);
 
+            /*
+             * IDLE is returned only before the parser consumes the next server
+             * message, so it is already a clean RFB protocol boundary. This is
+             * essential for a static desktop: an outstanding incremental
+             * FramebufferUpdateRequest may legitimately have no response yet,
+             * and shutdown must not wait forever for damage that never occurs.
+             * The subsequent BOUNDARY/COMMIT queue-empty proof still catches
+             * any server-message bytes that raced into the Pi bridge.
+             */
+            if (transport->rfb_quiesce_request_received != 0u) {
+                if (h1_rfb_complete_quiesce_at_boundary(
+                        runtime,
+                        transport) == 1)
+                    return 0;
+                goto fail;
+            }
+
             if (DelayThread(H1_RFB_IDLE_DELAY_US) < 0)
                 goto fail;
             continue;
@@ -269,10 +286,9 @@ int pstvnc_h1_rfb_session_runtime_run(
         h1_rfb_publish_diagnostic(runtime, transport);
 
         /*
-         * This is the decisive safe boundary: the current server message has
-         * been consumed to its exact RFB boundary. If the Pi requested shutdown
-         * at any point while that update was outstanding, stop here and do not
-         * send another framebuffer request.
+         * This is the decisive safe boundary after a completed update. If the Pi
+         * requested shutdown at any point while that update was outstanding,
+         * stop here and do not send another framebuffer request.
          */
         if (transport->rfb_quiesce_request_received != 0u) {
             if (h1_rfb_complete_quiesce_at_boundary(runtime, transport) == 1)
