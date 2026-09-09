@@ -2,25 +2,25 @@
 """
 File synopsis:
     Composes the cumulative through-Issue-39 H1 Pi runner with the verified raw
-    RFB channel-1 session adapter and clean finite-session quiesce protocol,
-    while leaving the PS2 RFB activation gate closed.
+    RFB channel-1 session adapter and clean finite-session quiesce protocol.
 
-RFB-OFF inherits the existing cumulative media runner unchanged. RFB-ON opens
-exactly one ordinary upstream VNC connection and runs an RFB-only finite session:
+RFB-OFF inherits the existing cumulative media runner unchanged. RFB-ON is
+accepted only by the cumulative experiment's explicit RFB-only PS2 gate and is
+not hardware-qualified yet. It opens exactly one ordinary upstream VNC
+connection and runs a finite headless RFB transport session:
 
     normal RFB traffic for --duration
     Pi zero-length REQUEST marker
-    PS2 finishes the current complete RFB message and sends BOUNDARY
+    PS2 stops at a complete RFB message boundary and sends BOUNDARY
     Pi shuts down + joins the upstream VNC reader, then sends COMMIT
     PS2 proves channel-1 queue empty and sends COMPLETE
     Pi sends ordinary MEDIA_END
     PS2 sends ordinary SESSION_RESULT
 
 The raw bridge never parses RFB boundaries; the unchanged through-Issue-39 PS2
-parser remains protocol authority. The canonical h1_tool.py control surface is
-not redirected here until CONFIG/CAP_RFB are deliberately opened.
+parser remains protocol authority. RFB-OFF creates no upstream VNC connection.
 
-Temporary preparation-time upstream selection:
+Temporary upstream selection:
     H1_RFB_UPSTREAM_HOST  default 127.0.0.1
     H1_RFB_UPSTREAM_PORT  default 5900
 """
@@ -41,6 +41,7 @@ from h1_rfb_session_adapter import H1RfbSessionAdapter, open_rfb_session_adapter
 base = cumulative.base
 _ParentSession = base.H1Session
 
+CAP_RFB = 1 << 0
 RFB_CONNECTOR: Callable[[str, int], socket.socket] | None = None
 RFB_QUIESCE_TIMEOUT_SECONDS = 30.0
 
@@ -92,6 +93,13 @@ class H1Cumulative39RfbBridgeSession(_ParentSession):
             f"H1_RFB_UPSTREAM_ATTACHED={host}:{port}",
             flush=True,
         )
+
+    def video_command(self) -> list[str]:
+        """Keep validate-only meaningful for RFB-only profiles with video inert."""
+
+        if int(self.profile["rfb_mode"]) != 0:
+            return []
+        return super().video_command()
 
     def _send_rfb_media_end(self) -> dict[str, int]:
         """Terminate only after RFB COMPLETE; no media payload exists in this mode."""
@@ -156,6 +164,13 @@ class H1Cumulative39RfbBridgeSession(_ParentSession):
         if not self.hello_event.wait(timeout=10.0):
             raise base.ProtocolError("timed out waiting for PS2 HELLO")
         self.check_reader()
+
+        if self.hello is None or (
+            int(self.hello["capabilities"]) & CAP_RFB
+        ) != CAP_RFB:
+            raise base.ProtocolError(
+                "wrong PS2 ELF: cumulative RFB capability absent"
+            )
 
         self.send_frame(base.FRAME_CONFIG, base.CHANNEL_CONTROL, self.config_payload)
         print(
