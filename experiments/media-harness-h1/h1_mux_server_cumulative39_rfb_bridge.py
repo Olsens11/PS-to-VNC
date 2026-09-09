@@ -2,32 +2,37 @@
 """
 File synopsis:
     Composes the cumulative through-Issue-39 H1 Pi runner with the verified raw
-    RFB channel-1 session adapter, while leaving the PS2 RFB activation gate
-    closed at this checkpoint.
+    RFB channel-1 session adapter and clean finite-session quiesce protocol,
+    while leaving the PS2 RFB activation gate closed.
 
-This wrapper intentionally does not copy H1Session.reader(), media scheduling,
-telemetry, capture geometry, or result validation.  It imports the current
-cumulative runner first, subclasses its already-composed H1Session, and adds one
-optional upstream VNC attachment during construction.
+RFB-OFF inherits the existing cumulative media runner unchanged. RFB-ON opens
+exactly one ordinary upstream VNC connection and runs an RFB-only finite session:
 
-RFB-OFF behavior remains inert: no upstream VNC socket is opened and the RFB
-receive shim is not installed.  RFB-ON opens exactly one upstream ordinary VNC
-connection (default 127.0.0.1:5900) before H1Session.run() starts the sole PSTV
-reader.  The PS2 still rejects RFB-ON today, so this is repository/host-tested
-Pi orchestration preparation rather than a hardware-operational runner.
+    normal RFB traffic for --duration
+    Pi zero-length REQUEST marker
+    PS2 finishes the current complete RFB message and sends BOUNDARY
+    Pi shuts down + joins the upstream VNC reader, then sends COMMIT
+    PS2 proves channel-1 queue empty and sends COMPLETE
+    Pi sends ordinary MEDIA_END
+    PS2 sends ordinary SESSION_RESULT
 
-Temporary preparation-time upstream selection uses environment variables:
+The raw bridge never parses RFB boundaries; the unchanged through-Issue-39 PS2
+parser remains protocol authority. The canonical h1_tool.py control surface is
+not redirected here until CONFIG/CAP_RFB are deliberately opened.
+
+Temporary preparation-time upstream selection:
     H1_RFB_UPSTREAM_HOST  default 127.0.0.1
     H1_RFB_UPSTREAM_PORT  default 5900
-
-The canonical h1_tool.py control surface is deliberately not redirected to this
-wrapper until the PS2 activation checkpoint is ready.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import socket
+import struct
+import threading
+import time
 from typing import Callable
 
 import h1_mux_server_cumulative39_thread_census as cumulative
@@ -36,9 +41,8 @@ from h1_rfb_session_adapter import H1RfbSessionAdapter, open_rfb_session_adapter
 base = cumulative.base
 _ParentSession = base.H1Session
 
-# Host tests may inject a socketpair connector.  Normal runner execution leaves
-# this unset and uses the adapter's ordinary socket.create_connection path.
 RFB_CONNECTOR: Callable[[str, int], socket.socket] | None = None
+RFB_QUIESCE_TIMEOUT_SECONDS = 30.0
 
 
 def _rfb_upstream() -> tuple[str, int]:
@@ -70,6 +74,11 @@ class H1Cumulative39RfbBridgeSession(_ParentSession):
         if int(profile["rfb_mode"]) == 0:
             return
 
+        if int(profile["audio_mode"]) != 0 or int(profile["video_mode"]) != 0:
+            raise base.ProtocolError(
+                "first RFB mux runner permits RFB-only sessions; AUDIO/MPEG remain off"
+            )
+
         host, port = _rfb_upstream()
         kwargs = {"host": host, "port": port}
         if RFB_CONNECTOR is not None:
@@ -83,6 +92,143 @@ class H1Cumulative39RfbBridgeSession(_ParentSession):
             f"H1_RFB_UPSTREAM_ATTACHED={host}:{port}",
             flush=True,
         )
+
+    def _send_rfb_media_end(self) -> dict[str, int]:
+        """Terminate only after RFB COMPLETE; no media payload exists in this mode."""
+
+        words = [
+            base.MEDIA_END_VERSION,
+            self.profile["session_id"],
+            0,  # audio bytes
+            0,  # audio frames
+            0,  # audio last sequence
+            0,  # audio crc32
+            0,  # mpeg bytes
+            0,  # mpeg frames
+            0,  # mpeg last sequence
+            0,  # mpeg crc32
+            0,  # picture starts
+            0,  # sequence headers
+            0,  # sequence ends
+            base.STOP_REASON_FINITE_DURATION,
+            0,
+            0,
+        ]
+        payload = struct.pack(">16I", *words)
+        if len(payload) != base.MEDIA_END_BYTES:
+            raise AssertionError("H1 RFB MEDIA_END payload size mismatch")
+
+        metadata = {
+            "session_id": self.profile["session_id"],
+            "audio_bytes": 0,
+            "audio_frames": 0,
+            "audio_last_sequence": 0,
+            "audio_crc32": 0,
+            "mpeg_bytes": 0,
+            "mpeg_frames": 0,
+            "mpeg_last_sequence": 0,
+            "mpeg_crc32": 0,
+            "picture_starts": 0,
+            "sequence_headers": 0,
+            "sequence_ends": 0,
+            "stop_reason": base.STOP_REASON_FINITE_DURATION,
+        }
+
+        self.send_frame(base.FRAME_MEDIA_END, base.CHANNEL_CONTROL, payload)
+        print(
+            "H1_RFB_MEDIA_END_SENT=" + json.dumps(metadata, sort_keys=True),
+            flush=True,
+        )
+        return metadata
+
+    def _run_rfb_only(self) -> None:
+        adapter = self.rfb_session_adapter
+        if adapter is None:
+            raise base.ProtocolError("RFB-only run missing RFB adapter")
+
+        reader = threading.Thread(
+            target=self.reader,
+            name="h1-ps2-reader",
+            daemon=True,
+        )
+        reader.start()
+
+        if not self.hello_event.wait(timeout=10.0):
+            raise base.ProtocolError("timed out waiting for PS2 HELLO")
+        self.check_reader()
+
+        self.send_frame(base.FRAME_CONFIG, base.CHANNEL_CONTROL, self.config_payload)
+        print(
+            "H1_CONFIG_SENT=" + json.dumps(self.profile, sort_keys=True),
+            flush=True,
+        )
+
+        if not self.config_ack_event.wait(timeout=10.0):
+            raise base.ProtocolError("timed out waiting for exact CONFIG ACK")
+        self.check_reader()
+
+        # The bridge was started during construction but cannot read VNC bytes
+        # until the PS2 sends initial channel-1 receiver credit after CONFIG ACK.
+        deadline = time.monotonic() + self.duration
+        while True:
+            self.check_reader()
+            adapter.check()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            time.sleep(min(remaining, 0.05))
+
+        print(
+            f"H1_RFB_QUIESCE_REQUEST duration={self.duration:.6f}",
+            flush=True,
+        )
+        adapter.request_quiesce()
+        adapter.wait_quiesce_complete(timeout=RFB_QUIESCE_TIMEOUT_SECONDS)
+        self.check_reader()
+
+        print(
+            "H1_RFB_QUIESCE=COMPLETE "
+            f"boundary={int(adapter.quiesce_boundary_received)} "
+            f"bridge_stopped={int(adapter.bridge_quiesced)} "
+            f"commit={int(adapter.quiesce_commit_sent)} "
+            f"complete={int(adapter.quiesce_complete_received)}",
+            flush=True,
+        )
+
+        metadata = self._send_rfb_media_end()
+
+        if not self.result_event.wait(timeout=60.0):
+            raise base.ProtocolError("timed out waiting for H1 PS2 SESSION_RESULT")
+        self.check_reader()
+        self.validate_result(metadata)
+
+        quiesce_summary = {
+            "requested": adapter.quiesce_requested,
+            "boundary_received": adapter.quiesce_boundary_received,
+            "bridge_quiesced": adapter.bridge_quiesced,
+            "commit_sent": adapter.quiesce_commit_sent,
+            "complete_received": adapter.quiesce_complete_received,
+            "bridge_stats": vars(adapter.bridge.stats),
+        }
+        (self.evidence / "rfb_quiesce.json").write_text(
+            json.dumps(quiesce_summary, indent=2, sort_keys=True) + "\n"
+        )
+
+        self.stop_event.set()
+        try:
+            self.sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+        self.sock.close()
+        reader.join(timeout=1.0)
+        if reader.is_alive():
+            raise base.ProtocolError("H1 PS2 reader did not stop after RFB session")
+
+    def run(self) -> None:
+        if int(self.profile["rfb_mode"]) == 0:
+            super().run()
+            return
+        self._run_rfb_only()
 
     def cleanup(self) -> None:
         # Preserve lifecycle order: physical PSTV owner closes first through the
