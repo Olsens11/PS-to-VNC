@@ -22,9 +22,10 @@ sequence, giving the PS2 a deterministic point at which it can prove its RFB
 queue is empty before replying COMPLETE.
 
 RFB-OFF is genuinely inert: open_rfb_session_adapter() returns None before
-opening an upstream VNC socket or installing the shim. RFB-ON remains blocked by
-the PS2 CONFIG validator at the current checkpoint, so this is host/build-tested
-preparation rather than a hardware qualification claim.
+opening an upstream VNC socket or installing the shim. RFB modes 1 (CP2J
+headless) and 2 (CP2K visible) intentionally share the exact same Pi bridge,
+queue, credit, framing, and quiesce mechanics; the mode-2 distinction belongs
+only to the PS2-side presentation coordinator.
 """
 
 from __future__ import annotations
@@ -40,12 +41,19 @@ from h1_rfb_pi_bridge import H1RfbPiBridge
 CHANNEL_RFB = 1
 RFB_OFF = 0
 RFB_ON_RESERVED = 1
+RFB_ON_VISIBLE = 2
 
 _RFB_REGISTRY_LOCK = threading.Lock()
 _RFB_BY_PSTV_SOCKET: dict[socket.socket, "H1RfbSessionAdapter"] = {}
 _SHIM_INSTALL_LOCK = threading.Lock()
 _SHIM_INSTALLED = False
 _ORIGINAL_RECEIVE_FRAME = base.receive_frame
+
+
+def _rfb_mode_is_enabled(mode: int) -> bool:
+    """Return true for either cumulative RFB transport mode."""
+
+    return mode in (RFB_ON_RESERVED, RFB_ON_VISIBLE)
 
 
 class H1RfbSessionAdapter:
@@ -65,8 +73,11 @@ class H1RfbSessionAdapter:
         self.quiesce_boundary_event = threading.Event()
         self.quiesce_complete_event = threading.Event()
 
-        if int(session.profile["rfb_mode"]) != RFB_ON_RESERVED:
-            raise base.ProtocolError("RFB session adapter requires rfb_mode=1")
+        mode = int(session.profile["rfb_mode"])
+        if not _rfb_mode_is_enabled(mode):
+            raise base.ProtocolError(
+                f"RFB session adapter requires an enabled RFB mode, got {mode}"
+            )
 
         queue_capacity = int(session.profile["rfb_queue_capacity"])
         max_payload = int(session.profile["max_data_payload"])
@@ -273,7 +284,7 @@ def open_rfb_session_adapter(
     mode = int(session.profile["rfb_mode"])
     if mode == RFB_OFF:
         return None
-    if mode != RFB_ON_RESERVED:
+    if not _rfb_mode_is_enabled(mode):
         raise base.ProtocolError(f"unsupported Pi RFB mode {mode}")
     if not host:
         raise base.ProtocolError("RFB upstream host must be non-empty")
