@@ -3,10 +3,10 @@
  * Runs the unchanged through-Issue-39 RFB session/parser against H1 logical
  * channel 1 and owns the PS2 half of clean finite-session quiescence.
  *
- * CP2J qualified this coordinator headlessly. The headless entry point remains
- * unchanged in meaning. A separate optional callback seam can now publish only
- * complete authoritative framebuffer states, allowing visible RFB presentation
- * to be qualified without adding GS, input, OSK, or compositor knowledge here.
+ * CP2J qualified this coordinator headlessly and CP2K qualified its complete-
+ * framebuffer presentation callback. A second optional callback now lets the
+ * application/main thread service semantic input only at complete RFB message
+ * boundaries without moving RFB serialization into the controller worker.
  */
 
 #include "h1_rfb_session_runtime.h"
@@ -168,11 +168,40 @@ static int h1_rfb_complete_quiesce_at_boundary(
     return 1;
 }
 
+static int h1_rfb_service_application(
+    pstvnc_h1_rfb_session_runtime_t *runtime,
+    pstvnc_h1_rfb_service_callback_t service,
+    void *service_context)
+{
+    if (service == NULL)
+        return 1;
+
+    if (runtime == NULL ||
+        runtime->session.state != PSTVNC_RFB_SESSION_READY)
+        return 0;
+
+    /*
+     * This call site exists only at server-message boundaries. The service owns
+     * no receive work; it may publish already-routed RFB input writes through
+     * the same synchronized session before parsing resumes.
+     */
+    if (!service(service_context, &runtime->session))
+        return 0;
+
+    if (runtime->stats.application_service_calls == UINT32_MAX)
+        return 0;
+
+    runtime->stats.application_service_calls++;
+    return 1;
+}
+
 static int h1_rfb_run(
     pstvnc_h1_rfb_session_runtime_t *runtime,
     pstvnc_h1_transport_runtime_t *transport,
     pstvnc_h1_rfb_present_callback_t present,
-    void *present_context)
+    void *present_context,
+    pstvnc_h1_rfb_service_callback_t service,
+    void *service_context)
 {
     if (runtime == NULL || transport == NULL ||
         transport->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
@@ -228,13 +257,25 @@ static int h1_rfb_run(
     /*
      * Initial-frame completion itself is a protocol boundary. A very early Pi
      * quiesce request may therefore terminate cleanly here without manufacturing
-     * an unnecessary incremental request.
+     * an unnecessary incremental request or starting application-side work.
      */
     if (transport->rfb_quiesce_request_received != 0u) {
         if (h1_rfb_complete_quiesce_at_boundary(runtime, transport) == 1)
             return 0;
         goto fail;
     }
+
+    /*
+     * Ordinary application work begins only after a coherent initial desktop is
+     * visible and only if shutdown has not already been requested. CP2L uses
+     * this first call to establish the neutral published pointer and then start
+     * its controller producer.
+     */
+    if (!h1_rfb_service_application(
+            runtime,
+            service,
+            service_context))
+        goto fail;
 
     if (!pstvnc_rfb_session_request_update(
             &runtime->session,
@@ -280,6 +321,17 @@ static int h1_rfb_run(
                 goto fail;
             }
 
+            /*
+             * Drain ordinary application work while the server is idle. The
+             * callback still runs on the RFB-owning main thread; the controller
+             * producer only fills its semantic FIFO.
+             */
+            if (!h1_rfb_service_application(
+                    runtime,
+                    service,
+                    service_context))
+                goto fail;
+
             if (DelayThread(H1_RFB_IDLE_DELAY_US) < 0)
                 goto fail;
             continue;
@@ -313,13 +365,20 @@ static int h1_rfb_run(
         /*
          * This is the decisive safe boundary after a completed update. If the Pi
          * requested shutdown at any point while that update was outstanding,
-         * stop here and do not send another framebuffer request.
+         * stop here and do not publish later input or send another framebuffer
+         * request.
          */
         if (transport->rfb_quiesce_request_received != 0u) {
             if (h1_rfb_complete_quiesce_at_boundary(runtime, transport) == 1)
                 return 0;
             goto fail;
         }
+
+        if (!h1_rfb_service_application(
+                runtime,
+                service,
+                service_context))
+            goto fail;
 
         if (!pstvnc_rfb_session_request_update(
                 &runtime->session,
@@ -341,7 +400,13 @@ int pstvnc_h1_rfb_session_runtime_run(
     pstvnc_h1_rfb_session_runtime_t *runtime,
     pstvnc_h1_transport_runtime_t *transport)
 {
-    return h1_rfb_run(runtime, transport, NULL, NULL);
+    return h1_rfb_run(
+        runtime,
+        transport,
+        NULL,
+        NULL,
+        NULL,
+        NULL);
 }
 
 int pstvnc_h1_rfb_session_runtime_run_with_presenter(
@@ -353,7 +418,33 @@ int pstvnc_h1_rfb_session_runtime_run_with_presenter(
     if (present == NULL)
         return -1;
 
-    return h1_rfb_run(runtime, transport, present, present_context);
+    return h1_rfb_run(
+        runtime,
+        transport,
+        present,
+        present_context,
+        NULL,
+        NULL);
+}
+
+int pstvnc_h1_rfb_session_runtime_run_with_presenter_and_service(
+    pstvnc_h1_rfb_session_runtime_t *runtime,
+    pstvnc_h1_transport_runtime_t *transport,
+    pstvnc_h1_rfb_present_callback_t present,
+    void *present_context,
+    pstvnc_h1_rfb_service_callback_t service,
+    void *service_context)
+{
+    if (present == NULL || service == NULL)
+        return -1;
+
+    return h1_rfb_run(
+        runtime,
+        transport,
+        present,
+        present_context,
+        service,
+        service_context);
 }
 
 void pstvnc_h1_rfb_session_runtime_shutdown(
