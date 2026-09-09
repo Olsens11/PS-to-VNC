@@ -1,21 +1,22 @@
 /*
  * File synopsis:
- * Opens the cumulative H1 experiment's first RFB hardware CONFIG path without
- * weakening the ordinary H1 validator or enabling any hybrid composition.
+ * Opens the cumulative H1 experiment's RFB-only CONFIG paths without weakening
+ * the ordinary H1 validator or enabling any hybrid composition.
  *
  * The normal h1_config.c object is compiled in this one cumulative target with
  * pstvnc_h1_config_validate renamed to pstvnc_h1_config_validate_inner. This
  * wrapper retains that validator as authority for every existing non-RFB field.
  *
- * RFB OFF is passed through unchanged. RFB ON is accepted only when AUDIO and
- * MPEG are both OFF and the explicit CONFIG-v4 RFB queue/credit relationships
- * are internally valid. A normalized copy then clears only the RFB fields and
- * is submitted to the unchanged inner validator, proving all remaining profile
- * semantics through the same code used by qualified media sessions.
+ * RFB OFF is passed through unchanged. RFB headless or visible presentation is
+ * accepted only when AUDIO and MPEG are both OFF and the explicit CONFIG-v4 RFB
+ * queue/credit relationships are internally valid. A normalized copy then
+ * clears only the RFB fields and is submitted to the unchanged inner validator,
+ * proving all remaining profile semantics through the same code used by
+ * qualified media sessions.
  *
  * This file is linked only by the cumulative H1 RFB-prep target. Other H1 builds
  * continue to expose the original public validator and therefore still reject
- * RFB ON.
+ * every nonzero RFB mode.
  */
 
 #include "h1_config.h"
@@ -43,7 +44,7 @@ static int h1_rfb_policy_valid(
     } else if (config->rfb_credit_batch_bytes != 0u) {
         /*
          * Keep an OFF return mechanism genuinely inert rather than carrying a
-         * hidden dormant batch value into the first hardware authority.
+         * hidden dormant batch value into hardware authority.
          */
         return 0;
     }
@@ -62,7 +63,7 @@ int pstvnc_h1_config_validate(
     if (config->rfb_mode == PSTVNC_H1_RFB_OFF)
         return pstvnc_h1_config_validate_inner(config);
 
-    if (config->rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
+    if (!pstvnc_h1_rfb_mode_is_enabled(config->rfb_mode) ||
         config->audio_mode != PSTVNC_H1_AUDIO_OFF ||
         config->video_mode != PSTVNC_H1_VIDEO_OFF ||
         !h1_rfb_policy_valid(config))
