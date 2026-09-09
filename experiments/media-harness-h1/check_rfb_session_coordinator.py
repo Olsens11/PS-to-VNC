@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 """
 File synopsis:
-    Verifies the cumulative H1 headless RFB session coordinator and clean RFB
-    quiesce mechanism while the public hardware activation gate remains closed.
+    Verifies the cumulative H1 headless RFB session coordinator, clean RFB
+    quiesce mechanism, and deliberately narrow cumulative-only activation seam.
 
 The check is architectural rather than a substitute for hardware. Source checks
 prove that the coordinator allocates only CPU framebuffer authority, uses the
 unchanged through-Issue-39 RFB session API over the already-bound mux identity,
 keeps first-stage RFB mutually exclusive with AUDIO/MPEG, stops at complete RFB
-message boundaries, and completes the four zero-length channel-1 quiesce markers
-without starting graphics/input/UI ownership. Optional object checks prove the
-pinned PS2 build actually links those references and still does not link app.c.
+message boundaries (including an idle boundary), and completes the four
+zero-length channel-1 quiesce markers without starting graphics/input/UI
+ownership.
+
+The ordinary H1 validator remains RFB-OFF-only. The cumulative build alone adds
+an RFB-only validator wrapper and CAP_RFB override. Optional object checks prove
+the pinned PS2 build actually links the coordinator references and still does
+not link app.c. None of these checks transfer hardware qualification.
 """
 
 from __future__ import annotations
@@ -30,6 +35,12 @@ SNAPSHOT_C = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_transport_snaps
 LIVE_C = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_transport_live.c"
 LIVE_H = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_transport_live.h"
 CONFIG_C = ROOT / "experiments" / "media-harness-h1" / "h1_config.c"
+ACTIVATION_GATE_C = (
+    ROOT / "experiments" / "media-harness-h1" / "h1_config_rfb_activation_gate.c"
+)
+CAPABILITY_OVERRIDE_H = (
+    ROOT / "experiments" / "media-harness-h1" / "h1_rfb_capability_override.h"
+)
 TRANSPORT_C = ROOT / "experiments" / "media-harness-h1" / "h1_transport_runtime.c"
 PI_ADAPTER = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_session_adapter.py"
 PI_RUNNER = (
@@ -66,11 +77,14 @@ def check_source() -> None:
     live_code = strip_c_comments(live)
     live_h = LIVE_H.read_text(encoding="utf-8")
     config = CONFIG_C.read_text(encoding="utf-8")
+    activation_gate = ACTIVATION_GATE_C.read_text(encoding="utf-8")
+    capability_override = CAPABILITY_OVERRIDE_H.read_text(encoding="utf-8")
     transport = TRANSPORT_C.read_text(encoding="utf-8")
     pi_adapter = PI_ADAPTER.read_text(encoding="utf-8")
     pi_runner = PI_RUNNER.read_text(encoding="utf-8")
 
     for obj in (
+        "h1_config_rfb_activation_gate.o",
         "h1_rfb_transport_live.o",
         "h1_rfb_transport_snapshot.o",
         "h1_rfb_session_runtime.o",
@@ -91,6 +105,7 @@ def check_source() -> None:
         "pstvnc_rfb_session_receive_initial_frame(",
         "pstvnc_rfb_session_try_receive_update(",
         "pstvnc_rfb_session_request_update(",
+        "PSTVNC_RFB_SESSION_RECEIVE_IDLE",
         "pstvnc_h1_rfb_transport_snapshot(",
         "pstvnc_h1_rfb_transport_send_quiesce_boundary(",
         "pstvnc_h1_rfb_transport_send_quiesce_complete(",
@@ -168,17 +183,43 @@ def check_source() -> None:
         "adapter.wait_quiesce_complete(",
         "metadata = self._send_rfb_media_end()",
         "self.validate_result(metadata)",
+        "CAP_RFB",
+        "cumulative RFB capability absent",
     ):
         require(pi_runner, needle, "pi_quiesce_runner")
 
-    # Public hardware activation remains explicitly fail closed at this checkpoint.
+    # The ordinary H1 validator remains RFB-OFF-only. The cumulative target
+    # mechanically renames that function and wraps it with the narrow RFB-only
+    # activation gate; no ordinary H1 target silently broadens its semantics.
     require(
         config,
         "config->rfb_mode != PSTVNC_H1_RFB_OFF",
-        "config_gate_still_closed",
+        "ordinary_config_gate_still_closed",
     )
+    for needle in (
+        "pstvnc_h1_config_validate_inner",
+        "config->rfb_mode != PSTVNC_H1_RFB_ON_RESERVED",
+        "config->audio_mode != PSTVNC_H1_AUDIO_OFF",
+        "config->video_mode != PSTVNC_H1_VIDEO_OFF",
+        "normalized.rfb_mode = PSTVNC_H1_RFB_OFF",
+        "return pstvnc_h1_config_validate_inner(&normalized)",
+    ):
+        require(activation_gate, needle, "cumulative_activation_gate")
+
+    # CAP_RFB is mechanically scoped to the cumulative transport object rather
+    # than added to ordinary H1 transport source.
     if "PSTVNC_TRANSPORT_CAP_RFB" in transport:
-        fail("rfb_capability_advertised_before_activation_checkpoint")
+        fail("ordinary_transport_source_advertises_rfb")
+    require(
+        capability_override,
+        "PSTVNC_TRANSPORT_CAP_RFB",
+        "cumulative_capability_override",
+    )
+    require(
+        make,
+        "h1_rfb_capability_override.h",
+        "cumulative_capability_preinclude",
+    )
 
     if "app39.o" in make or "src/app.c" in make:
         fail("old_app_coordinator_linked")
@@ -219,6 +260,7 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
         "runtime": build_dir / "h1_rfb_session_runtime.o",
         "snapshot": build_dir / "h1_rfb_transport_snapshot.o",
         "live": build_dir / "h1_rfb_transport_live.o",
+        "gate": build_dir / "h1_config_rfb_activation_gate.o",
     }
     for path in paths.values():
         if not path.is_file():
@@ -239,6 +281,10 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
         fail("snapshot_definition_missing")
     if "pstvnc_h1_rfb_transport_snapshot" not in undefined["runtime"]:
         fail("runtime_not_using_locked_snapshot")
+    if "pstvnc_h1_config_validate" not in defined["gate"]:
+        fail("cumulative_public_config_validator_missing")
+    if "pstvnc_h1_config_validate_inner" not in undefined["gate"]:
+        fail("cumulative_gate_not_delegating_to_inner_validator")
 
     for required in (
         "pstvnc_rfb_session_start",
