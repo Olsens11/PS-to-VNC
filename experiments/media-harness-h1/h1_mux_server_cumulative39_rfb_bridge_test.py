@@ -44,26 +44,7 @@ def main() -> int:
         return bridge_sock
 
     runner.RFB_CONNECTOR = connector
-    on_profile = resolve_profile(
-        "P11_COMPAT_VIDEO_ONLY",
-        0x3002,
-        {
-            # First hardware RFB authority is deliberately RFB-only. The manual
-            # override stays local to this preparation test until a named profile
-            # is introduced at the activation checkpoint.
-            "video_mode": 0,
-            "mpeg_queue_capacity": 0,
-            "mpeg_initial_credit_bytes": 0,
-            "video_encode_width": 0,
-            "video_encode_height": 0,
-            "rfb_mode": 1,
-            "rfb_queue_capacity": 32768,
-            "rfb_credit_batch_bytes": 8192,
-            "rfb_credit_flush_on_empty": 1,
-            "rfb_credit_return_enabled": 1,
-            "rfb_initial_credit_bytes": 32768,
-        },
-    )
+    on_profile = resolve_profile("H1_RFB_ONLY", 0x3002)
     on = runner.base.H1Session(
         h1_sock,
         on_profile,
@@ -73,9 +54,20 @@ def main() -> int:
     )
     try:
         assert calls == [("127.0.0.1", 5900)]
+        assert on.profile["profile_id"] == 2
         assert on.profile["audio_mode"] == 0
         assert on.profile["video_mode"] == 0
+        assert on.profile["audio_queue_capacity"] == 0
+        assert on.profile["mpeg_queue_capacity"] == 0
+        assert on.profile["video_encode_width"] == 0
+        assert on.profile["video_encode_height"] == 0
         assert on.profile["rfb_mode"] == 1
+        assert on.profile["rfb_queue_capacity"] == 32768
+        assert on.profile["rfb_credit_batch_bytes"] == 8192
+        assert on.profile["rfb_credit_flush_on_empty"] == 1
+        assert on.profile["rfb_credit_return_enabled"] == 1
+        assert on.profile["rfb_initial_credit_bytes"] == 32768
+        assert on.video_command() == []
         assert on.rfb_session_adapter is not None
         assert on.rfb_session_adapter.started
         assert on.rfb_session_adapter.bridge.queue_capacity == 32768
