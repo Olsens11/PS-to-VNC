@@ -107,6 +107,27 @@ python3 experiments/media-harness-h1/h1_tool.py knobs \
 
 See `H1_TOOL_GUIDE.md` for the compact operator guide.
 
+## Integration intent
+
+H1 is a proving ground for upgrades to the clean PS-to-VNC program, not an
+alternate product architecture. Proven runtime mechanisms should ultimately be
+sorted into the existing clean ownership/domain structure and integrated at the
+narrowest correct boundaries. Existing production modules should be reused
+through their normal interfaces rather than reimplemented inside the harness.
+
+H1 development tooling may remain useful in the repository for parameter
+exploration, profiles, sweeps, evidence capture, qualification and later
+re-optimization even if that machinery is not included in the production ELF.
+Production may consume selected qualified profiles, including potentially
+mode-specific profiles for future multiple-display-mode support.
+
+Temporary experiment scaffolding must not become production structure by
+inertia. Before extending user-facing runtime behavior beyond the current
+qualified boundary, read `H1_INTEGRATION_INTENT.md`; it records the required
+surgical-integration direction, cleanup/classification rules, profile philosophy
+and the current hold/reassessment of the experiment-specific CP2M keyboard
+checkpoint.
+
 ## Future hybrid media-object composition note
 
 The 2026-09-08 geometry experiments motivated a future model in which media is
