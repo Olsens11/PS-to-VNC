@@ -32,6 +32,8 @@ typedef struct pstvnc_h1_rfb_channel_stats {
     uint32_t bytes_enqueued;
     uint32_t bytes_consumed;
     uint32_t credit_bytes_pending;
+    uint32_t credit_frames_sent;
+    uint32_t credit_bytes_sent;
     uint32_t logical_write_calls;
     uint32_t logical_bytes_written;
     uint32_t data_frames_sent;
