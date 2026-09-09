@@ -6,10 +6,10 @@
  *   once: prepare IOP/network/link and the qualified H1 video chassis
  *   loop: fresh PSTV mux connection -> CONFIG -> selected session -> RESULT
  *
- * The cumulative RFB-prep build can now instantiate a headless through-Issue-39
- * RFB parser/session when rfb_mode=ON.  The authoritative CONFIG validator still
+ * The cumulative RFB-prep build can instantiate a headless through-Issue-39
+ * RFB parser/session when rfb_mode=ON. The authoritative CONFIG validator still
  * rejects that mode at this checkpoint, so qualified media behavior remains the
- * only reachable runtime.  The RFB branch deliberately owns no GS presentation,
+ * only reachable runtime. The RFB branch deliberately owns no GS presentation,
  * input, pointer, keyboard, OSK, or local-UI behavior yet.
  */
 
@@ -31,6 +31,7 @@
 
 #define H1_CONNECT_RETRY_DELAY_US 250000u
 #define H1_AUDIO_FINISH_POLL_US 1000u
+#define H1_TRANSPORT_END_POLL_US 1000u
 #define H1_BETWEEN_SESSION_DELAY_US 100000u
 
 static int h1_wait_for_session_transport(
@@ -60,6 +61,27 @@ static int h1_wait_for_audio_completion(
     }
 
     return 0;
+}
+
+static int h1_wait_for_transport_end(
+    pstvnc_h1_transport_runtime_t *transport)
+{
+    if (transport == NULL)
+        return -1;
+
+    while (!transport->receiver_done &&
+           pstvnc_h1_transport_last_error(transport) ==
+                PSTVNC_H1_ERROR_NONE) {
+        if (DelayThread(H1_TRANSPORT_END_POLL_US) < 0)
+            return -1;
+    }
+
+    return transport->receiver_done &&
+        transport->end_received &&
+        pstvnc_h1_transport_last_error(transport) ==
+            PSTVNC_H1_ERROR_NONE
+        ? 0
+        : -1;
 }
 
 int main(void)
@@ -195,24 +217,43 @@ int main(void)
             if (rfb_result_code < 0) {
                 printf(
                     "H1_RFB=FAIL state=%u error=%u handshake=%u initial=%u "
-                    "requests=%u updates=%u idle=%u\n",
+                    "requests=%u updates=%u idle=%u boundary=%u commit=%u "
+                    "complete=%u\n",
                     (unsigned int)rfb.session.state,
                     (unsigned int)rfb.session.error,
                     (unsigned int)rfb.stats.handshake_complete,
                     (unsigned int)rfb.stats.initial_frame_complete,
                     (unsigned int)rfb.stats.incremental_requests_sent,
                     (unsigned int)rfb.stats.incremental_updates_complete,
-                    (unsigned int)rfb.stats.idle_polls);
+                    (unsigned int)rfb.stats.idle_polls,
+                    (unsigned int)rfb.stats.quiesce_boundary_sent,
+                    (unsigned int)rfb.stats.quiesce_commit_observed,
+                    (unsigned int)rfb.stats.quiesce_complete_sent);
+                session_ok = 0;
+            } else if (h1_wait_for_transport_end(&transport) < 0) {
+                /*
+                 * COMPLETE authorizes the Pi to send ordinary MEDIA_END. Wait
+                 * for that final transport record before emitting SESSION_RESULT
+                 * so integrity semantics stay identical to existing H1 runs.
+                 */
+                printf(
+                    "H1_RFB=END_WAIT_FAIL transport_error=%d end=%d done=%d\n",
+                    (int)pstvnc_h1_transport_last_error(&transport),
+                    (int)transport.end_received,
+                    (int)transport.receiver_done);
                 session_ok = 0;
             } else {
                 printf(
                     "H1_RFB=PASS handshake=%u initial=%u requests=%u "
-                    "updates=%u idle=%u\n",
+                    "updates=%u idle=%u boundary=%u commit=%u complete=%u\n",
                     (unsigned int)rfb.stats.handshake_complete,
                     (unsigned int)rfb.stats.initial_frame_complete,
                     (unsigned int)rfb.stats.incremental_requests_sent,
                     (unsigned int)rfb.stats.incremental_updates_complete,
-                    (unsigned int)rfb.stats.idle_polls);
+                    (unsigned int)rfb.stats.idle_polls,
+                    (unsigned int)rfb.stats.quiesce_boundary_sent,
+                    (unsigned int)rfb.stats.quiesce_commit_observed,
+                    (unsigned int)rfb.stats.quiesce_complete_sent);
             }
 
             pstvnc_h1_rfb_session_runtime_shutdown(&rfb);
@@ -274,7 +315,7 @@ int main(void)
         }
 
         if (config->rfb_mode == PSTVNC_H1_RFB_ON_RESERVED) {
-            /* Preserve the RFB parser progress word published by its runtime. */
+            /* Preserve the RFB parser/quiesce progress word. */
             diagnostic_word = transport.diagnostic_word;
         } else {
             diagnostic_word =
