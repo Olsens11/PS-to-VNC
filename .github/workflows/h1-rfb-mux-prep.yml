@@ -28,6 +28,14 @@ jobs:
             experiments/media-harness-h1/h1_rfb_channel_test.c \
             -o /tmp/h1_rfb_channel_test
           /tmp/h1_rfb_channel_test
+      - name: Test H1 logical RFB credit policy
+        run: |
+          cc -std=c99 -Wall -Wextra -Werror \
+            -Iexperiments/media-harness-h1 \
+            experiments/media-harness-h1/h1_rfb_credit_policy.c \
+            experiments/media-harness-h1/h1_rfb_credit_policy_test.c \
+            -o /tmp/h1_rfb_credit_policy_test
+          /tmp/h1_rfb_credit_policy_test
       - name: Verify H1 operator control surface remains readable
         run: |
           python3 experiments/media-harness-h1/h1_tool.py --help >/dev/null
