@@ -1,3 +1,4 @@
 branch=experiment/h1-rfb-mux-prep
 purpose=H1_RFB_MUX_PREPARATION_ONLY
 issue40_started=NO
+cp2m_source_commit=0cfb4b98b463668f99cb67a561932809e24580ed
