@@ -1,14 +1,12 @@
 /*
  * File synopsis:
- * Runs the unchanged through-Issue-39 RFB session/parser headlessly against H1
- * logical channel 1 and owns the PS2 half of clean finite-session quiescence.
+ * Runs the unchanged through-Issue-39 RFB session/parser against H1 logical
+ * channel 1 and owns the PS2 half of clean finite-session quiescence.
  *
- * This checkpoint deliberately stops at CPU framebuffer authority. It does not
- * initialize gsKit, the H1 MPEG presenter, controller input, pointer routing,
- * keyboard, OSK, or local UI. Its purpose is to make the RFB 3.8 handshake,
- * complete initial Raw framebuffer, incremental requests/updates, parser byte
- * consumption, mux credit behavior, and protocol-boundary shutdown observable
- * before presentation ownership is changed.
+ * CP2J qualified this coordinator headlessly. The headless entry point remains
+ * unchanged in meaning. A separate optional callback seam can now publish only
+ * complete authoritative framebuffer states, allowing visible RFB presentation
+ * to be qualified without adding GS, input, OSK, or compositor knowledge here.
  */
 
 #include "h1_rfb_session_runtime.h"
@@ -155,10 +153,9 @@ static int h1_rfb_complete_quiesce_at_boundary(
         return -1;
 
     /*
-     * Conservative first-hardware contract: COMMIT is accepted as a clean RFB
-     * boundary only if no channel-1 bytes remain after every pre-COMMIT DATA
-     * frame has been received. Residual bytes mean the raw bridge had already
-     * crossed into another server message; fail rather than calling that clean.
+     * COMMIT is accepted as a clean RFB boundary only if no channel-1 bytes
+     * remain after every pre-COMMIT DATA frame has been received. Residual bytes
+     * mean the raw bridge had already crossed into another server message.
      */
     if (!snapshot.active || snapshot.queue_current != 0u)
         return -1;
@@ -171,9 +168,11 @@ static int h1_rfb_complete_quiesce_at_boundary(
     return 1;
 }
 
-int pstvnc_h1_rfb_session_runtime_run(
+static int h1_rfb_run(
     pstvnc_h1_rfb_session_runtime_t *runtime,
-    pstvnc_h1_transport_runtime_t *transport)
+    pstvnc_h1_transport_runtime_t *transport,
+    pstvnc_h1_rfb_present_callback_t present,
+    void *present_context)
 {
     if (runtime == NULL || transport == NULL ||
         transport->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
@@ -211,6 +210,19 @@ int pstvnc_h1_rfb_session_runtime_run(
         goto fail;
 
     runtime->stats.initial_frame_complete = 1u;
+
+    /*
+     * Publication is permitted only after the parser has proven complete full
+     * coverage and marked the authoritative framebuffer valid. The callback is
+     * outside parser/transport ownership and may only observe this complete
+     * state.
+     */
+    if (present != NULL) {
+        if (!present(present_context, &runtime->framebuffer))
+            goto fail;
+        runtime->stats.initial_presentations = 1u;
+    }
+
     h1_rfb_publish_diagnostic(runtime, transport);
 
     /*
@@ -259,8 +271,6 @@ int pstvnc_h1_rfb_session_runtime_run(
              * essential for a static desktop: an outstanding incremental
              * FramebufferUpdateRequest may legitimately have no response yet,
              * and shutdown must not wait forever for damage that never occurs.
-             * The subsequent BOUNDARY/COMMIT queue-empty proof still catches
-             * any server-message bytes that raced into the Pi bridge.
              */
             if (transport->rfb_quiesce_request_received != 0u) {
                 if (h1_rfb_complete_quiesce_at_boundary(
@@ -283,6 +293,21 @@ int pstvnc_h1_rfb_session_runtime_run(
             goto fail;
 
         runtime->stats.incremental_updates_complete++;
+
+        /*
+         * Match the through-Issue-39 application presentation contract: a
+         * completed incremental server message advances presentation only when
+         * it actually dirtied the authoritative desktop. The parser remains the
+         * sole authority for that dirty bit.
+         */
+        if (present != NULL && runtime->framebuffer.dirty) {
+            if (!present(present_context, &runtime->framebuffer))
+                goto fail;
+            if (runtime->stats.incremental_presentations == UINT32_MAX)
+                goto fail;
+            runtime->stats.incremental_presentations++;
+        }
+
         h1_rfb_publish_diagnostic(runtime, transport);
 
         /*
@@ -310,6 +335,25 @@ int pstvnc_h1_rfb_session_runtime_run(
 fail:
     h1_rfb_publish_diagnostic(runtime, transport);
     return -1;
+}
+
+int pstvnc_h1_rfb_session_runtime_run(
+    pstvnc_h1_rfb_session_runtime_t *runtime,
+    pstvnc_h1_transport_runtime_t *transport)
+{
+    return h1_rfb_run(runtime, transport, NULL, NULL);
+}
+
+int pstvnc_h1_rfb_session_runtime_run_with_presenter(
+    pstvnc_h1_rfb_session_runtime_t *runtime,
+    pstvnc_h1_transport_runtime_t *transport,
+    pstvnc_h1_rfb_present_callback_t present,
+    void *present_context)
+{
+    if (present == NULL)
+        return -1;
+
+    return h1_rfb_run(runtime, transport, present, present_context);
 }
 
 void pstvnc_h1_rfb_session_runtime_shutdown(
