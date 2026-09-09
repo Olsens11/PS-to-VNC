@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
 File synopsis:
-    Verifies the cumulative H1 headless RFB session coordinator while the public
-    RFB activation gate remains closed.
+    Verifies the cumulative H1 headless RFB session coordinator and clean RFB
+    quiesce mechanism while the public hardware activation gate remains closed.
 
-The check is intentionally architectural rather than a substitute for hardware:
-source checks prove the coordinator allocates only CPU framebuffer authority,
-uses the unchanged through-Issue-39 RFB session API over the already-bound mux
-identity, keeps first-stage RFB mutually exclusive with AUDIO/MPEG, and does not
-start graphics/input/UI ownership. Optional object checks prove the pinned PS2
-build actually links those references and still does not link old app.c.
+The check is architectural rather than a substitute for hardware. Source checks
+prove that the coordinator allocates only CPU framebuffer authority, uses the
+unchanged through-Issue-39 RFB session API over the already-bound mux identity,
+keeps first-stage RFB mutually exclusive with AUDIO/MPEG, stops at complete RFB
+message boundaries, and completes the four zero-length channel-1 quiesce markers
+without starting graphics/input/UI ownership. Optional object checks prove the
+pinned PS2 build actually links those references and still does not link app.c.
 """
 
 from __future__ import annotations
@@ -26,9 +27,17 @@ MAIN_C = ROOT / "experiments" / "media-harness-h1" / "h1_main.c"
 RUNTIME_C = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_session_runtime.c"
 RUNTIME_H = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_session_runtime.h"
 SNAPSHOT_C = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_transport_snapshot.c"
+LIVE_C = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_transport_live.c"
 LIVE_H = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_transport_live.h"
 CONFIG_C = ROOT / "experiments" / "media-harness-h1" / "h1_config.c"
 TRANSPORT_C = ROOT / "experiments" / "media-harness-h1" / "h1_transport_runtime.c"
+PI_ADAPTER = ROOT / "experiments" / "media-harness-h1" / "h1_rfb_session_adapter.py"
+PI_RUNNER = (
+    ROOT
+    / "experiments"
+    / "media-harness-h1"
+    / "h1_mux_server_cumulative39_rfb_bridge.py"
+)
 
 
 def fail(message: str) -> None:
@@ -53,17 +62,26 @@ def check_source() -> None:
     runtime_code = strip_c_comments(runtime)
     runtime_h = RUNTIME_H.read_text(encoding="utf-8")
     snapshot_code = strip_c_comments(SNAPSHOT_C.read_text(encoding="utf-8"))
+    live = LIVE_C.read_text(encoding="utf-8")
+    live_code = strip_c_comments(live)
     live_h = LIVE_H.read_text(encoding="utf-8")
     config = CONFIG_C.read_text(encoding="utf-8")
     transport = TRANSPORT_C.read_text(encoding="utf-8")
+    pi_adapter = PI_ADAPTER.read_text(encoding="utf-8")
+    pi_runner = PI_RUNNER.read_text(encoding="utf-8")
 
-    for obj in ("h1_rfb_transport_snapshot.o", "h1_rfb_session_runtime.o"):
+    for obj in (
+        "h1_rfb_transport_live.o",
+        "h1_rfb_transport_snapshot.o",
+        "h1_rfb_session_runtime.o",
+    ):
         require(make, f"$(BUILD_DIR)/{obj}", "linked_object")
 
     require(main, '#include "h1_rfb_session_runtime.h"', "main_runtime_include")
     require(main, "pstvnc_h1_rfb_session_runtime_run(", "main_runtime_call")
     require(main, "PSTVNC_H1_RFB_ON_RESERVED", "main_rfb_gate_branch")
     require(main, "H1_RFB=HYBRID_NOT_ENABLED", "first_stage_hybrid_rejection")
+    require(main, "h1_wait_for_transport_end(&transport)", "post_quiesce_media_end_wait")
 
     for needle in (
         "pstvnc_framebuffer_init(",
@@ -74,6 +92,9 @@ def check_source() -> None:
         "pstvnc_rfb_session_try_receive_update(",
         "pstvnc_rfb_session_request_update(",
         "pstvnc_h1_rfb_transport_snapshot(",
+        "pstvnc_h1_rfb_transport_send_quiesce_boundary(",
+        "pstvnc_h1_rfb_transport_send_quiesce_complete(",
+        "snapshot.queue_current != 0u",
     ):
         require(runtime_code, needle, "headless_runtime_mechanism")
 
@@ -95,18 +116,62 @@ def check_source() -> None:
         if forbidden in snapshot_code:
             fail(f"snapshot_contains_socket_io:{forbidden}")
 
+    # Zero-length channel-1 DATA is lifecycle control only. Non-empty DATA must
+    # still go through the raw byte queue and unchanged parser seam.
+    for needle in (
+        "if (payload_length == 0u)",
+        "h1_rfb_accept_quiesce_marker(runtime)",
+        "runtime->rfb_quiesce_request_received = 1u",
+        "runtime->rfb_quiesce_commit_received = 1u",
+        "pstvnc_h1_transport_send_frame_internal(",
+        "PSTVNC_TRANSPORT_FRAME_DATA",
+        "PSTVNC_TRANSPORT_CHANNEL_RFB",
+        "runtime->rfb_quiesce_boundary_sent = 1u",
+        "runtime->rfb_quiesce_complete_sent = 1u",
+    ):
+        require(live_code, needle, "rfb_quiesce_transport")
+
     require(
         live_h,
         "pstvnc_h1_rfb_transport_snapshot(",
         "locked_snapshot_declaration",
     )
     require(
+        live_h,
+        "pstvnc_h1_rfb_transport_send_quiesce_boundary(",
+        "quiesce_boundary_declaration",
+    )
+    require(
+        live_h,
+        "pstvnc_h1_rfb_transport_send_quiesce_complete(",
+        "quiesce_complete_declaration",
+    )
+    require(
         runtime_h,
-        "pstvnc_h1_rfb_session_runtime_stats_t",
-        "parser_progress_stats",
+        "quiesce_complete_sent",
+        "parser_quiesce_progress_stats",
     )
 
-    # Public hardware activation remains explicitly fail closed at CP2I.
+    # Pi must stop+join its upstream raw reader on BOUNDARY before COMMIT and
+    # send ordinary MEDIA_END only after COMPLETE.
+    for needle in (
+        "self.bridge.stop()",
+        "self.quiesce_boundary_received = True",
+        "self.quiesce_commit_sent = True",
+        "self.quiesce_complete_received = True",
+        "self.session.send_frame(base.FRAME_DATA, CHANNEL_RFB, b\"\")",
+    ):
+        require(pi_adapter, needle, "pi_quiesce_adapter")
+
+    for needle in (
+        "adapter.request_quiesce()",
+        "adapter.wait_quiesce_complete(",
+        "metadata = self._send_rfb_media_end()",
+        "self.validate_result(metadata)",
+    ):
+        require(pi_runner, needle, "pi_quiesce_runner")
+
+    # Public hardware activation remains explicitly fail closed at this checkpoint.
     require(
         config,
         "config->rfb_mode != PSTVNC_H1_RFB_OFF",
@@ -115,8 +180,6 @@ def check_source() -> None:
     if "PSTVNC_TRANSPORT_CAP_RFB" in transport:
         fail("rfb_capability_advertised_before_activation_checkpoint")
 
-    # The old app coordinator would bring its own socket/GS/input ownership and
-    # is explicitly forbidden from this cumulative coordinator.
     if "app39.o" in make or "src/app.c" in make:
         fail("old_app_coordinator_linked")
 
@@ -155,6 +218,7 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
         "main": build_dir / "h1_main.o",
         "runtime": build_dir / "h1_rfb_session_runtime.o",
         "snapshot": build_dir / "h1_rfb_transport_snapshot.o",
+        "live": build_dir / "h1_rfb_transport_live.o",
     }
     for path in paths.values():
         if not path.is_file():
@@ -183,9 +247,18 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
         "pstvnc_rfb_session_request_update",
         "pstvnc_framebuffer_init",
         "pstvnc_framebuffer_set_geometry",
+        "pstvnc_h1_rfb_transport_send_quiesce_boundary",
+        "pstvnc_h1_rfb_transport_send_quiesce_complete",
     ):
         if required not in undefined["runtime"]:
             fail(f"runtime_missing_clean_module_reference:{required}")
+
+    for required in (
+        "pstvnc_h1_rfb_transport_send_quiesce_boundary",
+        "pstvnc_h1_rfb_transport_send_quiesce_complete",
+    ):
+        if required not in defined["live"]:
+            fail(f"live_quiesce_definition_missing:{required}")
 
     for forbidden in (
         "pstvnc_ps2_graphics_init",
