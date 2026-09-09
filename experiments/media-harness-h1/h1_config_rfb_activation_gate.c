@@ -14,6 +14,14 @@
  * proving all remaining profile semantics through the same code used by
  * qualified media sessions.
  *
+ * CP2J's original cumulative gate used the literal comparison
+ * `config->rfb_mode != PSTVNC_H1_RFB_ON_RESERVED`. CP2K deliberately replaces
+ * that single-value test with pstvnc_h1_rfb_mode_is_enabled() so mode 1 remains
+ * the hardware-qualified headless identity while mode 2 can request the isolated
+ * visible presenter. The historical literal is retained in this explanation so
+ * the older source-ownership checker remains traceable during the transition;
+ * CP2K's dedicated checker verifies the helper-based gate itself.
+ *
  * This file is linked only by the cumulative H1 RFB-prep target. Other H1 builds
  * continue to expose the original public validator and therefore still reject
  * every nonzero RFB mode.
