@@ -19,7 +19,7 @@ import threading
 import time
 
 import h1_mux_server as base
-from h1_profiles import P11_COMPAT_VIDEO_ONLY if False else resolve_profile
+from h1_profiles import resolve_profile
 from h1_rfb_session_adapter import open_rfb_session_adapter
 
 
