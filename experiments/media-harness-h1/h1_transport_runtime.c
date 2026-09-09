@@ -1,13 +1,24 @@
 /*
  * File synopsis:
- * Implements H1's one-socket AUDIO + MPEG2 PSTV receiver.
+ * Implements H1's one-socket AUDIO + MPEG2 PSTV receiver, with cumulative-build
+ * hooks for the prepared logical RFB channel 1.
  *
  * The Pi schedules logical channels. One EE receiver thread owns recv(), each
  * enabled media channel has its own runtime-allocated ring and credit stream,
  * and temporary MPEG queue starvation remains distinct from terminal EOF.
+ *
+ * In the cumulative RFB-prep target only, channel-1 resources are prepared
+ * before the sole receiver thread starts, inbound RFB DATA is dispatched to its
+ * independent queue, and initial RFB credit is emitted through the same
+ * serialized send path. The authoritative CONFIG validator remains the public
+ * activation gate.
  */
 
 #include "h1_transport_runtime.h"
+
+#ifdef PSTVNC_H1_RFB_MUX_PREP
+#include "h1_rfb_transport_live.h"
+#endif
 
 #include <delaythread.h>
 #include <kernel.h>
@@ -206,6 +217,27 @@ done:
     return ok;
 }
 
+/*
+ * Experiment-internal bridge used by logical RFB channel 1. It intentionally
+ * exposes no raw socket access: every frame still passes through H1's existing
+ * send semaphore, sequence counter, framing, and error accounting.
+ */
+int pstvnc_h1_transport_send_frame_internal(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint8_t kind,
+    uint8_t channel,
+    const void *payload,
+    size_t payload_length)
+{
+    return h1_send_frame(
+        runtime,
+        kind,
+        channel,
+        0,
+        payload,
+        payload_length);
+}
+
 static int h1_send_error_code(
     pstvnc_h1_transport_runtime_t *runtime)
 {
@@ -234,6 +266,7 @@ static int h1_send_hello(
         PSTVNC_H1_CAP_MPEG2_ES |
         PSTVNC_H1_CAP_REPEAT_SESSIONS;
 
+    /* CAP_RFB deliberately remains absent until the activation gate is opened. */
     memset(payload, 0, sizeof(payload));
     pstvnc_transport_write_be32(&payload[0], capabilities);
     pstvnc_transport_write_be32(
@@ -614,6 +647,14 @@ static int h1_accept_data(
     int sema;
     uint32_t alignment;
     int written;
+
+#ifdef PSTVNC_H1_RFB_MUX_PREP
+    if (header->channel == PSTVNC_TRANSPORT_CHANNEL_RFB)
+        return pstvnc_h1_rfb_transport_accept_data(
+            runtime,
+            runtime->receiver_payload,
+            header->payload_length);
+#endif
 
     if (header->payload_length == 0u ||
         header->payload_length > runtime->config.max_data_payload ||
@@ -997,6 +1038,18 @@ int pstvnc_h1_transport_start(
         goto fail;
     }
 
+#ifdef PSTVNC_H1_RFB_MUX_PREP
+    /*
+     * Critical ordering invariant: if channel 1 is ever accepted by CONFIG, its
+     * queue/semaphore/binding must exist before CONFIG ACK, initial credit, and
+     * especially before the sole physical receiver thread can accept DATA.
+     */
+    if (!pstvnc_h1_rfb_transport_prepare(runtime)) {
+        (void)h1_send_error_code(runtime);
+        goto fail;
+    }
+#endif
+
     if (!h1_send_config_ack(runtime))
         goto fail;
 
@@ -1013,6 +1066,11 @@ int pstvnc_h1_transport_start(
             PSTVNC_TRANSPORT_CHANNEL_MPEG2,
             runtime->config.mpeg_initial_credit_bytes))
         goto fail;
+
+#ifdef PSTVNC_H1_RFB_MUX_PREP
+    if (!pstvnc_h1_rfb_transport_send_initial_credit(runtime))
+        goto fail;
+#endif
 
     if (!h1_start_receiver(runtime))
         goto fail;
