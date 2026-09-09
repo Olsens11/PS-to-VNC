@@ -2,7 +2,7 @@
 
 ## Status
 
-**CI QUALIFIED FOR DEPLOYMENT AS A HARDWARE CANDIDATE. NOT HARDWARE QUALIFIED.**
+**HARDWARE QUALIFIED FOR THE NARROW CP2N SCOPE.**
 
 CP2N is the corrected successor to the CP2L visible-RFB-plus-mouse checkpoint.
 It retains CP2L's already hardware-qualified one-physical-PSTV-connection RFB
@@ -26,6 +26,10 @@ architectural parent of this checkpoint.
 
 AUDIO and MPEG remain disabled. Hybrid media composition remains deferred.
 Issue #40 has not been started.
+
+The real-PS2 result is recorded in:
+
+    experiments/media-harness-h1/RFB_MUX_CP2N_HARDWARE_RESULT.md
 
 ## Scope guard
 
@@ -131,40 +135,45 @@ The green workflow proves the CP2N source and linked-object contract, including:
 - cooperative input shutdown must prove worker dormancy before storage can be
   reused; otherwise CP2N halts instead of guessing.
 
-These are build/source facts only. They do not establish real-PS2 correctness of
-the changed PT_LOAD.
+These build/source gates were paired with the exact real-hardware qualification
+record below; the CI facts alone are not treated as hardware authority.
 
-## Required real-PS2 hardware gate
+## Hardware qualification result
 
-The exact ELF above must be deployed with hash/readback evidence and exercised on
-real hardware before any CP2N hardware-qualified claim is permitted.
+The exact ELF above completed the CP2N real-PS2 hardware gate on 2026-09-09.
 
-A satisfactory narrow CP2N operator run should establish all of the following:
+    test_id=H1-RFB-CP2N-HW1-20260909T221954Z
+    session_id=3053165241
+    evidence=/home/ps2/ps2vnc-evidence/h1-rfb-cp2n-hw1-20260909T221954Z
+    deployment_evidence=/home/ps2/ps2vnc-evidence/deployments/H1-RFB-CP2N-HW1-20260909T221954Z.json
+    deployment_readback=PASS
+    quiesce=PASS_REQUEST_BOUNDARY_COMMIT_COMPLETE
+    integrity_pass=1
+    transport_error=0
+    diagnostic_word=0xA200E184
 
-1. the live Pi desktop remains visible on the PS2 television;
-2. the already-qualified desktop mouse path still works with left stick/D-pad,
-   Cross left click/drag, and Circle right click;
-3. Select opens the existing OSK without a phantom desktop click;
-4. while the OSK owns foreground input, desktop mouse interpretation is suspended;
-5. D-pad changes OSK selection;
-6. Cross activates a selected OSK key and the focused remote application receives
-   the resulting keyboard input;
-7. Triangle's Shift behavior can be observed with an appropriate key;
-8. Square emits Backspace, Start emits Enter, and R1 emits Tab where their effects
-   can be observed safely;
-9. Circle or Select closes the OSK, and after the required release/quarantine the
-   desktop mouse resumes without a carried-through button/action;
-10. the session reaches the existing REQUEST/BOUNDARY/COMMIT/COMPLETE RFB
-    quiesce and host validation completes with no transport or integrity error.
+The unique archival and rolling deployment targets both read back with the exact
+candidate SHA-256 and byte count. The Pi runner reached CONFIG ACK, complete RFB
+finite quiesce, normal post-result socket closure, H1 session validation, and
+H1 Pi mux PASS.
 
-The gate is qualitative as well as machine-observed: the operator must report
-what was actually visible and controllable on the physical PS2 display. A clean
-host log alone is insufficient.
+The operator reported a full physical PASS: the live Pi desktop remained
+visible; left-stick/D-pad pointer movement, Cross left click/drag, and Circle
+right click worked; Select opened the real OSK without a phantom desktop action;
+OSK foreground suspended desktop mouse interpretation; D-pad OSK navigation and
+Cross character activation worked; Triangle Shift, Square Backspace, Start Enter,
+and R1 Tab worked; Circle/Select closed the OSK; and mouse control resumed after
+the release/quarantine boundary without a carried-through click/action.
 
-Until that gate is completed:
+The cursor felt somewhat sluggish/laggy compared with earlier behavior. This is
+recorded as a deferred performance/optimization observation, not a functional
+qualification failure.
 
-    CP2N_HARDWARE_QUALIFIED=NO
-    CURRENT_HARDWARE_AUTHORITY=CP2L_VISIBLE_RFB_PLUS_PS2_MOUSE_INPUT
+    CP2N_HARDWARE_QUALIFIED=YES
+    CURRENT_HARDWARE_AUTHORITY=CP2N_VISIBLE_RFB_REAL_ISSUE39_INTERACTION
 
-RFB+AUDIO, RFB+MPEG, hybrid composition, performance optimization, production
-transport extraction, and Issue #40 remain outside this checkpoint.
+RFB+AUDIO, RFB+MPEG, simultaneous combined workload behavior, hybrid
+composition, performance optimization, production transport extraction, and
+Issue #40 remain outside this qualification. Subsequent performance/stability
+experiments should use the resident H1 ELF and canonical `h1_tool.py`
+run/profile/sweep apparatus rather than bespoke one-off runners.

@@ -1,16 +1,16 @@
 # CP2N real Issue-39 interaction hardware runbook
 
-## Purpose
+## Purpose and status
 
-This is the operator runbook for the first real-PS2 execution of the exact CP2N
-candidate pinned in `RFB_MUX_CP2N_VISIBLE_INTERACTION_CANDIDATE.md`.
+This is the reproducible operator runbook for the exact CP2N candidate pinned in
+`RFB_MUX_CP2N_VISIBLE_INTERACTION_CANDIDATE.md`.
 
-It does not change the candidate, begin Issue #40, enable AUDIO/MPEG, or qualify
-anything by itself. It exists to make the hardware gate reproducible and
-fail-closed.
+CP2N completed this gate successfully on 2026-09-09. The qualified result is
+recorded in `RFB_MUX_CP2N_HARDWARE_RESULT.md`. This runbook remains as the
+reproduction procedure and as a record of the exact apparatus expectations.
 
-The hardware authority before this run remains CP2L visible RFB plus PS2 mouse
-input.
+It does not change the candidate, begin Issue #40, enable AUDIO/MPEG, or transfer
+qualification to a changed ELF.
 
 ## Candidate identity
 
@@ -31,20 +31,48 @@ Expected PT_LOAD identity:
 The candidate is intentionally not identity-restamped for this gate. Stamping
 would change the PT_LOAD and create a different hardware candidate.
 
+The build must use the same pinned PS2DEV image as CI:
+
+    ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
+
+`/usr/local/ps2dev` is the toolchain path **inside that container**. Do not export
+that path as though the PS2SDK necessarily exists directly on the Pi host.
+
 ## Before running the packet
 
 The PS2 must be powered and in the same FTP-ready state used for the prior H1
-hardware deployments so `192.168.50.2:21` is reachable.
+hardware deployments. In the current wLaunchELF setup, start PS2Net/ps2ftpd and
+leave it listening so `192.168.50.2:21` returns a `220 ps2ftpd ready` banner.
 
 The Pi's demand-ready RFB endpoint is expected at `127.0.0.1:5903`. Its socket
 unit is `ps-to-vnc-rfb.socket`, with provider service
-`ps-to-vnc-rfb-tigervnc.service`. The packet below verifies the RFB 3.8 banner
-before touching the DUT.
+`ps-to-vnc-rfb-tigervnc.service`. The packet verifies the RFB 3.8 banner before
+deployment.
 
 For the qualitative keyboard test, leave a harmless focused remote text target
 available on the Pi desktop, such as a terminal prompt. An external Windows VNC
 client may be used to arrange that desktop beforehand; it is separate from the
 single Pi-to-PS2 PSTV connection and is not part of the PSTV stream count.
+
+The Pi repository's Git remote name is `origin`. Its URL currently uses the SSH
+host alias `github-ps-to-vnc`; those are different names. Git commands in this
+runbook therefore fetch `origin`, not a nonexistent Git remote named
+`github-ps-to-vnc`.
+
+## Resident-session behavior
+
+CP2N is a resident multi-session H1 ELF. Once launched successfully, it returns
+to its session-wait loop after each clean H1 session and automatically retries
+the one PSTV connection until the next H1 listener appears.
+
+Therefore:
+
+- launch `mass:/0/PS2VNC.ELF` only when bootstrapping the resident ELF after a
+  console reset or when no compatible H1 ELF is already running;
+- do **not** relaunch between ordinary `h1_tool.py run` sessions;
+- `h1_tool.py sweep` cases are expected to reconnect to the same resident ELF;
+- this is normal finite-session lifecycle, not automatic recovery from a silent
+  in-session freeze.
 
 ## Canonical interactive packet
 
@@ -59,18 +87,14 @@ BASE="$HOME/src/PS-to-VNC"
 WORK="$HOME/src/PS-to-VNC-h1-rfb-cp2n-7e047a9c"
 COMMIT="7e047a9cb9dfef9283f66a80ccd865664f075c11"
 BRANCH="experiment/h1-rfb-mux-prep"
-REMOTE="github-ps-to-vnc"
+REMOTE="origin"
+IMAGE="ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11"
 EXPECTED_ELF_SHA="f55b2620903ea0ba2a64c53c4196b1e1959a6bb13be1c8a3ae6bf52a08df1000"
 EXPECTED_ELF_BYTES="3041300"
 EXPECTED_PT_LOAD_SHA="544117b8bdf4c0cacefb7d6b2e8fa01eba90809a369cfd8bfdfc0abc36722914"
 EXPECTED_PT_LOAD_BYTES="491028"
 BUILD_DIR="build/experiments/media-harness-h1-cp2n-visible-rfb-interaction/ps2"
 ELF_REL="$BUILD_DIR/PS2VNC-H1-CP2N-VisibleRFBInteraction.ELF"
-
-export PS2DEV="${PS2DEV:-/usr/local/ps2dev}"
-export PS2SDK="${PS2SDK:-$PS2DEV/ps2sdk}"
-export GSKIT="${GSKIT:-$PS2DEV/gsKit}"
-export PATH="$PS2DEV/bin:$PS2DEV/ee/bin:$PS2DEV/iop/bin:$PS2DEV/dvp/bin:$PS2SDK/bin:$PATH"
 
 printf '%s\n' '===== CP2N EXACT-SOURCE PREFLIGHT ====='
 git -C "$BASE" fetch "$REMOTE" "$BRANCH"
@@ -95,13 +119,24 @@ printf 'CP2N_WORKTREE=%s\n' "$WORK"
 printf 'CP2N_WORKTREE_HEAD=%s\n' "$(git -C "$WORK" rev-parse HEAD)"
 printf 'CP2N_WORKTREE_CLEAN=PASS\n'
 
-cd "$WORK"
-rm -rf "$BUILD_DIR"
-make -f mk/media-harness-h1-cp2n-visible-rfb-interaction.mk
-python3 experiments/media-harness-h1/check_rfb_visible_interaction.py \
-    --build-dir "$BUILD_DIR"
-python3 experiments/media-harness-h1/check_rfb_mux_seam.py \
-    --build-dir "$BUILD_DIR"
+printf '%s\n' '===== PINNED CP2N CONTAINER BUILD ====='
+docker run --rm \
+    --entrypoint /bin/sh \
+    -v "$WORK:/repo" \
+    -w /repo \
+    "$IMAGE" \
+    -lc '
+        set -eu
+        apk add --no-cache bash binutils make python3 >/dev/null
+        export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+        test -f /usr/local/ps2dev/ps2sdk/samples/Makefile.pref
+        rm -rf build/experiments/media-harness-h1-cp2n-visible-rfb-interaction/ps2
+        make -f mk/media-harness-h1-cp2n-visible-rfb-interaction.mk
+        python3 experiments/media-harness-h1/check_rfb_visible_interaction.py \
+            --build-dir build/experiments/media-harness-h1-cp2n-visible-rfb-interaction/ps2
+        python3 experiments/media-harness-h1/check_rfb_mux_seam.py \
+            --build-dir build/experiments/media-harness-h1-cp2n-visible-rfb-interaction/ps2
+    '
 
 ELF="$WORK/$ELF_REL"
 ACTUAL_ELF_SHA="$(sha256sum "$ELF" | awk '{print $1}')"
@@ -118,7 +153,19 @@ printf 'CP2N_LOCAL_ELF_BYTES=%s\n' "$ACTUAL_ELF_BYTES"
 }
 printf 'CP2N_LOCAL_ELF_IDENTITY=PASS\n'
 
-PT_LOAD_OUT="$(./scripts/testkit/pt-load-fingerprint.sh "$ELF")"
+PT_LOAD_OUT="$(
+    docker run --rm \
+        --entrypoint /bin/sh \
+        -v "$WORK:/repo:ro" \
+        -w /repo \
+        "$IMAGE" \
+        -lc '
+            set -eu
+            apk add --no-cache bash binutils python3 >/dev/null
+            ./scripts/testkit/pt-load-fingerprint.sh \
+                build/experiments/media-harness-h1-cp2n-visible-rfb-interaction/ps2/PS2VNC-H1-CP2N-VisibleRFBInteraction.ELF
+        '
+)"
 printf '%s\n' "$PT_LOAD_OUT"
 printf '%s\n' "$PT_LOAD_OUT" | grep -Fx "PT_LOAD_SHA256=$EXPECTED_PT_LOAD_SHA" >/dev/null
 printf '%s\n' "$PT_LOAD_OUT" | grep -Fx "PT_LOAD_BYTES=$EXPECTED_PT_LOAD_BYTES" >/dev/null
@@ -149,10 +196,14 @@ python3 - <<'PY'
 import socket
 
 try:
-    with socket.create_connection(("192.168.50.2", 21), timeout=5.0):
-        pass
+    with socket.create_connection(("192.168.50.2", 21), timeout=5.0) as stream:
+        stream.settimeout(5.0)
+        banner = stream.recv(256)
 except OSError as exc:
     raise SystemExit(f"PS2_FTP=FAIL {exc}")
+print(f"PS2_FTP_BANNER={banner!r}")
+if not banner.startswith(b"220"):
+    raise SystemExit("PS2_FTP=FAIL_BAD_BANNER")
 print("PS2_FTP=PASS")
 PY
 
@@ -160,6 +211,8 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 TEST_ID="H1-RFB-CP2N-HW1-$STAMP"
 DEPLOY_EVIDENCE="$HOME/ps2vnc-evidence/deployments/$TEST_ID.json"
 RUN_EVIDENCE="$HOME/ps2vnc-evidence/h1-rfb-cp2n-hw1-$STAMP"
+
+cd "$WORK"
 
 printf '%s\n' '===== DEPLOYMENT DRY RUN ====='
 python3 scripts/testkit/deploy-elf.py \
@@ -184,8 +237,8 @@ python3 scripts/testkit/deploy-elf.py \
 printf 'CP2N_TEST_ID=%s\n' "$TEST_ID"
 printf 'CP2N_DEPLOY_EVIDENCE=%s\n' "$DEPLOY_EVIDENCE"
 printf 'CP2N_RUN_EVIDENCE=%s\n' "$RUN_EVIDENCE"
-printf '%s\n' 'OPERATOR: if H1_PS2_CONNECTED appears automatically, DO NOT relaunch the ELF.'
-printf '%s\n' 'OPERATOR: if H1_LISTENING appears without H1_PS2_CONNECTED, launch mass:/0/PS2VNC.ELF once.'
+printf '%s\n' 'OPERATOR: keep the resident CP2N ELF running; it should connect automatically when H1_LISTENING appears.'
+printf '%s\n' 'OPERATOR: launch mass:/0/PS2VNC.ELF once only if no compatible resident H1 ELF is currently running.'
 printf '%s\n' 'OPERATOR: exercise the CP2N checklist on the physical PS2 television during the session.'
 
 export H1_RFB_UPSTREAM_HOST="127.0.0.1"
@@ -209,8 +262,8 @@ printf 'CP2N_HARDWARE_QUALIFIED=NO_OPERATOR_JUDGMENT_STILL_REQUIRED\n'
 
 ## Physical operator checklist
 
-During the 90-second finite session, judge the physical television and
-controller behavior, not merely the host console:
+During the finite session, judge the physical television and controller behavior,
+not merely the host console:
 
 1. live Pi desktop appears and continues updating;
 2. CP2L desktop mouse behavior still works: left stick/D-pad motion, Cross left
@@ -229,20 +282,18 @@ controller behavior, not merely the host console:
 10. the host reaches REQUEST -> BOUNDARY -> COMMIT -> COMPLETE and finishes with
     clean session validation, no integrity failure, and no transport error.
 
-If the console freezes, the OSK/input path behaves incorrectly, the host fails,
-or the exact ELF/PT_LOAD/readback checks do not pass, CP2N remains hardware
-unqualified. Preserve the returned console output and evidence rather than
-masking or auto-recovering the failure.
+A green machine result is necessary but insufficient. The operator's physical
+observation completes the gate. If the console freezes or the interaction path
+behaves incorrectly, preserve evidence and classify the failure rather than
+adding automatic recovery that masks it.
 
-## Qualification rule
+## Qualified reproduction reference
 
-A green machine result is necessary but insufficient. Only the operator's
-physical observation can complete this gate.
+The first successful run used:
 
-Until both machine evidence and operator judgment pass:
+    test_id=H1-RFB-CP2N-HW1-20260909T221954Z
+    session_id=3053165241
+    evidence=/home/ps2/ps2vnc-evidence/h1-rfb-cp2n-hw1-20260909T221954Z
 
-    CP2N_HARDWARE_QUALIFIED=NO
-    CURRENT_HARDWARE_AUTHORITY=CP2L_VISIBLE_RFB_PLUS_PS2_MOUSE_INPUT
-
-No RFB+AUDIO, RFB+MPEG, hybrid composition, production transport extraction, or
-Issue #40 work is authorized by this runbook.
+That exact run is authoritative for CP2N. A later reproduction is additional
+evidence; it does not rewrite the original result identity.

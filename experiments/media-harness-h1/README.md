@@ -26,13 +26,13 @@ RFB was intentionally absent from the first media-harness profile so the first
 combined workload could isolate audio + MPEG video. It has since been
 reintroduced on logical channel 1 without adding a second physical PS2-facing
 connection. CP2J qualified the headless RFB path, CP2K qualified visible RFB,
-and CP2L qualified visible RFB plus the existing PS2 mouse semantics. CP2N is
-the current CI-qualified, hardware-pending checkpoint that composes the real
-through-Issue-39 local-controller/local-UI/OSK/keyboard path over that same
-mux-backed RFB session.
+CP2L qualified visible RFB plus the existing PS2 mouse semantics, and CP2N now
+qualifies the real through-Issue-39 local-controller/local-UI/OSK/keyboard path
+over that same mux-backed RFB session.
 
-The current hardware authority remains CP2L until the exact CP2N candidate is
-observed on real PS2 hardware. AUDIO and MPEG remain OFF for the CP2N gate.
+The current hardware authority is CP2N visible RFB plus the real Issue-39
+interaction composition. AUDIO and MPEG remained OFF for that qualification;
+combined RFB/media workloads remain later controlled experiments.
 
 This preserves the transport-mux lesson already learned by the audio work. A
 future A/B comparison may change audio *encoding* or place compressed audio in
@@ -111,6 +111,18 @@ Frequently used settings have friendly switches such as `--audio-priority`,
 profile field remains reachable through `--set NAME=INTEGER`, while sweeps use
 `--vary NAME=V1,V2,...`.
 
+The current CP2N ELF is intentionally resident across sessions. After a clean
+finite session it returns to its PSTV session-wait loop and automatically
+reconnects when the next `h1_tool.py run` or sweep case opens the listener.
+Ordinary repeated H1 tests therefore do not relaunch the ELF between cases.
+This resident reconnect behavior is normal test-harness lifecycle behavior, not
+a watchdog or silent-freeze recovery mechanism.
+
+Use `h1_tool.py` as the default control path for subsequent profile exploration,
+A/B testing, performance work, and stability sweeps. Bespoke runners should be
+introduced only when the canonical tool/runner genuinely cannot express the
+experiment.
+
 The CLI is intentionally self-documenting:
 
 ```sh
@@ -126,17 +138,28 @@ See `H1_TOOL_GUIDE.md` for the compact operator guide.
 ## Current RFB checkpoint authority
 
 The machine-readable experiment state is `RFB_MUX_PREP_STATUS.env`. The current
-hardware-qualified boundary is CP2L visible RFB plus PS2 mouse input. The exact
-next hardware candidate is documented in
-`RFB_MUX_CP2N_VISIBLE_INTERACTION_CANDIDATE.md`.
+hardware-qualified boundary is CP2N visible RFB plus the real through-Issue-39
+mouse, local-controller, local-UI, OSK, and keyboard interaction composition.
+The exact qualification record is:
 
-CP2N intentionally replaces the wrong-abstraction CP2M transient L1+D-pad
-keyboard experiment as the next proof direction. CP2N composes the existing
-Issue-39 input runtime, local-controller router, local UI, OSK, keyboard builder,
-RFB session API, display conversion and PS2 graphics interfaces. It adds no new
-checkpoint-specific controller gesture. A green CI build is not a hardware
-claim; CP2N remains unqualified until its exact recorded PT_LOAD is exercised on
-the real console and the operator reports the visible interaction behavior.
+    RFB_MUX_CP2N_HARDWARE_RESULT.md
+
+The corresponding candidate/source authority remains documented in:
+
+    RFB_MUX_CP2N_VISIBLE_INTERACTION_CANDIDATE.md
+
+CP2N intentionally replaced the wrong-abstraction CP2M transient L1+D-pad
+keyboard experiment. It composes the existing Issue-39 input runtime,
+local-controller router, local UI, OSK, keyboard builder, RFB session API,
+display conversion and PS2 graphics interfaces with no new checkpoint-specific
+controller gesture. The real-PS2 gate passed with exact ELF/PT_LOAD/deployment
+identity, clean finite quiesce, clean machine validation, and full operator
+interaction confirmation.
+
+The operator noted somewhat sluggish/laggy cursor response. That is retained as
+a later performance/profile-optimization observation rather than a qualification
+failure. H1 profiles and reproducible sweeps are the intended mechanism for
+characterizing and optimizing such behavior as workloads become more complex.
 
 ## Integration intent
 
