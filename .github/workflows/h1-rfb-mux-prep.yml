@@ -24,6 +24,17 @@ jobs:
         run: python3 experiments/media-harness-h1/check_rfb_visible_presentation.py
       - name: Verify CP2L visible RFB mouse-input contract
         run: python3 experiments/media-harness-h1/check_rfb_visible_input.py
+      - name: Verify CP2M visible RFB keyboard contract
+        run: python3 experiments/media-harness-h1/check_rfb_visible_keyboard.py
+      - name: Test CP2M pure Test11F keyboard chord router
+        run: |
+          cc -std=c99 -Wall -Wextra -Werror \
+            -Isrc/input \
+            -Iexperiments/media-harness-h1 \
+            experiments/media-harness-h1/h1_rfb_keyboard_chord.c \
+            experiments/media-harness-h1/h1_rfb_keyboard_chord_test.c \
+            -o /tmp/h1_rfb_keyboard_chord_test
+          /tmp/h1_rfb_keyboard_chord_test
       - name: Test cumulative-only RFB CONFIG activation gate
         run: |
           cc -std=c99 -Wall -Wextra -Werror \
@@ -90,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build cumulative H1 RFB-prep, CP2K visible, and CP2L input candidates with pinned PS2 toolchain
+      - name: Build cumulative H1 RFB-prep, CP2K, CP2L, and CP2M candidates with pinned PS2 toolchain
         env:
           IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
         run: |
@@ -135,6 +146,17 @@ jobs:
               sha256sum "$CP2L_ELF"
               ./scripts/testkit/pt-load-fingerprint.sh "$CP2L_ELF"
               echo H1_CP2L_ELF_END
+
+              make -f mk/media-harness-h1-cp2m-visible-rfb-keyboard.mk
+              python3 experiments/media-harness-h1/check_rfb_visible_keyboard.py \
+                --build-dir build/experiments/media-harness-h1-cp2m-visible-rfb-keyboard/ps2
+              python3 experiments/media-harness-h1/check_rfb_mux_seam.py \
+                --build-dir build/experiments/media-harness-h1-cp2m-visible-rfb-keyboard/ps2
+              CP2M_ELF=build/experiments/media-harness-h1-cp2m-visible-rfb-keyboard/ps2/PS2VNC-H1-CP2M-VisibleRFBKeyboard.ELF
+              echo H1_CP2M_ELF_BEGIN
+              sha256sum "$CP2M_ELF"
+              ./scripts/testkit/pt-load-fingerprint.sh "$CP2M_ELF"
+              echo H1_CP2M_ELF_END
             '
       - name: Preserve unqualified RFB-prep ELF
         uses: actions/upload-artifact@v4
@@ -153,4 +175,10 @@ jobs:
         with:
           name: h1-cp2l-visible-rfb-input-unqualified-elf
           path: build/experiments/media-harness-h1-cp2l-visible-rfb-input/ps2/PS2VNC-H1-CP2L-VisibleRFBInput.ELF
+          if-no-files-found: error
+      - name: Preserve unqualified CP2M visible RFB keyboard ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: h1-cp2m-visible-rfb-keyboard-unqualified-elf
+          path: build/experiments/media-harness-h1-cp2m-visible-rfb-keyboard/ps2/PS2VNC-H1-CP2M-VisibleRFBKeyboard.ELF
           if-no-files-found: error
