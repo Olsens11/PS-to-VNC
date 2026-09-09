@@ -8,6 +8,12 @@
  * drive the configurable receiver-credit policy, and outbound RFB client bytes
  * are fragmented into H1 DATA frames through the existing serialized send path.
  *
+ * Clean finite-session shutdown uses zero-length channel-1 DATA frames as
+ * lifecycle markers. They contain no RFB bytes and are consumed here instead of
+ * entering the parser queue. Direction plus strict state ordering makes their
+ * meaning unambiguous:
+ *   Pi request -> PS2 boundary -> Pi commit -> PS2 complete.
+ *
  * The authoritative CONFIG validator still controls whether RFB ON may enter
  * this path. Keeping mechanics complete behind that gate lets source/build tests
  * prove ownership before the first RFB hardware activation.
@@ -123,6 +129,32 @@ int pstvnc_h1_rfb_transport_release(
         &runtime->rfb_resources);
 }
 
+static int h1_rfb_accept_quiesce_marker(
+    pstvnc_h1_transport_runtime_t *runtime)
+{
+    if (runtime->rfb_quiesce_request_received == 0u) {
+        if (runtime->rfb_quiesce_boundary_sent != 0u ||
+            runtime->rfb_quiesce_commit_received != 0u ||
+            runtime->rfb_quiesce_complete_sent != 0u) {
+            h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_CHANNEL);
+            return 0;
+        }
+
+        runtime->rfb_quiesce_request_received = 1u;
+        return 1;
+    }
+
+    if (runtime->rfb_quiesce_boundary_sent != 0u &&
+        runtime->rfb_quiesce_commit_received == 0u &&
+        runtime->rfb_quiesce_complete_sent == 0u) {
+        runtime->rfb_quiesce_commit_received = 1u;
+        return 1;
+    }
+
+    h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_CHANNEL);
+    return 0;
+}
+
 int pstvnc_h1_rfb_transport_accept_data(
     pstvnc_h1_transport_runtime_t *runtime,
     const void *payload,
@@ -133,9 +165,16 @@ int pstvnc_h1_rfb_transport_accept_data(
     if (runtime == NULL ||
         runtime->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
         !runtime->rfb_resources.active ||
-        payload == NULL ||
-        payload_length == 0u ||
         payload_length > runtime->config.max_data_payload) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_CHANNEL);
+        return 0;
+    }
+
+    /* Zero bytes are lifecycle control and never enter the raw RFB queue. */
+    if (payload_length == 0u)
+        return h1_rfb_accept_quiesce_marker(runtime);
+
+    if (payload == NULL) {
         h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_CHANNEL);
         return 0;
     }
@@ -389,4 +428,57 @@ int pstvnc_h1_rfb_transport_write_exact(
     }
 
     return 0;
+}
+
+static int h1_rfb_send_quiesce_marker(
+    pstvnc_h1_transport_runtime_t *runtime)
+{
+    return pstvnc_h1_transport_send_frame_internal(
+        runtime,
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        NULL,
+        0u);
+}
+
+int pstvnc_h1_rfb_transport_send_quiesce_boundary(
+    pstvnc_h1_transport_runtime_t *runtime)
+{
+    if (runtime == NULL ||
+        runtime->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
+        !runtime->rfb_resources.active ||
+        runtime->rfb_quiesce_request_received == 0u ||
+        runtime->rfb_quiesce_boundary_sent != 0u ||
+        runtime->rfb_quiesce_commit_received != 0u ||
+        runtime->rfb_quiesce_complete_sent != 0u) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_CHANNEL);
+        return 0;
+    }
+
+    if (!h1_rfb_send_quiesce_marker(runtime))
+        return 0;
+
+    runtime->rfb_quiesce_boundary_sent = 1u;
+    return 1;
+}
+
+int pstvnc_h1_rfb_transport_send_quiesce_complete(
+    pstvnc_h1_transport_runtime_t *runtime)
+{
+    if (runtime == NULL ||
+        runtime->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
+        !runtime->rfb_resources.active ||
+        runtime->rfb_quiesce_request_received == 0u ||
+        runtime->rfb_quiesce_boundary_sent == 0u ||
+        runtime->rfb_quiesce_commit_received == 0u ||
+        runtime->rfb_quiesce_complete_sent != 0u) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_CHANNEL);
+        return 0;
+    }
+
+    if (!h1_rfb_send_quiesce_marker(runtime))
+        return 0;
+
+    runtime->rfb_quiesce_complete_sent = 1u;
+    return 1;
 }
