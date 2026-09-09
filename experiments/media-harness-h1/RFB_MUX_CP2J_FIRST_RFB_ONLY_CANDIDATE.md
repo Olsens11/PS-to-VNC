@@ -37,8 +37,12 @@ Pinned PS2IP:
 Candidate executable identity:
 
     ELF_SHA256=d51681273aab15eab9922913b4f6e91a39b21820b8de1cfc8953fbb9f6a86ab3
+    ELF_BYTES=3014524
     PT_LOAD_SHA256=ed14abe54ea84b31ef0fead13f8a2dfaf5c4e5a08e923d840542718b10790951
     PT_LOAD_BYTES=488084
+
+`ELF_BYTES` was independently read from the preserved CI artifact after verifying
+its whole-file SHA256 matched the candidate identity above.
 
 Preserved CI artifact:
 
@@ -174,8 +178,8 @@ delegates to the cumulative bridge runner and preserves the same evidence path
 used by later sweeps.
 
 Before the first physical run, deployment/read-back should verify the exact
-ELF SHA above. Any source or PT_LOAD change creates a new candidate and resets
-the hardware gate.
+ELF SHA and byte count above. Any source or PT_LOAD change creates a new
+candidate and resets the hardware gate.
 
 ## First hardware success criteria
 
