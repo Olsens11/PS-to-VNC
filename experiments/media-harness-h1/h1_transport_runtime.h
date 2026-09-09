@@ -26,22 +26,11 @@
 /* H1 extensions to the v1 PSTV framing vocabulary. */
 #define PSTVNC_H1_FRAME_MEDIA_END 8u
 #define PSTVNC_H1_FRAME_SESSION_RESULT 9u
-#define PSTVNC_H1_FRAME_RFB_QUIESCE 10u
 
 #define PSTVNC_H1_MEDIA_END_VERSION 1u
 #define PSTVNC_H1_MEDIA_END_WORDS 16u
 #define PSTVNC_H1_MEDIA_END_BYTES \
     (PSTVNC_H1_MEDIA_END_WORDS * 4u)
-
-#define PSTVNC_H1_RFB_QUIESCE_VERSION 1u
-#define PSTVNC_H1_RFB_QUIESCE_WORDS 3u
-#define PSTVNC_H1_RFB_QUIESCE_BYTES \
-    (PSTVNC_H1_RFB_QUIESCE_WORDS * 4u)
-
-#define PSTVNC_H1_RFB_QUIESCE_REQUEST 1u
-#define PSTVNC_H1_RFB_QUIESCE_BOUNDARY 2u
-#define PSTVNC_H1_RFB_QUIESCE_COMMIT 3u
-#define PSTVNC_H1_RFB_QUIESCE_COMPLETE 4u
 
 #define PSTVNC_H1_TELEMETRY_VERSION 2u
 #define PSTVNC_H1_TELEMETRY_WORDS 40u
@@ -120,9 +109,10 @@ typedef struct pstvnc_h1_transport_runtime {
     volatile uint32_t diagnostic_word;
 
     /*
-     * RFB quiesce is a four-phase control handshake over the same PSTV stream:
-     * request(Pi)->boundary(PS2)->commit(Pi)->complete(PS2).
-     * These flags are written/read only at complete PSTV-frame boundaries.
+     * Clean RFB shutdown uses four zero-length PSTV DATA markers on logical
+     * channel 1: request(Pi)->boundary(PS2)->commit(Pi)->complete(PS2).
+     * Non-empty channel-1 DATA remains raw RFB bytes and is never interpreted
+     * here as lifecycle control.
      */
     volatile uint32_t rfb_quiesce_request_received;
     volatile uint32_t rfb_quiesce_boundary_sent;
