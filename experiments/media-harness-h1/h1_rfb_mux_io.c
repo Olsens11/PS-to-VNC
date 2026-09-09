@@ -3,10 +3,10 @@
  * Binds the unchanged clean RFB session I/O seam to H1 logical channel 1.
  *
  * No physical socket is opened here. The cumulative H1 transport remains the
- * sole owner of the one PSTV TCP connection and recv() thread. The historical
- * RFB session's integer socket handle is used only as a fail-closed identity
- * check against the bound H1 runtime; all actual reads/writes are delegated to
- * logical channel-1 mechanics.
+ * sole owner of the one PSTV TCP connection and physical receive thread. The
+ * historical RFB session's integer socket handle is used only as a fail-closed
+ * identity check against the bound H1 runtime; all actual reads/writes are
+ * delegated to logical channel-1 mechanics.
  */
 
 #include "h1_rfb_mux_io.h"
