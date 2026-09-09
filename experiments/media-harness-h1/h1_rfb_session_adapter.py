@@ -292,8 +292,13 @@ def open_rfb_session_adapter(
         raise base.ProtocolError(f"invalid RFB upstream port {port}")
 
     upstream = connector(host, port)
-    adapter = H1RfbSessionAdapter(session, upstream)
     try:
+        # The connect timeout is only a bound on establishing the upstream VNC
+        # connection. Once connected, an incremental RFB request may legitimately
+        # produce no server bytes for an arbitrary amount of time while the
+        # desktop is idle, so steady-state reads must be blocking.
+        upstream.settimeout(None)
+        adapter = H1RfbSessionAdapter(session, upstream)
         adapter.start()
     except BaseException:
         try:
