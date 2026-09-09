@@ -21,6 +21,11 @@ include mk/media-harness-h1-cumulative39-thread-census.mk
 # linked through-Issue-39 input/runtime/pad objects.
 EXTRA_EE_OBJS += $(BUILD_DIR)/h1_rfb_input_service.o
 
+# The inherited final-link rule was parsed before the CP2L-only append above.
+# Make this object an explicit final-ELF prerequisite so make schedules its
+# recipe before the inherited link command expands the recursive object list.
+$(EE_BIN): $(BUILD_DIR)/h1_rfb_input_service.o
+
 $(BUILD_DIR)/h1_main.o: \
 	experiments/media-harness-h1/h1_main_rfb_visible_input_entry.c \
 	experiments/media-harness-h1/h1_main_rfb_visible_input.c \

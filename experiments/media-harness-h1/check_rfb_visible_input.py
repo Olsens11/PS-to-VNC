@@ -46,13 +46,10 @@ def strip_c_comments(text: str) -> str:
 
 def check_source() -> None:
     runtime_h = RUNTIME_H.read_text(encoding="utf-8")
-    runtime_c = RUNTIME_C.read_text(encoding="utf-8")
-    runtime_code = strip_c_comments(runtime_c)
+    runtime_code = strip_c_comments(RUNTIME_C.read_text(encoding="utf-8"))
     input_h = INPUT_H.read_text(encoding="utf-8")
-    input_c = INPUT_C.read_text(encoding="utf-8")
-    input_code = strip_c_comments(input_c)
-    main_c = MAIN_C.read_text(encoding="utf-8")
-    main_code = strip_c_comments(main_c)
+    input_code = strip_c_comments(INPUT_C.read_text(encoding="utf-8"))
+    main_code = strip_c_comments(MAIN_C.read_text(encoding="utf-8"))
     main_entry = MAIN_ENTRY.read_text(encoding="utf-8")
     cp2k_main = CP2K_MAIN.read_text(encoding="utf-8")
     makefile = MAKEFILE.read_text(encoding="utf-8")
@@ -73,8 +70,6 @@ def check_source() -> None:
     ):
         require(runtime_code, needle, "runtime_service_boundary")
 
-    # The service callback must remain an application-side seam. It does not
-    # gain physical receive/socket ownership or any display/media/UI mechanism.
     for forbidden in (
         "socket(",
         "connect(",
@@ -103,7 +98,6 @@ def check_source() -> None:
     ):
         require(input_code, needle, "input_service_mechanism")
 
-    # Keyboard is fail-closed vocabulary only; no keyboard serializer is legal.
     require(input_code, "PSTVNC_INPUT_EVENT_KEYBOARD_TAP", "keyboard_fail_closed")
     if "pstvnc_rfb_session_send_key_event(" in input_code:
         fail("keyboard_serializer_enabled")
@@ -132,8 +126,6 @@ def check_source() -> None:
         if forbidden in main_code:
             fail(f"cp2l_main_forbidden_owner:{forbidden}")
 
-    # CP2K's tested coordinator remains presenter-only in source. The new service
-    # seam must not silently activate input in the CP2K entry point.
     if "run_with_presenter_and_service" in cp2k_main or \
        "pstvnc_h1_rfb_input_service" in cp2k_main:
         fail("cp2k_presenter_silently_gained_input")
@@ -146,15 +138,14 @@ def check_source() -> None:
 
     for needle in (
         "H1_MAIN_SOURCE := experiments/media-harness-h1/h1_main_rfb_visible_input_entry.c",
-        "h1_rfb_input_service.o",
+        "EXTRA_EE_OBJS += $(BUILD_DIR)/h1_rfb_input_service.o",
+        "$(EE_BIN): $(BUILD_DIR)/h1_rfb_input_service.o",
         "h1_rfb_transport_live_visible.c",
         "h1_rfb_session_runtime_visible.c",
         "include mk/media-harness-h1-cumulative39-thread-census.mk",
     ):
         require(makefile, needle, "cp2l_makefile")
 
-    # Ensure the header itself describes a single semantic-input owner rather
-    # than growing a generic transport abstraction.
     require(input_h, "pstvnc_input_runtime_t input_runtime", "input_owner")
     require(input_h, "pointer_messages_sent", "input_stats")
 
