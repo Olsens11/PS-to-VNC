@@ -38,6 +38,8 @@ jobs:
           /tmp/h1_rfb_credit_policy_test
       - name: Test H1 Pi RFB byte bridge
         run: python3 experiments/media-harness-h1/h1_rfb_pi_bridge_test.py
+      - name: Test H1 reader-to-RFB bridge integration
+        run: python3 experiments/media-harness-h1/h1_rfb_session_adapter_test.py
       - name: Verify H1 operator control surface remains readable
         run: |
           python3 experiments/media-harness-h1/h1_tool.py --help >/dev/null
