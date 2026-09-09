@@ -1,37 +1,36 @@
-# H1 cumulative through-Issue-39 EE-thread census build.
+# H1 cumulative through-Issue-39 EE-thread census / RFB transport build.
 #
 # Purpose:
 #   Produce one resident diagnostic ELF containing the clean reconstruction
 #   subsystem implementations completed through Issue #39 plus the current H1
-#   AUDIO/MPEG harness.
-#
-# Runtime contract for the first hardware census:
-#   - H1 AUDIO/MPEG path is active according to CONFIG;
-#   - RFB/input/OSK/local-UI modules are linked but not started;
-#   - therefore the exact same binary can later activate those subsystems
-#     deliberately without changing their source population.
+#   AUDIO/MPEG harness and the experiment-owned one-socket RFB transport path.
 #
 # The old Issue-39 app.c coordinator is intentionally NOT linked. It owns fixed
-# desktop-sized static presentation buffers and startup policy that would be
-# live ELF state even while RFB is disabled. H1 remains the resident coordinator
-# and will instantiate each clean module only when its session toggle is ON.
+# desktop-sized static presentation buffers and startup policy that would be live
+# ELF state even while RFB is disabled. H1 remains the resident coordinator and
+# instantiates clean modules only when the session mode selects them.
 #
 # Likewise the Issue-7/39 deterministic sendto wrapper is not linked into this
 # H1 transport experiment: wrapping all sendto calls would be a transport-side
 # behavior change even when product diagnostics are unused. The ordinary
 # diagnostics module itself remains available and inert until explicitly used.
 #
-# RFB mux preparation rule:
+# RFB mux rule:
 #   The clean through-Issue-39 RFB parser/session source remains mechanically
-#   unchanged. In this H1-only cumulative target its three rfb_io.h calls are
-#   preprocessor-renamed to experiment-owned mux adapter symbols. The logical
-#   channel, CONFIG-sized resource bundle, host-tested credit policy, live
-#   channel-1 transport mechanics, adapter binding, lifecycle cleanup, locked
-#   transport snapshot, and headless RFB session coordinator are linked here.
-#   PSTVNC_H1_RFB_MUX_PREP enables cumulative hooks inside the existing H1
-#   transport. The authoritative CONFIG validator still rejects RFB ON, so the
-#   new parser coordinator remains unreachable until a later explicit gate
-#   checkpoint. No RFB graphics/input presentation is activated here.
+#   unchanged. Its three rfb_io.h calls are preprocessor-renamed to the H1 mux
+#   adapter. Logical channel 1, CONFIG-sized queue/credit resources, clean
+#   quiesce, and the headless CPU-framebuffer coordinator are experiment-owned.
+#
+# First activation checkpoint:
+#   This cumulative target alone opens CONFIG for RFB ON, and only for RFB-only
+#   sessions (AUDIO OFF + MPEG OFF). h1_config.c is compiled with its public
+#   validator renamed to an inner symbol; a small wrapper validates RFB policy,
+#   normalizes only the RFB fields, and delegates all other profile authority to
+#   the unchanged inner validator. CAP_RFB is likewise injected only into this
+#   target's h1_transport_runtime.o via a documented preinclude override.
+#
+# No RFB GS presentation, controller input, pointer, keyboard, OSK, local UI, or
+# AUDIO/MPEG hybrid composition is activated by this rule.
 
 BUILD_DIR ?= build/experiments/media-harness-h1-cumulative39-thread-census/ps2
 EE_BIN ?= $(BUILD_DIR)/PS2VNC-H1-Cumulative39-ThreadCensus.ELF
@@ -48,6 +47,7 @@ EXTRA_EE_INCS := \
 	-I$(GSKIT)/include
 
 EXTRA_EE_OBJS := \
+	$(BUILD_DIR)/h1_config_rfb_activation_gate.o \
 	$(BUILD_DIR)/diagnostics39.o \
 	$(BUILD_DIR)/rfb39.o \
 	$(BUILD_DIR)/framebuffer39.o \
@@ -82,18 +82,30 @@ EXTRA_EE_LIBS := \
 	-ldmakit \
 	-lpad
 
-#
+# Cumulative-only CONFIG gate: retain h1_config.c as inner authority and expose
+# the experiment wrapper as the public validator.
+$(BUILD_DIR)/h1_config.o: EE_CFLAGS += \
+	-Dpstvnc_h1_config_validate=pstvnc_h1_config_validate_inner
+
 # Cumulative-only transport seam:
-#   Rename the original public lifecycle definitions to inner names, retain the
-#   wrapper for cleanup, and enable the RFB-preparation hook points in the same
-#   source. Other H1 targets are unaffected by these target-specific flags.
-#
+#   - enable the RFB preparation hooks;
+#   - rename public transport lifecycle definitions to the cleanup wrapper's
+#     inner names;
+#   - preinclude the build-local CAP_RFB override. The override changes only the
+#     existing HELLO capability expression and does not alter transport logic.
 $(BUILD_DIR)/h1_transport_runtime.o: EE_CFLAGS += \
 	-DPSTVNC_H1_RFB_MUX_PREP=1 \
 	-Dpstvnc_h1_transport_start=pstvnc_h1_transport_start_inner \
-	-Dpstvnc_h1_transport_shutdown=pstvnc_h1_transport_shutdown_inner
+	-Dpstvnc_h1_transport_shutdown=pstvnc_h1_transport_shutdown_inner \
+	-include experiments/media-harness-h1/h1_rfb_capability_override.h
 
 include mk/media-harness-h1-thread-census-diag.mk
+
+$(BUILD_DIR)/h1_config_rfb_activation_gate.o: \
+	experiments/media-harness-h1/h1_config_rfb_activation_gate.c \
+	experiments/media-harness-h1/h1_config.h \
+	experiments/audio-transport/common/transport_protocol.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/diagnostics39.o: \
 	src/diagnostics/diagnostics.c \
