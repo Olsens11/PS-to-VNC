@@ -72,6 +72,12 @@ def main() -> int:
     h1_sock, fake_ps2 = socket.socketpair()
     bridge_sock, fake_vnc = socket.socketpair()
 
+    # Reproduce the production condition from socket.create_connection(timeout=5):
+    # a connected upstream socket can retain a finite read timeout. The adapter
+    # contract must clear it because an idle RFB incremental request can remain
+    # silent indefinitely without indicating transport failure.
+    bridge_sock.settimeout(0.05)
+
     profile = resolve_profile(
         "P11_COMPAT_VIDEO_ONLY",
         0x2002,
@@ -98,6 +104,7 @@ def main() -> int:
     adapter = open_rfb_session_adapter(session, connector=connector)
     assert adapter is not None
     assert connector_calls == [("127.0.0.1", 5900)]
+    assert adapter.upstream.gettimeout() is None
 
     reader = threading.Thread(target=session.reader, name="h1-rfb-adapter-test-reader")
     reader.start()
@@ -202,6 +209,12 @@ def main() -> int:
         )
         wait_for(lambda: session.mpeg.credit == 3, "interleaved base MPEG credit")
         session.check_reader()
+        adapter.check()
+
+        # Stay completely idle for longer than the finite timeout the connector
+        # originally supplied. This is normal RFB behavior: the server may send
+        # nothing until the framebuffer changes. The bridge must remain healthy.
+        time.sleep(0.10)
         adapter.check()
 
         stats = adapter.bridge.stats
