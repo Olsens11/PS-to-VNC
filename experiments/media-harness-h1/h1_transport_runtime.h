@@ -1,14 +1,12 @@
 /*
  * File synopsis:
  * Defines H1's one-socket mux runtime for logical AUDIO and MPEG2 channels,
- * plus the dormant ownership slot for prepared RFB channel-1 resources.
+ * plus the experiment-owned logical RFB channel-1 resources and quiesce state.
  *
  * One EE receiver thread is the sole recv() owner. Audio and MPEG bytes land in
- * separate runtime-allocated queues and receive independent credits. The Pi
- * owns scheduling between channels; the PS2 exposes truthful capacity and
- * consumption. RFB resources are embedded here for lifecycle ownership only;
- * CONFIG still rejects RFB ON and no channel-1 dispatch/credit/send path is
- * activated by this checkpoint.
+ * separate runtime-allocated queues and receive independent credits. RFB uses
+ * its own queue/credit resources only in the cumulative preparation build.
+ * CONFIG still remains the public activation authority.
  */
 
 #ifndef PSTVNC_MEDIA_HARNESS_H1_TRANSPORT_RUNTIME_H
@@ -28,11 +26,22 @@
 /* H1 extensions to the v1 PSTV framing vocabulary. */
 #define PSTVNC_H1_FRAME_MEDIA_END 8u
 #define PSTVNC_H1_FRAME_SESSION_RESULT 9u
+#define PSTVNC_H1_FRAME_RFB_QUIESCE 10u
 
 #define PSTVNC_H1_MEDIA_END_VERSION 1u
 #define PSTVNC_H1_MEDIA_END_WORDS 16u
 #define PSTVNC_H1_MEDIA_END_BYTES \
     (PSTVNC_H1_MEDIA_END_WORDS * 4u)
+
+#define PSTVNC_H1_RFB_QUIESCE_VERSION 1u
+#define PSTVNC_H1_RFB_QUIESCE_WORDS 3u
+#define PSTVNC_H1_RFB_QUIESCE_BYTES \
+    (PSTVNC_H1_RFB_QUIESCE_WORDS * 4u)
+
+#define PSTVNC_H1_RFB_QUIESCE_REQUEST 1u
+#define PSTVNC_H1_RFB_QUIESCE_BOUNDARY 2u
+#define PSTVNC_H1_RFB_QUIESCE_COMMIT 3u
+#define PSTVNC_H1_RFB_QUIESCE_COMPLETE 4u
 
 #define PSTVNC_H1_TELEMETRY_VERSION 2u
 #define PSTVNC_H1_TELEMETRY_WORDS 40u
@@ -110,6 +119,16 @@ typedef struct pstvnc_h1_transport_runtime {
     volatile pstvnc_h1_transport_error_t error;
     volatile uint32_t diagnostic_word;
 
+    /*
+     * RFB quiesce is a four-phase control handshake over the same PSTV stream:
+     * request(Pi)->boundary(PS2)->commit(Pi)->complete(PS2).
+     * These flags are written/read only at complete PSTV-frame boundaries.
+     */
+    volatile uint32_t rfb_quiesce_request_received;
+    volatile uint32_t rfb_quiesce_boundary_sent;
+    volatile uint32_t rfb_quiesce_commit_received;
+    volatile uint32_t rfb_quiesce_complete_sent;
+
     pstvnc_h1_config_t config;
     uint32_t config_digest;
     uint32_t config_payload_length;
@@ -128,8 +147,7 @@ typedef struct pstvnc_h1_transport_runtime {
 
     /*
      * Experiment-owned RFB channel-1 resources live with the one-socket H1
-     * transport owner. They remain inactive while the current CONFIG validator
-     * accepts only PSTVNC_H1_RFB_OFF.
+     * transport owner. They remain inactive while CONFIG accepts only RFB OFF.
      */
     pstvnc_h1_rfb_runtime_resources_t rfb_resources;
 
