@@ -2,7 +2,7 @@
 
 ## Status
 
-**READY FOR HARDWARE QUALIFICATION; NOT YET HARDWARE QUALIFIED.**
+**HARDWARE QUALIFIED FOR THE NARROW CP2L SCOPE.**
 
 CP2L extends the CP2K visible-RFB-only checkpoint by activating only the existing
 through-Issue-39 PS2 controller/mouse semantic path. The controller worker remains
@@ -10,8 +10,12 @@ a semantic-event producer; the RFB-owning application/main thread drains those
 events only at complete RFB server-message boundaries and performs the native RFB
 pointer writes.
 
-This candidate does not activate keyboard serialization, OSK, local UI, AUDIO,
+This checkpoint does not activate keyboard serialization, OSK, local UI, AUDIO,
 MPEG, hybrid composition, or Issue #40 work.
+
+The real-PS2 result is recorded in:
+
+    experiments/media-harness-h1/RFB_MUX_CP2L_HARDWARE_RESULT.md
 
 ## Scope guard
 
@@ -30,8 +34,9 @@ MPEG, hybrid composition, or Issue #40 work.
 Controller semantics available to this checkpoint are the already-earned
 through-Issue-39 mouse mappings: D-pad and left stick pointer movement, Cross
 left click, Circle right click, Triangle+D-pad wheel, and L3 analog-wheel-mode
-toggle. The first hardware qualification need only prove ordinary pointer motion
-and clicking; wheel behavior may be exercised as additional evidence.
+toggle. CP2L hardware qualification directly observed ordinary pointer motion,
+left click, click-and-drag, and right click; wheel behavior was not required for
+this gate.
 
 ## Exact source/build authority
 
@@ -99,24 +104,29 @@ The green workflow proved the CP2L source and linked-object contract, including:
   storage if dormancy cannot be proven.
 
 The workflow also rebuilt and rechecked the inherited RFB mux seam and prior
-source-level contracts. Those checks do not transfer real-hardware qualification
-to this changed PT_LOAD.
+source-level contracts.
 
-## Hardware gate
+## Hardware qualification result
 
-The exact ELF above has a changed PT_LOAD and is therefore **unqualified until a
-real PS2 run observes it**.
+The exact ELF above completed a 60-second real-PS2 run with session ID
+`2627828139` and evidence directory:
 
-The first qualification should keep the same Pi RFB-only profile used for CP2K:
-AUDIO OFF, MPEG OFF, CONFIG mode 2, upstream VNC `127.0.0.1:5903`, and the single
-PSTV listener on port 5902. During the finite session the operator should verify
-on the PS2/TV that the desktop remains live while PS2 controller input moves the
-remote cursor and performs at least one left click. A right click is a useful
-second proof. The run must still complete the existing RFB quiesce handshake and
-return a clean H1 result.
+    /home/ps2/ps2vnc-evidence/h1-rfb-cp2l-hw1-20260909T110649Z
 
-Until that observation and sealed run evidence exist:
+The run passed CONFIG ACK, the complete REQUEST/BOUNDARY/COMMIT/COMPLETE RFB
+quiesce sequence, normal post-result socket closure, H1 session validation, and
+Pi mux validation with `integrity_pass=1`, `transport_error=0`, and `RUN_RC=0`.
+The diagnostic word was `0xA200E139`, corresponding to 313 completed incremental
+RFB updates under the existing CP2J/CP2K diagnostic encoding.
 
-    CP2L_HARDWARE_QUALIFIED=NO
-    CURRENT_HARDWARE_AUTHORITY=CP2K_VISIBLE_RFB_ONLY
+The operator observed on the PS2 television that the Pi desktop remained live
+while the PS2 controller moved the pointer with both left stick and D-pad. Cross
+performed left click and click-and-drag, and Circle performed right click. The
+operator noted that interaction was somewhat sluggish; this is recorded as a
+performance observation for later optimization, not a functional gate failure.
 
+    CP2L_HARDWARE_QUALIFIED=YES
+    CURRENT_HARDWARE_AUTHORITY=CP2L_VISIBLE_RFB_PLUS_PS2_MOUSE_INPUT
+
+Keyboard, OSK, local UI, RFB+AUDIO, RFB+MPEG, hybrid composition, and Issue #40
+remain outside this qualification.
