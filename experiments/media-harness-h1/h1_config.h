@@ -57,13 +57,27 @@ typedef enum pstvnc_h1_video_mode {
 
 /*
  * CONFIG v4 gives RFB the same explicit queue/credit vocabulary as AUDIO and
- * MPEG. The current activation checkpoint may still reject ON until live
- * channel-1 dispatch/bridge behavior is separately build-verified.
+ * MPEG. Value 1 is the exact CP2J headless transport/parser authority already
+ * qualified on hardware. Value 2 preserves the same transport semantics while
+ * requesting the separate CP2K through-Issue-39 visible presenter. Both remain
+ * cumulative-experiment-only; ordinary H1 validation still rejects nonzero RFB.
  */
 typedef enum pstvnc_h1_rfb_mode {
     PSTVNC_H1_RFB_OFF = 0,
-    PSTVNC_H1_RFB_ON_RESERVED = 1
+    PSTVNC_H1_RFB_ON_RESERVED = 1,
+    PSTVNC_H1_RFB_ON_VISIBLE = 2
 } pstvnc_h1_rfb_mode_t;
+
+static inline int pstvnc_h1_rfb_mode_is_enabled(uint32_t mode)
+{
+    return mode == PSTVNC_H1_RFB_ON_RESERVED ||
+        mode == PSTVNC_H1_RFB_ON_VISIBLE;
+}
+
+static inline int pstvnc_h1_rfb_mode_is_visible(uint32_t mode)
+{
+    return mode == PSTVNC_H1_RFB_ON_VISIBLE;
+}
 
 typedef enum pstvnc_h1_audio_start_mode {
     PSTVNC_H1_AUDIO_START_IMMEDIATE = 0,
