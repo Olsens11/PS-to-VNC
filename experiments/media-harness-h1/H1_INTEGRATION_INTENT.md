@@ -242,28 +242,43 @@ it is not production authority.
 
 ---
 
-## 9. Required next architectural step
+## 9. Near-term hardware-proof course and architectural guardrails
 
-Before adding another user-facing H1 runtime feature, perform a read-only
-integration inventory.
+The immediate post-CP2L course remains the planned sequence of basic hardware
+proofs. The experiment should continue proving capabilities incrementally on the
+real PS2 rather than turning every checkpoint into a final production-integration
+exercise.
 
-For each relevant production module, record:
+The first architectural reconnaissance after CP2L established enough direction
+to correct the next step: the next interaction proof should use the real
+post-Issue-39 module composition where practical instead of advancing the
+experiment-specific CP2M L1+D-pad behavior.
 
-- responsibility and owner;
-- public interface;
-- normal lifecycle;
-- dependencies;
-- current RFB/transport/presentation assumptions;
-- whether H1 can use it unchanged;
-- any genuinely required thin adapter or interface change;
-- H1 code that becomes redundant when the production module is used; and
-- expected final source-directory ownership for any new surviving code.
+For each upcoming proof, apply the larger integration intent as a guardrail:
 
-Then compare the H1 runtime tree against that inventory and classify each H1
-piece as production functionality to integrate, development tooling to retain,
-or vestigial scaffolding to discard.
+- use existing clean modules and public interfaces where practical;
+- avoid H1-specific duplication of behavior already owned by the product;
+- preserve the one-physical-PSTV-connection rule;
+- keep cross-domain ownership clean;
+- use naming that is suitable for eventual integration when naming durable
+  mechanisms;
+- distinguish qualification/checkpoint scaffolding from mechanisms expected to
+  survive; and
+- avoid choices that would make the later shared-data-transport integration
+  unnecessarily difficult.
 
-Do not resume feature implementation until the intended wiring is understood.
+A checkpoint is not required to be production-final. Its immediate purpose is
+to establish controlled behavioral evidence and reveal real hardware
+constraints. The architectural standard during this phase is therefore not
+"integrate everything now" but "learn what we need without accumulating an
+avoidable wrong turn."
+
+As the hardware-proof sequence proceeds, maintain a lightweight integration
+inventory for relevant mechanisms: owner, public boundary, assumptions,
+experimental substitutes, durable vocabulary, and likely eventual source owner.
+This inventory is preparation for the deliberate alignment pass described below;
+it is not a requirement to dismantle useful experiment machinery before each
+new proof.
 
 ---
 
@@ -414,13 +429,64 @@ readability does not create an exception to evidence discipline.
 
 ---
 
-## 14. Guiding statement
+## 14. Architectural alignment is a consolidation ledge, not final integration
+
+After enough basic hardware proofs have accumulated, H1 should deliberately
+enter an architectural alignment/consolidation phase before the proven concepts
+are pushed much further toward mature features.
+
+This phase is not the final integration pass and must not be confused with a
+requirement to tear away useful scaffolding. H1 may still need specialized
+coordinators, exposed knobs, qualification runners, profiles, instrumentation,
+sweeps and other experiment machinery for the next stage of feature development.
+
+The purpose of the alignment phase is to square up what the experiment has
+actually become with the direction of the clean product architecture. It is a
+point to gather the loose pieces developed during the hardware-proof climb,
+bring their edges into alignment, remove obvious roughness and make the whole
+working set coherent before development resumes.
+
+At that point:
+
+- compare the accumulated H1 mechanisms against the clean ownership and
+  dependency model;
+- correct names that describe old checkpoints rather than durable
+  responsibilities;
+- correct abstractions or boundaries that would otherwise create integration
+  debt;
+- replace unnecessary experimental substitutes with real clean modules where
+  doing so improves the development base;
+- separate cross-domain tangles before more behavior is built on top of them;
+- identify which scaffolding is still actively useful and retain it deliberately;
+- preserve qualified evidence even when the proving implementation will later
+  be reshaped; and
+- make sure the next feature-development climb begins from a coherent,
+  integration-compatible base.
+
+The alignment phase therefore asks neither "is H1 finished?" nor "can all
+scaffolding be deleted?" Its question is:
+
+> Has the experiment been consolidated enough that continued development is
+> carrying us toward the eventual clean integration rather than farther away
+> from it?
+
+Only later, once the relevant mechanisms and features are mature enough, should
+the project perform the full integration pass: move surviving production
+mechanisms into their proper clean owners, remove duplicated product behavior
+from H1, retain useful engineering/qualification infrastructure, discard truly
+vestigial experiment runtime, and qualify the resulting production-shaped code
+under the normal evidence rules.
+
+---
+
+## 15. Guiding statement
 
 > H1 is the proving ground, not the replacement product. Prove the new shared
-> data transport, media and scheduling capabilities aggressively; then tease
-> the successful mechanisms apart and integrate them surgically into the clean
-> PS-to-VNC architecture. Reuse the existing production modules instead of
-> imitating them. Keep H1 as development tooling where it remains useful,
-> preserve naming and ownership quality while experimenting, discard vestigial
-> scaffolding, and let production consume only the qualified mechanisms and
-> profiles it actually needs.
+> data transport, media and scheduling capabilities aggressively; periodically
+> consolidate the experiment so its names, ownership and boundaries stay aligned
+> with the clean product direction; then integrate mature successful mechanisms
+> surgically into PS-to-VNC. Reuse existing production modules instead of
+> imitating them. Keep useful H1 development scaffolding for as long as it earns
+> its place, preserve qualification evidence, discard genuinely vestigial pieces
+> when their job is done, and let production consume only the qualified
+> mechanisms and profiles it actually needs.
