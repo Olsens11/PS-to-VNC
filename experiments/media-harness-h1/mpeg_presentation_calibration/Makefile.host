@@ -93,7 +93,7 @@ $(RUNTIME_TEST): $(RUNTIME_SOURCES) h1_mpeg_calibration_runtime_test.c
 	$(CC) $(CFLAGS) -I. -I../../../src/input $(RUNTIME_SOURCES) h1_mpeg_calibration_runtime_test.c -o $@
 
 $(INTERACTION_BINDING_TEST): $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_interaction_binding_test.c
-	$(CC) $(CFLAGS) -I. -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_interaction_binding_test.c -o $@
+	$(CC) $(CFLAGS) -I. -Ihost_stubs -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_interaction_binding_test.c -o $@
 
 clean:
 	rm -f $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST)
