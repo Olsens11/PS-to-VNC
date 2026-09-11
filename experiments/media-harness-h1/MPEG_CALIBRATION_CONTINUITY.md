@@ -2,12 +2,12 @@
 
 ## Session identity
 
-- Timestamp: 2026-09-11 17:47 EDT / 21:47 UTC
+- Timestamp: 2026-09-11 18:53 EDT / 22:53 UTC
 - Branch: `experiment/h1-rfb-mux-prep`
-- Session-start pushed HEAD: `dd6c5c8cc9aa9aae24976e8ef233aadbd487a9ce`
-- Implementation/evidence HEAD before this handoff update: `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d`
-- The canonical handoff commit is the commit containing this file and is the branch HEAD immediately after this update.
-- Repository connector evidence cannot report David's Pi worktree staged/unstaged/untracked state. Do not infer the Pi worktree is clean. No reset, clean, discard, overwrite, merge, or `src/` mutation was performed.
+- Session-start pushed HEAD: `d5db0e324fd229332645d87be1ed0bbc160801b6`
+- Implementation/evidence HEAD before this handoff update: `908250ae93a8a0801189b0113360adc0e21ba08a`
+- The canonical handoff commit containing this file is the branch HEAD immediately after this update.
+- Remote repository state is clean by definition, but the repository connector cannot inspect David's Pi worktree staged/unstaged/untracked state. Treat Pi-local dirty state as **unknown**. No reset, clean, discard, overwrite, merge, or `src/` mutation was performed.
 
 ## Larger push objective
 
@@ -17,97 +17,94 @@ Required behavior remains: held `START+SELECT` temporary entry; accepted EDIT/CO
 
 ## This session objective
 
-Prepare the narrow experiment-local coordinator binding that can execute calibration foreground ownership against the current H1 input/RFB objects before ordinary `pstvnc_local_controller_route()` dispatch, without modifying `src/` or yet changing the live coordinator.
+Diagnose and repair the remaining interaction-binding host failure with exact evidence, require the full strict calibration host suite to return green, and stop before live coordinator insertion so a red contract is never integrated.
 
 ## What changed this run
 
 Added:
 
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding.h`
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding.c`
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding_test.c`
+- `.github/workflows/mpeg-calibration-host-diagnostic.yml` — runs the exact strict calibration host suite, tees stdout/stderr to `build/evidence/mpeg-calibration-host.log`, and preserves it as an Actions artifact even on failure.
+- `experiments/media-harness-h1/mpeg_presentation_calibration/host_stubs/libpad.h` — host-only PS2SDK type shim containing only the `struct padButtonStatus` surface needed by the real `src/input/pad.h` header graph during ordinary Ubuntu host compilation.
 
 Updated:
 
-- `experiments/media-harness-h1/mpeg_presentation_calibration/Makefile.host`
+- `experiments/media-harness-h1/mpeg_presentation_calibration/Makefile.host` — only the interaction-binding host target now places `-Ihost_stubs` before the real `src/input` include directory.
 
 Commits:
 
-- `810d83e522de115b2c3ffae12cc4ec335786cc44` — add interaction-binding contract
-- `ee3847918756e8ca459ebf1bc555a080bfff6b93` — implement interaction binding
-- `dcf8a972b2e782d9239dbaef235706be21960022` — add binding host contract test
-- `880318d06f2d4f752ebf673209629588925c516e` — add binding test to strict host suite
-- `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d` — de-duplicate the binding test source composition after the first CI failure
+- `68234589a96a316eac7d66ab73a8a14132216672` — preserve exact MPEG calibration host diagnostic log
+- `58814d024b34bc50b78f3faf75af24840bd149a1` — add host-only libpad type shim
+- `908250ae93a8a0801189b0113360adc0e21ba08a` — use the host-only shim for the binding contract
 
 No `src/` file, qualified controller/input/local-UI code, live H1 interaction coordinator, RFB parser/session implementation, PS2 graphics owner, or permanent MPEG compositor was modified.
 
-## Interaction-binding contract now represented
+## Root cause and reconciliation
 
-The binding owns no new domain semantics. It borrows pointers to the current H1 coordinator-owned input runtime, RFB session, published pointer coordinates/button state, pointer-message counter, and mouse-suspension fact. It adapts the existing calibration foreground operations to the current architecture:
+The previous red interaction-binding contract was not a calibration logic/assertion defect. Exact preserved diagnostic output showed host compilation stopped transitively at:
 
-1. `pstvnc_input_runtime_suspend_mouse_interpretation()`;
-2. publish a neutral RFB pointer event if a click is currently published;
-3. `pstvnc_input_runtime_rebase_suspended_mouse_state()` to the exact published coordinates with neutral buttons;
-4. retain ownership through calibration release quarantine;
-5. `pstvnc_input_runtime_resume_mouse_interpretation()` only after the calibration core proves full physical release.
+`src/input/input_runtime.h -> src/input/pad.h -> <libpad.h>`
 
-The binding also owns one calibration runtime plus one calibration RFB-flow adapter and exposes the already-prepared generic `pstvnc_h1_rfb_flow_policy_t` for later use by `pstvnc_h1_rfb_session_runtime_run_with_flow_policy()`.
+with `fatal error: libpad.h: No such file or directory` on ordinary Ubuntu CI. The interaction binding intentionally consumes the real current `pstvnc_input_runtime_t` interface, so replacing or weakening that production header contract would have been the wrong fix.
 
-Ordinary Select remains outside calibration unless START is simultaneously held; the host contract explicitly exercises that distinction.
+The repair is deliberately host-only. The shim supplies only the libpad structure declaration needed to parse the real source header graph; it emulates no libpad calls, pad behavior, controller semantics, or input-runtime behavior. Pinned PS2 builds continue to use the real PS2SDK `<libpad.h>` because their build paths do not add `host_stubs`.
 
 ## Tests/checks and exact evidence
 
-### Preserved passing baseline from the previous tranche
+### Failure captured exactly
 
-Exact implementation HEAD `2baa3c98b51ff916d4c1d059da69366934acfd9e` passed workflow run `34646154111`, including the calibration core/adapter/foreground/RFB-gate/scheduler/flow/render/runtime host contracts and the existing H1 source/ownership checks. The pinned PS2 cumulative build also compiled the modified generic RFB runtime. That remains regression evidence only, not a calibration-enabled ELF.
+Diagnostic run at `68234589a96a316eac7d66ab73a8a14132216672`:
 
-### This run: preserved failures
+- workflow run `34655663750` — **FAILURE**
+- artifact `10285364214`, `mpeg-calibration-host-diagnostic`
+- artifact digest `sha256:d117653ed678b0dd6ccab219d0aed9c4b96ef9f858231277209e49990decd0c3`
+- exact log identified missing host `<libpad.h>` while compiling `h1_mpeg_calibration_interaction_binding_test`; earlier calibration targets had already built.
 
-First binding-suite attempt at HEAD `880318d06f2d4f752ebf673209629588925c516e`:
+This preserves the failure rather than replacing it with a post-hoc description.
 
-- workflow run `34650926359`
-- host-preflight job `103432644159`
-- `Test MPEG presentation calibration host contracts` failed.
+### Corrected strict host suite
 
-Inspection found one definite build-composition defect in the new Makefile target: the initial `INTERACTION_BINDING_SOURCES` combined `RUNTIME_SOURCES` and `RFB_FLOW_SOURCES`, causing `h1_mpeg_calibration_rfb_gate.c` to be included twice. Commit `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d` replaced that aggregate composition with an explicit unique source list.
+Exact implementation HEAD `908250ae93a8a0801189b0113360adc0e21ba08a`:
 
-Second attempt at exact HEAD `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d`:
+- diagnostic workflow run `34655729670` — **SUCCESS**
+- artifact `10285725159`, `mpeg-calibration-host-diagnostic`
+- artifact digest `sha256:c4f1119f72f8395c46a5b34ea668e3b595ab6bda74fc9a27a3c4bb7c81d0b4e3`
+- strict flags: `-std=c99 -O2 -Wall -Wextra -Werror -pedantic`
+- exact PASS markers:
+  - `MPEG_CALIBRATION_HOST_TEST=PASS`
+  - `MPEG_CALIBRATION_ADAPTER_HOST_TEST=PASS`
+  - `MPEG_CALIBRATION_FOREGROUND_HOST_TEST=PASS`
+  - `MPEG_CALIBRATION_RFB_GATE_HOST_TEST=PASS`
+  - `MPEG_CALIBRATION_RFB_SCHEDULE_HOST_TEST=PASS`
+  - `MPEG_CALIBRATION_RFB_FLOW_HOST_TEST=PASS`
+  - `MPEG_CALIBRATION_RENDER_HOST_TEST=PASS`
+  - `MPEG_CALIBRATION_RUNTIME_HOST_TEST=PASS`
+  - `MPEG_CALIBRATION_INTERACTION_BINDING_HOST_TEST=PASS`
 
-- workflow run `34650963508`
-- host-preflight job `103432756951`
-- `Test MPEG presentation calibration host contracts` still failed.
+The ordinary branch workflow independently confirmed the same result:
 
-The GitHub repository connector exposes step status but not the step's stdout/stderr log body, so the exact remaining compiler/link/assertion text was not available in this session. Do not call the interaction-binding test proven. Preserve this as an unresolved failure rather than smoothing it over.
+- workflow run `34655729709` — **SUCCESS**
+- host-preflight job `103447595405` — **SUCCESS**; `Test MPEG presentation calibration host contracts` succeeded, followed by all existing CP2N/RFB/mux/operator checks.
+- ps2-build job `103447595609` — **SUCCESS**; cumulative H1 RFB-prep and CP2K/CP2L/CP2M/CP2N regression candidates compiled under the pinned PS2 toolchain and their existing artifacts were preserved.
 
-The same run's pinned `ps2-build` job `103432757320` was still in progress when this handoff was written and does not compile/link the new calibration binding into a candidate ELF anyway.
+Repository reconciliation also corrected one stale fact from the prior handoff: prior run `34650963508` ps2-build job `103432757320` ultimately completed **SUCCESS**. It was merely still running when that handoff was written.
 
-Evidence paths/IDs:
+These PS2 jobs remain regression-build evidence only. The current candidate makefiles do not yet link the calibration binding/runtime/renderer into a calibration-enabled ELF.
 
-- implementation HEAD `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d`
-- failed first run `34650926359`, host job `103432644159`
-- failed corrected-source-list run `34650963508`, host job `103432756951`
+## Evidence paths / artifacts
+
+- `.github/workflows/mpeg-calibration-host-diagnostic.yml`
+- `experiments/media-harness-h1/mpeg_presentation_calibration/host_stubs/libpad.h`
+- `experiments/media-harness-h1/mpeg_presentation_calibration/Makefile.host`
 - `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding.[ch]`
 - `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding_test.c`
-- `experiments/media-harness-h1/mpeg_presentation_calibration/Makefile.host`
+- failed diagnostic run/artifact: `34655663750` / `10285364214`
+- green diagnostic run/artifact: `34655729670` / `10285725159`
+- green full branch workflow: `34655729709`
+- green host job: `103447595405`
+- green pinned-PS2 regression job: `103447595609`
 - this handoff
 
 No Pi execution, deployment, physical PS2 observation, or calibration-enabled ELF execution occurred.
-
-## Repository/source reconciliation this run
-
-At session start the continuity guide was read first. Remote branch authority independently reported `experiment/h1-rfb-mux-prep` at `dd6c5c8cc9aa9aae24976e8ef233aadbd487a9ce`, matching the preceding handoff.
-
-The exact current `h1_interaction_coordinator.[ch]`, calibration runtime/foreground/adapter/flow contracts, `src/input/input_runtime.h`, and `src/rfb/rfb_session.h` were re-read before implementation.
-
-Important live-source facts reconfirmed:
-
-- normalized controller events enter `h1_interaction_service_controller_state()` immediately before `pstvnc_local_controller_route()`;
-- existing OSK foreground entry already demonstrates the desired suspend -> neutralize -> rebase sequence;
-- `h1_interaction_resume_desktop_mouse_if_ready()` would need to respect calibration ownership when the binding is actually inserted, so it cannot autonomously resume the mouse during calibration;
-- the calibration-specific flow policy remains separate from the RFB parser/runtime and can be passed through the generic policy entry point;
-- `src/` remains the reference model only and was not modified.
-
-Remote repository APIs cannot expose David's Pi worktree dirty/staged/untracked state. Reconcile the Pi worktree before any build/deploy that could overwrite newer local MPEG/shared-compositor work.
 
 ## Current executable / ELF / PT_LOAD identity
 
@@ -117,58 +114,56 @@ No calibration-enabled PS2 executable exists yet.
 - calibration candidate ELF bytes: **none**
 - calibration candidate PT_LOAD SHA256/bytes: **none**
 
+Existing CP2N/CP2O and other workflow ELFs are regression/reference artifacts only and must not be described as the calibration candidate.
+
 ## Proven vs unproven
 
-### Proven from earlier green evidence
+### Proven through current green evidence
 
-- portable calibration state/geometry and accepted UX mapping;
-- normalized-controller adapter and START+SELECT level-chord ownership model;
-- foreground ownership bridge and release quarantine contract;
-- RFB visual/request gate, request scheduler, generic RFB flow-policy seam, and calibration flow adapter;
-- render-plan/runtime contracts through the previous green implementation HEAD;
-- existing generic RFB runtime changes compile in the pinned PS2 cumulative regression build;
+- portable calibration state/geometry and accepted EDIT/CONTROLS/REVIEW UX mapping;
+- normalized-controller adapter and held START+SELECT entry ownership model;
+- foreground suspend -> neutralize -> rebase -> release-quarantine -> resume contract;
+- RFB visual/request gate, request scheduler, generic flow-policy seam, and calibration flow adapter;
+- render-plan/runtime contracts;
+- concrete interaction binding to the current H1-owned input runtime, RFB session, published pointer state, pointer-message counter, and suspension fact;
+- neutral-pointer publication accounting, ordinary Select pass-through, full-release resume, and binding-owned RFB policy exposure;
+- all nine strict calibration host contracts green at `908250ae...`;
+- existing non-calibration H1 candidates still compile under the pinned PS2 toolchain;
 - calibration remains experiment-local and `src/` untouched.
-
-### Represented in code this run but not yet proven
-
-- the new interaction binding's concrete adaptation of current H1 input/RFB/published-pointer state to the foreground callbacks;
-- neutral-pointer publication accounting through the borrowed H1 pointer-message counter;
-- ordinary Select pass-through at this new binding layer;
-- binding-owned exposure of the prepared generic RFB flow policy.
 
 ### Still unproven / incomplete
 
-- remaining interaction-binding host failure root cause and corrected green run;
-- insertion of the binding into the live H1 interaction coordinator before ordinary local-controller routing;
-- prevention of `h1_interaction_resume_desktop_mouse_if_ready()` from resuming during calibration ownership;
-- live H1 main use of `run_with_flow_policy` and the binding's policy;
+- insertion of the binding into the live experiment-local H1 interaction coordinator immediately before ordinary `pstvnc_local_controller_route()` dispatch;
+- preventing `h1_interaction_resume_desktop_mouse_if_ready()` from autonomously resuming while calibration owns suspension;
+- live H1 use of `pstvnc_h1_rfb_session_runtime_run_with_flow_policy()` with the binding's policy;
+- PS2 compilation of the actual coordinator-linked calibration objects;
 - native PS2 EDIT/CONTROLS/REVIEW raster/presentation adapter;
 - accepted geometry handoff into MPEG presentation;
-- permanent compositor enforcement of the outer-matte suppression perimeter;
-- a PS2 ELF target actually linking the calibration integration/runtime/renderer objects;
+- permanent compositor enforcement of the accepted outer-matte suppression perimeter;
+- a PS2 ELF target actually linking calibration integration/runtime/renderer/compositor ownership;
 - candidate ELF/PT_LOAD identity and physical PS2 qualification.
 
 ## Hardware-qualification boundary
 
-Nothing from this session is hardware-qualified. Existing qualified controller/input ownership semantics were used as the reference model and left untouched. No calibration-enabled ELF has been built or run on PS2 hardware.
+Nothing added or repaired in this session is hardware-qualified. Existing qualified controller/input semantics remain the reference model and were not modified. The green pinned PS2 job proves only that the existing regression candidates still build; it does not prove a calibration-enabled executable because those makefiles do not yet link calibration.
 
 ## Important design decisions / reconciliations
 
 - Keep START+SELECT meaning above qualified controller/libpad owners.
-- Keep calibration foreground mechanics in the experiment-local binding/runtime; do not add them to `src/ui/local_controller.*`.
-- Reuse exact current input-runtime suspension/rebase/resume semantics instead of inventing a second mouse freeze mechanism.
-- Neutralize only the successfully published remote button state and account for that RFB pointer message.
-- Keep calibration RFB flow policy separate from parser/socket ownership.
-- Do not wire a failing host contract into the live coordinator merely to make PT_LOAD progress.
+- Keep calibration foreground mechanics in the experiment-local binding/runtime; do not add them to `src/ui/local_controller.*` or other `src/` owners.
+- Reuse the exact current input-runtime suspension/rebase/resume interfaces.
+- Keep RFB flow policy separate from parser/socket ownership.
+- Use a host-only type shim to make real source interfaces testable off-target; never substitute that shim into a PS2 build or emulate libpad semantics in the calibration module.
+- Do not begin live coordinator insertion until the binding contract is green; that gate is now satisfied.
 - Native calibration rasterization remains separate from permanent MPEG composition.
 - Never merge/align this experiment into `src/` without David's explicit later permission.
 
 ## Current overall push status / milestone
 
-Milestone: **the coordinator-facing ownership adapter now exists as a first-class experiment-local module, but its new strict host contract is red and must be repaired before live coordinator insertion.**
+Milestone: **the coordinator-facing calibration ownership binding is now strict-host proven against the current source interfaces, and the branch's ordinary host plus pinned-PS2 regression workflows are green. The push is ready for experiment-local live coordinator insertion.**
 
-The path to the hardware-testable ELF remains: obtain green interaction-binding evidence; insert the binding before ordinary local-controller routing and connect its flow policy to the RFB run; add native PS2 calibration rasterization; connect committed geometry to MPEG presentation and outer-matte suppression; then build/check/hash the candidate ELF/PT_LOAD before physical qualification.
+The remaining path to a hardware-testable ELF is: bind calibration ownership and RFB flow into the experiment-local H1 coordinator; prove that integration under host/pinned PS2 builds; add native PS2 calibration rasterization; connect accepted geometry to MPEG presentation and permanent outer-matte suppression; then build/check/hash the calibration candidate ELF/PT_LOAD before physical qualification.
 
 ## Single best next action
 
-Diagnose and repair the exact remaining `h1_mpeg_calibration_interaction_binding_test` failure at current branch authority before touching the live coordinator. Use repository CI/check evidence or an execution-capable checkout to capture the compiler/link/assertion text, make the smallest correction, and require the entire strict calibration host suite to return green. Once green, the following tranche should insert one `pstvnc_h1_mpeg_calibration_interaction_binding_t` into the experiment-local H1 coordinator, call it immediately before `pstvnc_local_controller_route()`, prevent ordinary desktop-mouse auto-resume while calibration owns suspension, and pass its policy to `pstvnc_h1_rfb_session_runtime_run_with_flow_policy()`—still without modifying `src/` or beginning PS2 calibration rasterization.
+Insert one `pstvnc_h1_mpeg_calibration_interaction_binding_t` into the experiment-local H1 interaction coordinator and service it immediately before `pstvnc_local_controller_route()`. While its calibration runtime owns foreground, prevent `h1_interaction_resume_desktop_mouse_if_ready()` from independently resuming mouse interpretation. Pass `pstvnc_h1_mpeg_calibration_interaction_binding_rfb_policy()` into `pstvnc_h1_rfb_session_runtime_run_with_flow_policy()` at the current H1 main/RFB run site. Add focused host/source-ownership checks for that wiring and require both the strict host suite and pinned PS2 compilation to remain green before beginning the separate native calibration rasterization tranche. Do not modify `src/`.
