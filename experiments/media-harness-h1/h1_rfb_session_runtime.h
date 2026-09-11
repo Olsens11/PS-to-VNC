@@ -41,14 +41,53 @@ typedef int (*pstvnc_h1_rfb_service_callback_t)(
     void *context,
     pstvnc_rfb_session_t *session);
 
+/*
+ * Optional request/presentation flow-policy seam.
+ *
+ * The default entry points pass no policy and retain their qualified behavior:
+ * one incremental request is sent after each complete boundary and every dirty
+ * completed framebuffer update is published.
+ *
+ * A policy is evaluated only at the same already-qualified complete-message or
+ * pre-message IDLE boundaries. It does not own the parser, socket, framebuffer,
+ * presentation callback, or application service callback.
+ */
+typedef enum pstvnc_h1_rfb_request_policy_decision {
+    PSTVNC_H1_RFB_REQUEST_POLICY_HOLD = 0,
+    PSTVNC_H1_RFB_REQUEST_POLICY_INCREMENTAL,
+    PSTVNC_H1_RFB_REQUEST_POLICY_FULL
+} pstvnc_h1_rfb_request_policy_decision_t;
+
+typedef pstvnc_h1_rfb_request_policy_decision_t
+(*pstvnc_h1_rfb_next_request_callback_t)(void *context);
+
+typedef int (*pstvnc_h1_rfb_request_sent_callback_t)(
+    void *context,
+    pstvnc_h1_rfb_request_policy_decision_t decision);
+
+typedef int (*pstvnc_h1_rfb_update_complete_callback_t)(void *context);
+
+typedef int (*pstvnc_h1_rfb_allow_present_callback_t)(void *context);
+
+typedef struct pstvnc_h1_rfb_flow_policy {
+    pstvnc_h1_rfb_next_request_callback_t next_request;
+    pstvnc_h1_rfb_request_sent_callback_t request_sent;
+    pstvnc_h1_rfb_update_complete_callback_t update_complete;
+    pstvnc_h1_rfb_allow_present_callback_t allow_present;
+    void *context;
+} pstvnc_h1_rfb_flow_policy_t;
+
 typedef struct pstvnc_h1_rfb_session_runtime_stats {
     uint32_t handshake_complete;
     uint32_t initial_frame_complete;
     uint32_t incremental_requests_sent;
+    uint32_t full_requests_sent;
+    uint32_t held_request_boundaries;
     uint32_t incremental_updates_complete;
     uint32_t idle_polls;
     uint32_t initial_presentations;
     uint32_t incremental_presentations;
+    uint32_t suppressed_presentations;
     uint32_t application_service_calls;
     uint32_t quiesce_boundary_sent;
     uint32_t quiesce_commit_observed;
@@ -108,6 +147,23 @@ int pstvnc_h1_rfb_session_runtime_run_with_presenter_and_service(
     void *present_context,
     pstvnc_h1_rfb_service_callback_t service,
     void *service_context);
+
+/*
+ * Calibration/experiment integration entry point.
+ *
+ * Existing entry points remain behaviorally unchanged. A non-NULL flow policy
+ * may HOLD request issuance, choose incremental/full requests, account for
+ * successful sends/completed updates, and suppress only the visual publication
+ * of a completed dirty update while parser/framebuffer state still advances.
+ */
+int pstvnc_h1_rfb_session_runtime_run_with_flow_policy(
+    pstvnc_h1_rfb_session_runtime_t *runtime,
+    pstvnc_h1_transport_runtime_t *transport,
+    pstvnc_h1_rfb_present_callback_t present,
+    void *present_context,
+    pstvnc_h1_rfb_service_callback_t service,
+    void *service_context,
+    const pstvnc_h1_rfb_flow_policy_t *flow_policy);
 
 void pstvnc_h1_rfb_session_runtime_shutdown(
     pstvnc_h1_rfb_session_runtime_t *runtime);
