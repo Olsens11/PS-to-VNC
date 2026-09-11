@@ -5,20 +5,33 @@ CORE_SOURCES = \
 	mpeg_presentation_calibration_geometry.c \
 	mpeg_presentation_calibration_state.c
 
+ADAPTER_SOURCES = \
+	$(CORE_SOURCES) \
+	h1_mpeg_calibration_adapter.c
+
+FOREGROUND_SOURCES = \
+	$(ADAPTER_SOURCES) \
+	h1_mpeg_calibration_foreground.c
+
 CORE_TEST = mpeg_presentation_calibration_test
 ADAPTER_TEST = h1_mpeg_calibration_adapter_test
+FOREGROUND_TEST = h1_mpeg_calibration_foreground_test
 
 .PHONY: test clean
 
-test: $(CORE_TEST) $(ADAPTER_TEST)
+test: $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST)
 	./$(CORE_TEST)
 	./$(ADAPTER_TEST)
+	./$(FOREGROUND_TEST)
 
 $(CORE_TEST): $(CORE_SOURCES) mpeg_presentation_calibration_test.c
 	$(CC) $(CFLAGS) -I. $(CORE_SOURCES) mpeg_presentation_calibration_test.c -o $@
 
-$(ADAPTER_TEST): $(CORE_SOURCES) h1_mpeg_calibration_adapter.c h1_mpeg_calibration_adapter_test.c
-	$(CC) $(CFLAGS) -I. -I../../../src/input $(CORE_SOURCES) h1_mpeg_calibration_adapter.c h1_mpeg_calibration_adapter_test.c -o $@
+$(ADAPTER_TEST): $(ADAPTER_SOURCES) h1_mpeg_calibration_adapter_test.c
+	$(CC) $(CFLAGS) -I. -I../../../src/input $(ADAPTER_SOURCES) h1_mpeg_calibration_adapter_test.c -o $@
+
+$(FOREGROUND_TEST): $(FOREGROUND_SOURCES) h1_mpeg_calibration_foreground_test.c
+	$(CC) $(CFLAGS) -I. -I../../../src/input $(FOREGROUND_SOURCES) h1_mpeg_calibration_foreground_test.c -o $@
 
 clean:
-	rm -f $(CORE_TEST) $(ADAPTER_TEST)
+	rm -f $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST)
