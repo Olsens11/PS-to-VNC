@@ -2,190 +2,140 @@
 
 ## Session identity
 
-- Session timestamp: 2026-09-11 13:45 EDT run
+- Timestamp: 2026-09-11 14:49 EDT / 18:49 UTC
 - Branch: `experiment/h1-rfb-mux-prep`
-- Session-start pushed HEAD: `69dfd7e416a2ea0355da521516b8d568344f870c`
-- Pre-handoff implementation HEAD: `64a3c75365d0d9b436b3ebd8bbdb6a0d592807f6`
-- The canonical handoff commit is the commit containing this file and is therefore the branch HEAD immediately after this update.
-- Local Pi staged/unstaged/untracked state remains **not observable through the GitHub repository connector**. Do not infer a clean Pi worktree before any build/deploy. No unknown local work was reset, cleaned, discarded, or overwritten by this run.
+- Session-start pushed HEAD: `a91f5b3fa0e4df25c6e967409445dde5e0058077`
+- Evidence/source HEAD before this handoff update: `83f4bba0552c72dc29df1d5f8a7b058b4173c4ce`
+- The canonical handoff commit is the commit containing this file and is the pushed branch HEAD immediately after this update.
+- GitHub branch evidence has no staged/unstaged/untracked state. The Pi worktree's local staged/unstaged/untracked state is not observable through the repository connector in this run; do not infer it is clean. No reset, clean, discard, overwrite, merge, or `src/` mutation was performed.
 
 ## Larger push objective
 
-Prepare a hardware-testable H1 ELF combining qualified visible RFB interaction, PCM audio, MPEG presentation, and native PS2 MPEG-presentation calibration while keeping calibration experiment-local and separate from the permanent MPEG compositor/presentation backend.
+Produce a hardware-testable H1 ELF with qualified visible RFB interaction, PCM, MPEG presentation, and native PS2 MPEG-presentation calibration while keeping calibration experiment-local and separate from the permanent MPEG compositor/presentation backend.
 
-Temporary entry gesture remains held `START+SELECT`.
-
-During calibration, keep PSTV/RFB protocol state healthy, freeze new RFB visual/request work only through the existing complete-server-message scheduling boundary, retain the last authoritative desktop image, suppress ordinary mouse/controller/local-UI dispatch while physical controller polling continues, and render calibration locally. After accepted MPEG ownership begins, RFB may resume elsewhere but is forbidden from the outer edge of the outer matte inward.
+Calibration requirements remain: held `START+SELECT` temporary entry; accepted EDIT/CONTROLS/REVIEW UX and mapping; physical controller polling continues but ordinary mouse/controller/local-UI dispatch is suppressed while calibration owns foreground; RFB protocol remains healthy while new RFB visual presentation is frozen; request scheduling stops at the existing complete-server-message boundary; thaw requires one full/nonincremental refresh; and once MPEG presentation owns an accepted region, the outer edge of the outer matte is the permanent RFB suppression perimeter inward.
 
 ## This session objective
 
-Reduce the remaining H1 coordinator wiring surface without prematurely modifying the current coordinator or `src/`: compose the already-separated foreground bridge, safe-boundary RFB gate, render-plan access, and accepted-geometry access behind one experiment-local runtime boundary that the H1 coordinator can consume directly.
+Close the outstanding execution-evidence gap for the already-committed calibration core, adapter, foreground bridge, RFB gate, render-plan contract, and runtime facade before making live H1 coordinator/RFB-scheduler changes.
 
 ## What changed this run
 
-Added:
-
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_runtime.h`
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_runtime.c`
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_runtime_test.c`
-
-Updated:
-
-- `experiments/media-harness-h1/mpeg_presentation_calibration/Makefile.host`
-
-Commits:
-
-- `900c80d3e7773bfbb03613a42dcd7b4e1af30d78` — runtime interface
-- `c1ba12acd5304ce6547b2866f43f19d601f61be0` — runtime implementation
-- `83a824da8b4ea6bdb5579d4945e5a5018b0753d5` — runtime host contract test
-- `64a3c75365d0d9b436b3ebd8bbdb6a0d592807f6` — host target integration
-
-No `src/` file, qualified controller/input/local-UI/RFB implementation, parser/framing code, H1 interaction coordinator, PS2 graphics platform code, or permanent MPEG compositor was modified.
-
-## Repository/source evidence reconciled this run
-
-At session start the continuity guide and exact pushed branch history were re-read. The branch was still at `69dfd7e416a2ea0355da521516b8d568344f870c`, so there was no newer pushed calibration work to reconcile.
-
-The current H1 coordinator and clean platform graphics seam were inspected again before the tranche:
-
-- normalized controller state is routed in `h1_interaction_coordinator.c` immediately before `pstvnc_local_controller_route()`;
-- the existing OSK path already demonstrates the qualified suspend -> neutralize published pointer -> rebase ownership sequence;
-- final presentation converts the authoritative remote framebuffer to caller-owned GS pixels, prepares a caller-owned local overlay, then calls `pstvnc_ps2_graphics_present()`;
-- `src/platform/ps2_graphics.h` accepts a complete desktop plus one generic local overlay and does not own the product meaning of that overlay.
-
-Those facts support keeping calibration orchestration in the experiment-local runtime and a later experiment-local PS2 graphics adapter, rather than changing clean platform/controller owners.
-
-## Runtime contract now represented in code
-
-`h1_mpeg_calibration_runtime.*` composes, but does not merge, the existing calibration responsibilities:
-
-- foreground controller ownership via `h1_mpeg_calibration_foreground`;
-- RFB request/presentation freeze/thaw state via `h1_mpeg_calibration_rfb_gate`;
-- active native calibration presentation facts via `h1_mpeg_calibration_render`;
-- accepted geometry publication through a read-only committed-region accessor.
-
-For each normalized controller observation the runtime:
-
-1. delegates ownership transitions to the foreground bridge;
-2. immediately mirrors the bridge's `freeze_rfb_visuals` fact into the RFB gate;
-3. returns whether ordinary controller dispatch must be consumed;
-4. exposes whether calibration has a visible modal screen.
-
-The runtime does **not** itself issue RFB requests, parse RFB, draw GS pixels, poll libpad, route ordinary OSK/mouse actions, decode MPEG, or enforce permanent compositor clipping. Those remain with their existing/later owners.
-
-On frozen -> thawed transition, the existing RFB gate still requires exactly one full/nonincremental refresh before normal incremental assumptions resume.
-
-## Tests/checks and evidence boundary
-
-Previously executed and recorded:
-
-- `MPEG_CALIBRATION_HOST_TEST=PASS`
-
-Committed but **not executed in this repository-only run**:
-
-- `MPEG_CALIBRATION_ADAPTER_HOST_TEST=PASS` — not yet claimed
-- `MPEG_CALIBRATION_FOREGROUND_HOST_TEST=PASS` — not yet claimed
-- `MPEG_CALIBRATION_RFB_GATE_HOST_TEST=PASS` — not yet claimed
-- `MPEG_CALIBRATION_RENDER_HOST_TEST=PASS` — not yet claimed
-- `MPEG_CALIBRATION_RUNTIME_HOST_TEST=PASS` — not yet claimed
-
-`Makefile.host` now builds/runs all six tests with `-std=c99 -O2 -Wall -Wextra -Werror -pedantic`.
-
-The new runtime host test is intended to verify:
-
-- START+SELECT establishes the existing S/N/B foreground operation order;
-- calibration entry closes both RFB request and remote-present gates;
-- an active EDIT screen exposes a render plan;
-- cancel remains frozen through release quarantine;
-- full physical release resumes input, thaws both RFB gates, and produces exactly one full-refresh obligation;
-- committed MPEG geometry is absent before acceptance.
-
-No compiler, Pi execution, PS2 ELF build, deployment, or physical hardware observation occurred in this run. Therefore none of the newly added runtime behavior is execution-qualified yet.
-
-## Evidence / artifact paths
-
-Repository-visible evidence:
-
-- `experiments/media-harness-h1/mpeg_presentation_calibration/mpeg_presentation_calibration_*`
-- `.../h1_mpeg_calibration_adapter.*`
-- `.../h1_mpeg_calibration_foreground.*`
-- `.../h1_mpeg_calibration_rfb_gate.*`
-- `.../h1_mpeg_calibration_render.*`
-- `.../h1_mpeg_calibration_runtime.*`
-- corresponding host tests
-- `.../Makefile.host`
-- this handoff
-
-No external evidence directory was created because no execution-capable checkout was available in this run.
-
-## Current executable / ELF / PT_LOAD identity
-
-No new PS2 executable was built.
-
-- candidate ELF SHA256: **none yet**
-- candidate ELF bytes: **none yet**
-- candidate PT_LOAD SHA256/bytes: **none yet**
-
-Hardware authority remains with the previously qualified interaction/CP2N lineage and later recorded evidence. Calibration remains repository/source-contract evidence until a PT_LOAD-changing candidate is built and physically qualified.
-
-## Proven vs unproven
-
-### Proven from repository/source evidence
-
-- calibration remains experiment-local;
-- `src/` and qualified controller/input/local-UI/RFB/platform graphics code remain unchanged;
-- START+SELECT meaning remains outside qualified local-controller code;
-- portable state, normalized-controller mapping, foreground lifecycle, RFB scheduling gate, render-plan preparation, and runtime composition remain separately named responsibilities;
-- the outer-matte suppression rectangle remains an executable calibration/backend contract separate from permanent MPEG/RFB composition;
-- the H1 coordinator can now consume one experiment-local runtime boundary instead of knowing the internals of four calibration modules.
-
-### Still unproven
-
-- execution of adapter, foreground, RFB-gate, render, and runtime host tests on an execution-capable checkout;
-- direct runtime binding immediately before `pstvnc_local_controller_route()`;
-- live callback binding to qualified suspend/neutralize/rebase/resume operations;
-- live safe-boundary application of runtime RFB gate decisions to actual framebuffer request generation and remote-frame presentation;
-- PS2/GS adapter that rasterizes/draws the native calibration render plan over the frozen retained desktop;
-- exact native visual fidelity on PS2;
-- atomic accepted-geometry publication into MPEG presentation;
-- permanent compositor enforcement of the outer-matte suppression rectangle;
-- combined RFB + interaction + PCM + calibration + MPEG build/link;
-- candidate ELF/PT_LOAD identity;
-- physical PS2 behavior and hardware qualification.
-
-## Important design decisions / reconciliation
-
-- Do not put START+SELECT into `src/ui/local_controller.*`.
-- Entry uses authoritative `buttons_down`, not paired edge assumptions.
-- Calibration reuses the qualified input-runtime ownership lifecycle.
-- RFB quiescence remains application scheduling policy at the existing safe complete-message boundary; calibration does not disconnect RFB or pause parser internals.
-- Thaw requires one full/nonincremental refresh before normal incremental assumptions resume.
-- Calibration and permanent MPEG presentation/composition remain separate owners.
-- Native calibration rendering remains presentation facts plus a later experiment-local platform adapter; the clean PS2 graphics platform owner stays generic.
-- The runtime is orchestration only. It deliberately does not become a second controller, RFB, graphics, or MPEG owner.
-
-## Current overall push status / milestone
-
-Milestone reached: **portable calibration core + normalized-controller adapter + foreground bridge + safe-boundary RFB gate + platform-neutral render plan + one experiment-local runtime composition boundary are represented on the experimental branch.**
-
-This removes most policy plumbing from the eventual H1 coordinator patch. The main remaining functional layers before a hardware-testable ELF are now (1) execution of host contracts, (2) live H1 coordinator/RFB scheduling binding, (3) experiment-local PS2 calibration-overlay raster/presentation adapter, (4) accepted geometry handoff to MPEG presentation plus permanent suppression enforcement, and (5) combined PS2 build/identity evidence.
-
-## Single best next action
-
-On the next run, first re-read this file and branch state. If an execution-capable checkout is still unavailable, inspect the complete current H1 coordinator service/present functions and the current RFB worker request scheduling interfaces, then make the smallest coherent **experiment-local coordinator binding** that:
-
-1. owns one `pstvnc_h1_mpeg_calibration_runtime_t` in the H1 coordinator;
-2. services it immediately before ordinary `pstvnc_local_controller_route()`;
-3. maps the runtime foreground callbacks to the existing suspend/neutralize/rebase/resume operations without changing their semantics;
-4. skips ordinary local-controller routing whenever runtime result says `consume_controller_state`;
-5. evaluates request/present permission only at the existing safe server-message/application scheduling boundary;
-6. consumes the one-shot thaw full-refresh requirement there;
-7. does not yet fold PS2 rasterization or permanent MPEG composition into the runtime.
-
-If an execution-capable checkout is available first run:
+Updated `.github/workflows/h1-rfb-mux-prep.yml` so the existing branch CI runs:
 
 `make -C experiments/media-harness-h1/mpeg_presentation_calibration -f Makefile.host clean test`
 
-Preserve exact stdout/stderr and do not proceed past a failing contract without recording the failure. Expected PASS markers are the core, adapter, foreground, RFB-gate, render, and runtime tests listed above.
+Commit:
 
-After the coordinator binding compiles, the next separate tranche is the experiment-local PS2 graphics adapter for the render plan. Only after those integrate should the combined candidate ELF be built and its exact SHA256, byte count, and PT_LOAD identity recorded before any physical-hardware claim.
+- `83f4bba0552c72dc29df1d5f8a7b058b4173c4ce` — `ci(h1): execute MPEG calibration host contracts`
+
+No product/experiment C source was changed in this tranche. No `src/` file, qualified controller/input/local-UI implementation, RFB parser, graphics platform owner, or permanent MPEG compositor was changed.
+
+## Tests/checks and exact evidence
+
+GitHub Actions run `34635378219`, job `host-preflight` (`103381859183`), for exact HEAD `83f4bba0552c72dc29df1d5f8a7b058b4173c4ce` completed successfully.
+
+The new step `Test MPEG presentation calibration host contracts` completed `success` at 2026-09-11T18:48:50Z. The Makefile compiles/runs all six contracts under `-std=c99 -O2 -Wall -Wextra -Werror -pedantic`:
+
+- portable calibration core test — PASS by combined step success
+- normalized-controller adapter test — PASS by combined step success
+- foreground ownership bridge test — PASS by combined step success
+- RFB freeze/thaw gate test — PASS by combined step success
+- render-plan contract test — PASS by combined step success
+- runtime facade test — PASS by combined step success
+
+The same host-preflight job also passed the existing H1 CONFIG, RFB mux ownership, headless coordinator, CP2K presentation, CP2L mouse input, CP2M keyboard, CP2N real-module interaction, logical RFB channel/credit, Pi byte bridge, reader integration, cumulative bridge, and operator-surface checks.
+
+The workflow's pinned-toolchain `ps2-build` job was still in progress when this handoff evidence was written. It builds the existing RFB-prep/CP2K/CP2L/CP2M/CP2N lineage only; it does **not** yet build a calibration ELF, so its completion would not constitute calibration ELF evidence.
+
+Evidence URLs/paths:
+
+- GitHub Actions run: `34635378219`
+- host-preflight job: `103381859183`
+- `.github/workflows/h1-rfb-mux-prep.yml`
+- `experiments/media-harness-h1/mpeg_presentation_calibration/Makefile.host`
+- calibration module/test files under `experiments/media-harness-h1/mpeg_presentation_calibration/`
+- this handoff
+
+No Pi execution, deployment, or physical PS2 observation occurred.
+
+## Repository/source reconciliation this run
+
+The exact current pushed H1 coordinator and RFB runtime were re-read before deciding the next integration shape.
+
+Important live facts:
+
+- normalized controller state is still handled immediately before `pstvnc_local_controller_route()` in `h1_interaction_coordinator.c`;
+- the existing OSK path remains the qualified reference for suspend -> neutralize published pointer -> rebase -> later resume;
+- `h1_rfb_session_runtime.c` invokes application service only at complete server-message boundaries;
+- after that service callback it currently sends the next incremental framebuffer request unconditionally;
+- an incremental request can already be outstanding while the server is idle;
+- therefore calibration entry may need to suppress presentation of one already-in-flight response, then prevent subsequent requests, while leaving parsing/session state healthy;
+- on thaw, the scheduler needs a one-shot full/nonincremental request before returning to incremental requests.
+
+A pushed-branch/local-worktree discrepancy is also explicit: the pushed branch currently contains `h1_main_rfb_visible_interaction_pcm.c` (CP2O, MPEG OFF) and does **not** contain the later `h1_main_rfb_visible_interaction_pcm_mpeg.c` / shared MPEG compositor names referenced by earlier Pi-local development context. Do not silently assume those Pi-local/unpushed files exist in the pushed branch. Reconcile the Pi worktree before any deployment or build that could overwrite/localize newer work.
+
+## Current executable / ELF / PT_LOAD identity
+
+No calibration-enabled PS2 executable exists yet.
+
+- calibration candidate ELF SHA256: **none**
+- calibration candidate ELF bytes: **none**
+- calibration candidate PT_LOAD SHA256/bytes: **none**
+
+The existing CI PS2 job continues to build the older qualified/unqualified baseline lineage only. Hardware authority remains with the previously qualified CP2N/interaction lineage and later recorded hardware evidence; the calibration path is host-contract proven but not yet PS2-link or hardware proven.
+
+## Proven vs unproven
+
+### Proven now
+
+- all six calibration host contracts compile and execute successfully under strict host warnings-as-errors;
+- calibration remains experiment-local and `src/` remains untouched;
+- START+SELECT semantic entry, accepted geometry/control behavior, release quarantine, foreground ownership lifecycle, RFB gate behavior, render-plan preparation, and runtime composition are covered by passing host contracts;
+- outer-matte-derived suppression geometry remains an executable backend contract separate from permanent composition;
+- current RFB scheduling provides the required complete-message application boundary for calibration policy insertion.
+
+### Still unproven
+
+- live H1 coordinator binding before ordinary `pstvnc_local_controller_route()`;
+- live use of the qualified suspend/neutralize/rebase/resume functions through the calibration foreground callbacks;
+- safe-boundary suppression of new framebuffer requests after calibration entry;
+- suppression of visual publication for an already-outstanding RFB request that completes during calibration;
+- one-shot full/nonincremental framebuffer refresh on thaw in the real RFB loop;
+- native PS2 calibration overlay raster/presentation adapter;
+- accepted geometry handoff into MPEG presentation;
+- permanent compositor enforcement of the outer-matte RFB suppression perimeter;
+- calibration-enabled PS2 compile/link and checker results;
+- candidate ELF/PT_LOAD identity;
+- physical PS2 qualification.
+
+## Important design decisions / reconciliation
+
+- Do not put START+SELECT into `src/ui/local_controller.*` or qualified pad code.
+- Calibration may claim foreground only from the ordinary desktop path, but once claimed it must continue receiving normalized physical-controller observations through release quarantine.
+- Do not pause/disconnect the RFB parser/socket as the calibration mechanism.
+- If a framebuffer request was already outstanding when calibration claims foreground, consume the resulting complete server message to keep protocol state healthy but suppress its visual publication; then issue no new request while frozen.
+- The RFB scheduler, not the calibration state machine, owns request issuance.
+- Thaw's full-refresh obligation must be represented at the RFB safe-boundary scheduler, not hidden in the parser.
+- Calibration rendering remains separate from the permanent MPEG compositor/presenter.
+- Never align/merge into `src/` without David's explicit later permission.
+
+## Current overall push status / milestone
+
+Milestone reached: **the entire experiment-local calibration policy stack through the runtime facade is now host-execution proven.**
+
+The remaining path to a hardware-testable ELF is predominantly live integration: safe-boundary RFB request policy + H1 coordinator ownership binding, native PS2 calibration rendering, accepted-region MPEG/presentation binding with outer-matte suppression, then pinned PS2 build/checkers/ELF identity and physical qualification.
+
+## Single best next action
+
+Implement the smallest experiment-local live scheduling/binding tranche, preserving existing callers:
+
+1. extend `h1_rfb_session_runtime` with an optional safe-boundary framebuffer-request policy seam while preserving all existing run entry points unchanged;
+2. represent three scheduler decisions: HOLD, INCREMENTAL, FULL;
+3. explicitly track whether a framebuffer request is outstanding so IDLE servicing cannot manufacture duplicate requests;
+4. after calibration entry, allow an already-outstanding response to finish but suppress its presentation through the coordinator's calibration runtime gate;
+5. when no request is outstanding, consult the policy only at the existing complete-message/IDLE boundary; HOLD sends nothing, INCREMENTAL sends the normal incremental request, FULL sends one nonincremental request;
+6. bind the coordinator's calibration runtime immediately before ordinary local-controller routing, using the existing suspend/neutralize/rebase/resume semantics and consuming ordinary routing while calibration owns foreground/release quarantine;
+7. add host/source contract tests for the scheduler semantics before touching native PS2 rendering.
+
+Do not fold PS2 calibration rasterization or permanent MPEG composition into that scheduling tranche. Before any Pi build/deploy, first reconcile the Pi worktree against this pushed branch because its local dirty/unpushed state is not visible here.
