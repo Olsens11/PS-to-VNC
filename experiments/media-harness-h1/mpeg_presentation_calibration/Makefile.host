@@ -71,7 +71,7 @@ $(RFB_SCHEDULE_TEST): $(RFB_SCHEDULE_SOURCES) h1_mpeg_calibration_rfb_schedule_t
 	$(CC) $(CFLAGS) -I. $(RFB_SCHEDULE_SOURCES) h1_mpeg_calibration_rfb_schedule_test.c -o $@
 
 $(RFB_FLOW_TEST): $(RFB_FLOW_SOURCES) h1_mpeg_calibration_rfb_flow_test.c
-	$(CC) $(CFLAGS) -I. -I../../../src -I../../../src/input $(RFB_FLOW_SOURCES) h1_mpeg_calibration_rfb_flow_test.c -o $@
+	$(CC) $(CFLAGS) -I. -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(RFB_FLOW_SOURCES) h1_mpeg_calibration_rfb_flow_test.c -o $@
 
 $(RENDER_TEST): $(RENDER_SOURCES) h1_mpeg_calibration_render_test.c
 	$(CC) $(CFLAGS) -I. $(RENDER_SOURCES) h1_mpeg_calibration_render_test.c -o $@
