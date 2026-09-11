@@ -35,6 +35,10 @@ jobs:
             experiments/media-harness-h1/h1_rfb_keyboard_chord_test.c \
             -o /tmp/h1_rfb_keyboard_chord_test
           /tmp/h1_rfb_keyboard_chord_test
+      - name: Test MPEG presentation calibration host contracts
+        run: |
+          make -C experiments/media-harness-h1/mpeg_presentation_calibration \
+            -f Makefile.host clean test
       - name: Verify CP2N real-module visible RFB interaction contract
         run: python3 experiments/media-harness-h1/check_rfb_visible_interaction.py
       - name: Test cumulative-only RFB CONFIG activation gate
@@ -189,7 +193,7 @@ jobs:
           name: h1-cp2l-visible-rfb-input-unqualified-elf
           path: build/experiments/media-harness-h1-cp2l-visible-rfb-input/ps2/PS2VNC-H1-CP2L-VisibleRFBInput.ELF
           if-no-files-found: error
-      - name: Preserve unqualified CP2M visible RFB keyboard ELF
+      - name: Preserve unqualified CP2M visible RFB keyboard input ELF
         uses: actions/upload-artifact@v4
         with:
           name: h1-cp2m-visible-rfb-keyboard-unqualified-elf
