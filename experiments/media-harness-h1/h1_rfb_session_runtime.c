@@ -4,9 +4,9 @@
  * channel 1 and owns the PS2 half of clean finite-session quiescence.
  *
  * CP2J qualified this coordinator headlessly and CP2K qualified its complete-
- * framebuffer presentation callback. A second optional callback now lets the
- * application/main thread service semantic input only at complete RFB message
- * boundaries without moving RFB serialization into the controller worker.
+ * framebuffer presentation callback. Optional service and flow-policy seams let
+ * later experiment layers act only at complete RFB message boundaries without
+ * moving RFB serialization into the controller worker or parser.
  */
 
 #include "h1_rfb_session_runtime.h"
@@ -127,23 +127,12 @@ static int h1_rfb_complete_quiesce_at_boundary(
     if (transport->rfb_quiesce_request_received == 0u)
         return 0;
 
-    /*
-     * We are called only between complete RFB server messages. The coordinator
-     * stops issuing framebuffer requests before publishing BOUNDARY, so every
-     * RFB client write preceding this marker is already ordered ahead of it on
-     * the same PSTV send sequence.
-     */
     if (!pstvnc_h1_rfb_transport_send_quiesce_boundary(transport))
         return -1;
 
     runtime->stats.quiesce_boundary_sent = 1u;
     h1_rfb_publish_diagnostic(runtime, transport);
 
-    /*
-     * On BOUNDARY the Pi shuts down and joins its raw VNC reader before sending
-     * COMMIT. Because all Pi->PS2 PSTV frames share one send lock/sequence, any
-     * final DATA already read by the bridge must appear before COMMIT.
-     */
     if (!h1_rfb_wait_for_commit(runtime, transport))
         return -1;
 
@@ -152,11 +141,6 @@ static int h1_rfb_complete_quiesce_at_boundary(
             &snapshot))
         return -1;
 
-    /*
-     * COMMIT is accepted as a clean RFB boundary only if no channel-1 bytes
-     * remain after every pre-COMMIT DATA frame has been received. Residual bytes
-     * mean the raw bridge had already crossed into another server message.
-     */
     if (!snapshot.active || snapshot.queue_current != 0u)
         return -1;
 
@@ -180,11 +164,6 @@ static int h1_rfb_service_application(
         runtime->session.state != PSTVNC_RFB_SESSION_READY)
         return 0;
 
-    /*
-     * This call site exists only at server-message boundaries. The service owns
-     * no receive work; it may publish already-routed RFB input writes through
-     * the same synchronized session before parsing resumes.
-     */
     if (!service(service_context, &runtime->session))
         return 0;
 
@@ -195,19 +174,94 @@ static int h1_rfb_service_application(
     return 1;
 }
 
+static int h1_rfb_flow_policy_valid(
+    const pstvnc_h1_rfb_flow_policy_t *flow_policy)
+{
+    if (flow_policy == NULL)
+        return 1;
+
+    return flow_policy->next_request != NULL &&
+        flow_policy->request_sent != NULL &&
+        flow_policy->update_complete != NULL &&
+        flow_policy->allow_present != NULL;
+}
+
+static int h1_rfb_request_at_boundary(
+    pstvnc_h1_rfb_session_runtime_t *runtime,
+    const pstvnc_h1_rfb_flow_policy_t *flow_policy)
+{
+    pstvnc_h1_rfb_request_policy_decision_t decision;
+    int incremental;
+
+    if (runtime == NULL)
+        return 0;
+
+    decision = PSTVNC_H1_RFB_REQUEST_POLICY_INCREMENTAL;
+    if (flow_policy != NULL)
+        decision = flow_policy->next_request(flow_policy->context);
+
+    if (decision == PSTVNC_H1_RFB_REQUEST_POLICY_HOLD) {
+        if (runtime->stats.held_request_boundaries != UINT32_MAX)
+            runtime->stats.held_request_boundaries++;
+        return 1;
+    }
+
+    if (decision == PSTVNC_H1_RFB_REQUEST_POLICY_INCREMENTAL) {
+        incremental = 1;
+    } else if (decision == PSTVNC_H1_RFB_REQUEST_POLICY_FULL) {
+        incremental = 0;
+    } else {
+        return 0;
+    }
+
+    if (!pstvnc_rfb_session_request_update(
+            &runtime->session,
+            incremental))
+        return 0;
+
+    if (flow_policy != NULL &&
+        !flow_policy->request_sent(
+            flow_policy->context,
+            decision))
+        return 0;
+
+    if (decision == PSTVNC_H1_RFB_REQUEST_POLICY_INCREMENTAL) {
+        if (runtime->stats.incremental_requests_sent == UINT32_MAX)
+            return 0;
+        runtime->stats.incremental_requests_sent++;
+    } else {
+        if (runtime->stats.full_requests_sent == UINT32_MAX)
+            return 0;
+        runtime->stats.full_requests_sent++;
+    }
+
+    return 1;
+}
+
+static int h1_rfb_allow_present(
+    const pstvnc_h1_rfb_flow_policy_t *flow_policy)
+{
+    if (flow_policy == NULL)
+        return 1;
+
+    return flow_policy->allow_present(flow_policy->context) ? 1 : 0;
+}
+
 static int h1_rfb_run(
     pstvnc_h1_rfb_session_runtime_t *runtime,
     pstvnc_h1_transport_runtime_t *transport,
     pstvnc_h1_rfb_present_callback_t present,
     void *present_context,
     pstvnc_h1_rfb_service_callback_t service,
-    void *service_context)
+    void *service_context,
+    const pstvnc_h1_rfb_flow_policy_t *flow_policy)
 {
     if (runtime == NULL || transport == NULL ||
         transport->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
         transport->config.audio_mode != PSTVNC_H1_AUDIO_OFF ||
         transport->config.video_mode != PSTVNC_H1_VIDEO_OFF ||
-        !transport->rfb_resources.active)
+        !transport->rfb_resources.active ||
+        !h1_rfb_flow_policy_valid(flow_policy))
         return -1;
 
     pstvnc_h1_rfb_session_runtime_init(runtime);
@@ -217,12 +271,6 @@ static int h1_rfb_run(
 
     h1_rfb_publish_diagnostic(runtime, transport);
 
-    /*
-     * The integer handle remains only the existing clean-session identity token.
-     * In this cumulative build rfb_session39.o resolves all three rfb_io calls
-     * to the H1 mux adapter, which verifies this exact socket identity and then
-     * delegates to logical channel 1. No second physical recv/send occurs here.
-     */
     if (!pstvnc_rfb_session_start(
             &runtime->session,
             transport->socket_fd,
@@ -241,10 +289,9 @@ static int h1_rfb_run(
     runtime->stats.initial_frame_complete = 1u;
 
     /*
-     * Publication is permitted only after the parser has proven complete full
-     * coverage and marked the authoritative framebuffer valid. The callback is
-     * outside parser/transport ownership and may only observe this complete
-     * state.
+     * Calibration cannot own foreground until application service begins below,
+     * so the initial authoritative desktop remains the qualified unconditional
+     * publication point. Flow policy begins with the first subsequent request.
      */
     if (present != NULL) {
         if (!present(present_context, &runtime->framebuffer))
@@ -254,35 +301,20 @@ static int h1_rfb_run(
 
     h1_rfb_publish_diagnostic(runtime, transport);
 
-    /*
-     * Initial-frame completion itself is a protocol boundary. A very early Pi
-     * quiesce request may therefore terminate cleanly here without manufacturing
-     * an unnecessary incremental request or starting application-side work.
-     */
     if (transport->rfb_quiesce_request_received != 0u) {
         if (h1_rfb_complete_quiesce_at_boundary(runtime, transport) == 1)
             return 0;
         goto fail;
     }
 
-    /*
-     * Ordinary application work begins only after a coherent initial desktop is
-     * visible and only if shutdown has not already been requested. CP2L uses
-     * this first call to establish the neutral published pointer and then start
-     * its controller producer.
-     */
     if (!h1_rfb_service_application(
             runtime,
             service,
             service_context))
         goto fail;
 
-    if (!pstvnc_rfb_session_request_update(
-            &runtime->session,
-            1))
+    if (!h1_rfb_request_at_boundary(runtime, flow_policy))
         goto fail;
-
-    runtime->stats.incremental_requests_sent = 1u;
 
     for (;;) {
         pstvnc_rfb_session_receive_result_t receive_result;
@@ -306,13 +338,6 @@ static int h1_rfb_run(
 
             h1_rfb_publish_diagnostic(runtime, transport);
 
-            /*
-             * IDLE is returned only before the parser consumes the next server
-             * message, so it is already a clean RFB protocol boundary. This is
-             * essential for a static desktop: an outstanding incremental
-             * FramebufferUpdateRequest may legitimately have no response yet,
-             * and shutdown must not wait forever for damage that never occurs.
-             */
             if (transport->rfb_quiesce_request_received != 0u) {
                 if (h1_rfb_complete_quiesce_at_boundary(
                         runtime,
@@ -321,15 +346,20 @@ static int h1_rfb_run(
                 goto fail;
             }
 
-            /*
-             * Drain ordinary application work while the server is idle. The
-             * callback still runs on the RFB-owning main thread; the controller
-             * producer only fills its semantic FIFO.
-             */
             if (!h1_rfb_service_application(
                     runtime,
                     service,
                     service_context))
+                goto fail;
+
+            /*
+             * Default/qualified callers do not issue requests from IDLE because
+             * their one incremental request may still be outstanding. A flow
+             * policy explicitly owns that fact and may therefore safely HOLD or
+             * issue the first post-thaw FULL request here.
+             */
+            if (flow_policy != NULL &&
+                !h1_rfb_request_at_boundary(runtime, flow_policy))
                 goto fail;
 
             if (DelayThread(H1_RFB_IDLE_DELAY_US) < 0)
@@ -347,27 +377,31 @@ static int h1_rfb_run(
         runtime->stats.incremental_updates_complete++;
 
         /*
-         * Match the through-Issue-39 application presentation contract: a
-         * completed incremental server message advances presentation only when
-         * it actually dirtied the authoritative desktop. The parser remains the
-         * sole authority for that dirty bit.
+         * Protocol ownership is discharged before visual publication policy is
+         * consulted. An update requested before calibration entry therefore
+         * still advances parser/framebuffer state and clears request ownership
+         * even when its dirty pixels are deliberately not presented.
          */
+        if (flow_policy != NULL &&
+            !flow_policy->update_complete(flow_policy->context))
+            goto fail;
+
         if (present != NULL && runtime->framebuffer.dirty) {
-            if (!present(present_context, &runtime->framebuffer))
-                goto fail;
-            if (runtime->stats.incremental_presentations == UINT32_MAX)
-                goto fail;
-            runtime->stats.incremental_presentations++;
+            if (h1_rfb_allow_present(flow_policy)) {
+                if (!present(present_context, &runtime->framebuffer))
+                    goto fail;
+                if (runtime->stats.incremental_presentations == UINT32_MAX)
+                    goto fail;
+                runtime->stats.incremental_presentations++;
+            } else {
+                if (runtime->stats.suppressed_presentations == UINT32_MAX)
+                    goto fail;
+                runtime->stats.suppressed_presentations++;
+            }
         }
 
         h1_rfb_publish_diagnostic(runtime, transport);
 
-        /*
-         * This is the decisive safe boundary after a completed update. If the Pi
-         * requested shutdown at any point while that update was outstanding,
-         * stop here and do not publish later input or send another framebuffer
-         * request.
-         */
         if (transport->rfb_quiesce_request_received != 0u) {
             if (h1_rfb_complete_quiesce_at_boundary(runtime, transport) == 1)
                 return 0;
@@ -380,15 +414,8 @@ static int h1_rfb_run(
                 service_context))
             goto fail;
 
-        if (!pstvnc_rfb_session_request_update(
-                &runtime->session,
-                1))
+        if (!h1_rfb_request_at_boundary(runtime, flow_policy))
             goto fail;
-
-        if (runtime->stats.incremental_requests_sent == UINT32_MAX)
-            goto fail;
-
-        runtime->stats.incremental_requests_sent++;
     }
 
 fail:
@@ -403,6 +430,7 @@ int pstvnc_h1_rfb_session_runtime_run(
     return h1_rfb_run(
         runtime,
         transport,
+        NULL,
         NULL,
         NULL,
         NULL,
@@ -424,6 +452,7 @@ int pstvnc_h1_rfb_session_runtime_run_with_presenter(
         present,
         present_context,
         NULL,
+        NULL,
         NULL);
 }
 
@@ -444,7 +473,31 @@ int pstvnc_h1_rfb_session_runtime_run_with_presenter_and_service(
         present,
         present_context,
         service,
-        service_context);
+        service_context,
+        NULL);
+}
+
+int pstvnc_h1_rfb_session_runtime_run_with_flow_policy(
+    pstvnc_h1_rfb_session_runtime_t *runtime,
+    pstvnc_h1_transport_runtime_t *transport,
+    pstvnc_h1_rfb_present_callback_t present,
+    void *present_context,
+    pstvnc_h1_rfb_service_callback_t service,
+    void *service_context,
+    const pstvnc_h1_rfb_flow_policy_t *flow_policy)
+{
+    if (present == NULL || service == NULL || flow_policy == NULL ||
+        !h1_rfb_flow_policy_valid(flow_policy))
+        return -1;
+
+    return h1_rfb_run(
+        runtime,
+        transport,
+        present,
+        present_context,
+        service,
+        service_context,
+        flow_policy);
 }
 
 void pstvnc_h1_rfb_session_runtime_shutdown(
