@@ -13,16 +13,21 @@ FOREGROUND_SOURCES = \
 	$(ADAPTER_SOURCES) \
 	h1_mpeg_calibration_foreground.c
 
+RFB_GATE_SOURCES = \
+	h1_mpeg_calibration_rfb_gate.c
+
 CORE_TEST = mpeg_presentation_calibration_test
 ADAPTER_TEST = h1_mpeg_calibration_adapter_test
 FOREGROUND_TEST = h1_mpeg_calibration_foreground_test
+RFB_GATE_TEST = h1_mpeg_calibration_rfb_gate_test
 
 .PHONY: test clean
 
-test: $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST)
+test: $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST)
 	./$(CORE_TEST)
 	./$(ADAPTER_TEST)
 	./$(FOREGROUND_TEST)
+	./$(RFB_GATE_TEST)
 
 $(CORE_TEST): $(CORE_SOURCES) mpeg_presentation_calibration_test.c
 	$(CC) $(CFLAGS) -I. $(CORE_SOURCES) mpeg_presentation_calibration_test.c -o $@
@@ -33,5 +38,8 @@ $(ADAPTER_TEST): $(ADAPTER_SOURCES) h1_mpeg_calibration_adapter_test.c
 $(FOREGROUND_TEST): $(FOREGROUND_SOURCES) h1_mpeg_calibration_foreground_test.c
 	$(CC) $(CFLAGS) -I. -I../../../src/input $(FOREGROUND_SOURCES) h1_mpeg_calibration_foreground_test.c -o $@
 
+$(RFB_GATE_TEST): $(RFB_GATE_SOURCES) h1_mpeg_calibration_rfb_gate_test.c
+	$(CC) $(CFLAGS) -I. $(RFB_GATE_SOURCES) h1_mpeg_calibration_rfb_gate_test.c -o $@
+
 clean:
-	rm -f $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST)
+	rm -f $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST)
