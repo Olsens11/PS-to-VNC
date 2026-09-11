@@ -20,6 +20,10 @@ RFB_SCHEDULE_SOURCES = \
 	$(RFB_GATE_SOURCES) \
 	h1_mpeg_calibration_rfb_schedule.c
 
+RFB_FLOW_SOURCES = \
+	$(RFB_SCHEDULE_SOURCES) \
+	h1_mpeg_calibration_rfb_flow.c
+
 RENDER_SOURCES = \
 	$(CORE_SOURCES) \
 	h1_mpeg_calibration_render.c
@@ -35,17 +39,19 @@ ADAPTER_TEST = h1_mpeg_calibration_adapter_test
 FOREGROUND_TEST = h1_mpeg_calibration_foreground_test
 RFB_GATE_TEST = h1_mpeg_calibration_rfb_gate_test
 RFB_SCHEDULE_TEST = h1_mpeg_calibration_rfb_schedule_test
+RFB_FLOW_TEST = h1_mpeg_calibration_rfb_flow_test
 RENDER_TEST = h1_mpeg_calibration_render_test
 RUNTIME_TEST = h1_mpeg_calibration_runtime_test
 
 .PHONY: test clean
 
-test: $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RENDER_TEST) $(RUNTIME_TEST)
+test: $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RUNTIME_TEST)
 	./$(CORE_TEST)
 	./$(ADAPTER_TEST)
 	./$(FOREGROUND_TEST)
 	./$(RFB_GATE_TEST)
 	./$(RFB_SCHEDULE_TEST)
+	./$(RFB_FLOW_TEST)
 	./$(RENDER_TEST)
 	./$(RUNTIME_TEST)
 
@@ -64,6 +70,9 @@ $(RFB_GATE_TEST): $(RFB_GATE_SOURCES) h1_mpeg_calibration_rfb_gate_test.c
 $(RFB_SCHEDULE_TEST): $(RFB_SCHEDULE_SOURCES) h1_mpeg_calibration_rfb_schedule_test.c
 	$(CC) $(CFLAGS) -I. $(RFB_SCHEDULE_SOURCES) h1_mpeg_calibration_rfb_schedule_test.c -o $@
 
+$(RFB_FLOW_TEST): $(RFB_FLOW_SOURCES) h1_mpeg_calibration_rfb_flow_test.c
+	$(CC) $(CFLAGS) -I. -I../../../src -I../../../src/input $(RFB_FLOW_SOURCES) h1_mpeg_calibration_rfb_flow_test.c -o $@
+
 $(RENDER_TEST): $(RENDER_SOURCES) h1_mpeg_calibration_render_test.c
 	$(CC) $(CFLAGS) -I. $(RENDER_SOURCES) h1_mpeg_calibration_render_test.c -o $@
 
@@ -71,4 +80,4 @@ $(RUNTIME_TEST): $(RUNTIME_SOURCES) h1_mpeg_calibration_runtime_test.c
 	$(CC) $(CFLAGS) -I. -I../../../src/input $(RUNTIME_SOURCES) h1_mpeg_calibration_runtime_test.c -o $@
 
 clean:
-	rm -f $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RENDER_TEST) $(RUNTIME_TEST)
+	rm -f $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RUNTIME_TEST)
