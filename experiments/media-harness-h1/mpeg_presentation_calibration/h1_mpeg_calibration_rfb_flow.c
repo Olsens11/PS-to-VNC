@@ -72,8 +72,8 @@ static int flow_allow_present(void *context)
     if (flow == NULL || flow->calibration_runtime == NULL)
         return 0;
 
-    return pstvnc_h1_mpeg_calibration_runtime_allows_remote_present(
-        flow->calibration_runtime);
+    return pstvnc_h1_mpeg_calibration_rfb_gate_allows_remote_present(
+        &flow->calibration_runtime->rfb_gate);
 }
 
 void pstvnc_h1_mpeg_calibration_rfb_flow_init(
