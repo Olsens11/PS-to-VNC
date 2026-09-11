@@ -1,0 +1,31 @@
+name: MPEG calibration host diagnostic
+
+on:
+  push:
+    branches:
+      - experiment/h1-rfb-mux-prep
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calibration-host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run strict MPEG calibration host contracts
+        shell: bash
+        run: |
+          mkdir -p build/evidence
+          set -o pipefail
+          make -C experiments/media-harness-h1/mpeg_presentation_calibration \
+            -f Makefile.host clean test 2>&1 | \
+            tee build/evidence/mpeg-calibration-host.log
+      - name: Preserve exact host diagnostic log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpeg-calibration-host-diagnostic
+          path: build/evidence/mpeg-calibration-host.log
+          if-no-files-found: error
