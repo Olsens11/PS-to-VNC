@@ -2,10 +2,10 @@
 
 ## Session identity
 
-- Timestamp: 2026-09-11 16:50 EDT / 20:50 UTC
+- Timestamp: 2026-09-11 17:47 EDT / 21:47 UTC
 - Branch: `experiment/h1-rfb-mux-prep`
-- Session-start pushed HEAD: `c2f855e88e338e9e7096c695f72999511d8a9915`
-- Implementation/evidence HEAD before this handoff update: `2baa3c98b51ff916d4c1d059da69366934acfd9e`
+- Session-start pushed HEAD: `dd6c5c8cc9aa9aae24976e8ef233aadbd487a9ce`
+- Implementation/evidence HEAD before this handoff update: `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d`
 - The canonical handoff commit is the commit containing this file and is the branch HEAD immediately after this update.
 - Repository connector evidence cannot report David's Pi worktree staged/unstaged/untracked state. Do not infer the Pi worktree is clean. No reset, clean, discard, overwrite, merge, or `src/` mutation was performed.
 
@@ -13,101 +13,81 @@
 
 Produce a hardware-testable H1 ELF with qualified visible RFB interaction, PCM, MPEG presentation, and native PS2 MPEG-presentation calibration while keeping calibration experiment-local and separate from the permanent MPEG compositor/presentation backend.
 
-Calibration requirements remain: held `START+SELECT` temporary entry; accepted EDIT/CONTROLS/REVIEW UX and mapping; physical controller polling continues but ordinary mouse/controller/local-UI dispatch is suppressed while calibration owns foreground; RFB protocol remains healthy while new RFB visual presentation is frozen; request scheduling stops at complete-server-message/IDLE boundaries; thaw requires one full/nonincremental refresh; and once MPEG presentation owns an accepted region, the outer edge of the outer matte is the permanent RFB suppression perimeter inward.
+Required behavior remains: held `START+SELECT` temporary entry; accepted EDIT/CONTROLS/REVIEW UX and mapping; physical controller polling continues while ordinary mouse/controller/local-UI dispatch is suppressed; RFB protocol remains healthy while visual updates are frozen; thaw requires one full/nonincremental refresh; and the outer edge of the accepted outer matte is the permanent RFB-suppression perimeter inward once MPEG presentation owns the region.
 
 ## This session objective
 
-Integrate the already host-proven HOLD / INCREMENTAL / FULL scheduler into the experiment-local H1 RFB session runtime through an optional generic flow-policy seam, without making the RFB runtime calibration-aware or changing the behavior of existing callers.
+Prepare the narrow experiment-local coordinator binding that can execute calibration foreground ownership against the current H1 input/RFB objects before ordinary `pstvnc_local_controller_route()` dispatch, without modifying `src/` or yet changing the live coordinator.
 
 ## What changed this run
 
-Modified experiment-local RFB runtime:
+Added:
 
-- `experiments/media-harness-h1/h1_rfb_session_runtime.h`
-- `experiments/media-harness-h1/h1_rfb_session_runtime.c`
-
-Added calibration-specific adapter/test:
-
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_rfb_flow.h`
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_rfb_flow.c`
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_rfb_flow_test.c`
+- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding.h`
+- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding.c`
+- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding_test.c`
 
 Updated:
 
 - `experiments/media-harness-h1/mpeg_presentation_calibration/Makefile.host`
 
-Contents-API commits in this tranche:
+Commits:
 
-- `63e29dea91b6d9734dd36cd875290e5285e30815` — `feat(h1): add optional RFB flow policy seam`
-- `e6fec996464e5b87c4f3601eb74823c94a23f279` — `feat(h1): honor optional RFB flow policy at safe boundaries`
-- `ecab04e811ed099cb53aec7a289e6bb031716c71` — `feat(h1): adapt calibration scheduler to RFB flow policy`
-- `c04dd0fb6c2d59d48a6113791e45a4327f58e973` — `feat(h1): implement calibration RFB flow adapter`
-- `ec048bbbbe792aedfb5131526843ce5e519c9bdd` — `refactor(h1): keep RFB flow adapter on gate contract`
-- `d9917abf6c73e76de52f71d9398e9167e691aefa` — `test(h1): cover calibration RFB flow adapter`
-- `6640d4fe5c85edfe50c5ff7b26b040f633283f1f` — `test(h1): add calibration RFB flow adapter contract`
-- `2baa3c98b51ff916d4c1d059da69366934acfd9e` — `fix(h1): use current src topology for RFB flow test`
+- `810d83e522de115b2c3ffae12cc4ec335786cc44` — add interaction-binding contract
+- `ee3847918756e8ca459ebf1bc555a080bfff6b93` — implement interaction binding
+- `dcf8a972b2e782d9239dbaef235706be21960022` — add binding host contract test
+- `880318d06f2d4f752ebf673209629588925c516e` — add binding test to strict host suite
+- `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d` — de-duplicate the binding test source composition after the first CI failure
 
-No `src/` file, qualified controller/input/local-UI implementation, parser, permanent MPEG compositor, or platform graphics implementation was modified.
+No `src/` file, qualified controller/input/local-UI code, live H1 interaction coordinator, RFB parser/session implementation, PS2 graphics owner, or permanent MPEG compositor was modified.
 
-## RFB flow contract now represented in live experiment code
+## Interaction-binding contract now represented
 
-The H1 RFB runtime remains generic. Existing `run`, `run_with_presenter`, and `run_with_presenter_and_service` entry points pass no flow policy and retain their prior request/presentation cadence.
+The binding owns no new domain semantics. It borrows pointers to the current H1 coordinator-owned input runtime, RFB session, published pointer coordinates/button state, pointer-message counter, and mouse-suspension fact. It adapts the existing calibration foreground operations to the current architecture:
 
-A new optional `pstvnc_h1_rfb_session_runtime_run_with_flow_policy()` accepts a narrow generic policy with four facts/actions:
+1. `pstvnc_input_runtime_suspend_mouse_interpretation()`;
+2. publish a neutral RFB pointer event if a click is currently published;
+3. `pstvnc_input_runtime_rebase_suspended_mouse_state()` to the exact published coordinates with neutral buttons;
+4. retain ownership through calibration release quarantine;
+5. `pstvnc_input_runtime_resume_mouse_interpretation()` only after the calibration core proves full physical release.
 
-- choose `HOLD`, `INCREMENTAL`, or `FULL` at an already-safe boundary;
-- acknowledge a successfully transmitted request;
-- acknowledge a complete framebuffer-update response;
-- decide whether a completed dirty framebuffer may be visually published.
+The binding also owns one calibration runtime plus one calibration RFB-flow adapter and exposes the already-prepared generic `pstvnc_h1_rfb_flow_policy_t` for later use by `pstvnc_h1_rfb_session_runtime_run_with_flow_policy()`.
 
-With a policy present:
-
-- `HOLD` sends no framebuffer request;
-- `INCREMENTAL` maps to `pstvnc_rfb_session_request_update(..., 1)`;
-- `FULL` maps to `pstvnc_rfb_session_request_update(..., 0)`;
-- IDLE evaluates policy only for policy-enabled callers, so the scheduler can retain an outstanding request or issue the first post-thaw full refresh without altering default caller behavior;
-- a complete update clears request ownership before visual-publication policy is consulted;
-- a response requested before calibration entry can therefore be fully parsed/applied to authoritative framebuffer state while its visual publication is suppressed;
-- application service and quiesce ordering remain at the existing complete-message/IDLE boundaries.
-
-The new `h1_mpeg_calibration_rfb_flow.*` adapter connects this generic seam to the existing calibration RFB gate and request scheduler. The RFB runtime itself contains no calibration-specific state or START+SELECT logic.
+Ordinary Select remains outside calibration unless START is simultaneously held; the host contract explicitly exercises that distinction.
 
 ## Tests/checks and exact evidence
 
-### Preserved failure evidence
+### Preserved passing baseline from the previous tranche
 
-The first final-head attempt exposed a real branch-topology mistake rather than a behavioral failure:
+Exact implementation HEAD `2baa3c98b51ff916d4c1d059da69366934acfd9e` passed workflow run `34646154111`, including the calibration core/adapter/foreground/RFB-gate/scheduler/flow/render/runtime host contracts and the existing H1 source/ownership checks. The pinned PS2 cumulative build also compiled the modified generic RFB runtime. That remains regression evidence only, not a calibration-enabled ELF.
 
-- workflow run `34646069635`
-- host-preflight job `103417044393`
-- failing step: `Test MPEG presentation calibration host contracts`
-- exact compiler failure: `../h1_rfb_session_runtime.h:19:10: fatal error: framebuffer.h: No such file or directory`
+### This run: preserved failures
 
-Cause: the first host-test include path assumed a flat `src/`; repository inspection confirmed this branch uses the current layered topology, including `src/framebuffer/framebuffer.h`, `src/rfb/...`, and `src/input/...`.
+First binding-suite attempt at HEAD `880318d06f2d4f752ebf673209629588925c516e`:
 
-Fix: commit `2baa3c98b51ff916d4c1d059da69366934acfd9e` changed the test include paths only to the current branch topology. No `src/` file was changed.
+- workflow run `34650926359`
+- host-preflight job `103432644159`
+- `Test MPEG presentation calibration host contracts` failed.
 
-### Passing repository-authoritative evidence
+Inspection found one definite build-composition defect in the new Makefile target: the initial `INTERACTION_BINDING_SOURCES` combined `RUNTIME_SOURCES` and `RFB_FLOW_SOURCES`, causing `h1_mpeg_calibration_rfb_gate.c` to be included twice. Commit `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d` replaced that aggregate composition with an explicit unique source list.
 
-GitHub Actions run `34646154111` for exact implementation HEAD `2baa3c98b51ff916d4c1d059da69366934acfd9e`:
+Second attempt at exact HEAD `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d`:
 
-- host-preflight job `103417325493` completed **success**;
-- `Test MPEG presentation calibration host contracts` completed **success**;
-- CP2N real-module interaction contract completed **success**;
-- CONFIG, RFB mux ownership, headless coordinator, CP2K presentation, CP2L input, CP2M keyboard, keyboard chord, cumulative activation, logical RFB channel/credit, Pi bridge, reader integration, cumulative bridge, operator profile, and operator-surface checks all completed **success**.
+- workflow run `34650963508`
+- host-preflight job `103432756951`
+- `Test MPEG presentation calibration host contracts` still failed.
 
-The same run's pinned `ps2-build` job `103417325520` successfully completed its cumulative H1 RFB-prep/CP2K/CP2L/CP2M/CP2N compile step against the modified generic RFB runtime. Artifact-preservation steps were still finishing when this handoff was written. This is useful regression compile evidence for the generic runtime change, but it is **not** a calibration-enabled ELF build because the new calibration flow adapter/runtime is not yet bound into an ELF target.
+The GitHub repository connector exposes step status but not the step's stdout/stderr log body, so the exact remaining compiler/link/assertion text was not available in this session. Do not call the interaction-binding test proven. Preserve this as an unresolved failure rather than smoothing it over.
+
+The same run's pinned `ps2-build` job `103432757320` was still in progress when this handoff was written and does not compile/link the new calibration binding into a candidate ELF anyway.
 
 Evidence paths/IDs:
 
-- implementation/evidence HEAD `2baa3c98b51ff916d4c1d059da69366934acfd9e`
-- passing workflow run `34646154111`
-- passing host-preflight job `103417325493`
-- pinned ps2-build job `103417325520`
-- preserved failing workflow run `34646069635`
-- preserved failing host-preflight job `103417044393`
-- `experiments/media-harness-h1/h1_rfb_session_runtime.[ch]`
-- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_rfb_flow.*`
+- implementation HEAD `a46c12c6a2728bb175f81e1b515f5eeac64f8a6d`
+- failed first run `34650926359`, host job `103432644159`
+- failed corrected-source-list run `34650963508`, host job `103432756951`
+- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding.[ch]`
+- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding_test.c`
 - `experiments/media-harness-h1/mpeg_presentation_calibration/Makefile.host`
 - this handoff
 
@@ -115,18 +95,19 @@ No Pi execution, deployment, physical PS2 observation, or calibration-enabled EL
 
 ## Repository/source reconciliation this run
 
-At session start the continuity guide was read first and branch `experiment/h1-rfb-mux-prep` was independently verified at exact pushed HEAD `c2f855e88e338e9e7096c695f72999511d8a9915`.
+At session start the continuity guide was read first. Remote branch authority independently reported `experiment/h1-rfb-mux-prep` at `dd6c5c8cc9aa9aae24976e8ef233aadbd487a9ce`, matching the preceding handoff.
 
-The live experiment-local `h1_rfb_session_runtime.[ch]`, calibration gate/scheduler/runtime, and branch `src/` topology were re-read before and during implementation.
+The exact current `h1_interaction_coordinator.[ch]`, calibration runtime/foreground/adapter/flow contracts, `src/input/input_runtime.h`, and `src/rfb/rfb_session.h` were re-read before implementation.
 
-Important reconciliations:
+Important live-source facts reconfirmed:
 
-- request ownership and visual-presentation ownership remain deliberately distinct;
-- default RFB entry points must not start issuing requests from IDLE merely because the policy-capable path can do so;
-- the policy-enabled IDLE path is safe because its scheduler explicitly tracks whether a request is outstanding;
-- complete response accounting occurs before visual publication so protocol state remains healthy during calibration freeze;
-- this branch's clean-source model is directory-layered (`src/framebuffer`, `src/rfb`, `src/input`), and host test paths now reflect that current authority;
-- the pushed-branch/Pi-local discrepancy remains important: pushed GitHub state does not prove later Pi-local MPEG/shared-compositor files are absent. Reconcile David's Pi worktree before any deploy/build that could overwrite newer local work.
+- normalized controller events enter `h1_interaction_service_controller_state()` immediately before `pstvnc_local_controller_route()`;
+- existing OSK foreground entry already demonstrates the desired suspend -> neutralize -> rebase sequence;
+- `h1_interaction_resume_desktop_mouse_if_ready()` would need to respect calibration ownership when the binding is actually inserted, so it cannot autonomously resume the mouse during calibration;
+- the calibration-specific flow policy remains separate from the RFB parser/runtime and can be passed through the generic policy entry point;
+- `src/` remains the reference model only and was not modified.
+
+Remote repository APIs cannot expose David's Pi worktree dirty/staged/untracked state. Reconcile the Pi worktree before any build/deploy that could overwrite newer local MPEG/shared-compositor work.
 
 ## Current executable / ELF / PT_LOAD identity
 
@@ -136,61 +117,58 @@ No calibration-enabled PS2 executable exists yet.
 - calibration candidate ELF bytes: **none**
 - calibration candidate PT_LOAD SHA256/bytes: **none**
 
-The pinned PS2 job compiled existing RFB-prep through CP2N targets against the generic runtime change, but those are not calibration candidates.
-
 ## Proven vs unproven
 
-### Proven now
+### Proven from earlier green evidence
 
-- the calibration policy stack through scheduler remains strict-host-test passing;
-- the generic H1 RFB runtime now has a host-regression-checked optional request/presentation flow seam while preserving existing public entry points;
-- the calibration-specific flow adapter is strict-host-test passing;
-- HOLD / incremental / full request decisions map cleanly onto generic RFB runtime policy;
-- an in-flight response can clear request ownership while visual presentation is denied;
-- thaw still yields exactly one full-refresh decision before incremental cadence resumes;
-- the modified generic RFB runtime passes existing source/ownership contracts and compiles in the existing pinned PS2 cumulative build step;
-- calibration remains experiment-local and `src/` remains untouched;
-- permanent RFB suppression from the outer edge of the outer matte remains a separate backend/compositor contract.
+- portable calibration state/geometry and accepted UX mapping;
+- normalized-controller adapter and START+SELECT level-chord ownership model;
+- foreground ownership bridge and release quarantine contract;
+- RFB visual/request gate, request scheduler, generic RFB flow-policy seam, and calibration flow adapter;
+- render-plan/runtime contracts through the previous green implementation HEAD;
+- existing generic RFB runtime changes compile in the pinned PS2 cumulative regression build;
+- calibration remains experiment-local and `src/` untouched.
 
-### Still unproven
+### Represented in code this run but not yet proven
 
-- actual H1 main/coordinator use of `run_with_flow_policy`;
-- START+SELECT interception in the live experiment coordinator immediately before ordinary local-controller routing;
-- live qualified suspend/neutralize/rebase/resume callbacks during calibration;
-- live freeze/thaw behavior against a real VNC server and in-flight response;
-- native PS2 calibration EDIT/CONTROLS/REVIEW raster/presentation adapter;
+- the new interaction binding's concrete adaptation of current H1 input/RFB/published-pointer state to the foreground callbacks;
+- neutral-pointer publication accounting through the borrowed H1 pointer-message counter;
+- ordinary Select pass-through at this new binding layer;
+- binding-owned exposure of the prepared generic RFB flow policy.
+
+### Still unproven / incomplete
+
+- remaining interaction-binding host failure root cause and corrected green run;
+- insertion of the binding into the live H1 interaction coordinator before ordinary local-controller routing;
+- prevention of `h1_interaction_resume_desktop_mouse_if_ready()` from resuming during calibration ownership;
+- live H1 main use of `run_with_flow_policy` and the binding's policy;
+- native PS2 EDIT/CONTROLS/REVIEW raster/presentation adapter;
 - accepted geometry handoff into MPEG presentation;
-- permanent compositor enforcement of the outer-matte RFB suppression perimeter;
-- a PS2 ELF target that actually links the calibration runtime/flow/renderer objects;
-- calibration candidate ELF/PT_LOAD identity;
-- physical PS2 qualification.
+- permanent compositor enforcement of the outer-matte suppression perimeter;
+- a PS2 ELF target actually linking the calibration integration/runtime/renderer objects;
+- candidate ELF/PT_LOAD identity and physical PS2 qualification.
 
-## Important design decisions / reconciliation
+## Hardware-qualification boundary
 
-- Keep the RFB session runtime generic; calibration policy belongs in the experiment-local adapter.
-- Do not put START+SELECT into `src/ui/local_controller.*` or qualified pad code.
-- Do not pause/disconnect the RFB parser/socket as calibration's freeze mechanism.
-- Do not cancel an already-outstanding RFB request on calibration entry.
-- `update_complete` must discharge protocol ownership before presentation permission is evaluated.
-- Policy-enabled IDLE may evaluate request scheduling; legacy/default paths retain prior IDLE behavior.
-- Native calibration rendering remains separate from permanent MPEG composition.
-- Never align/merge into `src/` without David's explicit later permission.
+Nothing from this session is hardware-qualified. Existing qualified controller/input ownership semantics were used as the reference model and left untouched. No calibration-enabled ELF has been built or run on PS2 hardware.
+
+## Important design decisions / reconciliations
+
+- Keep START+SELECT meaning above qualified controller/libpad owners.
+- Keep calibration foreground mechanics in the experiment-local binding/runtime; do not add them to `src/ui/local_controller.*`.
+- Reuse exact current input-runtime suspension/rebase/resume semantics instead of inventing a second mouse freeze mechanism.
+- Neutralize only the successfully published remote button state and account for that RFB pointer message.
+- Keep calibration RFB flow policy separate from parser/socket ownership.
+- Do not wire a failing host contract into the live coordinator merely to make PT_LOAD progress.
+- Native calibration rasterization remains separate from permanent MPEG composition.
+- Never merge/align this experiment into `src/` without David's explicit later permission.
 
 ## Current overall push status / milestone
 
-Milestone reached: **the previously host-proven calibration RFB scheduler is now connected through a generic, regression-checked experiment-local RFB session flow-policy seam, including in-flight-response visual suppression and one-shot post-thaw full-refresh semantics.**
+Milestone: **the coordinator-facing ownership adapter now exists as a first-class experiment-local module, but its new strict host contract is red and must be repaired before live coordinator insertion.**
 
-The remaining path to a hardware-testable ELF is now dominated by live experiment composition rather than request-policy design: bind calibration ownership into the H1 coordinator/main path, implement native PS2 calibration presentation, connect accepted geometry to MPEG presentation and outer-matte compositor suppression, then create an ELF target that actually links those calibration objects and record pinned build/checker/ELF/PT_LOAD evidence before physical qualification.
+The path to the hardware-testable ELF remains: obtain green interaction-binding evidence; insert the binding before ordinary local-controller routing and connect its flow policy to the RFB run; add native PS2 calibration rasterization; connect committed geometry to MPEG presentation and outer-matte suppression; then build/check/hash the candidate ELF/PT_LOAD before physical qualification.
 
 ## Single best next action
 
-Bind the host-proven calibration runtime and RFB flow adapter into the current experiment-local H1 coordinator/main composition without touching `src/`:
-
-1. instantiate one calibration runtime plus `pstvnc_h1_mpeg_calibration_rfb_flow_t` alongside existing H1 interaction state;
-2. service normalized controller state immediately before ordinary `pstvnc_local_controller_route()`, so held START+SELECT can consume calibration-owned observations before Select reaches OSK or mouse/local UI;
-3. implement foreground callbacks using the already-existing experiment-local access to the qualified input-runtime suspend -> neutralize pointer -> rebase -> release-quarantine -> resume sequence;
-4. pass the prepared generic policy to `pstvnc_h1_rfb_session_runtime_run_with_flow_policy()`;
-5. add a source/integration contract test proving ordinary controller dispatch is suppressed while calibration owns foreground and that legacy non-calibration RFB entry points remain available;
-6. add/update a pinned PS2 build target that actually compiles/links these calibration integration objects before beginning native calibration rasterization.
-
-Do not fold PS2 rasterization, MPEG decoding, or permanent compositor clipping into that coordinator-binding tranche. Before any Pi build/deploy, reconcile David's Pi worktree because its local dirty/unpushed state is not visible through this repository connection.
+Diagnose and repair the exact remaining `h1_mpeg_calibration_interaction_binding_test` failure at current branch authority before touching the live coordinator. Use repository CI/check evidence or an execution-capable checkout to capture the compiler/link/assertion text, make the smallest correction, and require the entire strict calibration host suite to return green. Once green, the following tranche should insert one `pstvnc_h1_mpeg_calibration_interaction_binding_t` into the experiment-local H1 coordinator, call it immediately before `pstvnc_local_controller_route()`, prevent ordinary desktop-mouse auto-resume while calibration owns suspension, and pass its policy to `pstvnc_h1_rfb_session_runtime_run_with_flow_policy()`—still without modifying `src/` or beginning PS2 calibration rasterization.
