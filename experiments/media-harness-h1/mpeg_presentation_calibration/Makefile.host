@@ -34,6 +34,11 @@ RUNTIME_SOURCES = \
 	h1_mpeg_calibration_render.c \
 	h1_mpeg_calibration_runtime.c
 
+INTERACTION_BINDING_SOURCES = \
+	$(RUNTIME_SOURCES) \
+	$(RFB_FLOW_SOURCES) \
+	h1_mpeg_calibration_interaction_binding.c
+
 CORE_TEST = mpeg_presentation_calibration_test
 ADAPTER_TEST = h1_mpeg_calibration_adapter_test
 FOREGROUND_TEST = h1_mpeg_calibration_foreground_test
@@ -42,10 +47,11 @@ RFB_SCHEDULE_TEST = h1_mpeg_calibration_rfb_schedule_test
 RFB_FLOW_TEST = h1_mpeg_calibration_rfb_flow_test
 RENDER_TEST = h1_mpeg_calibration_render_test
 RUNTIME_TEST = h1_mpeg_calibration_runtime_test
+INTERACTION_BINDING_TEST = h1_mpeg_calibration_interaction_binding_test
 
 .PHONY: test clean
 
-test: $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RUNTIME_TEST)
+test: $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST)
 	./$(CORE_TEST)
 	./$(ADAPTER_TEST)
 	./$(FOREGROUND_TEST)
@@ -54,6 +60,7 @@ test: $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCH
 	./$(RFB_FLOW_TEST)
 	./$(RENDER_TEST)
 	./$(RUNTIME_TEST)
+	./$(INTERACTION_BINDING_TEST)
 
 $(CORE_TEST): $(CORE_SOURCES) mpeg_presentation_calibration_test.c
 	$(CC) $(CFLAGS) -I. $(CORE_SOURCES) mpeg_presentation_calibration_test.c -o $@
@@ -79,5 +86,8 @@ $(RENDER_TEST): $(RENDER_SOURCES) h1_mpeg_calibration_render_test.c
 $(RUNTIME_TEST): $(RUNTIME_SOURCES) h1_mpeg_calibration_runtime_test.c
 	$(CC) $(CFLAGS) -I. -I../../../src/input $(RUNTIME_SOURCES) h1_mpeg_calibration_runtime_test.c -o $@
 
+$(INTERACTION_BINDING_TEST): $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_interaction_binding_test.c
+	$(CC) $(CFLAGS) -I. -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_interaction_binding_test.c -o $@
+
 clean:
-	rm -f $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RUNTIME_TEST)
+	rm -f $(CORE_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST)
