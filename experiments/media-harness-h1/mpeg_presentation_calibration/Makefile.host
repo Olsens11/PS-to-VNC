@@ -35,8 +35,14 @@ RUNTIME_SOURCES = \
 	h1_mpeg_calibration_runtime.c
 
 INTERACTION_BINDING_SOURCES = \
-	$(RUNTIME_SOURCES) \
-	$(RFB_FLOW_SOURCES) \
+	$(CORE_SOURCES) \
+	h1_mpeg_calibration_adapter.c \
+	h1_mpeg_calibration_foreground.c \
+	h1_mpeg_calibration_rfb_gate.c \
+	h1_mpeg_calibration_rfb_schedule.c \
+	h1_mpeg_calibration_render.c \
+	h1_mpeg_calibration_runtime.c \
+	h1_mpeg_calibration_rfb_flow.c \
 	h1_mpeg_calibration_interaction_binding.c
 
 CORE_TEST = mpeg_presentation_calibration_test
