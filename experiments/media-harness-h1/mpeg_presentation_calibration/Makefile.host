@@ -1,11 +1,24 @@
 CC ?= cc
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Werror -pedantic
-SOURCES = mpeg_presentation_calibration_geometry.c mpeg_presentation_calibration_state.c
-TEST = mpeg_presentation_calibration_test
+
+CORE_SOURCES = \
+	mpeg_presentation_calibration_geometry.c \
+	mpeg_presentation_calibration_state.c
+
+CORE_TEST = mpeg_presentation_calibration_test
+ADAPTER_TEST = h1_mpeg_calibration_adapter_test
+
 .PHONY: test clean
-test: $(TEST)
-	./$(TEST)
-$(TEST): $(SOURCES) mpeg_presentation_calibration_test.c
-	$(CC) $(CFLAGS) -I. $(SOURCES) mpeg_presentation_calibration_test.c -o $@
+
+test: $(CORE_TEST) $(ADAPTER_TEST)
+	./$(CORE_TEST)
+	./$(ADAPTER_TEST)
+
+$(CORE_TEST): $(CORE_SOURCES) mpeg_presentation_calibration_test.c
+	$(CC) $(CFLAGS) -I. $(CORE_SOURCES) mpeg_presentation_calibration_test.c -o $@
+
+$(ADAPTER_TEST): $(CORE_SOURCES) h1_mpeg_calibration_adapter.c h1_mpeg_calibration_adapter_test.c
+	$(CC) $(CFLAGS) -I. -I../../../src/input $(CORE_SOURCES) h1_mpeg_calibration_adapter.c h1_mpeg_calibration_adapter_test.c -o $@
+
 clean:
-	rm -f $(TEST)
+	rm -f $(CORE_TEST) $(ADAPTER_TEST)
