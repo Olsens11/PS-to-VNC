@@ -562,7 +562,7 @@ new_guard = '''        # Exact producer stop/drain is the first destructive reti
             self.producer.retire_exact(generation)
         elif getattr(self.session, "video_producer", None) is not None:
             raise base.ProtocolError(
-                "CP2P RETIRE found live MPEG producer without generation owner"
+                "CP2P RETIRE cannot acknowledge while MPEG producer is live without generation owner"
             )
 
         self.suppression_bridge.retire_suppression_exact(generation)
@@ -671,30 +671,38 @@ class RetirementControlTests(unittest.TestCase):
 ''',
     1,
 )
-insert_marker = "    def test_wrong_generation_or_session_does_not_mutate_state(self) -> None:\n"
+insert_marker = "    def test_wrong_generation_never_cleans_or_acknowledges(self) -> None:\n"
 new_test = r'''    def test_live_generation_producer_retires_before_suppression_and_ack(self) -> None:
-        producer = FakeGenerationProducer(0, self.bridge)
-        receiver = H1Cp2pSuppressionStartReceiver(
-            self.session,
-            self.bridge,
-            producer,
-        )
-        frame = base.Frame(
-            base.FRAME_DATA,
-            base.CHANNEL_MPEG2,
-            0,
-            1,
-            start_payload(self.session.profile["session_id"], 8),
-        )
-        receiver._handle_start_frame(frame)
-        self.assertEqual(producer.active_generation(), 8)
-        self.assertEqual(self.bridge.suppression_generation, 8)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bridge_sock, peer = socket.socketpair()
+            bridge = H1Cp2pRfbPiBridge(
+                bridge_sock,
+                queue_capacity=1024 * 1024,
+                max_payload=8192,
+                send_data=lambda payload: None,
+                desktop_width=640,
+                desktop_height=448,
+            )
+            session = FakeSession(Path(temp_dir))
+            producer = FakeGenerationProducer(0, bridge)
+            receiver = H1Cp2pSuppressionStartReceiver(session, bridge, producer)
+            try:
+                receiver._handle_start_frame(
+                    make_start_frame(session.profile["session_id"], 8)
+                )
+                self.assertEqual(producer.active_generation(), 8)
+                self.assertEqual(bridge.suppression_generation, 8)
 
-        receiver._handle_retire_frame(self.retire_frame(8))
-        self.assertEqual(producer.retired, [8])
-        self.assertEqual(self.bridge.suppression_generation, 0)
-        self.assertEqual(len(self.session.sent), 1)
-        self.assertEqual(self.session.sent[0][0], base.FRAME_MPEG_RETIRE)
+                receiver._handle_retire_frame(
+                    make_retire_frame(session.profile["session_id"], 8)
+                )
+                self.assertEqual(producer.retired, [8])
+                self.assertEqual(bridge.suppression_generation, 0)
+                self.assertEqual(len(session.sent), 1)
+                self.assertEqual(session.sent[0][0], MPEG_RETIRE_FRAME_KIND)
+            finally:
+                bridge.stop()
+                peer.close()
 
 '''
 if insert_marker not in retirement:

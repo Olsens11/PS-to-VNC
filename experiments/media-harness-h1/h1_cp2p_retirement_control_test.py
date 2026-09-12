@@ -67,6 +67,28 @@ def make_retire_frame(session_id: int, generation: int) -> base.Frame:
     )
 
 
+class FakeGenerationProducer:
+    def __init__(self, generation: int, bridge) -> None:
+        self.generation = int(generation)
+        self.bridge = bridge
+        self.retired = []
+
+    def active_generation(self) -> int:
+        return self.generation
+
+    def start_exact(self, plan):
+        self.generation = int(plan.generation)
+        return {"archive_path": "fake.m2v"}
+
+    def retire_exact(self, generation: int):
+        # The critical #8/#11A ordering assertion: suppression still belongs to
+        # this generation while producer stop/drain completes.
+        if self.bridge.suppression_generation != int(generation):
+            raise AssertionError("suppression removed before producer retirement")
+        self.retired.append(int(generation))
+        self.generation = 0
+
+
 class RetirementControlTests(unittest.TestCase):
     def test_codec_rejects_wrong_session_and_zero_generation(self) -> None:
         payload = encode_mpeg_retire_payload(7, 9)
@@ -131,6 +153,38 @@ class RetirementControlTests(unittest.TestCase):
                     receiver._handle_start_frame(
                         make_start_frame(session.profile["session_id"], 7)
                     )
+            finally:
+                bridge.stop()
+                peer.close()
+
+    def test_live_generation_producer_retires_before_suppression_and_ack(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bridge_sock, peer = socket.socketpair()
+            bridge = H1Cp2pRfbPiBridge(
+                bridge_sock,
+                queue_capacity=1024 * 1024,
+                max_payload=8192,
+                send_data=lambda payload: None,
+                desktop_width=640,
+                desktop_height=448,
+            )
+            session = FakeSession(Path(temp_dir))
+            producer = FakeGenerationProducer(0, bridge)
+            receiver = H1Cp2pSuppressionStartReceiver(session, bridge, producer)
+            try:
+                receiver._handle_start_frame(
+                    make_start_frame(session.profile["session_id"], 8)
+                )
+                self.assertEqual(producer.active_generation(), 8)
+                self.assertEqual(bridge.suppression_generation, 8)
+
+                receiver._handle_retire_frame(
+                    make_retire_frame(session.profile["session_id"], 8)
+                )
+                self.assertEqual(producer.retired, [8])
+                self.assertEqual(bridge.suppression_generation, 0)
+                self.assertEqual(len(session.sent), 1)
+                self.assertEqual(session.sent[0][0], MPEG_RETIRE_FRAME_KIND)
             finally:
                 bridge.stop()
                 peer.close()

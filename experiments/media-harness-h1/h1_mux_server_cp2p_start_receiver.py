@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 File synopsis:
-    CP2P Pi runner for items #5/#6/#7: visible RFB + optional PCM, immutable
-    MPEG START receive/validation, generation-scoped Pi-side RFB suppression,
-    and exact START-derived capture-geometry preparation.
+    CP2P Pi runner through item #8: visible RFB + optional PCM, immutable
+    START receive/validation, generation-scoped RFB suppression, exact capture
+    preparation, and one START-driven exact-generation local FFmpeg producer.
 
 The runner preserves one physical PSTV socket and one H1 reader thread. It
 substitutes a CP2P-only upstream RFB bridge while leaving the qualified CP2O
@@ -16,9 +16,9 @@ FramebufferUpdateRequest after START, so any older request already outstanding
 at calibration acceptance may finish normally while PS2 presentation remains
 frozen in WAIT_FIRST_FRAME.
 
-MPEG production is still dormant here. The FFmpeg command is prepared and saved
-to evidence but no process or MPEG DATA is started; producer activation remains
-item #8 and must consume this exact generation only after suppression is ready.
+Item #8 now launches the exact prepared FFmpeg command after suppression and
+capture preparation succeed. The item-#10 public MPEG gate remains closed, so
+producer bytes stay local/bounded and no MPEG DATA is emitted onto PSTV yet.
 
 Compound START preparation is fail-closed. If a later preparation step fails
 after suppression was installed, the exact suppression generation and usable
@@ -33,6 +33,7 @@ from pathlib import Path
 
 import h1_mux_server_cumulative39_rfb_pcm_bridge as cp2o
 from h1_cp2p_capture_geometry import H1Cp2pCapturePlan, prepare_exact_capture_plan
+from h1_cp2p_mpeg_producer import H1Cp2pMpegProducer
 from h1_cp2p_rfb_suppression import (
     H1Cp2pRfbPiBridge,
     open_cp2p_rfb_session_adapter,
@@ -51,10 +52,16 @@ _ParentSession = cp2o.H1Cumulative39RfbPcmSession
 class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
     """START authority plus ordered suppression and exact capture preparation."""
 
-    def __init__(self, session, suppression_bridge: H1Cp2pRfbPiBridge) -> None:
+    def __init__(
+        self,
+        session,
+        suppression_bridge: H1Cp2pRfbPiBridge,
+        producer: H1Cp2pMpegProducer | None = None,
+    ) -> None:
         super().__init__(session)
         self.suppression_bridge = suppression_bridge
         self.capture_plan: H1Cp2pCapturePlan | None = None
+        self.producer = producer
 
     def _rollback_compound_preparation(
         self,
@@ -65,6 +72,12 @@ class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
         """Remove all usable state for one failed START while preserving high-water."""
 
         rollback_error: BaseException | None = None
+
+        if self.producer is not None and self.producer.active_generation() == int(generation):
+            try:
+                self.producer.retire_exact(generation)
+            except BaseException as exc:
+                rollback_error = exc
 
         if suppression_installed:
             try:
@@ -122,12 +135,19 @@ class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
                 f"requested={generation}"
             )
 
-        # Item #8 will replace this dormant-producer guard with an exact
-        # stop/drain operation before suppression is removed. Until then, never
-        # acknowledge retirement over an unexpected live legacy producer.
-        if getattr(self.session, "video_producer", None) is not None:
+        # Exact producer stop/drain is the first destructive retirement step.
+        # Suppression remains installed until every locally buffered, unsent MPEG
+        # byte is discarded and the process/reader are proven quiescent.
+        if self.producer is not None:
+            if self.producer.active_generation() != generation:
+                raise base.ProtocolError(
+                    "CP2P RETIRE producer generation mismatch "
+                    f"active={self.producer.active_generation()} requested={generation}"
+                )
+            self.producer.retire_exact(generation)
+        elif getattr(self.session, "video_producer", None) is not None:
             raise base.ProtocolError(
-                "CP2P RETIRE cannot acknowledge while MPEG producer is live"
+                "CP2P RETIRE cannot acknowledge while MPEG producer is live without generation owner"
             )
 
         self.suppression_bridge.retire_suppression_exact(generation)
@@ -188,10 +208,18 @@ class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
             )
 
             capture_evidence = self.capture_plan.to_dict()
-            capture_evidence["state"] = "prepared-producer-dormant"
+            capture_evidence["state"] = "prepared-before-producer-launch"
             (Path(self.session.evidence) / "mpeg_capture_prepared.json").write_text(
                 json.dumps(capture_evidence, indent=2, sort_keys=True) + "\n"
             )
+
+            if self.producer is not None:
+                producer_evidence = self.producer.start_exact(self.capture_plan)
+                capture_evidence["state"] = "producer-live-local-gate-closed"
+                capture_evidence["producer_archive_path"] = producer_evidence["archive_path"]
+                (Path(self.session.evidence) / "mpeg_capture_prepared.json").write_text(
+                    json.dumps(capture_evidence, indent=2, sort_keys=True) + "\n"
+                )
         except BaseException:
             self._rollback_compound_preparation(
                 request.generation,
@@ -224,6 +252,10 @@ class H1Cp2pStartReceiveSession(_ParentSession):
     ) -> None:
         super().__init__(sock, profile, evidence, duration, display)
         self.cp2p_start_receiver: H1Cp2pStartReceiver | None = None
+        self.cp2p_mpeg_producer = H1Cp2pMpegProducer(
+            Path(evidence),
+            attach=lambda producer: setattr(self, "video_producer", producer),
+        )
 
         adapter = self.rfb_session_adapter
         if adapter is None or not isinstance(adapter.bridge, H1Cp2pRfbPiBridge):
@@ -236,6 +268,7 @@ class H1Cp2pStartReceiveSession(_ParentSession):
             self.cp2p_start_receiver = H1Cp2pSuppressionStartReceiver(
                 self,
                 adapter.bridge,
+                self.cp2p_mpeg_producer,
             )
             self.cp2p_start_receiver.start()
         except BaseException:
@@ -253,11 +286,14 @@ class H1Cp2pStartReceiveSession(_ParentSession):
 
     def cleanup(self) -> None:
         try:
-            super().cleanup()
+            self.cp2p_mpeg_producer.shutdown()
         finally:
-            if self.cp2p_start_receiver is not None:
-                self.cp2p_start_receiver.stop()
-                self.cp2p_start_receiver = None
+            try:
+                super().cleanup()
+            finally:
+                if self.cp2p_start_receiver is not None:
+                    self.cp2p_start_receiver.stop()
+                    self.cp2p_start_receiver = None
 
 
 base.H1Session = H1Cp2pStartReceiveSession
