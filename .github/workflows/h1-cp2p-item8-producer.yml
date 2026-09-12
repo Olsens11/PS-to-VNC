@@ -17,10 +17,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply corrected one-shot item 8 patch
+      - name: Apply one-shot item 8 patches
         run: |
           python3 experiments/media-harness-h1/.item8_patch_fix.py
           python3 experiments/media-harness-h1/.item8_patch.py
+          python3 experiments/media-harness-h1/.item8_safety_patch.py
 
       - name: Compile and prove Pi CP2P contracts
         working-directory: experiments/media-harness-h1
@@ -56,6 +57,7 @@ jobs:
             echo 'item #8 producer owner must not emit PSTV MPEG DATA before #10' >&2
             exit 1
           fi
+          grep -Fq 'suppression retained fail-closed' h1_mux_server_cp2p_start_receiver.py
           grep -Fq 'CP2O runner requires MPEG/video OFF' h1_mux_server_cumulative39_rfb_pcm_bridge.py
           echo H1_CP2P_ITEM8_PUBLIC_GATE=CLOSED
 
@@ -74,17 +76,18 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'h1: add START-driven generation MPEG producer'
+          git commit -m 'h1: harden START-driven producer rollback ordering'
           git push origin HEAD:experiment/h1-cp2p-start-driven-producer
 
   ps2-regression:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply corrected one-shot item 8 patch
+      - name: Apply one-shot item 8 patches
         run: |
           python3 experiments/media-harness-h1/.item8_patch_fix.py
           python3 experiments/media-harness-h1/.item8_patch.py
+          python3 experiments/media-harness-h1/.item8_safety_patch.py
       - name: Build linked CP2P PS2 target in pinned PS2DEV image
         env:
           IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
@@ -104,8 +107,8 @@ jobs:
               make -f mk/media-harness-h1-cp2p-application-link.mk cp2p-application-link-check
               mips64r5900el-ps2-elf-nm "$ELF" > item8-symbols.txt
               grep -Eq "[[:space:]]pstvnc_h1_cp2p_mpeg_worker_arm$" item8-symbols.txt
-              grep -Eq "[[:space:]]pstvnc_h1_transport_begin_mpeg_retirement$" item8-symbols.txt
-              grep -Eq "[[:space:]]pstvnc_h1_transport_poll_mpeg_retirement$" item8-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_transport_mpeg_retire_begin$" item8-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_transport_mpeg_retire_poll$" item8-symbols.txt
               echo H1_CP2P_ITEM8_PS2_REGRESSION=PASS
               sha256sum "$ELF"
               stat -c "ELF_BYTES=%s" "$ELF"
