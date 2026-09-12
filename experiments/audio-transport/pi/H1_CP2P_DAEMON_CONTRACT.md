@@ -237,7 +237,8 @@ receive PSTV frame in sole PS2 reader
     -> install same-generation RFB suppression as pending      [item #6 DONE]
     -> prepare exact START-base X,Y,W,H capture command        [item #7 DONE]
     -> launch one exact-generation local FFmpeg producer       [item #8 DONE]
-    -> keep MPEG output local/bounded while public gate closed [item #10 OPEN]
+    -> open that generation's exact emission fence             [item #10 DONE]
+    -> send channel-4 MPEG only under an exact emission lease  [item #10 DONE]
 ```
 
 Pending suppression becomes active immediately before forwarding the first **new** FramebufferUpdateRequest after START. An older request already outstanding at acceptance may complete unchanged while PS2 presentation remains frozen in `WAIT_FIRST_FRAME`.
@@ -248,7 +249,7 @@ The START preparation/launch path is one fail-closed transaction. If suppression
 
 ## 8. Producer startup state
 
-Item #8 is now concrete at the software/pre-public-gate boundary:
+Item #8 remains the START-owned producer authority. Item #10 now exposes that already-proven producer through the public CP2P MPEG gate without changing who may start it:
 
 - RFB may be active from session startup;
 - PCM audio may be active from session startup;
@@ -256,7 +257,7 @@ Item #8 is now concrete at the software/pre-public-gate boundary:
 - `h1_cp2p_capture_geometry.py` prepares the exact FFmpeg x11grab command from the immutable START base rectangle;
 - only after same-generation suppression and exact capture preparation succeed does `h1_cp2p_mpeg_producer.py` launch one generation-owned FFmpeg process;
 - the producer is attached to the existing H1 session as the video producer; no second PS2-facing socket, transport reader, or bypass writer is introduced;
-- producer output is locally bounded/backpressured and archived for evidence, but item #10's public MPEG CONFIG gate remains closed, so item #8 emits **zero PSTV MPEG DATA**;
+- producer output remains locally bounded/backpressured and archived for evidence; item #10 now permits the existing CP2P scheduler to emit that exact generation's bytes only through `open_emission_exact` / `begin_emission_exact` / `finish_emission_exact` and the existing serialized PSTV writer;
 - only one MPEG producer generation may be active at a time; wrong-generation retirement is rejected;
 - exact retirement first requests producer stop, drains/discards every locally buffered unsent byte, and proves the subprocess/reader quiescent before suppression may be removed;
 - if graceful stop cannot prove quiescence, termination is attempted; if quiescence still cannot be proven, retirement fails closed and generation ownership/suppression are retained rather than acknowledged.
@@ -295,7 +296,7 @@ The ordering is deliberately **Pi first** during recalibration. While generation
 
 Item #8 now extends this exact transaction with the real generation-owned producer rather than inventing a second retirement protocol. The Pi validates one matching prepared START, capture plan, suppression generation, and producer generation; exact producer stop/drain/discard is the first destructive step; only after the producer subprocess and reader are proven quiescent may exact-generation suppression be removed, prepared START/capture state and evidence be released, and completion be sent. An unexpected live legacy producer without the generation owner still blocks acknowledgement. If producer quiescence cannot be proven, cleanup stops fail-closed before suppression removal and no completion is sent. The prepared-generation high-water is retained, so the retired generation remains stale and cannot be reused.
 
-Item #11B is now concrete and software-proven as the live data-plane generation boundary. It uses the existing ordered PSTV/TCP stream plus the existing bounded PS2 MPEG ring as an epoch boundary rather than adding per-packet generation tags or a second queue. The Pi closes exact-generation emission admission and waits for any in-flight send before its RETIRE completion; the sole PS2 receiver treats that exact completion as the wire-order fence, immediately closes channel-4 admission, then—after the old worker is stopped—atomically discards any residual generation-N ring bytes, returns their withheld credit, and clears the retirement latch. A fresh N+1 transport generation cannot open until the old queue/credit/retirement state is clean. Item #10 remains responsible for actually opening the public MPEG CONFIG/emission gate and exercising this boundary with live MPEG DATA.
+Item #11B is concrete and software-proven as the live data-plane generation boundary. It uses the existing ordered PSTV/TCP stream plus the existing bounded PS2 MPEG ring as an epoch boundary rather than adding per-packet generation tags or a second queue. The Pi closes exact-generation emission admission and waits for any in-flight send before its RETIRE completion; the sole PS2 receiver treats that exact completion as the wire-order fence, immediately closes channel-4 admission, then—after the old worker is stopped—atomically discards any residual generation-N ring bytes, returns their withheld credit, and clears the retirement latch. A fresh N+1 transport generation cannot open until the old queue/credit/retirement state is clean. Item #10 now exercises this boundary with live MPEG DATA: CONFIG enables the capability, START remains the sole producer/generation authority, and every MPEG send holds the exact-generation emission lease.
 
 For the first RFB-only -> MPEG START path, no prior MPEG generation exists and therefore no retirement message is required before START.
 
@@ -364,11 +365,11 @@ At minimum, the comprehensive bootstrap/runtime that absorbs CP2P should be able
 - PS2 local MPEG ownership remains intact while Pi retirement is pending, and full-RFB restoration begins only after exact Pi completion (`h1_cp2p_session_coordinator_test.c`);
 - item #8 exact retirement stops/drains/discards that exact producer's unsent local bytes and proves process/reader quiescence before suppression removal and completion (`h1_cp2p_mpeg_producer_test.py`, `h1_cp2p_retirement_control_test.py`);
 - failed post-launch rollback that cannot prove producer quiescence retains suppression/prepared state and fails closed (`h1_cp2p_start_preparation_transaction_test.py`);
-- while item #10 remains closed, the generation-owned producer has no PSTV MPEG DATA send path and cannot bypass the existing writer;
+- item #10 live MPEG DATA is emitted only through the existing serialized PSTV writer while holding the exact generation's emission lease; CONFIG alone cannot start a producer and wrong/stale generations cannot send;
 - the item-#11B Pi emission fence is closed by default, exact-generation only, and RETIRE waits for an in-flight emission lease before producer stop/drain (`h1_cp2p_mpeg_producer_test.py`);
 - the shared PS2 queue discard primitive empties wrapped residual data without reallocating or lowering queue high-water telemetry (`transport_queue_generation_boundary_test.c`);
 - the PS2 coordinator opens one exact MPEG transport generation before START, aborts it on START-send failure, latches the ordered RETIRE completion, stops the old worker before residual queue discard/final-credit return, and cannot open N+1 until the old epoch is finalized (`h1_cp2p_session_coordinator_test.c`);
-- item #10 remains closed: the CP2P runner does not call `open_emission_exact()` and the public PS2 CP2P CONFIG gate still requires video OFF;
+- item #10 is open only for the CP2P composition: the CP2P CONFIG gate requires visible RFB + MPEG2_ES + optional PCM, CP2O still requires MPEG OFF, START remains producer authority, and the generated CP2P decoder contains no obsolete standalone-GS transfer/draw-packet prerequisite (`h1_cp2p_item10_activation_test.py`);
 - RFB and PCM ownership paths remain alive while MPEG is active;
 - only the existing PSTV writer emits PS2-facing frames.
 
@@ -390,13 +391,13 @@ As CP2P work proceeds, use this section as the handoff checklist. Every row that
 | RFB suppression | `h1_cp2p_rfb_suppression.py`; `h1_cp2p_rfb_suppression_test.py` | absorb generation-scoped pending/active Raw filtering, current-desktop byte budgeting, and exact retirement primitive without another VNC/PSTV reader |
 | MPEG capture geometry | `h1_cp2p_capture_geometry.py`; `h1_cp2p_capture_geometry_test.py` | install/own exact START-base x11grab geometry and FFmpeg executable dependency; active desktop remains bounds authority only |
 | compound START / producer activation | `h1_mux_server_cp2p_start_receiver.py`; `h1_cp2p_start_preparation_transaction_test.py` | preserve ordered START -> suppression -> exact capture -> generation-owned producer launch and the fail-closed rollback barrier that retains suppression if producer quiescence cannot be proven |
-| MPEG producer | `h1_cp2p_mpeg_producer.py`; `h1_cp2p_mpeg_producer_test.py`; integration in `h1_mux_server_cp2p_start_receiver.py` | own one exact START generation, launch only the prepared exact capture command, keep output locally bounded while #10 is closed, and prove exact stop/drain before suppression release; never become an alternate PSTV writer |
-| MPEG mux scheduling / generation fence | Pi exact-generation emission lease in `h1_cp2p_mpeg_producer.py`; PS2 epoch gate/finalizer in `h1_transport_runtime.[ch]`; queue discard in `experiments/audio-transport/common/transport_queue.[ch]`; `CP2P_LIVE_GENERATION_BOUNDARY.md` | preserve one ordered PSTV writer/reader, exact generation admission, RETIRE-as-wire-fence semantics, residual old-epoch queue discard + final credit, and fresh-generation refusal until the old epoch is clean; item #10 may open emission only through this fence |
+| MPEG producer | `h1_cp2p_mpeg_producer.py`; `h1_cp2p_mpeg_producer_test.py`; integration in `h1_mux_server_cp2p_start_receiver.py` | own one exact START generation, launch only the prepared exact capture command, expose output only through item #10's exact-generation emission lease, and prove exact stop/drain before suppression release; never become an alternate PSTV writer |
+| MPEG mux scheduling / generation fence | Pi exact-generation emission lease in `h1_cp2p_mpeg_producer.py`; item-#10 scheduler in `h1_mux_server_cp2p_start_receiver.py`; PS2 epoch gate/finalizer in `h1_transport_runtime.[ch]`; queue discard in `experiments/audio-transport/common/transport_queue.[ch]`; `CP2P_LIVE_GENERATION_BOUNDARY.md` | preserve one ordered PSTV writer/reader, exact generation admission, lease-wrapped live channel-4 sends, RETIRE-as-wire-fence semantics, residual old-epoch queue discard + final credit, and fresh-generation refusal until the old epoch is clean |
 | retirement control | Pi: `h1_cp2p_retirement_control.py`, `h1_cp2p_start_receiver.py`, `h1_mux_server_cp2p_start_receiver.py`, `h1_cp2p_mpeg_producer.py`; PS2: `h1_transport_runtime.[ch]`, `h1_cp2p_session_coordinator.[ch]`; tests: `h1_cp2p_retirement_control_test.py`, `h1_cp2p_mpeg_producer_test.py`, `h1_cp2p_session_coordinator_test.c` | preserve kind-10 exact retirement, Pi producer/emission quiescence before completion, completion as the ordered receive-side MPEG epoch fence, old-worker stop before residual queue discard/final-credit return, and only then local presentation retirement/full-RFB restoration |
 | PCM capture | current mux uses PipeWire `wpctl` + `pw-record` | install/configure audio capture prerequisites |
 | RFB provider | current mux expects isolated local VNC provider | install/configure VNC provider under the general desktop/VNC setup |
 | service management | not finalized by this experiment | comprehensive service startup/restart/dependency ordering |
-| verification | items #5/#6/#7/#8/#11A/#11B host contracts; clean #11B run `34713445142` (host `103606261825`, PS2 `103606261723`) | include START, same-reader, suppression/capture, generation-owned producer, fail-closed rollback, exact retirement, Pi emission lease/fence, wrapped-ring discard, ordered ACK epoch fence, old-worker-before-queue-finalize ordering, fresh-generation clean-state gate, and closed item-#10 public gate in fresh-install self-check plus project regressions |
+| verification | items #5/#6/#7/#8/#11A/#11B/#10 host contracts; clean #10 run `34718230541` (host `103619197119`, PS2 `103619197057`) | include START, same-reader, suppression/capture, generation-owned producer, fail-closed rollback, exact retirement, live exact-generation MPEG lease/send accounting, wrapped-ring discard, ordered ACK epoch fence, old-worker-before-queue-finalize ordering, fresh-generation clean-state gate, CP2O MPEG-OFF regression, generated-runtime first-frame/cancellation checks, and unexpected-worker-failure latching in fresh-install self-check plus project regressions |
 
 When a row moves from future to concrete implementation, update this table in the same tranche.
 
@@ -424,6 +425,9 @@ Current source authorities to consult together:
 - shared residual-queue discard authority: `experiments/audio-transport/common/transport_queue.[ch]` and `transport_queue_generation_boundary_test.c`
 - Pi exact-generation retirement wire/control codec: `experiments/media-harness-h1/h1_cp2p_retirement_control.py`
 - Pi exact-generation retirement contract: `experiments/media-harness-h1/h1_cp2p_retirement_control_test.py`
+- CP2P all-guns CONFIG activation gate: `experiments/media-harness-h1/h1_config_cp2p_activation_gate.c` and `h1_config_cp2p_activation_gate_test.c`
+- CP2P live all-guns scheduler/accounting authority: `experiments/media-harness-h1/h1_mux_server_cp2p_start_receiver.py`
+- CP2P item-#10 activation/runtime contract: `experiments/media-harness-h1/h1_cp2p_item10_activation_test.py` and `CP2P_ITEM10_ALL_GUNS_ACTIVATION.md`
 - PS2 exact retirement transport owner: `experiments/media-harness-h1/h1_transport_runtime.[ch]`
 - PS2 retirement/recalibration coordinator ordering: `experiments/media-harness-h1/h1_cp2p_session_coordinator.[ch]`
 - Pi START implementation/proof note: `experiments/media-harness-h1/CP2P_PI_START_RECEIVE_VALIDATION.md`
@@ -442,17 +446,20 @@ At this document's current revision:
 - Pi START receive/validation and immutable prepared-generation state are implemented and host-proven by item #5 without adding a second PS2-facing socket, reader, or receive thread;
 - item #6 generation-scoped Pi RFB suppression is concrete and host-proven: pending suppression activates on the first new update request, Raw updates are clipped around the exact suppression footprint, and the transaction budget derives from the current desktop dimensions rather than a hard-coded resolution;
 - item #7 exact calibrated geometry is DONE at the current software boundary: START base X/Y/W/H becomes the exact FFmpeg x11grab source and item #8 consumes that same immutable plan in a live generation-owned producer; current desktop dimensions remain validation bounds only;
-- item #8 START-driven MPEG production is DONE at the pre-public-gate software boundary: suppression and exact capture preparation precede one generation-owned FFmpeg launch, output remains locally bounded/backpressured, and no PSTV MPEG DATA is emitted while item #10 remains closed;
+- item #8 START-driven MPEG production remains DONE: suppression and exact capture preparation precede one generation-owned FFmpeg launch; item #10 now exposes that same START-owned producer through the exact-generation lease rather than introducing a CONFIG-owned producer path;
 - item #8 extends item #11A retirement exactly as intended: exact producer stop/drain/discard and subprocess/reader quiescence precede suppression removal and Pi completion; a producer that cannot be proven quiescent leaves suppression/prepared state retained fail-closed and cannot be acknowledged;
 - item #11A exact-generation Pi retirement control is therefore DONE with the live local producer present: kind-10 request/completion remains exact-session/exact-generation matched, PS2 local MPEG ownership remains intact while completion is pending, and fresh full-RFB restoration is created only after exact Pi completion;
-- item #11B live cross-machine MPEG generation boundary is DONE at the pre-public-gate software boundary: Pi exact-generation emission admission is fenced before RETIRE completion; ordered TCP/PSTV completion closes PS2 channel-4 generation admission; the old worker stops before residual old-generation ring bytes are discarded and all withheld credit is returned; N+1 cannot open until the old epoch is completely finalized; no per-packet generation tag, second MPEG queue, socket, reader, or writer was added;
-- item #10 remains CLOSED by design and is now the next implementation tranche: it must open the public CP2P MPEG CONFIG gate and route live MPEG DATA only through item #11B's exact-generation emission lease and existing serialized writer;
+- item #11B live cross-machine MPEG generation boundary remains DONE and is now exercised by the item-#10 live send path: Pi exact-generation emission admission is fenced before RETIRE completion; ordered TCP/PSTV completion closes PS2 channel-4 generation admission; the old worker stops before residual old-generation ring bytes are discarded and all withheld credit is returned; N+1 cannot open until the old epoch is completely finalized; no per-packet generation tag, second MPEG queue, socket, reader, or writer was added;
+- item #10 exact CP2P all-guns CONFIG/live MPEG activation is DONE at the software-proof boundary: CP2P alone accepts visible RFB + MPEG2_ES + optional PCM; CP2O remains MPEG-OFF; CONFIG enables capability but START remains producer/generation authority; every live MPEG send uses the exact-generation emission lease and existing serialized writer; actual wire counters/CRC/start-code evidence are reported; explicit retirement cancellation is clean; and unexpected decoder-worker exit is sticky/fatal;
 - the permanent comprehensive Pi bootstrap has not yet absorbed these experimental CP2P additions;
 - item #8 product source authority is branch `experiment/h1-cp2p-start-driven-producer`, commit `0347e2f1a0295a83aa7051fc9b963b7f3ece85a2`; clean committed-source verification used wrapper head `51e1141f252edec2a7c1b19f445d941033e6fa19`, whose only product-independent delta is the one-line CI trigger comment;
 - item #8 clean proof is GitHub Actions run `34712568840`, host job `103603873398`, PS2 regression job `103603873498`;
 - item #11B product source authority is branch `experiment/h1-cp2p-live-generation-boundary`, commit `14d2b5fc68e11756356af397cfe3766e03c89008`; clean committed-source verification used wrapper head `bb56f36b4b0071e87819b338b4efa98a1e00740d`, whose only product-independent delta is the one-line CI trigger comment;
 - item #11B clean proof is GitHub Actions run `34713445142`, host job `103606261825`, PS2 build job `103606261723`;
 - item #11B pinned PS2 identity is ELF SHA256 `4f36d9b742598aa64c0bdd15b436ddc1d558b88278139a9a0edc19aa1e2f7ffd`, ELF bytes `3238440`, PT_LOAD SHA256 `8e91cde73f655a770c0c507a19bcde2081f43e74e4d4b29d47cc72d52a530fc3`, PT_LOAD bytes `512020`;
-- physical all-guns hardware qualification has not yet occurred.
+- item #10 clean official product source is `experiment/h1-cp2p-all-guns-activation` commit `6c24fddbf4618d2e0bf69eba909be640dcff005f`, a clean re-parent of the host/PS2-proven product tree; clean verification run `34718230541` used wrapper `a09fd93b02b4604370370d21626712b28c183ca8` whose only product-independent delta is its proof workflow;
+- item #10 clean proof jobs are host `103619197119` and pinned PS2 build `103619197057`; the unqualified candidate artifact is `h1-cp2p-item10-all-guns-unqualified-elf`, artifact ID `10305431287`;
+- item #10 pinned candidate identity is ELF SHA256 `89d8d007ae76292be1542739e47897caf30292163a26950026126c71be905aad`, ELF bytes `3238996`, PT_LOAD SHA256 `4c7da3948483e27576583b9b80bb99e108b84f853aafa602f36ab66681657494`, PT_LOAD bytes `512276`;
+- physical all-guns hardware qualification has not yet occurred; item #12 is the remaining qualification/seal milestone.
 
 Update this file whenever a Pi-side mechanism, dependency, path, service requirement, or configuration step becomes concrete. Preserve the experiment history separately rather than rewriting historical entries.

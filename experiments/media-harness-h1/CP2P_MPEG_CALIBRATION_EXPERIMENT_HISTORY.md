@@ -1662,3 +1662,64 @@ Exact #11B PS2 proof identity under pinned `ps2dev/ps2dev@sha256:8fba50ecc2229ac
 **Checklist transition:** #11B stale/live MPEG generation boundary is **OPEN/PARTIAL -> DONE at the pre-public-gate software-proof boundary**. #10 remains deliberately CLOSED and is now next: open the all-guns CP2P MPEG CONFIG path and send live channel-4 MPEG only through #11B's emission lease and the existing serialized PSTV writer. #12 remains the immutable/hardware-candidate milestone.
 
 No live all-guns MPEG transport, deployment, physical PS2 behavior, or hardware stability is claimed here. Preferred remaining order is **#10 -> #12**.
+
+---
+
+# PHASE S — SEPTEMBER 12 CP2P ALL-GUNS SOFTWARE ACTIVATION
+
+## 43. Item #10 — public CP2P MPEG gate opens; clean software candidate is ready for hardware qualification
+
+After item #11B sealed the live generation boundary, item #10 opened the final public software activation gate on a CP2P-only continuation. The architectural rule remained unchanged: **CONFIG enables capability; START owns generation and producer activation**. No CONFIG-driven producer path was reintroduced.
+
+The PS2 side now has a CP2P-only activation wrapper, `h1_config_cp2p_activation_gate.c`. For the all-guns CP2P composition it accepts visible RFB plus `MPEG2_ES` with optional canonical PCM, while delegating MPEG queue, credit, decoder, scheduler, geometry-capacity, thread, and ordinary H1 constraints to the existing generic validator. The CP2O composition still selects its original visible-RFB/PCM gate and therefore continues to require MPEG OFF. The CP2P main likewise now requires `MPEG2_ES` rather than the prior item-#9 dormant mode.
+
+The Pi runner keeps START as the sole producer authority. A valid START still establishes immutable generation state, pending suppression, exact START-base capture geometry, and the exact-generation FFmpeg producer. Item #10 adds only the live scheduling privilege: `open_emission_exact(generation)` opens the #11B fence for that exact active generation, and each channel-4 send must acquire `begin_emission_exact(generation)` and release `finish_emission_exact(generation)` around the pre-existing serialized `_send_from()` writer. Retirement sets a one-way `retiring` latch before closing emission, so the same generation cannot reopen its fence while RETIRE is waiting for an in-flight send.
+
+Finite-session accounting was made truthful for this live path. MPEG byte/frame/sequence/CRC totals come from the bytes actually written to PSTV, not from every byte FFmpeg produced. MPEG start-code counts are accumulated from the actual sent-byte stream, including boundaries that span DATA frames. This matters because producer tail bytes may be deliberately discarded unsent, and #11B may legitimately discard residual old-generation bytes already enqueued on the PS2 during recalibration. Result validation therefore preserves exact wire integrity while allowing consumed MPEG bytes to be less than enqueued bytes only through the already-proven generation-retirement boundary.
+
+A first complete compile/link proof was not treated as sufficient. During pre-hardware source review, the generated CP2P decoder was found to retain a standalone-GS first-picture prerequisite requiring `transfer_packet` and `draw_packet` to be non-NULL. CP2P deliberately removed those packet owners when it moved MPEG presentation into the shared compositor, so a real first decoded picture would have failed despite a green link. The generator was hardened to remove and forbid those obsolete checks. Expected exact-generation cancellation during prefill/decode is now a clean successful exit, while the generation worker carries a sticky `failure_latched` bit for any unexpected decoder/runtime exit. Final session validation rejects an unexpected worker failure even if an earlier frame had already been displayed.
+
+The first apply proof also exposed a proof-harness-only link omission: the host activation-gate test initially omitted `transport_protocol.c`, leaving `pstvnc_transport_read_be32` unresolved. No product commit was made from that failed run. After the harness was corrected, the all-guns implementation passed; later hardening and a clean committed-source proof were then required before seal.
+
+The hardened product tree was first materialized as development commit `28d86b1ca68b8582a77683e5f4306fe15e3c468e`. To keep temporary staging/CI ancestry out of the official line, that exact tree (`1817b10e12c43f62eb6e73872602ebf1a6a0bbba`) was re-parented directly onto sealed #11B, producing official item-#10 source commit:
+
+`6c24fddbf4618d2e0bf69eba909be640dcff005f`
+
+`h1: open and harden CP2P item10 all-guns activation gate`
+
+The official #10 product commit is exactly one commit ahead of #11B and contains only durable activation/runtime/test/documentation files; no temporary workflow, staging helper, symbol dump, or identity file is present.
+
+Clean committed-source verification used proof-wrapper commit `a09fd93b02b4604370370d21626712b28c183ca8`, whose only delta over the proven product tree is `.github/workflows/h1-cp2p-item10-clean-proof.yml`. GitHub Actions run `34718230541` completed SUCCESS:
+
+- host-contracts job `103619197119` — SUCCESS;
+- pinned PS2 build job `103619197057` — SUCCESS;
+- CP2O visible-RFB/PCM source/object and mux regressions — PASS;
+- CP2P all-guns CONFIG gate contract — PASS;
+- all prior START/suppression/capture/producer/retirement/generation-boundary host contracts — PASS;
+- calibration/session host suite — PASS;
+- generated CP2P runtime contains no obsolete standalone transfer/draw-packet first-frame guard — PASS;
+- exact cancellation and sticky unexpected-worker-failure checks — PASS;
+- `H1_CP2P_ITEM10_PUBLIC_MPEG_GATE=LIVE` — PASS;
+- `H1_CP2P_MPEG_WORKER=GENERATION_BOUND_START_ACTIVATED` — PASS;
+- `H1_CP2P_ITEM10_CLEAN_PS2=PASS`;
+- no tracked source mutation after either host or PS2 proof job.
+
+Pinned toolchain authority remained:
+
+`ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11`
+
+Exact item-#10 unqualified all-guns candidate identity:
+
+- ELF `PS2VNC-H1-CP2P-ApplicationLink.ELF`;
+- SHA256 `89d8d007ae76292be1542739e47897caf30292163a26950026126c71be905aad`;
+- ELF bytes `3238996`;
+- PT_LOAD segments `1`;
+- PT_LOAD SHA256 `4c7da3948483e27576583b9b80bb99e108b84f853aafa602f36ab66681657494`;
+- PT_LOAD bytes `512276`;
+- artifact `h1-cp2p-item10-all-guns-unqualified-elf`;
+- artifact ID `10305431287`;
+- artifact ZIP SHA256 `15f06494487e0f4aeb124601ec24b70d0d425add201ab36b77891baf787b1974`.
+
+**Checklist transition:** item #10 — exact CP2P CONFIG/live MPEG gate — **OPEN -> DONE at the software-proof boundary**. Items #1-#11B are now mechanically implemented/proven at their intended software boundaries. The remaining milestone is **#12**: freeze the complete PS2/Pi/config/toolchain/deployment identities and perform actual all-guns hardware qualification, including visible RFB + PCM + calibrated MPEG, first-frame ownership, high-change RFB outside suppression, exact capture geometry, retirement/recalibration N -> full RFB -> N+1, stale-generation exclusion, and continued input/keyboard/OSK/local-UI operation.
+
+No live physical PS2 all-guns behavior or hardware stability is claimed by item #10. The artifact remains explicitly **unqualified** until #12 hardware evidence exists.
