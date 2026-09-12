@@ -897,3 +897,92 @@ Do not edit an old entry simply because a later experiment proved it incomplete.
 If an old entry turns out to be wrong in a source-factual sense, preserve it and append the later discovery that corrected it.
 
 That is the point of the log.
+
+---
+
+# PHASE J — CLEAN RECALIBRATION TRANSACTION LIFECYCLE
+
+## 31. September 12 — START+SELECT becomes a fresh calibration transaction boundary
+
+A live design review simplified the MPEG recalibration lifecycle.
+
+The settled operator rule became:
+
+- START+SELECT always starts a **new calibration transaction**;
+- an existing MPEG generation is never edited or evolved in place;
+- if no MPEG generation exists, the current RFB desktop may freeze and calibration may enter immediately;
+- if a generation exists (including `WAIT_FIRST_FRAME`), its immutable committed rectangle and inner/outer matte settings are preserved as the seed for the new transaction;
+- that generation is retired before calibration begins;
+- RFB must return to a **new full-frame state after retirement** before calibration freezes the screen;
+- a full request already in flight before retirement is not sufficient, because it may have been generated while the old MPEG suppression footprint still applied;
+- after the new post-retirement full RFB update completes and has had its presentation opportunity, calibration enters using the preserved settings;
+- confirm creates a **new generation** from the newly committed settings, whether unchanged or edited;
+- cancel creates no generation and returns to full-frame RFB + PCM audio.
+
+This intentionally eliminates long-running generation mutation bookkeeping. The only continuity carried between MPEG generations is the user's last confirmed calibration configuration.
+
+The first experiment-local lifecycle primitive was implemented in commit:
+
+`d2af6c4918b6d9af1123d8704ca97829e6e73271`
+
+`h1: add clean CP2P recalibration retirement lifecycle`
+
+It added the exact-generation retirement helper plus a small RFB restoration watch. Host validation run `34694084275` passed, including:
+
+- `H1_MPEG_CP2P_RFB_RESTORATION_HOST_TEST=PASS`;
+- `H1_MPEG_RECALIBRATION_HOST_TEST=PASS`.
+
+The restoration watch explicitly rejects a FULL request that was already outstanding when the new restoration epoch was armed.
+
+## 32. September 12 — lifecycle wired into the CP2P interaction path
+
+David then authorized wiring the settled lifecycle into the CP2P application-interaction path.
+
+The implementation deliberately preserved CP2O behavior. The ordinary `h1_interaction_coordinator.c` remained unchanged and CP2O continues compiling it directly. CP2P instead gained a narrow translation unit that reuses the exact coordinator source while redirecting only the existing 750 ms calibration-entry hold `observe` / `poll` calls through the recalibration bridge.
+
+Primary wiring commit:
+
+`4d307d022a7595da28059d31dd0fa496a10e1f31`
+
+`h1: wire clean recalibration into CP2P interaction path`
+
+The new CP2P composition now provides:
+
+- reuse of the real 750 ms START+SELECT hold rather than a second gesture detector;
+- immediate ordinary calibration entry while RFB-only;
+- exact-generation MPEG retirement when the held chord matures with MPEG active;
+- consumption of controller observations while the post-retirement RFB restoration is pending, preventing START/SELECT from leaking into desktop/OSK routing;
+- re-issuance of the coordinator's existing synthetic START+SELECT calibration activation only after the new FULL restoration has completed;
+- one CP2P-owned `mpeg_handoff`;
+- one combined calibration + MPEG RFB flow policy;
+- one recalibration transaction state;
+- a caller-supplied exact-generation `clear_mpeg` seam for withdrawing producer/visible MPEG state without duplicating presentation-owner retirement;
+- continued use of the existing calibration presenter.
+
+Source inspection confirmed that the CP2P shared graphics module already replaces the public `pstvnc_ps2_graphics_present()` owner. Therefore ordinary/calibration RFB presentation through the existing presenter naturally updates the shared compositor's cached desktop while active MPEG remains protected by its suppression/matte footprint; no second presenter was added.
+
+Validation run:
+
+`34694695086`
+
+completed successfully at exact head `4d307d022a7595da28059d31dd0fa496a10e1f31`.
+
+The strict host suite remained green, including the new:
+
+`H1_MPEG_RECALIBRATION_ENTRY_BRIDGE_HOST_TEST=PASS`
+
+The pinned PS2 toolchain also compiled all CP2P interaction-side pieces successfully, with markers:
+
+- `H1_CP2P_SHARED_COMPOSITOR_COMPILE=PASS`;
+- `H1_CP2P_VIDEO_RUNTIME_COMPILE=PASS`;
+- `H1_CP2P_RECALIBRATION_ENTRY_BRIDGE_COMPILE=PASS;
+- `H1_CP2P_INTERACTION_COORDINATOR_COMPILE=PASS`;
+- `H1_CP2P_INTERACTION_WRAPPER_COMPILE=PASS`.
+
+The temporary diagnostic workflow was then removed in commit:
+
+`e549daaa4a144b39b6cfc7b00fd2d1f979b8f2ed`
+
+`ci(h1): retire CP2P recalibration diagnostic`
+
+Proof boundary at this entry: the clean START+SELECT retirement/re-entry lifecycle is now wired into a CP2P-specific interaction composition and host/PS2-cross-compile proven. This does **not** yet claim a complete runnable all-guns ELF or hardware qualification. The final CP2P main still has to instantiate this composition alongside the concrete MPEG worker/producer-stop callback, accepted→START live send, Pi START/suppression/producer path, and exact CONFIG gate.
