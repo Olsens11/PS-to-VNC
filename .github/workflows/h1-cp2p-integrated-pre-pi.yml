@@ -27,9 +27,21 @@ jobs:
           grep -Fq '$(BUILD_DIR)/h1_cp2p_session_coordinator.o' "$TARGET"
           grep -Fq '$(BUILD_DIR)/h1_mpeg_recalibration.o' "$TARGET"
           grep -Fq 'H1_CP2P_SESSION_COORDINATOR=LIVE' "$TARGET"
+          grep -Fq 'pstvnc_h1_audio_load_modules_once(' "$MAIN"
+          grep -Fq 'pstvnc_h1_audio_start(' "$MAIN"
+          grep -Fq 'pstvnc_h1_audio_finished(' "$MAIN"
+          grep -Fq 'pstvnc_h1_audio_shutdown(' "$MAIN"
+          grep -Fq 'pstvnc_h1_rfb_session_runtime_run_with_flow_policy(' "$MAIN"
+          grep -Fq 'pstvnc_h1_cp2p_session_coordinator_present' "$MAIN"
           grep -Fq 'pstvnc_h1_cp2p_session_coordinator_service' "$MAIN"
           grep -Fq 'pstvnc_h1_cp2p_session_coordinator_rfb_policy' "$MAIN"
+          grep -Fq 'PSTVNC_H1_RFB_ON_VISIBLE' "$MAIN"
+          grep -Fq 'PSTVNC_H1_VIDEO_OFF' "$MAIN"
           grep -Fq 'h1_cp2p_clear_dormant_mpeg' "$MAIN"
+          if grep -Fq 'pstvnc_h1_video_run_cp2p_session(' "$MAIN"; then
+            echo H1_CP2P_MAIN_PREMATURE_MPEG_WORKER=FAIL
+            exit 1
+          fi
           echo H1_CP2P_INTEGRATED_SOURCE_CONTRACT=PASS
 
   ps2-build:
@@ -87,7 +99,11 @@ jobs:
             echo H1_CP2O_INTEGRATED_RFB_PCM_REGRESSION=PASS
 
             make -f mk/media-harness-h1-cp2p-application-link.mk cp2p-application-link-check
-            python3 experiments/media-harness-h1/check_rfb_pcm_interaction.py --build-dir "$CP2P_BUILD"
+            # check_rfb_pcm_interaction.py is intentionally CP2O-specific: it
+            # requires h1_main.o to reference the bare interaction coordinator.
+            # CP2P correctly delegates through the session coordinator instead.
+            # Preserve the inherited transport/mux proof here and prove CP2P
+            # application composition through the source contract and ELF symbols.
             python3 experiments/media-harness-h1/check_rfb_mux_seam.py --build-dir "$CP2P_BUILD"
 
             mips64r5900el-ps2-elf-nm "$CP2P_ELF" > cp2p-integrated-symbols.txt
