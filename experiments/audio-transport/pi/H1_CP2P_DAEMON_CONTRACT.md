@@ -141,6 +141,17 @@ The wire payload deliberately carries no duplicate canvas dimensions. The Pi mus
 
 Inner matte settings are PS2 presentation state and are intentionally not present on the wire.
 
+### Current Pi implementation authority (item #5)
+
+The receive/validation side is now concrete and host-proven in the experimental tree. The future comprehensive Pi runtime must absorb the semantics currently implemented by:
+
+- `experiments/media-harness-h1/h1_cp2p_start_receiver.py` — pure START decode/validation, same-reader dispatch, and immutable prepared-generation state;
+- `experiments/media-harness-h1/h1_mux_server_cp2p_start_receiver.py` — narrow CP2P runner integration layered onto the existing visible-RFB/optional-PCM Pi runner;
+- `experiments/media-harness-h1/h1_cp2p_start_receiver_test.py` — focused host contract for valid/invalid START, desktop bounds, generation state, and same-reader dispatch;
+- `experiments/media-harness-h1/CP2P_PI_START_RECEIVE_VALIDATION.md` — item-#5 implementation/proof contract.
+
+The item-#5 implementation introduces no new external executable, OS package, socket, service, or receive thread. It uses Python 3 and the already-existing H1/RFB Pi runtime environment. Promotion into the comprehensive Pi stack is therefore principally a **runtime/code integration and self-test requirement**, not a new package-install requirement.
+
 ## 5. Meaning of the two rectangles
 
 The two rectangles are different authorities and must never be conflated.
@@ -191,6 +202,18 @@ A later calibration confirm creates a **new** generation even if geometry is unc
 
 There is no long-running history of edits to one generation.
 
+### Prepared-generation state proven by item #5
+
+On the Pi, a structurally valid START does not immediately mean “producer running.” Item #5 introduced an intermediate immutable **prepared request**:
+
+- at most one generation may be prepared at a time;
+- a second START cannot replace an unreleased prepared generation;
+- release must name the exact prepared generation;
+- after a generation has been prepared/released, that generation or any older generation is stale;
+- preparation stores the exact base and suppression rectangles without installing suppression, changing capture geometry, or starting MPEG.
+
+This prepared state is the handoff that later Pi suppression/capture/producer work must consume rather than reparsing or reconstructing START independently.
+
 ## 7. START processing order on the Pi
 
 The required order is deliberate:
@@ -202,8 +225,8 @@ receive PSTV frame in sole PS2 reader
     -> require exactly 44-byte payload
     -> decode wire version/session/generation/geometry
     -> validate active session and desktop bounds
-    -> establish generation state
-    -> install generation-scoped RFB suppression
+    -> establish immutable prepared-generation state   [implemented/proven in item #5]
+    -> install generation-scoped RFB suppression             [future item #6]
     -> configure exact X,Y,W,H capture
     -> start/activate MPEG producer for that generation
     -> only then permit MPEG DATA for that generation onto PSTV channel 4
@@ -224,7 +247,7 @@ For the all-guns CP2P session:
 - producer lifecycle must be generation-scoped;
 - only one MPEG generation is active at a time for the current milestone.
 
-The current historical mux daemon (`experiments/audio-transport/pi/mux_daemon.py`) already demonstrates the required single-reader/single-writer mux ownership for RFB + PCM, but it does **not** yet implement CP2P START handling or the deferred MPEG producer lifecycle. Experimental implementation may extend or wrap that code while proving the design. The permanent result should ultimately be folded into the comprehensive Pi runtime/bootstrap rather than installed as an unrelated second daemon.
+The historical base mux daemon (`experiments/audio-transport/pi/mux_daemon.py`) remains the transport-ownership precedent and does not itself contain CP2P START handling. Item #5 now supplies that handling experimentally through `h1_cp2p_start_receiver.py` and the narrow `h1_mux_server_cp2p_start_receiver.py` wrapper while preserving the same sole-reader call chain. Deferred suppression/capture/producer activation remains unimplemented. The permanent result must fold the proven START receiver/prepared-state semantics into the comprehensive Pi runtime/bootstrap rather than install the experimental wrapper as an unrelated second daemon.
 
 ## 9. Recalibration / retirement semantics the Pi runtime must support
 
@@ -297,7 +320,7 @@ At minimum, the comprehensive bootstrap/runtime that absorbs CP2P should be able
 
 - every external CP2P executable/library capability is present after a fresh bootstrap;
 - required service/user permissions and runtime paths are created reproducibly;
-- valid 44-byte START decodes exactly;
+- valid 44-byte START decodes exactly (current host authority: `h1_cp2p_start_receiver_test.py`);
 - bad version/length/session/generation/geometry is rejected;
 - draw rectangle and suppression rectangle remain distinct;
 - desktop-bound validation rejects off-screen capture/suppression;
@@ -320,9 +343,10 @@ As CP2P work proceeds, use this section as the handoff checklist. Every row that
 | PSTV framing | `experiments/audio-transport/common/transport_protocol.h` | matching protocol/runtime installation |
 | single-reader/single-writer mux ownership | `experiments/audio-transport/pi/mux_daemon.py` | permanent Pi transport service/runtime |
 | H1 config/session identity | `experiments/media-harness-h1/h1_config.h` | config parsing and active-session state |
-| MPEG START wire | `mpeg_presentation_calibration/h1_mpeg_start_wire.[ch]` | matching Pi decoder/validator |
-| MPEG START send semantics | `mpeg_presentation_calibration/h1_mpeg_start_transport.[ch]` | inbound channel-4 START routing |
-| generation lifecycle | start-handoff / presentation-owner / recalibration sources | Pi lifecycle state and stale-generation rejection |
+| MPEG START wire | PS2: `mpeg_presentation_calibration/h1_mpeg_start_wire.[ch]`; Pi: `h1_cp2p_start_receiver.py` | preserve exact 44-byte decoder/validator and desktop-bound checks |
+| MPEG START receive/routing | `h1_cp2p_start_receiver.py`; `h1_mux_server_cp2p_start_receiver.py` | absorb same-reader DATA/channel-4 routing into permanent Pi runtime; do not create another socket/reader |
+| MPEG START send semantics | `mpeg_presentation_calibration/h1_mpeg_start_transport.[ch]` | preserve compatibility with inbound channel-4 START routing |
+| generation lifecycle | PS2 start-handoff/presentation-owner/recalibration; Pi prepared state in `h1_cp2p_start_receiver.py` | preserve immutable prepared-generation state, exact release, and stale-generation rejection; later extend with producer lifecycle |
 | RFB suppression | implementation still to be made concrete | install/configure chosen suppression mechanism |
 | MPEG capture/encoder | implementation still to be made concrete | install encoder/capture dependency and exact-region launch logic |
 | MPEG mux scheduling | implementation still to be made concrete | channel-4 queue/credit/scheduling support without second socket |
@@ -330,7 +354,7 @@ As CP2P work proceeds, use this section as the handoff checklist. Every row that
 | PCM capture | current mux uses PipeWire `wpctl` + `pw-record` | install/configure audio capture prerequisites |
 | RFB provider | current mux expects isolated local VNC provider | install/configure VNC provider under the general desktop/VNC setup |
 | service management | not finalized by this experiment | comprehensive service startup/restart/dependency ordering |
-| verification | host tests + later all-guns qualification | fresh-install self-check plus project regression tests |
+| verification | item #5: `h1_cp2p_start_receiver_test.py`, proof run `34702828032`; later all-guns qualification | include START decoder/prepared-state/same-reader regression in fresh-install self-check plus project regression tests |
 
 When a row moves from “to be made concrete” to an implementation, update the row in the same tranche that introduces it.
 
@@ -344,6 +368,10 @@ Current source authorities to consult together:
 - START in-memory handoff: `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_start_handoff.[ch]`
 - START wire: `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_start_wire.[ch]`
 - START transport sender: `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_start_transport.[ch]`
+- Pi START decoder/prepared-state owner: `experiments/media-harness-h1/h1_cp2p_start_receiver.py`
+- Pi START receiver integration runner: `experiments/media-harness-h1/h1_mux_server_cp2p_start_receiver.py`
+- Pi START host contract: `experiments/media-harness-h1/h1_cp2p_start_receiver_test.py`
+- Pi START implementation/proof note: `experiments/media-harness-h1/CP2P_PI_START_RECEIVE_VALIDATION.md`
 - PS2 CP2P session coordinator: `experiments/media-harness-h1/h1_cp2p_session_coordinator.[ch]`
 - generation presentation owner: `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_presentation_owner.[ch]`
 - recalibration lifecycle: `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_recalibration.[ch]`
@@ -357,8 +385,11 @@ At this document's current revision:
 - PS2 accepted -> fresh generation -> START(session_id, generation, exact geometry, suppression) is implemented and host/PS2-compile proven;
 - the old experimental macro/global recalibration bridge has been removed;
 - START+SELECT is explicitly only a replaceable test trigger;
-- Pi START parsing, generation-scoped suppression, deferred exact-region MPEG producer activation, and explicit Pi retirement signaling are the next implementation work;
+- Pi START receive/validation and immutable prepared-generation state are implemented and host-proven by item #5 without adding a second socket, reader, receive thread, producer, or package dependency;
+- generation-scoped suppression, deferred exact-region MPEG producer activation, and explicit Pi retirement signaling remain future implementation work;
 - the permanent comprehensive Pi bootstrap has **not** yet absorbed these experimental CP2P additions;
+- item #5 proof authority is branch `experiment/h1-cp2p-pi-start-receive-validation`, tested/documented source head `c37c22c64d159d8f1814a3462ac6dbfa2e0b4557`, GitHub Actions run `34702828032` / job `103577491937`, with 14 focused START tests plus existing RFB regressions passing;
+- the sealed item-#5 branch head is `5a839b16f2d9458bc1e5c4089b90ffc942e4f3e0`;
 - physical all-guns hardware qualification has not yet occurred.
 
 Update this file whenever a Pi-side mechanism, dependency, path, service requirement, or configuration step becomes concrete. Preserve the experiment history separately rather than rewriting historical entries.
