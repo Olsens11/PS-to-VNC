@@ -1,0 +1,74 @@
+name: CP2P session coordinator final check
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-recalibration-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  prove-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply final coordinator tightening
+        shell: bash
+        run: python3 experiments/media-harness-h1/apply_cp2p_session_final_tightening.py
+
+      - name: Run strict host contracts
+        shell: bash
+        run: make -C experiments/media-harness-h1/mpeg_presentation_calibration -f Makefile.host clean test
+
+      - name: Compile CP2P and CP2O with pinned PS2 toolchain
+        shell: bash
+        env:
+          IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            --entrypoint /bin/sh \
+            -v "$PWD:/repo" \
+            -w /repo \
+            "$IMAGE" \
+            -lc '
+              set -eu
+              apk add --no-cache bash binutils make python3 >/dev/null
+              export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              make -f mk/media-harness-h1-cp2p-compositor-check.mk cp2p-compositor-check
+              make -f mk/media-harness-h1-cp2o-visible-rfb-interaction-pcm.mk
+            '
+
+      - name: Verify clean runtime tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -n -E 'h1_mpeg_recalibration_entry_bridge|h1_interaction_coordinator_cp2p|h1_interaction_cp2p' \
+              experiments/media-harness-h1 mk \
+              --include='*.c' --include='*.h' --include='*.mk'; then
+            echo 'vestigial CP2P bridge reference remains' >&2
+            exit 1
+          fi
+          test ! -e .github/workflows/cp2p-session-final-check.yml
+          test ! -e experiments/media-harness-h1/apply_cp2p_session_final_tightening.py
+          test ! -e .github/workflows/cp2p-session-coordinator-apply.yml
+          test ! -e .github/workflows/cp2p-history-append.yml
+          find experiments/media-harness-h1/mpeg_presentation_calibration -maxdepth 1 -type f -perm /111 -print -quit | grep -q . && {
+            echo 'generated executable remains in source tree' >&2
+            exit 1
+          } || true
+
+      - name: Commit proven tightening
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Olsens11'
+          git config user.email '39144541+Olsens11@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'h1: tighten session start accounting'
+          git push origin HEAD:experiment/h1-cp2p-recalibration-lifecycle
