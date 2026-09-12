@@ -19,11 +19,17 @@ frozen in WAIT_FIRST_FRAME.
 MPEG production is still dormant here. The FFmpeg command is prepared and saved
 to evidence but no process or MPEG DATA is started; producer activation remains
 item #8 and must consume this exact generation only after suppression is ready.
+
+Compound START preparation is fail-closed. If a later preparation step fails
+after suppression was installed, the exact suppression generation and usable
+prepared START state are rolled back together while the generation high-water
+remains stale/rejected.
 """
 
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import h1_mux_server_cumulative39_rfb_pcm_bridge as cp2o
 from h1_cp2p_capture_geometry import H1Cp2pCapturePlan, prepare_exact_capture_plan
@@ -50,53 +56,112 @@ class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
         self.suppression_bridge = suppression_bridge
         self.capture_plan: H1Cp2pCapturePlan | None = None
 
+    def _rollback_compound_preparation(
+        self,
+        generation: int,
+        *,
+        suppression_installed: bool,
+    ) -> None:
+        """Remove all usable state for one failed START while preserving high-water."""
+
+        rollback_error: BaseException | None = None
+
+        if suppression_installed:
+            try:
+                self.suppression_bridge.retire_suppression_exact(generation)
+            except BaseException as exc:
+                rollback_error = exc
+
+        prepared = self.peek_prepared()
+        if prepared is not None and prepared.generation == int(generation):
+            try:
+                self.release_prepared_exact(generation)
+            except BaseException as exc:
+                if rollback_error is None:
+                    rollback_error = exc
+
+        self.capture_plan = None
+
+        # These files are evidence of usable prepared state. A failed compound
+        # transaction must not leave them implying that suppression/capture can
+        # later be activated. Failure to remove evidence is itself fail-closed.
+        for name in (
+            "mpeg_start_prepared.json",
+            "rfb_suppression_prepared.json",
+            "mpeg_capture_prepared.json",
+        ):
+            try:
+                (Path(self.session.evidence) / name).unlink(missing_ok=True)
+            except BaseException as exc:
+                if rollback_error is None:
+                    rollback_error = exc
+
+        if rollback_error is not None:
+            raise base.ProtocolError(
+                f"CP2P START generation {int(generation)} rollback failed"
+            ) from rollback_error
+
     def _handle_start_frame(self, frame: base.Frame) -> None:
-        super()._handle_start_frame(frame)
+        try:
+            super()._handle_start_frame(frame)
+        except BaseException:
+            prepared = self.peek_prepared()
+            if prepared is not None:
+                self._rollback_compound_preparation(
+                    prepared.generation,
+                    suppression_installed=False,
+                )
+            raise
+
         request = self.peek_prepared()
         if request is None:
             raise base.ProtocolError("validated MPEG START did not remain prepared")
 
+        suppression_installed = False
         try:
             self.suppression_bridge.install_suppression(request)
+            suppression_installed = True
+
             self.capture_plan = prepare_exact_capture_plan(
                 request,
                 desktop_width=self.suppression_bridge.desktop_width,
                 desktop_height=self.suppression_bridge.desktop_height,
                 display=self.session.display,
             )
+
+            suppression_evidence = {
+                "generation": int(request.generation),
+                "desktop_width": int(self.suppression_bridge.desktop_width),
+                "desktop_height": int(self.suppression_bridge.desktop_height),
+                "raw_pixel_budget_bytes": int(
+                    self.suppression_bridge.desktop_raw_byte_budget
+                ),
+                "suppression_x": int(request.suppression_x),
+                "suppression_y": int(request.suppression_y),
+                "suppression_width": int(request.suppression_width),
+                "suppression_height": int(request.suppression_height),
+                "state": "pending-next-new-rfb-update-request",
+            }
+            (Path(self.session.evidence) / "rfb_suppression_prepared.json").write_text(
+                json.dumps(suppression_evidence, indent=2, sort_keys=True) + "\n"
+            )
+
+            capture_evidence = self.capture_plan.to_dict()
+            capture_evidence["state"] = "prepared-producer-dormant"
+            (Path(self.session.evidence) / "mpeg_capture_prepared.json").write_text(
+                json.dumps(capture_evidence, indent=2, sort_keys=True) + "\n"
+            )
         except BaseException:
-            # The generation number remains stale/high-water in item-#5 state,
-            # but no failed setup may remain prepared for later producer start.
-            self.release_prepared_exact(request.generation)
-            self.capture_plan = None
+            self._rollback_compound_preparation(
+                request.generation,
+                suppression_installed=suppression_installed,
+            )
             raise
 
-        suppression_evidence = {
-            "generation": int(request.generation),
-            "desktop_width": int(self.suppression_bridge.desktop_width),
-            "desktop_height": int(self.suppression_bridge.desktop_height),
-            "raw_pixel_budget_bytes": int(
-                self.suppression_bridge.desktop_raw_byte_budget
-            ),
-            "suppression_x": int(request.suppression_x),
-            "suppression_y": int(request.suppression_y),
-            "suppression_width": int(request.suppression_width),
-            "suppression_height": int(request.suppression_height),
-            "state": "pending-next-new-rfb-update-request",
-        }
-        (self.session.evidence / "rfb_suppression_prepared.json").write_text(
-            json.dumps(suppression_evidence, indent=2, sort_keys=True) + "\n"
-        )
         print(
             "H1_CP2P_RFB_SUPPRESSION_PREPARED="
             + json.dumps(suppression_evidence, sort_keys=True),
             flush=True,
-        )
-
-        capture_evidence = self.capture_plan.to_dict()
-        capture_evidence["state"] = "prepared-producer-dormant"
-        (self.session.evidence / "mpeg_capture_prepared.json").write_text(
-            json.dumps(capture_evidence, indent=2, sort_keys=True) + "\n"
         )
         print(
             "H1_CP2P_MPEG_CAPTURE_PREPARED="

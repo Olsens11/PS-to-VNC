@@ -19,7 +19,8 @@ jobs:
             h1_cp2p_start_receiver.py \
             h1_cp2p_rfb_suppression.py \
             h1_cp2p_capture_geometry.py \
-            h1_mux_server_cp2p_start_receiver.py
+            h1_mux_server_cp2p_start_receiver.py \
+            h1_cp2p_start_preparation_transaction_test.py
 
       - name: Prove existing START receiver contract
         working-directory: experiments/media-harness-h1
@@ -36,3 +37,7 @@ jobs:
       - name: Prove exact START-derived capture geometry
         working-directory: experiments/media-harness-h1
         run: python3 h1_cp2p_capture_geometry_test.py
+
+      - name: Prove compound START preparation rollback
+        working-directory: experiments/media-harness-h1
+        run: python3 h1_cp2p_start_preparation_transaction_test.py
