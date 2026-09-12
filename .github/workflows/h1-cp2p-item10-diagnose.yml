@@ -1,0 +1,40 @@
+name: H1 CP2P Item 10 Diagnose
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-item10-live-mpeg-gate-wip
+    paths:
+      - .github/workflows/h1-cp2p-item10-diagnose.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Capture exact patch failure
+        run: |
+          set -u
+          python3 experiments/media-harness-h1/.item10_preapply_fix.py > /tmp/item10-pre.log 2>&1
+          PRE=$?
+          python3 experiments/media-harness-h1/.item10_apply_existing.py > /tmp/item10-apply.log 2>&1
+          APPLY=$?
+          {
+            echo "PREAPPLY_EXIT=$PRE"
+            cat /tmp/item10-pre.log
+            echo "APPLY_EXIT=$APPLY"
+            cat /tmp/item10-apply.log
+          } | tee experiments/media-harness-h1/ITEM10_PATCH_DIAGNOSTIC.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add experiments/media-harness-h1/ITEM10_PATCH_DIAGNOSTIC.txt
+          git commit -m 'ci(h1): capture item10 patch diagnostic'
+          git push origin HEAD:experiment/h1-cp2p-item10-live-mpeg-gate-wip
+          test "$PRE" -eq 0
+          test "$APPLY" -eq 0
