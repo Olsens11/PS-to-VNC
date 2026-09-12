@@ -1,0 +1,524 @@
+name: H1 CP2P Item 9 Implementation
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-ps2-mpeg-worker
+    paths:
+      - .github/workflows/h1-cp2p-item9-implement.yml
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/h1-cp2p-ps2-mpeg-worker
+          fetch-depth: 0
+      - name: Apply fail-closed item 9 patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              text = p.read_text()
+              n = text.count(old)
+              if n != 1:
+                  raise SystemExit(f"{label}: expected 1 match in {path}, found {n}")
+              p.write_text(text.replace(old, new, 1))
+
+          # Transport: preserve the historical API as a wrapper and add only a
+          # consumer-local cancellation predicate for the CP2P MPEG worker.
+          replace_once(
+              'experiments/media-harness-h1/h1_transport_runtime.h',
+              '''int pstvnc_h1_transport_mpeg_read(\n    pstvnc_h1_transport_runtime_t *runtime,\n    void *buffer,\n    size_t maximum_count,\n    size_t *bytes_read);\n''',
+              '''int pstvnc_h1_transport_mpeg_read(\n    pstvnc_h1_transport_runtime_t *runtime,\n    void *buffer,\n    size_t maximum_count,\n    size_t *bytes_read);\n\n/* CP2P consumer-local cancellation; does not alter queue/session ownership. */\nint pstvnc_h1_transport_mpeg_read_cancellable(\n    pstvnc_h1_transport_runtime_t *runtime,\n    void *buffer,\n    size_t maximum_count,\n    size_t *bytes_read,\n    const volatile int *cancel_requested);\n''',
+              'transport header cancellable read')
+
+          replace_once(
+              'experiments/media-harness-h1/h1_transport_runtime.c',
+              '''int pstvnc_h1_transport_mpeg_read(\n    pstvnc_h1_transport_runtime_t *runtime,\n    void *buffer,\n    size_t maximum_count,\n    size_t *bytes_read)\n{\n''',
+              '''int pstvnc_h1_transport_mpeg_read_cancellable(\n    pstvnc_h1_transport_runtime_t *runtime,\n    void *buffer,\n    size_t maximum_count,\n    size_t *bytes_read,\n    const volatile int *cancel_requested)\n{\n''',
+              'transport cancellable signature')
+          replace_once(
+              'experiments/media-harness-h1/h1_transport_runtime.c',
+              '''    for (;;) {\n        size_t available;\n''',
+              '''    for (;;) {\n        size_t available;\n\n        if (cancel_requested != NULL && *cancel_requested)\n            return 0;\n''',
+              'transport cancellation poll')
+          replace_once(
+              'experiments/media-harness-h1/h1_transport_runtime.c',
+              '''    }\n}\n\nint pstvnc_h1_transport_audio_exhausted(\n''',
+              '''    }\n}\n\nint pstvnc_h1_transport_mpeg_read(\n    pstvnc_h1_transport_runtime_t *runtime,\n    void *buffer,\n    size_t maximum_count,\n    size_t *bytes_read)\n{\n    return pstvnc_h1_transport_mpeg_read_cancellable(\n        runtime, buffer, maximum_count, bytes_read, NULL);\n}\n\nint pstvnc_h1_transport_audio_exhausted(\n''',
+              'transport compatibility wrapper')
+
+          # Generated CP2P runtime: thread cancellation is consumer-local. A
+          # cancellation must not mutate the presentation owner; coordinator
+          # retirement remains authoritative.
+          gen = 'experiments/media-harness-h1/generate_h1_video_runtime_cp2p.py'
+          replace_once(
+              gen,
+              '''        "    pstvnc_h1_mpeg_start_contract_t start_contract;\\n\\n"\n        "    MPEGSequenceInfo *sequence_info;",''',
+              '''        "    pstvnc_h1_mpeg_start_contract_t start_contract;\\n"\n        "    const volatile int *stop_requested;\\n"\n        "    unsigned cancelled : 1;\\n\\n"\n        "    MPEGSequenceInfo *sequence_info;",''',
+              'generator stop fields')
+          replace_once(
+              gen,
+              '''    source = replace_function(\n        source,\n        "static void *h1_video_sequence_init(",''',
+              '''    source = replace_once(\n        source,\n        "    if (!pstvnc_h1_transport_mpeg_read(\\n"\n        "            session->transport,\\n"\n        "            session->feed_buffer,\\n"\n        "            session->config->mpeg_feed_bytes,\\n"\n        "            &payload_size))\\n"\n        "        return 0;",\n        "    if (!pstvnc_h1_transport_mpeg_read_cancellable(\\n"\n        "            session->transport,\\n"\n        "            session->feed_buffer,\\n"\n        "            session->config->mpeg_feed_bytes,\\n"\n        "            &payload_size,\\n"\n        "            session->stop_requested)) {\\n"\n        "        if (session->stop_requested != NULL && *session->stop_requested)\\n"\n        "            session->cancelled = 1;\\n"\n        "        return 0;\\n"\n        "    }",\n        "CP2P cancellable MPEG feed",\n    )\n\n    source = replace_once(\n        source,\n        "    for (;;) {\\n"\n        "        size_t current = pstvnc_h1_transport_mpeg_queue_size(session->transport);",\n        "    for (;;) {\\n"\n        "        size_t current;\\n\\n"\n        "        if (session->stop_requested != NULL && *session->stop_requested) {\\n"\n        "            session->cancelled = 1;\\n"\n        "            return 0;\\n"\n        "        }\\n\\n"\n        "        current = pstvnc_h1_transport_mpeg_queue_size(session->transport);",\n        "CP2P cancellable prefill",\n    )\n\n    source = replace_function(\n        source,\n        "static void *h1_video_sequence_init(",''',
+              'generator cancellation transforms')
+          replace_once(
+              gen,
+              '''        "    const pstvnc_h1_mpeg_start_contract_t *start_contract)",''',
+              '''        "    const pstvnc_h1_mpeg_start_contract_t *start_contract,\\n"\n        "    const volatile int *stop_requested)",''',
+              'generator run stop signature')
+          replace_once(
+              gen,
+              '''        "    session.start_contract = *start_contract;\\n",''',
+              '''        "    session.start_contract = *start_contract;\\n"\n        "    session.stop_requested = stop_requested;\\n",''',
+              'generator stop assignment')
+          replace_once(
+              gen,
+              '''    if (state == PSTVNC_H1_MPEG_PRESENTATION_WAIT_FIRST_FRAME) {\n        (void)pstvnc_h1_graphics_clear_video();\n        (void)pstvnc_h1_mpeg_start_handoff_abort_start(\n            session->handoff,\n            session->start_contract.generation);\n    }''',
+              '''    if (state == PSTVNC_H1_MPEG_PRESENTATION_WAIT_FIRST_FRAME &&\n        !session->cancelled) {\n        (void)pstvnc_h1_graphics_clear_video();\n        (void)pstvnc_h1_mpeg_start_handoff_abort_start(\n            session->handoff,\n            session->start_contract.generation);\n    }''',
+              'generator cancellation owner boundary')
+          replace_once(
+              gen,
+              '''        "pstvnc_h1_graphics_present_video_macroblocks(",''',
+              '''        "pstvnc_h1_transport_mpeg_read_cancellable(",\n        "pstvnc_h1_graphics_present_video_macroblocks(",''',
+              'generator required cancellable marker')
+
+          replace_once(
+              'experiments/media-harness-h1/h1_video_runtime_cp2p.h',
+              '''    pstvnc_h1_mpeg_start_handoff_t *handoff,\n    const pstvnc_h1_mpeg_start_contract_t *start_contract);''',
+              '''    pstvnc_h1_mpeg_start_handoff_t *handoff,\n    const pstvnc_h1_mpeg_start_contract_t *start_contract,\n    const volatile int *stop_requested);''',
+              'CP2P runtime cancellation API')
+
+          # Coordinator: install an optional arm callback. The existing init API
+          # remains source-compatible; the CP2P app explicitly installs it.
+          replace_once(
+              'experiments/media-harness-h1/h1_cp2p_session_coordinator.h',
+              '''#include "mpeg_presentation_calibration/h1_mpeg_start_handoff.h"\n\ntypedef struct pstvnc_h1_cp2p_session_coordinator {''',
+              '''#include "mpeg_presentation_calibration/h1_mpeg_start_handoff.h"\n\ntypedef int (*pstvnc_h1_cp2p_session_arm_mpeg_fn)(\n    void *context,\n    pstvnc_h1_mpeg_start_handoff_t *handoff,\n    const pstvnc_h1_mpeg_start_contract_t *contract);\n\ntypedef struct pstvnc_h1_cp2p_session_coordinator {''',
+              'coordinator arm typedef')
+          replace_once(
+              'experiments/media-harness-h1/h1_cp2p_session_coordinator.h',
+              '''    pstvnc_h1_mpeg_recalibration_clear_mpeg_fn clear_mpeg;\n    void *clear_mpeg_context;\n    uint32_t session_id;''',
+              '''    pstvnc_h1_mpeg_recalibration_clear_mpeg_fn clear_mpeg;\n    void *clear_mpeg_context;\n    pstvnc_h1_cp2p_session_arm_mpeg_fn arm_mpeg;\n    void *arm_mpeg_context;\n    uint32_t session_id;''',
+              'coordinator arm fields')
+          replace_once(
+              'experiments/media-harness-h1/h1_cp2p_session_coordinator.h',
+              '''int pstvnc_h1_cp2p_session_coordinator_present(\n''',
+              '''int pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(\n    pstvnc_h1_cp2p_session_coordinator_t *coordinator,\n    pstvnc_h1_cp2p_session_arm_mpeg_fn arm_mpeg,\n    void *arm_mpeg_context);\n\nint pstvnc_h1_cp2p_session_coordinator_present(\n''',
+              'coordinator setter declaration')
+
+          coord = 'experiments/media-harness-h1/h1_cp2p_session_coordinator.c'
+          replace_once(
+              coord,
+              '''    if (!pstvnc_h1_mpeg_start_transport_send(\n            coordinator->transport,\n            coordinator->session_id,\n            &contract)) {\n        (void)pstvnc_h1_mpeg_start_handoff_abort_start(\n            &coordinator->mpeg_handoff,\n            contract.generation);\n        coordinator->current_start_contract_valid = 0;\n        return 0;\n    }''',
+              '''    if (coordinator->arm_mpeg != NULL &&\n        !coordinator->arm_mpeg(\n            coordinator->arm_mpeg_context,\n            &coordinator->mpeg_handoff,\n            &contract)) {\n        (void)pstvnc_h1_mpeg_start_handoff_abort_start(\n            &coordinator->mpeg_handoff,\n            contract.generation);\n        coordinator->current_start_contract_valid = 0;\n        return 0;\n    }\n\n    if (!pstvnc_h1_mpeg_start_transport_send(\n            coordinator->transport,\n            coordinator->session_id,\n            &contract)) {\n        if (coordinator->arm_mpeg != NULL &&\n            (coordinator->clear_mpeg == NULL ||\n             !coordinator->clear_mpeg(\n                 coordinator->clear_mpeg_context,\n                 contract.generation))) {\n            coordinator->current_start_contract_valid = 0;\n            return 0;\n        }\n        (void)pstvnc_h1_mpeg_start_handoff_abort_start(\n            &coordinator->mpeg_handoff,\n            contract.generation);\n        coordinator->current_start_contract_valid = 0;\n        return 0;\n    }''',
+              'coordinator arm-before-START')
+          replace_once(
+              coord,
+              '''    return 1;\n}\n\nint pstvnc_h1_cp2p_session_coordinator_present(\n''',
+              '''    return 1;\n}\n\nint pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(\n    pstvnc_h1_cp2p_session_coordinator_t *coordinator,\n    pstvnc_h1_cp2p_session_arm_mpeg_fn arm_mpeg,\n    void *arm_mpeg_context)\n{\n    if (coordinator == NULL || !coordinator->initialized || arm_mpeg == NULL)\n        return 0;\n\n    coordinator->arm_mpeg = arm_mpeg;\n    coordinator->arm_mpeg_context = arm_mpeg_context;\n    return 1;\n}\n\nint pstvnc_h1_cp2p_session_coordinator_present(\n''',
+              'coordinator arm setter')
+          replace_once(
+              coord,
+              '''    coordinator->clear_mpeg = NULL;\n    coordinator->clear_mpeg_context = NULL;\n    coordinator->current_start_contract_valid = 0;''',
+              '''    coordinator->clear_mpeg = NULL;\n    coordinator->clear_mpeg_context = NULL;\n    coordinator->arm_mpeg = NULL;\n    coordinator->arm_mpeg_context = NULL;\n    coordinator->current_start_contract_valid = 0;''',
+              'coordinator shutdown arm clear')
+
+          # New generation-bound worker. It deliberately does not own handoff
+          # transitions; clear stops/drains and removes concrete pixels only.
+          Path('experiments/media-harness-h1/h1_cp2p_mpeg_worker.h').write_text(r'''/*
+           * File synopsis:
+           * Defines CP2P's exact-generation MPEG decode worker. The worker owns
+           * only thread/decoder/pixel lifetime; session coordinator owns MPEG
+           * presentation-generation state.
+           */
+          #ifndef PSTVNC_H1_CP2P_MPEG_WORKER_H
+          #define PSTVNC_H1_CP2P_MPEG_WORKER_H
+
+          #include "h1_media_clock.h"
+          #include "h1_transport_runtime.h"
+          #include "h1_video_runtime.h"
+          #include "mpeg_presentation_calibration/h1_mpeg_start_handoff.h"
+
+          typedef struct pstvnc_h1_cp2p_mpeg_worker {
+              pstvnc_h1_transport_runtime_t *transport;
+              pstvnc_h1_media_clock_t *clock;
+              pstvnc_h1_mpeg_start_handoff_t *handoff;
+              pstvnc_h1_mpeg_start_contract_t contract;
+              pstvnc_h1_video_result_t result;
+              int thread_id;
+              int thread_started;
+              int initialized;
+              int live_decode;
+              volatile int stop_requested;
+              volatile int finished;
+              volatile int run_result;
+              void *thread_stack_allocation;
+              unsigned char *thread_stack;
+              uint32_t generation;
+              unsigned armed : 1;
+          } pstvnc_h1_cp2p_mpeg_worker_t;
+
+          int pstvnc_h1_cp2p_mpeg_worker_init(
+              pstvnc_h1_cp2p_mpeg_worker_t *worker,
+              pstvnc_h1_transport_runtime_t *transport,
+              pstvnc_h1_media_clock_t *clock);
+
+          int pstvnc_h1_cp2p_mpeg_worker_arm(
+              void *context,
+              pstvnc_h1_mpeg_start_handoff_t *handoff,
+              const pstvnc_h1_mpeg_start_contract_t *contract);
+
+          int pstvnc_h1_cp2p_mpeg_worker_clear(
+              void *context,
+              uint32_t generation);
+
+          int pstvnc_h1_cp2p_mpeg_worker_shutdown(
+              pstvnc_h1_cp2p_mpeg_worker_t *worker);
+
+          #endif
+          '''.replace('          ', ''))
+
+          Path('experiments/media-harness-h1/h1_cp2p_mpeg_worker.c').write_text(r'''/*
+           * File synopsis:
+           * Implements the CP2P generation-bound MPEG worker. One optional EE
+           * decoder thread consumes the existing transport MPEG queue; no socket,
+           * recv owner, queue, sequence owner, or presentation owner is added.
+           */
+          #include "h1_cp2p_mpeg_worker.h"
+
+          #include "h1_cumulative39_graphics.h"
+          #include "h1_video_runtime_cp2p.h"
+
+          #include <delaythread.h>
+          #include <kernel.h>
+          #include <malloc.h>
+          #include <string.h>
+
+          #define H1_CP2P_MPEG_WORKER_STACK_BYTES (64u * 1024u)
+          #define H1_CP2P_MPEG_WORKER_STOP_POLL_US 1000u
+          #define H1_CP2P_MPEG_WORKER_STOP_MAX_LOOPS 3000u
+
+          static unsigned char *h1_worker_align64(void *allocation)
+          {
+              uintptr_t value = (uintptr_t)allocation;
+              value = (value + 63u) & ~(uintptr_t)63u;
+              return (unsigned char *)value;
+          }
+
+          static void h1_cp2p_mpeg_worker_thread(void *argument)
+          {
+              pstvnc_h1_cp2p_mpeg_worker_t *worker =
+                  (pstvnc_h1_cp2p_mpeg_worker_t *)argument;
+
+              worker->run_result = pstvnc_h1_video_run_cp2p_session(
+                  worker->transport,
+                  worker->clock,
+                  &worker->result,
+                  worker->handoff,
+                  &worker->contract,
+                  &worker->stop_requested);
+              worker->finished = 1;
+              ExitThread();
+          }
+
+          static int h1_cp2p_mpeg_worker_join(
+              pstvnc_h1_cp2p_mpeg_worker_t *worker)
+          {
+              unsigned int loops = 0u;
+
+              if (!worker->thread_started)
+                  return 1;
+
+              worker->stop_requested = 1;
+              while (!worker->finished && loops < H1_CP2P_MPEG_WORKER_STOP_MAX_LOOPS) {
+                  ee_thread_status_t status;
+                  memset(&status, 0, sizeof(status));
+                  if (ReferThreadStatus(worker->thread_id, &status) < 0)
+                      return 0;
+                  if (status.status == THS_DORMANT) {
+                      worker->finished = 1;
+                      break;
+                  }
+                  if (DelayThread(H1_CP2P_MPEG_WORKER_STOP_POLL_US) < 0)
+                      return 0;
+                  loops++;
+              }
+
+              if (!worker->finished)
+                  return 0;
+              if (DeleteThread(worker->thread_id) < 0)
+                  return 0;
+
+              worker->thread_started = 0;
+              worker->thread_id = -1;
+              free(worker->thread_stack_allocation);
+              worker->thread_stack_allocation = NULL;
+              worker->thread_stack = NULL;
+              return 1;
+          }
+
+          int pstvnc_h1_cp2p_mpeg_worker_init(
+              pstvnc_h1_cp2p_mpeg_worker_t *worker,
+              pstvnc_h1_transport_runtime_t *transport,
+              pstvnc_h1_media_clock_t *clock)
+          {
+              if (worker == NULL || transport == NULL || clock == NULL)
+                  return 0;
+              memset(worker, 0, sizeof(*worker));
+              worker->transport = transport;
+              worker->clock = clock;
+              worker->thread_id = -1;
+              worker->initialized = 1;
+              return 1;
+          }
+
+          int pstvnc_h1_cp2p_mpeg_worker_arm(
+              void *context,
+              pstvnc_h1_mpeg_start_handoff_t *handoff,
+              const pstvnc_h1_mpeg_start_contract_t *contract)
+          {
+              pstvnc_h1_cp2p_mpeg_worker_t *worker =
+                  (pstvnc_h1_cp2p_mpeg_worker_t *)context;
+              const pstvnc_h1_config_t *config;
+              ee_thread_t thread;
+
+              if (worker == NULL || !worker->initialized || handoff == NULL ||
+                  contract == NULL || contract->generation == 0u || worker->armed)
+                  return 0;
+              if (pstvnc_h1_mpeg_presentation_owner_state(&handoff->owner) !=
+                      PSTVNC_H1_MPEG_PRESENTATION_WAIT_FIRST_FRAME ||
+                  handoff->owner.generation != contract->generation)
+                  return 0;
+
+              config = pstvnc_h1_transport_config(worker->transport);
+              if (config == NULL)
+                  return 0;
+
+              worker->handoff = handoff;
+              worker->contract = *contract;
+              worker->generation = contract->generation;
+              worker->stop_requested = 0;
+              worker->finished = 0;
+              worker->run_result = 0;
+              worker->live_decode = 0;
+              worker->armed = 1;
+
+              /* Item #10 owns public MPEG activation. OFF is an armed dormant worker. */
+              if (config->video_mode == PSTVNC_H1_VIDEO_OFF)
+                  return 1;
+              if (config->video_mode != PSTVNC_H1_VIDEO_MPEG2_ES)
+                  goto fail;
+              if (pstvnc_h1_video_chassis_init() < 0)
+                  goto fail;
+
+              worker->thread_stack_allocation =
+                  malloc(H1_CP2P_MPEG_WORKER_STACK_BYTES + 63u);
+              if (worker->thread_stack_allocation == NULL)
+                  goto fail;
+              worker->thread_stack = h1_worker_align64(worker->thread_stack_allocation);
+
+              memset(&thread, 0, sizeof(thread));
+              thread.func = h1_cp2p_mpeg_worker_thread;
+              thread.stack = worker->thread_stack;
+              thread.stack_size = H1_CP2P_MPEG_WORKER_STACK_BYTES;
+              thread.gp_reg = &_gp;
+              thread.initial_priority = 42;
+              worker->thread_id = CreateThread(&thread);
+              if (worker->thread_id < 0)
+                  goto fail;
+              if (StartThread(worker->thread_id, worker) < 0) {
+                  (void)DeleteThread(worker->thread_id);
+                  worker->thread_id = -1;
+                  goto fail;
+              }
+              worker->thread_started = 1;
+              worker->live_decode = 1;
+              return 1;
+
+          fail:
+              free(worker->thread_stack_allocation);
+              worker->thread_stack_allocation = NULL;
+              worker->thread_stack = NULL;
+              worker->handoff = NULL;
+              worker->generation = 0u;
+              worker->armed = 0;
+              return 0;
+          }
+
+          int pstvnc_h1_cp2p_mpeg_worker_clear(void *context, uint32_t generation)
+          {
+              pstvnc_h1_cp2p_mpeg_worker_t *worker =
+                  (pstvnc_h1_cp2p_mpeg_worker_t *)context;
+
+              if (worker == NULL || !worker->initialized || !worker->armed ||
+                  generation == 0u || worker->generation != generation)
+                  return 0;
+              if (!h1_cp2p_mpeg_worker_join(worker))
+                  return 0;
+
+              if (pstvnc_h1_graphics_clear_video() < 0)
+                  return 0;
+
+              memset(&worker->contract, 0, sizeof(worker->contract));
+              worker->handoff = NULL;
+              worker->generation = 0u;
+              worker->live_decode = 0;
+              worker->armed = 0;
+              return 1;
+          }
+
+          int pstvnc_h1_cp2p_mpeg_worker_shutdown(
+              pstvnc_h1_cp2p_mpeg_worker_t *worker)
+          {
+              if (worker == NULL || !worker->initialized)
+                  return -1;
+              if (worker->armed &&
+                  !pstvnc_h1_cp2p_mpeg_worker_clear(worker, worker->generation))
+                  return -1;
+              worker->transport = NULL;
+              worker->clock = NULL;
+              worker->initialized = 0;
+              return 0;
+          }
+          '''.replace('          ', ''))
+
+          # CP2P main: real worker replaces dormant callback; gate remains OFF.
+          main = 'experiments/media-harness-h1/h1_main_cp2p_visible_interaction_pcm.c'
+          replace_once(main,
+              '#include "h1_cp2p_session_coordinator.h"\n',
+              '#include "h1_cp2p_session_coordinator.h"\n#include "h1_cp2p_mpeg_worker.h"\n',
+              'main worker include')
+          start = Path(main).read_text()
+          old_block = '''/*\n * Item #4 deliberately has no live MPEG worker yet. The session coordinator\n * nevertheless owns retirement semantics now, so provide the smallest honest\n * withdrawal seam: there is no producer/visible MPEG state to clear until the\n * later worker-integration milestone replaces this callback.\n */\nstatic int h1_cp2p_clear_dormant_mpeg(void *context, uint32_t generation)\n{\n    (void)context;\n    return generation != 0u ? 1 : 0;\n}\n\n'''
+          if start.count(old_block) != 1:
+              raise SystemExit('main dormant callback boundary mismatch')
+          Path(main).write_text(start.replace(old_block, '', 1))
+          replace_once(main,
+              '''        pstvnc_h1_audio_runtime_t audio;\n        pstvnc_h1_media_clock_t clock;''',
+              '''        pstvnc_h1_audio_runtime_t audio;\n        pstvnc_h1_media_clock_t clock;\n        pstvnc_h1_cp2p_mpeg_worker_t mpeg_worker;''',
+              'main worker local')
+          replace_once(main,
+              '''        memset(&audio, 0, sizeof(audio));\n        pstvnc_h1_rfb_session_runtime_init(&rfb);''',
+              '''        memset(&audio, 0, sizeof(audio));\n        memset(&mpeg_worker, 0, sizeof(mpeg_worker));\n        pstvnc_h1_rfb_session_runtime_init(&rfb);''',
+              'main worker zero')
+          replace_once(main,
+              '''        if (session_ok) {\n            if (!pstvnc_h1_cp2p_session_coordinator_init(\n                    &cp2p,\n                    &transport,\n                    h1_cp2p_clear_dormant_mpeg,\n                    NULL)) {''',
+              '''        if (session_ok) {\n            if (!pstvnc_h1_cp2p_mpeg_worker_init(\n                    &mpeg_worker, &transport, &clock)) {\n                printf("H1_CP2P=MPEG_WORKER_INIT_FAIL\\n");\n                session_ok = 0;\n            } else if (!pstvnc_h1_cp2p_session_coordinator_init(\n                    &cp2p,\n                    &transport,\n                    pstvnc_h1_cp2p_mpeg_worker_clear,\n                    &mpeg_worker)) {''',
+              'main worker/coordinator init')
+          replace_once(main,
+              '''            } else {\n                interaction_initialized = 1;\n            }\n        }\n\n        pstvnc_h1_media_clock_init(&clock, config->media_epoch_lead_us);''',
+              '''            } else if (!pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(\n                    &cp2p,\n                    pstvnc_h1_cp2p_mpeg_worker_arm,\n                    &mpeg_worker)) {\n                printf("H1_CP2P=MPEG_WORKER_BIND_FAIL\\n");\n                session_ok = 0;\n            } else {\n                interaction_initialized = 1;\n            }\n        }\n\n        pstvnc_h1_media_clock_init(&clock, config->media_epoch_lead_us);''',
+              'main worker bind')
+          replace_once(main,
+              '"mpeg_worker=0 input=1 keyboard=1 osk=1 local_ui=1\\n");',
+              '"mpeg_worker=GENERATION_BOUND_GATE_DORMANT input=1 keyboard=1 osk=1 local_ui=1\\n");',
+              'main boot marker')
+          replace_once(main,
+              '''        if (audio_active && pstvnc_h1_audio_shutdown(&audio) < 0) {''',
+              '''        if (mpeg_worker.initialized &&\n            pstvnc_h1_cp2p_mpeg_worker_shutdown(&mpeg_worker) < 0) {\n            printf("H1_TEARDOWN=MPEG_WORKER_FAIL\\n");\n            session_ok = 0;\n        }\n\n        if (audio_active && pstvnc_h1_audio_shutdown(&audio) < 0) {''',
+              'main worker shutdown')
+          # Update synopsis only; profile gate itself remains deliberately OFF.
+          replace_once(main,
+              ''' * combined RFB policy. The MPEG worker remains deliberately dormant until the\n * later worker-integration milestone.\n''',
+              ''' * combined RFB policy. Item #9 adds the exact-generation MPEG worker while\n * the public CONFIG gate intentionally keeps live decode dormant until #10.\n''',
+              'main synopsis')
+
+          # CP2P makefile: replace inherited standalone video runtime with the
+          # generated shared-compositor runtime and link the worker.
+          mk = 'mk/media-harness-h1-cp2p-application-link.mk'
+          replace_once(mk,
+              '''# The MPEG worker itself remains dormant at this checkpoint. Item #9 will\n# replace the no-producer retirement seam with the real worker stop/drain path.\n# This target therefore proves application composition without falsely claiming\n# live all-guns MPEG execution.\n''',
+              '''# Item #9 links the real exact-generation MPEG worker and generated CP2P\n# decoder/runtime. The public CONFIG gate remains MPEG OFF until item #10, so\n# this checkpoint proves worker readiness without claiming all-guns activation.\n''',
+              'make synopsis')
+          replace_once(mk,
+              '''CP2P_SESSION_OBJECTS := \\\n\t$(BUILD_DIR)/h1_cp2p_session_coordinator.o\n\nEXTRA_EE_OBJS += $(CP2P_CALIBRATION_OBJECTS) $(CP2P_SESSION_OBJECTS)\n$(EE_BIN): $(CP2P_CALIBRATION_OBJECTS) $(CP2P_SESSION_OBJECTS)\n''',
+              '''CP2P_SESSION_OBJECTS := \\\n\t$(BUILD_DIR)/h1_cp2p_session_coordinator.o \\\n\t$(BUILD_DIR)/h1_cp2p_mpeg_worker.o \\\n\t$(BUILD_DIR)/h1_video_runtime_cp2p.o\n\nEXTRA_EE_OBJS += $(CP2P_CALIBRATION_OBJECTS) $(CP2P_SESSION_OBJECTS)\n# Replace the inherited standalone GS-owning runtime with the CP2P compositor runtime.\nEE_OBJS := $(filter-out $(BUILD_DIR)/h1_video_runtime.o,$(EE_OBJS))\nEE_OBJS += $(BUILD_DIR)/h1_video_runtime_cp2p.o\n$(EE_BIN): $(CP2P_CALIBRATION_OBJECTS) $(CP2P_SESSION_OBJECTS)\n''',
+              'make worker objects')
+          replace_once(mk,
+              '''\texperiments/media-harness-h1/h1_cp2p_session_coordinator.h\n\t$(EE_CC)''',
+              '''\texperiments/media-harness-h1/h1_cp2p_session_coordinator.h \\\n\texperiments/media-harness-h1/h1_cp2p_mpeg_worker.h\n\t$(EE_CC)''',
+              'make main worker dep')
+          insert = '''\nCP2P_GEN_DIR := $(BUILD_DIR)/generated-cp2p\nCP2P_VIDEO_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p.py\nCP2P_VIDEO_SOURCE := experiments/media-harness-h1/h1_video_runtime.c\nCP2P_VIDEO_GENERATED := $(CP2P_GEN_DIR)/h1_video_runtime_cp2p_generated.c\n\n$(CP2P_GEN_DIR):\n\tmkdir -p $@\n\n$(CP2P_VIDEO_GENERATED): $(CP2P_VIDEO_SOURCE) $(CP2P_VIDEO_GENERATOR) | $(CP2P_GEN_DIR)\n\tpython3 $(CP2P_VIDEO_GENERATOR) --input $(CP2P_VIDEO_SOURCE) --output $@\n\n$(BUILD_DIR)/h1_video_runtime_cp2p.o: $(CP2P_VIDEO_GENERATED) \\\n\texperiments/media-harness-h1/h1_video_runtime_cp2p.h \\\n\texperiments/media-harness-h1/h1_cumulative39_graphics.h | $(BUILD_DIR)\n\t$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -I$(CALIBRATION_DIR) -c $(CP2P_VIDEO_GENERATED) -o $@\n\n$(BUILD_DIR)/h1_cp2p_mpeg_worker.o: \\\n\texperiments/media-harness-h1/h1_cp2p_mpeg_worker.c \\\n\texperiments/media-harness-h1/h1_cp2p_mpeg_worker.h \\\n\texperiments/media-harness-h1/h1_video_runtime_cp2p.h | $(BUILD_DIR)\n\t$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -I$(CALIBRATION_DIR) -c $< -o $@\n'''
+          replace_once(mk,
+              '''$(BUILD_DIR)/ps2_graphics39.o: \\\n''',
+              insert + '''\n$(BUILD_DIR)/ps2_graphics39.o: \\\n''',
+              'make generated runtime rules')
+          replace_once(mk,
+              '''\t@test -f $(BUILD_DIR)/h1_cp2p_session_coordinator.o\n''',
+              '''\t@test -f $(BUILD_DIR)/h1_cp2p_session_coordinator.o\n\t@test -f $(BUILD_DIR)/h1_cp2p_mpeg_worker.o\n\t@test -f $(BUILD_DIR)/h1_video_runtime_cp2p.o\n''',
+              'make worker checks')
+          replace_once(mk,
+              '''\t@echo H1_CP2P_MPEG_WORKER=DORMANT\n''',
+              '''\t@echo H1_CP2P_MPEG_WORKER=GENERATION_BOUND_GATE_DORMANT\n\t@echo H1_CP2P_MPEG_CANCELLABLE_READ=LIVE\n''',
+              'make worker marker')
+
+          # Focused host contract: structural assertions where PS2SDK execution
+          # is impossible, plus generated-runtime fail-closed source transform.
+          Path('experiments/media-harness-h1/test_h1_cp2p_mpeg_worker_contract.py').write_text(r'''#!/usr/bin/env python3
+          from pathlib import Path
+          import tempfile
+          import subprocess
+
+          root = Path(__file__).resolve().parents[2]
+          worker = (root / 'experiments/media-harness-h1/h1_cp2p_mpeg_worker.c').read_text()
+          coord = (root / 'experiments/media-harness-h1/h1_cp2p_session_coordinator.c').read_text()
+          transport = (root / 'experiments/media-harness-h1/h1_transport_runtime.c').read_text()
+          main = (root / 'experiments/media-harness-h1/h1_main_cp2p_visible_interaction_pcm.c').read_text()
+          mk = (root / 'mk/media-harness-h1-cp2p-application-link.mk').read_text()
+
+          assert 'pstvnc_h1_transport_mpeg_read_cancellable' in transport
+          assert 'return pstvnc_h1_transport_mpeg_read_cancellable(' in transport
+          assert 'prepare_start' in coord
+          assert coord.index('coordinator->arm_mpeg(') < coord.index('pstvnc_h1_mpeg_start_transport_send(')
+          send_fail = coord[coord.index('if (!pstvnc_h1_mpeg_start_transport_send('):]
+          assert send_fail.index('coordinator->clear_mpeg(') < send_fail.index('pstvnc_h1_mpeg_start_handoff_abort_start(')
+          assert 'pstvnc_h1_cp2p_mpeg_worker_clear' in worker
+          assert 'pstvnc_h1_graphics_clear_video()' in worker
+          assert 'pstvnc_h1_mpeg_start_handoff_abort_start' not in worker
+          assert 'pstvnc_h1_mpeg_start_handoff_stop' not in worker
+          assert 'CreateThread' in worker and 'StartThread' in worker and 'DeleteThread' in worker
+          assert 'config->video_mode == PSTVNC_H1_VIDEO_OFF' in worker
+          assert 'config->video_mode != PSTVNC_H1_VIDEO_MPEG2_ES' in worker
+          assert 'PSTVNC_H1_VIDEO_OFF' in main and 'MPEG_WORKER_BIND_FAIL' in main
+          assert 'filter-out $(BUILD_DIR)/h1_video_runtime.o' in mk
+
+          with tempfile.TemporaryDirectory() as td:
+              out = Path(td) / 'generated.c'
+              subprocess.run([
+                  'python3', str(root / 'experiments/media-harness-h1/generate_h1_video_runtime_cp2p.py'),
+                  '--input', str(root / 'experiments/media-harness-h1/h1_video_runtime.c'),
+                  '--output', str(out)], check=True)
+              generated = out.read_text()
+              assert 'pstvnc_h1_transport_mpeg_read_cancellable(' in generated
+              assert 'session->cancelled = 1' in generated
+              assert 'const volatile int *stop_requested' in generated
+
+          print('H1_CP2P_MPEG_WORKER_HOST_TEST=PASS')
+          print('H1_CP2P_ARM_BEFORE_START_HOST_TEST=PASS')
+          print('H1_CP2P_WORKER_CLEAR_BEFORE_ABORT_HOST_TEST=PASS')
+          print('H1_CP2P_PUBLIC_MPEG_GATE=DORMANT')
+          '''.replace('          ', ''))
+          PY
+
+          git diff --check
+          python3 experiments/media-harness-h1/test_h1_cp2p_mpeg_worker_contract.py
+          git status --short
+      - name: Commit implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add experiments/media-harness-h1 mk/media-harness-h1-cp2p-application-link.mk
+          git commit -m "h1: integrate generation-bound CP2P MPEG worker [skip ci]"
+          git push origin HEAD:experiment/h1-cp2p-ps2-mpeg-worker
