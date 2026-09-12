@@ -22,6 +22,27 @@ jobs:
           make -C experiments/media-harness-h1/mpeg_presentation_calibration \
             -f Makefile.host clean test 2>&1 | \
             tee build/evidence/mpeg-calibration-host.log
+      - name: Run CP2P combined RFB ownership contract
+        shell: bash
+        run: |
+          set -eu
+          cd experiments/media-harness-h1/mpeg_presentation_calibration
+          cc -std=c99 -O2 -Wall -Wextra -Werror -pedantic \
+            -I. -I../../../src/input \
+            mpeg_presentation_calibration_geometry.c \
+            mpeg_presentation_calibration_state.c \
+            h1_mpeg_calibration_adapter.c \
+            h1_mpeg_calibration_foreground.c \
+            h1_mpeg_calibration_rfb_gate.c \
+            h1_mpeg_calibration_render.c \
+            h1_mpeg_calibration_runtime.c \
+            h1_mpeg_calibration_rfb_schedule.c \
+            h1_mpeg_presentation_owner.c \
+            h1_mpeg_cp2p_rfb_flow.c \
+            h1_mpeg_cp2p_rfb_flow_test.c \
+            -o /tmp/h1_mpeg_cp2p_rfb_flow_test
+          /tmp/h1_mpeg_cp2p_rfb_flow_test | \
+            tee -a ../../../build/evidence/mpeg-calibration-host.log
       - name: Preserve exact host diagnostic log
         if: always()
         uses: actions/upload-artifact@v4
