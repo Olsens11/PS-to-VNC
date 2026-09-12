@@ -21,6 +21,13 @@ typedef struct pstvnc_h1_mpeg_calibration_runtime_result {
     unsigned consume_controller_state : 1;
     unsigned freeze_rfb_visuals : 1;
     unsigned calibration_visible : 1;
+
+    /*
+     * One-shot edge produced by the existing calibration core when REVIEW is
+     * accepted. This is propagated outward unchanged; it is not inferred from
+     * committed geometry or foreground state.
+     */
+    unsigned accepted : 1;
 } pstvnc_h1_mpeg_calibration_runtime_result_t;
 
 void pstvnc_h1_mpeg_calibration_runtime_init(
@@ -35,6 +42,8 @@ void pstvnc_h1_mpeg_calibration_runtime_init(
  * runtime immediately mirrors its freeze fact into the experiment-local RFB
  * gate; actual RFB request/presentation scheduling is still performed by the
  * H1 coordinator/worker only at its existing complete-server-message boundary.
+ * The existing calibration accepted edge is returned exactly once on the input
+ * observation that commits the region.
  */
 int pstvnc_h1_mpeg_calibration_runtime_service_controller(
     pstvnc_h1_mpeg_calibration_runtime_t *runtime,
