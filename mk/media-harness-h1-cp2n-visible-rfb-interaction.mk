@@ -16,9 +16,17 @@ include mk/media-harness-h1-cumulative39-thread-census.mk
 
 # The clean through-Issue-39 domain objects are already linked by the cumulative
 # target. CP2N adds only experiment-local cross-domain composition scaffolding.
-EXTRA_EE_OBJS += $(BUILD_DIR)/h1_interaction_coordinator.o
+#
+# The coordinator has since gained hooks for the later MPEG-calibration tranche.
+# CP2N must preserve its hardware-qualified no-calibration behavior, so link the
+# explicit neutral capability seam rather than the real calibration runtime.
+EXTRA_EE_OBJS += \
+	$(BUILD_DIR)/h1_interaction_coordinator.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_cp2n_disabled.o
 
-$(EE_BIN): $(BUILD_DIR)/h1_interaction_coordinator.o
+$(EE_BIN): \
+	$(BUILD_DIR)/h1_interaction_coordinator.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_cp2n_disabled.o
 
 $(BUILD_DIR)/h1_main.o: \
 	experiments/media-harness-h1/h1_main_rfb_visible_interaction_entry.c \
@@ -47,6 +55,14 @@ $(BUILD_DIR)/h1_interaction_coordinator.o: \
 	src/display/display.h \
 	src/platform/ps2_graphics.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/h1_mpeg_calibration_cp2n_disabled.o: \
+	experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_cp2n_disabled.c \
+	experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_entry_hold.h \
+	experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) \
+		-Iexperiments/media-harness-h1/mpeg_presentation_calibration \
+		-c $< -o $@
 
 # Preserve the already-qualified CP2J queue/credit/mux/quiesce implementation
 # under visible CONFIG mode 2 exactly as CP2K and CP2L do.
