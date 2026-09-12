@@ -3,3 +3,6 @@
 
 # Strict host-contract executables are generated beside their C sources.
 /experiments/media-harness-h1/mpeg_presentation_calibration/*_test
+
+# Python host-proof bytecode is generated transiently by py_compile/tests.
+/experiments/media-harness-h1/__pycache__/
