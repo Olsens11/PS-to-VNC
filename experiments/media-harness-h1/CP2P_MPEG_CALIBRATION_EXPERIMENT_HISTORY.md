@@ -1118,3 +1118,63 @@ Final item-#4 CP2P identity:
 Proof refinement also established that `check_rfb_pcm_interaction.py` is CP2O-specific because it requires `h1_main.o` to reference the bare interaction coordinator. Applying it to CP2P was therefore invalid: CP2P correctly delegates through the session coordinator. The final proof uses the CP2O checker only for CP2O and proves CP2P through its own source contract, inherited mux seam, and linked-symbol assertions. Production behavior was not changed to satisfy an inapplicable checker.
 
 At this entry scoreboard item **#4 — Link a real CP2P PS2 target — is complete for the intended pre-Pi software boundary.** This does not claim Pi START receive/validation, Pi suppression/capture activation, a running PS2 MPEG worker, final all-guns CONFIG activation, deployment, physical behavior, or hardware qualification. The next incomplete implementation item is **#5 — Pi START receive + validation**.
+
+---
+# PHASE M — SEPTEMBER 12 PI START RECEIVE + VALIDATION
+
+## 35. Item #5 — Pi START receive + validation closes
+
+With the integrated item-#4 tree sealed, work moved to the first missing Pi-side control-plane endpoint rather than waking MPEG prematurely.
+
+A new non-destructive continuation branch, `experiment/h1-cp2p-pi-start-receive-validation`, was created from integrated pre-Pi head `e61b0ce50d7e3e72fc97d6f382247eb1f35cf5de`.
+
+The implementation deliberately preserves the established one-transport/one-reader architecture. The existing Pi RFB session adapter already consumes only logical channel 1 on the sole `H1Session.reader()` call chain and returns all other frames to the base dispatcher. The new CP2P START receiver therefore wraps that already-active receive owner after RFB attachment and consumes only PS2->Pi PSTV `DATA` on logical MPEG2 channel 4. It creates no second PS2-facing socket, transport reader, frame-sequence owner, or receive thread.
+
+The Pi decoder mirrors the existing PS2 wire authority: exactly 44 bytes / eleven big-endian 32-bit words containing version, session id, generation, exact base rectangle, and expanded suppression rectangle. Validation now requires:
+
+- wire version 1 and exact 44-byte length;
+- active session-id equality;
+- nonzero generation;
+- geometry representable in the PS2 signed-int domain;
+- base width/height at least 16 and 16-pixel aligned;
+- positive suppression size;
+- suppression fully containing the exact base rectangle;
+- both base and suppression rectangles lying inside the active Pi desktop described by existing Pi-only profile metadata.
+
+No new CONFIG field or imaginary profile string was introduced.
+
+A successful START becomes one immutable prepared Pi request. Only one generation may remain prepared at a time. Replacing it before exact release is rejected, and once a generation has been prepared, that generation or an older one is stale. The exact-generation release seam exists for later producer/lifecycle work but performs no activation itself.
+
+The CP2P Pi runner is a narrow descendant of the existing CP2O visible-RFB/optional-PCM runner. At this checkpoint a valid START only records `mpeg_start_prepared.json` and emits `H1_CP2P_MPEG_START_PREPARED=...`. It does **not** install RFB source suppression, alter capture geometry, launch ffmpeg, emit MPEG bytes, run the PS2 concurrent MPEG worker, or open the final all-guns CONFIG gate.
+
+Durable implementation files introduced in this tranche:
+
+- `experiments/media-harness-h1/h1_cp2p_start_receiver.py`;
+- `experiments/media-harness-h1/h1_cp2p_start_receiver_test.py`;
+- `experiments/media-harness-h1/h1_mux_server_cp2p_start_receiver.py`;
+- `experiments/media-harness-h1/CP2P_PI_START_RECEIVE_VALIDATION.md`.
+
+Important commits leading to the tested checkpoint:
+
+- `57373a83fa6b128353eb8efe54152b8abcccd3ef` — Pi START receive/validation seam;
+- `2a02513bfce0d1f275e19bc71ea0951980fd5221` — CP2P Pi runner integration;
+- `5caadf746fb5cf1eaa4caab7d75024f9db471352` — focused host tests;
+- tested/documented source head `c37c22c64d159d8f1814a3462ac6dbfa2e0b4557`.
+
+GitHub Actions proof run `34702828032`, job `103577491937`, completed SUCCESS. Evidence included:
+
+- Python compile proof PASS;
+- 14 focused START receive/validation tests PASS;
+- `H1_CP2P_PI_START_RECEIVE_HOST_TEST=PASS`;
+- existing `h1_rfb_pi_bridge_test.py` PASS;
+- existing `h1_rfb_session_adapter_test.py` PASS;
+- existing cumulative RFB bridge runner test PASS;
+- `H1_CP2P_PI_START_RFB_REGRESSION=PASS`;
+- inert CP2P runner `--validate-only` PASS;
+- `H1_CP2P_PI_START_RUNNER_VALIDATE=PASS`;
+- static proof that the START module creates no receive thread, socket, or producer process;
+- `H1_CP2P_PI_START_BOUNDARY=PASS`.
+
+The proof boundary remains software-only. It does not claim Pi suppression/capture activation, START-driven MPEG production, live concurrent PS2 MPEG consumption, all-guns CONFIG activation, deployment, or hardware qualification.
+
+At this entry scoreboard item **#5 — Pi START receive + validation — OPEN -> DONE**. The chosen next implementation order is **#9 — integrate the concurrent PS2 MPEG worker**, before allowing later Pi work to make a valid START wake MPEG production.
