@@ -6,15 +6,15 @@
  * This checkpoint builds directly from CP2N's hardware-qualified visible RFB,
  * mouse, keyboard, OSK, and local-UI composition. It activates the already
  * linked/canonical H1 PCM/AUDSRV runtime on the same physical PSTV connection.
- * MPEG remains OFF. No new audio consumer, controller gesture, keyboard meaning,
- * transport framing, or RFB parser behavior is introduced here.
+ * MPEG remains OFF. The experiment-local MPEG-calibration ownership/RFB-flow
+ * policy is linked here only to prove its live coordinator seam before native
+ * calibration rasterization and MPEG presentation are added.
  *
  * The resident process accepts both CP2N-equivalent visible-RFB-only sessions
  * and the new visible-RFB+PCM sessions, allowing repeated h1_tool runs against
  * one unchanged ELF. Qualification still applies only to the exact tested
  * profile and PT_LOAD identity.
  */
-
 #include "h1_audio_runtime.h"
 #include "h1_config.h"
 #include "h1_interaction_coordinator.h"
@@ -197,13 +197,15 @@ int main(void)
 
         if (session_ok) {
             rfb_result_code =
-                pstvnc_h1_rfb_session_runtime_run_with_presenter_and_service(
+                pstvnc_h1_rfb_session_runtime_run_with_flow_policy(
                     &rfb,
                     &transport,
                     pstvnc_h1_interaction_coordinator_present,
                     &interaction,
                     pstvnc_h1_interaction_coordinator_service,
-                    &interaction);
+                    &interaction,
+                    pstvnc_h1_interaction_coordinator_rfb_policy(
+                        &interaction));
 
             /* Preserve RFB/quiesce diagnostic authority if audio census samples
              * update the shared diagnostic word while PCM drains afterward. */

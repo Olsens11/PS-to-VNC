@@ -156,6 +156,25 @@ int pstvnc_h1_mpeg_calibration_interaction_binding_service_controller(
     return 1;
 }
 
+int pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+    const pstvnc_h1_mpeg_calibration_interaction_binding_t *binding)
+{
+    if (binding == NULL)
+        return 0;
+
+    return pstvnc_mpeg_calibration_owns_foreground(
+        &binding->runtime.foreground.adapter.calibration)
+        ? 1
+        : 0;
+}
+
+int pstvnc_h1_mpeg_calibration_interaction_binding_owns_mouse_suspension(
+    const pstvnc_h1_mpeg_calibration_interaction_binding_t *binding)
+{
+    return binding != NULL &&
+        binding->runtime.foreground.mouse_interpretation_suspended != 0;
+}
+
 const pstvnc_h1_rfb_flow_policy_t *
 pstvnc_h1_mpeg_calibration_interaction_binding_rfb_policy(
     const pstvnc_h1_mpeg_calibration_interaction_binding_t *binding)

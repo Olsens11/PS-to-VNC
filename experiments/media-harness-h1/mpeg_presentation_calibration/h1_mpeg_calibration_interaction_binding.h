@@ -56,6 +56,17 @@ int pstvnc_h1_mpeg_calibration_interaction_binding_service_controller(
     const pstvnc_controller_state_t *controller_state,
     int *consume_controller_state);
 
+/*
+ * Foreground and suspension facts intentionally exposed to the experiment-local
+ * coordinator so ordinary controller routing and the desktop mouse-resume path
+ * cannot race calibration ownership.
+ */
+int pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+    const pstvnc_h1_mpeg_calibration_interaction_binding_t *binding);
+
+int pstvnc_h1_mpeg_calibration_interaction_binding_owns_mouse_suspension(
+    const pstvnc_h1_mpeg_calibration_interaction_binding_t *binding);
+
 const pstvnc_h1_rfb_flow_policy_t *
 pstvnc_h1_mpeg_calibration_interaction_binding_rfb_policy(
     const pstvnc_h1_mpeg_calibration_interaction_binding_t *binding);

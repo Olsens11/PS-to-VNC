@@ -115,6 +115,11 @@ static void test_entry_uses_existing_ownership_sequence_and_consumes_chord(void)
     pstvnc_h1_mpeg_calibration_interaction_binding_init(
         &binding, 704, 462);
 
+    assert(!pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+        &binding));
+    assert(!pstvnc_h1_mpeg_calibration_interaction_binding_owns_mouse_suspension(
+        &binding));
+
     state = controller(
         PSTVNC_CONTROLLER_BUTTON_START |
             PSTVNC_CONTROLLER_BUTTON_SELECT,
@@ -125,6 +130,10 @@ static void test_entry_uses_existing_ownership_sequence_and_consumes_chord(void)
         &binding, &context, &state, &consume));
     assert(consume);
     assert(suspended);
+    assert(pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+        &binding));
+    assert(pstvnc_h1_mpeg_calibration_interaction_binding_owns_mouse_suspension(
+        &binding));
     assert(suspend_calls == 1u);
     assert(pointer_calls == 1u);
     assert(last_pointer_buttons == 0);
@@ -178,6 +187,10 @@ static void test_ordinary_select_is_not_consumed(void)
         &binding, &context, &state, &consume));
     assert(!consume);
     assert(!suspended);
+    assert(!pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+        &binding));
+    assert(!pstvnc_h1_mpeg_calibration_interaction_binding_owns_mouse_suspension(
+        &binding));
     assert(suspend_calls == 0u);
     assert(pointer_calls == 0u);
     assert(rebase_calls == 0u);
@@ -222,6 +235,10 @@ static void test_cancel_holds_ownership_until_full_release_then_resumes(void)
     assert(pstvnc_h1_mpeg_calibration_interaction_binding_service_controller(
         &binding, &context, &state, &consume));
     assert(consume && suspended);
+    assert(pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+        &binding));
+    assert(pstvnc_h1_mpeg_calibration_interaction_binding_owns_mouse_suspension(
+        &binding));
 
     state = controller(
         PSTVNC_CONTROLLER_BUTTON_CIRCLE,
@@ -231,6 +248,10 @@ static void test_cancel_holds_ownership_until_full_release_then_resumes(void)
     assert(pstvnc_h1_mpeg_calibration_interaction_binding_service_controller(
         &binding, &context, &state, &consume));
     assert(consume && suspended);
+    assert(pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+        &binding));
+    assert(pstvnc_h1_mpeg_calibration_interaction_binding_owns_mouse_suspension(
+        &binding));
     assert(resume_calls == 0u);
 
     state = controller(0, 0, PSTVNC_CONTROLLER_BUTTON_CIRCLE);
@@ -238,6 +259,10 @@ static void test_cancel_holds_ownership_until_full_release_then_resumes(void)
         &binding, &context, &state, &consume));
     assert(consume);
     assert(!suspended);
+    assert(!pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+        &binding));
+    assert(!pstvnc_h1_mpeg_calibration_interaction_binding_owns_mouse_suspension(
+        &binding));
     assert(resume_calls == 1u);
     assert(pstvnc_h1_mpeg_calibration_runtime_allows_rfb_request(
         &binding.runtime));

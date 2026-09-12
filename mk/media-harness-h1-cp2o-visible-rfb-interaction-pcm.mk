@@ -5,19 +5,37 @@
 # activation/composition policy so visible RFB mode 2 may run concurrently with
 # PCM while MPEG remains OFF.
 #
-# This is still one physical PSTV TCP connection. No new audio implementation,
-# RFB parser, controller semantic, keyboard semantic, or transport framing is
-# introduced by this target.
+# This integration tranche also links the experiment-local MPEG-calibration
+# foreground/RFB-flow objects so their coordinator seam can be PS2-compiled
+# before native calibration rasterization and MPEG presentation are introduced.
+# No src/ owner or permanent compositor is changed by this target.
 
 BUILD_DIR := build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
 EE_BIN := $(BUILD_DIR)/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF
 H1_MAIN_SOURCE := experiments/media-harness-h1/h1_main_rfb_visible_interaction_pcm.c
 
+CALIBRATION_DIR := experiments/media-harness-h1/mpeg_presentation_calibration
+CALIBRATION_HEADERS := $(wildcard $(CALIBRATION_DIR)/*.h)
+CALIBRATION_OBJECTS := \
+	$(BUILD_DIR)/mpeg_presentation_calibration_geometry.o \
+	$(BUILD_DIR)/mpeg_presentation_calibration_state.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_entry_hold.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_adapter.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_foreground.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_rfb_gate.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_rfb_schedule.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_render.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_runtime.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_rfb_flow.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_interaction_binding.o
+
 include mk/media-harness-h1-cumulative39-thread-census.mk
 
-EXTRA_EE_OBJS += $(BUILD_DIR)/h1_interaction_coordinator.o
+EXTRA_EE_OBJS += \
+	$(BUILD_DIR)/h1_interaction_coordinator.o \
+	$(CALIBRATION_OBJECTS)
 
-$(EE_BIN): $(BUILD_DIR)/h1_interaction_coordinator.o
+$(EE_BIN): $(BUILD_DIR)/h1_interaction_coordinator.o $(CALIBRATION_OBJECTS)
 
 $(BUILD_DIR)/h1_main.o: \
 	experiments/media-harness-h1/h1_main_rfb_visible_interaction_pcm.c \
@@ -31,6 +49,7 @@ $(BUILD_DIR)/h1_main.o: \
 $(BUILD_DIR)/h1_interaction_coordinator.o: \
 	experiments/media-harness-h1/h1_interaction_coordinator.c \
 	experiments/media-harness-h1/h1_interaction_coordinator.h \
+	$(CALIBRATION_HEADERS) \
 	src/input/input_runtime.h \
 	src/input/input.h \
 	src/input/controller.h \
@@ -47,6 +66,12 @@ $(BUILD_DIR)/h1_interaction_coordinator.o: \
 	src/display/display.h \
 	src/platform/ps2_graphics.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+# Keep the calibration implementation experiment-local while compiling the same
+# objects used by the strict host contracts into the PS2 integration candidate.
+$(CALIBRATION_OBJECTS): $(BUILD_DIR)/%.o: \
+	$(CALIBRATION_DIR)/%.c $(CALIBRATION_HEADERS) | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -I$(CALIBRATION_DIR) -c $< -o $@
 
 # Replace only the cumulative experiment's public CONFIG gate. The underlying
 # h1_config.c object remains the same renamed inner validator.

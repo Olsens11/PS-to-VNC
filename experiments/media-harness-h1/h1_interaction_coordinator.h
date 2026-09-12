@@ -11,9 +11,11 @@
  * analogue is the clean application coordinator; this file remains H1
  * scaffolding until the later architectural-alignment/integration work.
  */
-
 #ifndef PSTVNC_MEDIA_HARNESS_H1_INTERACTION_COORDINATOR_H
 #define PSTVNC_MEDIA_HARNESS_H1_INTERACTION_COORDINATOR_H
+
+#include "mpeg_presentation_calibration/h1_mpeg_calibration_entry_hold.h"
+#include "mpeg_presentation_calibration/h1_mpeg_calibration_interaction_binding.h"
 
 #include "display.h"
 #include "input_runtime.h"
@@ -42,6 +44,14 @@ typedef struct pstvnc_h1_interaction_coordinator {
     pstvnc_local_controller_t local_controller;
     pstvnc_local_ui_t local_ui;
     pstvnc_osk_t osk;
+
+    /*
+     * MPEG calibration remains experiment-local. The binding borrows the
+     * coordinator's input/RFB ownership facts; the hold state owns only the
+     * temporary 750 ms START+SELECT entry policy.
+     */
+    pstvnc_h1_mpeg_calibration_interaction_binding_t mpeg_calibration;
+    pstvnc_h1_mpeg_calibration_entry_hold_t mpeg_calibration_entry_hold;
 
     const pstvnc_framebuffer_t *current_framebuffer;
 
@@ -74,6 +84,14 @@ int pstvnc_h1_interaction_coordinator_present(
 int pstvnc_h1_interaction_coordinator_service(
     void *context,
     pstvnc_rfb_session_t *session);
+
+/*
+ * Borrow the coordinator-owned calibration flow policy for the generic H1 RFB
+ * runtime. The policy remains valid for the coordinator's lifetime.
+ */
+const pstvnc_h1_rfb_flow_policy_t *
+pstvnc_h1_interaction_coordinator_rfb_policy(
+    const pstvnc_h1_interaction_coordinator_t *coordinator);
 
 /*
  * Cooperatively stop the real through-Issue-39 input runtime. A failure means
