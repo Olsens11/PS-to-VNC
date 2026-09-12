@@ -89,6 +89,7 @@ typedef struct pstvnc_h1_transport_stats {
     volatile uint32_t mpeg_frames_received;
     volatile uint32_t mpeg_bytes_enqueued;
     volatile uint32_t mpeg_bytes_consumed;
+    volatile uint32_t mpeg_bytes_discarded_generation_boundary;
     volatile uint32_t mpeg_credit_frames_sent;
     volatile uint32_t mpeg_credit_bytes_sent;
     volatile uint32_t mpeg_read_calls;
@@ -125,7 +126,11 @@ typedef struct pstvnc_h1_transport_runtime {
     volatile uint32_t rfb_quiesce_commit_received;
     volatile uint32_t rfb_quiesce_complete_sent;
 
-    /* Exact CP2P Pi-retirement request/ack state; receiver thread owns ACK. */
+    /*
+     * CP2P MPEG epoch state. DATA belongs to the one active generation until
+     * the sole receiver observes that generation's ordered Pi RETIRE ACK.
+     */
+    volatile uint32_t mpeg_data_generation;
     volatile uint32_t mpeg_retire_pending_generation;
     volatile uint32_t mpeg_retire_ack_generation;
 
@@ -215,14 +220,34 @@ int pstvnc_h1_transport_mpeg_read_cancellable(
     size_t *bytes_read,
     const volatile int *cancel_requested);
 
+/* Bind channel-4 DATA acceptance to one immutable CP2P generation. */
+int pstvnc_h1_transport_mpeg_generation_open(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation);
+
+/* Abort a just-opened generation only while no MPEG bytes are queued/pending. */
+int pstvnc_h1_transport_mpeg_generation_abort(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation);
+
 int pstvnc_h1_transport_mpeg_retire_begin(
     pstvnc_h1_transport_runtime_t *runtime,
     uint32_t generation);
 
-/* 1=exact completion consumed, 0=still pending, -1=invalid/failed transport. */
+/* 1=ordered Pi completion observed, 0=still pending, -1=invalid/failed. */
 int pstvnc_h1_transport_mpeg_retire_poll(
     pstvnc_h1_transport_runtime_t *runtime,
     uint32_t generation);
+
+/*
+ * Called only after the generation's decoder worker is stopped. Discards the
+ * residual old-generation queue, returns all withheld credit, and closes the
+ * exact retirement transaction so a fresh generation may open.
+ */
+int pstvnc_h1_transport_mpeg_retire_finalize(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation,
+    uint32_t *bytes_discarded);
 
 int pstvnc_h1_transport_audio_exhausted(
     pstvnc_h1_transport_runtime_t *runtime);

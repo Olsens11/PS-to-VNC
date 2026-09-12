@@ -155,3 +155,18 @@ int pstvnc_transport_queue_read(
 
     return 1;
 }
+
+
+size_t pstvnc_transport_queue_discard_all(
+    pstvnc_transport_queue_t *queue)
+{
+    size_t discarded;
+
+    if (queue == NULL || queue->byte_count > queue->capacity)
+        return 0u;
+
+    discarded = queue->byte_count;
+    queue->read_position = queue->write_position;
+    queue->byte_count = 0u;
+    return discarded;
+}

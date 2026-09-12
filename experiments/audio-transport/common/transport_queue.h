@@ -61,4 +61,11 @@ int pstvnc_transport_queue_read(
     void *data,
     size_t count);
 
+/*
+ * Discard every currently queued byte without reallocating or lowering the
+ * historical high-water mark. Returns the number of discarded bytes.
+ */
+size_t pstvnc_transport_queue_discard_all(
+    pstvnc_transport_queue_t *queue);
+
 #endif

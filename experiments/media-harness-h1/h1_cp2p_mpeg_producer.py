@@ -27,6 +27,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import subprocess
+import threading
 import time
 from typing import Callable
 
@@ -109,9 +110,83 @@ class H1Cp2pMpegProducer:
         self.plan: H1Cp2pCapturePlan | None = None
         self.producer: object | None = None
         self.archive_path: Path | None = None
+        self._emission_condition = threading.Condition()
+        self._emission_open = False
+        self._emission_in_flight = 0
 
     def active_generation(self) -> int:
         return int(self.generation)
+
+    def emission_open_for_generation(self, generation: int) -> bool:
+        with self._emission_condition:
+            return (
+                int(generation) > 0
+                and self.generation == int(generation)
+                and self._emission_open
+            )
+
+    def open_emission_exact(self, generation: int) -> None:
+        """Item #10 hook: permit scheduler leases for one exact live generation."""
+        generation = int(generation)
+        with self._emission_condition:
+            if (
+                generation <= 0
+                or self.producer is None
+                or self.generation != generation
+                or self._emission_open
+                or self._emission_in_flight != 0
+            ):
+                raise base.ProtocolError(
+                    "CP2P MPEG emission-open generation/state mismatch "
+                    f"active={self.generation} requested={generation}"
+                )
+            self._emission_open = True
+
+    def begin_emission_exact(self, generation: int) -> object | None:
+        """Acquire one scheduler lease; returns None while the public gate is closed."""
+        generation = int(generation)
+        with self._emission_condition:
+            if generation <= 0 or self.producer is None or self.generation != generation:
+                raise base.ProtocolError(
+                    "CP2P MPEG emission generation mismatch "
+                    f"active={self.generation} requested={generation}"
+                )
+            if not self._emission_open:
+                return None
+            self._emission_in_flight += 1
+            return self.producer
+
+    def finish_emission_exact(self, generation: int) -> None:
+        generation = int(generation)
+        with self._emission_condition:
+            if (
+                generation <= 0
+                or self.generation != generation
+                or self._emission_in_flight <= 0
+            ):
+                raise base.ProtocolError(
+                    "CP2P MPEG emission-release generation/state mismatch"
+                )
+            self._emission_in_flight -= 1
+            self._emission_condition.notify_all()
+
+    def _close_emission_exact(self, generation: int, timeout: float) -> None:
+        generation = int(generation)
+        deadline = time.monotonic() + timeout
+        with self._emission_condition:
+            if generation <= 0 or self.producer is None or self.generation != generation:
+                raise base.ProtocolError(
+                    "CP2P MPEG emission-close generation mismatch "
+                    f"active={self.generation} requested={generation}"
+                )
+            self._emission_open = False
+            while self._emission_in_flight != 0:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise base.ProtocolError(
+                        f"MPEG generation {generation} emission did not quiesce"
+                    )
+                self._emission_condition.wait(timeout=min(remaining, 0.05))
 
     def start_exact(self, plan: H1Cp2pCapturePlan) -> dict[str, object]:
         generation = int(plan.generation)
@@ -153,6 +228,7 @@ class H1Cp2pMpegProducer:
             "archive_path": str(archive_path),
             "state": "live-local-producer-public-mpeg-gate-closed",
             "pstv_mpeg_data_emission": False,
+            "emission_fence_open": False,
         }
         try:
             (self.evidence / "mpeg_producer_live.json").write_text(
@@ -213,6 +289,10 @@ class H1Cp2pMpegProducer:
 
         producer = self.producer
         discarded = 0
+
+        # Close scheduler admission first and wait out any send already holding
+        # a lease. The later RETIRE ACK is therefore ordered after every N send.
+        self._close_emission_exact(generation, timeout)
         producer.stop()
         deadline = self.monotonic() + timeout
         terminated = False
@@ -265,6 +345,10 @@ class H1Cp2pMpegProducer:
         self.plan = None
         self.generation = 0
         self.archive_path = None
+        with self._emission_condition:
+            self._emission_open = False
+            self._emission_in_flight = 0
+            self._emission_condition.notify_all()
         if self.attach is not None:
             self.attach(None)
 
@@ -294,5 +378,9 @@ class H1Cp2pMpegProducer:
             self.plan = None
             self.generation = 0
             self.archive_path = None
+            with self._emission_condition:
+                self._emission_open = False
+                self._emission_in_flight = 0
+                self._emission_condition.notify_all()
             if self.attach is not None:
                 self.attach(None)

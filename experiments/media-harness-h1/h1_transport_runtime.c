@@ -656,6 +656,18 @@ static int h1_accept_data(
             header->payload_length);
 #endif
 
+    /*
+     * Channel-4 DATA is session-framed but generation-owned by CP2P. The ACK
+     * receiver closes mpeg_data_generation at the ordered wire fence, so any
+     * later stale DATA is a protocol error rather than input to N+1.
+     */
+    if (header->channel == PSTVNC_TRANSPORT_CHANNEL_MPEG2 &&
+        runtime->config.video_mode == PSTVNC_H1_VIDEO_MPEG2_ES &&
+        runtime->mpeg_data_generation == 0u) {
+        h1_record_error(runtime, PSTVNC_H1_ERROR_MPEG_RETIRE);
+        return 0;
+    }
+
     if (header->payload_length == 0u ||
         header->payload_length > runtime->config.max_data_payload ||
         !h1_queue_for_channel(
@@ -838,12 +850,19 @@ static int h1_accept_mpeg_retire(
     if (version != PSTVNC_H1_MPEG_RETIRE_VERSION ||
         session_id != runtime->config.session_id ||
         generation == 0u ||
+        runtime->mpeg_data_generation != generation ||
         runtime->mpeg_retire_pending_generation != generation ||
         runtime->mpeg_retire_ack_generation != 0u) {
         h1_record_error(runtime, PSTVNC_H1_ERROR_MPEG_RETIRE);
         return 0;
     }
 
+    /*
+     * TCP/PSTV order makes this ACK the wire fence: all earlier generation-N
+     * DATA has already been accepted into the queue by this sole receiver.
+     * Close DATA acceptance immediately; local worker/queue cleanup follows.
+     */
+    runtime->mpeg_data_generation = 0u;
     runtime->mpeg_retire_ack_generation = generation;
     return 1;
 }
@@ -1007,6 +1026,62 @@ static int h1_return_credit(
     return amount == 0u || h1_send_credit(runtime, channel, amount);
 }
 
+static int h1_mpeg_queue_empty_for_generation_boundary(
+    pstvnc_h1_transport_runtime_t *runtime)
+{
+    int empty;
+
+    if (runtime->config.video_mode == PSTVNC_H1_VIDEO_OFF)
+        return 1;
+    if (runtime->config.video_mode != PSTVNC_H1_VIDEO_MPEG2_ES)
+        return 0;
+
+    if (WaitSema(runtime->mpeg_queue_sema_id) < 0) {
+        h1_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+    empty = pstvnc_transport_queue_size(&runtime->mpeg_queue) == 0u;
+    if (SignalSema(runtime->mpeg_queue_sema_id) < 0) {
+        h1_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+    return empty;
+}
+
+int pstvnc_h1_transport_mpeg_generation_open(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation)
+{
+    if (runtime == NULL || generation == 0u ||
+        !runtime->initialized || !runtime->config_accepted ||
+        runtime->mpeg_data_generation != 0u ||
+        runtime->mpeg_retire_pending_generation != 0u ||
+        runtime->mpeg_retire_ack_generation != 0u ||
+        runtime->mpeg_credit_pending != 0u ||
+        !h1_mpeg_queue_empty_for_generation_boundary(runtime))
+        return 0;
+
+    runtime->mpeg_data_generation = generation;
+    return 1;
+}
+
+int pstvnc_h1_transport_mpeg_generation_abort(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation)
+{
+    if (runtime == NULL || generation == 0u ||
+        !runtime->initialized || !runtime->config_accepted ||
+        runtime->mpeg_data_generation != generation ||
+        runtime->mpeg_retire_pending_generation != 0u ||
+        runtime->mpeg_retire_ack_generation != 0u ||
+        runtime->mpeg_credit_pending != 0u ||
+        !h1_mpeg_queue_empty_for_generation_boundary(runtime))
+        return 0;
+
+    runtime->mpeg_data_generation = 0u;
+    return 1;
+}
+
 int pstvnc_h1_transport_mpeg_retire_begin(
     pstvnc_h1_transport_runtime_t *runtime,
     uint32_t generation)
@@ -1017,6 +1092,7 @@ int pstvnc_h1_transport_mpeg_retire_begin(
         !runtime->initialized || !runtime->config_accepted ||
         runtime->error != PSTVNC_H1_ERROR_NONE ||
         runtime->stop_requested || runtime->receiver_done ||
+        runtime->mpeg_data_generation != generation ||
         runtime->mpeg_retire_pending_generation != 0u ||
         runtime->mpeg_retire_ack_generation != 0u)
         return 0;
@@ -1054,11 +1130,8 @@ int pstvnc_h1_transport_mpeg_retire_poll(
         runtime->mpeg_retire_pending_generation != generation)
         return -1;
 
-    if (runtime->mpeg_retire_ack_generation == generation) {
-        runtime->mpeg_retire_ack_generation = 0u;
-        runtime->mpeg_retire_pending_generation = 0u;
+    if (runtime->mpeg_retire_ack_generation == generation)
         return 1;
-    }
 
     if (runtime->mpeg_retire_ack_generation != 0u ||
         runtime->error != PSTVNC_H1_ERROR_NONE ||
@@ -1066,6 +1139,77 @@ int pstvnc_h1_transport_mpeg_retire_poll(
         return -1;
 
     return 0;
+}
+
+int pstvnc_h1_transport_mpeg_retire_finalize(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation,
+    uint32_t *bytes_discarded)
+{
+    size_t queued = 0u;
+    uint32_t credit_amount = 0u;
+
+    if (bytes_discarded != NULL)
+        *bytes_discarded = 0u;
+
+    if (runtime == NULL || generation == 0u ||
+        !runtime->initialized || !runtime->config_accepted ||
+        runtime->error != PSTVNC_H1_ERROR_NONE ||
+        runtime->mpeg_data_generation != 0u ||
+        runtime->mpeg_retire_pending_generation != generation ||
+        runtime->mpeg_retire_ack_generation != generation)
+        return 0;
+
+    if (runtime->config.video_mode == PSTVNC_H1_VIDEO_MPEG2_ES) {
+        if (WaitSema(runtime->mpeg_queue_sema_id) < 0) {
+            h1_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+            return 0;
+        }
+
+        queued = pstvnc_transport_queue_size(&runtime->mpeg_queue);
+        if (queued > 0xffffffffu ||
+            runtime->mpeg_credit_pending > 0xffffffffu - (uint32_t)queued ||
+            runtime->stats.mpeg_bytes_discarded_generation_boundary >
+                0xffffffffu - (uint32_t)queued) {
+            (void)SignalSema(runtime->mpeg_queue_sema_id);
+            h1_record_error(runtime, PSTVNC_H1_ERROR_OVERFLOW);
+            return 0;
+        }
+
+        if (pstvnc_transport_queue_discard_all(&runtime->mpeg_queue) != queued) {
+            (void)SignalSema(runtime->mpeg_queue_sema_id);
+            h1_record_error(runtime, PSTVNC_H1_ERROR_MPEG_RETIRE);
+            return 0;
+        }
+
+        if (SignalSema(runtime->mpeg_queue_sema_id) < 0) {
+            h1_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+            return 0;
+        }
+
+        credit_amount = runtime->mpeg_credit_pending + (uint32_t)queued;
+        if (credit_amount != 0u &&
+            !h1_send_credit(
+                runtime,
+                PSTVNC_TRANSPORT_CHANNEL_MPEG2,
+                credit_amount))
+            return 0;
+
+        runtime->mpeg_credit_pending = 0u;
+        runtime->stats.mpeg_bytes_discarded_generation_boundary +=
+            (uint32_t)queued;
+    } else if (runtime->config.video_mode == PSTVNC_H1_VIDEO_OFF) {
+        if (runtime->mpeg_credit_pending != 0u)
+            return 0;
+    } else {
+        return 0;
+    }
+
+    runtime->mpeg_retire_ack_generation = 0u;
+    runtime->mpeg_retire_pending_generation = 0u;
+    if (bytes_discarded != NULL)
+        *bytes_discarded = (uint32_t)queued;
+    return 1;
 }
 
 int pstvnc_h1_transport_start(

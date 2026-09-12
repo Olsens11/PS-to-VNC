@@ -385,7 +385,7 @@ replace_block(
     coord_c,
     """            coordinator->clear_mpeg,\n            coordinator->clear_mpeg_context,\n            &begin_result))\n        return 0;\n\n    if (begin_result == PSTVNC_H1_MPEG_RECALIBRATION_ENTER_NOW) {\n""",
     """            coordinator->pi_retire_pending\n                ? h1_cp2p_session_clear_mpeg_after_pi_retire\n                : coordinator->clear_mpeg,\n            coordinator->pi_retire_pending\n                ? coordinator\n                : coordinator->clear_mpeg_context,\n            &begin_result))\n        return 0;\n\n    if (coordinator->pi_retire_pending) {\n        coordinator->pi_retire_pending = 0;\n        coordinator->pi_retire_generation = 0u;\n    }\n\n    if (begin_result == PSTVNC_H1_MPEG_RECALIBRATION_ENTER_NOW) {\n""",
-    "h1_cp2p_session_clear_mpeg_after_pi_retire",
+    "coordinator->pi_retire_pending\n                ? h1_cp2p_session_clear_mpeg_after_pi_retire",
     "coordinator finalize callback",
 )
 
@@ -525,7 +525,7 @@ replace_block(
     producer_py,
     """        self.producer = None\n        self.plan = None\n        self.generation = 0\n        self.archive_path = None\n        if self.attach is not None:\n""",
     """        self.producer = None\n        self.plan = None\n        self.generation = 0\n        self.archive_path = None\n        with self._emission_condition:\n            self._emission_open = False\n            self._emission_in_flight = 0\n            self._emission_condition.notify_all()\n        if self.attach is not None:\n""",
-    "self._emission_condition.notify_all()",
+    "self.archive_path = None\n        with self._emission_condition:\n            self._emission_open = False",
     "producer retirement fence reset",
 )
 # Forced session cleanup gets the same local fence reset, but this replacement
@@ -669,7 +669,7 @@ replace_block(
     coord_test,
     """    if (generation == 0u || retire_begin_count != 0u)\n        return 0;\n""",
     """    if (generation == 0u || retire_begin_count != 0u ||\n        transport_generation != generation)\n        return 0;\n""",
-    "transport_generation != generation",
+    "retire_begin_count != 0u ||\n        transport_generation != generation",
     "coordinator test retire begin exact generation",
 )
 replace_block(

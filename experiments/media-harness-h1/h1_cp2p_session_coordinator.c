@@ -14,6 +14,14 @@
 const pstvnc_h1_config_t *pstvnc_h1_transport_config(
     const struct pstvnc_h1_transport_runtime *runtime);
 
+int pstvnc_h1_transport_mpeg_generation_open(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation);
+
+int pstvnc_h1_transport_mpeg_generation_abort(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation);
+
 int pstvnc_h1_transport_mpeg_retire_begin(
     struct pstvnc_h1_transport_runtime *runtime,
     uint32_t generation);
@@ -22,8 +30,39 @@ int pstvnc_h1_transport_mpeg_retire_poll(
     struct pstvnc_h1_transport_runtime *runtime,
     uint32_t generation);
 
+int pstvnc_h1_transport_mpeg_retire_finalize(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation,
+    uint32_t *bytes_discarded);
+
 #include <stddef.h>
 #include <string.h>
+
+static int h1_cp2p_session_clear_mpeg_after_pi_retire(
+    void *context,
+    uint32_t generation)
+{
+    pstvnc_h1_cp2p_session_coordinator_t *coordinator =
+        (pstvnc_h1_cp2p_session_coordinator_t *)context;
+    uint32_t discarded = 0u;
+
+    if (coordinator == NULL || !coordinator->initialized ||
+        coordinator->clear_mpeg == NULL || !coordinator->pi_retire_pending ||
+        coordinator->pi_retire_generation != generation)
+        return 0;
+
+    /* Stop the old decoder/pixels before touching its transport queue. */
+    if (!coordinator->clear_mpeg(
+            coordinator->clear_mpeg_context, generation))
+        return 0;
+
+    /* ACK was the wire fence; discard only the now-unconsumed old epoch. */
+    if (!pstvnc_h1_transport_mpeg_retire_finalize(
+            coordinator->transport, generation, &discarded))
+        return 0;
+
+    return 1;
+}
 
 static int h1_cp2p_session_calibration_entry_gate(
     void *context,
@@ -64,8 +103,7 @@ static int h1_cp2p_session_calibration_entry_gate(
             return 1;
         }
 
-        coordinator->pi_retire_pending = 0;
-        coordinator->pi_retire_generation = 0u;
+        /* Keep the exact retirement latched through local worker + queue cleanup. */
     } else if (owner_state != PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY) {
         generation = coordinator->mpeg_handoff.owner.generation;
         if (generation == 0u ||
@@ -92,10 +130,19 @@ static int h1_cp2p_session_calibration_entry_gate(
             &coordinator->mpeg_handoff,
             calibration,
             &coordinator->rfb_flow,
-            coordinator->clear_mpeg,
-            coordinator->clear_mpeg_context,
+            coordinator->pi_retire_pending
+                ? h1_cp2p_session_clear_mpeg_after_pi_retire
+                : coordinator->clear_mpeg,
+            coordinator->pi_retire_pending
+                ? coordinator
+                : coordinator->clear_mpeg_context,
             &begin_result))
         return 0;
+
+    if (coordinator->pi_retire_pending) {
+        coordinator->pi_retire_pending = 0;
+        coordinator->pi_retire_generation = 0u;
+    }
 
     if (begin_result == PSTVNC_H1_MPEG_RECALIBRATION_ENTER_NOW) {
         *enter_now = 1;
@@ -145,6 +192,26 @@ static int h1_cp2p_session_start_accepted_calibration(
         return 0;
     }
 
+    /*
+     * Open the PS2 channel-4 generation gate before START can reach the Pi. A
+     * very fast Pi may answer immediately on the receiver thread.
+     */
+    if (!pstvnc_h1_transport_mpeg_generation_open(
+            coordinator->transport, contract.generation)) {
+        if (coordinator->arm_mpeg != NULL &&
+            (coordinator->clear_mpeg == NULL ||
+             !coordinator->clear_mpeg(
+                 coordinator->clear_mpeg_context,
+                 contract.generation))) {
+            coordinator->current_start_contract_valid = 0;
+            return 0;
+        }
+        (void)pstvnc_h1_mpeg_start_handoff_abort_start(
+            &coordinator->mpeg_handoff, contract.generation);
+        coordinator->current_start_contract_valid = 0;
+        return 0;
+    }
+
     if (!pstvnc_h1_mpeg_start_transport_send(
             coordinator->transport,
             coordinator->session_id,
@@ -154,6 +221,11 @@ static int h1_cp2p_session_start_accepted_calibration(
              !coordinator->clear_mpeg(
                  coordinator->clear_mpeg_context,
                  contract.generation))) {
+            coordinator->current_start_contract_valid = 0;
+            return 0;
+        }
+        if (!pstvnc_h1_transport_mpeg_generation_abort(
+                coordinator->transport, contract.generation)) {
             coordinator->current_start_contract_valid = 0;
             return 0;
         }

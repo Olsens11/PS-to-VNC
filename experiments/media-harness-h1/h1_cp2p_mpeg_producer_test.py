@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from pathlib import Path
 import tempfile
+import threading
+import time
 import unittest
 
 import h1_mux_server as base
@@ -166,6 +168,60 @@ class ProducerTests(unittest.TestCase):
             owner.retire_exact(12)
         self.assertEqual(owner.active_generation(), 11)
         self.assertFalse(fake.stop_called)
+
+    def test_retirement_waits_for_inflight_emission_lease(self) -> None:
+        fake = FakeProducer(b"queued-after-send")
+        owner = H1Cp2pMpegProducer(
+            self.evidence,
+            producer_factory=lambda capture_plan, archive: fake,
+        )
+        owner.start_exact(plan(15))
+
+        # #10 is the only future caller allowed to open this fence. Once open,
+        # one scheduler lease represents DATA that may already be in send_frame.
+        owner.open_emission_exact(15)
+        self.assertIs(owner.begin_emission_exact(15), fake)
+
+        result = []
+        failure = []
+
+        def retire():
+            try:
+                result.append(owner.retire_exact(15))
+            except BaseException as exc:
+                failure.append(exc)
+
+        thread = threading.Thread(target=retire)
+        thread.start()
+
+        deadline = time.monotonic() + 1.0
+        while owner.emission_open_for_generation(15) and time.monotonic() < deadline:
+            time.sleep(0.001)
+
+        self.assertFalse(owner.emission_open_for_generation(15))
+        self.assertFalse(fake.stop_called)
+        self.assertIsNone(owner.begin_emission_exact(15))
+
+        owner.finish_emission_exact(15)
+        thread.join(timeout=1.0)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(failure, [])
+        self.assertEqual(len(result), 1)
+        self.assertTrue(fake.stop_called)
+        self.assertEqual(owner.active_generation(), 0)
+
+    def test_emission_fence_is_closed_by_default_and_exact_generation_only(self) -> None:
+        fake = FakeProducer(b"abc")
+        owner = H1Cp2pMpegProducer(
+            self.evidence,
+            producer_factory=lambda capture_plan, archive: fake,
+        )
+        owner.start_exact(plan(17))
+        self.assertFalse(owner.emission_open_for_generation(17))
+        self.assertIsNone(owner.begin_emission_exact(17))
+        with self.assertRaises(base.ProtocolError):
+            owner.open_emission_exact(18)
+        owner.retire_exact(17)
 
     def test_stuck_producer_fails_closed_after_terminate_grace(self) -> None:
         clock = Clock()

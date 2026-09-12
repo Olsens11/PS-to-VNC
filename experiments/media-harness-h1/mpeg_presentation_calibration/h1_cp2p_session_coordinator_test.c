@@ -18,6 +18,15 @@ static uint32_t cleared_generation;
 static unsigned int retire_begin_count;
 static uint32_t retire_generation;
 static int retire_poll_result;
+static unsigned int generation_open_count;
+static unsigned int generation_abort_count;
+static unsigned int retire_finalize_count;
+static uint32_t transport_generation;
+static uint32_t finalized_generation;
+static uint32_t finalized_discarded;
+static unsigned int lifecycle_order;
+static unsigned int clear_order;
+static unsigned int finalize_order;
 static pstvnc_h1_config_t fake_config;
 
 void pstvnc_h1_interaction_coordinator_init(
@@ -98,12 +107,37 @@ int pstvnc_h1_mpeg_start_transport_send(
     return send_success;
 }
 
+int pstvnc_h1_transport_mpeg_generation_open(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation)
+{
+    (void)runtime;
+    if (generation == 0u || transport_generation != 0u)
+        return 0;
+    transport_generation = generation;
+    generation_open_count++;
+    return 1;
+}
+
+int pstvnc_h1_transport_mpeg_generation_abort(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation)
+{
+    (void)runtime;
+    if (generation == 0u || transport_generation != generation)
+        return 0;
+    transport_generation = 0u;
+    generation_abort_count++;
+    return 1;
+}
+
 int pstvnc_h1_transport_mpeg_retire_begin(
     struct pstvnc_h1_transport_runtime *runtime,
     uint32_t generation)
 {
     (void)runtime;
-    if (generation == 0u || retire_begin_count != 0u)
+    if (generation == 0u || retire_begin_count != 0u ||
+        transport_generation != generation)
         return 0;
     retire_begin_count++;
     retire_generation = generation;
@@ -117,7 +151,28 @@ int pstvnc_h1_transport_mpeg_retire_poll(
     (void)runtime;
     if (generation == 0u || generation != retire_generation)
         return -1;
+    if (retire_poll_result == 1)
+        transport_generation = 0u;
     return retire_poll_result;
+}
+
+int pstvnc_h1_transport_mpeg_retire_finalize(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation,
+    uint32_t *bytes_discarded)
+{
+    (void)runtime;
+    if (generation == 0u || generation != retire_generation ||
+        transport_generation != 0u || clear_count == 0u)
+        return 0;
+    retire_finalize_count++;
+    finalized_generation = generation;
+    finalized_discarded = 17u;
+    finalize_order = ++lifecycle_order;
+    if (bytes_discarded != NULL)
+        *bytes_discarded = finalized_discarded;
+    retire_generation = 0u;
+    return 1;
 }
 
 static int clear_mpeg(void *context, uint32_t generation)
@@ -125,6 +180,7 @@ static int clear_mpeg(void *context, uint32_t generation)
     (void)context;
     clear_count++;
     cleared_generation = generation;
+    clear_order = ++lifecycle_order;
     return 1;
 }
 
@@ -168,6 +224,8 @@ int main(void)
     assert(pstvnc_h1_cp2p_session_coordinator_service(
         &coordinator, &rfb_session));
     assert(send_count == 1u);
+    assert(generation_open_count == 1u);
+    assert(transport_generation == sent_contract.generation);
     assert(sent_session_id == UINT32_C(0x1234abcd));
     assert(sent_contract.draw_x == region.x);
     assert(sent_contract.draw_y == region.y);
@@ -186,6 +244,9 @@ int main(void)
 
     assert(pstvnc_h1_mpeg_start_handoff_abort_start(
         &coordinator.mpeg_handoff, sent_contract.generation));
+    assert(pstvnc_h1_transport_mpeg_generation_abort(
+        transport, sent_contract.generation));
+    assert(generation_abort_count == 1u);
     coordinator.current_start_contract_valid = 0;
 
     region = sample_region(96, 64);
@@ -195,6 +256,9 @@ int main(void)
     assert(!pstvnc_h1_cp2p_session_coordinator_service(
         &coordinator, &rfb_session));
     assert(send_count == 2u);
+    assert(generation_open_count == 2u);
+    assert(generation_abort_count == 2u);
+    assert(transport_generation == 0u);
     assert(pstvnc_h1_mpeg_presentation_owner_state(
         &coordinator.mpeg_handoff.owner) ==
         PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY);
@@ -219,6 +283,9 @@ int main(void)
         &coordinator.mpeg_handoff, &region, &active_contract));
     assert(pstvnc_h1_mpeg_start_handoff_first_frame_presented(
         &coordinator.mpeg_handoff, active_contract.generation));
+    assert(pstvnc_h1_transport_mpeg_generation_open(
+        transport, active_contract.generation));
+    assert(generation_open_count == 3u);
     coordinator.current_start_contract = active_contract;
     coordinator.current_start_contract_valid = 1;
 
@@ -261,6 +328,11 @@ int main(void)
     assert(coordinator.pi_retire_generation == 0u);
     assert(clear_count == 1u);
     assert(cleared_generation == active_contract.generation);
+    assert(retire_finalize_count == 1u);
+    assert(finalized_generation == active_contract.generation);
+    assert(finalized_discarded == 17u);
+    assert(clear_order != 0u && finalize_order > clear_order);
+    assert(transport_generation == 0u);
     assert(pstvnc_h1_mpeg_presentation_owner_state(
         &coordinator.mpeg_handoff.owner) ==
         PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY);
