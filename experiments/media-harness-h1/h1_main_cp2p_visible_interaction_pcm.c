@@ -114,7 +114,7 @@ int main(void)
     }
 
     printf(
-        "H1_BOOT=PASS mode=CP2P_RFB_VISIBLE_INTERACTION_PCM_CAPABLE "
+        "H1_BOOT=PASS mode=CP2P_ALL_GUNS "
         "mpeg_worker=GENERATION_BOUND_START_ACTIVATED input=1 keyboard=1 osk=1 local_ui=1\n");
 
     for (;;) {
@@ -242,8 +242,17 @@ int main(void)
                     (unsigned int)mpeg_worker.result.feed_calls,
                     (unsigned int)mpeg_worker.result.payload_bytes_submitted,
                     (unsigned int)mpeg_worker.result.error);
-                if (mpeg_worker.result.pictures_displayed == 0u) {
-                    printf("H1_CP2P=MPEG_PRESENTATION_UNPROVEN\n");
+                if (mpeg_worker.failure_latched ||
+                    mpeg_worker.run_result != 0 ||
+                    mpeg_worker.result.error != PSTVNC_H1_VIDEO_ERROR_NONE ||
+                    mpeg_worker.result.pictures_displayed == 0u) {
+                    printf(
+                        "H1_CP2P=MPEG_RUNTIME_UNPROVEN failure_latched=%d "
+                        "run_result=%d error=%u displayed=%u\n",
+                        (int)mpeg_worker.failure_latched,
+                        (int)mpeg_worker.run_result,
+                        (unsigned int)mpeg_worker.result.error,
+                        (unsigned int)mpeg_worker.result.pictures_displayed);
                     session_ok = 0;
                 }
             }

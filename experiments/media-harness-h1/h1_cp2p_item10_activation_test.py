@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import unittest
 
 import h1_mux_server_cp2p_start_receiver as cp2p
+import generate_h1_video_runtime_cp2p as video_generator
 
 base = cp2p.base
 
@@ -106,6 +107,22 @@ class Item10Tests(unittest.TestCase):
         owner.retiring = True
         self.assertFalse(session._send_cp2p_mpeg_once())
         self.assertEqual(owner.open_calls, 1)
+
+    def test_generated_live_runtime_has_no_standalone_packet_guard_and_clean_cancel(self) -> None:
+        source = Path("h1_video_runtime.c").read_text()
+        generated = video_generator.generate(source)
+        self.assertNotIn("session.transfer_packet == NULL", generated)
+        self.assertNotIn("session.draw_packet == NULL", generated)
+        self.assertIn("CP2P", Path("CP2P_ITEM10_ALL_GUNS_ACTIVATION.md").read_text())
+        self.assertGreaterEqual(generated.count("if (session.cancelled)"), 3)
+        self.assertIn("success = 1;", generated)
+
+        worker_header = Path("h1_cp2p_mpeg_worker.h").read_text()
+        worker_source = Path("h1_cp2p_mpeg_worker.c").read_text()
+        main_source = Path("h1_main_cp2p_visible_interaction_pcm.c").read_text()
+        self.assertIn("failure_latched", worker_header)
+        self.assertIn("worker->failure_latched = 1", worker_source)
+        self.assertIn("mpeg_worker.failure_latched", main_source)
 
     def test_wrong_active_generation_never_sends(self) -> None:
         session = object.__new__(cp2p.H1Cp2pStartReceiveSession)

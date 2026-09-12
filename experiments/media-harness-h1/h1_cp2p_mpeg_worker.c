@@ -37,6 +37,8 @@ static void h1_cp2p_mpeg_worker_thread(void *argument)
         worker->handoff,
         &worker->contract,
         &worker->stop_requested);
+    if (worker->run_result < 0)
+        worker->failure_latched = 1;
     worker->finished = 1;
     ExitThread();
 }

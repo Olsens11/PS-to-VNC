@@ -53,3 +53,9 @@ Host/compile proof must establish:
 - the pinned PS2 target links with the CP2P gate and real worker result path.
 
 Live PS2/Pi all-guns qualification remains item #12.
+
+The generated CP2P decoder also removes the obsolete standalone-GS first-picture
+`transfer_packet`/`draw_packet` prerequisite. Explicit exact-generation retirement
+is a clean decoder cancellation, while any decoder worker that exits without an
+owner stop request latches a session failure. This prevents a previously displayed
+frame from masking a later live decoder/runtime failure.

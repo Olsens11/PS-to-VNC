@@ -25,6 +25,7 @@ typedef struct pstvnc_h1_cp2p_mpeg_worker {
     volatile int stop_requested;
     volatile int finished;
     volatile int run_result;
+    volatile int failure_latched;
     void *thread_stack_allocation;
     unsigned char *thread_stack;
     uint32_t generation;

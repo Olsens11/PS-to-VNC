@@ -344,6 +344,56 @@ def generate(source: str) -> str:
         "CP2P session ownership assignment",
     )
 
+    source = replace_once(
+        source,
+        "    if (!h1_video_wait_prefill(&session)) {\n"
+        "        h1_video_record_error(&session, PSTVNC_H1_VIDEO_ERROR_PREFILL);\n"
+        "        goto done;\n"
+        "    }",
+        "    if (!h1_video_wait_prefill(&session)) {\n"
+        "        if (session.cancelled) {\n"
+        "            success = 1;\n"
+        "            goto done;\n"
+        "        }\n"
+        "        h1_video_record_error(&session, PSTVNC_H1_VIDEO_ERROR_PREFILL);\n"
+        "        goto done;\n"
+        "    }",
+        "CP2P clean cancellation during prefill",
+    )
+
+    source = replace_once(
+        source,
+        "    if (picture_result == 0 ||\n"
+        "        session.transfer_packet == NULL ||\n"
+        "        session.draw_packet == NULL) {\n"
+        "        h1_video_record_error(&session, PSTVNC_H1_VIDEO_ERROR_DECODE);\n"
+        "        goto done;\n"
+        "    }",
+        "    if (picture_result == 0) {\n"
+        "        if (session.cancelled) {\n"
+        "            success = 1;\n"
+        "            goto done;\n"
+        "        }\n"
+        "        h1_video_record_error(&session, PSTVNC_H1_VIDEO_ERROR_DECODE);\n"
+        "        goto done;\n"
+        "    }",
+        "CP2P shared-compositor first-picture guard",
+    )
+
+    source = replace_once(
+        source,
+        "        if (picture_result == 0)\n"
+        "            break;",
+        "        if (picture_result == 0) {\n"
+        "            if (session.cancelled) {\n"
+        "                success = 1;\n"
+        "                goto done;\n"
+        "            }\n"
+        "            break;\n"
+        "        }",
+        "CP2P clean cancellation during decode loop",
+    )
+
     draw_call = "        h1_video_draw(&session);"
     if source.count(draw_call) != 2:
         raise RuntimeError(
@@ -388,6 +438,8 @@ int pstvnc_h1_video_cp2p_retire_presentation(
 
     forbidden = (
         "DMA_CHANNEL_GIF",
+        "session.transfer_packet == NULL",
+        "session.draw_packet == NULL",
         "graph_vram_allocate(",
         "dma_channel_send_chain(DMA_CHANNEL_GIF",
         "dma_channel_send_normal(\n        DMA_CHANNEL_GIF",
