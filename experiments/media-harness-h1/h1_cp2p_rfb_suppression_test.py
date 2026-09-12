@@ -199,7 +199,7 @@ class FilterTests(unittest.TestCase):
             # this guard scales with whatever desktop the session actually uses.
             one_raw = bytes(4 * 4 * 2)
             wire = (
-                b"\x00\x02"
+                b"\x00\x00\x02"
                 + struct.pack(">HHHHi", 0, 0, 4, 4, 0)
                 + one_raw
                 + struct.pack(">HHHHi", 0, 0, 4, 4, 0)
