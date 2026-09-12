@@ -1,14 +1,48 @@
-# H1 CP2P Pi Daemon Reconstruction Contract
+# H1 CP2P Pi Integration / Reconstruction Contract
 
-Status: current implementation contract for the H1 all-guns CP2P experiment.
+Status: current integration contract for the H1 all-guns CP2P experiment.
 
-This document is intentionally different from the chronological experiment history. The history records what was believed and proved at each point in time. This file records the **current behavior that a Pi-side daemon must recreate** if the daemon is rewritten, replaced, or reconstructed from scratch.
+This document is intentionally different from the chronological experiment history. The history records what was believed and proved at each point in time. This file records the **current Pi-side behavior, components, dependencies, configuration, and lifecycle requirements that the eventual comprehensive PS-to-VNC Pi setup must be able to recreate**.
+
+This experiment is **not** intended to become a separate permanent Pi installation stack. The long-term project will have one comprehensive Pi-side bootstrap/installer and runtime/service arrangement that prepares the Pi generally for PS-to-VNC: networking, SMB, VNC/desktop services, audio, media support, project utilities, dependencies, configuration, and service startup/recovery. CP2P contributes requirements and implementation pieces to that larger system.
+
+The rule for this experiment is therefore:
+
+> Anything CP2P creates, depends on, configures, or requires on the Pi must be recorded here well enough that the future comprehensive Pi bootstrap can install or recreate it without relying on this chat, an old shell history, or undocumented manual setup.
 
 If this document and executable source disagree, stop and reconcile the discrepancy before hardware qualification. Do not silently choose one.
 
+## 0. Relationship to the future comprehensive Pi bootstrap
+
+The eventual general Pi bootstrap/service stack is the installation authority. It should absorb the proven pieces from this experiment rather than launching a second independent CP2P environment.
+
+When CP2P is promoted out of the experiment, the comprehensive Pi setup must include, as applicable:
+
+- the PSTV mux/runtime code that owns the single PS2 transport;
+- the CP2P START decoder and lifecycle state;
+- RFB suppression support;
+- the MPEG capture/encoder producer and its exact-region startup logic;
+- any new scheduler/channel support needed for MPEG data;
+- runtime configuration/schema additions;
+- service/unit integration needed to launch and recover the Pi-side runtime;
+- every external executable/library/package required by those pieces;
+- permissions, groups, environment variables, sockets, paths, or desktop/session assumptions they rely on;
+- host-side tests and self-checks that prove the installed Pi has the required capabilities.
+
+Do **not** treat a command installed manually during this experiment as an acceptable permanent dependency record. Whenever the experiment begins relying on a new Pi-side dependency or manual configuration step, update this contract at the same time with the executable/capability required and, once known, the canonical installation/configuration mechanism that the comprehensive bootstrap must perform.
+
+Current executable-level dependencies already visible in the experimental Pi path include:
+
+- Python 3 for the current mux daemon implementation;
+- a local RFB/VNC provider reachable by the mux (the current experiment targets an isolated X0tigervnc provider);
+- PipeWire command-line facilities used by the current PCM path, including `wpctl` and `pw-record`;
+- an MPEG capture/encode facility will be required by CP2P; the exact command line and installation authority must be recorded here when the deferred producer is made concrete rather than guessed in advance.
+
+Package names are deliberately not guessed here because they can vary by Pi OS/distribution. The comprehensive bootstrap should ultimately own the distro-specific package mapping.
+
 ## 1. Architectural boundary
 
-The CP2P daemon extends the existing PSTV mux architecture; it does not create a second MPEG control or data connection.
+CP2P extends the existing PSTV mux architecture; it does not create a second MPEG control or data connection.
 
 Hard invariants:
 
@@ -87,7 +121,7 @@ The PS2 source authority is:
 
 ### Structural validation
 
-The daemon must reject START unless all of the following are true:
+The Pi runtime must reject START unless all of the following are true:
 
 - payload length is exactly 44;
 - wire version is exactly 1;
@@ -190,11 +224,11 @@ For the all-guns CP2P session:
 - producer lifecycle must be generation-scoped;
 - only one MPEG generation is active at a time for the current milestone.
 
-The current historical mux daemon (`experiments/audio-transport/pi/mux_daemon.py`) already demonstrates the required single-reader/single-writer mux ownership for RFB + PCM, but it does **not** yet implement CP2P START handling or the deferred MPEG producer lifecycle. A reconstruction must preserve its transport ownership discipline while adding those pieces.
+The current historical mux daemon (`experiments/audio-transport/pi/mux_daemon.py`) already demonstrates the required single-reader/single-writer mux ownership for RFB + PCM, but it does **not** yet implement CP2P START handling or the deferred MPEG producer lifecycle. Experimental implementation may extend or wrap that code while proving the design. The permanent result should ultimately be folded into the comprehensive Pi runtime/bootstrap rather than installed as an unrelated second daemon.
 
-## 9. Recalibration / retirement semantics the daemon must support
+## 9. Recalibration / retirement semantics the Pi runtime must support
 
-START+SELECT is currently only a PS2 hardware-test shortcut for requesting calibration. It is **not** part of the Pi protocol and the Pi daemon must not depend on that chord. A future UI button is expected to replace it without changing this daemon contract.
+START+SELECT is currently only a PS2 hardware-test shortcut for requesting calibration. It is **not** part of the Pi protocol and the Pi runtime must not depend on that chord. A future UI button is expected to replace it without changing this contract.
 
 The semantic lifecycle is trigger-agnostic:
 
@@ -214,7 +248,7 @@ For the first RFB-only -> MPEG START path, no prior MPEG generation exists and t
 
 ## 10. Failure and stale-generation rules
 
-The daemon must be conservative around stale state:
+The Pi runtime must be conservative around stale state:
 
 - malformed START: reject; do not alter the current valid generation;
 - wrong session ID: reject;
@@ -225,11 +259,11 @@ The daemon must be conservative around stale state:
 - a newer generation must not coexist with an older producer for the current milestone;
 - stopping one generation must be able to prove producer dormancy before resources/state are reused for another generation.
 
-No automatic "best effort" geometry correction is permitted. Invalid geometry is an error, not something the daemon clamps behind the PS2's back.
+No automatic "best effort" geometry correction is permitted. Invalid geometry is an error, not something the Pi clamps behind the PS2's back.
 
 ## 11. Reconstructable Pi state model
 
-A minimal daemon implementation needs only a small amount of MPEG lifecycle state:
+A minimal implementation needs only a small amount of MPEG lifecycle state:
 
 ```text
 active_h1_session_id
@@ -244,23 +278,25 @@ There is no need to retain the historical evolution of prior generations. Once a
 
 Persisted user calibration settings are a PS2/session-UI concern, not a Pi generation-history concern.
 
-## 12. Suggested daemon decomposition
+## 12. Suggested runtime decomposition
 
-Keep responsibilities small and replaceable:
+Keep responsibilities small and replaceable even if the comprehensive Pi runtime eventually hosts them in one service:
 
 - `PSTV reader`: sole socket reader; framing + sequence ownership;
 - `START decoder/validator`: pure 44-byte parser and geometry/session validation;
 - `RFB suppression owner`: installs/removes one generation's suppression footprint;
-- `MPEG producer`: owns FFmpeg/capture subprocess and exact X,Y,W,H source;
+- `MPEG producer`: owns the capture/encoder subprocess and exact X,Y,W,H source;
 - `MPEG lifecycle`: orders suppression -> producer start and producer stop -> suppression removal;
 - existing scheduler/writer: remains the sole Pi->PS2 frame writer and schedules RFB/PCM/MPEG logical-channel payloads.
 
-Do not merge these into an opaque monolithic loop merely because the first prototype is small.
+Logical decomposition does not require separate permanent daemons. Prefer one comprehensively managed service architecture with clear internal ownership over a collection of competing background processes.
 
-## 13. Required reconstruction tests
+## 13. Required reconstruction/install tests
 
-At minimum, a replacement daemon should prove these behaviors without PS2 hardware before qualification:
+At minimum, the comprehensive bootstrap/runtime that absorbs CP2P should be able to prove these behaviors without PS2 hardware before qualification:
 
+- every external CP2P executable/library capability is present after a fresh bootstrap;
+- required service/user permissions and runtime paths are created reproducibly;
 - valid 44-byte START decodes exactly;
 - bad version/length/session/generation/geometry is rejected;
 - draw rectangle and suppression rectangle remain distinct;
@@ -273,7 +309,32 @@ At minimum, a replacement daemon should prove these behaviors without PS2 hardwa
 - RFB and PCM ownership paths remain alive while MPEG is active;
 - only the existing PSTV writer emits PS2-facing frames.
 
-## 14. Source map for reconstruction
+A fresh-Pi reconstruction is not complete merely because source files were copied. The bootstrap must reproduce the runtime dependencies and system configuration those files require.
+
+## 14. Promotion inventory for the comprehensive Pi setup
+
+As CP2P work proceeds, use this section as the handoff checklist. Every row that becomes concrete should point to an exact source/config/install authority rather than tribal knowledge.
+
+| Area | Experimental/current authority | What the comprehensive Pi setup must eventually own |
+| --- | --- | --- |
+| PSTV framing | `experiments/audio-transport/common/transport_protocol.h` | matching protocol/runtime installation |
+| single-reader/single-writer mux ownership | `experiments/audio-transport/pi/mux_daemon.py` | permanent Pi transport service/runtime |
+| H1 config/session identity | `experiments/media-harness-h1/h1_config.h` | config parsing and active-session state |
+| MPEG START wire | `mpeg_presentation_calibration/h1_mpeg_start_wire.[ch]` | matching Pi decoder/validator |
+| MPEG START send semantics | `mpeg_presentation_calibration/h1_mpeg_start_transport.[ch]` | inbound channel-4 START routing |
+| generation lifecycle | start-handoff / presentation-owner / recalibration sources | Pi lifecycle state and stale-generation rejection |
+| RFB suppression | implementation still to be made concrete | install/configure chosen suppression mechanism |
+| MPEG capture/encoder | implementation still to be made concrete | install encoder/capture dependency and exact-region launch logic |
+| MPEG mux scheduling | implementation still to be made concrete | channel-4 queue/credit/scheduling support without second socket |
+| retirement control | wire encoding still to be made concrete | exact-generation stop/drain/remove-suppression path |
+| PCM capture | current mux uses PipeWire `wpctl` + `pw-record` | install/configure audio capture prerequisites |
+| RFB provider | current mux expects isolated local VNC provider | install/configure VNC provider under the general desktop/VNC setup |
+| service management | not finalized by this experiment | comprehensive service startup/restart/dependency ordering |
+| verification | host tests + later all-guns qualification | fresh-install self-check plus project regression tests |
+
+When a row moves from “to be made concrete” to an implementation, update the row in the same tranche that introduces it.
+
+## 15. Source map for reconstruction
 
 Current source authorities to consult together:
 
@@ -289,14 +350,15 @@ Current source authorities to consult together:
 - combined RFB/MPEG flow policy: `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_cp2p_rfb_flow.[ch]`
 - chronological evidence/history: `experiments/media-harness-h1/CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md`
 
-## 15. Current implementation boundary
+## 16. Current implementation boundary
 
-At creation of this document:
+At this document's current revision:
 
 - PS2 accepted -> fresh generation -> START(session_id, generation, exact geometry, suppression) is implemented and host/PS2-compile proven;
 - the old experimental macro/global recalibration bridge has been removed;
 - START+SELECT is explicitly only a replaceable test trigger;
 - Pi START parsing, generation-scoped suppression, deferred exact-region MPEG producer activation, and explicit Pi retirement signaling are the next implementation work;
+- the permanent comprehensive Pi bootstrap has **not** yet absorbed these experimental CP2P additions;
 - physical all-guns hardware qualification has not yet occurred.
 
-Update this file whenever one of those Pi-side mechanisms becomes concrete, but preserve the experiment history separately rather than rewriting historical entries.
+Update this file whenever a Pi-side mechanism, dependency, path, service requirement, or configuration step becomes concrete. Preserve the experiment history separately rather than rewriting historical entries.
