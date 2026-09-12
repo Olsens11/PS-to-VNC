@@ -26,6 +26,11 @@
 /* H1 extensions to the v1 PSTV framing vocabulary. */
 #define PSTVNC_H1_FRAME_MEDIA_END 8u
 #define PSTVNC_H1_FRAME_SESSION_RESULT 9u
+#define PSTVNC_H1_FRAME_MPEG_RETIRE 10u
+
+#define PSTVNC_H1_MPEG_RETIRE_VERSION 1u
+#define PSTVNC_H1_MPEG_RETIRE_WORDS 3u
+#define PSTVNC_H1_MPEG_RETIRE_BYTES (PSTVNC_H1_MPEG_RETIRE_WORDS * 4u)
 
 #define PSTVNC_H1_MEDIA_END_VERSION 1u
 #define PSTVNC_H1_MEDIA_END_WORDS 16u
@@ -61,7 +66,8 @@ typedef enum pstvnc_h1_transport_error {
     PSTVNC_H1_ERROR_CONFIG = 15,
     PSTVNC_H1_ERROR_ALLOCATION = 16,
     PSTVNC_H1_ERROR_END_METADATA = 17,
-    PSTVNC_H1_ERROR_OVERFLOW = 18
+    PSTVNC_H1_ERROR_OVERFLOW = 18,
+    PSTVNC_H1_ERROR_MPEG_RETIRE = 19
 } pstvnc_h1_transport_error_t;
 
 typedef struct pstvnc_h1_transport_stats {
@@ -118,6 +124,10 @@ typedef struct pstvnc_h1_transport_runtime {
     volatile uint32_t rfb_quiesce_boundary_sent;
     volatile uint32_t rfb_quiesce_commit_received;
     volatile uint32_t rfb_quiesce_complete_sent;
+
+    /* Exact CP2P Pi-retirement request/ack state; receiver thread owns ACK. */
+    volatile uint32_t mpeg_retire_pending_generation;
+    volatile uint32_t mpeg_retire_ack_generation;
 
     pstvnc_h1_config_t config;
     uint32_t config_digest;
@@ -204,6 +214,15 @@ int pstvnc_h1_transport_mpeg_read_cancellable(
     size_t maximum_count,
     size_t *bytes_read,
     const volatile int *cancel_requested);
+
+int pstvnc_h1_transport_mpeg_retire_begin(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation);
+
+/* 1=exact completion consumed, 0=still pending, -1=invalid/failed transport. */
+int pstvnc_h1_transport_mpeg_retire_poll(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation);
 
 int pstvnc_h1_transport_audio_exhausted(
     pstvnc_h1_transport_runtime_t *runtime);

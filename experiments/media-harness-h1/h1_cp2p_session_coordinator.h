@@ -34,7 +34,9 @@ typedef struct pstvnc_h1_cp2p_session_coordinator {
 
     pstvnc_h1_mpeg_start_contract_t current_start_contract;
     uint32_t start_messages_sent;
+    uint32_t pi_retire_generation;
     unsigned current_start_contract_valid : 1;
+    unsigned pi_retire_pending : 1;
     unsigned initialized : 1;
 } pstvnc_h1_cp2p_session_coordinator_t;
 

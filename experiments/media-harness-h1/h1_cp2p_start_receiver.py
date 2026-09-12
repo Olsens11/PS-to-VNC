@@ -31,6 +31,11 @@ import struct
 import threading
 
 import h1_mux_server as base
+from h1_cp2p_retirement_control import (
+    MPEG_RETIRE_FRAME_KIND,
+    decode_mpeg_retire_payload,
+    encode_mpeg_retire_payload,
+)
 
 MPEG_START_WIRE_VERSION = 1
 MPEG_START_WIRE_WORDS = 11
@@ -234,6 +239,56 @@ class H1Cp2pStartReceiver:
             flush=True,
         )
 
+    def retire_generation_exact(self, generation: int) -> H1Cp2pPreparedStart:
+        """Release the exact prepared generation; subclasses extend runtime cleanup."""
+
+        request = self.release_prepared_exact(generation)
+        (Path(self.session.evidence) / "mpeg_start_prepared.json").unlink(
+            missing_ok=True
+        )
+        return request
+
+    def _handle_retire_frame(self, frame: base.Frame) -> None:
+        if (
+            frame.kind != MPEG_RETIRE_FRAME_KIND
+            or frame.channel != base.CHANNEL_CONTROL
+        ):
+            raise base.ProtocolError("CP2P RETIRE receiver received a non-RETIRE frame")
+        if frame.flags != 0:
+            raise base.ProtocolError("MPEG RETIRE flags must be zero")
+
+        control = decode_mpeg_retire_payload(
+            frame.payload,
+            expected_session_id=int(self.session.profile["session_id"]),
+        )
+
+        # ACK is deliberately after exact runtime cleanup. Failure leaves the
+        # PS2 deferred and never falsely authorizes full-RFB restoration.
+        self.retire_generation_exact(control.generation)
+
+        evidence = {
+            "session_id": int(control.session_id),
+            "generation": int(control.generation),
+            "state": "retired-complete",
+        }
+        (Path(self.session.evidence) / "mpeg_retire_completed.json").write_text(
+            json.dumps(evidence, indent=2, sort_keys=True) + "\n"
+        )
+
+        self.session.send_frame(
+            MPEG_RETIRE_FRAME_KIND,
+            base.CHANNEL_CONTROL,
+            encode_mpeg_retire_payload(
+                control.session_id,
+                control.generation,
+            ),
+        )
+        print(
+            "H1_CP2P_MPEG_RETIRE_COMPLETE="
+            + json.dumps(evidence, sort_keys=True),
+            flush=True,
+        )
+
     def start(self) -> None:
         if self.started:
             raise base.ProtocolError("CP2P START receiver already started")
@@ -271,11 +326,15 @@ def _receive_frame_with_start_dispatch(sock):
         with _START_REGISTRY_LOCK:
             receiver = _START_BY_PSTV_SOCKET.get(sock)
 
-        if (
-            receiver is None
-            or frame.kind != base.FRAME_DATA
-            or frame.channel != base.CHANNEL_MPEG2
-        ):
+        is_start = (
+            frame.kind == base.FRAME_DATA
+            and frame.channel == base.CHANNEL_MPEG2
+        )
+        is_retire = (
+            frame.kind == MPEG_RETIRE_FRAME_KIND
+            and frame.channel == base.CHANNEL_CONTROL
+        )
+        if receiver is None or not (is_start or is_retire):
             return frame
 
         session = receiver.session
@@ -286,9 +345,12 @@ def _receive_frame_with_start_dispatch(sock):
             )
         session.expected_rx_sequence += 1
 
-        receiver._handle_start_frame(frame)
-        # START is complete. Stay in this same H1 reader call and receive the next
-        # physical PSTV frame for the pre-existing dispatch chain/base reader.
+        if is_start:
+            receiver._handle_start_frame(frame)
+        else:
+            receiver._handle_retire_frame(frame)
+        # CP2P control is complete. Stay in this same H1 reader call and receive
+        # the next physical PSTV frame for the pre-existing dispatch/base reader.
 
 
 def _install_receive_shim() -> None:

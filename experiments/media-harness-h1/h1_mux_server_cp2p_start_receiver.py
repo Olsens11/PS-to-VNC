@@ -101,6 +101,47 @@ class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
                 f"CP2P START generation {int(generation)} rollback failed"
             ) from rollback_error
 
+    def retire_generation_exact(self, generation: int):
+        """Retire one exact prepared Pi generation before acknowledging the PS2."""
+
+        generation = int(generation)
+        request = self.peek_prepared()
+        if request is None or request.generation != generation:
+            raise base.ProtocolError(
+                "CP2P RETIRE prepared-generation mismatch "
+                f"prepared={getattr(request, 'generation', 0)} requested={generation}"
+            )
+        if self.capture_plan is None or self.capture_plan.generation != generation:
+            raise base.ProtocolError(
+                "CP2P RETIRE exact capture generation is not prepared"
+            )
+        if self.suppression_bridge.suppression_generation != generation:
+            raise base.ProtocolError(
+                "CP2P RETIRE suppression generation mismatch "
+                f"active={self.suppression_bridge.suppression_generation} "
+                f"requested={generation}"
+            )
+
+        # Item #8 will replace this dormant-producer guard with an exact
+        # stop/drain operation before suppression is removed. Until then, never
+        # acknowledge retirement over an unexpected live legacy producer.
+        if getattr(self.session, "video_producer", None) is not None:
+            raise base.ProtocolError(
+                "CP2P RETIRE cannot acknowledge while MPEG producer is live"
+            )
+
+        self.suppression_bridge.retire_suppression_exact(generation)
+        released = super().retire_generation_exact(generation)
+        self.capture_plan = None
+
+        for name in (
+            "rfb_suppression_prepared.json",
+            "mpeg_capture_prepared.json",
+        ):
+            (Path(self.session.evidence) / name).unlink(missing_ok=True)
+
+        return released
+
     def _handle_start_frame(self, frame: base.Frame) -> None:
         try:
             super()._handle_start_frame(frame)

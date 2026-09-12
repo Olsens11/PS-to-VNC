@@ -14,6 +14,14 @@
 const pstvnc_h1_config_t *pstvnc_h1_transport_config(
     const struct pstvnc_h1_transport_runtime *runtime);
 
+int pstvnc_h1_transport_mpeg_retire_begin(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation);
+
+int pstvnc_h1_transport_mpeg_retire_poll(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation);
+
 #include <stddef.h>
 #include <string.h>
 
@@ -24,7 +32,10 @@ static int h1_cp2p_session_calibration_entry_gate(
     pstvnc_h1_cp2p_session_coordinator_t *coordinator =
         (pstvnc_h1_cp2p_session_coordinator_t *)context;
     pstvnc_h1_mpeg_recalibration_begin_result_t begin_result;
+    pstvnc_h1_mpeg_presentation_owner_state_t owner_state;
     pstvnc_mpeg_calibration_t *calibration;
+    uint32_t generation;
+    int retire_poll;
 
     if (coordinator == NULL || !coordinator->initialized ||
         enter_now == NULL)
@@ -39,6 +50,40 @@ static int h1_cp2p_session_calibration_entry_gate(
         return 1;
     }
 
+    owner_state = pstvnc_h1_mpeg_presentation_owner_state(
+        &coordinator->mpeg_handoff.owner);
+
+    if (coordinator->pi_retire_pending) {
+        retire_poll = pstvnc_h1_transport_mpeg_retire_poll(
+            coordinator->transport,
+            coordinator->pi_retire_generation);
+        if (retire_poll < 0)
+            return 0;
+        if (retire_poll == 0) {
+            *enter_now = 0;
+            return 1;
+        }
+
+        coordinator->pi_retire_pending = 0;
+        coordinator->pi_retire_generation = 0u;
+    } else if (owner_state != PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY) {
+        generation = coordinator->mpeg_handoff.owner.generation;
+        if (generation == 0u ||
+            !pstvnc_h1_transport_mpeg_retire_begin(
+                coordinator->transport, generation))
+            return 0;
+
+        coordinator->pi_retire_generation = generation;
+        coordinator->pi_retire_pending = 1;
+        *enter_now = 0;
+        return 1;
+    }
+
+    /*
+     * Pi completion is now proven for the exact old generation. Only here may
+     * local worker/presentation state retire and the one-full-RFB restoration
+     * obligation become visible to the request scheduler.
+     */
     calibration = &coordinator->interaction.mpeg_calibration.runtime
         .foreground.adapter.calibration;
 
@@ -309,6 +354,8 @@ int pstvnc_h1_cp2p_session_coordinator_shutdown(
     coordinator->clear_mpeg_context = NULL;
     coordinator->arm_mpeg = NULL;
     coordinator->arm_mpeg_context = NULL;
+    coordinator->pi_retire_generation = 0u;
+    coordinator->pi_retire_pending = 0;
     coordinator->current_start_contract_valid = 0;
     return result;
 }

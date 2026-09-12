@@ -15,6 +15,9 @@ static uint32_t sent_session_id;
 static pstvnc_h1_mpeg_start_contract_t sent_contract;
 static unsigned int clear_count;
 static uint32_t cleared_generation;
+static unsigned int retire_begin_count;
+static uint32_t retire_generation;
+static int retire_poll_result;
 static pstvnc_h1_config_t fake_config;
 
 void pstvnc_h1_interaction_coordinator_init(
@@ -93,6 +96,28 @@ int pstvnc_h1_mpeg_start_transport_send(
     sent_session_id = session_id;
     sent_contract = *contract;
     return send_success;
+}
+
+int pstvnc_h1_transport_mpeg_retire_begin(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation)
+{
+    (void)runtime;
+    if (generation == 0u || retire_begin_count != 0u)
+        return 0;
+    retire_begin_count++;
+    retire_generation = generation;
+    return 1;
+}
+
+int pstvnc_h1_transport_mpeg_retire_poll(
+    struct pstvnc_h1_transport_runtime *runtime,
+    uint32_t generation)
+{
+    (void)runtime;
+    if (generation == 0u || generation != retire_generation)
+        return -1;
+    return retire_poll_result;
 }
 
 static int clear_mpeg(void *context, uint32_t generation)
@@ -197,10 +222,43 @@ int main(void)
     coordinator.current_start_contract = active_contract;
     coordinator.current_start_contract_valid = 1;
 
+    /* First gate pass requests exact Pi retirement only. */
     assert(coordinator.interaction.calibration_entry_gate(
         coordinator.interaction.calibration_entry_gate_context,
         &enter_now));
     assert(!enter_now);
+    assert(retire_begin_count == 1u);
+    assert(retire_generation == active_contract.generation);
+    assert(coordinator.pi_retire_pending);
+    assert(coordinator.pi_retire_generation == active_contract.generation);
+    assert(clear_count == 0u);
+    assert(pstvnc_h1_mpeg_presentation_owner_state(
+        &coordinator.mpeg_handoff.owner) ==
+        PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED);
+    assert(coordinator.current_start_contract_valid);
+
+    /* Deferred polling cannot clear local ownership before exact Pi ACK. */
+    retire_poll_result = 0;
+    enter_now = 0;
+    assert(coordinator.interaction.calibration_entry_gate(
+        coordinator.interaction.calibration_entry_gate_context,
+        &enter_now));
+    assert(!enter_now);
+    assert(retire_begin_count == 1u);
+    assert(clear_count == 0u);
+    assert(pstvnc_h1_mpeg_presentation_owner_state(
+        &coordinator.mpeg_handoff.owner) ==
+        PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED);
+
+    /* Exact Pi completion unlocks the existing local retire/restoration path. */
+    retire_poll_result = 1;
+    enter_now = 0;
+    assert(coordinator.interaction.calibration_entry_gate(
+        coordinator.interaction.calibration_entry_gate_context,
+        &enter_now));
+    assert(!enter_now);
+    assert(!coordinator.pi_retire_pending);
+    assert(coordinator.pi_retire_generation == 0u);
     assert(clear_count == 1u);
     assert(cleared_generation == active_contract.generation);
     assert(pstvnc_h1_mpeg_presentation_owner_state(

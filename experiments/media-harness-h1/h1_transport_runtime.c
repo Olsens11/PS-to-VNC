@@ -815,6 +815,39 @@ static int h1_accept_end(
     return ok;
 }
 
+static int h1_accept_mpeg_retire(
+    pstvnc_h1_transport_runtime_t *runtime,
+    const pstvnc_transport_header_t *header)
+{
+    uint32_t version;
+    uint32_t session_id;
+    uint32_t generation;
+
+    if (runtime == NULL || header == NULL ||
+        header->channel != PSTVNC_TRANSPORT_CHANNEL_CONTROL ||
+        header->flags != 0u ||
+        header->payload_length != PSTVNC_H1_MPEG_RETIRE_BYTES) {
+        h1_record_error(runtime, PSTVNC_H1_ERROR_MPEG_RETIRE);
+        return 0;
+    }
+
+    version = pstvnc_transport_read_be32(&runtime->receiver_payload[0]);
+    session_id = pstvnc_transport_read_be32(&runtime->receiver_payload[4]);
+    generation = pstvnc_transport_read_be32(&runtime->receiver_payload[8]);
+
+    if (version != PSTVNC_H1_MPEG_RETIRE_VERSION ||
+        session_id != runtime->config.session_id ||
+        generation == 0u ||
+        runtime->mpeg_retire_pending_generation != generation ||
+        runtime->mpeg_retire_ack_generation != 0u) {
+        h1_record_error(runtime, PSTVNC_H1_ERROR_MPEG_RETIRE);
+        return 0;
+    }
+
+    runtime->mpeg_retire_ack_generation = generation;
+    return 1;
+}
+
 static int h1_accept_frame(
     pstvnc_h1_transport_runtime_t *runtime,
     const pstvnc_transport_header_t *header)
@@ -841,6 +874,9 @@ static int h1_accept_frame(
 
         case PSTVNC_H1_FRAME_MEDIA_END:
             return h1_accept_end(runtime, header);
+
+        case PSTVNC_H1_FRAME_MPEG_RETIRE:
+            return h1_accept_mpeg_retire(runtime, header);
 
         default:
             h1_record_error(runtime, PSTVNC_H1_ERROR_FRAME_KIND);
@@ -969,6 +1005,67 @@ static int h1_return_credit(
     }
 
     return amount == 0u || h1_send_credit(runtime, channel, amount);
+}
+
+int pstvnc_h1_transport_mpeg_retire_begin(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation)
+{
+    uint8_t payload[PSTVNC_H1_MPEG_RETIRE_BYTES];
+
+    if (runtime == NULL || generation == 0u ||
+        !runtime->initialized || !runtime->config_accepted ||
+        runtime->error != PSTVNC_H1_ERROR_NONE ||
+        runtime->stop_requested || runtime->receiver_done ||
+        runtime->mpeg_retire_pending_generation != 0u ||
+        runtime->mpeg_retire_ack_generation != 0u)
+        return 0;
+
+    pstvnc_transport_write_be32(
+        &payload[0], PSTVNC_H1_MPEG_RETIRE_VERSION);
+    pstvnc_transport_write_be32(
+        &payload[4], runtime->config.session_id);
+    pstvnc_transport_write_be32(&payload[8], generation);
+
+    /* Arm exact completion matching before the request can reach the Pi. */
+    runtime->mpeg_retire_pending_generation = generation;
+    runtime->mpeg_retire_ack_generation = 0u;
+
+    if (!h1_send_frame(
+            runtime,
+            PSTVNC_H1_FRAME_MPEG_RETIRE,
+            PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+            0u,
+            payload,
+            sizeof(payload))) {
+        runtime->mpeg_retire_pending_generation = 0u;
+        runtime->mpeg_retire_ack_generation = 0u;
+        return 0;
+    }
+
+    return 1;
+}
+
+int pstvnc_h1_transport_mpeg_retire_poll(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t generation)
+{
+    if (runtime == NULL || generation == 0u ||
+        runtime->mpeg_retire_pending_generation != generation)
+        return -1;
+
+    if (runtime->mpeg_retire_ack_generation == generation) {
+        runtime->mpeg_retire_ack_generation = 0u;
+        runtime->mpeg_retire_pending_generation = 0u;
+        return 1;
+    }
+
+    if (runtime->mpeg_retire_ack_generation != 0u ||
+        runtime->error != PSTVNC_H1_ERROR_NONE ||
+        runtime->stop_requested || runtime->receiver_done)
+        return -1;
+
+    return 0;
 }
 
 int pstvnc_h1_transport_start(
