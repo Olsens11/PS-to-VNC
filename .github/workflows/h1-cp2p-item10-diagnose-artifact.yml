@@ -1,5 +1,6 @@
 name: H1 CP2P Item 10 Diagnostic Artifact
 
+# Diagnostic iteration 2: constructor anchors tightened.
 on:
   push:
     branches:
