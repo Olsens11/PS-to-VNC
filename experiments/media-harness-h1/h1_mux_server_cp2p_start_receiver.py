@@ -73,11 +73,25 @@ class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
 
         rollback_error: BaseException | None = None
 
-        if self.producer is not None and self.producer.active_generation() == int(generation):
-            try:
-                self.producer.retire_exact(generation)
-            except BaseException as exc:
-                rollback_error = exc
+        if self.producer is not None:
+            active_producer_generation = int(self.producer.active_generation())
+            if active_producer_generation != 0:
+                if active_producer_generation != int(generation):
+                    raise base.ProtocolError(
+                        "CP2P START rollback producer generation mismatch "
+                        f"active={active_producer_generation} requested={int(generation)}; "
+                        "suppression retained fail-closed"
+                    )
+                try:
+                    self.producer.retire_exact(generation)
+                except BaseException as exc:
+                    # A producer that cannot be proven stopped/drained must stay
+                    # protected by its exact RFB suppression. Do not continue
+                    # destructive rollback and expose a still-live video source.
+                    raise base.ProtocolError(
+                        f"CP2P START generation {int(generation)} producer rollback "
+                        "failed; suppression retained fail-closed"
+                    ) from exc
 
         if suppression_installed:
             try:
