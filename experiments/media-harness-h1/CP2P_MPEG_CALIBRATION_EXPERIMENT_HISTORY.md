@@ -1626,3 +1626,39 @@ This changes the checklist at the software boundary:
 - **#12 remains OPEN**.
 
 No deployment, physical PS2 behavior, concurrent live MPEG transport, or all-guns hardware stability is claimed by item #8. The preferred remaining order is **#11B -> #10 -> #12**.
+
+
+---
+
+# PHASE R — SEPTEMBER 12 LIVE MPEG GENERATION BOUNDARY
+
+## 42. Item #11B — ordered PSTV epoch fence closes the stale-generation gap
+
+After item #8 was sealed at `12c88738f6c7ce4fc70ac62c6dd4908dd0b03c8a`, work moved to the last data-plane safety prerequisite before public MPEG activation on branch `experiment/h1-cp2p-live-generation-boundary`.
+
+The unresolved risk was specific: the PS2 MPEG ring is session-scoped, so once MPEG DATA is live a fresh generation N+1 must never consume residual generation-N bytes. The architecture already supplied a smaller exact boundary than tagging every MPEG frame: PSTV is one ordered TCP stream with one Pi writer and one PS2 receiver.
+
+Item #11B therefore treats exact RETIRE completion as an **epoch wire fence**. Before Pi completion for N, `H1Cp2pMpegProducer` closes new generation-N emission admission and waits for every already-issued send lease. Producer stop/drain and the existing Pi cleanup then finish before completion is written. When the sole PS2 receiver observes that completion, every earlier N DATA frame has already arrived in stream order; it immediately closes channel-4 generation admission and leaves the retirement transaction latched. The coordinator stops the N worker, then transport finalization discards the finite residual N bytes from the existing ring under its semaphore, returns withheld credit, and clears the latch. N+1 may open only when old generation, retirement, queue, and pending-credit state are clean.
+
+That is the minimal architecture: **one queue, one socket, one receiver, one writer, and an ordered epoch boundary**. No per-packet generation tag, second MPEG queue, alternate socket, receive owner, or send owner was introduced.
+
+The Pi producer gained a closed-by-default exact-generation emission lease (`open_emission_exact`, `begin_emission_exact`, `finish_emission_exact`). Item #10 is the future caller that may open it. The PS2 transport gained `pstvnc_h1_transport_mpeg_generation_open`, `pstvnc_h1_transport_mpeg_generation_abort`, latched retirement polling, `pstvnc_h1_transport_mpeg_retire_finalize`, and the O(1) `pstvnc_transport_queue_discard_all` primitive while preserving queue high-water telemetry.
+
+The first proof attempt exposed a proof-helper defect rather than a product defect: an overly broad idempotency marker saw the newly defined coordinator retirement wrapper and incorrectly skipped its call-site replacement, so the strict host build rejected the wrapper as unused. The helper was corrected to exact contextual markers, and two other broad markers were tightened before rerun; no product invariant was weakened.
+
+The corrected proof produced product-source commit `14d2b5fc68e11756356af397cfe3766e03c89008` (`h1: add exact live MPEG generation boundary`). Since Actions-bot product commits do not recursively trigger another workflow, product-independent wrapper `bb56f36b4b0071e87819b338b4efa98a1e00740d` adds only a one-line workflow trigger comment for committed-source verification.
+
+Clean run `34713445142` completed SUCCESS: host-contracts `103606261825` and ps2-build `103606261723`. It proved the queue boundary, all prior Pi contracts, the exact emission fence including an in-flight lease, the full calibration/session suite including coordinator epoch ordering, `H1_CP2P_ITEM11B_PUBLIC_GATE=CLOSED`, a clean committed-source tree, and the pinned linked PS2 generation-boundary symbols.
+
+Exact #11B PS2 proof identity under pinned `ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11`:
+
+- ELF `PS2VNC-H1-CP2P-ApplicationLink.ELF`;
+- SHA256 `4f36d9b742598aa64c0bdd15b436ddc1d558b88278139a9a0edc19aa1e2f7ffd`;
+- ELF bytes `3238440`;
+- PT_LOAD SHA256 `8e91cde73f655a770c0c507a19bcde2081f43e74e4d4b29d47cc72d52a530fc3`;
+- PT_LOAD bytes `512020`;
+- `H1_CP2P_ITEM11B_PS2_LINK=PASS` and `TESTKIT_PT_LOAD_FINGERPRINT=PASS`.
+
+**Checklist transition:** #11B stale/live MPEG generation boundary is **OPEN/PARTIAL -> DONE at the pre-public-gate software-proof boundary**. #10 remains deliberately CLOSED and is now next: open the all-guns CP2P MPEG CONFIG path and send live channel-4 MPEG only through #11B's emission lease and the existing serialized PSTV writer. #12 remains the immutable/hardware-candidate milestone.
+
+No live all-guns MPEG transport, deployment, physical PS2 behavior, or hardware stability is claimed here. Preferred remaining order is **#10 -> #12**.
