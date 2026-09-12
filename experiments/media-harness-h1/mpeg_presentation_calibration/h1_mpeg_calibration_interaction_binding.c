@@ -6,6 +6,7 @@
 #include "h1_mpeg_calibration_interaction_binding.h"
 
 #include <stddef.h>
+#include <string.h>
 
 static int binding_context_valid(
     const pstvnc_h1_mpeg_calibration_interaction_context_t *context)
@@ -124,11 +125,11 @@ void pstvnc_h1_mpeg_calibration_interaction_binding_init(
         &binding->rfb_policy);
 }
 
-int pstvnc_h1_mpeg_calibration_interaction_binding_service_controller(
+int pstvnc_h1_mpeg_calibration_interaction_binding_service_controller_result(
     pstvnc_h1_mpeg_calibration_interaction_binding_t *binding,
     pstvnc_h1_mpeg_calibration_interaction_context_t *context,
     const pstvnc_controller_state_t *controller_state,
-    int *consume_controller_state)
+    pstvnc_h1_mpeg_calibration_interaction_result_t *result)
 {
     static const pstvnc_h1_mpeg_calibration_foreground_ops_t ops = {
         binding_suspend_mouse,
@@ -136,24 +137,61 @@ int pstvnc_h1_mpeg_calibration_interaction_binding_service_controller(
         binding_rebase_mouse,
         binding_resume_mouse
     };
-    pstvnc_h1_mpeg_calibration_runtime_result_t result;
+    pstvnc_h1_mpeg_calibration_runtime_result_t runtime_result;
 
     if (binding == NULL ||
         !binding_context_valid(context) ||
         controller_state == NULL ||
-        consume_controller_state == NULL)
+        result == NULL)
         return 0;
+
+    memset(result, 0, sizeof(*result));
 
     if (!pstvnc_h1_mpeg_calibration_runtime_service_controller(
             &binding->runtime,
             controller_state,
             &ops,
             context,
+            &runtime_result))
+        return 0;
+
+    result->consume_controller_state =
+        runtime_result.consume_controller_state ? 1u : 0u;
+    result->accepted = runtime_result.accepted ? 1u : 0u;
+    return 1;
+}
+
+int pstvnc_h1_mpeg_calibration_interaction_binding_service_controller(
+    pstvnc_h1_mpeg_calibration_interaction_binding_t *binding,
+    pstvnc_h1_mpeg_calibration_interaction_context_t *context,
+    const pstvnc_controller_state_t *controller_state,
+    int *consume_controller_state)
+{
+    pstvnc_h1_mpeg_calibration_interaction_result_t result;
+
+    if (consume_controller_state == NULL)
+        return 0;
+
+    if (!pstvnc_h1_mpeg_calibration_interaction_binding_service_controller_result(
+            binding,
+            context,
+            controller_state,
             &result))
         return 0;
 
     *consume_controller_state = result.consume_controller_state ? 1 : 0;
     return 1;
+}
+
+const pstvnc_mpeg_cal_region_t *
+pstvnc_h1_mpeg_calibration_interaction_binding_committed_region(
+    const pstvnc_h1_mpeg_calibration_interaction_binding_t *binding)
+{
+    if (binding == NULL)
+        return NULL;
+
+    return pstvnc_h1_mpeg_calibration_runtime_committed_region(
+        &binding->runtime);
 }
 
 int pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
