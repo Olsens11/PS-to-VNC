@@ -65,6 +65,13 @@ int pstvnc_h1_mpeg_calibration_runtime_service_controller(
         runtime->foreground.adapter.calibration.screen !=
             PSTVNC_MPEG_CAL_INACTIVE;
 
+    /*
+     * Preserve the existing one-shot acceptance fact rather than reconstructing
+     * it later from committed geometry or foreground transitions.
+     */
+    result->accepted =
+        foreground_result.adapter_result.calibration_effects.accepted;
+
     return 1;
 }
 
