@@ -1237,3 +1237,42 @@ Exact proof ELF identity:
 One boundary remains deliberately open for later lifecycle work: the transport MPEG byte queue is still session-scoped rather than generation-tagged. Because the Pi producer is not yet active, that does not invalidate item #9; before real generation transitions can carry MPEG bytes, later item #11 work must prevent stale old-generation queued bytes from being consumed by a fresh generation.
 
 **Checklist transition:** item #9 — concurrent PS2 MPEG worker — **PARTIAL -> DONE at the pre-activation software-proof boundary**. The next planned tranche is combined item #6 + #7: Pi generation-scoped RFB suppression plus exact calibrated capture geometry, still without starting MPEG production.
+
+---
+
+## 37. Post-item-#9 checklist reconciliation and revised dependency order
+
+With item #9 sealed, the twelve-item implementation list was reconciled again against the actual forward branch rather than against earlier numbering alone.
+
+Current status:
+
+1. **PS2 Accept -> START session coordinator — DONE.** The session coordinator is the authoritative accepted-calibration -> fresh immutable generation -> worker arm -> START transaction owner.
+2. **PS2 START-send failure unwind — DONE.** Failure cannot leave a phantom prepared generation or armed MPEG worker; exact worker clear precedes exact generation abort.
+3. **Prove accepted -> START transition — DONE.** Host contracts, pinned PS2 compile/link evidence, and later integrated proofs cover the control-plane transition and failure boundaries.
+4. **Link a real CP2P PS2 target — DONE.** One integrated CP2O-derived CP2P ELF contains the real coordinator, shared compositor, START path, recalibration/RFB flow, and now the item-#9 MPEG worker machinery.
+5. **Pi START receive + validation — DONE.** One existing Pi reader accepts/validates the 44-byte channel-4 START and creates one immutable prepared generation without activating suppression or MPEG production.
+6. **Pi generation-scoped RFB suppression — OPEN.** The required ownership semantics are defined, but no real source-suppression mechanism is installed yet.
+7. **Exact calibrated geometry end-to-end — PARTIAL.** PS2 accepted geometry and START serialization are complete; Pi validation retains exact base and suppression rectangles, but the exact base rectangle is not yet bound to a real capture source and the suppression rectangle is not yet applied to RFB production.
+8. **START-driven MPEG producer — OPEN.** START is received and retained, but deliberately does not start ffmpeg/producer output yet.
+9. **Concurrent PS2 MPEG worker — DONE at the pre-activation software-proof boundary.** Exact-generation arm/clear, cancellable MPEG queue read, generated compositor-aware runtime, first-frame physical-presentation ownership, and pinned link proof are complete; public CONFIG still keeps the live decode path dormant.
+10. **Exact CP2P CONFIG gate — OPEN.** The public CP2P configuration still rejects MPEG-enabled operation; this remains intentionally late so configuration exposes an already-correct mechanism rather than being used as scaffolding.
+11. **Complete presentation / retirement / recalibration lifecycle — PARTIAL.** The PS2 side is substantially complete, including worker clear before exact ownership retirement and full-RFB restoration. Remaining live-data-plane work includes a concrete Pi-facing exact-generation retirement seam, removal of generation-scoped Pi suppression/producer state, and prevention/drain of stale old-generation MPEG bytes from the currently session-scoped PS2 MPEG queue.
+12. **Seal the immutable all-guns hardware candidate — OPEN.** Final source/config/runtime identities, deployment, physical qualification, and evidence remain after the live all-guns lifecycle is complete.
+
+The dependency order is therefore refined from the earlier simple numerical sequence.
+
+Recommended next order:
+
+`#6 + #7 -> #11A Pi exact-generation retirement control seam -> #8 START-driven producer -> finish #11 live generation cleanup/stale-byte exclusion -> #10 CONFIG gate -> #12 immutable hardware candidate`
+
+Rationale:
+
+- #6 and #7 can safely prepare suppression and exact capture state without emitting MPEG bytes.
+- A real producer must **not** be activated before the Pi can be told that generation N has retired. Recalibration requires old suppression and producer state to disappear before the fresh full-RFB restoration that precedes a new calibration transaction; waiting for the next START is too late.
+- Therefore the Pi-facing retirement-control subset of #11 is now a hard dependency of #8, even though the remainder of #11 can close after the producer exists.
+- Once exact Pi retirement exists, #8 can safely make valid START ordering `validate -> bind generation -> install suppression -> configure exact capture -> start producer -> emit MPEG`.
+- The remaining #11 closure then proves stop/drain/removal across both machines and excludes stale old-generation bytes before a fresh generation can consume MPEG.
+- Only after those mechanisms are live and correct should #10 expose MPEG through the public CP2P CONFIG gate.
+- #12 remains the final frozen-source/config/deployment/hardware qualification milestone.
+
+This replaces the earlier proposed `#6 + #7 -> #8 -> #11` ordering. The change is a dependency refinement discovered after item #9 made worker retirement and the session-scoped MPEG queue concrete; it does not invalidate any completed item.
