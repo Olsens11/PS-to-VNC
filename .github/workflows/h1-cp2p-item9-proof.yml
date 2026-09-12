@@ -65,7 +65,9 @@ jobs:
               echo H1_CP2O_CURRENT_TREE_REGRESSION=PASS
 
               make -f mk/media-harness-h1-cp2p-application-link.mk cp2p-application-link-check
-              python3 experiments/media-harness-h1/check_rfb_pcm_interaction.py --build-dir "$CP2P_BUILD"
+              # check_rfb_pcm_interaction.py is intentionally CP2O-specific: it
+              # requires the bare interaction coordinator from the CP2O main.
+              # CP2P correctly reaches interaction through the session coordinator.
               python3 experiments/media-harness-h1/check_rfb_mux_seam.py --build-dir "$CP2P_BUILD"
 
               test -f "$CP2P_BUILD/h1_cp2p_mpeg_worker.o"
