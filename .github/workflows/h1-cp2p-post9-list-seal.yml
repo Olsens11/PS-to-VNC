@@ -1,0 +1,39 @@
+name: H1 CP2P Post Item 9 List Seal
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-ps2-mpeg-worker
+    paths:
+      - .github/workflows/h1-cp2p-post9-list-seal.yml
+
+permissions:
+  contents: write
+
+jobs:
+  seal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/h1-cp2p-ps2-mpeg-worker
+          fetch-depth: 0
+      - name: Append reconciled checklist and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          HISTORY=experiments/media-harness-h1/CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md
+          ENTRY=.github/item9-list-entry.txt
+          EXPECTED_BLOB=e96ea950165d2254eb36a9815614109da075ae7e
+          test "$(git hash-object "$HISTORY")" = "$EXPECTED_BLOB"
+          cp "$HISTORY" /tmp/history.before
+          cat "$ENTRY" >> "$HISTORY"
+          cmp -n "$(stat -c %s /tmp/history.before)" /tmp/history.before "$HISTORY"
+          grep -Fq '## 37. Post-item-#9 checklist reconciliation and revised dependency order' "$HISTORY"
+          git diff --check
+          git rm "$ENTRY" .github/workflows/h1-cp2p-post9-list-seal.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$HISTORY"
+          git commit -m "docs(h1): reconcile checklist after item 9 [skip ci]"
+          git push origin HEAD:experiment/h1-cp2p-ps2-mpeg-worker
