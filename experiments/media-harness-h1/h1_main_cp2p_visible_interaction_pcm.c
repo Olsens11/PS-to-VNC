@@ -1,19 +1,13 @@
 /*
  * File synopsis:
- * CP2O visible RFB + real through-Issue-39 interaction + existing H1 PCM
- * coordinator.
+ * CP2P application shell mechanically derived from the qualified CP2O
+ * visible-RFB + interaction + optional-PCM resident main.
  *
- * This checkpoint builds directly from CP2N's hardware-qualified visible RFB,
- * mouse, keyboard, OSK, and local-UI composition. It activates the already
- * linked/canonical H1 PCM/AUDSRV runtime on the same physical PSTV connection.
- * MPEG remains OFF. The experiment-local MPEG-calibration ownership/RFB-flow
- * policy is linked here only to prove its live coordinator seam before native
- * calibration rasterization and MPEG presentation are added.
- *
- * The resident process accepts both CP2N-equivalent visible-RFB-only sessions
- * and the new visible-RFB+PCM sessions, allowing repeated h1_tool runs against
- * one unchanged ELF. Qualification still applies only to the exact tested
- * profile and PT_LOAD identity.
+ * The CP2O source remains byte-for-byte untouched. This derivative changes
+ * only application-level composition: it instantiates the CP2P session
+ * coordinator so calibration acceptance owns generation prepare/START and the
+ * combined RFB policy. The MPEG worker remains deliberately dormant until the
+ * later worker-integration milestone.
  */
 #include "h1_audio_runtime.h"
 #include "h1_config.h"
@@ -21,6 +15,7 @@
 #include "h1_media_clock.h"
 #include "h1_rfb_session_runtime.h"
 #include "h1_transport_runtime.h"
+#include "h1_cp2p_session_coordinator.h"
 #include "platform/ps2_graphics.h"
 #include "ps2_network.h"
 #include "ps2_system.h"
@@ -86,18 +81,24 @@ static int h1_cp2o_wait_for_audio_completion(
     return 0;
 }
 
+/*
+ * Item #4 deliberately has no live MPEG worker yet. The session coordinator
+ * nevertheless owns retirement semantics now, so provide the smallest honest
+ * withdrawal seam: there is no producer/visible MPEG state to clear until the
+ * later worker-integration milestone replaces this callback.
+ */
+static int h1_cp2p_clear_dormant_mpeg(void *context, uint32_t generation)
+{
+    (void)context;
+    return generation != 0u ? 1 : 0;
+}
+
 int main(void)
 {
     uint32_t completed_sessions = 0u;
+    static pstvnc_h1_cp2p_session_coordinator_t cp2p;
 
-    /*
-     * Static storage preserves CP2N's fail-closed input-worker ownership rule:
-     * if cooperative shutdown cannot prove dormancy, we never reclaim/reuse the
-     * worker-owned stack and queue state.
-     */
-    static pstvnc_h1_interaction_coordinator_t interaction;
-
-    printf("H1_CP2O_VISIBLE_RFB_INTERACTION_PCM_START\n");
+    printf("H1_CP2P_VISIBLE_RFB_INTERACTION_PCM_START\n");
 
     if (pstvnc_ps2_system_prepare_iop() < 0) {
         printf("H1_BOOT=IOP_PREPARE_FAIL\n");
@@ -124,8 +125,8 @@ int main(void)
     }
 
     printf(
-        "H1_BOOT=PASS mode=RFB_VISIBLE_INTERACTION_PCM_CAPABLE mpeg=0 "
-        "input=1 keyboard=1 osk=1 local_ui=1\n");
+        "H1_BOOT=PASS mode=CP2P_RFB_VISIBLE_INTERACTION_PCM_CAPABLE "
+        "mpeg_worker=0 input=1 keyboard=1 osk=1 local_ui=1\n");
 
     for (;;) {
         pstvnc_h1_transport_runtime_t transport;
@@ -133,7 +134,9 @@ int main(void)
         pstvnc_h1_audio_runtime_t audio;
         pstvnc_h1_media_clock_t clock;
         const pstvnc_h1_config_t *config;
+        pstvnc_h1_interaction_coordinator_t *interaction_view;
         int session_ok = 1;
+        int interaction_initialized = 0;
         int interaction_shutdown_failed = 0;
         int rfb_result_code = -1;
         int audio_active = 0;
@@ -141,7 +144,7 @@ int main(void)
 
         memset(&audio, 0, sizeof(audio));
         pstvnc_h1_rfb_session_runtime_init(&rfb);
-        pstvnc_h1_interaction_coordinator_init(&interaction);
+        interaction_view = &cp2p.interaction;
 
         printf(
             "H1_WAITING_FOR_SESSION completed=%u\n",
@@ -173,8 +176,21 @@ int main(void)
             config->video_mode != PSTVNC_H1_VIDEO_OFF ||
             (config->audio_mode != PSTVNC_H1_AUDIO_OFF &&
              config->audio_mode != PSTVNC_H1_AUDIO_PCM)) {
-            printf("H1_CP2O=PROFILE_REJECT_NOT_VISIBLE_RFB_OPTIONAL_PCM\n");
+            printf("H1_CP2P=PROFILE_REJECT_NOT_VISIBLE_RFB_OPTIONAL_PCM\n");
             session_ok = 0;
+        }
+
+        if (session_ok) {
+            if (!pstvnc_h1_cp2p_session_coordinator_init(
+                    &cp2p,
+                    &transport,
+                    h1_cp2p_clear_dormant_mpeg,
+                    NULL)) {
+                printf("H1_CP2P=SESSION_COORDINATOR_INIT_FAIL\n");
+                session_ok = 0;
+            } else {
+                interaction_initialized = 1;
+            }
         }
 
         pstvnc_h1_media_clock_init(&clock, config->media_epoch_lead_us);
@@ -200,22 +216,20 @@ int main(void)
                 pstvnc_h1_rfb_session_runtime_run_with_flow_policy(
                     &rfb,
                     &transport,
-                    pstvnc_h1_interaction_coordinator_present,
-                    &interaction,
-                    pstvnc_h1_interaction_coordinator_service,
-                    &interaction,
-                    pstvnc_h1_interaction_coordinator_rfb_policy(
-                        &interaction));
+                    pstvnc_h1_cp2p_session_coordinator_present,
+                    &cp2p,
+                    pstvnc_h1_cp2p_session_coordinator_service,
+                    &cp2p,
+                    pstvnc_h1_cp2p_session_coordinator_rfb_policy(&cp2p));
 
-            /* Preserve RFB/quiesce diagnostic authority if audio census samples
-             * update the shared diagnostic word while PCM drains afterward. */
             rfb_diagnostic_word = transport.diagnostic_word;
 
-            if (pstvnc_h1_interaction_coordinator_shutdown(&interaction) < 0) {
-                printf("H1_CP2O=INTERACTION_SHUTDOWN_UNPROVEN\n");
+            if (pstvnc_h1_cp2p_session_coordinator_shutdown(&cp2p) < 0) {
+                printf("H1_CP2P=INTERACTION_SHUTDOWN_UNPROVEN\n");
                 interaction_shutdown_failed = 1;
                 session_ok = 0;
             }
+            interaction_initialized = 0;
 
             if (rfb_result_code < 0) {
                 printf(
@@ -229,7 +243,7 @@ int main(void)
                     (unsigned int)rfb.stats.incremental_updates_complete,
                     (unsigned int)rfb.stats.application_service_calls,
                     (unsigned int)pstvnc_input_runtime_last_error(
-                        &interaction.input_runtime));
+                        &interaction_view->input_runtime));
                 session_ok = 0;
             } else if (h1_cp2o_wait_for_transport_end(&transport) < 0) {
                 printf(
@@ -256,19 +270,28 @@ int main(void)
                     (unsigned int)rfb.stats.incremental_presentations,
                     (unsigned int)rfb.stats.idle_polls,
                     (unsigned int)rfb.stats.application_service_calls,
-                    (unsigned int)interaction.stats.controller_state_events_consumed,
-                    (unsigned int)interaction.stats.mouse_update_events_consumed,
-                    (unsigned int)interaction.stats.pointer_messages_sent,
-                    (unsigned int)interaction.stats.wheel_pulses_sent,
-                    (unsigned int)interaction.stats.keyboard_taps_published,
-                    (unsigned int)interaction.stats.key_messages_sent,
-                    (unsigned int)interaction.stats.osk_open_count,
-                    (unsigned int)interaction.stats.osk_close_count,
-                    (unsigned int)interaction.stats.local_presentations,
+                    (unsigned int)interaction_view->stats.controller_state_events_consumed,
+                    (unsigned int)interaction_view->stats.mouse_update_events_consumed,
+                    (unsigned int)interaction_view->stats.pointer_messages_sent,
+                    (unsigned int)interaction_view->stats.wheel_pulses_sent,
+                    (unsigned int)interaction_view->stats.keyboard_taps_published,
+                    (unsigned int)interaction_view->stats.key_messages_sent,
+                    (unsigned int)interaction_view->stats.osk_open_count,
+                    (unsigned int)interaction_view->stats.osk_close_count,
+                    (unsigned int)interaction_view->stats.local_presentations,
                     (unsigned int)rfb.stats.quiesce_boundary_sent,
                     (unsigned int)rfb.stats.quiesce_commit_observed,
                     (unsigned int)rfb.stats.quiesce_complete_sent);
             }
+        }
+
+        if (interaction_initialized) {
+            if (pstvnc_h1_cp2p_session_coordinator_shutdown(&cp2p) < 0) {
+                printf("H1_CP2P=INTERACTION_SHUTDOWN_UNPROVEN\n");
+                interaction_shutdown_failed = 1;
+                session_ok = 0;
+            }
+            interaction_initialized = 0;
         }
 
         if (audio_active && session_ok) {
@@ -332,7 +355,7 @@ int main(void)
             (unsigned int)completed_sessions);
 
         if (interaction_shutdown_failed) {
-            printf("H1_CP2O=HALT_UNPROVEN_INPUT_DORMANCY\n");
+            printf("H1_CP2P=HALT_UNPROVEN_INPUT_DORMANCY\n");
             SleepThread();
             return 22;
         }
