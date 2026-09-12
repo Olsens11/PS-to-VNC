@@ -41,7 +41,7 @@ jobs:
       - name: Prove immutable CP2O anchor and integrated CP2P target
         env:
           IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
-          CP2O_ANCHOR: f200949502480827a1aa244ec6bd474fc9512696
+          CP2O_ANCHOR: a9037fd12115d48113423394703dfb3e313631b7
           CP2O_ANCHOR_SHA256: 0f30ae41ac7cf77ddf7f0a9d8e2c40639b6cfd03d232363cca3799e79f6969ad
         run: |
           docker run --rm --entrypoint /bin/sh \
