@@ -22,6 +22,7 @@ jobs:
       - name: Apply exact item 10 source patch
         run: |
           set -euo pipefail
+          python3 experiments/media-harness-h1/.item10_preapply_fix.py
           python3 experiments/media-harness-h1/.item10_apply_existing.py
           git diff --check
 
@@ -133,6 +134,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -f \
+            experiments/media-harness-h1/.item10_preapply_fix.py \
             experiments/media-harness-h1/.item10_apply_existing.py \
             experiments/media-harness-h1/.item10_runner_methods.txt \
             .github/workflows/h1-cp2p-item10-apply.yml
