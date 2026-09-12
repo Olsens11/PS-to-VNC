@@ -92,6 +92,10 @@ start_test.write_text(text)
 session_test = cal / 'h1_cp2p_session_coordinator_test.c'
 text = session_test.read_text()
 text = text.replace(
+    '#include "../h1_cp2p_session_coordinator.h"\n',
+    '#include "../h1_cp2p_session_coordinator.h"\n#include "../h1_config.h"\n',
+)
+text = text.replace(
     '#include <stdio.h>\n#include <string.h>\n',
     '#include <stdint.h>\n#include <stdio.h>\n#include <string.h>\n',
 )
