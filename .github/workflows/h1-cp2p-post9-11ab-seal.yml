@@ -1,0 +1,39 @@
+name: H1 CP2P Post Item 9 11AB Seal
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-ps2-mpeg-worker
+    paths:
+      - .github/workflows/h1-cp2p-post9-11ab-seal.yml
+
+permissions:
+  contents: write
+
+jobs:
+  seal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/h1-cp2p-ps2-mpeg-worker
+          fetch-depth: 0
+      - name: Append item 11A and 11B refinement and remove staging files
+        shell: bash
+        run: |
+          set -euo pipefail
+          HISTORY=experiments/media-harness-h1/CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md
+          ENTRY=experiments/media-harness-h1/.tmp_post9_11ab_entry.md
+          EXPECTED_BLOB=515f709544e8bb8b4f7ba2d2558cd04ff39df1b2
+          test "$(git hash-object "$HISTORY")" = "$EXPECTED_BLOB"
+          cp "$HISTORY" /tmp/history.before
+          cat "$ENTRY" >> "$HISTORY"
+          cmp -n "$(stat -c %s /tmp/history.before)" /tmp/history.before "$HISTORY"
+          grep -Fq '## 38. Checklist refinement — item #11 is split into #11A and #11B' "$HISTORY"
+          git diff --check
+          git rm "$ENTRY" .github/workflows/h1-cp2p-post9-11ab-seal.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$HISTORY"
+          git commit -m "docs(h1): split lifecycle checklist into item 11A and 11B [skip ci]"
+          git push origin HEAD:experiment/h1-cp2p-ps2-mpeg-worker
