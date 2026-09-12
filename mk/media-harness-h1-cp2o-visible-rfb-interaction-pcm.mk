@@ -11,9 +11,11 @@
 # present/service symbols and wrapped by the calibration presenter; no src/
 # owner or permanent MPEG compositor is modified.
 
-BUILD_DIR := build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
-EE_BIN := $(BUILD_DIR)/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF
-H1_MAIN_SOURCE := experiments/media-harness-h1/h1_main_rfb_visible_interaction_pcm.c
+# Descendants such as CP2P may override only target identity/build placement
+# while inheriting this exact CP2O application composition.
+BUILD_DIR ?= build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
+EE_BIN ?= $(BUILD_DIR)/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF
+H1_MAIN_SOURCE ?= experiments/media-harness-h1/h1_main_rfb_visible_interaction_pcm.c
 
 CALIBRATION_DIR := experiments/media-harness-h1/mpeg_presentation_calibration
 CALIBRATION_HEADERS := $(wildcard $(CALIBRATION_DIR)/*.h)
