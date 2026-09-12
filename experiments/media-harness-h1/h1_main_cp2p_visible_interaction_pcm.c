@@ -183,14 +183,15 @@ int main(void)
                     &mpeg_worker)) {
                 printf("H1_CP2P=SESSION_COORDINATOR_INIT_FAIL\n");
                 session_ok = 0;
-            } else if (!pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(
-                    &cp2p,
-                    pstvnc_h1_cp2p_mpeg_worker_arm,
-                    &mpeg_worker)) {
-                printf("H1_CP2P=MPEG_WORKER_BIND_FAIL\n");
-                session_ok = 0;
             } else {
                 interaction_initialized = 1;
+                if (!pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(
+                        &cp2p,
+                        pstvnc_h1_cp2p_mpeg_worker_arm,
+                        &mpeg_worker)) {
+                    printf("H1_CP2P=MPEG_WORKER_BIND_FAIL\n");
+                    session_ok = 0;
+                }
             }
         }
 

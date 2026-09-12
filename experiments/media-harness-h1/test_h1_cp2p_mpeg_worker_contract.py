@@ -25,6 +25,9 @@ assert 'config->video_mode == PSTVNC_H1_VIDEO_OFF' in worker
 assert 'config->video_mode != PSTVNC_H1_VIDEO_MPEG2_ES' in worker
 assert 'PSTVNC_H1_VIDEO_OFF' in main and 'MPEG_WORKER_BIND_FAIL' in main
 assert 'filter-out $(BUILD_DIR)/h1_video_runtime.o' in mk
+assert 'EE_OBJS += $(BUILD_DIR)/h1_video_runtime_cp2p.o' not in mk
+assert 'owner_state != PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY' in coord
+assert 'worker->live_decode && pstvnc_h1_graphics_clear_video()' in worker
 
 with tempfile.TemporaryDirectory() as td:
     out = Path(td) / 'generated.c'

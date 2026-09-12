@@ -32,7 +32,6 @@ CP2P_SESSION_OBJECTS := \
 EXTRA_EE_OBJS += $(CP2P_CALIBRATION_OBJECTS) $(CP2P_SESSION_OBJECTS)
 # Replace the inherited standalone GS-owning runtime with the CP2P compositor runtime.
 EE_OBJS := $(filter-out $(BUILD_DIR)/h1_video_runtime.o,$(EE_OBJS))
-EE_OBJS += $(BUILD_DIR)/h1_video_runtime_cp2p.o
 $(EE_BIN): $(CP2P_CALIBRATION_OBJECTS) $(CP2P_SESSION_OBJECTS)
 
 # Build the explicit CP2P derivative while leaving CP2O's qualified main source

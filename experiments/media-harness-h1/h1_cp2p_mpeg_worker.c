@@ -176,7 +176,7 @@ int pstvnc_h1_cp2p_mpeg_worker_clear(void *context, uint32_t generation)
     if (!h1_cp2p_mpeg_worker_join(worker))
         return 0;
 
-    if (pstvnc_h1_graphics_clear_video() < 0)
+    if (worker->live_decode && pstvnc_h1_graphics_clear_video() < 0)
         return 0;
 
     memset(&worker->contract, 0, sizeof(worker->contract));

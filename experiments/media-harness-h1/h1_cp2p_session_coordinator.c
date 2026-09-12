@@ -270,10 +270,36 @@ pstvnc_h1_cp2p_session_coordinator_current_start_contract(
 int pstvnc_h1_cp2p_session_coordinator_shutdown(
     pstvnc_h1_cp2p_session_coordinator_t *coordinator)
 {
+    pstvnc_h1_mpeg_presentation_owner_state_t owner_state;
+    uint32_t generation;
     int result;
 
     if (coordinator == NULL || !coordinator->initialized)
         return -1;
+
+    owner_state = pstvnc_h1_mpeg_presentation_owner_state(
+        &coordinator->mpeg_handoff.owner);
+    generation = coordinator->mpeg_handoff.owner.generation;
+
+    if (owner_state != PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY) {
+        if (generation == 0u || coordinator->clear_mpeg == NULL ||
+            !coordinator->clear_mpeg(
+                coordinator->clear_mpeg_context, generation))
+            return -1;
+
+        if (owner_state == PSTVNC_H1_MPEG_PRESENTATION_WAIT_FIRST_FRAME) {
+            if (!pstvnc_h1_mpeg_start_handoff_abort_start(
+                    &coordinator->mpeg_handoff, generation))
+                return -1;
+        } else if (owner_state == PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED) {
+            if (!pstvnc_h1_mpeg_start_handoff_stop(
+                    &coordinator->mpeg_handoff, generation))
+                return -1;
+        } else {
+            return -1;
+        }
+        coordinator->current_start_contract_valid = 0;
+    }
 
     result = pstvnc_h1_interaction_coordinator_shutdown(
         &coordinator->interaction);
