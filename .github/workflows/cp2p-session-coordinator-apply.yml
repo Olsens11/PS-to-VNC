@@ -21,6 +21,7 @@ jobs:
         run: |
           python3 experiments/media-harness-h1/apply_cp2p_session_refactor.py
           python3 experiments/media-harness-h1/fix_cp2p_session_host_rule.py
+          python3 experiments/media-harness-h1/fix_cp2p_session_transport_typedef.py
 
       - name: Run strict host contracts
         shell: bash
@@ -60,6 +61,7 @@ jobs:
           test ! -e .github/workflows/cp2p-session-coordinator-apply.yml
           test ! -e experiments/media-harness-h1/apply_cp2p_session_refactor.py
           test ! -e experiments/media-harness-h1/fix_cp2p_session_host_rule.py
+          test ! -e experiments/media-harness-h1/fix_cp2p_session_transport_typedef.py
 
       - name: Commit proven refactor
         shell: bash
