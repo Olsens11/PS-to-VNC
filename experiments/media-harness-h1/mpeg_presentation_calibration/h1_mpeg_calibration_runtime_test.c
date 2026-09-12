@@ -92,6 +92,7 @@ static void test_entry_freezes_gate_and_exposes_render_plan(void)
     assert(result.consume_controller_state);
     assert(result.freeze_rfb_visuals);
     assert(result.calibration_visible);
+    assert(!result.accepted);
     assert(!pstvnc_h1_mpeg_calibration_runtime_allows_rfb_request(&runtime));
     assert(!pstvnc_h1_mpeg_calibration_runtime_allows_remote_present(&runtime));
     assert(!pstvnc_h1_mpeg_calibration_runtime_take_full_refresh(&runtime));
@@ -103,6 +104,68 @@ static void test_entry_freezes_gate_and_exposes_render_plan(void)
     assert(pstvnc_h1_mpeg_calibration_runtime_prepare_render_plan(
         &runtime, &plan));
     assert(plan.kind == PSTVNC_H1_MPEG_CAL_RENDER_EDIT);
+}
+
+static void test_accept_edge_is_exposed_once_with_committed_geometry(void)
+{
+    pstvnc_h1_mpeg_calibration_runtime_t runtime;
+    pstvnc_h1_mpeg_calibration_runtime_result_t result;
+    pstvnc_h1_mpeg_calibration_foreground_ops_t ops = test_ops();
+    runtime_test_ops_state_t ops_state = {{0}, 0};
+    pstvnc_controller_state_t state;
+    const pstvnc_mpeg_cal_region_t *committed;
+
+    pstvnc_h1_mpeg_calibration_runtime_init(&runtime, 704, 462);
+
+    state = controller(
+        PSTVNC_CONTROLLER_BUTTON_START |
+            PSTVNC_CONTROLLER_BUTTON_SELECT,
+        PSTVNC_CONTROLLER_BUTTON_START |
+            PSTVNC_CONTROLLER_BUTTON_SELECT,
+        0);
+    assert(pstvnc_h1_mpeg_calibration_runtime_service_controller(
+        &runtime, &state, &ops, &ops_state, &result));
+    assert(!result.accepted);
+
+    state = controller(
+        PSTVNC_CONTROLLER_BUTTON_CROSS,
+        PSTVNC_CONTROLLER_BUTTON_CROSS,
+        PSTVNC_CONTROLLER_BUTTON_START |
+            PSTVNC_CONTROLLER_BUTTON_SELECT);
+    assert(pstvnc_h1_mpeg_calibration_runtime_service_controller(
+        &runtime, &state, &ops, &ops_state, &result));
+    assert(!result.accepted);
+
+    state = controller(0, 0, PSTVNC_CONTROLLER_BUTTON_CROSS);
+    assert(pstvnc_h1_mpeg_calibration_runtime_service_controller(
+        &runtime, &state, &ops, &ops_state, &result));
+    assert(!result.accepted);
+
+    state = controller(
+        PSTVNC_CONTROLLER_BUTTON_CROSS,
+        PSTVNC_CONTROLLER_BUTTON_CROSS,
+        0);
+    assert(pstvnc_h1_mpeg_calibration_runtime_service_controller(
+        &runtime, &state, &ops, &ops_state, &result));
+    assert(result.consume_controller_state);
+    assert(result.freeze_rfb_visuals);
+    assert(!result.calibration_visible);
+    assert(result.accepted);
+
+    committed = pstvnc_h1_mpeg_calibration_runtime_committed_region(&runtime);
+    assert(committed != NULL);
+    assert(committed->x == 176);
+    assert(committed->y == 119);
+    assert(committed->width == 352);
+    assert(committed->height == 224);
+
+    /* Acceptance is an edge, not a level derived from committed geometry. */
+    state = controller(PSTVNC_CONTROLLER_BUTTON_CROSS, 0, 0);
+    assert(pstvnc_h1_mpeg_calibration_runtime_service_controller(
+        &runtime, &state, &ops, &ops_state, &result));
+    assert(!result.accepted);
+    assert(pstvnc_h1_mpeg_calibration_runtime_committed_region(&runtime) ==
+        committed);
 }
 
 static void test_cancel_thaws_only_after_release_and_requests_full_refresh(void)
@@ -134,6 +197,7 @@ static void test_cancel_thaws_only_after_release_and_requests_full_refresh(void)
     assert(result.consume_controller_state);
     assert(result.freeze_rfb_visuals);
     assert(!result.calibration_visible);
+    assert(!result.accepted);
     assert(!pstvnc_h1_mpeg_calibration_runtime_allows_rfb_request(&runtime));
 
     state = controller(0, 0, PSTVNC_CONTROLLER_BUTTON_CIRCLE);
@@ -141,6 +205,7 @@ static void test_cancel_thaws_only_after_release_and_requests_full_refresh(void)
         &runtime, &state, &ops, &ops_state, &result));
     assert(result.consume_controller_state);
     assert(!result.freeze_rfb_visuals);
+    assert(!result.accepted);
     assert(pstvnc_h1_mpeg_calibration_runtime_allows_rfb_request(&runtime));
     assert(pstvnc_h1_mpeg_calibration_runtime_allows_remote_present(&runtime));
     assert(ops_state.call_count == 4);
@@ -161,6 +226,7 @@ static void test_no_committed_geometry_before_accept(void)
 int main(void)
 {
     test_entry_freezes_gate_and_exposes_render_plan();
+    test_accept_edge_is_exposed_once_with_committed_geometry();
     test_cancel_thaws_only_after_release_and_requests_full_refresh();
     test_no_committed_geometry_before_accept();
 
