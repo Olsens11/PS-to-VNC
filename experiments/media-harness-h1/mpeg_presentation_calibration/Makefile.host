@@ -70,6 +70,17 @@ INTERACTION_BINDING_SOURCES = \
 	h1_mpeg_calibration_rfb_flow.c \
 	h1_mpeg_calibration_interaction_binding.c
 
+CP2P_RFB_FLOW_SOURCES = \
+	$(RUNTIME_SOURCES) \
+	h1_mpeg_calibration_rfb_schedule.c \
+	h1_mpeg_presentation_owner.c \
+	h1_mpeg_cp2p_rfb_flow.c
+
+RECALIBRATION_SOURCES = \
+	$(CP2P_RFB_FLOW_SOURCES) \
+	h1_mpeg_start_handoff.c \
+	h1_mpeg_recalibration.c
+
 CORE_TEST = mpeg_presentation_calibration_test
 ENTRY_HOLD_TEST = h1_mpeg_calibration_entry_hold_test
 PRESENTATION_OWNER_TEST = h1_mpeg_presentation_owner_test
@@ -86,10 +97,13 @@ RASTER_TEST = h1_mpeg_calibration_raster_test
 RUNTIME_TEST = h1_mpeg_calibration_runtime_test
 INTERACTION_BINDING_TEST = h1_mpeg_calibration_interaction_binding_test
 ACCEPT_EDGE_TEST = h1_mpeg_calibration_accept_edge_test
+CP2P_RFB_FLOW_TEST = h1_mpeg_cp2p_rfb_flow_test
+CP2P_RFB_RESTORATION_TEST = h1_mpeg_cp2p_rfb_restoration_test
+RECALIBRATION_TEST = h1_mpeg_recalibration_test
 
 .PHONY: test clean
 
-test: $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF_TEST) $(START_WIRE_TEST) $(START_TRANSPORT_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST) $(ACCEPT_EDGE_TEST)
+test: $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF_TEST) $(START_WIRE_TEST) $(START_TRANSPORT_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST) $(ACCEPT_EDGE_TEST) $(CP2P_RFB_FLOW_TEST) $(CP2P_RFB_RESTORATION_TEST) $(RECALIBRATION_TEST)
 	./$(CORE_TEST)
 	./$(ENTRY_HOLD_TEST)
 	./$(PRESENTATION_OWNER_TEST)
@@ -106,6 +120,9 @@ test: $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF
 	./$(RUNTIME_TEST)
 	./$(INTERACTION_BINDING_TEST)
 	./$(ACCEPT_EDGE_TEST)
+	./$(CP2P_RFB_FLOW_TEST)
+	./$(CP2P_RFB_RESTORATION_TEST)
+	./$(RECALIBRATION_TEST)
 	python3 h1_mpeg_calibration_live_wiring_test.py
 
 $(CORE_TEST): $(CORE_SOURCES) mpeg_presentation_calibration_test.c
@@ -156,5 +173,14 @@ $(INTERACTION_BINDING_TEST): $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_
 $(ACCEPT_EDGE_TEST): $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_accept_edge_test.c
 	$(CC) $(CFLAGS) -I. -Ihost_stubs -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_accept_edge_test.c -o $@
 
+$(CP2P_RFB_FLOW_TEST): $(CP2P_RFB_FLOW_SOURCES) h1_mpeg_cp2p_rfb_flow_test.c
+	$(CC) $(CFLAGS) -I. -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(CP2P_RFB_FLOW_SOURCES) h1_mpeg_cp2p_rfb_flow_test.c -o $@
+
+$(CP2P_RFB_RESTORATION_TEST): $(CP2P_RFB_FLOW_SOURCES) h1_mpeg_cp2p_rfb_restoration_test.c
+	$(CC) $(CFLAGS) -I. -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(CP2P_RFB_FLOW_SOURCES) h1_mpeg_cp2p_rfb_restoration_test.c -o $@
+
+$(RECALIBRATION_TEST): $(RECALIBRATION_SOURCES) h1_mpeg_recalibration_test.c
+	$(CC) $(CFLAGS) -I. -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(RECALIBRATION_SOURCES) h1_mpeg_recalibration_test.c -o $@
+
 clean:
-	rm -f $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF_TEST) $(START_WIRE_TEST) $(START_TRANSPORT_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST) $(ACCEPT_EDGE_TEST)
+	rm -f $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF_TEST) $(START_WIRE_TEST) $(START_TRANSPORT_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST) $(ACCEPT_EDGE_TEST) $(CP2P_RFB_FLOW_TEST) $(CP2P_RFB_RESTORATION_TEST) $(RECALIBRATION_TEST)

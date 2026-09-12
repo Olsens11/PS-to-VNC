@@ -1,0 +1,21 @@
+name: CP2P recalibration lifecycle diagnostic
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-recalibration-lifecycle
+
+permissions:
+  contents: read
+
+jobs:
+  host-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run strict MPEG calibration and recalibration contracts
+        shell: bash
+        run: |
+          set -o pipefail
+          make -C experiments/media-harness-h1/mpeg_presentation_calibration \
+            -f Makefile.host clean test
