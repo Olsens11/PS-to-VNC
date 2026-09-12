@@ -104,34 +104,32 @@ static int h1_configure_video_texture(
     unsigned int width,
     unsigned int height)
 {
-    if (h1_video_texture_configured) {
+    if (!h1_video_texture_configured) {
         /*
-         * Preserve the historical no-VRAM-reallocation contract. First CP2P
-         * qualification does not support active MPEG recalibration/resizing.
+         * Allocate one maximum-size VRAM backing store once. Each immutable MPEG
+         * generation may then choose a different valid source size without
+         * reallocating/leaking VRAM or inheriting dimensions from its predecessor.
          */
-        if (width != h1_video_source_width ||
-            height != h1_video_source_height)
-            return -1;
-
+        memset(&h1_video_texture, 0, sizeof(h1_video_texture));
+        h1_video_texture.PSM = GS_PSM_CT16;
         h1_video_texture.Mem = (u32 *)h1_video_linear;
-        return 0;
+        h1_video_texture.Filter = GS_FILTER_NEAREST;
+        h1_video_texture.VramClut = 0;
+        h1_video_texture.Vram = gsKit_vram_alloc(
+            display,
+            gsKit_texture_size(
+                H1_VIDEO_MAX_WIDTH,
+                H1_VIDEO_MAX_HEIGHT,
+                GS_PSM_CT16),
+            GSKIT_ALLOC_USERBUFFER);
+        h1_video_texture_configured = 1;
     }
 
-    memset(&h1_video_texture, 0, sizeof(h1_video_texture));
     h1_video_texture.Width = width;
     h1_video_texture.Height = height;
-    h1_video_texture.PSM = GS_PSM_CT16;
     h1_video_texture.Mem = (u32 *)h1_video_linear;
-    h1_video_texture.Filter = GS_FILTER_NEAREST;
-    h1_video_texture.VramClut = 0;
-    h1_video_texture.Vram = gsKit_vram_alloc(
-        display,
-        gsKit_texture_size(width, height, GS_PSM_CT16),
-        GSKIT_ALLOC_USERBUFFER);
-
     h1_video_source_width = width;
     h1_video_source_height = height;
-    h1_video_texture_configured = 1;
     return 0;
 }
 

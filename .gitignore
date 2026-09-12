@@ -1,2 +1,5 @@
 # Generated clean reconstruction build outputs.
 /build/
+
+# Strict host-contract executables are generated beside their C sources.
+/experiments/media-harness-h1/mpeg_presentation_calibration/*_test

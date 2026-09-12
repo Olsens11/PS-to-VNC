@@ -39,6 +39,16 @@ typedef struct pstvnc_h1_interaction_stats {
     uint32_t local_presentations;
 } pstvnc_h1_interaction_stats_t;
 
+/*
+ * Optional session-level gate for a matured START+SELECT calibration request.
+ * With no gate installed the legacy/CP2O behavior remains immediate entry.
+ * A gate may defer entry while an owning session performs prerequisites such as
+ * retiring MPEG and restoring one new full RFB frame.
+ */
+typedef int (*pstvnc_h1_interaction_calibration_entry_gate_fn)(
+    void *context,
+    int *enter_now);
+
 typedef struct pstvnc_h1_interaction_coordinator {
     pstvnc_input_runtime_t input_runtime;
     pstvnc_local_controller_t local_controller;
@@ -52,6 +62,12 @@ typedef struct pstvnc_h1_interaction_coordinator {
      */
     pstvnc_h1_mpeg_calibration_interaction_binding_t mpeg_calibration;
     pstvnc_h1_mpeg_calibration_entry_hold_t mpeg_calibration_entry_hold;
+
+    pstvnc_h1_interaction_calibration_entry_gate_fn calibration_entry_gate;
+    void *calibration_entry_gate_context;
+    pstvnc_mpeg_cal_region_t accepted_calibration_region;
+    unsigned calibration_entry_deferred : 1;
+    unsigned accepted_calibration_pending : 1;
 
     const pstvnc_framebuffer_t *current_framebuffer;
 
@@ -74,6 +90,24 @@ typedef struct pstvnc_h1_interaction_coordinator {
 
 void pstvnc_h1_interaction_coordinator_init(
     pstvnc_h1_interaction_coordinator_t *coordinator);
+
+/*
+ * Install an optional session-level calibration-entry gate. Pass NULL to restore
+ * immediate entry. This is configuration, not a transport callback; the
+ * interaction coordinator remains ignorant of MPEG generations and PSTV START.
+ */
+int pstvnc_h1_interaction_coordinator_set_calibration_entry_gate(
+    pstvnc_h1_interaction_coordinator_t *coordinator,
+    pstvnc_h1_interaction_calibration_entry_gate_fn gate,
+    void *gate_context);
+
+/*
+ * Consume the one-shot accepted calibration result captured from the existing
+ * calibration core. The copied region is the exact newly committed settings.
+ */
+int pstvnc_h1_interaction_coordinator_take_calibration_accept(
+    pstvnc_h1_interaction_coordinator_t *coordinator,
+    pstvnc_mpeg_cal_region_t *committed_region);
 
 /* H1 RFB complete-frame presentation callback. */
 int pstvnc_h1_interaction_coordinator_present(

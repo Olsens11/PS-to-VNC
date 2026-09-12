@@ -16,14 +16,14 @@
 
 /* Implemented by h1_transport_runtime.c around its existing send semaphore. */
 int pstvnc_h1_transport_send_frame_internal(
-    pstvnc_h1_transport_runtime_t *runtime,
+    struct pstvnc_h1_transport_runtime *runtime,
     uint8_t kind,
     uint8_t channel,
     const void *payload,
     size_t payload_length);
 
 int pstvnc_h1_mpeg_start_transport_send(
-    pstvnc_h1_transport_runtime_t *runtime,
+    struct pstvnc_h1_transport_runtime *runtime,
     uint32_t session_id,
     const pstvnc_h1_mpeg_start_contract_t *contract)
 {

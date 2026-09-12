@@ -15,10 +15,9 @@
 #include <stdint.h>
 
 struct pstvnc_h1_transport_runtime;
-typedef struct pstvnc_h1_transport_runtime pstvnc_h1_transport_runtime_t;
 
 int pstvnc_h1_mpeg_start_transport_send(
-    pstvnc_h1_transport_runtime_t *runtime,
+    struct pstvnc_h1_transport_runtime *runtime,
     uint32_t session_id,
     const pstvnc_h1_mpeg_start_contract_t *contract);
 

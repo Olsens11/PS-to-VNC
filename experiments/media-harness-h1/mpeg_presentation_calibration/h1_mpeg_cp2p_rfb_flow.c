@@ -7,6 +7,10 @@
  * Calibration thaw and first-frame/stop owner refresh obligations are consumed
  * only when both owners permit a request; coincident obligations collapse into
  * one nonincremental refresh.
+ *
+ * Recalibration may arm a tiny restoration watch. It records the exact request
+ * kind sent after the watch was armed, so an older in-flight FULL cannot be
+ * mistaken for the post-MPEG full-RFB restoration required before calibration.
  */
 #include "h1_mpeg_cp2p_rfb_flow.h"
 
@@ -72,21 +76,43 @@ static int cp2p_request_sent(
         return 0;
     }
 
-    return pstvnc_h1_mpeg_calibration_rfb_schedule_request_sent(
-        &flow->schedule,
-        request);
+    if (!pstvnc_h1_mpeg_calibration_rfb_schedule_request_sent(
+            &flow->schedule,
+            request))
+        return 0;
+
+    flow->outstanding_request = request;
+
+    if (flow->restoration_watch_armed &&
+        request == PSTVNC_H1_MPEG_CALIBRATION_RFB_REQUEST_FULL)
+        flow->restoration_full_request_sent = 1;
+
+    return 1;
 }
 
 static int cp2p_update_complete(void *context)
 {
     pstvnc_h1_mpeg_cp2p_rfb_flow_t *flow =
         (pstvnc_h1_mpeg_cp2p_rfb_flow_t *)context;
+    pstvnc_h1_mpeg_calibration_rfb_request_t completed_request;
 
     if (flow == NULL)
         return 0;
 
-    return pstvnc_h1_mpeg_calibration_rfb_schedule_update_complete(
-        &flow->schedule);
+    completed_request = flow->outstanding_request;
+
+    if (!pstvnc_h1_mpeg_calibration_rfb_schedule_update_complete(
+            &flow->schedule))
+        return 0;
+
+    flow->outstanding_request = PSTVNC_H1_MPEG_CALIBRATION_RFB_REQUEST_HOLD;
+
+    if (flow->restoration_watch_armed &&
+        flow->restoration_full_request_sent &&
+        completed_request == PSTVNC_H1_MPEG_CALIBRATION_RFB_REQUEST_FULL)
+        flow->restoration_full_refresh_complete = 1;
+
+    return 1;
 }
 
 static int cp2p_allow_present(void *context)
@@ -117,6 +143,8 @@ void pstvnc_h1_mpeg_cp2p_rfb_flow_init(
     memset(flow, 0, sizeof(*flow));
     flow->calibration_runtime = calibration_runtime;
     flow->presentation_owner = presentation_owner;
+    flow->outstanding_request =
+        PSTVNC_H1_MPEG_CALIBRATION_RFB_REQUEST_HOLD;
     pstvnc_h1_mpeg_calibration_rfb_schedule_init(&flow->schedule);
 }
 
@@ -136,5 +164,30 @@ int pstvnc_h1_mpeg_cp2p_rfb_flow_prepare_policy(
     policy->update_complete = cp2p_update_complete;
     policy->allow_present = cp2p_allow_present;
     policy->context = flow;
+    return 1;
+}
+
+void pstvnc_h1_mpeg_cp2p_rfb_flow_arm_restoration_watch(
+    pstvnc_h1_mpeg_cp2p_rfb_flow_t *flow)
+{
+    if (flow == NULL)
+        return;
+
+    flow->restoration_watch_armed = 1;
+    flow->restoration_full_request_sent = 0;
+    flow->restoration_full_refresh_complete = 0;
+}
+
+int pstvnc_h1_mpeg_cp2p_rfb_flow_take_restoration_complete(
+    pstvnc_h1_mpeg_cp2p_rfb_flow_t *flow)
+{
+    if (flow == NULL ||
+        !flow->restoration_watch_armed ||
+        !flow->restoration_full_refresh_complete)
+        return 0;
+
+    flow->restoration_watch_armed = 0;
+    flow->restoration_full_request_sent = 0;
+    flow->restoration_full_refresh_complete = 0;
     return 1;
 }
