@@ -1,0 +1,160 @@
+name: H1 CP2P hard-stop-only diagnostic build
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-hardstop-only-build
+    paths:
+      - '.github/workflows/h1-cp2p-hardstop-only-build.yml'
+      - 'experiments/media-harness-h1/**'
+      - 'experiments/audio-transport/common/**'
+      - 'mk/**'
+      - 'src/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run item10 and prior host contracts
+        working-directory: experiments/media-harness-h1
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            generate_h1_video_runtime_cp2p.py \
+            h1_mux_server_cumulative39_rfb_pcm_bridge.py \
+            h1_mux_server_cp2p_start_receiver.py \
+            h1_cp2p_mpeg_producer.py \
+            h1_cp2p_item10_activation_test.py
+
+          cc -std=c11 -Wall -Wextra -Werror \
+            -I. -I../audio-transport/common \
+            -Dpstvnc_h1_config_validate=pstvnc_h1_config_validate_inner \
+            -c h1_config.c -o /tmp/h1_config_inner.o
+          cc -std=c11 -Wall -Wextra -Werror \
+            -I. -I../audio-transport/common \
+            h1_config_cp2p_activation_gate.c \
+            h1_config_cp2p_activation_gate_test.c \
+            ../audio-transport/common/transport_protocol.c \
+            /tmp/h1_config_inner.o \
+            -o /tmp/h1_cp2p_item10_gate_test
+          /tmp/h1_cp2p_item10_gate_test
+          cc -std=c11 -Wall -Wextra -Werror \
+            -I. -I../audio-transport/common \
+            h1_config_rfb_pcm_activation_gate.c \
+            h1_config_rfb_pcm_activation_gate_test.c \
+            ../audio-transport/common/transport_protocol.c \
+            /tmp/h1_config_inner.o \
+            -o /tmp/h1_cp2o_gate_test
+          /tmp/h1_cp2o_gate_test
+
+          python3 h1_cp2p_start_receiver_test.py
+          python3 h1_rfb_pi_bridge_test.py
+          python3 h1_cp2p_rfb_suppression_test.py
+          python3 h1_cp2p_capture_geometry_test.py
+          python3 h1_cp2p_start_preparation_transaction_test.py
+          python3 h1_cp2p_retirement_control_test.py
+          python3 h1_cp2p_mpeg_producer_test.py
+          python3 h1_cp2p_item10_activation_test.py
+          make -C mpeg_presentation_calibration -f Makefile.host clean
+          make -C mpeg_presentation_calibration -f Makefile.host test
+          cc -std=c11 -Wall -Wextra -Werror \
+            -I../audio-transport/common \
+            ../audio-transport/common/transport_queue.c \
+            ../audio-transport/common/transport_queue_generation_boundary_test.c \
+            -o /tmp/h1_queue_generation_boundary_test
+          /tmp/h1_queue_generation_boundary_test
+          echo H1_CP2P_HARDSTOP_ONLY_HOST=PASS
+
+      - name: Prove no tracked source mutation
+        run: git diff --exit-code
+
+  ps2-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build CP2O regression and hard-stop-only CP2P candidate in pinned PS2DEV
+        env:
+          IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
+        run: |
+          set -euo pipefail
+          SOURCE_COMMIT=$(git rev-parse HEAD)
+          docker run --rm \
+            --entrypoint /bin/sh \
+            -e SOURCE_COMMIT="$SOURCE_COMMIT" \
+            -v "$PWD:/repo" \
+            -w /repo \
+            "$IMAGE" \
+            -lc '
+              set -eu
+              apk add --no-cache bash binutils make python3 >/dev/null
+              export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+              CP2O_BUILD=build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
+              CP2P_BUILD=build/experiments/media-harness-h1-cp2p-application-link/ps2
+              CP2O_ELF="$CP2O_BUILD/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF"
+              CP2P_ELF="$CP2P_BUILD/PS2VNC-H1-CP2P-ApplicationLink.ELF"
+              GENERATED="$CP2P_BUILD/generated-cp2p/h1_video_runtime_cp2p_generated.c"
+              rm -rf "$CP2O_BUILD" "$CP2P_BUILD"
+
+              make -f mk/media-harness-h1-cp2o-visible-rfb-interaction-pcm.mk
+              python3 experiments/media-harness-h1/check_rfb_pcm_interaction.py --build-dir "$CP2O_BUILD"
+              python3 experiments/media-harness-h1/check_rfb_mux_seam.py --build-dir "$CP2O_BUILD"
+              test -f "$CP2O_ELF"
+              echo H1_CP2O_HARDSTOP_ONLY_REGRESSION=PASS
+
+              make -f mk/media-harness-h1-cp2p-application-link.mk cp2p-application-link-check
+              python3 experiments/media-harness-h1/check_rfb_mux_seam.py --build-dir "$CP2P_BUILD"
+              test -f "$CP2P_ELF"
+              test -f "$GENERATED"
+              ! grep -Fq "session.transfer_packet == NULL" "$GENERATED"
+              ! grep -Fq "session.draw_packet == NULL" "$GENERATED"
+              grep -Fq "if (session.cancelled)" "$GENERATED"
+              grep -Fq "failure_latched" experiments/media-harness-h1/h1_cp2p_mpeg_worker.h
+              grep -Fq "mpeg_worker.failure_latched" experiments/media-harness-h1/h1_main_cp2p_visible_interaction_pcm.c
+
+              mips64r5900el-ps2-elf-nm "$CP2P_ELF" >/tmp/cp2p-hardstop-only-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_cp2p_mpeg_worker_arm$" /tmp/cp2p-hardstop-only-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_transport_mpeg_generation_open$" /tmp/cp2p-hardstop-only-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_transport_mpeg_retire_finalize$" /tmp/cp2p-hardstop-only-symbols.txt
+
+              echo H1_CP2P_HARDSTOP_ONLY_PS2=PASS
+              echo "SOURCE_COMMIT=$SOURCE_COMMIT"
+              sha256sum "$CP2P_ELF"
+              stat -c "ELF_BYTES=%s" "$CP2P_ELF"
+              ./scripts/testkit/pt-load-fingerprint.sh "$CP2P_ELF"
+            '
+
+      - name: Stage diagnostic artifact and identity
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/h1-hardstop-only-artifact
+          ELF=build/experiments/media-harness-h1-cp2p-application-link/ps2/PS2VNC-H1-CP2P-ApplicationLink.ELF
+          cp "$ELF" /tmp/h1-hardstop-only-artifact/PS2VNC-H1-CP2P-HardStopOnly.ELF
+          {
+            echo "SOURCE_COMMIT=$(git rev-parse HEAD)"
+            echo "SOURCE_BASE=4c2d08ea28fe5c1d462f078ae688a24515914d25"
+            echo "DIAGNOSTIC_SOURCE_COMMIT=fb42f1545e2a2c1af1b85251ae454f7ffd1b914e"
+            sha256sum /tmp/h1-hardstop-only-artifact/PS2VNC-H1-CP2P-HardStopOnly.ELF
+            stat -c "ELF_BYTES=%s" /tmp/h1-hardstop-only-artifact/PS2VNC-H1-CP2P-HardStopOnly.ELF
+          } | tee /tmp/h1-hardstop-only-artifact/identity.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: h1-cp2p-hardstop-only-unqualified-elf
+          path: /tmp/h1-hardstop-only-artifact/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Prove no tracked source mutation
+        run: git diff --exit-code
