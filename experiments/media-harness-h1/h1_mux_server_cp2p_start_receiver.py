@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
 """
 File synopsis:
-    CP2P Pi runner for items #5/#6: visible RFB + optional PCM, immutable MPEG
-    START receive/validation, and generation-scoped Pi-side RFB suppression.
+    CP2P Pi runner for items #5/#6/#7: visible RFB + optional PCM, immutable
+    MPEG START receive/validation, generation-scoped Pi-side RFB suppression,
+    and exact START-derived capture-geometry preparation.
 
-The runner still preserves one physical PSTV socket and one H1 reader thread.
-It substitutes a CP2P-only upstream RFB bridge while leaving the qualified CP2O
+The runner preserves one physical PSTV socket and one H1 reader thread. It
+substitutes a CP2P-only upstream RFB bridge while leaving the qualified CP2O
 bridge implementation untouched. START first becomes immutable prepared state,
-then installs one pending suppression generation. Suppression becomes active
-immediately before the first NEW FramebufferUpdateRequest after START, so any
-older request already outstanding at calibration acceptance may finish normally
-while PS2 presentation remains frozen in WAIT_FIRST_FRAME.
+then installs one pending suppression generation, then prepares the exact
+capture plan from that same immutable START.
 
-MPEG production is still dormant here. No ffmpeg process or MPEG DATA is started
-by this checkpoint; exact-region capture/producer activation remains ordered
-after suppression.
+Suppression becomes active immediately before the first NEW
+FramebufferUpdateRequest after START, so any older request already outstanding
+at calibration acceptance may finish normally while PS2 presentation remains
+frozen in WAIT_FIRST_FRAME.
+
+MPEG production is still dormant here. The FFmpeg command is prepared and saved
+to evidence but no process or MPEG DATA is started; producer activation remains
+item #8 and must consume this exact generation only after suppression is ready.
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ from __future__ import annotations
 import json
 
 import h1_mux_server_cumulative39_rfb_pcm_bridge as cp2o
+from h1_cp2p_capture_geometry import H1Cp2pCapturePlan, prepare_exact_capture_plan
 from h1_cp2p_rfb_suppression import (
     H1Cp2pRfbPiBridge,
     open_cp2p_rfb_session_adapter,
@@ -38,11 +43,12 @@ _ParentSession = cp2o.H1Cumulative39RfbPcmSession
 
 
 class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
-    """Item-#5 START authority plus item-#6 suppression installation."""
+    """START authority plus ordered suppression and exact capture preparation."""
 
     def __init__(self, session, suppression_bridge: H1Cp2pRfbPiBridge) -> None:
         super().__init__(session)
         self.suppression_bridge = suppression_bridge
+        self.capture_plan: H1Cp2pCapturePlan | None = None
 
     def _handle_start_frame(self, frame: base.Frame) -> None:
         super()._handle_start_frame(frame)
@@ -52,10 +58,17 @@ class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
 
         try:
             self.suppression_bridge.install_suppression(request)
+            self.capture_plan = prepare_exact_capture_plan(
+                request,
+                desktop_width=self.suppression_bridge.desktop_width,
+                desktop_height=self.suppression_bridge.desktop_height,
+                display=self.session.display,
+            )
         except BaseException:
             # The generation number remains stale/high-water in item-#5 state,
             # but no failed setup may remain prepared for later producer start.
             self.release_prepared_exact(request.generation)
+            self.capture_plan = None
             raise
 
         suppression_evidence = {
@@ -80,9 +93,20 @@ class H1Cp2pSuppressionStartReceiver(H1Cp2pStartReceiver):
             flush=True,
         )
 
+        capture_evidence = self.capture_plan.to_dict()
+        capture_evidence["state"] = "prepared-producer-dormant"
+        (self.session.evidence / "mpeg_capture_prepared.json").write_text(
+            json.dumps(capture_evidence, indent=2, sort_keys=True) + "\n"
+        )
+        print(
+            "H1_CP2P_MPEG_CAPTURE_PREPARED="
+            + json.dumps(capture_evidence, sort_keys=True),
+            flush=True,
+        )
+
 
 class H1Cp2pStartReceiveSession(_ParentSession):
-    """CP2O transport/presentation baseline plus START and Pi suppression."""
+    """CP2O baseline plus START, Pi suppression, and exact capture preparation."""
 
     def __init__(
         self,
