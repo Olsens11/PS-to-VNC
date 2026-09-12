@@ -17,8 +17,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply one-shot item 8 patch
-        run: python3 experiments/media-harness-h1/.item8_patch.py
+      - name: Apply corrected one-shot item 8 patch
+        run: |
+          python3 experiments/media-harness-h1/.item8_patch_fix.py
+          python3 experiments/media-harness-h1/.item8_patch.py
 
       - name: Compile and prove Pi CP2P contracts
         working-directory: experiments/media-harness-h1
@@ -79,8 +81,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply one-shot item 8 patch
-        run: python3 experiments/media-harness-h1/.item8_patch.py
+      - name: Apply corrected one-shot item 8 patch
+        run: |
+          python3 experiments/media-harness-h1/.item8_patch_fix.py
+          python3 experiments/media-harness-h1/.item8_patch.py
       - name: Build linked CP2P PS2 target in pinned PS2DEV image
         env:
           IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
