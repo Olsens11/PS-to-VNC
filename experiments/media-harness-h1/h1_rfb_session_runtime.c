@@ -258,8 +258,6 @@ static int h1_rfb_run(
 {
     if (runtime == NULL || transport == NULL ||
         transport->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
-        transport->config.audio_mode != PSTVNC_H1_AUDIO_OFF ||
-        transport->config.video_mode != PSTVNC_H1_VIDEO_OFF ||
         !transport->rfb_resources.active ||
         !h1_rfb_flow_policy_valid(flow_policy))
         return -1;
