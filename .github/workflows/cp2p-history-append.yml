@@ -1,0 +1,27 @@
+name: Append CP2P recalibration history
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-recalibration-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  append-history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Append chronological experiment history
+        shell: bash
+        env:
+          HISTORY_B64: "Ci0tLQoKIyBQS...
+        run: |
+          set -eu
+          printf '%s' "$HISTORY_B64" | base64 -d >> experiments/media-harness-h1/CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md
+          git config user.name 'Olsens11'
+          git config user.email '39144541+Olsens11@users.noreply.github.com'
+          git add experiments/media-harness-h1/CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md
+          git commit -m 'docs(h1): record CP2P recalibration lifecycle wiring'
+          git push origin HEAD:experiment/h1-cp2p-recalibration-lifecycle
