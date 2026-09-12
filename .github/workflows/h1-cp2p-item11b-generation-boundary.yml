@@ -1,5 +1,4 @@
-name: H1 CP2P Item 11B Generation Boundary
-# Final committed-source verification trigger for item #11B.
+name: H1 CP2P Item 11B Seal
 
 on:
   push:
@@ -10,120 +9,37 @@ permissions:
   contents: write
 
 jobs:
-  host-contracts:
+  seal:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Apply corrected one-shot item 11B patch
-        run: |
-          python3 experiments/media-harness-h1/.item11b_patch_fix.py
-          python3 experiments/media-harness-h1/.item11b_patch.py
-
-      - name: Prove shared queue generation discard
-        run: |
-          cc -std=c99 -Wall -Wextra -Werror \
-            -Iexperiments/audio-transport/common \
-            experiments/audio-transport/common/transport_queue.c \
-            experiments/audio-transport/common/transport_queue_generation_boundary_test.c \
-            -o /tmp/h1_queue_generation_boundary_test
-          /tmp/h1_queue_generation_boundary_test
-
-      - name: Prove Pi generation emission fence and prior contracts
-        working-directory: experiments/media-harness-h1
-        run: |
-          python3 -m py_compile \
-            h1_cp2p_mpeg_producer.py \
-            h1_cp2p_mpeg_producer_test.py \
-            h1_cp2p_start_receiver.py \
-            h1_cp2p_rfb_suppression.py \
-            h1_cp2p_capture_geometry.py \
-            h1_cp2p_retirement_control.py \
-            h1_mux_server_cp2p_start_receiver.py
-          python3 h1_cp2p_start_receiver_test.py
-          python3 h1_rfb_pi_bridge_test.py
-          python3 h1_cp2p_rfb_suppression_test.py
-          python3 h1_cp2p_capture_geometry_test.py
-          python3 h1_cp2p_start_preparation_transaction_test.py
-          python3 h1_cp2p_retirement_control_test.py
-          python3 h1_cp2p_mpeg_producer_test.py
-
-      - name: Prove coordinator ordering and full calibration regressions
-        working-directory: experiments/media-harness-h1/mpeg_presentation_calibration
-        run: |
-          make -f Makefile.host clean
-          make -f Makefile.host test
-
-      - name: Prove #11B source boundary and #10 remains closed
+      - name: Promote item 11B authorities and remove temporary machinery
+        run: python3 experiments/media-harness-h1/.item11b_seal.py
+      - name: Verify sealed state
         run: |
           set -euo pipefail
-          grep -Fq 'TCP/PSTV order makes this ACK the wire fence' experiments/media-harness-h1/h1_transport_runtime.c
-          grep -Fq 'pstvnc_h1_transport_mpeg_retire_finalize' experiments/media-harness-h1/h1_transport_runtime.c
-          grep -Fq 'pstvnc_transport_queue_discard_all' experiments/media-harness-h1/h1_transport_runtime.c
-          grep -Fq 'Close scheduler admission first and wait out any send' experiments/media-harness-h1/h1_cp2p_mpeg_producer.py
-          grep -Fq 'coordinator->pi_retire_pending' experiments/media-harness-h1/h1_cp2p_session_coordinator.c
-          grep -Fq 'h1_cp2p_session_clear_mpeg_after_pi_retire' experiments/media-harness-h1/h1_cp2p_session_coordinator.c
-          if grep -Fq 'open_emission_exact(' experiments/media-harness-h1/h1_mux_server_cp2p_start_receiver.py; then
-            echo '#10 gate leaked: CP2P runner opens MPEG emission during #11B' >&2
-            exit 1
-          fi
-          grep -Fq 'CP2O runner requires MPEG/video OFF' experiments/media-harness-h1/h1_mux_server_cumulative39_rfb_pcm_bridge.py
-          grep -Fq 'config->video_mode != PSTVNC_H1_VIDEO_OFF' experiments/media-harness-h1/h1_main_cp2p_visible_interaction_pcm.c
-          echo H1_CP2P_ITEM11B_PUBLIC_GATE=CLOSED
-
-      - name: Verify patch cleanliness
-        run: |
+          CONTRACT=experiments/audio-transport/pi/H1_CP2P_DAEMON_CONTRACT.md
+          HISTORY=experiments/media-harness-h1/CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md
+          grep -Fq 'item #11B live cross-machine MPEG generation boundary is DONE at the pre-public-gate software boundary' "$CONTRACT"
+          grep -Fq '14d2b5fc68e11756356af397cfe3766e03c89008' "$CONTRACT"
+          grep -Fq '34713445142' "$CONTRACT"
+          grep -Fq '4f36d9b742598aa64c0bdd15b436ddc1d558b88278139a9a0edc19aa1e2f7ffd' "$CONTRACT"
+          test "$(grep -c '^## 42\. Item #11B' "$HISTORY")" -eq 1
+          grep -Fq '**one queue, one socket, one receiver, one writer, and an ordered epoch boundary**' "$HISTORY"
+          grep -Fq 'Preferred remaining order is **#10 -> #12**' "$HISTORY"
+          for path in .github/workflows/h1-cp2p-item11b-generation-boundary.yml experiments/media-harness-h1/.item11b_patch.py experiments/media-harness-h1/.item11b_patch_fix.py experiments/media-harness-h1/.item11b_seal.py; do
+            test ! -e "$path"
+          done
           git diff --check
           git status --short
-
-      - name: Commit implementation when patch changed the tree
+          echo H1_CP2P_ITEM11B_SEALED_STATE=PASS
+      - name: Commit seal
         run: |
           set -euo pipefail
-          if git diff --quiet; then
-            echo ITEM11B_COMMIT=ALREADY_PRESENT
-            exit 0
-          fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'h1: add exact live MPEG generation boundary'
+          git commit -m 'docs(h1): seal CP2P item 11B checkpoint'
           git push origin HEAD:experiment/h1-cp2p-live-generation-boundary
-
-  ps2-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Apply corrected one-shot item 11B patch
-        run: |
-          python3 experiments/media-harness-h1/.item11b_patch_fix.py
-          python3 experiments/media-harness-h1/.item11b_patch.py
-      - name: Build linked CP2P PS2 target in pinned PS2DEV image
-        env:
-          IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
-        run: |
-          docker run --rm \
-            --entrypoint /bin/sh \
-            -v "$PWD:/repo" \
-            -w /repo \
-            "$IMAGE" \
-            -lc '
-              set -eu
-              apk add --no-cache bash binutils make python3 >/dev/null
-              export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-              BUILD=build/experiments/media-harness-h1-cp2p-application-link/ps2
-              ELF="$BUILD/PS2VNC-H1-CP2P-ApplicationLink.ELF"
-              rm -rf "$BUILD"
-              make -f mk/media-harness-h1-cp2p-application-link.mk cp2p-application-link-check
-              mips64r5900el-ps2-elf-nm "$ELF" > item11b-symbols.txt
-              grep -Eq "[[:space:]]pstvnc_h1_transport_mpeg_generation_open$" item11b-symbols.txt
-              grep -Eq "[[:space:]]pstvnc_h1_transport_mpeg_generation_abort$" item11b-symbols.txt
-              grep -Eq "[[:space:]]pstvnc_h1_transport_mpeg_retire_finalize$" item11b-symbols.txt
-              grep -Eq "[[:space:]]pstvnc_transport_queue_discard_all$" item11b-symbols.txt
-              grep -Eq "[[:space:]]pstvnc_h1_cp2p_mpeg_worker_arm$" item11b-symbols.txt
-              echo H1_CP2P_ITEM11B_PS2_LINK=PASS
-              sha256sum "$ELF"
-              stat -c "ELF_BYTES=%s" "$ELF"
-              ./scripts/testkit/pt-load-fingerprint.sh "$ELF"
-            '
