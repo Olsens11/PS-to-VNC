@@ -1,0 +1,21 @@
+name: H1 CP2P start-wire branch check
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-start-wire-accepted
+
+permissions:
+  contents: read
+
+jobs:
+  calibration-host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run strict MPEG calibration host contracts
+        shell: bash
+        run: |
+          set -eu
+          make -C experiments/media-harness-h1/mpeg_presentation_calibration \
+            -f Makefile.host clean test
