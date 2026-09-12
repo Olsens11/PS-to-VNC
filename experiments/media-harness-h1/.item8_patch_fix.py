@@ -12,5 +12,13 @@ new = '''insert_marker = "    def test_wrong_generation_never_cleans_or_acknowle
 
 if text.count(old) != 1:
     raise SystemExit("item8 staged retirement block no longer matches expected draft")
-path.write_text(text.replace(old, new, 1))
+text = text.replace(old, new, 1)
+
+old_message = "CP2P RETIRE found live MPEG producer without generation owner"
+new_message = "CP2P RETIRE cannot acknowledge while MPEG producer is live without generation owner"
+if text.count(old_message) != 1:
+    raise SystemExit("item8 staged legacy-producer diagnostic no longer matches")
+text = text.replace(old_message, new_message, 1)
+
+path.write_text(text)
 print("ITEM8_PATCH_FIX=PASS")
