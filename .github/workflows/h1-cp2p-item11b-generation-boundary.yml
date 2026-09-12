@@ -1,4 +1,5 @@
 name: H1 CP2P Item 11B Generation Boundary
+# Final committed-source verification trigger for item #11B.
 
 on:
   push:
