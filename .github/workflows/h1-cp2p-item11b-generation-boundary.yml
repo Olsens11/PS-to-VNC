@@ -16,8 +16,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply one-shot item 11B patch
-        run: python3 experiments/media-harness-h1/.item11b_patch.py
+      - name: Apply corrected one-shot item 11B patch
+        run: |
+          python3 experiments/media-harness-h1/.item11b_patch_fix.py
+          python3 experiments/media-harness-h1/.item11b_patch.py
 
       - name: Prove shared queue generation discard
         run: |
@@ -60,6 +62,8 @@ jobs:
           grep -Fq 'pstvnc_h1_transport_mpeg_retire_finalize' experiments/media-harness-h1/h1_transport_runtime.c
           grep -Fq 'pstvnc_transport_queue_discard_all' experiments/media-harness-h1/h1_transport_runtime.c
           grep -Fq 'Close scheduler admission first and wait out any send' experiments/media-harness-h1/h1_cp2p_mpeg_producer.py
+          grep -Fq 'coordinator->pi_retire_pending' experiments/media-harness-h1/h1_cp2p_session_coordinator.c
+          grep -Fq 'h1_cp2p_session_clear_mpeg_after_pi_retire' experiments/media-harness-h1/h1_cp2p_session_coordinator.c
           if grep -Fq 'open_emission_exact(' experiments/media-harness-h1/h1_mux_server_cp2p_start_receiver.py; then
             echo '#10 gate leaked: CP2P runner opens MPEG emission during #11B' >&2
             exit 1
@@ -90,8 +94,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply one-shot item 11B patch
-        run: python3 experiments/media-harness-h1/.item11b_patch.py
+      - name: Apply corrected one-shot item 11B patch
+        run: |
+          python3 experiments/media-harness-h1/.item11b_patch_fix.py
+          python3 experiments/media-harness-h1/.item11b_patch.py
       - name: Build linked CP2P PS2 target in pinned PS2DEV image
         env:
           IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
