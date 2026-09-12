@@ -1,0 +1,80 @@
+name: H1 CP2P Item 11A Apply
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-pi-retirement-control
+    paths:
+      - .github/workflows/h1-cp2p-item11a-apply.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-host-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply exact item 11A source patch
+        run: |
+          set -euo pipefail
+          python3 experiments/media-harness-h1/.item11a_apply.py
+          git diff --check
+
+      - name: Compile and prove Pi contracts
+        working-directory: experiments/media-harness-h1
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            h1_cp2p_retirement_control.py \
+            h1_cp2p_start_receiver.py \
+            h1_cp2p_rfb_suppression.py \
+            h1_cp2p_capture_geometry.py \
+            h1_mux_server_cp2p_start_receiver.py \
+            h1_cp2p_retirement_control_test.py
+          python3 h1_cp2p_start_receiver_test.py
+          python3 h1_rfb_pi_bridge_test.py
+          python3 h1_cp2p_rfb_suppression_test.py
+          python3 h1_cp2p_capture_geometry_test.py
+          python3 h1_cp2p_start_preparation_transaction_test.py
+          python3 h1_cp2p_retirement_control_test.py
+          echo H1_CP2P_ITEM11A_PI_HOST=PASS
+
+      - name: Prove complete calibration/session host suite
+        working-directory: experiments/media-harness-h1/mpeg_presentation_calibration
+        run: |
+          set -euo pipefail
+          make -f Makefile.host clean
+          make -f Makefile.host test
+          echo H1_CP2P_ITEM11A_COORDINATOR_HOST=PASS
+
+      - name: Assert retirement architecture boundary
+        run: |
+          set -euo pipefail
+          grep -Fq '#define PSTVNC_H1_FRAME_MPEG_RETIRE 10u' experiments/media-harness-h1/h1_transport_runtime.h
+          grep -Fq 'PSTVNC_TRANSPORT_CHANNEL_CONTROL' experiments/media-harness-h1/h1_transport_runtime.c
+          grep -Fq 'mpeg_retire_pending_generation' experiments/media-harness-h1/h1_transport_runtime.h
+          grep -Fq 'pi_retire_pending' experiments/media-harness-h1/h1_cp2p_session_coordinator.c
+          grep -Fq 'MPEG_RETIRE_FRAME_KIND = 10' experiments/media-harness-h1/h1_cp2p_retirement_control.py
+          grep -Fq 'retire_suppression_exact' experiments/media-harness-h1/h1_mux_server_cp2p_start_receiver.py
+          if grep -Eq 'socket\(|threading\.Thread|receive_frame\(' experiments/media-harness-h1/h1_cp2p_retirement_control.py; then
+            echo 'retirement codec unexpectedly owns transport/threading' >&2
+            exit 1
+          fi
+          echo H1_CP2P_ITEM11A_SINGLE_READER_CONTROL=PASS
+
+      - name: Commit durable item 11A implementation
+        run: |
+          set -euo pipefail
+          rm -f experiments/media-harness-h1/.item11a_apply.py .github/workflows/h1-cp2p-item11a-apply.yml
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git status --short
+          git commit -m 'h1: add exact Pi MPEG retirement completion control'
+          git push origin HEAD:experiment/h1-cp2p-pi-retirement-control
