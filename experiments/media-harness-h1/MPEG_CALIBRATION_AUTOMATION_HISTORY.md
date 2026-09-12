@@ -76,3 +76,11 @@ The flattened state handoff created on 2026-09-12 has been preserved as:
 `experiments/media-harness-h1/MPEG_CALIBRATION_CURRENT_STATE.md`
 
 That file is a current-state aid only. It is not a substitute for this historical timeline or for the exact automation snapshots in Git history.
+
+## Master experiment-history pointer — appended 2026-09-12
+
+The automation is one phase of a larger continuous experimental drive. The canonical chronological history spanning the pre-automation lead-up, these automation snapshots, the subsequent live sessions, the CP2P source archaeology, and the current accepted-edge/START-wire work is:
+
+`experiments/media-harness-h1/CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md`
+
+That master file follows the same temporal-truth rule as this index: earlier contemporaneous entries remain historical evidence even when later entries supersede their technical understanding.
