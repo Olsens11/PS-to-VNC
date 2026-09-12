@@ -33,6 +33,14 @@ _ParentSession = rfb_base._ParentSession
 class H1Cumulative39RfbPcmSession(_ParentSession):
     """Visible cumulative RFB with optional canonical PCM and no MPEG."""
 
+    def _validate_composition_policy(self, profile: dict[str, int]) -> None:
+        if int(profile["rfb_mode"]) != 2:
+            raise base.ProtocolError("CP2O runner requires visible RFB mode 2")
+        if int(profile["video_mode"]) != 0:
+            raise base.ProtocolError("CP2O runner requires MPEG/video OFF")
+        if int(profile["audio_mode"]) not in (0, base.AUDIO_PCM):
+            raise base.ProtocolError("CP2O runner permits only audio OFF or PCM")
+
     def __init__(
         self,
         sock,
@@ -44,12 +52,7 @@ class H1Cumulative39RfbPcmSession(_ParentSession):
         super().__init__(sock, profile, evidence, duration, display)
         self.rfb_session_adapter: H1RfbSessionAdapter | None = None
 
-        if int(profile["rfb_mode"]) != 2:
-            raise base.ProtocolError("CP2O runner requires visible RFB mode 2")
-        if int(profile["video_mode"]) != 0:
-            raise base.ProtocolError("CP2O runner requires MPEG/video OFF")
-        if int(profile["audio_mode"]) not in (0, base.AUDIO_PCM):
-            raise base.ProtocolError("CP2O runner permits only audio OFF or PCM")
+        self._validate_composition_policy(profile)
 
         host, port = rfb_base._rfb_upstream()
         kwargs = {"host": host, "port": port}

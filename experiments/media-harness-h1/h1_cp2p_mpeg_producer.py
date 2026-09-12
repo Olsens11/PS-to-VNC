@@ -8,11 +8,11 @@ suppression, and an exact START-derived capture plan before this owner is called
 This module launches that exact FFmpeg command and owns the process/stdout spool
 until exact retirement.
 
-The public item-#10 MPEG CONFIG gate deliberately remains closed. Therefore this
-owner does NOT write PSTV frames and does not consume MPEG channel credit. Output
-is archived and held in the existing bounded ProducerBuffer; when its bounded
-unsent queue fills, normal pipe/TCP-style backpressure stalls FFmpeg rather than
-creating an unbounded queue.
+This owner never writes PSTV frames or consumes MPEG credit directly. Item #10's
+session scheduler may open one exact-generation emission lease after the public
+CP2P CONFIG gate and matching START are both valid. Output remains archived and
+bounded by the existing ProducerBuffer; backpressure still stalls FFmpeg rather
+than creating an unbounded queue.
 
 Retirement is exact-generation and stronger than merely signaling FFmpeg. It
 requests process stop, drains/discards every locally buffered unsent MPEG byte so
@@ -113,6 +113,7 @@ class H1Cp2pMpegProducer:
         self._emission_condition = threading.Condition()
         self._emission_open = False
         self._emission_in_flight = 0
+        self._emission_retiring = False
 
     def active_generation(self) -> int:
         return int(self.generation)
@@ -135,6 +136,7 @@ class H1Cp2pMpegProducer:
                 or self.generation != generation
                 or self._emission_open
                 or self._emission_in_flight != 0
+                or self._emission_retiring
             ):
                 raise base.ProtocolError(
                     "CP2P MPEG emission-open generation/state mismatch "
@@ -179,6 +181,7 @@ class H1Cp2pMpegProducer:
                     "CP2P MPEG emission-close generation mismatch "
                     f"active={self.generation} requested={generation}"
                 )
+            self._emission_retiring = True
             self._emission_open = False
             while self._emission_in_flight != 0:
                 remaining = deadline - time.monotonic()
@@ -213,6 +216,10 @@ class H1Cp2pMpegProducer:
         self.plan = plan
         self.producer = producer
         self.archive_path = archive_path
+        with self._emission_condition:
+            self._emission_open = False
+            self._emission_in_flight = 0
+            self._emission_retiring = False
         if self.attach is not None:
             self.attach(producer)
 
@@ -226,7 +233,7 @@ class H1Cp2pMpegProducer:
             "display": plan.display,
             "command": list(plan.command),
             "archive_path": str(archive_path),
-            "state": "live-local-producer-public-mpeg-gate-closed",
+            "state": "live-local-producer-awaiting-exact-emission-lease",
             "pstv_mpeg_data_emission": False,
             "emission_fence_open": False,
         }
@@ -348,6 +355,7 @@ class H1Cp2pMpegProducer:
         with self._emission_condition:
             self._emission_open = False
             self._emission_in_flight = 0
+            self._emission_retiring = False
             self._emission_condition.notify_all()
         if self.attach is not None:
             self.attach(None)
@@ -381,6 +389,7 @@ class H1Cp2pMpegProducer:
             with self._emission_condition:
                 self._emission_open = False
                 self._emission_in_flight = 0
+                self._emission_retiring = False
                 self._emission_condition.notify_all()
             if self.attach is not None:
                 self.attach(None)

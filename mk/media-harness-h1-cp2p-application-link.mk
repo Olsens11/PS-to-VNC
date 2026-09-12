@@ -6,13 +6,14 @@
 #   for calibration acceptance, generation ownership, START transmission, and
 #   the combined RFB policy.
 #
-# Item #9 links the real exact-generation MPEG worker and generated CP2P
-# decoder/runtime. The public CONFIG gate remains MPEG OFF until item #10, so
-# this checkpoint proves worker readiness without claiming all-guns activation.
+# Item #10 opens the CP2P-only visible-RFB + MPEG2 + optional-PCM CONFIG gate.
+# START remains the sole generation/producer activation authority; CONFIG only
+# allocates and authorizes the already-proven transport/decoder capability.
 
 BUILD_DIR := build/experiments/media-harness-h1-cp2p-application-link/ps2
 EE_BIN := $(BUILD_DIR)/PS2VNC-H1-CP2P-ApplicationLink.ELF
 H1_MAIN_SOURCE := experiments/media-harness-h1/h1_main_cp2p_visible_interaction_pcm.c
+H1_CONFIG_RFB_GATE_SOURCE := experiments/media-harness-h1/h1_config_cp2p_activation_gate.c
 
 include mk/media-harness-h1-cp2o-visible-rfb-interaction-pcm.mk
 
@@ -105,5 +106,6 @@ cp2p-application-link-check: $(EE_BIN)
 	@echo H1_CP2P_SESSION_COORDINATOR=LIVE
 	@echo H1_CP2P_ACCEPT_TO_START=LIVE
 	@echo H1_CP2P_GRAPHICS_OWNER=SHARED_COMPOSITOR
-	@echo H1_CP2P_MPEG_WORKER=GENERATION_BOUND_GATE_DORMANT
+	@echo H1_CP2P_MPEG_WORKER=GENERATION_BOUND_START_ACTIVATED
+	@echo H1_CP2P_ITEM10_PUBLIC_MPEG_GATE=LIVE
 	@echo H1_CP2P_MPEG_CANCELLABLE_READ=LIVE

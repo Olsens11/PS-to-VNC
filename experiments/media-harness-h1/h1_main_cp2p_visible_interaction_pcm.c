@@ -6,8 +6,8 @@
  * The CP2O source remains byte-for-byte untouched. This derivative changes
  * only application-level composition: it instantiates the CP2P session
  * coordinator so calibration acceptance owns generation prepare/START and the
- * combined RFB policy. Item #9 adds the exact-generation MPEG worker while
- * the public CONFIG gate intentionally keeps live decode dormant until #10.
+ * combined RFB policy. Item #10 now accepts the exact visible-RFB + MPEG2 +
+ * optional-PCM CONFIG while START remains the sole decode-generation trigger.
  */
 #include "h1_audio_runtime.h"
 #include "h1_config.h"
@@ -115,7 +115,7 @@ int main(void)
 
     printf(
         "H1_BOOT=PASS mode=CP2P_RFB_VISIBLE_INTERACTION_PCM_CAPABLE "
-        "mpeg_worker=GENERATION_BOUND_GATE_DORMANT input=1 keyboard=1 osk=1 local_ui=1\n");
+        "mpeg_worker=GENERATION_BOUND_START_ACTIVATED input=1 keyboard=1 osk=1 local_ui=1\n");
 
     for (;;) {
         pstvnc_h1_transport_runtime_t transport;
@@ -164,10 +164,10 @@ int main(void)
             (unsigned int)config->rfb_mode);
 
         if (config->rfb_mode != PSTVNC_H1_RFB_ON_VISIBLE ||
-            config->video_mode != PSTVNC_H1_VIDEO_OFF ||
+            config->video_mode != PSTVNC_H1_VIDEO_MPEG2_ES ||
             (config->audio_mode != PSTVNC_H1_AUDIO_OFF &&
              config->audio_mode != PSTVNC_H1_AUDIO_PCM)) {
-            printf("H1_CP2P=PROFILE_REJECT_NOT_VISIBLE_RFB_OPTIONAL_PCM\n");
+            printf("H1_CP2P=PROFILE_REJECT_NOT_ALL_GUNS\n");
             session_ok = 0;
         }
 
@@ -232,6 +232,21 @@ int main(void)
                 session_ok = 0;
             }
             interaction_initialized = 0;
+
+            if (config->video_mode == PSTVNC_H1_VIDEO_MPEG2_ES) {
+                printf(
+                    "H1_CP2P_MPEG_RESULT decoded=%u displayed=%u feed=%u "
+                    "payload=%u error=%u\n",
+                    (unsigned int)mpeg_worker.result.pictures_decoded,
+                    (unsigned int)mpeg_worker.result.pictures_displayed,
+                    (unsigned int)mpeg_worker.result.feed_calls,
+                    (unsigned int)mpeg_worker.result.payload_bytes_submitted,
+                    (unsigned int)mpeg_worker.result.error);
+                if (mpeg_worker.result.pictures_displayed == 0u) {
+                    printf("H1_CP2P=MPEG_PRESENTATION_UNPROVEN\n");
+                    session_ok = 0;
+                }
+            }
 
             if (rfb_result_code < 0) {
                 printf(
@@ -321,13 +336,13 @@ int main(void)
 
         if (!pstvnc_h1_transport_send_result(
                 &transport,
-                0u,
-                0u,
-                0u,
-                0u,
-                0u,
-                0u,
-                0u)) {
+                mpeg_worker.result.pictures_decoded,
+                mpeg_worker.result.pictures_displayed,
+                mpeg_worker.result.feed_calls,
+                mpeg_worker.result.payload_bytes_submitted,
+                mpeg_worker.result.dma_bytes_submitted,
+                mpeg_worker.result.deadline_misses,
+                (uint32_t)mpeg_worker.result.max_deadline_late_ticks)) {
             printf(
                 "H1_RESULT=SEND_FAIL transport_error=%d\n",
                 (int)pstvnc_h1_transport_last_error(&transport));

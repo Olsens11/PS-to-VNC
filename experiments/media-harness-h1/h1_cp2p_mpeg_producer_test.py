@@ -131,7 +131,7 @@ class ProducerTests(unittest.TestCase):
         self.assertEqual(owner.active_generation(), 7)
         self.assertIs(observed[0][0], owner.plan)
         self.assertEqual(list(owner.plan.command), evidence["command"])
-        self.assertEqual(evidence["state"], "live-local-producer-public-mpeg-gate-closed")
+        self.assertEqual(evidence["state"], "live-local-producer-awaiting-exact-emission-lease")
         self.assertFalse(evidence["pstv_mpeg_data_emission"])
         self.assertEqual(attached, [fake])
         self.assertTrue((self.evidence / "mpeg_producer_live.json").exists())
@@ -201,6 +201,8 @@ class ProducerTests(unittest.TestCase):
         self.assertFalse(owner.emission_open_for_generation(15))
         self.assertFalse(fake.stop_called)
         self.assertIsNone(owner.begin_emission_exact(15))
+        with self.assertRaises(base.ProtocolError):
+            owner.open_emission_exact(15)
 
         owner.finish_emission_exact(15)
         thread.join(timeout=1.0)

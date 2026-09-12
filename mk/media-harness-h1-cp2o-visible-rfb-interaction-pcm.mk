@@ -16,6 +16,7 @@
 BUILD_DIR ?= build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
 EE_BIN ?= $(BUILD_DIR)/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF
 H1_MAIN_SOURCE ?= experiments/media-harness-h1/h1_main_rfb_visible_interaction_pcm.c
+H1_CONFIG_RFB_GATE_SOURCE ?= experiments/media-harness-h1/h1_config_rfb_pcm_activation_gate.c
 
 CALIBRATION_DIR := experiments/media-harness-h1/mpeg_presentation_calibration
 CALIBRATION_HEADERS := $(wildcard $(CALIBRATION_DIR)/*.h)
@@ -99,11 +100,11 @@ $(CALIBRATION_OBJECTS): $(BUILD_DIR)/%.o: \
 # Replace only the cumulative experiment's public CONFIG gate. The underlying
 # h1_config.c object remains the same renamed inner validator.
 $(BUILD_DIR)/h1_config_rfb_activation_gate.o: \
-	experiments/media-harness-h1/h1_config_rfb_pcm_activation_gate.c \
+	$(H1_CONFIG_RFB_GATE_SOURCE) \
 	experiments/media-harness-h1/h1_config.h \
 	experiments/audio-transport/common/transport_protocol.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c \
-		experiments/media-harness-h1/h1_config_rfb_pcm_activation_gate.c \
+		$(H1_CONFIG_RFB_GATE_SOURCE) \
 		-o $@
 
 # Preserve CP2N's exact visible RFB transport and presenter mechanics.
