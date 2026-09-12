@@ -175,7 +175,20 @@ int main(void)
         PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY);
     assert(!coordinator.current_start_contract_valid);
 
+    /* Saturated diagnostics cannot put an unaccounted START on the wire. */
     send_success = 1;
+    coordinator.start_messages_sent = UINT32_MAX;
+    region = sample_region(112, 72);
+    coordinator.interaction.accepted_calibration_region = region;
+    coordinator.interaction.accepted_calibration_pending = 1;
+    assert(!pstvnc_h1_cp2p_session_coordinator_service(
+        &coordinator, &rfb_session));
+    assert(send_count == 2u);
+    assert(pstvnc_h1_mpeg_presentation_owner_state(
+        &coordinator.mpeg_handoff.owner) ==
+        PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY);
+    coordinator.start_messages_sent = 2u;
+
     region = sample_region(128, 80);
     assert(pstvnc_h1_mpeg_start_handoff_prepare_start(
         &coordinator.mpeg_handoff, &region, &active_contract));

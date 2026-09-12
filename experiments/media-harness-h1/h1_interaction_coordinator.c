@@ -27,6 +27,11 @@
 #define PSTVNC_H1_INTERACTION_CONTROLLER_PORT 0
 #define PSTVNC_H1_INTERACTION_CONTROLLER_SLOT 0
 
+/*
+ * Temporary hardware-test input adapter only. The session/MPEG lifecycle is
+ * deliberately trigger-agnostic so a later local-UI button can replace this
+ * chord without changing retirement, RFB restoration, START, or ownership.
+ */
 #define PSTVNC_H1_MPEG_CALIBRATION_ENTRY_CHORD \
     (PSTVNC_CONTROLLER_BUTTON_START | PSTVNC_CONTROLLER_BUTTON_SELECT)
 
@@ -490,9 +495,11 @@ static int h1_interaction_record_calibration_result(
     if (!result->accepted)
         return 1;
 
-    if (coordinator->accepted_calibration_pending)
-        return 0;
-
+    /*
+     * CP2P consumes this snapshot from the same service cadence. Other H1
+     * compositions may have no consumer; in that case retain the latest accepted
+     * settings without changing their calibration behavior.
+     */
     committed_region =
         pstvnc_h1_mpeg_calibration_interaction_binding_committed_region(
             &coordinator->mpeg_calibration);

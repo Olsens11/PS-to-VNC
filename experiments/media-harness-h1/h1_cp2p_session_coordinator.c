@@ -78,6 +78,9 @@ static int h1_cp2p_session_start_accepted_calibration(
             PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY)
         return 0;
 
+    if (coordinator->start_messages_sent == UINT32_MAX)
+        return 0;
+
     memset(&contract, 0, sizeof(contract));
     if (!pstvnc_h1_mpeg_start_handoff_prepare_start(
             &coordinator->mpeg_handoff,
@@ -93,13 +96,6 @@ static int h1_cp2p_session_start_accepted_calibration(
             &coordinator->mpeg_handoff,
             contract.generation);
         coordinator->current_start_contract_valid = 0;
-        return 0;
-    }
-
-    if (coordinator->start_messages_sent == UINT32_MAX) {
-        (void)pstvnc_h1_mpeg_start_handoff_abort_start(
-            &coordinator->mpeg_handoff,
-            contract.generation);
         return 0;
     }
 

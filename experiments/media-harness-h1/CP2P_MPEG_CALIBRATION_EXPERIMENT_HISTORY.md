@@ -1094,3 +1094,10 @@ The ordinary interaction coordinator instead gained two explicit generic seams: 
 The shared compositor's earlier first-qualification restriction against a later MPEG source size was also retired. It now allocates one maximum-size video VRAM backing store once and changes only texture dimensions per immutable generation, avoiding both dimension inheritance and repeated VRAM allocation.
 
 This entry records source/host/toolchain evidence only. It does not claim a runnable all-guns ELF or hardware qualification.
+
+
+### 34. September 12 — post-proof coordinator readback tightens boundaries
+
+After the first green session-coordinator proof, source readback found two small boundary conditions. CP2O does not consume the CP2P accepted-event snapshot, so a later accepted calibration now replaces an unconsumed snapshot instead of causing an interaction error. Separately, the START diagnostic counter guard was moved before `prepare_start()`/wire send so a bookkeeping limit can never create a wire-visible START followed by local abort. The session host contract now explicitly checks that saturated accounting sends no START and arms no generation.
+
+The START+SELECT entry chord is also recorded here as a temporary hardware-test shortcut, not part of the settled lifecycle contract. The session coordinator remains trigger-agnostic. The intended later product path is a local-UI button feeding the same interaction request boundary; that change should not alter MPEG retirement, one-full-RFB restoration, immutable generation creation, START serialization, or first-frame ownership.
