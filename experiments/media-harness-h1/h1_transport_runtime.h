@@ -197,6 +197,14 @@ int pstvnc_h1_transport_mpeg_read(
     size_t maximum_count,
     size_t *bytes_read);
 
+/* CP2P consumer-local cancellation; does not alter queue/session ownership. */
+int pstvnc_h1_transport_mpeg_read_cancellable(
+    pstvnc_h1_transport_runtime_t *runtime,
+    void *buffer,
+    size_t maximum_count,
+    size_t *bytes_read,
+    const volatile int *cancel_requested);
+
 int pstvnc_h1_transport_audio_exhausted(
     pstvnc_h1_transport_runtime_t *runtime);
 

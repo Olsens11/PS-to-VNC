@@ -13,6 +13,11 @@ struct pstvnc_h1_transport_runtime;
 #include "mpeg_presentation_calibration/h1_mpeg_recalibration.h"
 #include "mpeg_presentation_calibration/h1_mpeg_start_handoff.h"
 
+typedef int (*pstvnc_h1_cp2p_session_arm_mpeg_fn)(
+    void *context,
+    pstvnc_h1_mpeg_start_handoff_t *handoff,
+    const pstvnc_h1_mpeg_start_contract_t *contract);
+
 typedef struct pstvnc_h1_cp2p_session_coordinator {
     pstvnc_h1_interaction_coordinator_t interaction;
     pstvnc_h1_mpeg_start_handoff_t mpeg_handoff;
@@ -23,6 +28,8 @@ typedef struct pstvnc_h1_cp2p_session_coordinator {
     struct pstvnc_h1_transport_runtime *transport;
     pstvnc_h1_mpeg_recalibration_clear_mpeg_fn clear_mpeg;
     void *clear_mpeg_context;
+    pstvnc_h1_cp2p_session_arm_mpeg_fn arm_mpeg;
+    void *arm_mpeg_context;
     uint32_t session_id;
 
     pstvnc_h1_mpeg_start_contract_t current_start_contract;
@@ -36,6 +43,11 @@ int pstvnc_h1_cp2p_session_coordinator_init(
     struct pstvnc_h1_transport_runtime *transport,
     pstvnc_h1_mpeg_recalibration_clear_mpeg_fn clear_mpeg,
     void *clear_mpeg_context);
+
+int pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(
+    pstvnc_h1_cp2p_session_coordinator_t *coordinator,
+    pstvnc_h1_cp2p_session_arm_mpeg_fn arm_mpeg,
+    void *arm_mpeg_context);
 
 int pstvnc_h1_cp2p_session_coordinator_present(
     void *context,

@@ -88,10 +88,30 @@ static int h1_cp2p_session_start_accepted_calibration(
             &contract))
         return 0;
 
+    if (coordinator->arm_mpeg != NULL &&
+        !coordinator->arm_mpeg(
+            coordinator->arm_mpeg_context,
+            &coordinator->mpeg_handoff,
+            &contract)) {
+        (void)pstvnc_h1_mpeg_start_handoff_abort_start(
+            &coordinator->mpeg_handoff,
+            contract.generation);
+        coordinator->current_start_contract_valid = 0;
+        return 0;
+    }
+
     if (!pstvnc_h1_mpeg_start_transport_send(
             coordinator->transport,
             coordinator->session_id,
             &contract)) {
+        if (coordinator->arm_mpeg != NULL &&
+            (coordinator->clear_mpeg == NULL ||
+             !coordinator->clear_mpeg(
+                 coordinator->clear_mpeg_context,
+                 contract.generation))) {
+            coordinator->current_start_contract_valid = 0;
+            return 0;
+        }
         (void)pstvnc_h1_mpeg_start_handoff_abort_start(
             &coordinator->mpeg_handoff,
             contract.generation);
@@ -151,6 +171,19 @@ int pstvnc_h1_cp2p_session_coordinator_init(
         return 0;
     }
 
+    return 1;
+}
+
+int pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(
+    pstvnc_h1_cp2p_session_coordinator_t *coordinator,
+    pstvnc_h1_cp2p_session_arm_mpeg_fn arm_mpeg,
+    void *arm_mpeg_context)
+{
+    if (coordinator == NULL || !coordinator->initialized || arm_mpeg == NULL)
+        return 0;
+
+    coordinator->arm_mpeg = arm_mpeg;
+    coordinator->arm_mpeg_context = arm_mpeg_context;
     return 1;
 }
 
@@ -248,6 +281,8 @@ int pstvnc_h1_cp2p_session_coordinator_shutdown(
     coordinator->transport = NULL;
     coordinator->clear_mpeg = NULL;
     coordinator->clear_mpeg_context = NULL;
+    coordinator->arm_mpeg = NULL;
+    coordinator->arm_mpeg_context = NULL;
     coordinator->current_start_contract_valid = 0;
     return result;
 }

@@ -6,10 +6,9 @@
 #   for calibration acceptance, generation ownership, START transmission, and
 #   the combined RFB policy.
 #
-# The MPEG worker itself remains dormant at this checkpoint. Item #9 will
-# replace the no-producer retirement seam with the real worker stop/drain path.
-# This target therefore proves application composition without falsely claiming
-# live all-guns MPEG execution.
+# Item #9 links the real exact-generation MPEG worker and generated CP2P
+# decoder/runtime. The public CONFIG gate remains MPEG OFF until item #10, so
+# this checkpoint proves worker readiness without claiming all-guns activation.
 
 BUILD_DIR := build/experiments/media-harness-h1-cp2p-application-link/ps2
 EE_BIN := $(BUILD_DIR)/PS2VNC-H1-CP2P-ApplicationLink.ELF
@@ -26,16 +25,22 @@ CP2P_CALIBRATION_OBJECTS := \
 	$(BUILD_DIR)/h1_mpeg_start_transport.o
 
 CP2P_SESSION_OBJECTS := \
-	$(BUILD_DIR)/h1_cp2p_session_coordinator.o
+	$(BUILD_DIR)/h1_cp2p_session_coordinator.o \
+	$(BUILD_DIR)/h1_cp2p_mpeg_worker.o \
+	$(BUILD_DIR)/h1_video_runtime_cp2p.o
 
 EXTRA_EE_OBJS += $(CP2P_CALIBRATION_OBJECTS) $(CP2P_SESSION_OBJECTS)
+# Replace the inherited standalone GS-owning runtime with the CP2P compositor runtime.
+EE_OBJS := $(filter-out $(BUILD_DIR)/h1_video_runtime.o,$(EE_OBJS))
+EE_OBJS += $(BUILD_DIR)/h1_video_runtime_cp2p.o
 $(EE_BIN): $(CP2P_CALIBRATION_OBJECTS) $(CP2P_SESSION_OBJECTS)
 
 # Build the explicit CP2P derivative while leaving CP2O's qualified main source
 # byte-for-byte untouched.
 $(BUILD_DIR)/h1_main.o: \
 	experiments/media-harness-h1/h1_main_cp2p_visible_interaction_pcm.c \
-	experiments/media-harness-h1/h1_cp2p_session_coordinator.h
+	experiments/media-harness-h1/h1_cp2p_session_coordinator.h \
+	experiments/media-harness-h1/h1_cp2p_mpeg_worker.h
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(CP2P_CALIBRATION_OBJECTS): $(BUILD_DIR)/%.o: \
@@ -47,6 +52,29 @@ $(BUILD_DIR)/h1_cp2p_session_coordinator.o: \
 	experiments/media-harness-h1/h1_cp2p_session_coordinator.h \
 	experiments/media-harness-h1/h1_interaction_coordinator.h \
 	$(CALIBRATION_HEADERS) | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -I$(CALIBRATION_DIR) -c $< -o $@
+
+
+CP2P_GEN_DIR := $(BUILD_DIR)/generated-cp2p
+CP2P_VIDEO_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p.py
+CP2P_VIDEO_SOURCE := experiments/media-harness-h1/h1_video_runtime.c
+CP2P_VIDEO_GENERATED := $(CP2P_GEN_DIR)/h1_video_runtime_cp2p_generated.c
+
+$(CP2P_GEN_DIR):
+	mkdir -p $@
+
+$(CP2P_VIDEO_GENERATED): $(CP2P_VIDEO_SOURCE) $(CP2P_VIDEO_GENERATOR) | $(CP2P_GEN_DIR)
+	python3 $(CP2P_VIDEO_GENERATOR) --input $(CP2P_VIDEO_SOURCE) --output $@
+
+$(BUILD_DIR)/h1_video_runtime_cp2p.o: $(CP2P_VIDEO_GENERATED) \
+	experiments/media-harness-h1/h1_video_runtime_cp2p.h \
+	experiments/media-harness-h1/h1_cumulative39_graphics.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -I$(CALIBRATION_DIR) -c $(CP2P_VIDEO_GENERATED) -o $@
+
+$(BUILD_DIR)/h1_cp2p_mpeg_worker.o: \
+	experiments/media-harness-h1/h1_cp2p_mpeg_worker.c \
+	experiments/media-harness-h1/h1_cp2p_mpeg_worker.h \
+	experiments/media-harness-h1/h1_video_runtime_cp2p.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -I$(CALIBRATION_DIR) -c $< -o $@
 
 $(BUILD_DIR)/ps2_graphics39.o: \
@@ -64,6 +92,8 @@ $(BUILD_DIR)/ps2_graphics39.o: \
 cp2p-application-link-check: $(EE_BIN)
 	@test -f $(BUILD_DIR)/h1_main.o
 	@test -f $(BUILD_DIR)/h1_cp2p_session_coordinator.o
+	@test -f $(BUILD_DIR)/h1_cp2p_mpeg_worker.o
+	@test -f $(BUILD_DIR)/h1_video_runtime_cp2p.o
 	@test -f $(BUILD_DIR)/h1_mpeg_presentation_owner.o
 	@test -f $(BUILD_DIR)/h1_mpeg_start_handoff.o
 	@test -f $(BUILD_DIR)/h1_mpeg_cp2p_rfb_flow.o
@@ -76,4 +106,5 @@ cp2p-application-link-check: $(EE_BIN)
 	@echo H1_CP2P_SESSION_COORDINATOR=LIVE
 	@echo H1_CP2P_ACCEPT_TO_START=LIVE
 	@echo H1_CP2P_GRAPHICS_OWNER=SHARED_COMPOSITOR
-	@echo H1_CP2P_MPEG_WORKER=DORMANT
+	@echo H1_CP2P_MPEG_WORKER=GENERATION_BOUND_GATE_DORMANT
+	@echo H1_CP2P_MPEG_CANCELLABLE_READ=LIVE

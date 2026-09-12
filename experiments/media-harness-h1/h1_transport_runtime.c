@@ -1289,11 +1289,12 @@ int pstvnc_h1_transport_audio_read(
     return 1;
 }
 
-int pstvnc_h1_transport_mpeg_read(
+int pstvnc_h1_transport_mpeg_read_cancellable(
     pstvnc_h1_transport_runtime_t *runtime,
     void *buffer,
     size_t maximum_count,
-    size_t *bytes_read)
+    size_t *bytes_read,
+    const volatile int *cancel_requested)
 {
     uint8_t *destination = (uint8_t *)buffer;
     unsigned int wait_loops = 0u;
@@ -1310,6 +1311,9 @@ int pstvnc_h1_transport_mpeg_read(
 
     for (;;) {
         size_t available;
+
+        if (cancel_requested != NULL && *cancel_requested)
+            return 0;
         size_t take;
         int queue_empty;
         int end_received;
@@ -1371,6 +1375,16 @@ int pstvnc_h1_transport_mpeg_read(
             return 0;
         }
     }
+}
+
+int pstvnc_h1_transport_mpeg_read(
+    pstvnc_h1_transport_runtime_t *runtime,
+    void *buffer,
+    size_t maximum_count,
+    size_t *bytes_read)
+{
+    return pstvnc_h1_transport_mpeg_read_cancellable(
+        runtime, buffer, maximum_count, bytes_read, NULL);
 }
 
 int pstvnc_h1_transport_audio_exhausted(

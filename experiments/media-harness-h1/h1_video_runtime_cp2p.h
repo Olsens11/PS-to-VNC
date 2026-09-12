@@ -18,7 +18,8 @@ int pstvnc_h1_video_run_cp2p_session(
     pstvnc_h1_media_clock_t *clock,
     pstvnc_h1_video_result_t *result,
     pstvnc_h1_mpeg_start_handoff_t *handoff,
-    const pstvnc_h1_mpeg_start_contract_t *start_contract);
+    const pstvnc_h1_mpeg_start_contract_t *start_contract,
+    const volatile int *stop_requested);
 
 /*
  * Retire an active compositor presentation after the concurrent RFB worker is

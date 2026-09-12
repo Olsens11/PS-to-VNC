@@ -6,8 +6,8 @@
  * The CP2O source remains byte-for-byte untouched. This derivative changes
  * only application-level composition: it instantiates the CP2P session
  * coordinator so calibration acceptance owns generation prepare/START and the
- * combined RFB policy. The MPEG worker remains deliberately dormant until the
- * later worker-integration milestone.
+ * combined RFB policy. Item #9 adds the exact-generation MPEG worker while
+ * the public CONFIG gate intentionally keeps live decode dormant until #10.
  */
 #include "h1_audio_runtime.h"
 #include "h1_config.h"
@@ -16,6 +16,7 @@
 #include "h1_rfb_session_runtime.h"
 #include "h1_transport_runtime.h"
 #include "h1_cp2p_session_coordinator.h"
+#include "h1_cp2p_mpeg_worker.h"
 #include "platform/ps2_graphics.h"
 #include "ps2_network.h"
 #include "ps2_system.h"
@@ -81,18 +82,6 @@ static int h1_cp2o_wait_for_audio_completion(
     return 0;
 }
 
-/*
- * Item #4 deliberately has no live MPEG worker yet. The session coordinator
- * nevertheless owns retirement semantics now, so provide the smallest honest
- * withdrawal seam: there is no producer/visible MPEG state to clear until the
- * later worker-integration milestone replaces this callback.
- */
-static int h1_cp2p_clear_dormant_mpeg(void *context, uint32_t generation)
-{
-    (void)context;
-    return generation != 0u ? 1 : 0;
-}
-
 int main(void)
 {
     uint32_t completed_sessions = 0u;
@@ -126,13 +115,14 @@ int main(void)
 
     printf(
         "H1_BOOT=PASS mode=CP2P_RFB_VISIBLE_INTERACTION_PCM_CAPABLE "
-        "mpeg_worker=0 input=1 keyboard=1 osk=1 local_ui=1\n");
+        "mpeg_worker=GENERATION_BOUND_GATE_DORMANT input=1 keyboard=1 osk=1 local_ui=1\n");
 
     for (;;) {
         pstvnc_h1_transport_runtime_t transport;
         pstvnc_h1_rfb_session_runtime_t rfb;
         pstvnc_h1_audio_runtime_t audio;
         pstvnc_h1_media_clock_t clock;
+        pstvnc_h1_cp2p_mpeg_worker_t mpeg_worker;
         const pstvnc_h1_config_t *config;
         pstvnc_h1_interaction_coordinator_t *interaction_view;
         int session_ok = 1;
@@ -143,6 +133,7 @@ int main(void)
         uint32_t rfb_diagnostic_word = 0u;
 
         memset(&audio, 0, sizeof(audio));
+        memset(&mpeg_worker, 0, sizeof(mpeg_worker));
         pstvnc_h1_rfb_session_runtime_init(&rfb);
         interaction_view = &cp2p.interaction;
 
@@ -181,12 +172,22 @@ int main(void)
         }
 
         if (session_ok) {
-            if (!pstvnc_h1_cp2p_session_coordinator_init(
+            if (!pstvnc_h1_cp2p_mpeg_worker_init(
+                    &mpeg_worker, &transport, &clock)) {
+                printf("H1_CP2P=MPEG_WORKER_INIT_FAIL\n");
+                session_ok = 0;
+            } else if (!pstvnc_h1_cp2p_session_coordinator_init(
                     &cp2p,
                     &transport,
-                    h1_cp2p_clear_dormant_mpeg,
-                    NULL)) {
+                    pstvnc_h1_cp2p_mpeg_worker_clear,
+                    &mpeg_worker)) {
                 printf("H1_CP2P=SESSION_COORDINATOR_INIT_FAIL\n");
+                session_ok = 0;
+            } else if (!pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(
+                    &cp2p,
+                    pstvnc_h1_cp2p_mpeg_worker_arm,
+                    &mpeg_worker)) {
+                printf("H1_CP2P=MPEG_WORKER_BIND_FAIL\n");
                 session_ok = 0;
             } else {
                 interaction_initialized = 1;
@@ -332,6 +333,12 @@ int main(void)
             session_ok = 0;
         } else {
             printf("H1_RESULT=SEND_PASS\n");
+        }
+
+        if (mpeg_worker.initialized &&
+            pstvnc_h1_cp2p_mpeg_worker_shutdown(&mpeg_worker) < 0) {
+            printf("H1_TEARDOWN=MPEG_WORKER_FAIL\n");
+            session_ok = 0;
         }
 
         if (audio_active && pstvnc_h1_audio_shutdown(&audio) < 0) {

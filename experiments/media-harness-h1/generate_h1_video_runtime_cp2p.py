@@ -71,7 +71,9 @@ def generate(source: str) -> str:
         "    MPEGSequenceInfo *sequence_info;",
         "    pstvnc_h1_video_result_t *result;\n"
         "    pstvnc_h1_mpeg_start_handoff_t *handoff;\n"
-        "    pstvnc_h1_mpeg_start_contract_t start_contract;\n\n"
+        "    pstvnc_h1_mpeg_start_contract_t start_contract;\n"
+        "    const volatile int *stop_requested;\n"
+        "    unsigned cancelled : 1;\n\n"
         "    MPEGSequenceInfo *sequence_info;",
         "session ownership fields",
     )
@@ -95,6 +97,41 @@ def generate(source: str) -> str:
     (void)green;
     (void)blue;
 }""",
+    )
+
+    source = replace_once(
+        source,
+        "    if (!pstvnc_h1_transport_mpeg_read(\n"
+        "            session->transport,\n"
+        "            session->feed_buffer,\n"
+        "            session->config->mpeg_feed_bytes,\n"
+        "            &payload_size))\n"
+        "        return 0;",
+        "    if (!pstvnc_h1_transport_mpeg_read_cancellable(\n"
+        "            session->transport,\n"
+        "            session->feed_buffer,\n"
+        "            session->config->mpeg_feed_bytes,\n"
+        "            &payload_size,\n"
+        "            session->stop_requested)) {\n"
+        "        if (session->stop_requested != NULL && *session->stop_requested)\n"
+        "            session->cancelled = 1;\n"
+        "        return 0;\n"
+        "    }",
+        "CP2P cancellable MPEG feed",
+    )
+
+    source = replace_once(
+        source,
+        "    for (;;) {\n"
+        "        size_t current = pstvnc_h1_transport_mpeg_queue_size(session->transport);",
+        "    for (;;) {\n"
+        "        size_t current;\n\n"
+        "        if (session->stop_requested != NULL && *session->stop_requested) {\n"
+        "            session->cancelled = 1;\n"
+        "            return 0;\n"
+        "        }\n\n"
+        "        current = pstvnc_h1_transport_mpeg_queue_size(session->transport);",
+        "CP2P cancellable prefill",
     )
 
     source = replace_function(
@@ -238,7 +275,8 @@ def generate(source: str) -> str:
      * owned until the concurrent RFB worker is proven dormant and the caller
      * explicitly retires presentation.
      */
-    if (state == PSTVNC_H1_MPEG_PRESENTATION_WAIT_FIRST_FRAME) {
+    if (state == PSTVNC_H1_MPEG_PRESENTATION_WAIT_FIRST_FRAME &&
+        !session->cancelled) {
         (void)pstvnc_h1_graphics_clear_video();
         (void)pstvnc_h1_mpeg_start_handoff_abort_start(
             session->handoff,
@@ -277,7 +315,8 @@ def generate(source: str) -> str:
         "    pstvnc_h1_media_clock_t *clock,\n"
         "    pstvnc_h1_video_result_t *result,\n"
         "    pstvnc_h1_mpeg_start_handoff_t *handoff,\n"
-        "    const pstvnc_h1_mpeg_start_contract_t *start_contract)",
+        "    const pstvnc_h1_mpeg_start_contract_t *start_contract,\n"
+        "    const volatile int *stop_requested)",
         "CP2P run signature",
     )
 
@@ -300,7 +339,8 @@ def generate(source: str) -> str:
         "    session.result = result;\n",
         "    session.result = result;\n"
         "    session.handoff = handoff;\n"
-        "    session.start_contract = *start_contract;\n",
+        "    session.start_contract = *start_contract;\n"
+        "    session.stop_requested = stop_requested;\n",
         "CP2P session ownership assignment",
     )
 
@@ -357,6 +397,7 @@ int pstvnc_h1_video_cp2p_retire_presentation(
             raise RuntimeError(f"generated runtime retained forbidden GS owner: {marker}")
 
     required = (
+        "pstvnc_h1_transport_mpeg_read_cancellable(",
         "pstvnc_h1_graphics_present_video_macroblocks(",
         "pstvnc_h1_mpeg_start_handoff_first_frame_presented(",
         "pstvnc_h1_video_cp2p_retire_presentation(",
