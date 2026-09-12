@@ -47,6 +47,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          make -C experiments/media-harness-h1/mpeg_presentation_calibration -f Makefile.host clean
           if grep -R -n -E 'h1_mpeg_recalibration_entry_bridge|h1_interaction_coordinator_cp2p|h1_interaction_cp2p' \
               experiments/media-harness-h1 mk \
               --include='*.c' --include='*.h' --include='*.mk'; then
@@ -57,10 +58,14 @@ jobs:
           test ! -e experiments/media-harness-h1/apply_cp2p_session_final_tightening.py
           test ! -e .github/workflows/cp2p-session-coordinator-apply.yml
           test ! -e .github/workflows/cp2p-history-append.yml
-          find experiments/media-harness-h1/mpeg_presentation_calibration -maxdepth 1 -type f -perm /111 -print -quit | grep -q . && {
-            echo 'generated executable remains in source tree' >&2
+          if find experiments/media-harness-h1/mpeg_presentation_calibration -maxdepth 1 -type f -perm /111 -print -quit | grep -q .; then
+            echo 'generated executable remains after host clean' >&2
             exit 1
-          } || true
+          fi
+          if git ls-files experiments/media-harness-h1/mpeg_presentation_calibration | grep -E '/[^/]+_test$'; then
+            echo 'generated host test executable is tracked' >&2
+            exit 1
+          fi
 
       - name: Commit proven tightening
         shell: bash
