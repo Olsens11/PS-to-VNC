@@ -45,6 +45,7 @@ jobs:
             -I. -I../audio-transport/common \
             h1_config_cp2p_activation_gate.c \
             h1_config_cp2p_activation_gate_test.c \
+            ../audio-transport/common/transport_protocol.c \
             /tmp/h1_config_inner.o \
             -o /tmp/h1_cp2p_item10_gate_test
           /tmp/h1_cp2p_item10_gate_test
@@ -53,6 +54,7 @@ jobs:
             -I. -I../audio-transport/common \
             h1_config_rfb_pcm_activation_gate.c \
             h1_config_rfb_pcm_activation_gate_test.c \
+            ../audio-transport/common/transport_protocol.c \
             /tmp/h1_config_inner.o \
             -o /tmp/h1_cp2o_gate_test
           /tmp/h1_cp2o_gate_test
