@@ -1,0 +1,59 @@
+
+---
+
+# PHASE N — SEPTEMBER 12 GENERATION-BOUND PS2 MPEG WORKER
+
+## 36. Item #9 — concurrent PS2 MPEG worker integration closes at the pre-activation boundary
+
+After item #5 established the real Pi START receive/validation endpoint, work intentionally returned to the PS2 before allowing a valid START to wake a Pi MPEG producer. A new non-destructive continuation branch, `experiment/h1-cp2p-ps2-mpeg-worker`, was created exactly from sealed item-#5 head `c25907162d6f533c14877582196f4b1fdc832d1f`.
+
+The principal lifecycle constraint discovered during implementation was that the existing transport MPEG queue is session-scoped: `pstvnc_h1_transport_mpeg_read()` can block until MPEG bytes arrive or the whole PSTV session receives `MEDIA_END`. A generation-bound worker therefore could not be retired safely by setting a thread flag alone. The smallest architecture-preserving solution was a consumer-local cancellable MPEG read. The historical `pstvnc_h1_transport_mpeg_read()` API remains as a compatibility wrapper; CP2P uses `pstvnc_h1_transport_mpeg_read_cancellable()` with a worker-owned stop predicate. No second socket, transport reader, queue, sequence owner, or receive thread was introduced.
+
+Item #9 adds `h1_cp2p_mpeg_worker.c/.h`. The worker owns only EE decode-thread, libmpeg, and concrete MPEG-pixel lifetime. The CP2P session coordinator remains the sole authority for presentation-generation state. The worker arms only an exact nonzero generation already in `WAIT_FIRST_FRAME`, stores that generation's immutable START contract, and rejects mismatched or re-entrant arm requests.
+
+Accepted-confirm ordering is now:
+
+`prepare fresh generation -> arm exact worker -> send START`
+
+If worker arm fails, START is not sent and the coordinator aborts the exact prepared generation. If START transmission fails after arm, the coordinator first requires the exact worker to stop/drain/withdraw its concrete MPEG state and only then aborts that generation. If worker clear fails, ownership is not falsely retired beneath a potentially live worker.
+
+The generated compositor-aware CP2P video runtime now accepts the worker stop predicate. Its MPEG feed and prefill waits are cancellable. Explicit worker cancellation exits without independently aborting or stopping presentation ownership; natural pre-first-frame decoder failure retains the existing handoff-abort behavior. First MPEG ownership is still promoted only after decoded presentation reaches the shared compositor and physical `gsKit_sync_flip()` completes.
+
+Recalibration retains one ownership path: worker/pixels clear first, then the existing session/recalibration coordinator retires the exact generation and begins the already-proven full-RFB restoration transaction. Whole-session coordinator shutdown uses the same ordering for either `WAIT_FIRST_FRAME` or `MPEG_OWNED` state.
+
+The CP2P application target now links `h1_cp2p_mpeg_worker.o` and the generated compositor-aware `h1_video_runtime_cp2p.o`. The inherited standalone `h1_video_runtime.o` may still be compiled by the inherited make dependency graph but is filtered from the final CP2P linker command. The linked image contains one public graphics owner and the CP2P runtime symbols, not the standalone `pstvnc_h1_video_run_session` path.
+
+The public all-guns CONFIG gate remains deliberately unchanged at this checkpoint. CP2P still requires `video_mode=OFF`; in that state the exact-generation worker may be armed but decode-thread creation remains dormant. The `MPEG2_ES` live-thread path is compiled and linked for the later gate-opening milestone, but item #9 does not claim an ordinary live-MPEG session, Pi MPEG production, or hardware qualification. Item #10 remains the authority that will expose that path through public CP2P configuration.
+
+Durable implementation commits before final proof:
+
+- `ac4d557184a597004c8739b3d580d11e68dcef6e` — integrate generation-bound CP2P MPEG worker;
+- `d1978a57151b410691912626435f923236843dae` — tighten exact worker/coordinator lifecycle edges.
+
+Final software proof source head was `6925034802a5d847bffe09c8d4c783e5db1306bd`. GitHub Actions run `34706240485` completed `SUCCESS` under pinned PS2DEV image `ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11`.
+
+The proof established together:
+
+- current-tree CP2O build and RFB/PCM regressions PASS;
+- CP2P application link PASS;
+- generation-bound MPEG worker PASS;
+- cancellable MPEG transport read linked;
+- generated CP2P video runtime linked and standalone runtime excluded from the final image;
+- START transport and first-frame handoff symbols linked;
+- single public graphics owner PASS;
+- one-transport/one-reader architecture preserved;
+- public MPEG gate still dormant.
+
+Proof artifact `h1-cp2p-item9-unqualified-elf` has artifact ID `10302040505`.
+
+Exact proof ELF identity:
+
+- file `PS2VNC-H1-CP2P-ApplicationLink.ELF`;
+- SHA256 `89b57d33ce407cfb2420a7ef83819e426d5a2f8a5d1ba3e7a4dd1227c4f2966d`;
+- ELF bytes `3228136`;
+- PT_LOAD SHA256 `6a33a03b11d282768f1d64c19d45f62b2de071a7bfcd4e0bc5b0cae0bc7da6f5`;
+- PT_LOAD bytes `509716`.
+
+One boundary remains deliberately open for later lifecycle work: the transport MPEG byte queue is still session-scoped rather than generation-tagged. Because the Pi producer is not yet active, that does not invalidate item #9; before real generation transitions can carry MPEG bytes, later item #11 work must prevent stale old-generation queued bytes from being consumed by a fresh generation.
+
+**Checklist transition:** item #9 — concurrent PS2 MPEG worker — **PARTIAL -> DONE at the pre-activation software-proof boundary**. The next planned tranche is combined item #6 + #7: Pi generation-scoped RFB suppression plus exact calibrated capture geometry, still without starting MPEG production.
