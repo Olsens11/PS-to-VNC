@@ -3,12 +3,13 @@
 # Builds directly from the CP2N hardware-qualified composition. The cumulative
 # H1 target already links the canonical PCM/AUDSRV runtime; CP2O changes only
 # activation/composition policy so visible RFB mode 2 may run concurrently with
-# PCM while MPEG remains OFF.
+# PCM while MPEG decode remains OFF.
 #
-# This integration tranche also links the experiment-local MPEG-calibration
-# foreground/RFB-flow objects so their coordinator seam can be PS2-compiled
-# before native calibration rasterization and MPEG presentation are introduced.
-# No src/ owner or permanent compositor is changed by this target.
+# The experiment-local calibration integration is compiled into this target:
+# interaction ownership + RFB flow policy + native CT16 calibration raster.
+# The existing interaction coordinator is mechanically renamed to private
+# present/service symbols and wrapped by the calibration presenter; no src/
+# owner or permanent MPEG compositor is modified.
 
 BUILD_DIR := build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
 EE_BIN := $(BUILD_DIR)/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF
@@ -25,6 +26,7 @@ CALIBRATION_OBJECTS := \
 	$(BUILD_DIR)/h1_mpeg_calibration_rfb_gate.o \
 	$(BUILD_DIR)/h1_mpeg_calibration_rfb_schedule.o \
 	$(BUILD_DIR)/h1_mpeg_calibration_render.o \
+	$(BUILD_DIR)/h1_mpeg_calibration_raster.o \
 	$(BUILD_DIR)/h1_mpeg_calibration_runtime.o \
 	$(BUILD_DIR)/h1_mpeg_calibration_rfb_flow.o \
 	$(BUILD_DIR)/h1_mpeg_calibration_interaction_binding.o
@@ -33,9 +35,13 @@ include mk/media-harness-h1-cumulative39-thread-census.mk
 
 EXTRA_EE_OBJS += \
 	$(BUILD_DIR)/h1_interaction_coordinator.o \
+	$(BUILD_DIR)/h1_interaction_calibration_presenter.o \
 	$(CALIBRATION_OBJECTS)
 
-$(EE_BIN): $(BUILD_DIR)/h1_interaction_coordinator.o $(CALIBRATION_OBJECTS)
+$(EE_BIN): \
+	$(BUILD_DIR)/h1_interaction_coordinator.o \
+	$(BUILD_DIR)/h1_interaction_calibration_presenter.o \
+	$(CALIBRATION_OBJECTS)
 
 $(BUILD_DIR)/h1_main.o: \
 	experiments/media-harness-h1/h1_main_rfb_visible_interaction_pcm.c \
@@ -45,6 +51,13 @@ $(BUILD_DIR)/h1_main.o: \
 	experiments/media-harness-h1/h1_rfb_session_runtime.h \
 	experiments/media-harness-h1/h1_transport_runtime.h
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+# Keep the proven coordinator implementation unchanged. Rename only its public
+# present/service symbols so the experiment-local calibration presenter can wrap
+# them without editing coordinator or src/ behavior.
+$(BUILD_DIR)/h1_interaction_coordinator.o: EE_CFLAGS += \
+	-Dpstvnc_h1_interaction_coordinator_present=pstvnc_h1_interaction_coordinator_present_inner \
+	-Dpstvnc_h1_interaction_coordinator_service=pstvnc_h1_interaction_coordinator_service_inner
 
 $(BUILD_DIR)/h1_interaction_coordinator.o: \
 	experiments/media-harness-h1/h1_interaction_coordinator.c \
@@ -66,6 +79,14 @@ $(BUILD_DIR)/h1_interaction_coordinator.o: \
 	src/display/display.h \
 	src/platform/ps2_graphics.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/h1_interaction_calibration_presenter.o: \
+	experiments/media-harness-h1/h1_interaction_calibration_presenter.c \
+	experiments/media-harness-h1/h1_interaction_coordinator.h \
+	$(CALIBRATION_HEADERS) \
+	src/display/display.h \
+	src/platform/ps2_graphics.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -I$(CALIBRATION_DIR) -c $< -o $@
 
 # Keep the calibration implementation experiment-local while compiling the same
 # objects used by the strict host contracts into the PS2 integration candidate.
