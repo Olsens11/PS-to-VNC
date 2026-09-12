@@ -897,3 +897,32 @@ Do not edit an old entry simply because a later experiment proved it incomplete.
 If an old entry turns out to be wrong in a source-factual sense, preserve it and append the later discovery that corrected it.
 
 That is the point of the log.
+
+---
+
+# PHASE J — SEPTEMBER 12 CHECKPOINT BEFORE REAL CP2P TARGET LINKAGE
+
+## 31. Twelve-item implementation scoreboard after accepted→START coordinator work
+
+Immediately before beginning the next real-CP2P-target tranche, the project reconciled the remaining work against the current branch rather than against older handoff language alone. This entry records the checkpoint as understood at that moment; later entries may supersede it without rewriting it.
+
+1. **PS2 Accept → START session coordinator — DONE.** The authoritative live path is `accepted → committed calibration → prepare_start() → fresh generation N → WAIT_FIRST_FRAME → START(session_id, N, geometry)`. The old experimental macro/global bridge was removed rather than left as a competing path.
+2. **PS2 START-send failure unwind — DONE.** If generation N is prepared but START cannot be sent, that exact generation is aborted. It cannot remain stranded in `WAIT_FIRST_FRAME` or later acquire MPEG ownership. The RFB restoration obligation is preserved.
+3. **Prove accepted → START transition — DONE.** The integrated coordinator path plus failure/no-send cases are host-tested; the strict host suite passed; the CP2P pieces compiled with the pinned PS2 toolchain; CP2O regression remained green; and bridge-removal checks passed. This is software proof, not hardware qualification.
+4. **Link a real CP2P PS2 target — PARTIAL.** Major CP2P pieces compile individually, including interaction/session coordination, presentation ownership, RFB flow, shared compositor, generated MPEG runtime, and START machinery. No final real CP2P application target/ELF yet runs the all-guns composition. This is the next concrete item.
+5. **Pi START receive + validation — OPEN.** The protocol is explicit, but the current historical Pi mux path still accepts PS2 `DATA` only on RFB and does not yet implement PS2→Pi `DATA`/MPEG2 START decoding and validation.
+6. **Pi generation-scoped RFB suppression — OPEN.** Required semantics are settled—generation-scoped, installed before MPEG production, RFB live outside the footprint, retired with the generation—but the exact suppression mechanism remains to be chosen from source evidence.
+7. **Exact calibrated geometry end-to-end — PARTIAL.** PS2-side exact `X,Y,W,H` authority is implemented and remains distinct from the expanded suppression rectangle. Pi-side use of those exact values as the actual capture source remains unimplemented.
+8. **Make MPEG production START-driven — OPEN.** Intended Pi lifecycle remains `producer dormant → valid START → install suppression → configure exact capture → launch producer → permit MPEG bytes`; current Pi implementation does not yet provide that lifecycle.
+9. **Integrate the concurrent PS2 MPEG worker — PARTIAL.** CP2P video runtime/compositor and presentation machinery exist and compile, but the live all-guns target in which RFB + PCM + MPEG participate together over the one-transport/one-receive-owner architecture is not complete. This remains distinct from item 4: item 4 constructs/links the real application target; item 9 makes the MPEG worker participate correctly in that target.
+10. **Open the exact CP2P CONFIG gate — OPEN.** The final target needs a narrow structural gate for the intended visible-RFB + PCM + MPEG combination. No imaginary profile-name shortcut is to be introduced.
+11. **Complete presentation / retirement / recalibration lifecycle — PARTIAL, PS2 SIDE MOSTLY DONE.** The settled PS2 lifecycle preserves immutable generations, first-frame physical-presentation ownership, safe RFB restoration, and fresh START on reconfirmation. Remaining work is chiefly Pi-side exact-generation producer stop/drain, suppression retirement, and stale-generation exclusion. A mature normal stop/return path is not automatically a prerequisite for the first all-guns hardware run unless the first candidate implements that path.
+12. **Seal the immutable all-guns hardware candidate — OPEN.** After the runnable system exists, record exact PS2 source commit, Pi source commit, CONFIG, pinned toolchain evidence, ELF SHA256/size, PT_LOAD fingerprint, Pi runtime/deployment identity, and then perform the physical test.
+
+Checkpoint scoreboard:
+
+- **DONE:** #1, #2, #3.
+- **PARTIAL:** #4, #7, #9, #11.
+- **OPEN:** #5, #6, #8, #10, #12.
+
+The immediate next action from this checkpoint is item **#4**: inspect the existing CP2N/CP2O/CP2P build composition and create the smallest real CP2P PS2 application target that links the already-proven components without inventing new runtime behavior or claiming all-guns hardware readiness.
