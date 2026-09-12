@@ -36,28 +36,58 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build exact CP2O regression and integrated CP2P target
+        with:
+          fetch-depth: 0
+      - name: Prove immutable CP2O anchor and integrated CP2P target
         env:
           IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
+          CP2O_ANCHOR: f200949502480827a1aa244ec6bd474fc9512696
+          CP2O_ANCHOR_SHA256: 0f30ae41ac7cf77ddf7f0a9d8e2c40639b6cfd03d232363cca3799e79f6969ad
         run: |
-          docker run --rm --entrypoint /bin/sh -v "$PWD:/repo" -w /repo "$IMAGE" -lc '
+          docker run --rm --entrypoint /bin/sh \
+            -e CP2O_ANCHOR -e CP2O_ANCHOR_SHA256 -e GITHUB_SHA \
+            -v "$PWD:/repo" -w /repo "$IMAGE" -lc '
             set -eu
-            apk add --no-cache bash binutils make python3 >/dev/null
+            apk add --no-cache bash binutils git make python3 >/dev/null
             export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            git config --global --add safe.directory /repo
+
+            # Historical identity proof: rebuild the immutable CP2O anchor from
+            # its own source tree. Do not demand that the forward-integrated
+            # tree retain an old whole-ELF hash after shared coordinator work.
+            rm -rf /tmp/cp2o-anchor
+            mkdir -p /tmp/cp2o-anchor
+            git archive "$CP2O_ANCHOR" | tar -x -C /tmp/cp2o-anchor
+            cd /tmp/cp2o-anchor
+            make -f mk/media-harness-h1-cp2o-visible-rfb-interaction-pcm.mk
+            ANCHOR_ELF=build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF
+            ANCHOR_SHA=$(sha256sum "$ANCHOR_ELF" | cut -d" " -f1)
+            echo "H1_CP2O_ANCHOR_COMMIT=$CP2O_ANCHOR"
+            echo "H1_CP2O_ANCHOR_SHA256=$ANCHOR_SHA"
+            test "$ANCHOR_SHA" = "$CP2O_ANCHOR_SHA256"
+            echo H1_CP2O_ANCHOR_IDENTITY=PASS
+
+            # Forward-tree regression proof: the integrated coordinator is now
+            # intentionally newer than the CP2O anchor, so prove the inherited
+            # RFB/PCM and mux mechanics rather than falsely asserting old bytes.
+            cd /repo
             CP2O_BUILD=build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
             CP2O_ELF="$CP2O_BUILD/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF"
             CP2P_BUILD=build/experiments/media-harness-h1-cp2p-application-link/ps2
             CP2P_ELF="$CP2P_BUILD/PS2VNC-H1-CP2P-ApplicationLink.ELF"
             rm -rf "$CP2O_BUILD" "$CP2P_BUILD"
+
             make -f mk/media-harness-h1-cp2o-visible-rfb-interaction-pcm.mk
             python3 experiments/media-harness-h1/check_rfb_pcm_interaction.py --build-dir "$CP2O_BUILD"
             python3 experiments/media-harness-h1/check_rfb_mux_seam.py --build-dir "$CP2O_BUILD"
-            CP2O_SHA=$(sha256sum "$CP2O_ELF" | cut -d" " -f1)
-            echo "H1_CP2O_REGRESSION_SHA256=$CP2O_SHA"
-            test "$CP2O_SHA" = 0f30ae41ac7cf77ddf7f0a9d8e2c40639b6cfd03d232363cca3799e79f6969ad
+            CURRENT_CP2O_SHA=$(sha256sum "$CP2O_ELF" | cut -d" " -f1)
+            echo "H1_CP2O_INTEGRATED_REGRESSION_SHA256=$CURRENT_CP2O_SHA"
+            echo H1_CP2O_INTEGRATED_RFB_PCM_REGRESSION=PASS
+
             make -f mk/media-harness-h1-cp2p-application-link.mk cp2p-application-link-check
             python3 experiments/media-harness-h1/check_rfb_pcm_interaction.py --build-dir "$CP2P_BUILD"
             python3 experiments/media-harness-h1/check_rfb_mux_seam.py --build-dir "$CP2P_BUILD"
+
             mips64r5900el-ps2-elf-nm "$CP2P_ELF" > cp2p-integrated-symbols.txt
             grep -Eq "[[:space:]]pstvnc_h1_cp2p_session_coordinator_init$" cp2p-integrated-symbols.txt
             grep -Eq "[[:space:]]pstvnc_h1_cp2p_session_coordinator_service$" cp2p-integrated-symbols.txt
@@ -69,10 +99,19 @@ jobs:
             test "$(grep -Ec "[[:space:]]pstvnc_ps2_graphics_init$" cp2p-integrated-symbols.txt)" -eq 1
             test "$(grep -Ec "[[:space:]]pstvnc_ps2_graphics_present$" cp2p-integrated-symbols.txt)" -eq 1
             test "$(grep -Ec "[[:space:]]pstvnc_ps2_graphics_shutdown$" cp2p-integrated-symbols.txt)" -eq 1
-            if grep -Eq "[[:space:]]pstvnc_h1_video_run_cp2p_session$" cp2p-integrated-symbols.txt; then exit 1; fi
+            if grep -Eq "[[:space:]]pstvnc_h1_video_run_cp2p_session$" cp2p-integrated-symbols.txt; then
+              echo H1_CP2P_RUNTIME_PREMATURELY_LINKED=FAIL
+              exit 1
+            fi
             echo H1_CP2P_INTEGRATED_LINK=PASS
             echo H1_CP2P_MPEG_WORKER=DORMANT
-            { echo "SOURCE_COMMIT=${GITHUB_SHA:-unknown}"; sha256sum "$CP2P_ELF"; stat -c "ELF_BYTES=%s" "$CP2P_ELF"; ./scripts/testkit/pt-load-fingerprint.sh "$CP2P_ELF"; } | tee cp2p-integrated-identity.txt
+
+            {
+              echo "SOURCE_COMMIT=${GITHUB_SHA:-unknown}"
+              sha256sum "$CP2P_ELF"
+              stat -c "ELF_BYTES=%s" "$CP2P_ELF"
+              ./scripts/testkit/pt-load-fingerprint.sh "$CP2P_ELF"
+            } | tee cp2p-integrated-identity.txt
           '
       - uses: actions/upload-artifact@v4
         with:
