@@ -1,6 +1,9 @@
 CC ?= cc
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Werror -pedantic
 
+TRANSPORT_PROTOCOL_SOURCE = \
+	../../audio-transport/common/transport_protocol.c
+
 CORE_SOURCES = \
 	mpeg_presentation_calibration_geometry.c \
 	mpeg_presentation_calibration_state.c
@@ -15,6 +18,14 @@ START_HANDOFF_SOURCES = \
 	mpeg_presentation_calibration_geometry.c \
 	h1_mpeg_presentation_owner.c \
 	h1_mpeg_start_handoff.c
+
+START_WIRE_SOURCES = \
+	$(TRANSPORT_PROTOCOL_SOURCE) \
+	h1_mpeg_start_wire.c
+
+START_TRANSPORT_SOURCES = \
+	$(START_WIRE_SOURCES) \
+	h1_mpeg_start_transport.c
 
 ADAPTER_SOURCES = \
 	$(CORE_SOURCES) \
@@ -63,6 +74,8 @@ CORE_TEST = mpeg_presentation_calibration_test
 ENTRY_HOLD_TEST = h1_mpeg_calibration_entry_hold_test
 PRESENTATION_OWNER_TEST = h1_mpeg_presentation_owner_test
 START_HANDOFF_TEST = h1_mpeg_start_handoff_test
+START_WIRE_TEST = h1_mpeg_start_wire_test
+START_TRANSPORT_TEST = h1_mpeg_start_transport_test
 ADAPTER_TEST = h1_mpeg_calibration_adapter_test
 FOREGROUND_TEST = h1_mpeg_calibration_foreground_test
 RFB_GATE_TEST = h1_mpeg_calibration_rfb_gate_test
@@ -72,14 +85,17 @@ RENDER_TEST = h1_mpeg_calibration_render_test
 RASTER_TEST = h1_mpeg_calibration_raster_test
 RUNTIME_TEST = h1_mpeg_calibration_runtime_test
 INTERACTION_BINDING_TEST = h1_mpeg_calibration_interaction_binding_test
+ACCEPT_EDGE_TEST = h1_mpeg_calibration_accept_edge_test
 
 .PHONY: test clean
 
-test: $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST)
+test: $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF_TEST) $(START_WIRE_TEST) $(START_TRANSPORT_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST) $(ACCEPT_EDGE_TEST)
 	./$(CORE_TEST)
 	./$(ENTRY_HOLD_TEST)
 	./$(PRESENTATION_OWNER_TEST)
 	./$(START_HANDOFF_TEST)
+	./$(START_WIRE_TEST)
+	./$(START_TRANSPORT_TEST)
 	./$(ADAPTER_TEST)
 	./$(FOREGROUND_TEST)
 	./$(RFB_GATE_TEST)
@@ -89,6 +105,7 @@ test: $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF
 	./$(RASTER_TEST)
 	./$(RUNTIME_TEST)
 	./$(INTERACTION_BINDING_TEST)
+	./$(ACCEPT_EDGE_TEST)
 	python3 h1_mpeg_calibration_live_wiring_test.py
 
 $(CORE_TEST): $(CORE_SOURCES) mpeg_presentation_calibration_test.c
@@ -102,6 +119,12 @@ $(PRESENTATION_OWNER_TEST): $(PRESENTATION_OWNER_SOURCES) h1_mpeg_presentation_o
 
 $(START_HANDOFF_TEST): $(START_HANDOFF_SOURCES) h1_mpeg_start_handoff_test.c
 	$(CC) $(CFLAGS) -I. $(START_HANDOFF_SOURCES) h1_mpeg_start_handoff_test.c -o $@
+
+$(START_WIRE_TEST): $(START_WIRE_SOURCES) h1_mpeg_start_wire_test.c
+	$(CC) $(CFLAGS) -I. -I../../audio-transport/common $(START_WIRE_SOURCES) h1_mpeg_start_wire_test.c -o $@
+
+$(START_TRANSPORT_TEST): $(START_TRANSPORT_SOURCES) h1_mpeg_start_transport_test.c
+	$(CC) $(CFLAGS) -I. -I../../audio-transport/common $(START_TRANSPORT_SOURCES) h1_mpeg_start_transport_test.c -o $@
 
 $(ADAPTER_TEST): $(ADAPTER_SOURCES) h1_mpeg_calibration_adapter_test.c
 	$(CC) $(CFLAGS) -I. -I../../../src/input $(ADAPTER_SOURCES) h1_mpeg_calibration_adapter_test.c -o $@
@@ -130,5 +153,8 @@ $(RUNTIME_TEST): $(RUNTIME_SOURCES) h1_mpeg_calibration_runtime_test.c
 $(INTERACTION_BINDING_TEST): $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_interaction_binding_test.c
 	$(CC) $(CFLAGS) -I. -Ihost_stubs -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_interaction_binding_test.c -o $@
 
+$(ACCEPT_EDGE_TEST): $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_accept_edge_test.c
+	$(CC) $(CFLAGS) -I. -Ihost_stubs -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_accept_edge_test.c -o $@
+
 clean:
-	rm -f $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST)
+	rm -f $(CORE_TEST) $(ENTRY_HOLD_TEST) $(PRESENTATION_OWNER_TEST) $(START_HANDOFF_TEST) $(START_WIRE_TEST) $(START_TRANSPORT_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST) $(ACCEPT_EDGE_TEST)
