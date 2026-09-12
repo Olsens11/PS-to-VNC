@@ -275,11 +275,25 @@ The semantic lifecycle is trigger-agnostic:
 - cancel/back-out creates no new MPEG generation and leaves the user in full-frame live RFB + PCM;
 - confirm creates a fresh generation and a fresh START, whether the rectangle changed or not.
 
-### Retirement wire status
+### Exact-generation retirement control (item #11A)
 
-At the time this document was created, the PS2-side semantic retirement behavior is settled, but a final Pi-facing retirement wire encoding has **not yet been established in the current source tree**. Do not infer retirement from silence, timeout, or a guessed START variant.
+The Pi-facing retirement seam is now concrete and host/PS2-build proven. It uses one H1 experiment-local PSTV frame kind on **control channel 0**, not MPEG DATA channel 4:
 
-Before the all-guns candidate is sealed, the Pi implementation must have an explicit generation-safe way to stop/drain the old producer and remove its suppression when the PS2 retires that generation. Once that exact wire/control seam is implemented, update this section with the concrete encoding and source authority.
+- frame kind: `PSTVNC_H1_FRAME_MPEG_RETIRE = 10`;
+- flags: `0`;
+- payload length: exactly 12 bytes;
+- payload: three unsigned big-endian 32-bit words: `version=1`, `session_id`, `generation`;
+- request direction: PS2 -> Pi;
+- completion direction: Pi -> PS2 using the identical payload;
+- direction plus each side's strict one-pending-generation state distinguish request from completion.
+
+The PS2 transport publishes the exact pending generation **before** sending the request so an immediate Pi completion cannot race the receiver thread. The sole receiver accepts completion only when version, active session id, nonzero generation, and exact pending generation all match. The application coordinator polls that receiver-owned completion asynchronously; it never blocks the sole transport receive owner.
+
+The ordering is deliberately **Pi first** during recalibration. While generation N remains the authoritative PS2 MPEG owner, the coordinator sends RETIRE(N) and waits. The Pi completion is not sent until exact Pi runtime cleanup succeeds. Only after the PS2 observes completion does the existing local worker/presentation retirement run and create the fresh full-RFB restoration obligation. Therefore a failed or missing Pi retirement cannot leave the PS2 locally retired while the Pi still suppresses RFB, and no fresh full-RFB restoration can begin before Pi cleanup is proven complete.
+
+At the current pre-producer boundary the Pi exact cleanup transaction validates one matching prepared START, capture plan, and suppression generation; rejects any unexpected live legacy producer; removes exact-generation suppression; releases prepared START/capture state and evidence; then sends completion. The prepared-generation high-water is retained, so the retired generation remains stale and cannot be reused.
+
+Item #8 must extend this exact same transaction rather than inventing a second retirement protocol: replace the current dormant-producer guard with exact producer stop/drain for generation N, prove that stop/drain is complete **before** suppression removal, then continue the already-proven cleanup and completion ordering.
 
 For the first RFB-only -> MPEG START path, no prior MPEG generation exists and therefore no retirement message is required before START.
 
@@ -344,7 +358,9 @@ At minimum, the comprehensive bootstrap/runtime that absorbs CP2P should be able
 - the producer remains dormant during #5/#6/#7 preparation;
 - a post-suppression capture-preparation failure rolls back suppression/prepared/capture usable state while preserving stale-generation high-water (`h1_cp2p_start_preparation_transaction_test.py`);
 - duplicate/stale generation input cannot create two active producers;
-- retirement stops/drains the exact active generation once the retirement wire seam is defined;
+- exact RETIRE request/completion rejects wrong session/generation and does not acknowledge until exact Pi state is released (`h1_cp2p_retirement_control_test.py`);
+- PS2 local MPEG ownership remains intact while Pi retirement is pending, and full-RFB restoration begins only after exact Pi completion (`h1_cp2p_session_coordinator_test.c`);
+- once item #8 makes the producer live, retirement stops/drains that exact producer before suppression removal and completion;
 - RFB and PCM ownership paths remain alive while MPEG is active;
 - only the existing PSTV writer emits PS2-facing frames.
 
@@ -368,11 +384,11 @@ As CP2P work proceeds, use this section as the handoff checklist. Every row that
 | compound START preparation | `h1_mux_server_cp2p_start_receiver.py`; `h1_cp2p_start_preparation_transaction_test.py` | preserve ordered START -> suppression -> exact capture preparation and fail-closed rollback before producer activation |
 | MPEG producer | item #8 still open | launch the already-prepared exact capture command only after #11A retirement control exists; no independent geometry authority |
 | MPEG mux scheduling | implementation still to be made concrete | channel-4 queue/credit/scheduling support without second socket |
-| retirement control | wire/control seam still to be made concrete | exact-generation stop/drain/remove-suppression/release-capture path with completion semantics before fresh full-RFB restoration |
+| retirement control | Pi: `h1_cp2p_retirement_control.py`, `h1_cp2p_start_receiver.py`, `h1_mux_server_cp2p_start_receiver.py`; PS2: `h1_transport_runtime.[ch]`, `h1_cp2p_session_coordinator.[ch]`; tests: `h1_cp2p_retirement_control_test.py`, `h1_cp2p_session_coordinator_test.c` | preserve kind-10/control-channel exact request/completion, one pending generation, Pi-cleanup-before-completion, and Pi-completion-before-local-retire/full-RFB ordering; item #8 extends cleanup with exact producer stop/drain before suppression removal |
 | PCM capture | current mux uses PipeWire `wpctl` + `pw-record` | install/configure audio capture prerequisites |
 | RFB provider | current mux expects isolated local VNC provider | install/configure VNC provider under the general desktop/VNC setup |
 | service management | not finalized by this experiment | comprehensive service startup/restart/dependency ordering |
-| verification | items #5/#6/#7 host tests; proof runs `34702828032`, `34709167702`, final atomic proof `34710050027` | include START, same-reader, dynamic suppression, exact capture, and compound rollback contracts in fresh-install self-check plus project regressions |
+| verification | items #5/#6/#7 host tests plus item #11A exact-retirement tests; proof runs `34702828032`, `34709167702`, `34710050027`, item #11A run `34710972431` | include START, same-reader, dynamic suppression, exact capture, compound rollback, exact retirement request/completion, and Pi-completion-before-local-retire contracts in fresh-install self-check plus project regressions |
 
 When a row moves from future to concrete implementation, update this table in the same tranche.
 
@@ -394,6 +410,10 @@ Current source authorities to consult together:
 - exact START-base capture plan: `experiments/media-harness-h1/h1_cp2p_capture_geometry.py`
 - exact capture geometry contract: `experiments/media-harness-h1/h1_cp2p_capture_geometry_test.py`
 - compound START preparation rollback contract: `experiments/media-harness-h1/h1_cp2p_start_preparation_transaction_test.py`
+- Pi exact-generation retirement wire/control codec: `experiments/media-harness-h1/h1_cp2p_retirement_control.py`
+- Pi exact-generation retirement contract: `experiments/media-harness-h1/h1_cp2p_retirement_control_test.py`
+- PS2 exact retirement transport owner: `experiments/media-harness-h1/h1_transport_runtime.[ch]`
+- PS2 retirement/recalibration coordinator ordering: `experiments/media-harness-h1/h1_cp2p_session_coordinator.[ch]`
 - Pi START implementation/proof note: `experiments/media-harness-h1/CP2P_PI_START_RECEIVE_VALIDATION.md`
 - PS2 CP2P session coordinator: `experiments/media-harness-h1/h1_cp2p_session_coordinator.[ch]`
 - generation presentation owner: `experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_presentation_owner.[ch]`
@@ -412,10 +432,13 @@ At this document's current revision:
 - item #7 exact capture preparation is concrete and host-proven: START base X/Y/W/H becomes the prepared FFmpeg x11grab source while current desktop dimensions are validation bounds only;
 - compound START preparation is atomic at the current software boundary: failed post-suppression capture setup removes usable suppression/prepared/capture state and evidence while preserving stale generation high-water;
 - item #6 is DONE at the current host/software boundary; item #7 remains PARTIAL only because the prepared exact capture plan is not yet consumed by a live producer;
-- item #8 producer activation remains deliberately dormant;
-- item #11A exact-generation Pi retirement control remains the next architectural prerequisite before item #8; local `retire_suppression_exact()` is only a primitive, not the completed cross-machine control seam;
+- item #11A exact-generation Pi retirement control is DONE at the pre-producer software-proof boundary: kind-10 control request/completion is exact-session/exact-generation matched, Pi prepared/capture/suppression state is released before completion, PS2 local MPEG ownership remains intact while completion is pending, and fresh full-RFB restoration is created only after exact Pi completion;
+- item #8 producer activation remains deliberately dormant and is now the next implementation tranche; when item #8 makes FFmpeg live, it must extend item #11A cleanup with exact generation stop/drain before suppression removal/completion rather than changing the wire or ordering;
+- item #11B remains responsible for the fully live cross-machine lifecycle, including stale old-generation MPEG queue exclusion/drain after producer activation;
 - the permanent comprehensive Pi bootstrap has not yet absorbed these experimental CP2P additions;
 - item #6/#7 final host proof authority is branch `experiment/h1-cp2p-pi-suppression-geometry`, source head `81d150988e5bc0435c580465b3a826429aa7c139`, GitHub Actions run `34710050027` / job `103597045614`;
+- item #11A proof authority is branch `experiment/h1-cp2p-pi-retirement-control`, source head `d8d731ce9f66fc14ea7bfc2777215085b69975ae`, GitHub Actions run `34710972431`, host job `103599586082`, PS2-build job `103599586147`, unqualified artifact `10302704205`;
+- item #11A proof ELF SHA256 is `5667e14ff412b5848ced30801bac184320ed852a23603072aa13f7a4fcd75ddc`, ELF bytes `3232156`, PT_LOAD SHA256 `5bad594faf8555684f06cb854fad639fa5d3c8b69d9691e737fa6cf386d11336`, PT_LOAD bytes `510612`;
 - physical all-guns hardware qualification has not yet occurred.
 
 Update this file whenever a Pi-side mechanism, dependency, path, service requirement, or configuration step becomes concrete. Preserve the experiment history separately rather than rewriting historical entries.

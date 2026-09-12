@@ -1433,3 +1433,139 @@ The best current dependency order is therefore:
 `#11A -> #8 -> #11B -> #10 -> #12`
 
 This ordering remains subject to later refinement as implementation and hardware evidence improve understanding. At this checkpoint, however, #11A remains the next architectural prerequisite: generation N must be independently retireable on the Pi, with completion known before the fresh full-RFB restoration used for recalibration, **before** item #8 is allowed to turn the prepared capture plan into a live producer.
+
+
+---
+
+# PHASE P — SEPTEMBER 12 EXACT-GENERATION PI RETIREMENT CONTROL
+
+## 40. Item #11A closes with Pi-first exact retirement before local PS2 ownership retirement
+
+After the sealed #6/#7 checkpoint, work continued in the documented dependency order on:
+
+`experiment/h1-cp2p-pi-retirement-control`
+
+The purpose of item #11A was narrow but architectural: generation N had to be independently retireable on the Pi **before** item #8 was allowed to make the prepared exact capture plan launch a real producer, and completion had to be known before recalibration could create the fresh full-RFB restoration transaction.
+
+### Retirement wire/control seam
+
+The implemented H1 retirement control uses a new experiment-local PSTV frame kind rather than overloading MPEG channel-4 DATA:
+
+- frame kind `10` (`PSTVNC_H1_FRAME_MPEG_RETIRE`);
+- control channel `0`;
+- flags `0`;
+- exactly 12 payload bytes;
+- big-endian words: `version=1`, active H1 `session_id`, exact nonzero `generation`;
+- PS2 -> Pi is the retirement request;
+- Pi -> PS2 with the identical payload is completion;
+- direction plus one exact pending generation on each side disambiguates request/completion.
+
+This deliberately leaves channel-4 DATA as the START/media data-plane vocabulary rather than introducing retirement bytes into the future MPEG stream.
+
+The PS2 transport arms the exact pending generation **before** it sends RETIRE so an immediate Pi completion cannot race the sole receiver thread. The receiver accepts completion only for the exact active session and exact pending generation. The application coordinator polls that receiver-owned completion asynchronously; it does not become another socket reader and does not block the sole receive owner.
+
+### Pi exact cleanup before completion
+
+The existing same-reader CP2P START shim now also consumes RETIRE on the same H1 reader call chain. No second PSTV socket or reader thread is introduced.
+
+At this pre-producer checkpoint, exact Pi retirement requires all of these to name the requested generation:
+
+- immutable prepared START;
+- exact capture plan;
+- RFB suppression owner.
+
+If any identity mismatches, the request fails without mutating another generation and no completion is sent.
+
+With the producer still deliberately dormant, successful retirement performs:
+
+`validate exact N -> prove no unexpected live producer -> remove suppression(N) -> release prepared START(N) -> release capture plan/evidence(N) -> send RETIRE completion(N)`
+
+The item-#5 generation high-water is not lowered. A retired generation remains stale and cannot be reused.
+
+The live-producer guard is intentional rather than a missing error path: item #8 must replace it with exact producer stop/drain for N **before** suppression removal. The already-proven wire and later cleanup/completion ordering should not need to change when the producer becomes real.
+
+### Why Pi retirement happens before local PS2 owner retirement
+
+During review, two possible orderings were considered.
+
+One possible design was:
+
+`local PS2 retire -> request Pi retire -> wait ACK -> allow fresh full RFB`
+
+That would require an additional RFB barrier because local owner retirement immediately creates the existing full-RFB restoration obligation. More importantly, a failed or lost Pi retirement could leave the PS2 already retired while the Pi still held old suppression/producer state.
+
+The adopted design keeps the old PS2 generation authoritative while the Pi transaction is pending:
+
+`active PS2 generation N -> request Pi RETIRE(N) -> wait exact completion -> existing local clear/owner retire -> existing fresh full-RFB restoration -> calibration entry`
+
+This is both simpler and more transactional. While completion is pending, the coordinator test proves:
+
+- no second RETIRE is sent;
+- local `clear_mpeg` has not run;
+- PS2 remains `MPEG_OWNED` for N;
+- the current START contract remains valid;
+- no local retirement-created full-RFB obligation exists yet.
+
+Only exact Pi completion unlocks the already-proven local recalibration path. The local worker/owner is then retired and the next RFB scheduler decision is the required fresh FULL request. Therefore the restoration cannot precede proof that Pi suppression/capture state has disappeared.
+
+### Source authorities
+
+The item #11A source additions/changes include:
+
+- `experiments/media-harness-h1/h1_cp2p_retirement_control.py` — 12-byte retirement codec and H1 kind-10 vocabulary;
+- `experiments/media-harness-h1/h1_cp2p_start_receiver.py` — same-reader RETIRE dispatch and completion only after exact cleanup;
+- `experiments/media-harness-h1/h1_mux_server_cp2p_start_receiver.py` — exact Pi prepared/capture/suppression retirement and dormant-producer guard;
+- `experiments/media-harness-h1/h1_transport_runtime.[ch]` — PS2 send-before-race pending state, sole-receiver exact completion match, and asynchronous poll seam;
+- `experiments/media-harness-h1/h1_cp2p_session_coordinator.[ch]` — Pi-first recalibration gate ordering;
+- `experiments/media-harness-h1/h1_cp2p_retirement_control_test.py` — Pi exact cleanup/failure/stale-generation contract;
+- `experiments/media-harness-h1/mpeg_presentation_calibration/h1_cp2p_session_coordinator_test.c` — PS2 Pi-first ordering contract.
+
+No change was required to the existing recalibration or RFB-flow mechanism itself because the coordinator does not invoke local recalibration retirement until Pi completion has already been proven.
+
+### Software proof
+
+Final source/proof authority:
+
+- branch: `experiment/h1-cp2p-pi-retirement-control`;
+- source head: `d8d731ce9f66fc14ea7bfc2777215085b69975ae`;
+- GitHub Actions run: `34710972431`;
+- host-contracts job: `103599586082` — SUCCESS;
+- pinned PS2-build job: `103599586147` — SUCCESS;
+- PS2DEV image: `ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11`;
+- proof artifact: `h1-cp2p-item11a-unqualified-elf`, artifact ID `10302704205`.
+
+The host proof passed the prior START, RFB bridge, suppression, exact-capture, compound-rollback, and full calibration host suites together with the new exact-retirement contract.
+
+The pinned PS2 build proved current-tree CP2O regression, CP2P application linking, exact retirement begin/poll symbols, generation-bound worker/cancellable-read symbols, one public graphics owner, unchanged item-#10 MPEG gate, and the one-transport/one-reader architecture.
+
+Exact proof ELF identity:
+
+- file `PS2VNC-H1-CP2P-ApplicationLink.ELF`;
+- SHA256 `5667e14ff412b5848ced30801bac184320ed852a23603072aa13f7a4fcd75ddc`;
+- ELF bytes `3232156`;
+- PT_LOAD SHA256 `5bad594faf8555684f06cb854fad639fa5d3c8b69d9691e737fa6cf386d11336`;
+- PT_LOAD bytes `510612`.
+
+This remains a pre-producer software proof. It does **not** claim live FFmpeg execution, MPEG data flow, live producer stop/drain, stale queued MPEG exclusion, public MPEG CONFIG activation, deployment, or physical hardware qualification.
+
+### Checklist status after item #11A
+
+1. **PS2 Accept -> START session coordinator — DONE.**
+2. **PS2 START-send failure unwind — DONE.**
+3. **Prove accepted -> START transition — DONE.**
+4. **Link a real CP2P PS2 target — DONE.**
+5. **Pi START receive + validation — DONE.**
+6. **Pi generation-scoped RFB suppression — DONE at the current software-proof boundary.**
+7. **Exact calibrated geometry end-to-end — PARTIAL.** Exact START geometry reaches the prepared capture command; live consumption remains #8.
+8. **START-driven MPEG producer — OPEN.** This is now the next implementation tranche. It must consume the existing exact prepared capture plan and extend #11A with exact producer stop/drain before suppression removal/completion.
+9. **Concurrent PS2 MPEG worker — DONE at the pre-activation software-proof boundary.**
+10. **Exact CP2P CONFIG gate — OPEN.**
+11A. **Pi exact-generation retirement control — DONE at the pre-producer software-proof boundary.** Exact request/completion, Pi cleanup-before-completion, and Pi-completion-before-local-retire/full-RFB ordering are proven.
+11B. **Complete cross-machine presentation / retirement / recalibration lifecycle — PARTIAL.** Live producer retirement and stale old-generation MPEG-byte exclusion remain once #8 creates the live data plane.
+12. **Seal the immutable all-guns hardware candidate — OPEN.**
+
+The best current dependency order becomes:
+
+`#8 -> #11B -> #10 -> #12`
+
+As before, this order is subject to later reinterpretation with better implementation or hardware evidence. At this checkpoint, however, the prerequisite that forced #11A ahead of #8 is satisfied: generation N can be exactly retired on the Pi and completion can be proven before local PS2 retirement creates the fresh full-RFB restoration transaction.
