@@ -28,7 +28,10 @@ jobs:
           set -eu
           cd experiments/media-harness-h1/mpeg_presentation_calibration
           cc -std=c99 -O2 -Wall -Wextra -Werror -pedantic \
-            -I. -I../../../src/input \
+            -I. \
+            -I../../../src/input \
+            -I../../../src/framebuffer \
+            -I../../../src/rfb \
             mpeg_presentation_calibration_geometry.c \
             mpeg_presentation_calibration_state.c \
             h1_mpeg_calibration_adapter.c \
