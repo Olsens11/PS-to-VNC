@@ -16,14 +16,14 @@
 
 static unsigned int send_calls;
 static int send_result;
-static pstvnc_h1_transport_runtime_t *last_runtime;
+static struct pstvnc_h1_transport_runtime *last_runtime;
 static uint8_t last_kind;
 static uint8_t last_channel;
 static size_t last_payload_length;
 static uint8_t last_payload[PSTVNC_H1_MPEG_START_WIRE_BYTES];
 
 int pstvnc_h1_transport_send_frame_internal(
-    pstvnc_h1_transport_runtime_t *runtime,
+    struct pstvnc_h1_transport_runtime *runtime,
     uint8_t kind,
     uint8_t channel,
     const void *payload,
@@ -72,8 +72,8 @@ static void reset_spy(void)
 static void test_start_uses_existing_data_mpeg2_frame_path(void)
 {
     unsigned char runtime_token = 0u;
-    pstvnc_h1_transport_runtime_t *runtime =
-        (pstvnc_h1_transport_runtime_t *)&runtime_token;
+    struct pstvnc_h1_transport_runtime *runtime =
+        (struct pstvnc_h1_transport_runtime *)&runtime_token;
     pstvnc_h1_mpeg_start_contract_t contract = valid_contract();
     pstvnc_h1_mpeg_start_wire_message_t decoded;
 
@@ -97,8 +97,8 @@ static void test_start_uses_existing_data_mpeg2_frame_path(void)
 static void test_invalid_contract_never_reaches_transport_writer(void)
 {
     unsigned char runtime_token = 0u;
-    pstvnc_h1_transport_runtime_t *runtime =
-        (pstvnc_h1_transport_runtime_t *)&runtime_token;
+    struct pstvnc_h1_transport_runtime *runtime =
+        (struct pstvnc_h1_transport_runtime *)&runtime_token;
     pstvnc_h1_mpeg_start_contract_t contract = valid_contract();
 
     reset_spy();
@@ -111,8 +111,8 @@ static void test_invalid_contract_never_reaches_transport_writer(void)
 static void test_transport_failure_is_propagated(void)
 {
     unsigned char runtime_token = 0u;
-    pstvnc_h1_transport_runtime_t *runtime =
-        (pstvnc_h1_transport_runtime_t *)&runtime_token;
+    struct pstvnc_h1_transport_runtime *runtime =
+        (struct pstvnc_h1_transport_runtime *)&runtime_token;
     pstvnc_h1_mpeg_start_contract_t contract = valid_contract();
 
     reset_spy();

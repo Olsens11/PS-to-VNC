@@ -1075,3 +1075,22 @@ The temporary diagnostic workflow was then removed in commit:
 `ci(h1): retire CP2P recalibration diagnostic`
 
 Proof boundary at this entry: the clean START+SELECT retirement/re-entry lifecycle is now wired into a CP2P-specific interaction composition and host/PS2-cross-compile proven. This does **not** yet claim a complete runnable all-guns ELF or hardware qualification. The final CP2P main still has to instantiate this composition alongside the concrete MPEG worker/producer-stop callback, accepted→START live send, Pi START/suppression/producer path, and exact CONFIG gate.
+
+
+---
+
+## PHASE K — SESSION COORDINATOR REPLACES THE PROOF BRIDGE
+
+### 33. September 12 — accepted calibration becomes a session-owned MPEG START transaction
+
+The next implementation pass replaced the temporary CP2P interaction/macro bridge with the session-level ownership boundary agreed during live review.
+
+At this point the working lifecycle was: interaction reports the one-shot accepted committed settings; the session coordinator owns transport/session identity; the MPEG handoff creates one immutable generation and enters `WAIT_FIRST_FRAME`; exactly that generation is sent once as START on the existing PSTV socket/channel 4. START+SELECT does not edit a generation in place: if one exists, its confirmed geometry/mattes seed the next calibration transaction, it is retired, one new full RFB restoration is required, and only then does calibration enter. Cancel leaves no MPEG generation; confirm creates a fresh generation.
+
+The prior `h1_mpeg_recalibration_entry_bridge` global interception and CP2P coordinator-by-macro-include/wrapper files were deliberately removed as proof scaffolding. Their earlier commits remain valid historical evidence; they are not retained as competing runtime paths.
+
+The ordinary interaction coordinator instead gained two explicit generic seams: an optional calibration-entry gate (unset preserves immediate-entry behavior) and a one-shot accepted-calibration accessor. CP2P installs the gate from its session coordinator; CP2O does not.
+
+The shared compositor's earlier first-qualification restriction against a later MPEG source size was also retired. It now allocates one maximum-size video VRAM backing store once and changes only texture dimensions per immutable generation, avoiding both dimension inheritance and repeated VRAM allocation.
+
+This entry records source/host/toolchain evidence only. It does not claim a runnable all-guns ELF or hardware qualification.

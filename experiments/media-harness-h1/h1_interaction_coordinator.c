@@ -473,8 +473,35 @@ static int h1_interaction_calibration_entry_available(
             PSTVNC_LOCAL_UI_FOREGROUND_DESKTOP &&
         !pstvnc_local_ui_input_is_quarantined(&coordinator->local_ui) &&
         !coordinator->mouse_interpretation_suspended &&
+        !coordinator->calibration_entry_deferred &&
         !pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
             &coordinator->mpeg_calibration);
+}
+
+static int h1_interaction_record_calibration_result(
+    pstvnc_h1_interaction_coordinator_t *coordinator,
+    const pstvnc_h1_mpeg_calibration_interaction_result_t *result)
+{
+    const pstvnc_mpeg_cal_region_t *committed_region;
+
+    if (coordinator == NULL || result == NULL)
+        return 0;
+
+    if (!result->accepted)
+        return 1;
+
+    if (coordinator->accepted_calibration_pending)
+        return 0;
+
+    committed_region =
+        pstvnc_h1_mpeg_calibration_interaction_binding_committed_region(
+            &coordinator->mpeg_calibration);
+    if (committed_region == NULL)
+        return 0;
+
+    coordinator->accepted_calibration_region = *committed_region;
+    coordinator->accepted_calibration_pending = 1;
+    return 1;
 }
 
 static int h1_interaction_service_active_calibration(
@@ -483,18 +510,20 @@ static int h1_interaction_service_active_calibration(
     const pstvnc_controller_state_t *controller_state)
 {
     pstvnc_h1_mpeg_calibration_interaction_context_t calibration_context;
-    int consume_controller_state = 0;
+    pstvnc_h1_mpeg_calibration_interaction_result_t result;
 
     h1_interaction_prepare_calibration_context(
         coordinator,
         session,
         &calibration_context);
+    memset(&result, 0, sizeof(result));
 
-    if (!pstvnc_h1_mpeg_calibration_interaction_binding_service_controller(
+    if (!pstvnc_h1_mpeg_calibration_interaction_binding_service_controller_result(
             &coordinator->mpeg_calibration,
             &calibration_context,
             controller_state,
-            &consume_controller_state))
+            &result) ||
+        !h1_interaction_record_calibration_result(coordinator, &result))
         return 0;
 
     /*
@@ -502,7 +531,7 @@ static int h1_interaction_service_active_calibration(
      * trustworthy controller observation belongs to it. Losing that consumption
      * fact would be an ownership violation, not a reason to fall through.
      */
-    return consume_controller_state ? 1 : 0;
+    return result.consume_controller_state ? 1 : 0;
 }
 
 static int h1_interaction_service_controller_state(
@@ -530,6 +559,14 @@ static int h1_interaction_service_controller_state(
             coordinator,
             session,
             controller_state);
+
+    /*
+     * A matured CP2P entry request owns controller routing while its session
+     * prerequisite is pending. This keeps START/SELECT from leaking into OSK or
+     * desktop actions during the one-full-RFB restoration interval.
+     */
+    if (coordinator->calibration_entry_deferred)
+        return 1;
 
     entry_available =
         h1_interaction_calibration_entry_available(coordinator);
@@ -586,17 +623,83 @@ static int h1_interaction_service_controller_state(
     return 1;
 }
 
-static int h1_interaction_service_calibration_entry_hold(
+static int h1_interaction_query_calibration_entry_gate(
+    pstvnc_h1_interaction_coordinator_t *coordinator,
+    int *enter_now)
+{
+    if (coordinator == NULL || enter_now == NULL)
+        return 0;
+
+    if (coordinator->calibration_entry_gate == NULL) {
+        *enter_now = 1;
+        return 1;
+    }
+
+    if (!coordinator->calibration_entry_gate(
+            coordinator->calibration_entry_gate_context,
+            enter_now))
+        return 0;
+
+    *enter_now = *enter_now ? 1 : 0;
+    return 1;
+}
+
+static int h1_interaction_activate_calibration(
     pstvnc_h1_interaction_coordinator_t *coordinator,
     pstvnc_rfb_session_t *session)
 {
     pstvnc_h1_mpeg_calibration_interaction_context_t calibration_context;
+    pstvnc_h1_mpeg_calibration_interaction_result_t result;
     pstvnc_controller_state_t activation_state;
-    int activate_calibration = 0;
-    int consume_controller_state = 0;
 
     if (coordinator == NULL || session == NULL)
         return 0;
+
+    memset(&activation_state, 0, sizeof(activation_state));
+    activation_state.buttons_down =
+        PSTVNC_H1_MPEG_CALIBRATION_ENTRY_CHORD;
+    memset(&result, 0, sizeof(result));
+
+    h1_interaction_prepare_calibration_context(
+        coordinator,
+        session,
+        &calibration_context);
+
+    if (!pstvnc_h1_mpeg_calibration_interaction_binding_service_controller_result(
+            &coordinator->mpeg_calibration,
+            &calibration_context,
+            &activation_state,
+            &result) ||
+        !h1_interaction_record_calibration_result(coordinator, &result))
+        return 0;
+
+    return
+        result.consume_controller_state &&
+        pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+            &coordinator->mpeg_calibration);
+}
+
+static int h1_interaction_service_calibration_entry_hold(
+    pstvnc_h1_interaction_coordinator_t *coordinator,
+    pstvnc_rfb_session_t *session)
+{
+    int activate_calibration = 0;
+    int enter_now = 0;
+
+    if (coordinator == NULL || session == NULL)
+        return 0;
+
+    if (coordinator->calibration_entry_deferred) {
+        if (!h1_interaction_query_calibration_entry_gate(
+                coordinator, &enter_now))
+            return 0;
+
+        if (!enter_now)
+            return 1;
+
+        coordinator->calibration_entry_deferred = 0;
+        return h1_interaction_activate_calibration(coordinator, session);
+    }
 
     if (!pstvnc_h1_mpeg_calibration_entry_hold_poll(
             &coordinator->mpeg_calibration_entry_hold,
@@ -608,31 +711,16 @@ static int h1_interaction_service_calibration_entry_hold(
     if (!activate_calibration)
         return 1;
 
-    /*
-     * The portable calibration core enters from authoritative down-state, not a
-     * synthetic press edge. START+SELECT alone is therefore enough to promote
-     * the already-proven hold without inventing controller history.
-     */
-    memset(&activation_state, 0, sizeof(activation_state));
-    activation_state.buttons_down =
-        PSTVNC_H1_MPEG_CALIBRATION_ENTRY_CHORD;
-
-    h1_interaction_prepare_calibration_context(
-        coordinator,
-        session,
-        &calibration_context);
-
-    if (!pstvnc_h1_mpeg_calibration_interaction_binding_service_controller(
-            &coordinator->mpeg_calibration,
-            &calibration_context,
-            &activation_state,
-            &consume_controller_state))
+    if (!h1_interaction_query_calibration_entry_gate(
+            coordinator, &enter_now))
         return 0;
 
-    return
-        consume_controller_state &&
-        pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
-            &coordinator->mpeg_calibration);
+    if (!enter_now) {
+        coordinator->calibration_entry_deferred = 1;
+        return 1;
+    }
+
+    return h1_interaction_activate_calibration(coordinator, session);
 }
 
 static int h1_interaction_resume_desktop_mouse_if_ready(
@@ -719,6 +807,36 @@ void pstvnc_h1_interaction_coordinator_init(
         PSTVNC_DISPLAY_HEIGHT);
     pstvnc_h1_mpeg_calibration_entry_hold_init(
         &coordinator->mpeg_calibration_entry_hold);
+}
+
+int pstvnc_h1_interaction_coordinator_set_calibration_entry_gate(
+    pstvnc_h1_interaction_coordinator_t *coordinator,
+    pstvnc_h1_interaction_calibration_entry_gate_fn gate,
+    void *gate_context)
+{
+    if (coordinator == NULL || coordinator->input_started ||
+        coordinator->calibration_entry_deferred ||
+        pstvnc_h1_mpeg_calibration_interaction_binding_owns_foreground(
+            &coordinator->mpeg_calibration))
+        return 0;
+
+    coordinator->calibration_entry_gate = gate;
+    coordinator->calibration_entry_gate_context =
+        gate != NULL ? gate_context : NULL;
+    return 1;
+}
+
+int pstvnc_h1_interaction_coordinator_take_calibration_accept(
+    pstvnc_h1_interaction_coordinator_t *coordinator,
+    pstvnc_mpeg_cal_region_t *committed_region)
+{
+    if (coordinator == NULL || committed_region == NULL ||
+        !coordinator->accepted_calibration_pending)
+        return 0;
+
+    *committed_region = coordinator->accepted_calibration_region;
+    coordinator->accepted_calibration_pending = 0;
+    return 1;
 }
 
 int pstvnc_h1_interaction_coordinator_present(
