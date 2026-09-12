@@ -159,7 +159,9 @@ int main(void)
         pstvnc_h1_audio_runtime_t audio;
         pstvnc_h1_media_clock_t clock;
         const pstvnc_h1_config_t *config;
+#ifdef PSTVNC_H1_CP2P_APPLICATION
         pstvnc_h1_interaction_coordinator_t *interaction_view;
+#endif
         int session_ok = 1;
 #ifdef PSTVNC_H1_CP2P_APPLICATION
         int interaction_initialized = 0;
@@ -176,7 +178,6 @@ int main(void)
         interaction_view = &cp2p.interaction;
 #else
         pstvnc_h1_interaction_coordinator_init(&interaction);
-        interaction_view = &interaction;
 #endif
 
         printf(
@@ -306,8 +307,13 @@ int main(void)
                     (unsigned int)rfb.stats.initial_frame_complete,
                     (unsigned int)rfb.stats.incremental_updates_complete,
                     (unsigned int)rfb.stats.application_service_calls,
+#ifdef PSTVNC_H1_CP2P_APPLICATION
                     (unsigned int)pstvnc_input_runtime_last_error(
                         &interaction_view->input_runtime));
+#else
+                    (unsigned int)pstvnc_input_runtime_last_error(
+                        &interaction.input_runtime));
+#endif
                 session_ok = 0;
             } else if (h1_cp2o_wait_for_transport_end(&transport) < 0) {
                 printf(
@@ -334,6 +340,7 @@ int main(void)
                     (unsigned int)rfb.stats.incremental_presentations,
                     (unsigned int)rfb.stats.idle_polls,
                     (unsigned int)rfb.stats.application_service_calls,
+#ifdef PSTVNC_H1_CP2P_APPLICATION
                     (unsigned int)interaction_view->stats.controller_state_events_consumed,
                     (unsigned int)interaction_view->stats.mouse_update_events_consumed,
                     (unsigned int)interaction_view->stats.pointer_messages_sent,
@@ -343,6 +350,17 @@ int main(void)
                     (unsigned int)interaction_view->stats.osk_open_count,
                     (unsigned int)interaction_view->stats.osk_close_count,
                     (unsigned int)interaction_view->stats.local_presentations,
+#else
+                    (unsigned int)interaction.stats.controller_state_events_consumed,
+                    (unsigned int)interaction.stats.mouse_update_events_consumed,
+                    (unsigned int)interaction.stats.pointer_messages_sent,
+                    (unsigned int)interaction.stats.wheel_pulses_sent,
+                    (unsigned int)interaction.stats.keyboard_taps_published,
+                    (unsigned int)interaction.stats.key_messages_sent,
+                    (unsigned int)interaction.stats.osk_open_count,
+                    (unsigned int)interaction.stats.osk_close_count,
+                    (unsigned int)interaction.stats.local_presentations,
+#endif
                     (unsigned int)rfb.stats.quiesce_boundary_sent,
                     (unsigned int)rfb.stats.quiesce_commit_observed,
                     (unsigned int)rfb.stats.quiesce_complete_sent);
