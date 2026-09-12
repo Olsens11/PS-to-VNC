@@ -1,5 +1,6 @@
 name: H1 CP2P Item 10 Apply
 
+# Patch transformer preflight is now exact; run the full tranche.
 on:
   push:
     branches:
@@ -137,6 +138,9 @@ jobs:
             experiments/media-harness-h1/.item10_preapply_fix.py \
             experiments/media-harness-h1/.item10_apply_existing.py \
             experiments/media-harness-h1/.item10_runner_methods.txt \
+            experiments/media-harness-h1/ITEM10_PATCH_DIAGNOSTIC.txt \
+            .github/workflows/h1-cp2p-item10-diagnose.yml \
+            .github/workflows/h1-cp2p-item10-diagnose-artifact.yml \
             .github/workflows/h1-cp2p-item10-apply.yml
           git diff --check
           git config user.name 'github-actions[bot]'
