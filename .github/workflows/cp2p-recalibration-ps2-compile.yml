@@ -1,4 +1,4 @@
-name: CP2P recalibration PS2 compile diagnostic
+name: CP2P recalibration integration diagnostic
 
 on:
   push:
@@ -9,11 +9,22 @@ permissions:
   contents: read
 
 jobs:
+  host-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run strict calibration/recalibration host contracts
+        shell: bash
+        run: |
+          set -o pipefail
+          make -C experiments/media-harness-h1/mpeg_presentation_calibration \
+            -f Makefile.host clean test
+
   ps2-compile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Compile recalibration slice with pinned PS2 toolchain
+      - name: Compile CP2P compositor and interaction wiring with pinned PS2 toolchain
         env:
           IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
         shell: bash
@@ -27,12 +38,5 @@ jobs:
               set -eu
               apk add --no-cache bash binutils make python3 >/dev/null
               export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-              INC="-Iexperiments/media-harness-h1/mpeg_presentation_calibration -Iexperiments/media-harness-h1 -Isrc/input -Isrc/framebuffer -Isrc/rfb"
-              ee-gcc -std=c99 -O2 -Wall -Wextra -Werror $INC \
-                -c experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_cp2p_rfb_flow.c \
-                -o /tmp/h1_mpeg_cp2p_rfb_flow.o
-              ee-gcc -std=c99 -O2 -Wall -Wextra -Werror $INC \
-                -c experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_recalibration.c \
-                -o /tmp/h1_mpeg_recalibration.o
               make -f mk/media-harness-h1-cp2p-compositor-check.mk cp2p-compositor-check
             '
