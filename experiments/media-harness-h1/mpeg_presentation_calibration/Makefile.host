@@ -31,6 +31,9 @@ RENDER_SOURCES = \
 	$(CORE_SOURCES) \
 	h1_mpeg_calibration_render.c
 
+RASTER_SOURCES = \
+	h1_mpeg_calibration_raster.c
+
 RUNTIME_SOURCES = \
 	$(FOREGROUND_SOURCES) \
 	$(RFB_GATE_SOURCES) \
@@ -56,12 +59,13 @@ RFB_GATE_TEST = h1_mpeg_calibration_rfb_gate_test
 RFB_SCHEDULE_TEST = h1_mpeg_calibration_rfb_schedule_test
 RFB_FLOW_TEST = h1_mpeg_calibration_rfb_flow_test
 RENDER_TEST = h1_mpeg_calibration_render_test
+RASTER_TEST = h1_mpeg_calibration_raster_test
 RUNTIME_TEST = h1_mpeg_calibration_runtime_test
 INTERACTION_BINDING_TEST = h1_mpeg_calibration_interaction_binding_test
 
 .PHONY: test clean
 
-test: $(CORE_TEST) $(ENTRY_HOLD_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST)
+test: $(CORE_TEST) $(ENTRY_HOLD_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST)
 	./$(CORE_TEST)
 	./$(ENTRY_HOLD_TEST)
 	./$(ADAPTER_TEST)
@@ -70,6 +74,7 @@ test: $(CORE_TEST) $(ENTRY_HOLD_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_G
 	./$(RFB_SCHEDULE_TEST)
 	./$(RFB_FLOW_TEST)
 	./$(RENDER_TEST)
+	./$(RASTER_TEST)
 	./$(RUNTIME_TEST)
 	./$(INTERACTION_BINDING_TEST)
 	python3 h1_mpeg_calibration_live_wiring_test.py
@@ -98,6 +103,9 @@ $(RFB_FLOW_TEST): $(RFB_FLOW_SOURCES) h1_mpeg_calibration_rfb_flow_test.c
 $(RENDER_TEST): $(RENDER_SOURCES) h1_mpeg_calibration_render_test.c
 	$(CC) $(CFLAGS) -I. $(RENDER_SOURCES) h1_mpeg_calibration_render_test.c -o $@
 
+$(RASTER_TEST): $(RASTER_SOURCES) h1_mpeg_calibration_raster_test.c
+	$(CC) $(CFLAGS) -I. $(RASTER_SOURCES) h1_mpeg_calibration_raster_test.c -o $@
+
 $(RUNTIME_TEST): $(RUNTIME_SOURCES) h1_mpeg_calibration_runtime_test.c
 	$(CC) $(CFLAGS) -I. -I../../../src/input $(RUNTIME_SOURCES) h1_mpeg_calibration_runtime_test.c -o $@
 
@@ -105,4 +113,4 @@ $(INTERACTION_BINDING_TEST): $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_
 	$(CC) $(CFLAGS) -I. -Ihost_stubs -I../../../src/input -I../../../src/framebuffer -I../../../src/rfb $(INTERACTION_BINDING_SOURCES) h1_mpeg_calibration_interaction_binding_test.c -o $@
 
 clean:
-	rm -f $(CORE_TEST) $(ENTRY_HOLD_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST)
+	rm -f $(CORE_TEST) $(ENTRY_HOLD_TEST) $(ADAPTER_TEST) $(FOREGROUND_TEST) $(RFB_GATE_TEST) $(RFB_SCHEDULE_TEST) $(RFB_FLOW_TEST) $(RENDER_TEST) $(RASTER_TEST) $(RUNTIME_TEST) $(INTERACTION_BINDING_TEST)
