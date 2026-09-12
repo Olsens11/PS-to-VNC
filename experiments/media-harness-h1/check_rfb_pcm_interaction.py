@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Verify CP2O is CP2N visible interaction plus the existing PCM path only."""
+"""Verify CP2O keeps its qualified visible-interaction/PCM composition while
+allowing the experiment-local MPEG-calibration RFB flow policy to mediate request
+and presentation scheduling. MPEG decode/presentation itself remains off here.
+"""
 
 from __future__ import annotations
 
@@ -43,13 +46,20 @@ def check_source() -> None:
         "pstvnc_h1_audio_start(",
         "pstvnc_h1_audio_finished(",
         "pstvnc_h1_audio_shutdown(",
-        "pstvnc_h1_rfb_session_runtime_run_with_presenter_and_service(",
+        "pstvnc_h1_rfb_session_runtime_run_with_flow_policy(",
         "pstvnc_h1_interaction_coordinator_present",
         "pstvnc_h1_interaction_coordinator_service",
+        "pstvnc_h1_interaction_coordinator_rfb_policy(",
         "PSTVNC_H1_RFB_ON_VISIBLE",
         "PSTVNC_H1_VIDEO_OFF",
     ):
         require(main, needle, "cp2o_main")
+
+    # The live calibration seam deliberately replaces the older convenience
+    # entry point. Keeping both would make it ambiguous which request/present
+    # policy actually owns the session.
+    if "pstvnc_h1_rfb_session_runtime_run_with_presenter_and_service(" in main:
+        fail("cp2o_main_bypasses_calibration_flow_policy")
 
     if "pstvnc_h1_video_run_session(" in main:
         fail("cp2o_main_started_mpeg")
@@ -83,6 +93,8 @@ def check_source() -> None:
         "h1_rfb_transport_live_visible.c",
         "h1_rfb_session_runtime_visible.c",
         "$(BUILD_DIR)/h1_interaction_coordinator.o",
+        "$(BUILD_DIR)/h1_mpeg_calibration_interaction_binding.o",
+        "$(BUILD_DIR)/h1_mpeg_calibration_entry_hold.o",
     ):
         require(makefile, needle, "cp2o_makefile")
 
@@ -132,9 +144,10 @@ def check_objects(build_dir: Path, nm_explicit: str | None) -> None:
         "pstvnc_h1_audio_start",
         "pstvnc_h1_audio_finished",
         "pstvnc_h1_audio_shutdown",
-        "pstvnc_h1_rfb_session_runtime_run_with_presenter_and_service",
+        "pstvnc_h1_rfb_session_runtime_run_with_flow_policy",
         "pstvnc_h1_interaction_coordinator_present",
         "pstvnc_h1_interaction_coordinator_service",
+        "pstvnc_h1_interaction_coordinator_rfb_policy",
     ):
         if required not in undefined:
             fail(f"main_missing_reference:{required}")
