@@ -51,26 +51,28 @@ jobs:
             apk add --no-cache bash binutils git make python3 >/dev/null
             export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
             git config --global --add safe.directory /repo
+            CURRENT_SHA="$GITHUB_SHA"
 
-            # Historical identity proof: rebuild the immutable CP2O anchor from
-            # its own source tree. Do not demand that the forward-integrated
-            # tree retain an old whole-ELF hash after shared coordinator work.
-            rm -rf /tmp/cp2o-anchor
-            mkdir -p /tmp/cp2o-anchor
-            git archive "$CP2O_ANCHOR" | tar -x -C /tmp/cp2o-anchor
-            cd /tmp/cp2o-anchor
+            # Historical identity proof must reproduce the original source path
+            # because the ELF carries DWARF/debug path data. Build the proven
+            # anchor at /repo, exactly where run 34690484266 built it.
+            git checkout --detach "$CP2O_ANCHOR"
+            CP2O_BUILD=build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
+            CP2O_ELF="$CP2O_BUILD/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF"
+            rm -rf "$CP2O_BUILD"
             make -f mk/media-harness-h1-cp2o-visible-rfb-interaction-pcm.mk
-            ANCHOR_ELF=build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF
-            ANCHOR_SHA=$(sha256sum "$ANCHOR_ELF" | cut -d" " -f1)
+            python3 experiments/media-harness-h1/check_rfb_pcm_interaction.py --build-dir "$CP2O_BUILD"
+            python3 experiments/media-harness-h1/check_rfb_mux_seam.py --build-dir "$CP2O_BUILD"
+            ANCHOR_SHA=$(sha256sum "$CP2O_ELF" | cut -d" " -f1)
             echo "H1_CP2O_ANCHOR_COMMIT=$CP2O_ANCHOR"
             echo "H1_CP2O_ANCHOR_SHA256=$ANCHOR_SHA"
             test "$ANCHOR_SHA" = "$CP2O_ANCHOR_SHA256"
+            ./scripts/testkit/pt-load-fingerprint.sh "$CP2O_ELF"
             echo H1_CP2O_ANCHOR_IDENTITY=PASS
 
-            # Forward-tree regression proof: the integrated coordinator is now
-            # intentionally newer than the CP2O anchor, so prove the inherited
-            # RFB/PCM and mux mechanics rather than falsely asserting old bytes.
-            cd /repo
+            # Return to the exact integration source commit and prove the
+            # current inherited CP2O mechanics plus the unified CP2P target.
+            git checkout --detach "$CURRENT_SHA"
             CP2O_BUILD=build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
             CP2O_ELF="$CP2O_BUILD/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF"
             CP2P_BUILD=build/experiments/media-harness-h1-cp2p-application-link/ps2
@@ -107,7 +109,7 @@ jobs:
             echo H1_CP2P_MPEG_WORKER=DORMANT
 
             {
-              echo "SOURCE_COMMIT=${GITHUB_SHA:-unknown}"
+              echo "SOURCE_COMMIT=$CURRENT_SHA"
               sha256sum "$CP2P_ELF"
               stat -c "ELF_BYTES=%s" "$CP2P_ELF"
               ./scripts/testkit/pt-load-fingerprint.sh "$CP2P_ELF"
