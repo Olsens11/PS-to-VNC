@@ -16,219 +16,75 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Append item 4 convergence and proof history, then self-remove
+      - name: Append item 4 history and self-remove
         run: |
           set -eu
           HISTORY=experiments/media-harness-h1/CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md
           WORKFLOW=.github/workflows/h1-cp2p-seal-item4-history.yml
           EXPECTED_OLD_BLOB=60d48680ebb11ea2ce6d89c74be199ec250f4c68
-
-          ACTUAL_OLD_BLOB=$(git hash-object "$HISTORY")
-          echo "HISTORY_OLD_BLOB=$ACTUAL_OLD_BLOB"
-          test "$ACTUAL_OLD_BLOB" = "$EXPECTED_OLD_BLOB"
+          test "$(git hash-object "$HISTORY")" = "$EXPECTED_OLD_BLOB"
           cp "$HISTORY" /tmp/history-before.md
-
           cat >> "$HISTORY" <<'EOF'
-
----
-
-# PHASE L — SEPTEMBER 12 SIBLING-LINE CONVERGENCE AND FINAL ITEM #4 SEAL
-
-## 33. The lifecycle/session-coordinator line and the application-link line are converged before advancing
-
-After the first application-link checkpoint above, repository reconstruction exposed an important branch-lineage fact that had not been visible in the flat narrative: the work described as items #1–#3 and the first implementation of item #4 had been proven on **sibling branches**, not yet in one tree.
-
-The lifecycle/session line was `experiment/h1-cp2p-recalibration-lifecycle`, while the application-link line was `experiment/h1-cp2p-start-wire-accepted`. Both descended from the same earlier working checkpoint, but neither branch alone represented the complete pre-Pi state that the project intended to carry forward.
-
-The lifecycle/session branch had established the deliberately simple fresh-generation recalibration model:
-
-- `START+SELECT` begins a fresh calibration transaction rather than mutating a generation;
-- with no MPEG generation, calibration may enter immediately over the current RFB frame;
-- with an active or waiting MPEG generation, retire that exact generation first, require a **new full RFB restoration frame**, then freeze that restored full-RFB frame and enter calibration;
-- preserve the last confirmed calibration rectangle and matte settings as the seed for the next transaction;
-- cancel creates no replacement generation and returns to full-frame RFB + PCM;
-- confirm, whether unchanged or resized, creates a fresh higher generation;
-- stale retired generations cannot reacquire presentation ownership.
-
-Important contemporaneous milestones on that sibling line included:
-
-- `d2af6c4918b6d9af1123d8704ca97829e6e73271` — fresh recalibration transaction lifecycle;
-- `4d307d022a7595da28059d31dd0fa496a10e1f31` — lifecycle wired into the CP2P interaction path;
-- `e549daaa4a144b39b6cfc7b00fd2d1f979b8f2ed` — temporary diagnostic cleanup after that proof;
-- final sibling-line head `4d56f487357e1c73f6c025ad923c9966e69ab622` — session-owned accepted→START transaction and tightened coordinator boundaries.
-
-That line also established the real session coordinator as the owner of:
-
-- interaction/calibration state;
-- the immutable MPEG start handoff/generation;
-- combined CP2P RFB flow policy;
-- recalibration retirement/restoration state;
-- the existing PSTV transport pointer and real transport session id;
-- one-shot accepted calibration → `prepare_start()` → serialized START;
-- exact-generation START failure abort.
-
-The application-link line, separately, had established the distinct CP2P application target descended from CP2O, the one-public-graphics-owner composition, and pinned PS2 link evidence.
-
-Rather than moving to Pi item #5 with those facts merely *described* as integrated, a new branch was created:
-
-`experiment/h1-cp2p-integrated-pre-pi`
-
-A true two-parent convergence commit preserved both proven histories:
-
-`b45b00b443d79af8096ad7131798eda807ce1b4f`
-
-No qualified historical branch was rewritten. The convergence was also represented by PR #44, which was merged and closed with that same merge commit.
-
-The explicit CP2P target was then made to instantiate and run through the real CP2P session coordinator while leaving the MPEG worker deliberately dormant. CP2O's historical main was restored byte-for-byte and CP2P received its own clearly named CP2O-derived application main instead of using compile-time interception inside the CP2O source.
-
-This entry supersedes the earlier implication that the first item-#4 application-link ELF by itself was a sufficient integrated pre-Pi handoff. That earlier proof remains true for what it actually tested; the later repository reconstruction showed that one more convergence/proof boundary was required before item #4 could be considered closed for forward development.
-
----
-
-## 34. Item #4 closes on one integrated tree with pinned provenance and explicit proof boundaries
-
-The final integrated item-#4 source proof was run from:
-
-`a14afa66108a033bd9bc5da6362385c547515d4c`
-
-GitHub Actions run:
-
-`34701548058`
-
-Pinned PS2DEV image:
-
-`ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11`
-
-Both jobs completed successfully:
-
-- host-contracts `103574087813` — SUCCESS;
-- ps2-build `103574087729` — SUCCESS.
-
-The strict host suite and CP2P-specific source contract passed. The pinned PS2 job separately proved historical CP2O identity, current-tree CP2O regression behavior, and the integrated CP2P link.
-
-### Proven historical CP2O anchor
-
-During proof refinement, source archaeology established that the historical CP2O artifact identity `0f30ae41...` belonged to commit:
-
-`a9037fd12115d48113423394703dfb3e313631b7`
-
-Original authority: workflow run `34690484266`.
-
-The final proof rebuilt that exact commit in the original `/repo` source path because the complete ELF carries DWARF/debug path information. Under those historical conditions it reproduced:
-
-- ELF SHA256 `0f30ae41ac7cf77ddf7f0a9d8e2c40639b6cfd03d232363cca3799e79f6969ad`;
-- PT_LOAD SHA256 `8737d4c3735f165d667b63d3a1c3f174ebd0db96ba17d402b55cabdd5e34d08c`;
-- PT_LOAD bytes `507412`;
-- `H1_CP2O_ANCHOR_IDENTITY=PASS`.
-
-This clarified two provenance facts without rewriting earlier entries:
-
-1. `f200949...` was a later branch checkpoint, not the source commit of the historical `0f30ae...` CP2O artifact;
-2. a whole-ELF SHA containing debug information is source-path sensitive, so an otherwise identical rebuild under `/tmp/...` is not a valid whole-file identity reproduction.
-
-### Current integrated CP2O regression
-
-The forward-integrated tree intentionally contains newer shared interaction/coordinator machinery, so requiring its entire CP2O ELF to equal the historical anchor would conflate **historical identity** with **forward regression**.
-
-Instead, the final proof kept those questions separate. Current-tree CP2O passed its existing RFB/PCM source/object contracts and RFB mux seam checks:
-
-- `CP2O_RFB_PCM_SOURCE=PASS`;
-- `CP2O_RFB_PCM_OBJECTS=PASS`;
-- `H1_RFB_MUX_SEAM_SOURCE=PASS`;
-- `H1_RFB_MUX_SEAM_OBJECTS=PASS`;
-- `H1_RFB_MUX_SEAM=PASS`;
-- `H1_CP2O_INTEGRATED_RFB_PCM_REGRESSION=PASS`.
-
-Its forward-tree ELF SHA256 at this proof boundary was:
-
-`c00573ce36c1b4c2e1c678bfc054ee61e217365a82168caa9140e9a4a160d7fe`
-
-That value is a regression-build identity for the newer integrated tree, not a replacement for the historical CP2O anchor.
-
-### Integrated CP2P application proof
-
-The final CP2P target proved all of the following in one linked tree:
-
-- a distinct real CP2P application target descended from the CP2O composition;
-- existing visible RFB + optional PCM application mechanics retained as the baseline;
-- the real CP2P session coordinator linked and used by the CP2P application main;
-- accepted calibration → immutable generation → START transaction live at the session-coordinator layer;
-- recalibration retirement/full-RFB-restoration lifecycle linked;
-- START wire and existing serialized PSTV send path linked;
-- combined CP2P RFB flow policy linked;
-- the shared compositor remains the **single** public graphics owner;
-- the existing one-transport / one-PS2-receive-owner mux seam remains intact;
-- the generated concurrent CP2P MPEG worker/runtime is intentionally **not** linked or started yet.
-
-Important emitted proof markers included:
-
-- `H1_CP2P_APPLICATION_LINK=PASS`;
-- `H1_CP2P_BASELINE=CP2O`;
-- `H1_CP2P_SESSION_COORDINATOR=LIVE`;
-- `H1_CP2P_ACCEPT_TO_START=LIVE`;
-- `H1_CP2P_GRAPHICS_OWNER=SHARED_COMPOSITOR`;
-- `H1_CP2P_MPEG_WORKER=DORMANT`;
-- `H1_CP2P_INTEGRATED_LINK=PASS`;
-- `H1_RFB_MUX_SEAM=PASS`.
-
-The final pre-Pi item-#4 ELF was:
-
-`build/experiments/media-harness-h1-cp2p-application-link/ps2/PS2VNC-H1-CP2P-ApplicationLink.ELF`
-
-Identity:
-
-- source proof commit `a14afa66108a033bd9bc5da6362385c547515d4c`;
-- ELF SHA256 `328981b54a396bca78e3a3fb41d592a5bc20ec3674d1d91b7fd6288031972ec3`;
-- ELF bytes `3269860`;
-- PT_LOAD segments `1`;
-- PT_LOAD SHA256 `3df932c9b8752803f38926b21238ab000fd4dc9d255495b9df2be414ea177bbe`;
-- PT_LOAD bytes `518804`;
-- `TESTKIT_PT_LOAD_FINGERPRINT=PASS`.
-
-Uploaded proof artifact:
-
-- name `h1-cp2p-integrated-pre-pi-unqualified-elf`;
-- artifact id `10299788893`;
-- artifact ZIP SHA256 `609c221f3861763c2c78b2e527bb2f670aee20ead86efe0274cce39e09e1e43d`;
-- artifact bytes `1166064`.
-
-### Proof refinements preserved as history
-
-Several failed proof attempts were useful evidence refinements rather than implementation failures, and are intentionally preserved here:
-
-- a first combined proof incorrectly required the forward-integrated CP2O ELF to equal an older whole-file hash even though shared coordinator objects had intentionally evolved;
-- the historical source commit for that hash was then recovered as `a9037fd...`, rather than guessed from the later `f200949...` branch checkpoint;
-- rebuilding the exact historical commit under a different source path exposed DWARF/source-path sensitivity of the complete ELF hash, so the final identity proof reproduced the original `/repo` path;
-- `check_rfb_pcm_interaction.py` was found to be explicitly **CP2O-specific**: it requires `h1_main.o` to reference the bare interaction coordinator. Applying it to CP2P was invalid because CP2P correctly delegates through the session coordinator. The final proof therefore uses that checker for CP2O, while CP2P is proven through its own source contract, inherited mux seam, and linked-symbol assertions.
-
-No production-code behavior was changed merely to satisfy an inapplicable proof check.
-
-### Item #4 final boundary
-
-At this entry, scoreboard item **#4 — Link a real CP2P PS2 target — is complete for the intended pre-Pi software boundary.**
-
-This does **not** claim:
-
-- Pi START receive/validation;
-- Pi generation-scoped RFB suppression;
-- Pi exact calibrated capture/producer activation;
-- a running concurrent PS2 MPEG worker;
-- the final visible-RFB + PCM + MPEG CONFIG gate;
-- deployment to the PS2;
-- physical all-guns behavior;
-- hardware qualification or freeze-resolution proof.
-
-Those remain later scoreboard items. The next incomplete implementation item after this seal is **#5 — Pi START receive + validation**.
-EOF
-
+          
+          ---
+          
+          # PHASE L — SEPTEMBER 12 SIBLING-LINE CONVERGENCE AND FINAL ITEM #4 SEAL
+          
+          ## 33. Sibling lifecycle/session and application-link lines are converged before advancing
+          
+          Repository reconstruction after the first item-#4 application-link proof exposed an important lineage fact: items #1–#3/session-lifecycle work and the first #4 target proof lived on sibling branches and had never been proven together in one tree.
+          
+          The lifecycle line `experiment/h1-cp2p-recalibration-lifecycle` had established the fresh-generation rule: START+SELECT begins a new calibration transaction; an active/waiting generation is retired first; a **new full RFB restoration frame** must present before calibration freezes; cancel creates no generation; confirm creates a fresh higher generation; and stale retired generations cannot reacquire ownership. Important milestones included `d2af6c4918b6d9af1123d8704ca97829e6e73271`, `4d307d022a7595da28059d31dd0fa496a10e1f31`, and final sibling head `4d56f487357e1c73f6c025ad923c9966e69ab622`.
+          
+          That line also established the real CP2P session coordinator as owner of interaction/calibration state, immutable MPEG generation/start handoff, combined RFB-flow policy, recalibration state, the existing PSTV transport/session identity, one-shot accepted→START, and exact-generation send-failure abort.
+          
+          The application-link line `experiment/h1-cp2p-start-wire-accepted` separately proved the CP2O-derived CP2P target and one-public-graphics-owner linkage. Rather than advance to Pi #5 with only a narrative assertion that these lines composed, the new branch `experiment/h1-cp2p-integrated-pre-pi` converged them with true two-parent commit `b45b00b443d79af8096ad7131798eda807ce1b4f` (merged PR #44). Neither historical branch was rewritten.
+          
+          The explicit CP2P target was then wired to instantiate and use the real session coordinator while keeping the MPEG worker deliberately dormant. CP2O's historical main was restored byte-for-byte; CP2P uses its own clearly named CP2O-derived main. Thus the earlier #4 proof remains true for what it tested, while this later convergence closes the missing forward-integration boundary.
+          
+          ---
+          
+          ## 34. Item #4 closes on one integrated tree with pinned provenance
+          
+          Final integrated item-#4 source proof commit:
+          
+          `a14afa66108a033bd9bc5da6362385c547515d4c`
+          
+          Final proof run: `34701548058` using pinned image `ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11`.
+          
+          Both jobs passed: host-contracts `103574087813` and ps2-build `103574087729`.
+          
+          Historical CP2O provenance was refined rather than flattened. The exact `0f30ae41...` artifact belongs to source commit `a9037fd12115d48113423394703dfb3e313631b7`, originally proven by run `34690484266`. Rebuilding that exact commit at the original `/repo` source path reproduced:
+          
+          - ELF SHA256 `0f30ae41ac7cf77ddf7f0a9d8e2c40639b6cfd03d232363cca3799e79f6969ad`;
+          - PT_LOAD SHA256 `8737d4c3735f165d667b63d3a1c3f174ebd0db96ba17d402b55cabdd5e34d08c`;
+          - PT_LOAD bytes `507412`;
+          - `H1_CP2O_ANCHOR_IDENTITY=PASS`.
+          
+          This established that `f200949...` was a later branch checkpoint, not the source of that historical artifact, and that the complete ELF hash is DWARF/source-path sensitive.
+          
+          The forward-integrated tree intentionally contains newer shared coordinator machinery, so historical identity and forward regression were proven separately. Current-tree CP2O passed its RFB/PCM source/object and mux-seam contracts with `H1_CP2O_INTEGRATED_RFB_PCM_REGRESSION=PASS`; its proof-boundary ELF SHA256 was `c00573ce36c1b4c2e1c678bfc054ee61e217365a82168caa9140e9a4a160d7fe`.
+          
+          The integrated CP2P ELF proved in one linked tree: CP2O-derived visible RFB + optional PCM baseline; real CP2P session coordinator; accepted calibration→immutable generation→START; recalibration/full-RFB-restoration lifecycle; START wire through the existing serialized PSTV writer; combined CP2P RFB policy; one public graphics owner; and the existing one-transport/one-PS2-receive-owner mux seam. The generated concurrent MPEG worker remains intentionally dormant.
+          
+          Final item-#4 CP2P identity:
+          
+          - ELF `PS2VNC-H1-CP2P-ApplicationLink.ELF`;
+          - SHA256 `328981b54a396bca78e3a3fb41d592a5bc20ec3674d1d91b7fd6288031972ec3`;
+          - ELF bytes `3269860`;
+          - PT_LOAD SHA256 `3df932c9b8752803f38926b21238ab000fd4dc9d255495b9df2be414ea177bbe`;
+          - PT_LOAD bytes `518804`;
+          - artifact `h1-cp2p-integrated-pre-pi-unqualified-elf`, id `10299788893`;
+          - artifact ZIP SHA256 `609c221f3861763c2c78b2e527bb2f670aee20ead86efe0274cce39e09e1e43d`.
+          
+          Proof refinement also established that `check_rfb_pcm_interaction.py` is CP2O-specific because it requires `h1_main.o` to reference the bare interaction coordinator. Applying it to CP2P was therefore invalid: CP2P correctly delegates through the session coordinator. The final proof uses the CP2O checker only for CP2O and proves CP2P through its own source contract, inherited mux seam, and linked-symbol assertions. Production behavior was not changed to satisfy an inapplicable checker.
+          
+          At this entry scoreboard item **#4 — Link a real CP2P PS2 target — is complete for the intended pre-Pi software boundary.** This does not claim Pi START receive/validation, Pi suppression/capture activation, a running PS2 MPEG worker, final all-guns CONFIG activation, deployment, physical behavior, or hardware qualification. The next incomplete implementation item is **#5 — Pi START receive + validation**.
+          EOF
           OLD_BYTES=$(wc -c < /tmp/history-before.md)
-          NEW_BYTES=$(wc -c < "$HISTORY")
-          test "$NEW_BYTES" -gt "$OLD_BYTES"
+          test "$(wc -c < "$HISTORY")" -gt "$OLD_BYTES"
           cmp -n "$OLD_BYTES" /tmp/history-before.md "$HISTORY"
-          echo "HISTORY_APPEND_PREFIX_PRESERVED=PASS"
-          echo "HISTORY_OLD_BYTES=$OLD_BYTES"
-          echo "HISTORY_NEW_BYTES=$NEW_BYTES"
-
+          echo HISTORY_APPEND_PREFIX_PRESERVED=PASS
           rm "$WORKFLOW"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
