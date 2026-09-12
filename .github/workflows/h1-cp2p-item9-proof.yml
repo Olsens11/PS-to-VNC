@@ -1,0 +1,109 @@
+name: H1 CP2P Item 9 Proof
+
+on:
+  push:
+    branches:
+      - experiment/h1-cp2p-ps2-mpeg-worker
+    paths:
+      - .github/workflows/h1-cp2p-item9-proof.yml
+
+permissions:
+  contents: read
+
+jobs:
+  host-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/h1-cp2p-ps2-mpeg-worker
+      - name: Strict calibration and worker contracts
+        shell: bash
+        run: |
+          set -eu
+          make -C experiments/media-harness-h1/mpeg_presentation_calibration -f Makefile.host clean
+          make -C experiments/media-harness-h1/mpeg_presentation_calibration -f Makefile.host test
+          python3 experiments/media-harness-h1/test_h1_cp2p_mpeg_worker_contract.py
+          grep -Fq 'config->video_mode != PSTVNC_H1_VIDEO_OFF' experiments/media-harness-h1/h1_main_cp2p_visible_interaction_pcm.c
+          grep -Fq 'config->video_mode == PSTVNC_H1_VIDEO_OFF' experiments/media-harness-h1/h1_cp2p_mpeg_worker.c
+          echo H1_CP2P_ITEM9_HOST_CONTRACTS=PASS
+          echo H1_CP2P_ITEM10_GATE_UNCHANGED=PASS
+
+  ps2-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/h1-cp2p-ps2-mpeg-worker
+      - name: Build CP2O regression and CP2P worker target in pinned PS2DEV image
+        env:
+          IMAGE: ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
+        run: |
+          set -eu
+          SOURCE_COMMIT=$(git rev-parse HEAD)
+          docker run --rm \
+            --entrypoint /bin/sh \
+            -e SOURCE_COMMIT="$SOURCE_COMMIT" \
+            -v "$PWD:/repo" \
+            -w /repo \
+            "$IMAGE" \
+            -lc '
+              set -eu
+              apk add --no-cache bash binutils make python3 >/dev/null
+              export PATH=/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+              CP2O_BUILD=build/experiments/media-harness-h1-cp2o-visible-rfb-interaction-pcm/ps2
+              CP2P_BUILD=build/experiments/media-harness-h1-cp2p-application-link/ps2
+              CP2O_ELF="$CP2O_BUILD/PS2VNC-H1-CP2O-VisibleRFBInteractionPCM.ELF"
+              CP2P_ELF="$CP2P_BUILD/PS2VNC-H1-CP2P-ApplicationLink.ELF"
+              rm -rf "$CP2O_BUILD" "$CP2P_BUILD"
+
+              make -f mk/media-harness-h1-cp2o-visible-rfb-interaction-pcm.mk
+              python3 experiments/media-harness-h1/check_rfb_pcm_interaction.py --build-dir "$CP2O_BUILD"
+              python3 experiments/media-harness-h1/check_rfb_mux_seam.py --build-dir "$CP2O_BUILD"
+              test -f "$CP2O_ELF"
+              echo H1_CP2O_CURRENT_TREE_REGRESSION=PASS
+
+              make -f mk/media-harness-h1-cp2p-application-link.mk cp2p-application-link-check
+              python3 experiments/media-harness-h1/check_rfb_pcm_interaction.py --build-dir "$CP2P_BUILD"
+              python3 experiments/media-harness-h1/check_rfb_mux_seam.py --build-dir "$CP2P_BUILD"
+
+              test -f "$CP2P_BUILD/h1_cp2p_mpeg_worker.o"
+              test -f "$CP2P_BUILD/h1_video_runtime_cp2p.o"
+              test ! -f "$CP2P_BUILD/h1_video_runtime.o"
+
+              mips64r5900el-ps2-elf-nm "$CP2P_ELF" > cp2p-item9-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_cp2p_mpeg_worker_arm$" cp2p-item9-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_cp2p_mpeg_worker_clear$" cp2p-item9-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_video_run_cp2p_session$" cp2p-item9-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_transport_mpeg_read_cancellable$" cp2p-item9-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_mpeg_start_transport_send$" cp2p-item9-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_mpeg_start_handoff_first_frame_presented$" cp2p-item9-symbols.txt
+              grep -Eq "[[:space:]]pstvnc_h1_graphics_present_video_macroblocks$" cp2p-item9-symbols.txt
+              if grep -Eq "[[:space:]]pstvnc_h1_video_run_session$" cp2p-item9-symbols.txt; then
+                echo H1_CP2P_STANDALONE_VIDEO_RUNTIME_PRESENT=FAIL
+                exit 1
+              fi
+              test "$(grep -Ec "[[:space:]]pstvnc_ps2_graphics_init$" cp2p-item9-symbols.txt)" -eq 1
+              test "$(grep -Ec "[[:space:]]pstvnc_ps2_graphics_present$" cp2p-item9-symbols.txt)" -eq 1
+              test "$(grep -Ec "[[:space:]]pstvnc_ps2_graphics_shutdown$" cp2p-item9-symbols.txt)" -eq 1
+
+              echo H1_CP2P_ITEM9_PS2_LINK=PASS
+              echo H1_CP2P_ITEM9_GENERATION_WORKER=PASS
+              echo H1_CP2P_ITEM9_SINGLE_GRAPHICS_OWNER=PASS
+              echo H1_CP2P_ITEM9_SINGLE_TRANSPORT_READER_ARCHITECTURE=PASS
+              {
+                echo "SOURCE_COMMIT=$SOURCE_COMMIT"
+                sha256sum "$CP2P_ELF"
+                stat -c "ELF_BYTES=%s" "$CP2P_ELF"
+                ./scripts/testkit/pt-load-fingerprint.sh "$CP2P_ELF"
+              } | tee cp2p-item9-identity.txt
+            '
+      - uses: actions/upload-artifact@v4
+        with:
+          name: h1-cp2p-item9-unqualified-elf
+          path: |
+            build/experiments/media-harness-h1-cp2p-application-link/ps2/PS2VNC-H1-CP2P-ApplicationLink.ELF
+            cp2p-item9-identity.txt
+            cp2p-item9-symbols.txt
+          if-no-files-found: error
