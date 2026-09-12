@@ -1569,3 +1569,60 @@ The best current dependency order becomes:
 `#8 -> #11B -> #10 -> #12`
 
 As before, this order is subject to later reinterpretation with better implementation or hardware evidence. At this checkpoint, however, the prerequisite that forced #11A ahead of #8 is satisfied: generation N can be exactly retired on the Pi and completion can be proven before local PS2 retirement creates the fresh full-RFB restoration transaction.
+
+
+---
+
+# PHASE Q — SEPTEMBER 12 START-DRIVEN PI MPEG PRODUCER
+
+## 41. Item #8 — START-driven Pi MPEG producer closes behind the public gate
+
+Work continued from sealed item-#11A head `d2283b44cd9c240b26b9bda2f045a7ca1452af06` on branch `experiment/h1-cp2p-start-driven-producer`. The objective was deliberately narrower than all-guns activation: make a valid immutable START wake a real exact-region Pi encoder owned by that generation, while keeping item #10's public MPEG CONFIG gate closed so no MPEG bytes could yet enter PSTV.
+
+The implementation first landed as `f9ad2f991713256890409fdfb55399bff4eaabd9` (`h1: add START-driven generation MPEG producer`) and was then hardened at `0347e2f1a0295a83aa7051fc9b963b7f3ece85a2` (`h1: harden START-driven producer rollback ordering`). The latter is the item-#8 product-source authority.
+
+`h1_cp2p_mpeg_producer.py` now owns one exact generation. It launches only the already-prepared FFmpeg/x11grab command derived from the accepted START base X/Y/W/H after that same generation's RFB suppression and capture plan are established. It does not reconstruct geometry independently. The producer is attached to the existing H1 session and uses the existing bounded producer-buffer behavior; it creates no second PS2-facing transport, reader, frame-sequence owner, or bypass writer.
+
+The public all-guns gate remains intentionally closed. Item #8 therefore proves a real local encoder process and lifecycle, **not** MPEG transport activation: generated MPEG output remains locally bounded/backpressured and `h1_cp2p_mpeg_producer.py` has no PSTV channel-4 send path. `H1_CP2P_ITEM8_PUBLIC_GATE=CLOSED` is part of the proof boundary. Item #10 remains the later authority that will expose MPEG DATA only after the live generation-transition boundary is safe.
+
+The important lifecycle addition is exact producer retirement. For generation N, Pi cleanup now orders:
+
+`stop/drain/discard exact producer N -> prove subprocess + reader quiescent -> remove suppression N -> release prepared START/capture/evidence N -> send exact RETIRE completion N`.
+
+Every locally buffered unsent MPEG byte is drained/discarded before suppression can be removed. Wrong-generation retirement is rejected. If graceful stop cannot quiesce the producer, termination is attempted; if quiescence still cannot be proven, retirement fails closed. A review during implementation found and corrected a subtler rollback edge: a failed post-launch START transaction originally could have continued removing suppression after producer stop/drain failed. The hardened path now stops rollback at that boundary and deliberately retains suppression plus prepared-generation state when producer dormancy cannot be proven.
+
+That ordering preserves item #11A's Pi-first cross-machine rule. The PS2 still retains generation N as authoritative while waiting for Pi completion; the Pi cannot acknowledge until the exact local producer and suppression/capture state are safely retired; only then may PS2 local retirement create the fresh full-RFB restoration obligation.
+
+Host coverage now includes:
+
+- `h1_cp2p_mpeg_producer_test.py`: exact START-plan launch, no PSTV MPEG emission, exact retirement and unsent-byte drain, wrong-generation refusal, and stuck-producer fail-closed behavior;
+- `h1_cp2p_retirement_control_test.py`: a live generation-owned producer retires before suppression removal and completion, while an unowned live legacy producer blocks acknowledgement;
+- `h1_cp2p_start_preparation_transaction_test.py`: post-launch rollback failure that cannot prove producer quiescence retains suppression/prepared state fail-closed;
+- the full prior #5/#6/#7/#11A Pi contract suite;
+- the complete calibration/session host suite.
+
+A first green proof run, `34711889280`, applied the final safety hardening in the runner worktree and then committed it as `0347e2f1...`. Because the project distinguishes tested working-tree state from immutable committed-source proof, a second clean verification was required. CI-only head `51e1141f252edec2a7c1b19f445d941033e6fa19` differs from the product source only by a one-line workflow trigger comment. GitHub Actions run `34712568840` checked out that committed tree; all item-#8 staging helpers reported `ALREADY_APPLIED`, the working tree remained product-clean, and both jobs passed:
+
+- host-contracts `103603873398` — SUCCESS;
+- ps2-regression `103603873498` — SUCCESS.
+
+The pinned PS2 regression used `ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11` and retained the exact item-#11A PS2 binary identity, as expected for this Pi-only product tranche:
+
+- ELF `PS2VNC-H1-CP2P-ApplicationLink.ELF`;
+- SHA256 `5667e14ff412b5848ced30801bac184320ed852a23603072aa13f7a4fcd75ddc`;
+- ELF bytes `3232156`;
+- PT_LOAD SHA256 `5bad594faf8555684f06cb854fad639fa5d3c8b69d9691e737fa6cf386d11336`;
+- PT_LOAD bytes `510612`;
+- `H1_CP2P_ITEM8_PS2_REGRESSION=PASS`;
+- `TESTKIT_PT_LOAD_FINGERPRINT=PASS`.
+
+This changes the checklist at the software boundary:
+
+- **#7 exact calibrated geometry end-to-end: PARTIAL -> DONE**, because the immutable START base rectangle is now consumed by the real generation-owned encoder process rather than ending at a prepared command;
+- **#8 START-driven MPEG producer: OPEN -> DONE behind the public gate**;
+- **#11A exact Pi retirement control remains DONE and is now proven with a live local producer**;
+- **#11B remains OPEN/PARTIAL and is next**: before item #10 permits real MPEG DATA, the cross-machine data plane must ensure stale generation-N bytes in the session-scoped MPEG transport path cannot be consumed by generation N+1;
+- **#10 remains OPEN/CLOSED by design**;
+- **#12 remains OPEN**.
+
+No deployment, physical PS2 behavior, concurrent live MPEG transport, or all-guns hardware stability is claimed by item #8. The preferred remaining order is **#11B -> #10 -> #12**.
