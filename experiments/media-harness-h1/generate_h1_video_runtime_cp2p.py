@@ -5,6 +5,11 @@ The transform is intentionally narrow and fail-closed. It retains the current
 H1 libmpeg/IPU/feed/timing/scheduler implementation, removes only the standalone
 GIF/GS packet owner, and binds successful physical presentation to the calibrated
 CP2P first-frame ownership contract.
+
+MPEG stop requests deliberately do not enter libmpeg through its data callback.
+The current MPEG_Picture() call continues receiving ordinary stream data until it
+returns; the runtime observes stop only at that completed-picture boundary.
+Decoder ownership is then destroyed before local IPU/DMAC reset.
 """
 
 from __future__ import annotations
@@ -99,26 +104,9 @@ def generate(source: str) -> str:
 }""",
     )
 
-    source = replace_once(
-        source,
-        "    if (!pstvnc_h1_transport_mpeg_read(\n"
-        "            session->transport,\n"
-        "            session->feed_buffer,\n"
-        "            session->config->mpeg_feed_bytes,\n"
-        "            &payload_size))\n"
-        "        return 0;",
-        "    if (!pstvnc_h1_transport_mpeg_read_cancellable(\n"
-        "            session->transport,\n"
-        "            session->feed_buffer,\n"
-        "            session->config->mpeg_feed_bytes,\n"
-        "            &payload_size,\n"
-        "            session->stop_requested)) {\n"
-        "        if (session->stop_requested != NULL && *session->stop_requested)\n"
-        "            session->cancelled = 1;\n"
-        "        return 0;\n"
-        "    }",
-        "CP2P cancellable MPEG feed",
-    )
+    # The libmpeg data callback intentionally retains the source runtime's
+    # ordinary pstvnc_h1_transport_mpeg_read(). An asynchronous lifecycle stop
+    # must never be translated into callback EOF while MPEG_Picture() is active.
 
     source = replace_once(
         source,
@@ -249,11 +237,16 @@ def generate(source: str) -> str:
 {
     pstvnc_h1_mpeg_presentation_owner_state_t state;
 
-    dma_channel_wait(DMA_CHANNEL_toIPU, 0);
-
+    /*
+     * Safe-stop lifecycle:
+     * MPEG_Picture() has already returned to our code before release begins.
+     * Destroy libmpeg ownership before touching the local IPU/DMAC state.
+     * There is deliberately no pre-destroy TO_IPU wait here.
+     */
     if (session->mpeg_initialized) {
         MPEG_Destroy();
         session->mpeg_initialized = 0;
+        h1_video_reference_ipu_reset();
     }
 
     free(session->picture_allocation);
@@ -272,8 +265,7 @@ def generate(source: str) -> str:
     /*
      * A start that never crossed the physical first-frame boundary must fail
      * back to full RFB immediately. Once MPEG is visible, keep its last frame
-     * owned until the concurrent RFB worker is proven dormant and the caller
-     * explicitly retires presentation.
+     * owned until the coordinator completes exact-generation retirement.
      */
     if (state == PSTVNC_H1_MPEG_PRESENTATION_WAIT_FIRST_FRAME &&
         !session->cancelled) {
@@ -394,6 +386,36 @@ def generate(source: str) -> str:
         "CP2P clean cancellation during decode loop",
     )
 
+    source = replace_once(
+        source,
+        "    result->pictures_decoded = 1u;\n"
+        "    h1_video_stage(config, 0, 192, 0, 1u);",
+        "    result->pictures_decoded = 1u;\n\n"
+        "    /* Stop only after the active MPEG_Picture() has returned. */\n"
+        "    if (session.stop_requested != NULL && *session.stop_requested) {\n"
+        "        session.cancelled = 1;\n"
+        "        success = 1;\n"
+        "        goto done;\n"
+        "    }\n\n"
+        "    h1_video_stage(config, 0, 192, 0, 1u);",
+        "CP2P first-picture stop boundary",
+    )
+
+    source = replace_once(
+        source,
+        "        result->pictures_decoded += 1u;\n\n"
+        "        if (!h1_video_wait_for_picture(",
+        "        result->pictures_decoded += 1u;\n\n"
+        "        /* Stop only between completed MPEG_Picture() calls. */\n"
+        "        if (session.stop_requested != NULL && *session.stop_requested) {\n"
+        "            session.cancelled = 1;\n"
+        "            success = 1;\n"
+        "            goto done;\n"
+        "        }\n\n"
+        "        if (!h1_video_wait_for_picture(",
+        "CP2P decode-loop stop boundary",
+    )
+
     draw_call = "        h1_video_draw(&session);"
     if source.count(draw_call) != 2:
         raise RuntimeError(
@@ -438,6 +460,7 @@ int pstvnc_h1_video_cp2p_retire_presentation(
 
     forbidden = (
         "DMA_CHANNEL_GIF",
+        "pstvnc_h1_transport_mpeg_read_cancellable(",
         "session.transfer_packet == NULL",
         "session.draw_packet == NULL",
         "graph_vram_allocate(",
@@ -449,7 +472,8 @@ int pstvnc_h1_video_cp2p_retire_presentation(
             raise RuntimeError(f"generated runtime retained forbidden GS owner: {marker}")
 
     required = (
-        "pstvnc_h1_transport_mpeg_read_cancellable(",
+        "pstvnc_h1_transport_mpeg_read(",
+        "session.stop_requested != NULL && *session.stop_requested",
         "pstvnc_h1_graphics_present_video_macroblocks(",
         "pstvnc_h1_mpeg_start_handoff_first_frame_presented(",
         "pstvnc_h1_video_cp2p_retire_presentation(",
@@ -484,6 +508,9 @@ def main() -> int:
 
     print(f"H1_CP2P_VIDEO_SOURCE_BLOB={actual_sha}")
     print("H1_CP2P_VIDEO_RUNTIME_GENERATION=PASS")
+    print("H1_CP2P_MPEG_ASYNC_CALLBACK_STOP=ABSENT")
+    print("H1_CP2P_MPEG_STOP_POINT=BETWEEN_COMPLETED_MPEG_PICTURE_CALLS")
+    print("H1_CP2P_MPEG_RELEASE_ORDER=DESTROY_THEN_LOCAL_IPU_RESET")
     return 0
 
 

@@ -56,11 +56,11 @@ $(BUILD_DIR)/h1_cp2p_session_coordinator.o: \
 
 
 CP2P_GEN_DIR := $(BUILD_DIR)/generated-cp2p
-# Diagnostic derivative: retain the authoritative CP2P transform, then layer
-# the existing MPEG stall markers plus the persistent live last-stage witness.
-CP2P_VIDEO_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p_persistent_diag.py
-CP2P_VIDEO_DIAG_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p_diag.py
+# Ordinary CP2P builds use the clean authoritative runtime transform.
+# Diagnostic wrappers remain opt-in through a command-line generator override.
 CP2P_VIDEO_BASE_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p.py
+CP2P_VIDEO_GENERATOR ?= $(CP2P_VIDEO_BASE_GENERATOR)
+CP2P_VIDEO_DIAG_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p_diag.py
 CP2P_VIDEO_SOURCE := experiments/media-harness-h1/h1_video_runtime.c
 CP2P_VIDEO_GENERATED := $(CP2P_GEN_DIR)/h1_video_runtime_cp2p_generated.c
 
@@ -113,4 +113,5 @@ cp2p-application-link-check: $(EE_BIN)
 	@echo H1_CP2P_GRAPHICS_OWNER=SHARED_COMPOSITOR
 	@echo H1_CP2P_MPEG_WORKER=GENERATION_BOUND_START_ACTIVATED
 	@echo H1_CP2P_ITEM10_PUBLIC_MPEG_GATE=LIVE
-	@echo H1_CP2P_MPEG_CANCELLABLE_READ=LIVE
+	@echo H1_CP2P_MPEG_ASYNC_CALLBACK_STOP=ABSENT
+	@echo H1_CP2P_MPEG_STOP_BOUNDARY=COMPLETED_PICTURE

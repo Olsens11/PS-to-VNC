@@ -48,10 +48,15 @@ static int h1_cp2p_session_clear_mpeg_after_pi_retire(
 
     if (coordinator == NULL || !coordinator->initialized ||
         coordinator->clear_mpeg == NULL || !coordinator->pi_retire_pending ||
-        coordinator->pi_retire_generation != generation)
+        coordinator->pi_retire_generation != generation ||
+        !coordinator->mpeg_stop_pending ||
+        coordinator->mpeg_stop_generation != generation)
         return 0;
 
-    /* Stop the old decoder/pixels before touching its transport queue. */
+    /*
+     * The decoder runtime is already stopped at a completed-picture boundary.
+     * clear_mpeg() now joins/deletes that finished thread and clears its pixels.
+     */
     if (!coordinator->clear_mpeg(
             coordinator->clear_mpeg_context, generation))
         return 0;
@@ -74,6 +79,7 @@ static int h1_cp2p_session_calibration_entry_gate(
     pstvnc_h1_mpeg_presentation_owner_state_t owner_state;
     pstvnc_mpeg_calibration_t *calibration;
     uint32_t generation;
+    int stop_poll;
     int retire_poll;
 
     if (coordinator == NULL || !coordinator->initialized ||
@@ -92,6 +98,72 @@ static int h1_cp2p_session_calibration_entry_gate(
     owner_state = pstvnc_h1_mpeg_presentation_owner_state(
         &coordinator->mpeg_handoff.owner);
 
+    /*
+     * Safe MPEG retirement is deliberately two-sided and ordered:
+     *
+     *   1. request local stop while the Pi producer remains live;
+     *   2. wait until the active MPEG_Picture() call has returned and the
+     *      decoder worker has completed its local release path;
+     *   3. retire the exact Pi producer generation and wait for its ACK;
+     *   4. join/delete the already-finished worker, clear pixels, finalize the
+     *      old queue, then restore full RFB ownership.
+     *
+     * Never convert an asynchronous lifecycle request into EOF from inside
+     * libmpeg's data callback.
+     */
+    if (owner_state != PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY) {
+        generation = coordinator->mpeg_handoff.owner.generation;
+        if (generation == 0u)
+            return 0;
+
+        if (!coordinator->mpeg_stop_pending) {
+            if (coordinator->request_mpeg_stop == NULL ||
+                coordinator->poll_mpeg_stop == NULL ||
+                !coordinator->request_mpeg_stop(
+                    coordinator->arm_mpeg_context, generation))
+                return 0;
+
+            coordinator->mpeg_stop_generation = generation;
+            coordinator->mpeg_stop_pending = 1;
+            *enter_now = 0;
+            return 1;
+        }
+
+        if (coordinator->mpeg_stop_generation != generation)
+            return 0;
+
+        stop_poll = coordinator->poll_mpeg_stop(
+            coordinator->arm_mpeg_context,
+            generation);
+        if (stop_poll < 0)
+            return 0;
+        if (stop_poll == 0) {
+            *enter_now = 0;
+            return 1;
+        }
+
+        /*
+         * The local decoder is now finished. Only at this boundary may the Pi
+         * producer be stopped without starving an active MPEG_Picture().
+         */
+        if (!coordinator->pi_retire_pending) {
+            if (!pstvnc_h1_transport_mpeg_retire_begin(
+                    coordinator->transport, generation))
+                return 0;
+
+            coordinator->pi_retire_generation = generation;
+            coordinator->pi_retire_pending = 1;
+            *enter_now = 0;
+            return 1;
+        }
+
+        if (coordinator->pi_retire_generation != generation)
+            return 0;
+    } else if (coordinator->mpeg_stop_pending) {
+        /* RFB_ONLY with an unfinished stop transaction is inconsistent. */
+        return 0;
+    }
+
     if (coordinator->pi_retire_pending) {
         retire_poll = pstvnc_h1_transport_mpeg_retire_poll(
             coordinator->transport,
@@ -102,26 +174,8 @@ static int h1_cp2p_session_calibration_entry_gate(
             *enter_now = 0;
             return 1;
         }
-
-        /* Keep the exact retirement latched through local worker + queue cleanup. */
-    } else if (owner_state != PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY) {
-        generation = coordinator->mpeg_handoff.owner.generation;
-        if (generation == 0u ||
-            !pstvnc_h1_transport_mpeg_retire_begin(
-                coordinator->transport, generation))
-            return 0;
-
-        coordinator->pi_retire_generation = generation;
-        coordinator->pi_retire_pending = 1;
-        *enter_now = 0;
-        return 1;
     }
 
-    /*
-     * Pi completion is now proven for the exact old generation. Only here may
-     * local worker/presentation state retire and the one-full-RFB restoration
-     * obligation become visible to the request scheduler.
-     */
     calibration = &coordinator->interaction.mpeg_calibration.runtime
         .foreground.adapter.calibration;
 
@@ -142,6 +196,11 @@ static int h1_cp2p_session_calibration_entry_gate(
     if (coordinator->pi_retire_pending) {
         coordinator->pi_retire_pending = 0;
         coordinator->pi_retire_generation = 0u;
+    }
+
+    if (coordinator->mpeg_stop_pending) {
+        coordinator->mpeg_stop_pending = 0;
+        coordinator->mpeg_stop_generation = 0u;
     }
 
     if (begin_result == PSTVNC_H1_MPEG_RECALIBRATION_ENTER_NOW) {
@@ -294,12 +353,18 @@ int pstvnc_h1_cp2p_session_coordinator_init(
 int pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(
     pstvnc_h1_cp2p_session_coordinator_t *coordinator,
     pstvnc_h1_cp2p_session_arm_mpeg_fn arm_mpeg,
+    pstvnc_h1_cp2p_session_request_mpeg_stop_fn request_mpeg_stop,
+    pstvnc_h1_cp2p_session_poll_mpeg_stop_fn poll_mpeg_stop,
     void *arm_mpeg_context)
 {
-    if (coordinator == NULL || !coordinator->initialized || arm_mpeg == NULL)
+    if (coordinator == NULL || !coordinator->initialized ||
+        arm_mpeg == NULL || request_mpeg_stop == NULL ||
+        poll_mpeg_stop == NULL)
         return 0;
 
     coordinator->arm_mpeg = arm_mpeg;
+    coordinator->request_mpeg_stop = request_mpeg_stop;
+    coordinator->poll_mpeg_stop = poll_mpeg_stop;
     coordinator->arm_mpeg_context = arm_mpeg_context;
     return 1;
 }
@@ -425,8 +490,12 @@ int pstvnc_h1_cp2p_session_coordinator_shutdown(
     coordinator->clear_mpeg = NULL;
     coordinator->clear_mpeg_context = NULL;
     coordinator->arm_mpeg = NULL;
+    coordinator->request_mpeg_stop = NULL;
+    coordinator->poll_mpeg_stop = NULL;
     coordinator->arm_mpeg_context = NULL;
+    coordinator->mpeg_stop_generation = 0u;
     coordinator->pi_retire_generation = 0u;
+    coordinator->mpeg_stop_pending = 0;
     coordinator->pi_retire_pending = 0;
     coordinator->current_start_contract_valid = 0;
     return result;

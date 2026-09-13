@@ -192,6 +192,49 @@ fail:
     return 0;
 }
 
+
+int pstvnc_h1_cp2p_mpeg_worker_request_stop(
+    void *context,
+    uint32_t generation)
+{
+    pstvnc_h1_cp2p_mpeg_worker_t *worker =
+        (pstvnc_h1_cp2p_mpeg_worker_t *)context;
+
+    if (worker == NULL || !worker->initialized || !worker->armed ||
+        generation == 0u || worker->generation != generation)
+        return 0;
+
+    /*
+     * This is only a lifecycle request. The CP2P video runtime deliberately
+     * does not expose this flag to libmpeg's data callback.
+     */
+    worker->stop_requested = 1;
+    return 1;
+}
+
+int pstvnc_h1_cp2p_mpeg_worker_stop_poll(
+    void *context,
+    uint32_t generation)
+{
+    pstvnc_h1_cp2p_mpeg_worker_t *worker =
+        (pstvnc_h1_cp2p_mpeg_worker_t *)context;
+
+    if (worker == NULL || !worker->initialized || !worker->armed ||
+        generation == 0u || worker->generation != generation)
+        return -1;
+
+    if (!worker->thread_started)
+        return 1;
+
+    if (worker->failure_latched)
+        return -1;
+
+    if (!worker->finished)
+        return 0;
+
+    return worker->run_result < 0 ? -1 : 1;
+}
+
 int pstvnc_h1_cp2p_mpeg_worker_clear(void *context, uint32_t generation)
 {
     pstvnc_h1_cp2p_mpeg_worker_t *worker =

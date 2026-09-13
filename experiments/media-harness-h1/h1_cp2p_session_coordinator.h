@@ -18,6 +18,14 @@ typedef int (*pstvnc_h1_cp2p_session_arm_mpeg_fn)(
     pstvnc_h1_mpeg_start_handoff_t *handoff,
     const pstvnc_h1_mpeg_start_contract_t *contract);
 
+typedef int (*pstvnc_h1_cp2p_session_request_mpeg_stop_fn)(
+    void *context,
+    uint32_t generation);
+
+typedef int (*pstvnc_h1_cp2p_session_poll_mpeg_stop_fn)(
+    void *context,
+    uint32_t generation);
+
 typedef struct pstvnc_h1_cp2p_session_coordinator {
     pstvnc_h1_interaction_coordinator_t interaction;
     pstvnc_h1_mpeg_start_handoff_t mpeg_handoff;
@@ -29,13 +37,17 @@ typedef struct pstvnc_h1_cp2p_session_coordinator {
     pstvnc_h1_mpeg_recalibration_clear_mpeg_fn clear_mpeg;
     void *clear_mpeg_context;
     pstvnc_h1_cp2p_session_arm_mpeg_fn arm_mpeg;
+    pstvnc_h1_cp2p_session_request_mpeg_stop_fn request_mpeg_stop;
+    pstvnc_h1_cp2p_session_poll_mpeg_stop_fn poll_mpeg_stop;
     void *arm_mpeg_context;
     uint32_t session_id;
 
     pstvnc_h1_mpeg_start_contract_t current_start_contract;
     uint32_t start_messages_sent;
+    uint32_t mpeg_stop_generation;
     uint32_t pi_retire_generation;
     unsigned current_start_contract_valid : 1;
+    unsigned mpeg_stop_pending : 1;
     unsigned pi_retire_pending : 1;
     unsigned initialized : 1;
 } pstvnc_h1_cp2p_session_coordinator_t;
@@ -49,6 +61,8 @@ int pstvnc_h1_cp2p_session_coordinator_init(
 int pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(
     pstvnc_h1_cp2p_session_coordinator_t *coordinator,
     pstvnc_h1_cp2p_session_arm_mpeg_fn arm_mpeg,
+    pstvnc_h1_cp2p_session_request_mpeg_stop_fn request_mpeg_stop,
+    pstvnc_h1_cp2p_session_poll_mpeg_stop_fn poll_mpeg_stop,
     void *arm_mpeg_context);
 
 int pstvnc_h1_cp2p_session_coordinator_present(

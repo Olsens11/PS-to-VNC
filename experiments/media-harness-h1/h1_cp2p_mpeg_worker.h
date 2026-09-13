@@ -42,6 +42,22 @@ int pstvnc_h1_cp2p_mpeg_worker_arm(
     pstvnc_h1_mpeg_start_handoff_t *handoff,
     const pstvnc_h1_mpeg_start_contract_t *contract);
 
+/*
+ * Request lifecycle stop without joining or deleting the worker. The video
+ * runtime consumes this request only at a safe completed-picture boundary.
+ */
+int pstvnc_h1_cp2p_mpeg_worker_request_stop(
+    void *context,
+    uint32_t generation);
+
+/*
+ * Return 1 when the requested generation has returned from the video runtime,
+ * 0 while it is still active, and -1 on a failed/invalid worker lifecycle.
+ */
+int pstvnc_h1_cp2p_mpeg_worker_stop_poll(
+    void *context,
+    uint32_t generation);
+
 int pstvnc_h1_cp2p_mpeg_worker_clear(
     void *context,
     uint32_t generation);

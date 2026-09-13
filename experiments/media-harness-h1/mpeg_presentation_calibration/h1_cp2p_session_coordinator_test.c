@@ -15,6 +15,13 @@ static uint32_t sent_session_id;
 static pstvnc_h1_mpeg_start_contract_t sent_contract;
 static unsigned int clear_count;
 static uint32_t cleared_generation;
+static unsigned int stop_request_count;
+static unsigned int stop_poll_count;
+static int stop_poll_result;
+static uint32_t stop_generation;
+static unsigned int stop_request_order;
+static unsigned int stop_complete_order;
+static unsigned int retire_begin_order;
 static unsigned int retire_begin_count;
 static uint32_t retire_generation;
 static int retire_poll_result;
@@ -141,6 +148,7 @@ int pstvnc_h1_transport_mpeg_retire_begin(
         return 0;
     retire_begin_count++;
     retire_generation = generation;
+    retire_begin_order = ++lifecycle_order;
     return 1;
 }
 
@@ -173,6 +181,44 @@ int pstvnc_h1_transport_mpeg_retire_finalize(
         *bytes_discarded = finalized_discarded;
     retire_generation = 0u;
     return 1;
+}
+
+
+static int arm_mpeg(
+    void *context,
+    pstvnc_h1_mpeg_start_handoff_t *handoff,
+    const pstvnc_h1_mpeg_start_contract_t *contract)
+{
+    (void)context;
+    return handoff != NULL && contract != NULL;
+}
+
+static int request_mpeg_stop(void *context, uint32_t generation)
+{
+    (void)context;
+
+    if (generation == 0u || stop_request_count != 0u)
+        return 0;
+
+    stop_request_count++;
+    stop_generation = generation;
+    stop_request_order = ++lifecycle_order;
+    return 1;
+}
+
+static int poll_mpeg_stop(void *context, uint32_t generation)
+{
+    (void)context;
+
+    if (generation == 0u || generation != stop_generation)
+        return -1;
+
+    stop_poll_count++;
+
+    if (stop_poll_result == 1 && stop_complete_order == 0u)
+        stop_complete_order = ++lifecycle_order;
+
+    return stop_poll_result;
 }
 
 static int clear_mpeg(void *context, uint32_t generation)
@@ -278,6 +324,13 @@ int main(void)
         PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY);
     coordinator.start_messages_sent = 2u;
 
+    assert(pstvnc_h1_cp2p_session_coordinator_set_mpeg_worker(
+        &coordinator,
+        arm_mpeg,
+        request_mpeg_stop,
+        poll_mpeg_stop,
+        NULL));
+
     region = sample_region(128, 80);
     assert(pstvnc_h1_mpeg_start_handoff_prepare_start(
         &coordinator.mpeg_handoff, &region, &active_contract));
@@ -289,22 +342,52 @@ int main(void)
     coordinator.current_start_contract = active_contract;
     coordinator.current_start_contract_valid = 1;
 
-    /* First gate pass requests exact Pi retirement only. */
+    /*
+     * First gate pass requests only the local decoder stop. The Pi generation
+     * must remain live until the worker reaches a completed-picture boundary.
+     */
     assert(coordinator.interaction.calibration_entry_gate(
         coordinator.interaction.calibration_entry_gate_context,
         &enter_now));
     assert(!enter_now);
+    assert(stop_request_count == 1u);
+    assert(stop_generation == active_contract.generation);
+    assert(coordinator.mpeg_stop_pending);
+    assert(coordinator.mpeg_stop_generation == active_contract.generation);
+    assert(retire_begin_count == 0u);
+    assert(clear_count == 0u);
+    assert(pstvnc_h1_mpeg_presentation_owner_state(
+        &coordinator.mpeg_handoff.owner) ==
+        PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED);
+
+    /* An active worker blocks Pi retirement. */
+    stop_poll_result = 0;
+    enter_now = 0;
+    assert(coordinator.interaction.calibration_entry_gate(
+        coordinator.interaction.calibration_entry_gate_context,
+        &enter_now));
+    assert(!enter_now);
+    assert(stop_poll_count >= 1u);
+    assert(retire_begin_count == 0u);
+    assert(clear_count == 0u);
+
+    /* Worker completion is the authority to begin exact Pi retirement. */
+    stop_poll_result = 1;
+    enter_now = 0;
+    assert(coordinator.interaction.calibration_entry_gate(
+        coordinator.interaction.calibration_entry_gate_context,
+        &enter_now));
+    assert(!enter_now);
+    assert(stop_complete_order != 0u);
     assert(retire_begin_count == 1u);
     assert(retire_generation == active_contract.generation);
     assert(coordinator.pi_retire_pending);
     assert(coordinator.pi_retire_generation == active_contract.generation);
     assert(clear_count == 0u);
-    assert(pstvnc_h1_mpeg_presentation_owner_state(
-        &coordinator.mpeg_handoff.owner) ==
-        PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED);
-    assert(coordinator.current_start_contract_valid);
+    assert(stop_request_order < stop_complete_order);
+    assert(stop_complete_order < retire_begin_order);
 
-    /* Deferred polling cannot clear local ownership before exact Pi ACK. */
+    /* Exact Pi ACK remains a fence before queue/presentation cleanup. */
     retire_poll_result = 0;
     enter_now = 0;
     assert(coordinator.interaction.calibration_entry_gate(
@@ -317,7 +400,10 @@ int main(void)
         &coordinator.mpeg_handoff.owner) ==
         PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED);
 
-    /* Exact Pi completion unlocks the existing local retire/restoration path. */
+    /*
+     * ACK unlocks join/delete of the already-finished worker, graphics clear,
+     * queue finalization, owner stop, and the required full-RFB restoration.
+     */
     retire_poll_result = 1;
     enter_now = 0;
     assert(coordinator.interaction.calibration_entry_gate(
@@ -326,12 +412,15 @@ int main(void)
     assert(!enter_now);
     assert(!coordinator.pi_retire_pending);
     assert(coordinator.pi_retire_generation == 0u);
+    assert(!coordinator.mpeg_stop_pending);
+    assert(coordinator.mpeg_stop_generation == 0u);
     assert(clear_count == 1u);
     assert(cleared_generation == active_contract.generation);
     assert(retire_finalize_count == 1u);
     assert(finalized_generation == active_contract.generation);
     assert(finalized_discarded == 17u);
-    assert(clear_order != 0u && finalize_order > clear_order);
+    assert(retire_begin_order < clear_order);
+    assert(clear_order < finalize_order);
     assert(transport_generation == 0u);
     assert(pstvnc_h1_mpeg_presentation_owner_state(
         &coordinator.mpeg_handoff.owner) ==
