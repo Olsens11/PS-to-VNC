@@ -124,6 +124,16 @@ typedef struct pstvnc_h1_transport_runtime {
     volatile uint32_t mpeg_diag_stage;
 
     /*
+     * MPEG consumer wait ownership.
+     *
+     * -1 means no sleeping MPEG consumer. When the MPEG queue becomes empty,
+     * the sole MPEG consumer publishes its EE thread id while still holding
+     * the MPEG queue semaphore. The sole receiver clears this field and
+     * WakeupThread()s that consumer after MPEG DATA is committed.
+     */
+    volatile int mpeg_wait_thread_id;
+
+    /*
      * Clean RFB shutdown uses four zero-length PSTV DATA markers on logical
      * channel 1: request(Pi)->boundary(PS2)->commit(Pi)->complete(PS2).
      * Non-empty channel-1 DATA remains raw RFB bytes and is never interpreted
