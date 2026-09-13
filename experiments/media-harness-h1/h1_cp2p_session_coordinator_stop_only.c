@@ -1,20 +1,32 @@
 /*
  * File synopsis:
- * Disposable CP2P stop-only lifecycle diagnostic.
+ * Disposable CP2P retire-ACK hold diagnostic.
  *
  * This derivative reuses the exact qualified CP2P session coordinator and wraps
  * only its service entry point. After the first MPEG generation reaches
- * MPEG_OWNED and remains there for ten seconds, it performs one autonomous
- * retirement transaction and returns presentation ownership to RFB_ONLY.
+ * MPEG_OWNED and remains there for ten seconds, it performs only the Pi-side
+ * exact-generation retirement transaction. Once the matching RETIRE ACK is
+ * observed on the PS2, it deliberately stops there.
  *
  * Purpose:
- *     prove whether an otherwise-healthy RFB + PCM + MPEG session can tear MPEG
- *     down completely and return to the original RFB + PCM state without
- *     entering recalibration. No second calibration is started automatically.
+ *     split "getting off the bike" at the wire fence. If RFB + PCM remain alive
+ *     after the exact Pi generation has retired and the PS2 has observed the ACK,
+ *     then the global freeze belongs to the local post-ACK teardown path rather
+ *     than producer retirement / RETIRE ACK transport itself.
  *
- * The stop sequence deliberately reuses the existing production operations:
- *     retire exact Pi generation -> wait for ACK -> clear/join local MPEG worker
- *     and pixels -> finalize old MPEG queue -> owner stop -> one full RFB refresh.
+ * Deliberately NOT performed after ACK:
+ *     - no MPEG worker stop request
+ *     - no worker join/delete
+ *     - no IPU/DMA teardown
+ *     - no MPEG_Destroy()
+ *     - no graphics clear
+ *     - no MPEG queue finalize/discard
+ *     - no owner transition to RFB_ONLY
+ *     - no recalibration
+ *
+ * The frozen/last MPEG image may therefore remain visible. That is expected.
+ * The decisive observation is whether PCM, RFB outside/behind that presentation,
+ * controller/service progress, and PS2 telemetry continue after RETIRE_ACK_HOLD.
  *
  * No queue sizing, worker priority, decoder policy, pacing, RFB suppression,
  * transport ownership, or PCM behavior is changed.
@@ -22,8 +34,7 @@
 
 /*
  * Compile the existing coordinator into this translation unit under a private
- * service symbol. All of its static lifecycle helpers remain the authoritative
- * implementation used by the stop-only wrapper below.
+ * service symbol. All ordinary session behavior remains authoritative.
  */
 #define pstvnc_h1_cp2p_session_coordinator_service \
     pstvnc_h1_cp2p_session_coordinator_service_baseline
@@ -42,7 +53,7 @@ typedef struct h1_cp2p_stop_only_state {
     uint64_t mpeg_owned_since_us;
     unsigned armed : 1;
     unsigned retire_started : 1;
-    unsigned completed : 1;
+    unsigned ack_hold_reached : 1;
 } h1_cp2p_stop_only_state_t;
 
 static h1_cp2p_stop_only_state_t h1_cp2p_stop_only;
@@ -83,15 +94,21 @@ static int h1_cp2p_session_service_stop_only(
     if (h1_cp2p_stop_only.session_id != coordinator->session_id)
         h1_cp2p_stop_only_reset_for_session(coordinator->session_id);
 
-    if (h1_cp2p_stop_only.completed)
+    /*
+     * Once the exact ACK has been observed, deliberately hold the session in
+     * the pre-local-teardown state forever. Do not consume any local lifecycle
+     * primitive. Baseline service still runs so ordinary RFB/input/PCM service
+     * can prove whether the PS2 remains healthy.
+     */
+    if (h1_cp2p_stop_only.ack_hold_reached)
         return 1;
 
     owner_state = pstvnc_h1_mpeg_presentation_owner_state(
         &coordinator->mpeg_handoff.owner);
 
     /*
-     * We intentionally begin the clock only after the first frame has promoted
-     * ownership to MPEG_OWNED. Calibration and WAIT_FIRST_FRAME are unchanged.
+     * Begin the timer only after the first frame has promoted ownership to
+     * MPEG_OWNED. Calibration and WAIT_FIRST_FRAME are unchanged.
      */
     if (owner_state != PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED)
         return 1;
@@ -107,7 +124,7 @@ static int h1_cp2p_session_service_stop_only(
         h1_cp2p_stop_only.mpeg_owned_since_us = now_us;
         h1_cp2p_stop_only.armed = 1;
         printf(
-            "H1_CP2P_STOP_ONLY=ARM generation=%u delay_us=%u\n",
+            "H1_CP2P_ACK_HOLD=ARM generation=%u delay_us=%u\n",
             (unsigned int)generation,
             (unsigned int)H1_CP2P_STOP_ONLY_DELAY_US);
         return 1;
@@ -136,7 +153,7 @@ static int h1_cp2p_session_service_stop_only(
         h1_cp2p_stop_only.retire_started = 1;
 
         printf(
-            "H1_CP2P_STOP_ONLY=RETIRE_BEGIN generation=%u\n",
+            "H1_CP2P_ACK_HOLD=RETIRE_BEGIN generation=%u\n",
             (unsigned int)generation);
         return 1;
     }
@@ -153,35 +170,15 @@ static int h1_cp2p_session_service_stop_only(
     if (retire_poll == 0)
         return 1;
 
-    printf(
-        "H1_CP2P_STOP_ONLY=RETIRE_ACK generation=%u\n",
-        (unsigned int)generation);
-
     /*
-     * Reuse the exact existing post-ACK teardown helper. It stops/joins the MPEG
-     * worker, clears MPEG pixels, and finalizes/discards the old queue epoch.
-     * It deliberately does not mutate presentation-owner state.
+     * This is the experimental endpoint. Leave pi_retire_pending/generation,
+     * worker state, queue epoch, graphics, and owner state untouched. The ACK
+     * is proven; nothing local is torn down.
      */
-    if (!h1_cp2p_session_clear_mpeg_after_pi_retire(
-            coordinator, generation))
-        return 0;
-
-    /*
-     * This is the entire point of the experiment: return to square one and stop.
-     * owner_stop() changes the owner to RFB_ONLY and arms its ordinary one-shot
-     * full refresh. No recalibration seed/watch/foreground transition is used.
-     */
-    if (!pstvnc_h1_mpeg_start_handoff_stop(
-            &coordinator->mpeg_handoff, generation))
-        return 0;
-
-    coordinator->pi_retire_pending = 0;
-    coordinator->pi_retire_generation = 0u;
-    coordinator->current_start_contract_valid = 0;
-    h1_cp2p_stop_only.completed = 1;
+    h1_cp2p_stop_only.ack_hold_reached = 1;
 
     printf(
-        "H1_CP2P_STOP_ONLY=RFB_ONLY generation=%u\n",
+        "H1_CP2P_ACK_HOLD=RETIRE_ACK_HOLD generation=%u\n",
         (unsigned int)generation);
     return 1;
 }
