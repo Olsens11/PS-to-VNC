@@ -1,48 +1,48 @@
 /*
  * File synopsis:
- * Disposable CP2P stop-only lifecycle diagnostic.
+ * Disposable CP2P completed-picture-boundary stop diagnostic.
  *
- * This derivative reuses the exact qualified CP2P session coordinator and wraps
- * only its service entry point. After the first MPEG generation reaches
- * MPEG_OWNED and remains there for two seconds, it performs one autonomous
- * retirement transaction and returns presentation ownership to RFB_ONLY.
+ * This wrapper keeps the ordinary CP2P coordinator but changes retirement order
+ * for one autonomous two-second test. Instead of retiring the Pi producer first
+ * and then cancelling the decoder from inside its data callback, it requests a
+ * local MPEG stop while the producer remains live. The video runtime observes
+ * that request only between completed MPEG_Picture() calls, destroys decoder
+ * ownership there, and lets the worker finish. Only after worker completion do
+ * we retire the exact Pi generation, finalize its old queue, clear presentation,
+ * and return to RFB_ONLY.
  *
- * Purpose:
- *     prove whether an otherwise-healthy RFB + PCM + MPEG session can tear MPEG
- *     down completely and return to the original RFB + PCM state without
- *     entering recalibration. No second calibration is started automatically.
- *
- * The stop sequence deliberately reuses the existing production operations:
- *     retire exact Pi generation -> wait for ACK -> clear/join local MPEG worker
- *     and pixels -> finalize old MPEG queue -> owner stop -> one full RFB refresh.
- *
- * The two-second delay is diagnostic only. It avoids the separately-proven
- * spontaneous active MPEG read stall so teardown is exercised while the MPEG
- * worker is still healthy. No queue sizing, worker priority, decoder policy,
- * pacing, RFB suppression, transport ownership, or PCM behavior is changed.
+ * This is a clean-room behavioral adaptation of the mature control pattern seen
+ * in PS2 movie players: stop/abort is observed at a decoder-call boundary, not
+ * converted into an asynchronous end-of-input from inside the data callback.
  */
 
 /*
  * Compile the existing coordinator into this translation unit under a private
- * service symbol. All of its static lifecycle helpers remain the authoritative
- * implementation used by the stop-only wrapper below.
+ * service symbol. Its static post-ACK queue-finalization helper remains the
+ * authoritative implementation after the local worker is already quiescent.
  */
 #define pstvnc_h1_cp2p_session_coordinator_service \
     pstvnc_h1_cp2p_session_coordinator_service_baseline
 #include "h1_cp2p_session_coordinator.c"
 #undef pstvnc_h1_cp2p_session_coordinator_service
 
+#include "h1_cp2p_mpeg_worker.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <timer.h>
 
 #define H1_CP2P_STOP_ONLY_DELAY_US UINT64_C(2000000)
+#define H1_CP2P_BOUNDARY_STOP_REQUESTED UINT32_C(0xE5000001)
+#define H1_CP2P_BOUNDARY_WORKER_FINISHED UINT32_C(0xE5000002)
 
 typedef struct h1_cp2p_stop_only_state {
     uint32_t session_id;
     uint32_t generation;
     uint64_t mpeg_owned_since_us;
     unsigned armed : 1;
+    unsigned local_stop_requested : 1;
+    unsigned worker_finished_observed : 1;
     unsigned retire_started : 1;
     unsigned completed : 1;
 } h1_cp2p_stop_only_state_t;
@@ -73,14 +73,18 @@ static void h1_cp2p_stop_only_reset_for_session(uint32_t session_id)
 static int h1_cp2p_session_service_stop_only(
     pstvnc_h1_cp2p_session_coordinator_t *coordinator)
 {
+    pstvnc_h1_cp2p_mpeg_worker_t *worker;
     pstvnc_h1_mpeg_presentation_owner_state_t owner_state;
     uint32_t generation;
     uint64_t now_us;
     int retire_poll;
 
     if (coordinator == NULL || !coordinator->initialized ||
-        coordinator->transport == NULL)
+        coordinator->transport == NULL ||
+        coordinator->clear_mpeg_context == NULL)
         return 0;
+
+    worker = (pstvnc_h1_cp2p_mpeg_worker_t *)coordinator->clear_mpeg_context;
 
     if (h1_cp2p_stop_only.session_id != coordinator->session_id)
         h1_cp2p_stop_only_reset_for_session(coordinator->session_id);
@@ -91,10 +95,6 @@ static int h1_cp2p_session_service_stop_only(
     owner_state = pstvnc_h1_mpeg_presentation_owner_state(
         &coordinator->mpeg_handoff.owner);
 
-    /*
-     * We intentionally begin the clock only after the first frame has promoted
-     * ownership to MPEG_OWNED. Calibration and WAIT_FIRST_FRAME are unchanged.
-     */
     if (owner_state != PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED)
         return 1;
 
@@ -109,7 +109,7 @@ static int h1_cp2p_session_service_stop_only(
         h1_cp2p_stop_only.mpeg_owned_since_us = now_us;
         h1_cp2p_stop_only.armed = 1;
         printf(
-            "H1_CP2P_STOP_ONLY=ARM generation=%u delay_us=%u\n",
+            "H1_CP2P_BOUNDARY_STOP=ARM generation=%u delay_us=%u\n",
             (unsigned int)generation,
             (unsigned int)H1_CP2P_STOP_ONLY_DELAY_US);
         return 1;
@@ -118,7 +118,7 @@ static int h1_cp2p_session_service_stop_only(
     if (generation != h1_cp2p_stop_only.generation)
         return 0;
 
-    if (!h1_cp2p_stop_only.retire_started) {
+    if (!h1_cp2p_stop_only.local_stop_requested) {
         if (now_us < h1_cp2p_stop_only.mpeg_owned_since_us) {
             h1_cp2p_stop_only.mpeg_owned_since_us = now_us;
             return 1;
@@ -128,6 +128,50 @@ static int h1_cp2p_session_service_stop_only(
             H1_CP2P_STOP_ONLY_DELAY_US)
             return 1;
 
+        if (!worker->initialized || !worker->armed ||
+            !worker->thread_started || worker->generation != generation)
+            return 0;
+
+        /*
+         * Producer deliberately remains live here. The video runtime ignores
+         * this flag from its data callback and observes it only after the active
+         * MPEG_Picture() has returned successfully.
+         */
+        pstvnc_h1_transport_set_diagnostic_word(
+            coordinator->transport,
+            H1_CP2P_BOUNDARY_STOP_REQUESTED);
+        worker->stop_requested = 1;
+        h1_cp2p_stop_only.local_stop_requested = 1;
+
+        printf(
+            "H1_CP2P_BOUNDARY_STOP=STOP_REQUESTED generation=%u producer=LIVE\n",
+            (unsigned int)generation);
+        return 1;
+    }
+
+    if (!h1_cp2p_stop_only.worker_finished_observed) {
+        if (!worker->finished)
+            return 1;
+
+        if (worker->run_result < 0 || worker->failure_latched)
+            return 0;
+
+        pstvnc_h1_transport_set_diagnostic_word(
+            coordinator->transport,
+            H1_CP2P_BOUNDARY_WORKER_FINISHED);
+        h1_cp2p_stop_only.worker_finished_observed = 1;
+
+        printf(
+            "H1_CP2P_BOUNDARY_STOP=WORKER_FINISHED generation=%u run_result=%d\n",
+            (unsigned int)generation,
+            worker->run_result);
+    }
+
+    /*
+     * Only now may the Pi producer retire. No decoder callback can observe this
+     * retirement because the video runtime and MPEG decoder have already ended.
+     */
+    if (!h1_cp2p_stop_only.retire_started) {
         if (coordinator->pi_retire_pending ||
             !pstvnc_h1_transport_mpeg_retire_begin(
                 coordinator->transport, generation))
@@ -138,7 +182,7 @@ static int h1_cp2p_session_service_stop_only(
         h1_cp2p_stop_only.retire_started = 1;
 
         printf(
-            "H1_CP2P_STOP_ONLY=RETIRE_BEGIN generation=%u\n",
+            "H1_CP2P_BOUNDARY_STOP=RETIRE_BEGIN generation=%u worker=FINISHED\n",
             (unsigned int)generation);
         return 1;
     }
@@ -156,23 +200,18 @@ static int h1_cp2p_session_service_stop_only(
         return 1;
 
     printf(
-        "H1_CP2P_STOP_ONLY=RETIRE_ACK generation=%u\n",
+        "H1_CP2P_BOUNDARY_STOP=RETIRE_ACK generation=%u\n",
         (unsigned int)generation);
 
     /*
-     * Reuse the exact existing post-ACK teardown helper. It stops/joins the MPEG
-     * worker, clears MPEG pixels, and finalizes/discards the old queue epoch.
-     * It deliberately does not mutate presentation-owner state.
+     * Worker runtime is already finished. This existing helper therefore only
+     * performs the ordinary join/DeleteThread, graphics clear, and exact old
+     * queue finalization behind the Pi ACK fence.
      */
     if (!h1_cp2p_session_clear_mpeg_after_pi_retire(
             coordinator, generation))
         return 0;
 
-    /*
-     * This is the entire point of the experiment: return to square one and stop.
-     * owner_stop() changes the owner to RFB_ONLY and arms its ordinary one-shot
-     * full refresh. No recalibration seed/watch/foreground transition is used.
-     */
     if (!pstvnc_h1_mpeg_start_handoff_stop(
             &coordinator->mpeg_handoff, generation))
         return 0;
@@ -183,7 +222,7 @@ static int h1_cp2p_session_service_stop_only(
     h1_cp2p_stop_only.completed = 1;
 
     printf(
-        "H1_CP2P_STOP_ONLY=RFB_ONLY generation=%u\n",
+        "H1_CP2P_BOUNDARY_STOP=RFB_ONLY generation=%u\n",
         (unsigned int)generation);
     return 1;
 }
