@@ -1723,3 +1723,20 @@ Exact item-#10 unqualified all-guns candidate identity:
 **Checklist transition:** item #10 — exact CP2P CONFIG/live MPEG gate — **OPEN -> DONE at the software-proof boundary**. Items #1-#11B are now mechanically implemented/proven at their intended software boundaries. The remaining milestone is **#12**: freeze the complete PS2/Pi/config/toolchain/deployment identities and perform actual all-guns hardware qualification, including visible RFB + PCM + calibrated MPEG, first-frame ownership, high-change RFB outside suppression, exact capture geometry, retirement/recalibration N -> full RFB -> N+1, stale-generation exclusion, and continued input/keyboard/OSK/local-UI operation.
 
 No live physical PS2 all-guns behavior or hardware stability is claimed by item #10. The artifact remains explicitly **unqualified** until #12 hardware evidence exists.
+
+---
+
+## 2026-09-13 — all-guns event-wake stability checkpoint
+
+The receiver-driven MPEG empty-queue wake candidate at
+`d85e896093f9f22be5fb9ff8feb464c01b7cd0a9` sustained 600 seconds of
+simultaneous interactive RFB + PCM + MPEG on hardware. MPEG sent, enqueued and
+consumed exactly 113876965 bytes with zero Pi transport send failures.
+
+This qualifies the active runtime, not the complete session lifecycle. RFB
+quiesce completed and the Pi sent MEDIA_END, but no PS2 SESSION_RESULT returned.
+Clean repeat-session shutdown is therefore the immediate open defect.
+
+Default MPEG geometry was used. Calibration, matte/suppression geometry,
+cursor/OSK composition and non-default-geometry endurance remain pre-milestone
+work. See `CP2P_MPEG_EVENT_WAKE_HARDWARE_RESULT.md`.

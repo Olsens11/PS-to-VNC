@@ -350,3 +350,18 @@ reviewable, and reproducible.
 `H1_RFB_ONLY` and the current RFB-capable cumulative ELF remain **unqualified**
 until an exact ELF/PT_LOAD is run and observed on real PS2 hardware. CI and host
 tests establish readiness; they do not transfer physical qualification.
+
+---
+
+## Current CP2P all-guns qualification note — 2026-09-13
+
+A 600-second MPEG+PCM+RFB active-runtime hardware run passed with the
+receiver-driven MPEG event-wake candidate. RFB quiesce also completed.
+
+Successive H1 sessions are **not yet qualified**: after ordinary MEDIA_END the
+PS2 did not return SESSION_RESULT. Until that lifecycle defect is fixed and
+hardware-tested, do not assume a completed workload leaves the resident H1 ELF
+ready for the next automated session.
+
+See `CP2P_MPEG_EVENT_WAKE_HARDWARE_RESULT.md` for exact authority and remaining
+pre-ledge qualification.
