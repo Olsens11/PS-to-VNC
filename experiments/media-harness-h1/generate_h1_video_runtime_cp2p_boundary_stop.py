@@ -102,10 +102,9 @@ def generate(source: str) -> str:
 }""",
     )
 
-    # The mature control point is between completed MPEG_Picture() calls.  The
+    # The mature control point is between completed MPEG_Picture() calls. The
     # first picture cannot carry a stop request because the two-second timer does
-    # not start until MPEG_OWNED, so the loop boundary is the only active stop
-    # point required by this diagnostic.
+    # not start until MPEG_OWNED, so the loop boundary is the active stop point.
     old = """        result->pictures_decoded += 1u;
 
         if (!h1_video_wait_for_picture(
@@ -150,10 +149,19 @@ def generate(source: str) -> str:
     if "session->stop_requested" in feed:
         raise RuntimeError("boundary-stop feed still references stop_requested")
 
-    boundary_pos = out.find("0xD8300001u")
-    destroy_pos = out.find("0xD8200001u")
-    if boundary_pos < 0 or destroy_pos < 0 or boundary_pos >= destroy_pos:
-        raise RuntimeError("boundary-stop marker does not precede decoder release")
+    run_start = out.find("int pstvnc_h1_video_run_cp2p_session(")
+    run_end = out.find("int pstvnc_h1_video_cp2p_retire_presentation(", run_start)
+    release_start = out.find("static void h1_video_release_session(")
+    release_end = out.find("int pstvnc_h1_video_chassis_init", release_start)
+    if run_start < 0 or run_end < 0 or release_start < 0 or release_end < 0:
+        raise RuntimeError("could not isolate generated boundary-stop sections")
+
+    run = out[run_start:run_end]
+    release = out[release_start:release_end]
+    if "0xD8300001u" not in run:
+        raise RuntimeError("completed-picture stop marker missing from run loop")
+    if "0xD8200001u" not in release or "MPEG_Destroy();" not in release:
+        raise RuntimeError("mature decoder release missing from release_session")
 
     return out
 
