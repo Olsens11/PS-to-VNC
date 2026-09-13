@@ -600,7 +600,7 @@ static int h1_send_telemetry(
     PUT32(144, runtime->config.audio_mode);
     PUT32(148, runtime->config.video_mode);
     PUT32(152, runtime->stats.receiver_loop_count);
-    PUT32(156, runtime->producer_stop_reason);
+    PUT32(156, runtime->mpeg_diag_stage);
 
 #undef PUT32
 
@@ -1530,6 +1530,20 @@ int pstvnc_h1_transport_audio_read(
     return 1;
 }
 
+/*
+ * Disposable MPEG consumer-stage witness.
+ *
+ * Observation only: one volatile 32-bit store. No waits, sends, queue
+ * operations, priority changes, or scheduling changes are introduced.
+ */
+static void h1_mpeg_diag_stage(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t stage)
+{
+    if (runtime != NULL)
+        runtime->mpeg_diag_stage = stage;
+}
+
 int pstvnc_h1_transport_mpeg_read_cancellable(
     pstvnc_h1_transport_runtime_t *runtime,
     void *buffer,
@@ -1549,6 +1563,8 @@ int pstvnc_h1_transport_mpeg_read_cancellable(
 
     *bytes_read = 0u;
     runtime->stats.mpeg_read_calls++;
+    h1_mpeg_diag_stage(
+        runtime, 0xD5100001u); /* MPEG transport read enter */
 
     for (;;) {
         size_t available;
@@ -1562,14 +1578,24 @@ int pstvnc_h1_transport_mpeg_read_cancellable(
         if (runtime->error != PSTVNC_H1_ERROR_NONE)
             return 0;
 
+        h1_mpeg_diag_stage(
+            runtime, 0xD5100002u); /* queue WaitSema enter */
+
         if (WaitSema(runtime->mpeg_queue_sema_id) < 0) {
             h1_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
             return 0;
         }
 
+        h1_mpeg_diag_stage(
+            runtime, 0xD5100003u); /* queue WaitSema return */
+
         available = pstvnc_transport_queue_size(&runtime->mpeg_queue);
         take = available < maximum_count ? available : maximum_count;
         end_received = runtime->end_received;
+
+        if (take != 0u)
+            h1_mpeg_diag_stage(
+                runtime, 0xD5100004u); /* queue read enter */
 
         if (take != 0u &&
             !pstvnc_transport_queue_read(&runtime->mpeg_queue, destination, take)) {
@@ -1578,15 +1604,28 @@ int pstvnc_h1_transport_mpeg_read_cancellable(
             return 0;
         }
 
+        if (take != 0u)
+            h1_mpeg_diag_stage(
+                runtime, 0xD5100005u); /* queue read return */
+
         queue_empty = pstvnc_transport_queue_size(&runtime->mpeg_queue) == 0u;
+
+        h1_mpeg_diag_stage(
+            runtime, 0xD5100006u); /* queue SignalSema enter */
 
         if (SignalSema(runtime->mpeg_queue_sema_id) < 0) {
             h1_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
             return 0;
         }
 
+        h1_mpeg_diag_stage(
+            runtime, 0xD5100007u); /* queue SignalSema return */
+
         if (take != 0u) {
             runtime->stats.mpeg_bytes_consumed += (uint32_t)take;
+
+            h1_mpeg_diag_stage(
+                runtime, 0xD5100008u); /* credit return enter */
 
             if (!h1_return_credit(
                     runtime,
@@ -1594,6 +1633,9 @@ int pstvnc_h1_transport_mpeg_read_cancellable(
                     (uint32_t)take,
                     queue_empty))
                 return 0;
+
+            h1_mpeg_diag_stage(
+                runtime, 0xD5100009u); /* credit return complete */
 
             if (wait_loops != 0u) {
                 runtime->stats.mpeg_wait_events++;
@@ -1603,6 +1645,8 @@ int pstvnc_h1_transport_mpeg_read_cancellable(
             }
 
             *bytes_read = take;
+            h1_mpeg_diag_stage(
+                runtime, 0xD510000Au); /* successful MPEG read return */
             return 1;
         }
 
@@ -1611,10 +1655,16 @@ int pstvnc_h1_transport_mpeg_read_cancellable(
 
         wait_loops++;
 
+        h1_mpeg_diag_stage(
+            runtime, 0xD510000Bu); /* empty DelayThread enter */
+
         if (DelayThread(runtime->config.mpeg_empty_delay_us) < 0) {
             h1_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
             return 0;
         }
+
+        h1_mpeg_diag_stage(
+            runtime, 0xD510000Cu); /* empty DelayThread return */
     }
 }
 

@@ -116,6 +116,14 @@ typedef struct pstvnc_h1_transport_runtime {
     volatile uint32_t diagnostic_word;
 
     /*
+     * Disposable MPEG inner-stall diagnostic witness.
+     *
+     * This field is independent of diagnostic_word and the producer_* fields
+     * already reused by the concurrent RFB diagnostics.
+     */
+    volatile uint32_t mpeg_diag_stage;
+
+    /*
      * Clean RFB shutdown uses four zero-length PSTV DATA markers on logical
      * channel 1: request(Pi)->boundary(PS2)->commit(Pi)->complete(PS2).
      * Non-empty channel-1 DATA remains raw RFB bytes and is never interpreted
