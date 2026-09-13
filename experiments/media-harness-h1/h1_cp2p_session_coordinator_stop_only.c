@@ -4,7 +4,7 @@
  *
  * This derivative reuses the exact qualified CP2P session coordinator and wraps
  * only its service entry point. After the first MPEG generation reaches
- * MPEG_OWNED and remains there for ten seconds, it performs one autonomous
+ * MPEG_OWNED and remains there for two seconds, it performs one autonomous
  * retirement transaction and returns presentation ownership to RFB_ONLY.
  *
  * Purpose:
@@ -16,8 +16,10 @@
  *     retire exact Pi generation -> wait for ACK -> clear/join local MPEG worker
  *     and pixels -> finalize old MPEG queue -> owner stop -> one full RFB refresh.
  *
- * No queue sizing, worker priority, decoder policy, pacing, RFB suppression,
- * transport ownership, or PCM behavior is changed.
+ * The two-second delay is diagnostic only. It avoids the separately-proven
+ * spontaneous active MPEG read stall so teardown is exercised while the MPEG
+ * worker is still healthy. No queue sizing, worker priority, decoder policy,
+ * pacing, RFB suppression, transport ownership, or PCM behavior is changed.
  */
 
 /*
@@ -34,7 +36,7 @@
 #include <string.h>
 #include <timer.h>
 
-#define H1_CP2P_STOP_ONLY_DELAY_US UINT64_C(10000000)
+#define H1_CP2P_STOP_ONLY_DELAY_US UINT64_C(2000000)
 
 typedef struct h1_cp2p_stop_only_state {
     uint32_t session_id;
