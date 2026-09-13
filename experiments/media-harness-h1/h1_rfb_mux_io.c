@@ -78,6 +78,19 @@ static void h1_rfb_diag_record(
     runtime->producer_picture_starts = h1_rfb_diag_operation_sequence;
 }
 
+void pstvnc_h1_rfb_mux_io_diag_stage(
+    int socket_fd,
+    uint32_t stage,
+    size_t count)
+{
+    pstvnc_h1_transport_runtime_t *runtime = h1_rfb_resolve(socket_fd);
+
+    if (runtime == NULL)
+        return;
+
+    h1_rfb_diag_record(runtime, stage, count);
+}
+
 int pstvnc_h1_rfb_mux_io_bind(
     pstvnc_h1_transport_runtime_t *runtime)
 {

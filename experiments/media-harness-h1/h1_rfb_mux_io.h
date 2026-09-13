@@ -14,6 +14,7 @@
 #define PSTVNC_MEDIA_HARNESS_H1_RFB_MUX_IO_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 struct pstvnc_h1_transport_runtime;
 typedef struct pstvnc_h1_transport_runtime pstvnc_h1_transport_runtime_t;
@@ -35,6 +36,16 @@ int pstvnc_h1_rfb_mux_io_poll_receive(
 int pstvnc_h1_rfb_mux_io_write_exact(
     int socket_fd,
     const void *buffer,
+    size_t count);
+
+/*
+ * Observation-only stage witness for the RFB/application service loop.
+ * This writes the same diagnostic telemetry slots used by the existing
+ * RFB I/O witness and changes no transport or scheduling behavior.
+ */
+void pstvnc_h1_rfb_mux_io_diag_stage(
+    int socket_fd,
+    uint32_t stage,
     size_t count);
 
 #endif

@@ -14,6 +14,7 @@
 #include "display.h"
 #include "h1_config.h"
 #include "h1_rfb_transport_live.h"
+#include "h1_rfb_mux_io.h"
 #include "h1_transport_runtime.h"
 
 #include <delaythread.h>
@@ -25,6 +26,19 @@
 #define H1_RFB_IDLE_DELAY_US 1000u
 #define H1_RFB_QUIESCE_WAIT_US 1000u
 #define H1_RFB_DIAGNOSTIC_MARKER 0xA0000000u
+
+/*
+ * Observation-only post-IDLE control-flow witnesses.
+ *
+ * If the RFB thread stops making progress, the last marker tells us which
+ * call was entered but did not return.
+ */
+#define H1_RFB_DIAG_APP_SERVICE_ENTER    0xE1050001u
+#define H1_RFB_DIAG_APP_SERVICE_RETURN   0xE1050002u
+#define H1_RFB_DIAG_REQUEST_ENTER        0xE1050003u
+#define H1_RFB_DIAG_REQUEST_RETURN       0xE1050004u
+#define H1_RFB_DIAG_IDLE_DELAY_ENTER     0xE1050005u
+#define H1_RFB_DIAG_IDLE_DELAY_RETURN    0xE1050006u
 
 static uint32_t h1_rfb_diagnostic_word(
     const pstvnc_h1_rfb_session_runtime_t *runtime)
@@ -344,11 +358,21 @@ static int h1_rfb_run(
                 goto fail;
             }
 
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                transport->socket_fd,
+                H1_RFB_DIAG_APP_SERVICE_ENTER,
+                0u);
+
             if (!h1_rfb_service_application(
                     runtime,
                     service,
                     service_context))
                 goto fail;
+
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                transport->socket_fd,
+                H1_RFB_DIAG_APP_SERVICE_RETURN,
+                0u);
 
             /*
              * Default/qualified callers do not issue requests from IDLE because
@@ -356,12 +380,33 @@ static int h1_rfb_run(
              * policy explicitly owns that fact and may therefore safely HOLD or
              * issue the first post-thaw FULL request here.
              */
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                transport->socket_fd,
+                H1_RFB_DIAG_REQUEST_ENTER,
+                0u);
+
             if (flow_policy != NULL &&
                 !h1_rfb_request_at_boundary(runtime, flow_policy))
                 goto fail;
 
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                transport->socket_fd,
+                H1_RFB_DIAG_REQUEST_RETURN,
+                0u);
+
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                transport->socket_fd,
+                H1_RFB_DIAG_IDLE_DELAY_ENTER,
+                H1_RFB_IDLE_DELAY_US);
+
             if (DelayThread(H1_RFB_IDLE_DELAY_US) < 0)
                 goto fail;
+
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                transport->socket_fd,
+                H1_RFB_DIAG_IDLE_DELAY_RETURN,
+                H1_RFB_IDLE_DELAY_US);
+
             continue;
         }
 
