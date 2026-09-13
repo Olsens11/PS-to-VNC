@@ -22,6 +22,8 @@
 
 #include <delaythread.h>
 #include <kernel.h>
+#include <timer.h>
+#include <timer_alarm.h>
 #include <ps2ip.h>
 
 #include <arpa/inet.h>
@@ -1544,6 +1546,107 @@ static void h1_mpeg_diag_stage(
         runtime->mpeg_diag_stage = stage;
 }
 
+/*
+ * MPEG-only experimental delay replacement.
+ *
+ * The ordinary PS2SDK DelayThread path creates a temporary semaphore,
+ * arms a timer alarm, waits on that semaphore, and has the alarm callback
+ * signal it.
+ *
+ * This experiment follows the alternate wakeup/sleep mechanism proposed
+ * upstream for PS2SDK:
+ *
+ *     GetThreadId()
+ *     SetTimerAlarm(...)
+ *     SleepThread()
+ *     alarm callback -> iWakeupThread(thread_id)
+ *
+ * It is deliberately used ONLY for the MPEG empty-queue retry delay so RFB's
+ * existing DelayThread path remains an unchanged control.
+ */
+
+static pstvnc_h1_transport_runtime_t *s_h1_mpeg_delay_runtime = NULL;
+
+static u64 h1_mpeg_delay_wakeup_callback(
+    s32 alarm_id,
+    u64 scheduled_time,
+    u64 actual_time,
+    void *arg,
+    void *pc_value)
+{
+    s32 thread_id = (s32)arg;
+    s32 wake_result;
+
+    (void)alarm_id;
+    (void)scheduled_time;
+    (void)actual_time;
+    (void)pc_value;
+
+    if (s_h1_mpeg_delay_runtime != NULL)
+        s_h1_mpeg_delay_runtime->mpeg_diag_stage =
+            0xD5110003u; /* alarm callback fired */
+
+    wake_result = iWakeupThread(thread_id);
+
+    if (wake_result < 0 &&
+        s_h1_mpeg_delay_runtime != NULL)
+        s_h1_mpeg_delay_runtime->mpeg_diag_stage =
+            0xD51100E3u; /* iWakeupThread failed */
+
+    ExitHandler();
+    return 0;
+}
+
+static s32 h1_mpeg_wakeup_delay(
+    pstvnc_h1_transport_runtime_t *runtime,
+    u32 microseconds)
+{
+    s32 thread_id;
+    s32 alarm_id;
+
+    if (runtime == NULL)
+        return -1;
+
+    runtime->mpeg_diag_stage =
+        0xD5110001u; /* wakeup delay helper enter */
+
+    thread_id = GetThreadId();
+
+    if (thread_id < 0) {
+        runtime->mpeg_diag_stage =
+            0xD51100E1u; /* GetThreadId failed */
+        return thread_id;
+    }
+
+    s_h1_mpeg_delay_runtime = runtime;
+
+    alarm_id = SetTimerAlarm(
+        TimerUSec2BusClock(0, microseconds),
+        h1_mpeg_delay_wakeup_callback,
+        (void *)thread_id);
+
+    if (alarm_id < 0) {
+        runtime->mpeg_diag_stage =
+            0xD51100E2u; /* SetTimerAlarm failed */
+        return alarm_id;
+    }
+
+    runtime->mpeg_diag_stage =
+        0xD5110002u; /* alarm armed / before SleepThread */
+
+    /*
+     * If the timer fires immediately before SleepThread executes,
+     * WakeupThread increments wakeupCount and SleepThread consumes it,
+     * so the wakeup is not lost.
+     */
+    (void)SleepThread();
+
+    runtime->mpeg_diag_stage =
+        0xD5110004u; /* SleepThread returned */
+
+    return 0;
+}
+
 int pstvnc_h1_transport_mpeg_read_cancellable(
     pstvnc_h1_transport_runtime_t *runtime,
     void *buffer,
@@ -1658,7 +1761,9 @@ int pstvnc_h1_transport_mpeg_read_cancellable(
         h1_mpeg_diag_stage(
             runtime, 0xD510000Bu); /* empty DelayThread enter */
 
-        if (DelayThread(runtime->config.mpeg_empty_delay_us) < 0) {
+        if (h1_mpeg_wakeup_delay(
+                runtime,
+                runtime->config.mpeg_empty_delay_us) < 0) {
             h1_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
             return 0;
         }
