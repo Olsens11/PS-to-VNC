@@ -6,7 +6,8 @@
  *
  * The disposable stall-diagnostic derivative writes observation-only stage
  * values to the existing transport diagnostic_word around worker lifecycle
- * boundaries. Thread priority and all runtime policy remain unchanged.
+ * boundaries. This scheduling diagnostic changes only the MPEG worker's
+ * initial priority from 42 to 67; all other runtime policy is unchanged.
  */
 #include "h1_cp2p_mpeg_worker.h"
 
@@ -165,7 +166,7 @@ int pstvnc_h1_cp2p_mpeg_worker_arm(
     thread.stack = worker->thread_stack;
     thread.stack_size = H1_CP2P_MPEG_WORKER_STACK_BYTES;
     thread.gp_reg = &_gp;
-    thread.initial_priority = 42;
+    thread.initial_priority = 67;
     worker->thread_id = CreateThread(&thread);
     if (worker->thread_id < 0)
         goto fail;
