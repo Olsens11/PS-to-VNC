@@ -56,6 +56,24 @@ static int h1_create_mutex(void)
     return CreateSema(&semaphore);
 }
 
+/*
+ * One-shot receiver-completion event.
+ *
+ * Unlike DelayThread polling this has no timer dependency.  A receiver that
+ * finishes before the application waits leaves one pending semaphore count;
+ * a receiver that finishes afterward wakes the blocked application directly.
+ */
+static int h1_create_completion_event(void)
+{
+    ee_sema_t semaphore;
+
+    memset(&semaphore, 0, sizeof(semaphore));
+    semaphore.init_count = 0;
+    semaphore.max_count = 1;
+    semaphore.option = 0;
+    return CreateSema(&semaphore);
+}
+
 static void *h1_allocate_aligned16(
     size_t byte_count,
     void **allocation)
@@ -968,6 +986,15 @@ static void h1_receiver_thread(void *argument)
     }
 
     runtime->receiver_done = 1;
+
+    /*
+     * Publish receiver_done before signaling.  Waiters that wake can therefore
+     * treat the flag as authoritative completion state.
+     */
+    if (runtime->receiver_done_sema_id >= 0 &&
+        SignalSema(runtime->receiver_done_sema_id) < 0)
+        h1_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+
     ExitThread();
 }
 
@@ -1240,6 +1267,7 @@ int pstvnc_h1_transport_start(
     runtime->audio_queue_sema_id = -1;
     runtime->mpeg_queue_sema_id = -1;
     runtime->send_sema_id = -1;
+    runtime->receiver_done_sema_id = -1;
     runtime->receiver_thread_id = -1;
     runtime->next_send_sequence = 1u;
     runtime->expected_receive_sequence = 1u;
@@ -1249,10 +1277,12 @@ int pstvnc_h1_transport_start(
     runtime->audio_queue_sema_id = h1_create_mutex();
     runtime->mpeg_queue_sema_id = h1_create_mutex();
     runtime->send_sema_id = h1_create_mutex();
+    runtime->receiver_done_sema_id = h1_create_completion_event();
 
     if (runtime->audio_queue_sema_id < 0 ||
         runtime->mpeg_queue_sema_id < 0 ||
-        runtime->send_sema_id < 0) {
+        runtime->send_sema_id < 0 ||
+        runtime->receiver_done_sema_id < 0) {
         h1_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
         goto fail;
     }
@@ -1338,6 +1368,27 @@ fail:
     return -1;
 }
 
+int pstvnc_h1_transport_wait_for_receiver_done(
+    pstvnc_h1_transport_runtime_t *runtime)
+{
+    if (runtime == NULL ||
+        runtime->receiver_done_sema_id < 0)
+        return -1;
+
+    /*
+     * If completion already happened there is nothing to wait for.  Otherwise
+     * WaitSema handles both ordinary wake-after-wait and signal-before-wait.
+     */
+    if (!runtime->receiver_done) {
+        if (WaitSema(runtime->receiver_done_sema_id) < 0) {
+            h1_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+            return -1;
+        }
+    }
+
+    return runtime->receiver_done ? 0 : -1;
+}
+
 int pstvnc_h1_transport_shutdown(
     pstvnc_h1_transport_runtime_t *runtime)
 {
@@ -1405,6 +1456,12 @@ int pstvnc_h1_transport_shutdown(
         if (DeleteSema(runtime->send_sema_id) < 0)
             result = -1;
         runtime->send_sema_id = -1;
+    }
+
+    if (runtime->receiver_done_sema_id >= 0) {
+        if (DeleteSema(runtime->receiver_done_sema_id) < 0)
+            result = -1;
+        runtime->receiver_done_sema_id = -1;
     }
 
     free(runtime->receiver_thread_stack_allocation);

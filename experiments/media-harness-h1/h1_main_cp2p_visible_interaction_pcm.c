@@ -30,7 +30,6 @@
 
 #define PSTVNC_H1_CP2O_CONNECT_RETRY_DELAY_US 250000u
 #define PSTVNC_H1_CP2O_AUDIO_FINISH_POLL_US 1000u
-#define PSTVNC_H1_CP2O_TRANSPORT_END_POLL_US 1000u
 #define PSTVNC_H1_CP2O_BETWEEN_SESSION_DELAY_US 100000u
 
 static int h1_cp2o_wait_for_session_transport(
@@ -57,12 +56,8 @@ static int h1_cp2o_wait_for_transport_end(
     if (transport == NULL)
         return -1;
 
-    while (!transport->receiver_done &&
-           pstvnc_h1_transport_last_error(transport) ==
-                PSTVNC_H1_ERROR_NONE) {
-        if (DelayThread(PSTVNC_H1_CP2O_TRANSPORT_END_POLL_US) < 0)
-            return -1;
-    }
+    if (pstvnc_h1_transport_wait_for_receiver_done(transport) < 0)
+        return -1;
 
     return transport->receiver_done &&
         transport->end_received &&

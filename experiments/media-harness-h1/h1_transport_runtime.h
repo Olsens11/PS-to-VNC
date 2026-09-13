@@ -103,6 +103,15 @@ typedef struct pstvnc_h1_transport_runtime {
     int audio_queue_sema_id;
     int mpeg_queue_sema_id;
     int send_sema_id;
+
+    /*
+     * One-shot receiver termination event.
+     *
+     * The sole receiver signals this exactly once immediately after publishing
+     * receiver_done.  The application may therefore block without timer-backed
+     * polling and without a signal-before-wait race.
+     */
+    int receiver_done_sema_id;
     int receiver_thread_id;
 
     int initialized;
@@ -204,6 +213,14 @@ typedef struct pstvnc_h1_transport_runtime {
 } pstvnc_h1_transport_runtime_t;
 
 int pstvnc_h1_transport_start(
+    pstvnc_h1_transport_runtime_t *runtime);
+
+/*
+ * Block until the sole transport receiver has terminated.
+ *
+ * This is an event wait, not DelayThread polling.
+ */
+int pstvnc_h1_transport_wait_for_receiver_done(
     pstvnc_h1_transport_runtime_t *runtime);
 
 int pstvnc_h1_transport_shutdown(
