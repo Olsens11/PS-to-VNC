@@ -33,6 +33,26 @@
 
 #define H1_RFB_EXACT_READ_WAIT_US 1000u
 
+/*
+ * Observation-only exact-read inner-loop witnesses.
+ *
+ * The existing outer RFB witness proves that the parser entered an exact read.
+ * These markers determine whether the thread then blocks on the queue semaphore,
+ * consumes bytes, sends receiver credit, sleeps waiting for more bytes, or
+ * continues looping normally.
+ */
+#define H1_RFB_DIAG_READ_LOOP_ENTER          0xE1060001u
+#define H1_RFB_DIAG_QUEUE_WAIT_ENTER         0xE1060002u
+#define H1_RFB_DIAG_QUEUE_WAIT_RETURN        0xE1060003u
+#define H1_RFB_DIAG_QUEUE_READ_RETURN        0xE1060004u
+#define H1_RFB_DIAG_QUEUE_SIGNAL_ENTER       0xE1060005u
+#define H1_RFB_DIAG_QUEUE_SIGNAL_RETURN      0xE1060006u
+#define H1_RFB_DIAG_CREDIT_SEND_ENTER        0xE1060007u
+#define H1_RFB_DIAG_CREDIT_SEND_RETURN       0xE1060008u
+#define H1_RFB_DIAG_READ_PROGRESS            0xE1060009u
+#define H1_RFB_DIAG_READ_DELAY_ENTER         0xE106000Au
+#define H1_RFB_DIAG_READ_DELAY_RETURN        0xE106000Bu
+
 /* Implemented by h1_transport_runtime.c around its existing send semaphore. */
 int pstvnc_h1_transport_send_frame_internal(
     pstvnc_h1_transport_runtime_t *runtime,
@@ -282,10 +302,21 @@ static size_t h1_rfb_read_available_and_credit(
     int queue_empty;
     uint32_t credit = 0u;
 
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        runtime->socket_fd,
+        H1_RFB_DIAG_QUEUE_WAIT_ENTER,
+        maximum_count);
+
     if (WaitSema(runtime->rfb_resources.queue_sema_id) < 0) {
         h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
         return 0u;
     }
+
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        runtime->socket_fd,
+        H1_RFB_DIAG_QUEUE_WAIT_RETURN,
+        pstvnc_h1_rfb_channel_queue_size(
+            &runtime->rfb_resources.channel));
 
     channel = &runtime->rfb_resources.channel;
     taken = pstvnc_h1_rfb_channel_read_available(
@@ -293,6 +324,11 @@ static size_t h1_rfb_read_available_and_credit(
         buffer,
         maximum_count);
     queue_empty = pstvnc_h1_rfb_channel_queue_size(channel) == 0u;
+
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        runtime->socket_fd,
+        H1_RFB_DIAG_QUEUE_READ_RETURN,
+        taken);
 
     if (pstvnc_h1_rfb_credit_should_return(
             channel->stats.credit_bytes_pending,
@@ -302,13 +338,35 @@ static size_t h1_rfb_read_available_and_credit(
             queue_empty))
         credit = pstvnc_h1_rfb_channel_take_credit(channel);
 
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        runtime->socket_fd,
+        H1_RFB_DIAG_QUEUE_SIGNAL_ENTER,
+        channel->stats.credit_bytes_pending);
+
     if (SignalSema(runtime->rfb_resources.queue_sema_id) < 0) {
         h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
         return 0u;
     }
 
-    if (credit != 0u && !h1_rfb_send_credit(runtime, credit))
-        return 0u;
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        runtime->socket_fd,
+        H1_RFB_DIAG_QUEUE_SIGNAL_RETURN,
+        credit);
+
+    if (credit != 0u) {
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            runtime->socket_fd,
+            H1_RFB_DIAG_CREDIT_SEND_ENTER,
+            credit);
+
+        if (!h1_rfb_send_credit(runtime, credit))
+            return 0u;
+
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            runtime->socket_fd,
+            H1_RFB_DIAG_CREDIT_SEND_RETURN,
+            credit);
+    }
 
     return taken;
 }
@@ -329,6 +387,12 @@ int pstvnc_h1_rfb_transport_read_exact(
 
     while (done < count) {
         size_t taken;
+        size_t remaining = count - done;
+
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            runtime->socket_fd,
+            H1_RFB_DIAG_READ_LOOP_ENTER,
+            remaining);
 
         if (runtime->error != PSTVNC_H1_ERROR_NONE ||
             runtime->stop_requested)
@@ -337,9 +401,16 @@ int pstvnc_h1_rfb_transport_read_exact(
         taken = h1_rfb_read_available_and_credit(
             runtime,
             destination + done,
-            count - done);
+            remaining);
+
         if (taken != 0u) {
             done += taken;
+
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                runtime->socket_fd,
+                H1_RFB_DIAG_READ_PROGRESS,
+                count - done);
+
             continue;
         }
 
@@ -347,10 +418,20 @@ int pstvnc_h1_rfb_transport_read_exact(
             runtime->receiver_done)
             return -1;
 
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            runtime->socket_fd,
+            H1_RFB_DIAG_READ_DELAY_ENTER,
+            count - done);
+
         if (DelayThread(H1_RFB_EXACT_READ_WAIT_US) < 0) {
             h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
             return -1;
         }
+
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            runtime->socket_fd,
+            H1_RFB_DIAG_READ_DELAY_RETURN,
+            count - done);
     }
 
     return 0;
