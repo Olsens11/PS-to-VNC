@@ -56,14 +56,19 @@ $(BUILD_DIR)/h1_cp2p_session_coordinator.o: \
 
 
 CP2P_GEN_DIR := $(BUILD_DIR)/generated-cp2p
-CP2P_VIDEO_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p.py
+# Diagnostic derivative: retain the authoritative CP2P transform, then layer
+# the existing MPEG stall markers plus the persistent live last-stage witness.
+CP2P_VIDEO_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p_persistent_diag.py
+CP2P_VIDEO_DIAG_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p_diag.py
+CP2P_VIDEO_BASE_GENERATOR := experiments/media-harness-h1/generate_h1_video_runtime_cp2p.py
 CP2P_VIDEO_SOURCE := experiments/media-harness-h1/h1_video_runtime.c
 CP2P_VIDEO_GENERATED := $(CP2P_GEN_DIR)/h1_video_runtime_cp2p_generated.c
 
 $(CP2P_GEN_DIR):
 	mkdir -p $@
 
-$(CP2P_VIDEO_GENERATED): $(CP2P_VIDEO_SOURCE) $(CP2P_VIDEO_GENERATOR) | $(CP2P_GEN_DIR)
+$(CP2P_VIDEO_GENERATED): $(CP2P_VIDEO_SOURCE) $(CP2P_VIDEO_GENERATOR) \
+	$(CP2P_VIDEO_DIAG_GENERATOR) $(CP2P_VIDEO_BASE_GENERATOR) | $(CP2P_GEN_DIR)
 	python3 $(CP2P_VIDEO_GENERATOR) --input $(CP2P_VIDEO_SOURCE) --output $@
 
 $(BUILD_DIR)/h1_video_runtime_cp2p.o: $(CP2P_VIDEO_GENERATED) \

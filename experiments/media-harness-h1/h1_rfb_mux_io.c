@@ -9,12 +9,14 @@
  * delegated to logical channel-1 mechanics.
  *
  * Diagnostic derivative note:
- * This branch also records observation-only RFB I/O witnesses in producer
- * telemetry fields while MEDIA_END has not yet arrived. Those fields are unused
- * producer metadata during the live phase and are overwritten by authoritative
- * MEDIA_END metadata later. No RFB framing, queue, credit, or scheduling policy
- * is changed. The witness identifies whether the parser is polling at a complete
- * message boundary, blocked on one exact read (and its byte count), or publishing
+ * This branch also records observation-only RFB I/O witnesses in three
+ * live-only producer telemetry fields while MEDIA_END has not yet arrived.
+ * producer_stop_reason is deliberately left untouched for the dedicated MPEG
+ * last-stage witness. MEDIA_END remains authoritative and overwrites the live
+ * diagnostic producer fields with real terminal producer metadata later.
+ * No RFB framing, queue, credit, or scheduling policy is changed. The witness
+ * identifies whether the parser is polling at a complete message boundary,
+ * blocked on one exact read (including requested byte count), or publishing
  * one exact client message.
  */
 
@@ -50,20 +52,19 @@ static pstvnc_h1_transport_runtime_t *h1_rfb_resolve(int socket_fd)
 }
 
 /*
- * Reuse live-only producer telemetry slots as an observation channel. The real
- * producer metadata is not authoritative until MEDIA_END, so stop writing these
- * witnesses as soon as end_received becomes true.
+ * Reuse three live-only producer telemetry slots as an RFB observation channel.
+ * The real producer metadata is not authoritative until MEDIA_END, so stop
+ * writing these witnesses as soon as end_received becomes true.
  *
- * producer_audio_bytes   = stage marker
- * producer_mpeg_bytes    = exact byte count associated with this operation
- * producer_picture_starts= monotonically increasing RFB-I/O witness sequence
- * producer_stop_reason   = operation-specific detail/return code
+ * producer_audio_bytes    = stage marker
+ * producer_mpeg_bytes     = exact byte count associated with this operation
+ * producer_picture_starts = monotonically increasing RFB-I/O witness sequence
+ * producer_stop_reason    = reserved for persistent MPEG last-stage witness
  */
 static void h1_rfb_diag_record(
     pstvnc_h1_transport_runtime_t *runtime,
     uint32_t stage,
-    size_t count,
-    uint32_t detail)
+    size_t count)
 {
     if (runtime == NULL || runtime->end_received != 0u)
         return;
@@ -75,7 +76,6 @@ static void h1_rfb_diag_record(
     runtime->producer_mpeg_bytes =
         count > UINT32_MAX ? UINT32_MAX : (uint32_t)count;
     runtime->producer_picture_starts = h1_rfb_diag_operation_sequence;
-    runtime->producer_stop_reason = detail;
 }
 
 int pstvnc_h1_rfb_mux_io_bind(
@@ -113,13 +113,12 @@ int pstvnc_h1_rfb_mux_io_read_exact(
     if (runtime == NULL)
         return -1;
 
-    h1_rfb_diag_record(runtime, H1_RFB_DIAG_READ_ENTER, count, 0u);
+    h1_rfb_diag_record(runtime, H1_RFB_DIAG_READ_ENTER, count);
     result = pstvnc_h1_rfb_transport_read_exact(runtime, buffer, count);
     h1_rfb_diag_record(
         runtime,
         result == 0 ? H1_RFB_DIAG_READ_RETURN_OK : H1_RFB_DIAG_READ_RETURN_FAIL,
-        count,
-        (uint32_t)result);
+        count);
     return result;
 }
 
@@ -132,15 +131,15 @@ int pstvnc_h1_rfb_mux_io_poll_receive(
     if (runtime == NULL)
         return -1;
 
-    h1_rfb_diag_record(runtime, H1_RFB_DIAG_POLL_ENTER, 0u, 0u);
+    h1_rfb_diag_record(runtime, H1_RFB_DIAG_POLL_ENTER, 0u);
     result = pstvnc_h1_rfb_transport_poll_receive(runtime);
 
     if (result < 0) {
-        h1_rfb_diag_record(runtime, H1_RFB_DIAG_POLL_FAIL, 0u, (uint32_t)result);
+        h1_rfb_diag_record(runtime, H1_RFB_DIAG_POLL_FAIL, 0u);
     } else if (result == 0) {
-        h1_rfb_diag_record(runtime, H1_RFB_DIAG_POLL_IDLE, 0u, 0u);
+        h1_rfb_diag_record(runtime, H1_RFB_DIAG_POLL_IDLE, 0u);
     } else {
-        h1_rfb_diag_record(runtime, H1_RFB_DIAG_POLL_READY, 0u, (uint32_t)result);
+        h1_rfb_diag_record(runtime, H1_RFB_DIAG_POLL_READY, 0u);
     }
 
     return result;
@@ -162,8 +161,7 @@ int pstvnc_h1_rfb_mux_io_write_exact(
     h1_rfb_diag_record(
         runtime,
         H1_RFB_DIAG_WRITE_ENTER_BASE | (message_type & 0xffu),
-        count,
-        message_type);
+        count);
 
     result = pstvnc_h1_rfb_transport_write_exact(runtime, buffer, count);
 
@@ -171,8 +169,7 @@ int pstvnc_h1_rfb_mux_io_write_exact(
         runtime,
         (result == 0 ? H1_RFB_DIAG_WRITE_OK_BASE : H1_RFB_DIAG_WRITE_FAIL_BASE) |
             (message_type & 0xffu),
-        count,
-        (uint32_t)result);
+        count);
 
     return result;
 }
