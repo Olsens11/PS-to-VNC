@@ -10,6 +10,7 @@
  * initial priority from 42 to 67; all other runtime policy is unchanged.
  */
 #include "h1_cp2p_mpeg_worker.h"
+#include "h1_transport_runtime.h"
 
 #include "h1_cumulative39_graphics.h"
 #include "h1_video_runtime_cp2p.h"
@@ -29,6 +30,42 @@ static void h1_cp2p_mpeg_diag(
 {
     if (worker != NULL && worker->transport != NULL)
         pstvnc_h1_transport_set_diagnostic_word(worker->transport, stage);
+}
+
+
+#define H1_CP2P_MPEG_JOIN_DIAG_JOIN_ENTER       0xE2030001u
+#define H1_CP2P_MPEG_JOIN_DIAG_STOP_REQUESTED   0xE2030002u
+#define H1_CP2P_MPEG_JOIN_DIAG_REFER_ENTER      0xE2030003u
+#define H1_CP2P_MPEG_JOIN_DIAG_REFER_RETURN     0xE2030004u
+#define H1_CP2P_MPEG_JOIN_DIAG_DORMANT          0xE2030005u
+#define H1_CP2P_MPEG_JOIN_DIAG_DELAY_ENTER      0xE2030006u
+#define H1_CP2P_MPEG_JOIN_DIAG_DELAY_RETURN     0xE2030007u
+#define H1_CP2P_MPEG_JOIN_DIAG_LOOP_EXHAUSTED   0xE2030008u
+#define H1_CP2P_MPEG_JOIN_DIAG_FINISHED         0xE2030009u
+#define H1_CP2P_MPEG_JOIN_DIAG_DELETE_ENTER     0xE203000Au
+#define H1_CP2P_MPEG_JOIN_DIAG_DELETE_RETURN    0xE203000Bu
+#define H1_CP2P_MPEG_JOIN_DIAG_JOIN_RETURN      0xE203000Cu
+#define H1_CP2P_MPEG_JOIN_DIAG_NO_THREAD        0xE203000Du
+
+#define H1_CP2P_MPEG_JOIN_DIAG_REFER_FAIL       0xE20300F1u
+#define H1_CP2P_MPEG_JOIN_DIAG_DELAY_FAIL       0xE20300F2u
+#define H1_CP2P_MPEG_JOIN_DIAG_TIMEOUT_FAIL     0xE20300F3u
+#define H1_CP2P_MPEG_JOIN_DIAG_DELETE_FAIL      0xE20300F4u
+
+/*
+ * Observation-only MPEG join witness.
+ *
+ * Do not send a telemetry snapshot here: this function executes inside the
+ * 1-ms join polling loop.  Repeated synchronous telemetry sends would alter
+ * the scheduling behavior being diagnosed.  The existing persistent/heartbeat
+ * telemetry paths observe mpeg_diag_stage asynchronously.
+ */
+static void h1_cp2p_mpeg_join_diag(
+    pstvnc_h1_cp2p_mpeg_worker_t *worker,
+    uint32_t stage)
+{
+    if (worker != NULL && worker->transport != NULL)
+        worker->transport->mpeg_diag_stage = stage;
 }
 
 static unsigned char *h1_worker_align64(void *allocation)
@@ -65,34 +102,116 @@ static int h1_cp2p_mpeg_worker_join(
 {
     unsigned int loops = 0u;
 
-    if (!worker->thread_started)
+    h1_cp2p_mpeg_join_diag(
+        worker,
+        H1_CP2P_MPEG_JOIN_DIAG_JOIN_ENTER);
+
+    if (!worker->thread_started) {
+        h1_cp2p_mpeg_join_diag(
+            worker,
+            H1_CP2P_MPEG_JOIN_DIAG_NO_THREAD);
         return 1;
+    }
 
     worker->stop_requested = 1;
-    while (!worker->finished && loops < H1_CP2P_MPEG_WORKER_STOP_MAX_LOOPS) {
+
+    h1_cp2p_mpeg_join_diag(
+        worker,
+        H1_CP2P_MPEG_JOIN_DIAG_STOP_REQUESTED);
+
+    while (!worker->finished &&
+           loops < H1_CP2P_MPEG_WORKER_STOP_MAX_LOOPS) {
         ee_thread_status_t status;
+
         memset(&status, 0, sizeof(status));
-        if (ReferThreadStatus(worker->thread_id, &status) < 0)
+
+        h1_cp2p_mpeg_join_diag(
+            worker,
+            H1_CP2P_MPEG_JOIN_DIAG_REFER_ENTER);
+
+        if (ReferThreadStatus(
+                worker->thread_id,
+                &status) < 0) {
+            h1_cp2p_mpeg_join_diag(
+                worker,
+                H1_CP2P_MPEG_JOIN_DIAG_REFER_FAIL);
             return 0;
+        }
+
+        h1_cp2p_mpeg_join_diag(
+            worker,
+            H1_CP2P_MPEG_JOIN_DIAG_REFER_RETURN);
+
         if (status.status == THS_DORMANT) {
             worker->finished = 1;
+
+            h1_cp2p_mpeg_join_diag(
+                worker,
+                H1_CP2P_MPEG_JOIN_DIAG_DORMANT);
+
             break;
         }
-        if (DelayThread(H1_CP2P_MPEG_WORKER_STOP_POLL_US) < 0)
+
+        h1_cp2p_mpeg_join_diag(
+            worker,
+            H1_CP2P_MPEG_JOIN_DIAG_DELAY_ENTER);
+
+        if (DelayThread(
+                H1_CP2P_MPEG_WORKER_STOP_POLL_US) < 0) {
+            h1_cp2p_mpeg_join_diag(
+                worker,
+                H1_CP2P_MPEG_JOIN_DIAG_DELAY_FAIL);
             return 0;
+        }
+
+        h1_cp2p_mpeg_join_diag(
+            worker,
+            H1_CP2P_MPEG_JOIN_DIAG_DELAY_RETURN);
+
         loops++;
     }
 
-    if (!worker->finished)
+    if (!worker->finished) {
+        h1_cp2p_mpeg_join_diag(
+            worker,
+            H1_CP2P_MPEG_JOIN_DIAG_LOOP_EXHAUSTED);
+
+        h1_cp2p_mpeg_join_diag(
+            worker,
+            H1_CP2P_MPEG_JOIN_DIAG_TIMEOUT_FAIL);
+
         return 0;
-    if (DeleteThread(worker->thread_id) < 0)
+    }
+
+    h1_cp2p_mpeg_join_diag(
+        worker,
+        H1_CP2P_MPEG_JOIN_DIAG_FINISHED);
+
+    h1_cp2p_mpeg_join_diag(
+        worker,
+        H1_CP2P_MPEG_JOIN_DIAG_DELETE_ENTER);
+
+    if (DeleteThread(worker->thread_id) < 0) {
+        h1_cp2p_mpeg_join_diag(
+            worker,
+            H1_CP2P_MPEG_JOIN_DIAG_DELETE_FAIL);
         return 0;
+    }
+
+    h1_cp2p_mpeg_join_diag(
+        worker,
+        H1_CP2P_MPEG_JOIN_DIAG_DELETE_RETURN);
 
     worker->thread_started = 0;
     worker->thread_id = -1;
     free(worker->thread_stack_allocation);
     worker->thread_stack_allocation = NULL;
     worker->thread_stack = NULL;
+
+    h1_cp2p_mpeg_join_diag(
+        worker,
+        H1_CP2P_MPEG_JOIN_DIAG_JOIN_RETURN);
+
     return 1;
 }
 
