@@ -352,6 +352,7 @@ static int h1_receive_config(
         runtime->receiver_payload,
         header.payload_length);
     runtime->audio_producer_done = 0u;
+    runtime->audio_debug_stage = 0u;
     runtime->config_accepted = 1;
     return 1;
 }
@@ -583,7 +584,16 @@ static int h1_send_telemetry(
     PUT32(0, PSTVNC_H1_TELEMETRY_VERSION);
     PUT32(4, runtime->error);
     PUT32(8, runtime->config.session_id);
-    PUT32(12, runtime->diagnostic_word);
+    PUT32(
+        12,
+        (runtime->audio_debug_stage ==
+                PSTVNC_H1_AUDIO_DIAG_WAIT_ENTER ||
+            runtime->audio_debug_stage ==
+                PSTVNC_H1_AUDIO_DIAG_PLAY_ENTER ||
+            runtime->audio_debug_stage ==
+                PSTVNC_H1_AUDIO_DIAG_STOP_ENTER)
+            ? runtime->audio_debug_stage
+            : runtime->diagnostic_word);
     PUT32(16, runtime->stats.frames_received);
     PUT32(20, runtime->stats.payload_bytes_received);
     PUT32(24, runtime->stats.last_received_sequence);

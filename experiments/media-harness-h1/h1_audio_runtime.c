@@ -206,10 +206,19 @@ static void h1_audio_thread(void *argument)
             continue;
         }
 
+        runtime->transport->audio_debug_stage =
+            PSTVNC_H1_AUDIO_DIAG_WAIT_ENTER;
+
         if (audsrv_wait_audio((int)bytes_read) != 0) {
             h1_audio_record_error(runtime, PSTVNC_H1_AUDIO_ERROR_WAIT);
             break;
         }
+
+        runtime->transport->audio_debug_stage =
+            PSTVNC_H1_AUDIO_DIAG_WAIT_RETURN;
+
+        runtime->transport->audio_debug_stage =
+            PSTVNC_H1_AUDIO_DIAG_PLAY_ENTER;
 
         if (audsrv_play_audio(
                 (const char *)runtime->audio_buffer,
@@ -217,6 +226,9 @@ static void h1_audio_thread(void *argument)
             h1_audio_record_error(runtime, PSTVNC_H1_AUDIO_ERROR_PLAY);
             break;
         }
+
+        runtime->transport->audio_debug_stage =
+            PSTVNC_H1_AUDIO_DIAG_PLAY_RETURN;
 
         pstvnc_h1_transport_record_audio_played(
             runtime->transport,
@@ -231,7 +243,13 @@ stop_audio:
      * audsrv_init() reconstruct that state reliably. Keep the service alive
      * across H1 sessions and only stop/mute the current stream here.
      */
+    runtime->transport->audio_debug_stage =
+        PSTVNC_H1_AUDIO_DIAG_STOP_ENTER;
+
     (void)audsrv_stop_audio();
+
+    runtime->transport->audio_debug_stage =
+        PSTVNC_H1_AUDIO_DIAG_STOP_RETURN;
 
 done:
     runtime->finished = 1;

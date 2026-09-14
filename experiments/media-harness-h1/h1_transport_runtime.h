@@ -98,6 +98,16 @@ typedef struct pstvnc_h1_transport_stats {
     volatile uint32_t mpeg_wait_max_loops;
 } pstvnc_h1_transport_stats_t;
 
+/*
+ * Diagnostic-only PCM/AUDSRV call-boundary stages.
+ */
+#define PSTVNC_H1_AUDIO_DIAG_WAIT_ENTER  0xE2010001u
+#define PSTVNC_H1_AUDIO_DIAG_WAIT_RETURN 0xE2010002u
+#define PSTVNC_H1_AUDIO_DIAG_PLAY_ENTER  0xE2010003u
+#define PSTVNC_H1_AUDIO_DIAG_PLAY_RETURN 0xE2010004u
+#define PSTVNC_H1_AUDIO_DIAG_STOP_ENTER  0xE2010005u
+#define PSTVNC_H1_AUDIO_DIAG_STOP_RETURN 0xE2010006u
+
 typedef struct pstvnc_h1_transport_runtime {
     int socket_fd;
     int audio_queue_sema_id;
@@ -132,6 +142,16 @@ typedef struct pstvnc_h1_transport_runtime {
      * MEDIA_END behind the RFB/MPEG shutdown sequence.
      */
     volatile uint32_t audio_producer_done;
+
+    /*
+     * Diagnostic-only persistent AUDSRV call-boundary witness.
+     *
+     * Odd ENTER stages remain set throughout the underlying AUDSRV call.
+     * Ordinary telemetry gives those ENTER stages temporary display priority
+     * over diagnostic_word so concurrent RFB/MPEG/thread-census/E200 writes
+     * cannot hide the location of a blocked audio worker.
+     */
+    volatile uint32_t audio_debug_stage;
 
     volatile pstvnc_h1_transport_error_t error;
     volatile uint32_t diagnostic_word;
