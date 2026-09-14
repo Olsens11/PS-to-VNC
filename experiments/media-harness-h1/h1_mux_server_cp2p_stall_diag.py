@@ -93,6 +93,13 @@ class H1Cp2pStallDiagnosticSession(_ParentSession):
     def __init__(self, sock, profile, evidence, duration, display) -> None:
         self._diag_started = time.monotonic()
         self._diag_stop = threading.Event()
+
+        # The heartbeat is an active PSTV writer, while the watchdog is
+        # observation-only.  Give the writer its own lifetime so MEDIA_END can
+        # become the final Pi->PS2 application frame without sacrificing
+        # shutdown telemetry.
+        self._diag_heartbeat_stop = threading.Event()
+
         self._diag_send_attempts = 0
         self._diag_send_completions = 0
         self._diag_send_failures = 0
@@ -213,10 +220,17 @@ class H1Cp2pStallDiagnosticSession(_ParentSession):
 
     def _diag_heartbeat(self) -> None:
         # Do not add any extra PSTV traffic before the exact CONFIG ACK.
-        while not self._diag_stop.is_set() and not self.config_ack_event.wait(0.1):
+        while (
+            not self._diag_stop.is_set()
+            and not self._diag_heartbeat_stop.is_set()
+            and not self.config_ack_event.wait(0.1)
+        ):
             pass
 
-        while not self._diag_stop.is_set():
+        while (
+            not self._diag_stop.is_set()
+            and not self._diag_heartbeat_stop.is_set()
+        ):
             # If another sender already owns the serialized path, do not queue a
             # probe behind it. The watchdog will report the occupied lock instead.
             if self.send_lock.locked():
@@ -230,7 +244,60 @@ class H1Cp2pStallDiagnosticSession(_ParentSession):
                     self._diag_heartbeat_error = repr(exc)
                     return
 
-            self._diag_stop.wait(_HEARTBEAT_PERIOD_S)
+            self._diag_heartbeat_stop.wait(_HEARTBEAT_PERIOD_S)
+
+    def _stop_diag_heartbeat_before_media_end(self) -> None:
+        """Make ordinary MEDIA_END the final Pi->PS2 diagnostic write."""
+
+        if self._diag_heartbeat_stop.is_set():
+            if self._diag_heartbeat_thread.is_alive():
+                self._diag_heartbeat_thread.join(timeout=2.0)
+
+            if self._diag_heartbeat_thread.is_alive():
+                raise base.ProtocolError(
+                    "diagnostic heartbeat did not stop before MEDIA_END"
+                )
+
+            return
+
+        attempts_before = self._diag_heartbeat_attempts
+        completions_before = self._diag_heartbeat_completions
+
+        # Close admission before waiting. If the heartbeat already owns
+        # send_lock, join waits for that exact send to finish before MEDIA_END
+        # can enter the serialized path.
+        self._diag_heartbeat_stop.set()
+        self._diag_heartbeat_thread.join(timeout=2.0)
+
+        if self._diag_heartbeat_thread.is_alive():
+            raise base.ProtocolError(
+                "diagnostic heartbeat did not stop before MEDIA_END"
+            )
+
+        print(
+            "H1_PI_HEARTBEAT_STOP_BEFORE_MEDIA_END=PASS "
+            f"attempts_before={attempts_before} "
+            f"attempts_after={self._diag_heartbeat_attempts} "
+            f"completions_before={completions_before} "
+            f"completions_after={self._diag_heartbeat_completions} "
+            f"send_lock_locked={int(self.send_lock.locked())}",
+            flush=True,
+        )
+
+    def _send_rfb_pcm_media_end(self) -> dict[str, int]:
+        """Stop diagnostic writes, then delegate to the real MEDIA_END path."""
+
+        self._stop_diag_heartbeat_before_media_end()
+
+        metadata = super()._send_rfb_pcm_media_end()
+
+        print(
+            "H1_PI_MEDIA_END_FINAL_APPLICATION_WRITE=PASS "
+            "half_close=0",
+            flush=True,
+        )
+
+        return metadata
 
     def _diag_watchdog(self) -> None:
         path = Path(self.evidence) / "mpeg_stall_watchdog.jsonl"
@@ -300,6 +367,7 @@ class H1Cp2pStallDiagnosticSession(_ParentSession):
             self._diag_stop.wait(_WATCHDOG_PERIOD_S)
 
     def cleanup(self) -> None:
+        self._diag_heartbeat_stop.set()
         self._diag_stop.set()
         super().cleanup()
 
