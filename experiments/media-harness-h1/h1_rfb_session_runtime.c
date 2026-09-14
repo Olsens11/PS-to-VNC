@@ -97,30 +97,30 @@ static void h1_rfb_publish_diagnostic(
 }
 
 /*
- * E206 cross-thread receiver witness.
+ * E206 passive cross-thread receiver witness.
  *
- * COMPLETE's owner can still send this snapshot even if the sole receiver is
- * blocked while accepting the previous inbound frame.
+ * The RFB owner reaches this point after COMPLETE_SEND_RETURN while the sole
+ * receiver may still be finishing acceptance of the inbound COMMIT marker.
+ *
+ * Do not send telemetry here.  Sending an additional PSTV frame at this exact
+ * synchronization boundary perturbs the timing being diagnosed.  Instead,
+ * latch the receiver observation into the already-existing live-only producer
+ * diagnostic slots.  Ordinary shutdown telemetry may subsequently expose it;
+ * MEDIA_END remains authoritative and overwrites these fields with real
+ * producer metadata.
  *
  * producer_audio_bytes    = receiver stage
  * producer_mpeg_bytes     = inbound PSTV sequence
  * producer_picture_starts = kind[31:24] | channel[23:16] |
  *                           payload_length[15:0]
  */
-static void h1_e206_publish_receiver_witness(
+static void h1_e206_latch_receiver_witness(
     pstvnc_h1_transport_runtime_t *transport)
 {
-    uint32_t saved_audio;
-    uint32_t saved_mpeg;
-    uint32_t saved_picture;
     uint32_t frame_identity;
 
     if (transport == NULL)
         return;
-
-    saved_audio = transport->producer_audio_bytes;
-    saved_mpeg = transport->producer_mpeg_bytes;
-    saved_picture = transport->producer_picture_starts;
 
     frame_identity =
         ((transport->receiver_diag_kind & 0xffu) << 24) |
@@ -133,12 +133,6 @@ static void h1_e206_publish_receiver_witness(
         transport->receiver_diag_sequence;
     transport->producer_picture_starts =
         frame_identity;
-
-    (void)pstvnc_h1_transport_send_telemetry_snapshot(transport);
-
-    transport->producer_audio_bytes = saved_audio;
-    transport->producer_mpeg_bytes = saved_mpeg;
-    transport->producer_picture_starts = saved_picture;
 }
 
 void pstvnc_h1_rfb_session_runtime_init(
@@ -359,7 +353,7 @@ static int h1_rfb_complete_quiesce_at_boundary(
 
     runtime->stats.quiesce_complete_sent = 1u;
     h1_rfb_publish_diagnostic(runtime, transport);
-    h1_e206_publish_receiver_witness(transport);
+    h1_e206_latch_receiver_witness(transport);
     return 1;
 }
 
