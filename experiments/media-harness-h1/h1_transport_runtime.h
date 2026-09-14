@@ -121,6 +121,18 @@ typedef struct pstvnc_h1_transport_runtime {
     volatile int stop_requested;
     volatile int receiver_done;
     volatile int end_received;
+
+    /*
+     * Ordered finite-PCM producer fence.
+     *
+     * Pi sends one zero-length AUDIO DATA frame only after every real PCM
+     * payload has been serialized. The receiver accepts no later AUDIO DATA.
+     * The audio worker may therefore retire once this flag is set and the
+     * local PCM queue reaches zero, without waiting for whole-session
+     * MEDIA_END behind the RFB/MPEG shutdown sequence.
+     */
+    volatile uint32_t audio_producer_done;
+
     volatile pstvnc_h1_transport_error_t error;
     volatile uint32_t diagnostic_word;
 

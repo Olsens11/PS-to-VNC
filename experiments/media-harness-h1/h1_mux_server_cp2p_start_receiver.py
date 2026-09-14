@@ -456,6 +456,24 @@ class H1Cp2pStartReceiveSession(_ParentSession):
                 with self.condition:
                     self.condition.wait(timeout=0.001)
 
+        # Ordered channel-2 producer fence. Every real PCM payload has already
+        # been serialized by the loop above. This zero-length DATA frame is
+        # intentionally sent directly rather than through _send_from(), so the
+        # existing audio byte/frame/CRC/last-data-sequence totals remain totals
+        # for real PCM only.
+        self.send_frame(
+            base.FRAME_DATA,
+            base.CHANNEL_AUDIO,
+            b"",
+        )
+        print(
+            "H1_AUDIO_PRODUCER_DONE_SENT "
+            f"bytes={self.audio.bytes_sent} "
+            f"frames={self.audio.frames_sent} "
+            f"last_data_sequence={self.audio.last_data_sequence}",
+            flush=True,
+        )
+
     def _retire_live_producer_for_session_end(self) -> None:
         """Close local production after RFB quiesce; session end needs no RETIRE ACK."""
 

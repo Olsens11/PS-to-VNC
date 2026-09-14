@@ -351,6 +351,7 @@ static int h1_receive_config(
     runtime->config_digest = pstvnc_h1_config_digest(
         runtime->receiver_payload,
         header.payload_length);
+    runtime->audio_producer_done = 0u;
     runtime->config_accepted = 1;
     return 1;
 }
@@ -676,6 +677,28 @@ static int h1_accept_data(
             runtime->receiver_payload,
             header->payload_length);
 #endif
+
+    /*
+     * Ordered finite-PCM producer completion.
+     *
+     * Direction + channel + zero payload identifies the marker. The same sole
+     * receiver accepted every earlier AUDIO DATA frame first, so producer_done
+     * is a wire fence: no additional PCM is legal after this point.
+     *
+     * Do not enqueue or include this marker in audio frame/byte/CRC accounting.
+     */
+    if (header->channel == PSTVNC_TRANSPORT_CHANNEL_AUDIO &&
+        runtime->config.audio_mode == PSTVNC_H1_AUDIO_PCM) {
+        if (runtime->audio_producer_done != 0u) {
+            h1_record_error(runtime, PSTVNC_H1_ERROR_CHANNEL);
+            return 0;
+        }
+
+        if (header->payload_length == 0u) {
+            runtime->audio_producer_done = 1u;
+            return 1;
+        }
+    }
 
     /*
      * Channel-4 DATA is session-framed but generation-owned by CP2P. The ACK
@@ -1869,7 +1892,8 @@ int pstvnc_h1_transport_audio_exhausted(
     pstvnc_h1_transport_runtime_t *runtime)
 {
     return runtime != NULL &&
-        runtime->end_received &&
+        (runtime->audio_producer_done != 0u ||
+            runtime->end_received) &&
         pstvnc_h1_transport_audio_queue_size(runtime) == 0u;
 }
 
