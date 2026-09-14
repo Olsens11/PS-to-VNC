@@ -77,6 +77,138 @@ static int h1_cp2o_wait_for_audio_completion(
     return 0;
 }
 
+
+#define H1_CP2P_SHUTDOWN_DIAG_COORD_ENTER          0xE2000001u
+#define H1_CP2P_SHUTDOWN_DIAG_COORD_RETURN         0xE2000002u
+#define H1_CP2P_SHUTDOWN_DIAG_TRANSPORT_END_ENTER  0xE2000003u
+#define H1_CP2P_SHUTDOWN_DIAG_TRANSPORT_END_RETURN 0xE2000004u
+#define H1_CP2P_SHUTDOWN_DIAG_AUDIO_WAIT_ENTER     0xE2000005u
+#define H1_CP2P_SHUTDOWN_DIAG_AUDIO_WAIT_RETURN    0xE2000006u
+#define H1_CP2P_SHUTDOWN_DIAG_RESULT_SEND_ENTER    0xE2000007u
+#define H1_CP2P_SHUTDOWN_DIAG_RESULT_SEND_RETURN   0xE2000008u
+
+/*
+ * Disposable main-thread shutdown witness.
+ *
+ * Each transition stores one stage in the already-existing diagnostic_word
+ * and immediately publishes one ordinary H1 telemetry snapshot. The functional
+ * call itself, its return value, and all synchronization remain unchanged.
+ */
+static void h1_cp2p_shutdown_diag_emit(
+    pstvnc_h1_transport_runtime_t *transport,
+    uint32_t stage)
+{
+    if (transport == NULL)
+        return;
+
+    pstvnc_h1_transport_set_diagnostic_word(transport, stage);
+    (void)pstvnc_h1_transport_send_telemetry_snapshot(transport);
+}
+
+static int h1_cp2p_shutdown_coordinator_diag(
+    pstvnc_h1_transport_runtime_t *transport,
+    pstvnc_h1_cp2p_session_coordinator_t *coordinator)
+{
+    int result;
+
+    h1_cp2p_shutdown_diag_emit(
+        transport,
+        H1_CP2P_SHUTDOWN_DIAG_COORD_ENTER);
+
+    result = pstvnc_h1_cp2p_session_coordinator_shutdown(coordinator);
+
+    h1_cp2p_shutdown_diag_emit(
+        transport,
+        H1_CP2P_SHUTDOWN_DIAG_COORD_RETURN);
+
+    return result;
+}
+
+static int h1_cp2p_wait_for_transport_end_diag(
+    pstvnc_h1_transport_runtime_t *transport)
+{
+    int result;
+
+    h1_cp2p_shutdown_diag_emit(
+        transport,
+        H1_CP2P_SHUTDOWN_DIAG_TRANSPORT_END_ENTER);
+
+    result = h1_cp2o_wait_for_transport_end(transport);
+
+    h1_cp2p_shutdown_diag_emit(
+        transport,
+        H1_CP2P_SHUTDOWN_DIAG_TRANSPORT_END_RETURN);
+
+    return result;
+}
+
+static int h1_cp2p_wait_for_audio_completion_diag(
+    pstvnc_h1_transport_runtime_t *transport,
+    pstvnc_h1_audio_runtime_t *audio)
+{
+    int result;
+
+    h1_cp2p_shutdown_diag_emit(
+        transport,
+        H1_CP2P_SHUTDOWN_DIAG_AUDIO_WAIT_ENTER);
+
+    result = h1_cp2o_wait_for_audio_completion(audio);
+
+    h1_cp2p_shutdown_diag_emit(
+        transport,
+        H1_CP2P_SHUTDOWN_DIAG_AUDIO_WAIT_RETURN);
+
+    return result;
+}
+
+static int h1_cp2p_send_result_diag(
+    pstvnc_h1_transport_runtime_t *transport,
+    uint32_t pictures_decoded,
+    uint32_t pictures_displayed,
+    uint32_t feed_calls,
+    uint32_t payload_bytes_submitted,
+    uint32_t dma_bytes_submitted,
+    uint32_t deadline_misses,
+    uint32_t max_deadline_late_ticks_lo)
+{
+    uint32_t saved_diagnostic_word;
+    int result;
+
+    if (transport == NULL)
+        return 0;
+
+    saved_diagnostic_word = transport->diagnostic_word;
+
+    h1_cp2p_shutdown_diag_emit(
+        transport,
+        H1_CP2P_SHUTDOWN_DIAG_RESULT_SEND_ENTER);
+
+    /*
+     * Keep the SESSION_RESULT diagnostic payload semantically identical to
+     * the candidate under test. The E200 stage has already gone over the wire
+     * in its telemetry snapshot.
+     */
+    pstvnc_h1_transport_set_diagnostic_word(
+        transport,
+        saved_diagnostic_word);
+
+    result = pstvnc_h1_transport_send_result(
+        transport,
+        pictures_decoded,
+        pictures_displayed,
+        feed_calls,
+        payload_bytes_submitted,
+        dma_bytes_submitted,
+        deadline_misses,
+        max_deadline_late_ticks_lo);
+
+    h1_cp2p_shutdown_diag_emit(
+        transport,
+        H1_CP2P_SHUTDOWN_DIAG_RESULT_SEND_RETURN);
+
+    return result;
+}
+
 int main(void)
 {
     uint32_t completed_sessions = 0u;
@@ -223,7 +355,7 @@ int main(void)
 
             rfb_diagnostic_word = transport.diagnostic_word;
 
-            if (pstvnc_h1_cp2p_session_coordinator_shutdown(&cp2p) < 0) {
+            if (h1_cp2p_shutdown_coordinator_diag(&transport, &cp2p) < 0) {
                 printf("H1_CP2P=INTERACTION_SHUTDOWN_UNPROVEN\n");
                 interaction_shutdown_failed = 1;
                 session_ok = 0;
@@ -268,7 +400,7 @@ int main(void)
                     (unsigned int)pstvnc_input_runtime_last_error(
                         &interaction_view->input_runtime));
                 session_ok = 0;
-            } else if (h1_cp2o_wait_for_transport_end(&transport) < 0) {
+            } else if (h1_cp2p_wait_for_transport_end_diag(&transport) < 0) {
                 printf(
                     "H1_RFB_VISIBLE_INTERACTION=END_WAIT_FAIL "
                     "transport_error=%d end=%d done=%d\n",
@@ -309,7 +441,7 @@ int main(void)
         }
 
         if (interaction_initialized) {
-            if (pstvnc_h1_cp2p_session_coordinator_shutdown(&cp2p) < 0) {
+            if (h1_cp2p_shutdown_coordinator_diag(&transport, &cp2p) < 0) {
                 printf("H1_CP2P=INTERACTION_SHUTDOWN_UNPROVEN\n");
                 interaction_shutdown_failed = 1;
                 session_ok = 0;
@@ -318,7 +450,7 @@ int main(void)
         }
 
         if (audio_active && session_ok) {
-            if (h1_cp2o_wait_for_audio_completion(&audio) < 0) {
+            if (h1_cp2p_wait_for_audio_completion_diag(&transport, &audio) < 0) {
                 printf("H1_AUDIO=FINISH_WAIT_FAIL\n");
                 session_ok = 0;
             } else if (pstvnc_h1_audio_last_error(&audio) !=
@@ -340,7 +472,7 @@ int main(void)
                 &transport,
                 rfb_diagnostic_word);
 
-        if (!pstvnc_h1_transport_send_result(
+        if (!h1_cp2p_send_result_diag(
                 &transport,
                 mpeg_worker.result.pictures_decoded,
                 mpeg_worker.result.pictures_displayed,

@@ -1920,6 +1920,22 @@ void pstvnc_h1_transport_set_diagnostic_word(
         runtime->diagnostic_word = diagnostic_word;
 }
 
+/*
+ * Disposable CP2P shutdown witness support.
+ *
+ * This exposes one explicit snapshot of the existing H1 telemetry payload.
+ * No telemetry fields, transport framing, synchronization, or lifecycle state
+ * are changed here.
+ */
+int pstvnc_h1_transport_send_telemetry_snapshot(
+    pstvnc_h1_transport_runtime_t *runtime)
+{
+    if (runtime == NULL)
+        return 0;
+
+    return h1_send_telemetry(runtime);
+}
+
 pstvnc_h1_transport_error_t pstvnc_h1_transport_last_error(
     const pstvnc_h1_transport_runtime_t *runtime)
 {

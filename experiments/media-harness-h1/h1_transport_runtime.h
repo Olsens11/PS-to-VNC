@@ -301,6 +301,9 @@ void pstvnc_h1_transport_set_diagnostic_word(
     pstvnc_h1_transport_runtime_t *runtime,
     uint32_t diagnostic_word);
 
+int pstvnc_h1_transport_send_telemetry_snapshot(
+    pstvnc_h1_transport_runtime_t *runtime);
+
 pstvnc_h1_transport_error_t pstvnc_h1_transport_last_error(
     const pstvnc_h1_transport_runtime_t *runtime);
 
