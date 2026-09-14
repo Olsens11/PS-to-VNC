@@ -39,6 +39,28 @@
 #define H1_RFB_DIAG_IDLE_DELAY_ENTER     0xE1050005u
 #define H1_RFB_DIAG_IDLE_DELAY_RETURN    0xE1050006u
 
+/*
+ * Observation-only finite-quiesce owner witnesses.
+ *
+ * These reuse the established persistent RFB-I/O witness storage. They alter
+ * no lifecycle state, queue contents, synchronization, protocol ordering, or
+ * error policy.
+ */
+#define H1_RFB_DIAG_QUIESCE_BOUNDARY_SEND_ENTER      0xE1070001u
+#define H1_RFB_DIAG_QUIESCE_BOUNDARY_SEND_RETURN     0xE1070002u
+#define H1_RFB_DIAG_QUIESCE_COMMIT_SNAPSHOT_ENTER    0xE1070003u
+#define H1_RFB_DIAG_QUIESCE_COMMIT_SNAPSHOT_RETURN   0xE1070004u
+#define H1_RFB_DIAG_QUIESCE_BEFORE_ACTIVITY_WAIT     0xE1070005u
+#define H1_RFB_DIAG_QUIESCE_ACTIVITY_WAIT_RETURN     0xE1070006u
+#define H1_RFB_DIAG_QUIESCE_COMMIT_OBSERVED          0xE1070007u
+#define H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_ENTER      0xE1070008u
+#define H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_ACTIVE     0xE1070009u
+#define H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_INACTIVE   0xE107000Au
+#define H1_RFB_DIAG_QUIESCE_QUEUE_REJECT              0xE107000Bu
+#define H1_RFB_DIAG_QUIESCE_COMPLETE_SEND_ENTER       0xE107000Cu
+#define H1_RFB_DIAG_QUIESCE_COMPLETE_SEND_RETURN      0xE107000Du
+#define H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_FAIL        0xE10700FEu
+
 static uint32_t h1_rfb_diagnostic_word(
     const pstvnc_h1_rfb_session_runtime_t *runtime)
 {
@@ -115,10 +137,20 @@ static int h1_rfb_wait_for_commit(
 {
     uint32_t activity_sequence;
 
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        transport->socket_fd,
+        H1_RFB_DIAG_QUIESCE_COMMIT_SNAPSHOT_ENTER,
+        0u);
+
     if (!pstvnc_h1_rfb_transport_activity_snapshot(
             transport,
             &activity_sequence))
         return 0;
+
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        transport->socket_fd,
+        H1_RFB_DIAG_QUIESCE_COMMIT_SNAPSHOT_RETURN,
+        activity_sequence);
 
     while (transport->rfb_quiesce_commit_received == 0u) {
         if (pstvnc_h1_transport_last_error(transport) !=
@@ -129,11 +161,26 @@ static int h1_rfb_wait_for_commit(
 
         h1_rfb_publish_diagnostic(runtime, transport);
 
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            transport->socket_fd,
+            H1_RFB_DIAG_QUIESCE_BEFORE_ACTIVITY_WAIT,
+            activity_sequence);
+
         if (!pstvnc_h1_rfb_transport_wait_for_activity(
                 transport,
                 &activity_sequence))
             return 0;
+
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            transport->socket_fd,
+            H1_RFB_DIAG_QUIESCE_ACTIVITY_WAIT_RETURN,
+            activity_sequence);
     }
+
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        transport->socket_fd,
+        H1_RFB_DIAG_QUIESCE_COMMIT_OBSERVED,
+        transport->rfb_quiesce_commit_received);
 
     runtime->stats.quiesce_commit_observed = 1u;
     h1_rfb_publish_diagnostic(runtime, transport);
@@ -149,8 +196,18 @@ static int h1_rfb_complete_quiesce_at_boundary(
     if (transport->rfb_quiesce_request_received == 0u)
         return 0;
 
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        transport->socket_fd,
+        H1_RFB_DIAG_QUIESCE_BOUNDARY_SEND_ENTER,
+        0u);
+
     if (!pstvnc_h1_rfb_transport_send_quiesce_boundary(transport))
         return -1;
+
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        transport->socket_fd,
+        H1_RFB_DIAG_QUIESCE_BOUNDARY_SEND_RETURN,
+        0u);
 
     runtime->stats.quiesce_boundary_sent = 1u;
     h1_rfb_publish_diagnostic(runtime, transport);
@@ -158,16 +215,48 @@ static int h1_rfb_complete_quiesce_at_boundary(
     if (!h1_rfb_wait_for_commit(runtime, transport))
         return -1;
 
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        transport->socket_fd,
+        H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_ENTER,
+        0u);
+
     if (!pstvnc_h1_rfb_transport_snapshot(
             transport,
-            &snapshot))
+            &snapshot)) {
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            transport->socket_fd,
+            H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_FAIL,
+            0u);
         return -1;
+    }
 
-    if (!snapshot.active || snapshot.queue_current != 0u)
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        transport->socket_fd,
+        snapshot.active
+            ? H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_ACTIVE
+            : H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_INACTIVE,
+        snapshot.queue_current);
+
+    if (!snapshot.active || snapshot.queue_current != 0u) {
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            transport->socket_fd,
+            H1_RFB_DIAG_QUIESCE_QUEUE_REJECT,
+            snapshot.queue_current);
         return -1;
+    }
+
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        transport->socket_fd,
+        H1_RFB_DIAG_QUIESCE_COMPLETE_SEND_ENTER,
+        0u);
 
     if (!pstvnc_h1_rfb_transport_send_quiesce_complete(transport))
         return -1;
+
+    pstvnc_h1_rfb_mux_io_diag_stage(
+        transport->socket_fd,
+        H1_RFB_DIAG_QUIESCE_COMPLETE_SEND_RETURN,
+        0u);
 
     runtime->stats.quiesce_complete_sent = 1u;
     h1_rfb_publish_diagnostic(runtime, transport);
