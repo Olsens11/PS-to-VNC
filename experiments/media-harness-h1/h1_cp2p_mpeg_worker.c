@@ -53,6 +53,33 @@ static void h1_cp2p_mpeg_diag(
 #define H1_CP2P_MPEG_JOIN_DIAG_DELETE_FAIL      0xE20300F4u
 
 /*
+ * E204 explicit join-call witness.
+ *
+ * E203 stored detailed stages in mpeg_diag_stage, but a blocked join can
+ * prevent any later ordinary telemetry snapshot from exporting that value.
+ * E204 therefore emits an explicit telemetry snapshot immediately before
+ * each potentially blocking EE kernel call and at terminal/error boundaries.
+ *
+ * This is diagnostic-only instrumentation.  It deliberately perturbs the
+ * 1-ms polling loop more than E203 in exchange for hardware-visible
+ * classification of the blocking call.
+ */
+#define H1_CP2P_MPEG_JOIN_WITNESS_JOIN_ENTER      0xE2040001u
+#define H1_CP2P_MPEG_JOIN_WITNESS_STOP_REQUESTED  0xE2040002u
+#define H1_CP2P_MPEG_JOIN_WITNESS_REFER_ENTER     0xE2040003u
+#define H1_CP2P_MPEG_JOIN_WITNESS_DORMANT         0xE2040004u
+#define H1_CP2P_MPEG_JOIN_WITNESS_DELAY_ENTER     0xE2040005u
+#define H1_CP2P_MPEG_JOIN_WITNESS_FINISHED        0xE2040006u
+#define H1_CP2P_MPEG_JOIN_WITNESS_DELETE_ENTER    0xE2040007u
+#define H1_CP2P_MPEG_JOIN_WITNESS_JOIN_RETURN     0xE2040008u
+#define H1_CP2P_MPEG_JOIN_WITNESS_NO_THREAD       0xE204000Du
+
+#define H1_CP2P_MPEG_JOIN_WITNESS_REFER_FAIL      0xE20400F1u
+#define H1_CP2P_MPEG_JOIN_WITNESS_DELAY_FAIL      0xE20400F2u
+#define H1_CP2P_MPEG_JOIN_WITNESS_TIMEOUT_FAIL    0xE20400F3u
+#define H1_CP2P_MPEG_JOIN_WITNESS_DELETE_FAIL     0xE20400F4u
+
+/*
  * Observation-only MPEG join witness.
  *
  * Do not send a telemetry snapshot here: this function executes inside the
@@ -66,6 +93,23 @@ static void h1_cp2p_mpeg_join_diag(
 {
     if (worker != NULL && worker->transport != NULL)
         worker->transport->mpeg_diag_stage = stage;
+}
+
+/*
+ * E204 hardware-visible blocking-call witness.
+ *
+ * The snapshot return value is intentionally observation-only.  Diagnostic
+ * transport failure must not rewrite the MPEG worker join's functional
+ * success/failure policy.
+ */
+static void h1_cp2p_mpeg_join_witness(
+    pstvnc_h1_cp2p_mpeg_worker_t *worker,
+    uint32_t stage)
+{
+    h1_cp2p_mpeg_join_diag(worker, stage);
+
+    if (worker != NULL && worker->transport != NULL)
+        (void)pstvnc_h1_transport_send_telemetry_snapshot(worker->transport);
 }
 
 static unsigned char *h1_worker_align64(void *allocation)
@@ -102,22 +146,22 @@ static int h1_cp2p_mpeg_worker_join(
 {
     unsigned int loops = 0u;
 
-    h1_cp2p_mpeg_join_diag(
+    h1_cp2p_mpeg_join_witness(
         worker,
-        H1_CP2P_MPEG_JOIN_DIAG_JOIN_ENTER);
+        H1_CP2P_MPEG_JOIN_WITNESS_JOIN_ENTER);
 
     if (!worker->thread_started) {
-        h1_cp2p_mpeg_join_diag(
+        h1_cp2p_mpeg_join_witness(
             worker,
-            H1_CP2P_MPEG_JOIN_DIAG_NO_THREAD);
+            H1_CP2P_MPEG_JOIN_WITNESS_NO_THREAD);
         return 1;
     }
 
     worker->stop_requested = 1;
 
-    h1_cp2p_mpeg_join_diag(
+    h1_cp2p_mpeg_join_witness(
         worker,
-        H1_CP2P_MPEG_JOIN_DIAG_STOP_REQUESTED);
+        H1_CP2P_MPEG_JOIN_WITNESS_STOP_REQUESTED);
 
     while (!worker->finished &&
            loops < H1_CP2P_MPEG_WORKER_STOP_MAX_LOOPS) {
@@ -125,82 +169,76 @@ static int h1_cp2p_mpeg_worker_join(
 
         memset(&status, 0, sizeof(status));
 
-        h1_cp2p_mpeg_join_diag(
+        /*
+         * If this snapshot reaches the Pi and no DELAY_ENTER follows,
+         * ReferThreadStatus() is the blocking boundary.
+         */
+        h1_cp2p_mpeg_join_witness(
             worker,
-            H1_CP2P_MPEG_JOIN_DIAG_REFER_ENTER);
+            H1_CP2P_MPEG_JOIN_WITNESS_REFER_ENTER);
 
         if (ReferThreadStatus(
                 worker->thread_id,
                 &status) < 0) {
-            h1_cp2p_mpeg_join_diag(
+            h1_cp2p_mpeg_join_witness(
                 worker,
-                H1_CP2P_MPEG_JOIN_DIAG_REFER_FAIL);
+                H1_CP2P_MPEG_JOIN_WITNESS_REFER_FAIL);
             return 0;
         }
-
-        h1_cp2p_mpeg_join_diag(
-            worker,
-            H1_CP2P_MPEG_JOIN_DIAG_REFER_RETURN);
 
         if (status.status == THS_DORMANT) {
             worker->finished = 1;
 
-            h1_cp2p_mpeg_join_diag(
+            h1_cp2p_mpeg_join_witness(
                 worker,
-                H1_CP2P_MPEG_JOIN_DIAG_DORMANT);
+                H1_CP2P_MPEG_JOIN_WITNESS_DORMANT);
 
             break;
         }
 
-        h1_cp2p_mpeg_join_diag(
+        /*
+         * If this snapshot reaches the Pi and no later REFER_ENTER
+         * follows, DelayThread() is the blocking boundary.
+         */
+        h1_cp2p_mpeg_join_witness(
             worker,
-            H1_CP2P_MPEG_JOIN_DIAG_DELAY_ENTER);
+            H1_CP2P_MPEG_JOIN_WITNESS_DELAY_ENTER);
 
         if (DelayThread(
                 H1_CP2P_MPEG_WORKER_STOP_POLL_US) < 0) {
-            h1_cp2p_mpeg_join_diag(
+            h1_cp2p_mpeg_join_witness(
                 worker,
-                H1_CP2P_MPEG_JOIN_DIAG_DELAY_FAIL);
+                H1_CP2P_MPEG_JOIN_WITNESS_DELAY_FAIL);
             return 0;
         }
-
-        h1_cp2p_mpeg_join_diag(
-            worker,
-            H1_CP2P_MPEG_JOIN_DIAG_DELAY_RETURN);
 
         loops++;
     }
 
     if (!worker->finished) {
-        h1_cp2p_mpeg_join_diag(
+        h1_cp2p_mpeg_join_witness(
             worker,
-            H1_CP2P_MPEG_JOIN_DIAG_LOOP_EXHAUSTED);
-
-        h1_cp2p_mpeg_join_diag(
-            worker,
-            H1_CP2P_MPEG_JOIN_DIAG_TIMEOUT_FAIL);
-
+            H1_CP2P_MPEG_JOIN_WITNESS_TIMEOUT_FAIL);
         return 0;
     }
 
-    h1_cp2p_mpeg_join_diag(
+    h1_cp2p_mpeg_join_witness(
         worker,
-        H1_CP2P_MPEG_JOIN_DIAG_FINISHED);
+        H1_CP2P_MPEG_JOIN_WITNESS_FINISHED);
 
-    h1_cp2p_mpeg_join_diag(
+    /*
+     * DeleteThread() is the only remaining EE kernel call in the join.
+     */
+    h1_cp2p_mpeg_join_witness(
         worker,
-        H1_CP2P_MPEG_JOIN_DIAG_DELETE_ENTER);
+        H1_CP2P_MPEG_JOIN_WITNESS_DELETE_ENTER);
 
     if (DeleteThread(worker->thread_id) < 0) {
-        h1_cp2p_mpeg_join_diag(
+        h1_cp2p_mpeg_join_witness(
             worker,
-            H1_CP2P_MPEG_JOIN_DIAG_DELETE_FAIL);
+            H1_CP2P_MPEG_JOIN_WITNESS_DELETE_FAIL);
         return 0;
     }
-
-    h1_cp2p_mpeg_join_diag(
-        worker,
-        H1_CP2P_MPEG_JOIN_DIAG_DELETE_RETURN);
 
     worker->thread_started = 0;
     worker->thread_id = -1;
@@ -208,9 +246,9 @@ static int h1_cp2p_mpeg_worker_join(
     worker->thread_stack_allocation = NULL;
     worker->thread_stack = NULL;
 
-    h1_cp2p_mpeg_join_diag(
+    h1_cp2p_mpeg_join_witness(
         worker,
-        H1_CP2P_MPEG_JOIN_DIAG_JOIN_RETURN);
+        H1_CP2P_MPEG_JOIN_WITNESS_JOIN_RETURN);
 
     return 1;
 }
