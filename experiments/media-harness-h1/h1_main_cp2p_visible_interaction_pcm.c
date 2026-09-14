@@ -87,6 +87,163 @@ static int h1_cp2o_wait_for_audio_completion(
 #define H1_CP2P_SHUTDOWN_DIAG_RESULT_SEND_ENTER    0xE2000007u
 #define H1_CP2P_SHUTDOWN_DIAG_RESULT_SEND_RETURN   0xE2000008u
 
+
+/*
+ * E205 previous-session transport teardown witness.
+ *
+ * One resident H1 process serves multiple PSTV sessions.  If an abnormal peer
+ * disappearance leaves the previous transport's physical receiver owner alive,
+ * the next loop iteration must not make that fact invisible by zeroing and
+ * reusing the stack-local transport object.
+ *
+ * E205 therefore copies only teardown observations into separate persistent
+ * main-owned storage immediately after transport shutdown returns.  On the next
+ * successfully connected session those observations are exported once through
+ * the already-existing diagnostic_word telemetry path.
+ *
+ * No transport state, synchronization, socket operation, timeout, or teardown
+ * policy is changed by this witness.
+ */
+#define H1_E205_PREVIOUS_FLAGS_BASE       0xE2050000u
+#define H1_E205_PREVIOUS_THREAD_ID_BASE   0xE2051000u
+#define H1_E205_PREVIOUS_SOCKET_FD_BASE   0xE2052000u
+#define H1_E205_PREVIOUS_ERROR_BASE       0xE2053000u
+
+#define H1_E205_FLAG_SHUTDOWN_FAILED      0x001u
+#define H1_E205_FLAG_RECEIVER_STARTED     0x002u
+#define H1_E205_FLAG_RECEIVER_DONE        0x004u
+#define H1_E205_FLAG_END_RECEIVED         0x008u
+#define H1_E205_FLAG_INITIALIZED          0x010u
+#define H1_E205_FLAG_STOP_REQUESTED       0x020u
+#define H1_E205_FLAG_THREAD_ID_LIVE       0x040u
+#define H1_E205_FLAG_SOCKET_FD_LIVE       0x080u
+
+typedef struct h1_e205_previous_transport_teardown {
+    int valid;
+    int shutdown_result;
+    int receiver_thread_started;
+    int receiver_thread_id;
+    int socket_fd;
+    int receiver_done;
+    int end_received;
+    int initialized;
+    int stop_requested;
+    int transport_error;
+} h1_e205_previous_transport_teardown_t;
+
+static uint32_t h1_e205_pack_i12(int value)
+{
+    if (value < 0)
+        return 0x0fffu;
+
+    if ((unsigned int)value > 0x0ffeu)
+        return 0x0ffeu;
+
+    return (uint32_t)value;
+}
+
+static void h1_e205_capture_previous_transport_teardown(
+    h1_e205_previous_transport_teardown_t *witness,
+    const pstvnc_h1_transport_runtime_t *transport,
+    int shutdown_result)
+{
+    if (witness == NULL || transport == NULL)
+        return;
+
+    witness->valid = 1;
+    witness->shutdown_result = shutdown_result;
+    witness->receiver_thread_started =
+        transport->receiver_thread_started;
+    witness->receiver_thread_id =
+        transport->receiver_thread_id;
+    witness->socket_fd =
+        transport->socket_fd;
+    witness->receiver_done =
+        transport->receiver_done;
+    witness->end_received =
+        transport->end_received;
+    witness->initialized =
+        transport->initialized;
+    witness->stop_requested =
+        transport->stop_requested;
+    witness->transport_error =
+        (int)pstvnc_h1_transport_last_error(transport);
+}
+
+static void h1_e205_publish_previous_transport_teardown(
+    pstvnc_h1_transport_runtime_t *transport,
+    h1_e205_previous_transport_teardown_t *witness)
+{
+    uint32_t saved_diagnostic_word;
+    uint32_t flags = 0u;
+
+    if (transport == NULL ||
+        witness == NULL ||
+        !witness->valid)
+        return;
+
+    saved_diagnostic_word = transport->diagnostic_word;
+
+    if (witness->shutdown_result < 0)
+        flags |= H1_E205_FLAG_SHUTDOWN_FAILED;
+
+    if (witness->receiver_thread_started)
+        flags |= H1_E205_FLAG_RECEIVER_STARTED;
+
+    if (witness->receiver_done)
+        flags |= H1_E205_FLAG_RECEIVER_DONE;
+
+    if (witness->end_received)
+        flags |= H1_E205_FLAG_END_RECEIVED;
+
+    if (witness->initialized)
+        flags |= H1_E205_FLAG_INITIALIZED;
+
+    if (witness->stop_requested)
+        flags |= H1_E205_FLAG_STOP_REQUESTED;
+
+    if (witness->receiver_thread_id >= 0)
+        flags |= H1_E205_FLAG_THREAD_ID_LIVE;
+
+    if (witness->socket_fd >= 0)
+        flags |= H1_E205_FLAG_SOCKET_FD_LIVE;
+
+    pstvnc_h1_transport_set_diagnostic_word(
+        transport,
+        H1_E205_PREVIOUS_FLAGS_BASE | flags);
+    (void)pstvnc_h1_transport_send_telemetry_snapshot(
+        transport);
+
+    pstvnc_h1_transport_set_diagnostic_word(
+        transport,
+        H1_E205_PREVIOUS_THREAD_ID_BASE |
+            h1_e205_pack_i12(
+                witness->receiver_thread_id));
+    (void)pstvnc_h1_transport_send_telemetry_snapshot(
+        transport);
+
+    pstvnc_h1_transport_set_diagnostic_word(
+        transport,
+        H1_E205_PREVIOUS_SOCKET_FD_BASE |
+            h1_e205_pack_i12(
+                witness->socket_fd));
+    (void)pstvnc_h1_transport_send_telemetry_snapshot(
+        transport);
+
+    pstvnc_h1_transport_set_diagnostic_word(
+        transport,
+        H1_E205_PREVIOUS_ERROR_BASE |
+            ((uint32_t)witness->transport_error & 0x0fffu));
+    (void)pstvnc_h1_transport_send_telemetry_snapshot(
+        transport);
+
+    pstvnc_h1_transport_set_diagnostic_word(
+        transport,
+        saved_diagnostic_word);
+
+    witness->valid = 0;
+}
+
 /*
  * Disposable main-thread shutdown witness.
  *
@@ -213,6 +370,8 @@ int main(void)
 {
     uint32_t completed_sessions = 0u;
     static pstvnc_h1_cp2p_session_coordinator_t cp2p;
+    static h1_e205_previous_transport_teardown_t
+        e205_previous_transport_teardown;
 
     printf("H1_CP2P_VISIBLE_RFB_INTERACTION_PCM_START\n");
 
@@ -280,6 +439,15 @@ int main(void)
             (void)pstvnc_h1_transport_shutdown(&transport);
             continue;
         }
+
+        /*
+         * Publish the previous session's captured teardown state only after the
+         * new transport is fully connected/configured.  The record itself lives
+         * outside the reused transport object.
+         */
+        h1_e205_publish_previous_transport_teardown(
+            &transport,
+            &e205_previous_transport_teardown);
 
         printf(
             "H1_SESSION_BEGIN id=%u profile=%u audio_mode=%u video_mode=%u "
@@ -502,9 +670,23 @@ int main(void)
 
         pstvnc_h1_rfb_session_runtime_shutdown(&rfb);
 
-        if (pstvnc_h1_transport_shutdown(&transport) < 0) {
-            printf("H1_TEARDOWN=TRANSPORT_FAIL\n");
-            session_ok = 0;
+        {
+            int transport_shutdown_result =
+                pstvnc_h1_transport_shutdown(&transport);
+
+            /*
+             * Capture immediately, before the next loop iteration can reuse
+             * and memset the stack-local transport object.
+             */
+            h1_e205_capture_previous_transport_teardown(
+                &e205_previous_transport_teardown,
+                &transport,
+                transport_shutdown_result);
+
+            if (transport_shutdown_result < 0) {
+                printf("H1_TEARDOWN=TRANSPORT_FAIL\n");
+                session_ok = 0;
+            }
         }
 
         completed_sessions++;
