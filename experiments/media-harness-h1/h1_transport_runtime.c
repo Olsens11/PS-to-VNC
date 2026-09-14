@@ -938,7 +938,21 @@ static int h1_accept_frame(
 {
     switch (header->kind) {
         case PSTVNC_TRANSPORT_FRAME_DATA:
-            return h1_accept_data(runtime, header);
+        {
+            int accepted;
+
+            if (header->channel == PSTVNC_TRANSPORT_CHANNEL_RFB)
+                runtime->receiver_diag_stage =
+                    PSTVNC_H1_RX_DIAG_RFB_ACCEPT_ENTER;
+
+            accepted = h1_accept_data(runtime, header);
+
+            if (header->channel == PSTVNC_TRANSPORT_CHANNEL_RFB)
+                runtime->receiver_diag_stage =
+                    PSTVNC_H1_RX_DIAG_RFB_ACCEPT_RETURN;
+
+            return accepted;
+        }
 
         case PSTVNC_TRANSPORT_FRAME_HELLO:
             if (header->channel != PSTVNC_TRANSPORT_CHANNEL_CONTROL ||
@@ -954,13 +968,41 @@ static int h1_accept_frame(
                 h1_record_error(runtime, PSTVNC_H1_ERROR_HEADER);
                 return 0;
             }
-            return h1_send_telemetry(runtime);
+
+            runtime->receiver_diag_stage =
+                PSTVNC_H1_RX_DIAG_HEARTBEAT_ENTER;
+
+            {
+                int accepted = h1_send_telemetry(runtime);
+
+                runtime->receiver_diag_stage =
+                    PSTVNC_H1_RX_DIAG_HEARTBEAT_RETURN;
+                return accepted;
+            }
 
         case PSTVNC_H1_FRAME_MEDIA_END:
-            return h1_accept_end(runtime, header);
+        {
+            int accepted;
+
+            runtime->receiver_diag_stage =
+                PSTVNC_H1_RX_DIAG_MEDIA_END_ENTER;
+            accepted = h1_accept_end(runtime, header);
+            runtime->receiver_diag_stage =
+                PSTVNC_H1_RX_DIAG_MEDIA_END_RETURN;
+            return accepted;
+        }
 
         case PSTVNC_H1_FRAME_MPEG_RETIRE:
-            return h1_accept_mpeg_retire(runtime, header);
+        {
+            int accepted;
+
+            runtime->receiver_diag_stage =
+                PSTVNC_H1_RX_DIAG_MPEG_RETIRE_ENTER;
+            accepted = h1_accept_mpeg_retire(runtime, header);
+            runtime->receiver_diag_stage =
+                PSTVNC_H1_RX_DIAG_MPEG_RETIRE_RETURN;
+            return accepted;
+        }
 
         default:
             h1_record_error(runtime, PSTVNC_H1_ERROR_FRAME_KIND);
@@ -979,11 +1021,20 @@ static void h1_receiver_thread(void *argument)
 
         runtime->stats.receiver_loop_count++;
 
+        runtime->receiver_diag_stage = PSTVNC_H1_RX_DIAG_LOOP_ENTER;
+        runtime->receiver_diag_sequence = runtime->expected_receive_sequence;
+        runtime->receiver_diag_kind = 0xffffffffu;
+        runtime->receiver_diag_channel = 0xffffffffu;
+        runtime->receiver_diag_payload_length = 0xffffffffu;
+
         if (!h1_socket_read_exact(runtime, wire_header, sizeof(wire_header))) {
             if (!runtime->stop_requested)
                 h1_record_error(runtime, PSTVNC_H1_ERROR_RECEIVE);
             break;
         }
+
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_HEADER_READ_RETURN;
 
         if (!pstvnc_transport_header_decode(&header, wire_header)) {
             h1_record_error(runtime, PSTVNC_H1_ERROR_HEADER);
@@ -996,6 +1047,13 @@ static void h1_receiver_thread(void *argument)
             break;
         }
 
+        runtime->receiver_diag_sequence = header.sequence;
+        runtime->receiver_diag_kind = header.kind;
+        runtime->receiver_diag_channel = header.channel;
+        runtime->receiver_diag_payload_length = header.payload_length;
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_HEADER_VALIDATED;
+
         if (header.payload_length != 0u &&
             !h1_socket_read_exact(
                 runtime,
@@ -1006,16 +1064,33 @@ static void h1_receiver_thread(void *argument)
             break;
         }
 
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_PAYLOAD_READY;
+
         runtime->stats.frames_received++;
         runtime->stats.payload_bytes_received += header.payload_length;
         runtime->stats.last_received_sequence = header.sequence;
         runtime->expected_receive_sequence++;
 
-        if (!h1_accept_frame(runtime, &header))
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_FRAME_COUNTED;
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_ACCEPT_FRAME_ENTER;
+
+        if (!h1_accept_frame(runtime, &header)) {
+            runtime->receiver_diag_stage =
+                PSTVNC_H1_RX_DIAG_ACCEPT_FRAME_FAIL;
             break;
+        }
+
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_ACCEPT_FRAME_RETURN;
 
         if (runtime->end_received)
             break;
+
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_LOOP_TAIL;
     }
 
     runtime->receiver_done = 1;

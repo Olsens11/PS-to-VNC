@@ -108,6 +108,40 @@ typedef struct pstvnc_h1_transport_stats {
 #define PSTVNC_H1_AUDIO_DIAG_STOP_ENTER  0xE2010005u
 #define PSTVNC_H1_AUDIO_DIAG_STOP_RETURN 0xE2010006u
 
+/*
+ * E206 receiver-boundary witness.
+ *
+ * Only the sole PSTV receiver thread advances these stages.
+ */
+#define PSTVNC_H1_RX_DIAG_LOOP_ENTER             0xE2060001u
+#define PSTVNC_H1_RX_DIAG_HEADER_READ_RETURN     0xE2060002u
+#define PSTVNC_H1_RX_DIAG_HEADER_VALIDATED       0xE2060003u
+#define PSTVNC_H1_RX_DIAG_PAYLOAD_READY          0xE2060004u
+#define PSTVNC_H1_RX_DIAG_FRAME_COUNTED          0xE2060005u
+#define PSTVNC_H1_RX_DIAG_ACCEPT_FRAME_ENTER     0xE2060006u
+#define PSTVNC_H1_RX_DIAG_ACCEPT_FRAME_RETURN    0xE2060007u
+#define PSTVNC_H1_RX_DIAG_LOOP_TAIL              0xE2060008u
+
+#define PSTVNC_H1_RX_DIAG_RFB_ACCEPT_ENTER       0xE2060010u
+#define PSTVNC_H1_RX_DIAG_RFB_MARKER_ACCEPTED    0xE2060011u
+#define PSTVNC_H1_RX_DIAG_RFB_NOTIFY_ENTER       0xE2060012u
+#define PSTVNC_H1_RX_DIAG_RFB_WAIT_ENTER         0xE2060013u
+#define PSTVNC_H1_RX_DIAG_RFB_WAIT_RETURN        0xE2060014u
+#define PSTVNC_H1_RX_DIAG_RFB_SIGNAL_ENTER       0xE2060015u
+#define PSTVNC_H1_RX_DIAG_RFB_SIGNAL_RETURN      0xE2060016u
+#define PSTVNC_H1_RX_DIAG_RFB_WAKE_ENTER         0xE2060017u
+#define PSTVNC_H1_RX_DIAG_RFB_WAKE_RETURN        0xE2060018u
+#define PSTVNC_H1_RX_DIAG_RFB_NOTIFY_RETURN      0xE2060019u
+#define PSTVNC_H1_RX_DIAG_RFB_ACCEPT_RETURN      0xE206001Au
+
+#define PSTVNC_H1_RX_DIAG_HEARTBEAT_ENTER        0xE2060020u
+#define PSTVNC_H1_RX_DIAG_HEARTBEAT_RETURN       0xE2060021u
+#define PSTVNC_H1_RX_DIAG_MEDIA_END_ENTER        0xE2060030u
+#define PSTVNC_H1_RX_DIAG_MEDIA_END_RETURN       0xE2060031u
+#define PSTVNC_H1_RX_DIAG_MPEG_RETIRE_ENTER      0xE2060040u
+#define PSTVNC_H1_RX_DIAG_MPEG_RETIRE_RETURN     0xE2060041u
+#define PSTVNC_H1_RX_DIAG_ACCEPT_FRAME_FAIL      0xE20600FFu
+
 typedef struct pstvnc_h1_transport_runtime {
     int socket_fd;
     int audio_queue_sema_id;
@@ -163,6 +197,15 @@ typedef struct pstvnc_h1_transport_runtime {
      * already reused by the concurrent RFB diagnostics.
      */
     volatile uint32_t mpeg_diag_stage;
+
+    /*
+     * E206 receiver-only progress witness and associated inbound frame.
+     */
+    volatile uint32_t receiver_diag_stage;
+    volatile uint32_t receiver_diag_sequence;
+    volatile uint32_t receiver_diag_kind;
+    volatile uint32_t receiver_diag_channel;
+    volatile uint32_t receiver_diag_payload_length;
 
     /*
      * MPEG consumer wait ownership.

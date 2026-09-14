@@ -205,16 +205,29 @@ int pstvnc_h1_rfb_transport_notify_activity(
     pstvnc_h1_transport_runtime_t *runtime)
 {
     int waiter_thread_id = -1;
+    int witness_lifecycle = 0;
 
     if (runtime == NULL ||
         !runtime->rfb_resources.active ||
         runtime->rfb_resources.queue_sema_id < 0)
         return 0;
 
+    witness_lifecycle =
+        runtime->receiver_diag_stage ==
+            PSTVNC_H1_RX_DIAG_RFB_NOTIFY_ENTER;
+
+    if (witness_lifecycle)
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_RFB_WAIT_ENTER;
+
     if (WaitSema(runtime->rfb_resources.queue_sema_id) < 0) {
         h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
         return 0;
     }
+
+    if (witness_lifecycle)
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_RFB_WAIT_RETURN;
 
     runtime->rfb_resources.activity_sequence++;
 
@@ -224,20 +237,37 @@ int pstvnc_h1_rfb_transport_notify_activity(
         runtime->rfb_resources.wait_thread_id = -1;
     }
 
+    if (witness_lifecycle)
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_RFB_SIGNAL_ENTER;
+
     if (SignalSema(runtime->rfb_resources.queue_sema_id) < 0) {
         h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
         return 0;
     }
+
+    if (witness_lifecycle)
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_RFB_SIGNAL_RETURN;
 
     /*
      * Clearing the waiter before WakeupThread coalesces concurrent producers.
      * Wake-before-SleepThread is safe because EE wakeup count is pending state,
      * the same ordering already hardware-qualified by the MPEG event wake.
      */
-    if (waiter_thread_id >= 0 &&
-        WakeupThread(waiter_thread_id) < 0) {
-        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
-        return 0;
+    if (waiter_thread_id >= 0) {
+        if (witness_lifecycle)
+            runtime->receiver_diag_stage =
+                PSTVNC_H1_RX_DIAG_RFB_WAKE_ENTER;
+
+        if (WakeupThread(waiter_thread_id) < 0) {
+            h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
+            return 0;
+        }
+
+        if (witness_lifecycle)
+            runtime->receiver_diag_stage =
+                PSTVNC_H1_RX_DIAG_RFB_WAKE_RETURN;
     }
 
     return 1;
@@ -363,7 +393,16 @@ int pstvnc_h1_rfb_transport_accept_data(
         if (!h1_rfb_accept_quiesce_marker(runtime))
             return 0;
 
-        return pstvnc_h1_rfb_transport_notify_activity(runtime);
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_RFB_MARKER_ACCEPTED;
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_RFB_NOTIFY_ENTER;
+
+        accepted = pstvnc_h1_rfb_transport_notify_activity(runtime);
+
+        runtime->receiver_diag_stage =
+            PSTVNC_H1_RX_DIAG_RFB_NOTIFY_RETURN;
+        return accepted;
     }
 
     if (payload == NULL) {
