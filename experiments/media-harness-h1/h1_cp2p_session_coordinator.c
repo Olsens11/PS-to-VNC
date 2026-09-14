@@ -8,6 +8,7 @@
  */
 #include "h1_rfb_transport_live.h"
 #include "h1_cp2p_session_coordinator.h"
+#include "h1_transport_runtime.h"
 
 #include "h1_config.h"
 #include "mpeg_presentation_calibration/h1_mpeg_start_transport.h"
@@ -465,6 +466,46 @@ pstvnc_h1_cp2p_session_coordinator_current_start_contract(
     return &coordinator->current_start_contract;
 }
 
+
+/*
+ * Disposable coordinator-shutdown substage witness.
+ *
+ * The ordinary diagnostic_word may be intentionally overridden by the E201
+ * AUDSRV call-boundary witness while PCM is blocked.  mpeg_diag_stage is
+ * already a diagnostic-only telemetry field, so use it here to preserve the
+ * main-thread shutdown location independently without changing the telemetry
+ * schema or session-integrity accounting.
+ *
+ * Odd values are ENTER states and therefore identify a call that has not yet
+ * returned.  Even values are the matching RETURN states.
+ */
+#define H1_CP2P_COORD_DIAG_CLEAR_ENTER        0xE2020001u
+#define H1_CP2P_COORD_DIAG_CLEAR_RETURN       0xE2020002u
+#define H1_CP2P_COORD_DIAG_ABORT_ENTER        0xE2020003u
+#define H1_CP2P_COORD_DIAG_ABORT_RETURN       0xE2020004u
+#define H1_CP2P_COORD_DIAG_STOP_ENTER         0xE2020005u
+#define H1_CP2P_COORD_DIAG_STOP_RETURN        0xE2020006u
+#define H1_CP2P_COORD_DIAG_INTERACTION_ENTER  0xE2020007u
+#define H1_CP2P_COORD_DIAG_INTERACTION_RETURN 0xE2020008u
+
+static void h1_cp2p_coordinator_shutdown_diag(
+    pstvnc_h1_cp2p_session_coordinator_t *coordinator,
+    uint32_t stage)
+{
+    if (coordinator == NULL || coordinator->transport == NULL)
+        return;
+
+    coordinator->transport->mpeg_diag_stage = stage;
+
+    /*
+     * Publish the transition immediately.  If the following call never
+     * returns, this snapshot proves the last main-thread boundary reached.
+     * Heartbeat telemetry will also continue carrying mpeg_diag_stage.
+     */
+    (void)pstvnc_h1_transport_send_telemetry_snapshot(
+        coordinator->transport);
+}
+
 int pstvnc_h1_cp2p_session_coordinator_shutdown(
     pstvnc_h1_cp2p_session_coordinator_t *coordinator)
 {
@@ -480,27 +521,67 @@ int pstvnc_h1_cp2p_session_coordinator_shutdown(
     generation = coordinator->mpeg_handoff.owner.generation;
 
     if (owner_state != PSTVNC_H1_MPEG_PRESENTATION_RFB_ONLY) {
-        if (generation == 0u || coordinator->clear_mpeg == NULL ||
-            !coordinator->clear_mpeg(
-                coordinator->clear_mpeg_context, generation))
+        if (generation == 0u || coordinator->clear_mpeg == NULL)
             return -1;
 
+        h1_cp2p_coordinator_shutdown_diag(
+            coordinator,
+            H1_CP2P_COORD_DIAG_CLEAR_ENTER);
+
+        if (!coordinator->clear_mpeg(
+                coordinator->clear_mpeg_context,
+                generation))
+            return -1;
+
+        h1_cp2p_coordinator_shutdown_diag(
+            coordinator,
+            H1_CP2P_COORD_DIAG_CLEAR_RETURN);
+
         if (owner_state == PSTVNC_H1_MPEG_PRESENTATION_WAIT_FIRST_FRAME) {
+            h1_cp2p_coordinator_shutdown_diag(
+                coordinator,
+                H1_CP2P_COORD_DIAG_ABORT_ENTER);
+
             if (!pstvnc_h1_mpeg_start_handoff_abort_start(
-                    &coordinator->mpeg_handoff, generation))
+                    &coordinator->mpeg_handoff,
+                    generation))
                 return -1;
-        } else if (owner_state == PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED) {
+
+            h1_cp2p_coordinator_shutdown_diag(
+                coordinator,
+                H1_CP2P_COORD_DIAG_ABORT_RETURN);
+        } else if (
+            owner_state == PSTVNC_H1_MPEG_PRESENTATION_MPEG_OWNED) {
+            h1_cp2p_coordinator_shutdown_diag(
+                coordinator,
+                H1_CP2P_COORD_DIAG_STOP_ENTER);
+
             if (!pstvnc_h1_mpeg_start_handoff_stop(
-                    &coordinator->mpeg_handoff, generation))
+                    &coordinator->mpeg_handoff,
+                    generation))
                 return -1;
+
+            h1_cp2p_coordinator_shutdown_diag(
+                coordinator,
+                H1_CP2P_COORD_DIAG_STOP_RETURN);
         } else {
             return -1;
         }
+
         coordinator->current_start_contract_valid = 0;
     }
 
+    h1_cp2p_coordinator_shutdown_diag(
+        coordinator,
+        H1_CP2P_COORD_DIAG_INTERACTION_ENTER);
+
     result = pstvnc_h1_interaction_coordinator_shutdown(
         &coordinator->interaction);
+
+    h1_cp2p_coordinator_shutdown_diag(
+        coordinator,
+        H1_CP2P_COORD_DIAG_INTERACTION_RETURN);
+
     coordinator->initialized = 0;
     coordinator->transport = NULL;
     coordinator->clear_mpeg = NULL;
