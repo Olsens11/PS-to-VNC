@@ -92,4 +92,16 @@ int pstvnc_h1_rfb_transport_snapshot(
     pstvnc_h1_transport_runtime_t *runtime,
     pstvnc_h1_rfb_transport_snapshot_t *snapshot);
 
+/*
+ * Terminal finite-session cleanup after ordered COMMIT.
+ *
+ * expected_queue_bytes comes from the sole RFB owner's semaphore-consistent
+ * post-COMMIT snapshot. The discard fails if that exact queue ownership state
+ * is no longer true.
+ */
+int pstvnc_h1_rfb_transport_discard_quiesce_residual(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t expected_queue_bytes,
+    uint32_t *bytes_discarded);
+
 #endif

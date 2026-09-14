@@ -57,6 +57,10 @@
 #define H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_ACTIVE     0xE1070009u
 #define H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_INACTIVE   0xE107000Au
 #define H1_RFB_DIAG_QUIESCE_QUEUE_REJECT              0xE107000Bu
+#define H1_RFB_DIAG_QUIESCE_RESIDUAL_DISCARD_ENTER  0xE107000Eu
+#define H1_RFB_DIAG_QUIESCE_RESIDUAL_DISCARD_RETURN 0xE107000Fu
+#define H1_RFB_DIAG_QUIESCE_POST_DISCARD_SNAPSHOT   0xE1070010u
+#define H1_RFB_DIAG_QUIESCE_RESIDUAL_DISCARD_FAIL   0xE10700FDu
 #define H1_RFB_DIAG_QUIESCE_COMPLETE_SEND_ENTER       0xE107000Cu
 #define H1_RFB_DIAG_QUIESCE_COMPLETE_SEND_RETURN      0xE107000Du
 #define H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_FAIL        0xE10700FEu
@@ -237,12 +241,62 @@ static int h1_rfb_complete_quiesce_at_boundary(
             : H1_RFB_DIAG_QUIESCE_POST_SNAPSHOT_INACTIVE,
         snapshot.queue_current);
 
-    if (!snapshot.active || snapshot.queue_current != 0u) {
+    if (!snapshot.active) {
         pstvnc_h1_rfb_mux_io_diag_stage(
             transport->socket_fd,
             H1_RFB_DIAG_QUIESCE_QUEUE_REJECT,
             snapshot.queue_current);
         return -1;
+    }
+
+    if (snapshot.queue_current != 0u) {
+        uint32_t bytes_discarded = 0u;
+
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            transport->socket_fd,
+            H1_RFB_DIAG_QUIESCE_RESIDUAL_DISCARD_ENTER,
+            snapshot.queue_current);
+
+        if (!pstvnc_h1_rfb_transport_discard_quiesce_residual(
+                transport,
+                snapshot.queue_current,
+                &bytes_discarded)) {
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                transport->socket_fd,
+                H1_RFB_DIAG_QUIESCE_RESIDUAL_DISCARD_FAIL,
+                snapshot.queue_current);
+            return -1;
+        }
+
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            transport->socket_fd,
+            H1_RFB_DIAG_QUIESCE_RESIDUAL_DISCARD_RETURN,
+            bytes_discarded);
+
+        if (bytes_discarded != snapshot.queue_current ||
+            !pstvnc_h1_rfb_transport_snapshot(
+                transport,
+                &snapshot)) {
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                transport->socket_fd,
+                H1_RFB_DIAG_QUIESCE_RESIDUAL_DISCARD_FAIL,
+                bytes_discarded);
+            return -1;
+        }
+
+        pstvnc_h1_rfb_mux_io_diag_stage(
+            transport->socket_fd,
+            H1_RFB_DIAG_QUIESCE_POST_DISCARD_SNAPSHOT,
+            snapshot.queue_current);
+
+        if (!snapshot.active ||
+            snapshot.queue_current != 0u) {
+            pstvnc_h1_rfb_mux_io_diag_stage(
+                transport->socket_fd,
+                H1_RFB_DIAG_QUIESCE_QUEUE_REJECT,
+                snapshot.queue_current);
+            return -1;
+        }
     }
 
     pstvnc_h1_rfb_mux_io_diag_stage(

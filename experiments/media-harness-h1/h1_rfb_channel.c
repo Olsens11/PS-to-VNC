@@ -112,6 +112,54 @@ size_t pstvnc_h1_rfb_channel_read_available(
     return take;
 }
 
+
+int pstvnc_h1_rfb_channel_discard_quiesce_residual(
+    pstvnc_h1_rfb_channel_t *channel,
+    size_t expected_queue_bytes,
+    uint32_t *bytes_discarded)
+{
+    size_t queued;
+    size_t discarded;
+
+    if (bytes_discarded != NULL)
+        *bytes_discarded = 0u;
+
+    if (channel == NULL ||
+        !channel->initialized ||
+        expected_queue_bytes > 0xffffffffu)
+        return 0;
+
+    queued = pstvnc_transport_queue_size(
+        &channel->queue);
+
+    /*
+     * Fail closed if queue ownership changed after the owner's post-COMMIT
+     * snapshot. Ordered COMMIT means no new raw RFB DATA is legitimate here.
+     */
+    if (queued != expected_queue_bytes)
+        return 0;
+
+    if (queued > 0xffffffffu ||
+        channel->stats.bytes_discarded_quiesce >
+            0xffffffffu - (uint32_t)queued)
+        return 0;
+
+    discarded = pstvnc_transport_queue_discard_all(
+        &channel->queue);
+
+    if (discarded != queued ||
+        pstvnc_transport_queue_size(&channel->queue) != 0u)
+        return 0;
+
+    channel->stats.bytes_discarded_quiesce +=
+        (uint32_t)discarded;
+
+    if (bytes_discarded != NULL)
+        *bytes_discarded = (uint32_t)discarded;
+
+    return 1;
+}
+
 uint32_t pstvnc_h1_rfb_channel_take_credit(
     pstvnc_h1_rfb_channel_t *channel)
 {

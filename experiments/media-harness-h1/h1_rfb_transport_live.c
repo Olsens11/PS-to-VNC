@@ -705,6 +705,55 @@ static int h1_rfb_send_quiesce_marker(
         0u);
 }
 
+
+int pstvnc_h1_rfb_transport_discard_quiesce_residual(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t expected_queue_bytes,
+    uint32_t *bytes_discarded)
+{
+    int ok;
+
+    if (bytes_discarded != NULL)
+        *bytes_discarded = 0u;
+
+    if (runtime == NULL ||
+        runtime->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
+        !runtime->rfb_resources.active ||
+        runtime->rfb_quiesce_commit_received == 0u ||
+        runtime->error != PSTVNC_H1_ERROR_NONE)
+        return 0;
+
+    if (WaitSema(
+            runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(
+            runtime,
+            PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    ok = pstvnc_h1_rfb_channel_discard_quiesce_residual(
+        &runtime->rfb_resources.channel,
+        (size_t)expected_queue_bytes,
+        bytes_discarded);
+
+    if (SignalSema(
+            runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(
+            runtime,
+            PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    if (!ok) {
+        h1_rfb_record_error(
+            runtime,
+            PSTVNC_H1_ERROR_CHANNEL);
+        return 0;
+    }
+
+    return 1;
+}
+
 int pstvnc_h1_rfb_transport_send_quiesce_boundary(
     pstvnc_h1_transport_runtime_t *runtime)
 {

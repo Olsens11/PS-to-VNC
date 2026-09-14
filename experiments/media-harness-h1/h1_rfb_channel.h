@@ -31,6 +31,14 @@ typedef struct pstvnc_h1_rfb_channel_stats {
     uint32_t data_frames_received;
     uint32_t bytes_enqueued;
     uint32_t bytes_consumed;
+
+    /*
+     * Bytes abandoned only after the ordered finite-session COMMIT fence.
+     * These bytes were never consumed by the RFB parser and therefore must
+     * remain distinct from bytes_consumed.
+     */
+    uint32_t bytes_discarded_quiesce;
+
     uint32_t credit_bytes_pending;
     uint32_t credit_frames_sent;
     uint32_t credit_bytes_sent;
@@ -68,6 +76,16 @@ size_t pstvnc_h1_rfb_channel_read_available(
     pstvnc_h1_rfb_channel_t *channel,
     void *buffer,
     size_t maximum_count);
+
+/*
+ * Discard exactly the residual queue proven by an ordered terminal quiesce
+ * fence. This operation does not count bytes as parser-consumed and does not
+ * create credit pending for a producer that has already committed shutdown.
+ */
+int pstvnc_h1_rfb_channel_discard_quiesce_residual(
+    pstvnc_h1_rfb_channel_t *channel,
+    size_t expected_queue_bytes,
+    uint32_t *bytes_discarded);
 
 uint32_t pstvnc_h1_rfb_channel_take_credit(
     pstvnc_h1_rfb_channel_t *channel);
