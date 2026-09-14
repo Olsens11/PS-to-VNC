@@ -676,6 +676,10 @@ static void input_runtime_controller_thread(
             if (!input_runtime_process_pad_sample(runtime))
                 break;
 
+            if (runtime->activity_notify != NULL)
+                runtime->activity_notify(
+                    runtime->activity_notify_context);
+
         } else if (
             runtime->physical_sample_active &&
             !runtime->pad.history_valid) {
@@ -688,6 +692,10 @@ static void input_runtime_controller_thread(
              */
             if (!input_runtime_handle_physical_loss(runtime))
                 break;
+
+            if (runtime->activity_notify != NULL)
+                runtime->activity_notify(
+                    runtime->activity_notify_context);
         }
 
         if (DelayThread(INPUT_RUNTIME_POLL_DELAY_US) < 0) {
@@ -701,6 +709,14 @@ static void input_runtime_controller_thread(
     runtime->suspended_physical_continuity_lost = 0;
     runtime->mouse_interpretation_suspended = 0;
     runtime->pad_handoff_acknowledged = 0;
+
+    /*
+     * Wake the owner once more on worker termination so a sleeping consumer can
+     * observe worker_error or the stopped worker instead of remaining parked.
+     */
+    if (runtime->activity_notify != NULL)
+        runtime->activity_notify(
+            runtime->activity_notify_context);
 
     ExitThread();
 }
@@ -813,6 +829,23 @@ int pstvnc_input_runtime_init(
     }
 
     runtime->initialized = 1;
+    return 0;
+}
+
+int pstvnc_input_runtime_set_activity_notify(
+    pstvnc_input_runtime_t *runtime,
+    pstvnc_input_runtime_activity_notify_fn notify,
+    void *notify_context)
+{
+    if (runtime == NULL ||
+        !runtime->initialized ||
+        runtime->controller_thread_started)
+        return -1;
+
+    runtime->activity_notify = notify;
+    runtime->activity_notify_context =
+        notify != NULL ? notify_context : NULL;
+
     return 0;
 }
 

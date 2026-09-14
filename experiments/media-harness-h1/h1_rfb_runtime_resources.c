@@ -37,6 +37,7 @@ void pstvnc_h1_rfb_runtime_resources_init(
 
     memset(resources, 0, sizeof(*resources));
     resources->queue_sema_id = -1;
+    resources->wait_thread_id = -1;
 }
 
 int pstvnc_h1_rfb_runtime_resources_activate(

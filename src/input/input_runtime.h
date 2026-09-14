@@ -82,7 +82,12 @@ typedef enum pstvnc_input_runtime_error {
  * consumer cooperatively observe them. They are simple single-writer control
  * facts, not substitutes for the semaphore protecting the ordinary event FIFO.
  */
+typedef void (*pstvnc_input_runtime_activity_notify_fn)(
+    void *context);
+
 typedef struct pstvnc_input_runtime {
+    pstvnc_input_runtime_activity_notify_fn activity_notify;
+    void *activity_notify_context;
     pstvnc_pad_t pad;
     pstvnc_mouse_t mouse;
     pstvnc_input_queue_t event_queue;
@@ -180,6 +185,15 @@ int pstvnc_input_runtime_init(
 /*
  * Start the dedicated approximately-60-Hz controller producer.
  */
+/*
+ * Install an optional owner-activity notification before the controller worker
+ * starts. The input layer remains transport-agnostic.
+ */
+int pstvnc_input_runtime_set_activity_notify(
+    pstvnc_input_runtime_t *runtime,
+    pstvnc_input_runtime_activity_notify_fn notify,
+    void *notify_context);
+
 int pstvnc_input_runtime_start(
     pstvnc_input_runtime_t *runtime);
 

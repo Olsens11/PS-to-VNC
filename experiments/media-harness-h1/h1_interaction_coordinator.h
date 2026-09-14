@@ -51,6 +51,8 @@ typedef int (*pstvnc_h1_interaction_calibration_entry_gate_fn)(
 
 typedef struct pstvnc_h1_interaction_coordinator {
     pstvnc_input_runtime_t input_runtime;
+    pstvnc_input_runtime_activity_notify_fn activity_notify;
+    void *activity_notify_context;
     pstvnc_local_controller_t local_controller;
     pstvnc_local_ui_t local_ui;
     pstvnc_osk_t osk;
@@ -96,6 +98,14 @@ void pstvnc_h1_interaction_coordinator_init(
  * immediate entry. This is configuration, not a transport callback; the
  * interaction coordinator remains ignorant of MPEG generations and PSTV START.
  */
+/*
+ * Configure optional owner activity notification before input is started.
+ */
+int pstvnc_h1_interaction_coordinator_set_activity_notify(
+    pstvnc_h1_interaction_coordinator_t *coordinator,
+    pstvnc_input_runtime_activity_notify_fn notify,
+    void *notify_context);
+
 int pstvnc_h1_interaction_coordinator_set_calibration_entry_gate(
     pstvnc_h1_interaction_coordinator_t *coordinator,
     pstvnc_h1_interaction_calibration_entry_gate_fn gate,

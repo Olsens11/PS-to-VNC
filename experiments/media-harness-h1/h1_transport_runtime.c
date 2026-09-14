@@ -987,6 +987,9 @@ static void h1_receiver_thread(void *argument)
 
     runtime->receiver_done = 1;
 
+    if (runtime->rfb_resources.active)
+        (void)pstvnc_h1_rfb_transport_notify_activity(runtime);
+
     /*
      * Publish receiver_done before signaling.  Waiters that wake can therefore
      * treat the flag as authoritative completion state.

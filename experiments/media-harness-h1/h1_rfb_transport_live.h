@@ -37,6 +37,24 @@ int pstvnc_h1_rfb_transport_release(
  * Non-empty DATA is raw RFB. Zero-length DATA is the experiment-local lifecycle
  * marker used only by the ordered quiesce state machine.
  */
+/*
+ * Activity rendezvous used by the sole RFB owner.
+ *
+ * A caller snapshots the activity sequence before servicing all currently
+ * visible work, then waits with that ticket. Producers advance the sequence
+ * and wake an armed owner without timers or accumulated blind polling.
+ */
+int pstvnc_h1_rfb_transport_activity_snapshot(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t *activity_sequence);
+
+int pstvnc_h1_rfb_transport_wait_for_activity(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t *activity_sequence);
+
+int pstvnc_h1_rfb_transport_notify_activity(
+    pstvnc_h1_transport_runtime_t *runtime);
+
 int pstvnc_h1_rfb_transport_accept_data(
     pstvnc_h1_transport_runtime_t *runtime,
     const void *payload,

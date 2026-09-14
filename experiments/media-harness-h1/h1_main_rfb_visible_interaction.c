@@ -11,6 +11,7 @@
  * not the later architectural-alignment pass and not Issue #40.
  */
 
+#include "h1_rfb_transport_live.h"
 #include "h1_config.h"
 #include "h1_interaction_coordinator.h"
 #include "h1_rfb_session_runtime.h"
@@ -68,6 +69,15 @@ static int h1_cp2n_wait_for_transport_end(
         : -1;
 }
 
+static void h1_cp2n_rfb_activity_notify(void *context)
+{
+    pstvnc_h1_transport_runtime_t *transport =
+        (pstvnc_h1_transport_runtime_t *)context;
+
+    if (transport != NULL)
+        (void)pstvnc_h1_rfb_transport_notify_activity(transport);
+}
+
 int main(void)
 {
     uint32_t completed_sessions = 0u;
@@ -119,6 +129,15 @@ int main(void)
 
         pstvnc_h1_rfb_session_runtime_init(&rfb);
         pstvnc_h1_interaction_coordinator_init(&interaction);
+
+        if (!pstvnc_h1_interaction_coordinator_set_activity_notify(
+                &interaction,
+                h1_cp2n_rfb_activity_notify,
+                &transport)) {
+            printf("H1_CP2N=ACTIVITY_NOTIFY_BIND_FAIL\n");
+            SleepThread();
+            return 23;
+        }
 
         printf(
             "H1_WAITING_FOR_SESSION completed=%u\n",

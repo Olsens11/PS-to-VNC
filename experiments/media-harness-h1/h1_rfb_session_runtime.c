@@ -17,7 +17,6 @@
 #include "h1_rfb_mux_io.h"
 #include "h1_transport_runtime.h"
 
-#include <delaythread.h>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -114,6 +113,13 @@ static int h1_rfb_wait_for_commit(
     pstvnc_h1_rfb_session_runtime_t *runtime,
     pstvnc_h1_transport_runtime_t *transport)
 {
+    uint32_t activity_sequence;
+
+    if (!pstvnc_h1_rfb_transport_activity_snapshot(
+            transport,
+            &activity_sequence))
+        return 0;
+
     while (transport->rfb_quiesce_commit_received == 0u) {
         if (pstvnc_h1_transport_last_error(transport) !=
                 PSTVNC_H1_ERROR_NONE ||
@@ -123,7 +129,9 @@ static int h1_rfb_wait_for_commit(
 
         h1_rfb_publish_diagnostic(runtime, transport);
 
-        if (DelayThread(H1_RFB_QUIESCE_WAIT_US) < 0)
+        if (!pstvnc_h1_rfb_transport_wait_for_activity(
+                transport,
+                &activity_sequence))
             return 0;
     }
 
@@ -270,6 +278,8 @@ static int h1_rfb_run(
     void *service_context,
     const pstvnc_h1_rfb_flow_policy_t *flow_policy)
 {
+    uint32_t activity_sequence;
+
     if (runtime == NULL || transport == NULL ||
         transport->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
         !transport->rfb_resources.active ||
@@ -318,6 +328,16 @@ static int h1_rfb_run(
             return 0;
         goto fail;
     }
+
+    /*
+     * Snapshot before application service. Input produced during or after
+     * service therefore changes the sequence and prevents the following idle
+     * wait from sleeping through semantic work.
+     */
+    if (!pstvnc_h1_rfb_transport_activity_snapshot(
+            transport,
+            &activity_sequence))
+        goto fail;
 
     if (!h1_rfb_service_application(
             runtime,
@@ -394,18 +414,24 @@ static int h1_rfb_run(
                 H1_RFB_DIAG_REQUEST_RETURN,
                 0u);
 
+            /*
+             * Keep the established marker ids for witness compatibility. The
+             * old timer delay between them is now a producer-driven event wait.
+             */
             pstvnc_h1_rfb_mux_io_diag_stage(
                 transport->socket_fd,
                 H1_RFB_DIAG_IDLE_DELAY_ENTER,
-                H1_RFB_IDLE_DELAY_US);
+                0u);
 
-            if (DelayThread(H1_RFB_IDLE_DELAY_US) < 0)
+            if (!pstvnc_h1_rfb_transport_wait_for_activity(
+                    transport,
+                    &activity_sequence))
                 goto fail;
 
             pstvnc_h1_rfb_mux_io_diag_stage(
                 transport->socket_fd,
                 H1_RFB_DIAG_IDLE_DELAY_RETURN,
-                H1_RFB_IDLE_DELAY_US);
+                0u);
 
             continue;
         }

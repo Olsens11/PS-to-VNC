@@ -762,6 +762,23 @@ static int h1_interaction_resume_desktop_mouse_if_ready(
     return 1;
 }
 
+int pstvnc_h1_interaction_coordinator_set_activity_notify(
+    pstvnc_h1_interaction_coordinator_t *coordinator,
+    pstvnc_input_runtime_activity_notify_fn notify,
+    void *notify_context)
+{
+    if (coordinator == NULL ||
+        coordinator->input_initialized ||
+        coordinator->input_started)
+        return 0;
+
+    coordinator->activity_notify = notify;
+    coordinator->activity_notify_context =
+        notify != NULL ? notify_context : NULL;
+
+    return 1;
+}
+
 static int h1_interaction_start_input(
     pstvnc_h1_interaction_coordinator_t *coordinator,
     pstvnc_rfb_session_t *session)
@@ -778,6 +795,13 @@ static int h1_interaction_start_input(
         return 0;
 
     coordinator->input_initialized = 1;
+
+    if (pstvnc_input_runtime_set_activity_notify(
+            &coordinator->input_runtime,
+            coordinator->activity_notify,
+            coordinator->activity_notify_context) < 0)
+        return 0;
+
     coordinator->published_cursor_x = PSTVNC_DISPLAY_WIDTH / 2u;
     coordinator->published_cursor_y = PSTVNC_DISPLAY_HEIGHT / 2u;
     coordinator->published_click_buttons = 0;

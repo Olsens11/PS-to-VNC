@@ -175,6 +175,171 @@ static int h1_rfb_accept_quiesce_marker(
     return 0;
 }
 
+int pstvnc_h1_rfb_transport_activity_snapshot(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t *activity_sequence)
+{
+    if (runtime == NULL ||
+        activity_sequence == NULL ||
+        !runtime->rfb_resources.active ||
+        runtime->rfb_resources.queue_sema_id < 0)
+        return 0;
+
+    if (WaitSema(runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    *activity_sequence =
+        runtime->rfb_resources.activity_sequence;
+
+    if (SignalSema(runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    return 1;
+}
+
+int pstvnc_h1_rfb_transport_notify_activity(
+    pstvnc_h1_transport_runtime_t *runtime)
+{
+    int waiter_thread_id = -1;
+
+    if (runtime == NULL ||
+        !runtime->rfb_resources.active ||
+        runtime->rfb_resources.queue_sema_id < 0)
+        return 0;
+
+    if (WaitSema(runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    runtime->rfb_resources.activity_sequence++;
+
+    if (runtime->rfb_resources.wait_thread_id >= 0) {
+        waiter_thread_id =
+            runtime->rfb_resources.wait_thread_id;
+        runtime->rfb_resources.wait_thread_id = -1;
+    }
+
+    if (SignalSema(runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    /*
+     * Clearing the waiter before WakeupThread coalesces concurrent producers.
+     * Wake-before-SleepThread is safe because EE wakeup count is pending state,
+     * the same ordering already hardware-qualified by the MPEG event wake.
+     */
+    if (waiter_thread_id >= 0 &&
+        WakeupThread(waiter_thread_id) < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
+        return 0;
+    }
+
+    return 1;
+}
+
+int pstvnc_h1_rfb_transport_wait_for_activity(
+    pstvnc_h1_transport_runtime_t *runtime,
+    uint32_t *activity_sequence)
+{
+    int current_thread_id;
+
+    if (runtime == NULL ||
+        activity_sequence == NULL ||
+        !runtime->rfb_resources.active ||
+        runtime->rfb_resources.queue_sema_id < 0)
+        return 0;
+
+    current_thread_id = GetThreadId();
+    if (current_thread_id < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
+        return 0;
+    }
+
+    if (WaitSema(runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    /*
+     * This comparison closes the producer-before-registration race. A producer
+     * that ran since the caller's snapshot already changed the ticket, so the
+     * owner returns immediately instead of sleeping through that work.
+     */
+    if (runtime->rfb_resources.activity_sequence !=
+            *activity_sequence ||
+        runtime->error != PSTVNC_H1_ERROR_NONE ||
+        runtime->receiver_done ||
+        runtime->stop_requested) {
+
+        *activity_sequence =
+            runtime->rfb_resources.activity_sequence;
+
+        if (SignalSema(runtime->rfb_resources.queue_sema_id) < 0) {
+            h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+            return 0;
+        }
+
+        return 1;
+    }
+
+    if (runtime->rfb_resources.wait_thread_id >= 0) {
+        (void)SignalSema(runtime->rfb_resources.queue_sema_id);
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    runtime->rfb_resources.wait_thread_id =
+        current_thread_id;
+
+    if (SignalSema(runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    if (SleepThread() < 0) {
+        if (WaitSema(runtime->rfb_resources.queue_sema_id) >= 0) {
+            if (runtime->rfb_resources.wait_thread_id ==
+                    current_thread_id)
+                runtime->rfb_resources.wait_thread_id = -1;
+
+            (void)SignalSema(
+                runtime->rfb_resources.queue_sema_id);
+        }
+
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
+        return 0;
+    }
+
+    if (WaitSema(runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    /*
+     * A normal producer clears this before waking us. Clear it here as well so
+     * a spurious/pending wake can never leave a stale waiter registration.
+     */
+    if (runtime->rfb_resources.wait_thread_id ==
+            current_thread_id)
+        runtime->rfb_resources.wait_thread_id = -1;
+
+    *activity_sequence =
+        runtime->rfb_resources.activity_sequence;
+
+    if (SignalSema(runtime->rfb_resources.queue_sema_id) < 0) {
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
+
+    return 1;
+}
+
 int pstvnc_h1_rfb_transport_accept_data(
     pstvnc_h1_transport_runtime_t *runtime,
     const void *payload,
@@ -190,9 +355,16 @@ int pstvnc_h1_rfb_transport_accept_data(
         return 0;
     }
 
-    /* Zero bytes are lifecycle control and never enter the raw RFB queue. */
-    if (payload_length == 0u)
-        return h1_rfb_accept_quiesce_marker(runtime);
+    /*
+     * Zero bytes are lifecycle control and never enter the raw RFB queue, but
+     * REQUEST/COMMIT are still activity for the sole RFB owner.
+     */
+    if (payload_length == 0u) {
+        if (!h1_rfb_accept_quiesce_marker(runtime))
+            return 0;
+
+        return pstvnc_h1_rfb_transport_notify_activity(runtime);
+    }
 
     if (payload == NULL) {
         h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_CHANNEL);
@@ -219,7 +391,7 @@ int pstvnc_h1_rfb_transport_accept_data(
         return 0;
     }
 
-    return 1;
+    return pstvnc_h1_rfb_transport_notify_activity(runtime);
 }
 
 static int h1_rfb_record_credit_sent(
@@ -377,12 +549,18 @@ int pstvnc_h1_rfb_transport_read_exact(
     size_t count)
 {
     uint8_t *destination = (uint8_t *)buffer;
+    uint32_t activity_sequence;
     size_t done = 0u;
 
     if (runtime == NULL ||
         (buffer == NULL && count != 0u) ||
         runtime->config.rfb_mode != PSTVNC_H1_RFB_ON_RESERVED ||
         !runtime->rfb_resources.active)
+        return -1;
+
+    if (!pstvnc_h1_rfb_transport_activity_snapshot(
+            runtime,
+            &activity_sequence))
         return -1;
 
     while (done < count) {
@@ -418,15 +596,20 @@ int pstvnc_h1_rfb_transport_read_exact(
             runtime->receiver_done)
             return -1;
 
+        /*
+         * Preserve the existing diagnostic marker identity so old witness
+         * tooling remains useful. These markers now bracket an event wait,
+         * not DelayThread().
+         */
         pstvnc_h1_rfb_mux_io_diag_stage(
             runtime->socket_fd,
             H1_RFB_DIAG_READ_DELAY_ENTER,
             count - done);
 
-        if (DelayThread(H1_RFB_EXACT_READ_WAIT_US) < 0) {
-            h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
+        if (!pstvnc_h1_rfb_transport_wait_for_activity(
+                runtime,
+                &activity_sequence))
             return -1;
-        }
 
         pstvnc_h1_rfb_mux_io_diag_stage(
             runtime->socket_fd,

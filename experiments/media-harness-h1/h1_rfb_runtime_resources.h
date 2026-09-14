@@ -19,6 +19,15 @@
 
 typedef struct pstvnc_h1_rfb_runtime_resources {
     int queue_sema_id;
+
+    /*
+     * Timer-free activity rendezvous for the sole RFB owner.
+     *
+     * activity_sequence changes whenever any producer publishes work relevant
+     * to that owner. wait_thread_id is armed only immediately before sleeping.
+     */
+    int wait_thread_id;
+    uint32_t activity_sequence;
     uint8_t *queue_storage;
     uint32_t queue_capacity;
     pstvnc_h1_rfb_channel_t channel;

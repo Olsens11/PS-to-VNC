@@ -6,6 +6,7 @@
  * immutable generation by prepare_start(), and serialized as one START on the
  * existing PSTV socket using the transport-owned session id.
  */
+#include "h1_rfb_transport_live.h"
 #include "h1_cp2p_session_coordinator.h"
 
 #include "h1_config.h"
@@ -301,6 +302,15 @@ static int h1_cp2p_session_start_accepted_calibration(
     return 1;
 }
 
+static void h1_cp2p_rfb_activity_notify(void *context)
+{
+    pstvnc_h1_transport_runtime_t *transport =
+        (pstvnc_h1_transport_runtime_t *)context;
+
+    if (transport != NULL)
+        (void)pstvnc_h1_rfb_transport_notify_activity(transport);
+}
+
 int pstvnc_h1_cp2p_session_coordinator_init(
     pstvnc_h1_cp2p_session_coordinator_t *coordinator,
     struct pstvnc_h1_transport_runtime *transport,
@@ -318,6 +328,12 @@ int pstvnc_h1_cp2p_session_coordinator_init(
 
     memset(coordinator, 0, sizeof(*coordinator));
     pstvnc_h1_interaction_coordinator_init(&coordinator->interaction);
+
+    if (!pstvnc_h1_interaction_coordinator_set_activity_notify(
+            &coordinator->interaction,
+            h1_cp2p_rfb_activity_notify,
+            transport))
+        return 0;
     pstvnc_h1_mpeg_start_handoff_init(
         &coordinator->mpeg_handoff,
         PSTVNC_DISPLAY_WIDTH,
