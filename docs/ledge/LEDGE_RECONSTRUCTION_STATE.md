@@ -1,12 +1,12 @@
 # Ledge Reconstruction — Lane State
 
 DOCUMENT=LEDGE_RECONSTRUCTION_STATE
-STATE_REVISION=0004
-RECORDED_AT=2026-09-15T16:47:13-04:00
+STATE_REVISION=0005
+RECORDED_AT=2026-09-15T18:10:00-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_STATE_REVISION=0003
-BASED_ON_AUDIT_STATE_REVISION=0006
-BASED_ON_GLOBAL_STATE_REVISION=0008
+BASED_ON_STATE_REVISION=0004
+BASED_ON_AUDIT_STATE_REVISION=0007
+BASED_ON_GLOBAL_STATE_REVISION=0009
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
@@ -14,52 +14,52 @@ This lane state owns reconstruction/integration continuity only. It does not sup
 
 ## Authority inspected
 
-- interactive shift branch authority at start: `f056ad828f4d520d9bca0eae350fe16240bdf82b`;
-- branch before this state write: `ed6d929b24f1636603905926f93bc81051cb3e4c`;
+- scheduled Reconstruction A branch authority at start: `b159471f62d9b67e3c349914d1b4df7a6e953b8b`;
+- branch immediately before this state write: `3b532b191502b5deb7e0ffff1ff4000aa333e8c7`;
 - forensic H1 source authority remains `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`;
-- audit state revision `0006` marks A001-A006 reconstruction-ready;
-- global state revision `0008` keeps A001 as the active dependency foundation;
-- validation state revision `0003` keeps V003 open while A001 remains incomplete.
+- audit state revision `0007` preserves A001-A006 as reconstruction-ready and closes the seeded audit;
+- global state revision `0009` keeps A001 as the active dependency foundation;
+- validation state revision `0004` keeps V003 and V004 open while A001 remains incomplete;
+- governing reconstruction contract revision `0002` and immutable work-log contract revision `0001` were consumed.
 
-The repository connector exposes committed GitHub authority but not external Pi-local dirty state. This shift neither overwrote nor declared absent any unseen local work.
+This worker is GitHub-native. Unknown external Pi-local dirty work is outside this mutation surface and was neither overwritten nor declared absent.
 
 ## Current reconstruction phase
 
-`A001_PHYSICAL_STREAM_SEND_IN_PROGRESS`
+`A001_PHYSICAL_STREAM_RECEIVE_IN_PROGRESS`
 
 ## Progress
 
-A001 now contains the backend-independent PSTV framing layer plus the first transport-owned physical stream runtime unit. `src/transport/physical_stream.h` and `src/transport/physical_stream.c` own one adopted physical socket, a single send semaphore, and the next outbound PSTV sequence. All framed sends pass through one serialized header-plus-payload transaction; partial socket sends are completed before progress is accepted, and the outbound sequence advances only after the complete frame is committed through the socket API.
+A001 now has direction-local sequence state in `src/transport/physical_stream.*` and a sole physical receive primitive alongside the existing serialized send path. `pstvnc_transport_physical_stream_receive_frame()` performs exact header receipt, protocol decode, expected inbound-sequence enforcement, payload-capacity/null validation, exact payload receipt, and advances the expected sequence only after the complete frame is present.
 
-Socket ownership transfers only after send-lock creation succeeds. Release closes the adopted descriptor and deletes the send semaphore, with an explicit contract that the higher transport runtime must prove receiver/dispatch quiescence before release once receive exists. The descriptor remains transport-internal and is not exposed to RFB. `src/transport/SYMBOLS.md` indexes the new physical-stream symbols.
+The physical descriptor remains private to Transport. This increment deliberately stops at physical framing: it does not introduce callbacks or cross-component dispatch from the physical-stream unit. Logical channel dispatch/storage belongs in the higher transport runtime so the physical owner does not acquire RFB/media semantics.
 
-This small subtranche reconstructs the proven H1 physical-send ordering without carrying over H1 diagnostic counters/stages or media/RFB policy.
+`src/transport/SYMBOLS.md` was updated for the receive state, public internal receive primitive, and file-local exact-receive helper. V004 is therefore improved for this increment but remains OPEN because full dictionary/portal completeness has not been machine-checked or resolved.
 
 ## Behavioral parity / defect treatment
 
-The H1 send invariant is preserved: one serialized physical send path; exact-send loops for header and payload; sequence begins at 1 and advances only after complete frame send. A semaphore failure is still treated as send failure. No known defect was silently corrected.
+The H1 direction-local receive invariant is preserved: exactly one physical socket owner reads complete PSTV frames; inbound sequence starts at 1 and advances only after a complete frame; malformed/oversized/out-of-order/incomplete frames fail rather than becoming receive authority. Diagnostic stages/counters were not carried into product synchronization.
 
-The historical receiver-dispatch shutdown race is not claimed solved by this send-only unit. Its required explicit quiescence replacement remains outstanding and release is documented as requiring that higher-level proof before resource reclamation.
+The historical receiver-dispatch shutdown race remains explicitly unresolved. This increment does not claim dispatch quiescence because dispatch itself is not yet reconstructed. No known defect was silently corrected.
 
 ## Validation status
 
-A001 remains **not VALIDATION_READY**. This shift did not implement sole receive, inbound sequence enforcement, logical channel dispatch, logical RFB queue/activity/credit/residual behavior, outbound RFB fragmentation, explicit receiver-dispatch quiescence, RFB bridge adaptation, or build/test integration.
+A001 remains **not VALIDATION_READY**. Logical channel dispatch, transport-owned logical RFB storage/activity/credit/residual behavior, outbound RFB fragmentation, explicit receiver-dispatch quiescence, RFB bridge adaptation, topology/build/test integration, host tests, and V004 portal/completeness closure remain outstanding.
 
-PENDING_LOCAL: compile/build of the new physical-stream unit, canonical `scripts/check.sh`, strict source-dictionary/topology checks, clean-product build integration, exact ELF/PT_LOAD identity, and PS2DEV-dependent checks. No such check is claimed PASS from repository inspection alone.
+PENDING_LOCAL: compile/build of the physical-stream receive increment, canonical `scripts/check.sh`, strict source-dictionary/topology checks, clean-product build integration, exact ELF/PT_LOAD identity, and PS2DEV-dependent checks. No unavailable local check is claimed PASS.
 
-HARDWARE_PENDING: none yet as a handoff state because A001 has not reached machine-validation completion; historical H1 hardware evidence remains forensic only.
+HARDWARE_PENDING: none yet because A001 has not reached machine-validation completion; historical H1 hardware evidence remains forensic only.
 
-## Commits in this interactive shift
+## Commits in this shift
 
-- `ef37c18cf35fe58f1b696c14d82dcb8248405392` — interactive Reconstruction STARTED_AT log event;
-- `e7d2196198391d3d17443fb8c7103f4278f46ab7` — transport physical-stream internal contract;
-- `6de2203a6af44b8488c3241125a59a61947bd0a0` — serialized physical framed-send implementation;
-- `ed6d929b24f1636603905926f93bc81051cb3e4c` — transport symbol dictionary update.
+- `4244ea0ddf1caa235b41d0e8eb124e33adf219bc` — define sole physical receive contract and direction-local receive sequence state;
+- `9170f97a2ec327fec5a9bbe63bbd7476da7e6a7a` — implement exact ordered physical frame receive;
+- `3b532b191502b5deb7e0ffff1ff4000aa333e8c7` — index receive symbols in the transport dictionary.
 
 ## Work remaining
 
-Continue A001 only: add sole physical receive with direction-local sequence validation and logical dispatch, then logical RFB queue/activity/credit accounting and outbound fragmentation, explicit receiver-dispatch quiescence, RFB bridge adaptation, topology/build/test integration, and host tests. Then run canonical checks and produce exact build/PT_LOAD evidence before `VALIDATION_READY`.
+Continue A001 only. Build the higher transport runtime that is the sole caller of the physical receive primitive, dispatch channel 1 DATA into transport-owned logical RFB storage, provide producer activity rendezvous, and keep physical framing ignorant of RFB semantics. Then implement parser-consumption-based credit, terminal residual distinction, outbound RFB fragmentation through the serialized send path, and explicit receiver-dispatch quiescence before resource reclamation. Follow with RFB bridge adaptation, topology/build/test integration, V004 completeness closure, canonical checks, and exact build/PT_LOAD evidence.
 
 ## Exact next pickup
 
-Start from `physical_stream.*`, `protocol.*`, and `transport.h`. Reconstruct the smallest sole-receiver path that reads and validates complete PSTV frames, enforces the expected inbound sequence, and dispatches channel 1 into transport-owned logical RFB storage without exposing the physical socket. Preserve explicit receiver-dispatch quiescence as a first-class lifecycle invariant; do not use diagnostic counters as synchronization authority and do not begin A002 media transport while A001 remains incoherent.
+Start from `physical_stream.*`, `transport.h`, and the A001 H1 logical-RFB evidence. Introduce the smallest transport-owned logical RFB channel/storage mechanism and receiver runtime that consumes `pstvnc_transport_physical_stream_receive_frame()`, accepts only the audit-authorized channel-1 DATA shape, enqueues complete payloads under transport synchronization, and exposes activity without blind polling. Keep credit/residual accounting explicit and do not reclaim receiver-touched resources until a first-class quiescence mechanism proves dispatch completion. Do not begin A002 media transport while A001 remains incoherent.
