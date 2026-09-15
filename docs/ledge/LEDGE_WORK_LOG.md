@@ -1,8 +1,8 @@
 # Ledge Reconstruction Work Log
 
 DOCUMENT=LEDGE_WORK_LOG
-DOCUMENT_REVISION=0006
-RECORDED_AT=2026-09-15T14:34:00-04:00
+DOCUMENT_REVISION=0007
+RECORDED_AT=2026-09-15T17:29:50-04:00
 SOURCE_COMMIT=SELF
 TEMPORAL_CLASS=WORK_EVENT_LOG
 TEMPORAL_SEMANTICS=EACH_ENTRY_TRUE_AS_KNOWN_AT_ITS_COMPLETION_TIME
@@ -324,3 +324,72 @@ A001 remains incomplete as a coherent buildable transport tranche. Exhaustive wh
 ### Exact next safe actions
 
 Audit executes A006, then A007 closure. Reconstruction continues A001 through physical framing/sequence, sole receiver/dispatch, serialized send, logical RFB buffering/credit/fragmentation, explicit quiescence, RFB bridge adaptation, topology/dictionary/build/test obligations, canonical checks and exact build/PT_LOAD identity before handoff. Validation preserves V003 until explicit A001 `VALIDATION_READY`, then independently validates the coherent tranche and classifies physical PS2 work separately as `HARDWARE_PENDING`. Continuity next reconciles any A006/A007, reconstruction-after-0002, or validation-after-0002 transition and records rather than guesses across any contradiction.
+
+## Work Entry L006
+
+STARTED_AT=2026-09-15T17:29:50-04:00
+COMPLETED_AT=2026-09-15T17:29:50-04:00
+STARTING_STATE_REVISION=0008
+ENDING_STATE_REVISION=0009
+STARTING_COMMIT=0a9d8683a63f09490e26858845ae4b468004830c
+ENDING_COMMIT=SELF
+TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_KNOWLEDGE_AND_WORK_AT_COMPLETION_TIME
+
+### Objective
+
+Reconcile semantic-audit closure, the A001 serialized physical-send reconstruction increment, and independent validation review into one current global snapshot while preserving historical lane truth and explicitly accounting for the global-log continuity gap.
+
+### Evidence inspected
+
+- `AGENTS.md`, `CONTRIBUTING.md`, `docs/CLEAN_ARCHITECTURE.md` version 1, reconstruction contract revision 0001, and existing global state/log authority;
+- branch `ledge/h1-all-guns` at `0a9d8683a63f09490e26858845ae4b468004830c` before governance writes;
+- global state revision 0008;
+- audit state revision 0007, semantic audit complete after A007;
+- reconstruction state revision 0004, A001 physical-send increment in progress;
+- validation state revision 0004 with V001-V004 status.
+
+### Reconciliation
+
+Audit revision 0007 closes the seeded semantic discovery queue. A001-A006 remain explicitly `RECONSTRUCTION_READY`; A007 is completeness closure rather than a product reconstruction tranche. There are zero unexplained project-defined owner/process families in the seeded H1 closure.
+
+Reconstruction revision 0004 remains correctly inside active A001. It adds transport-owned physical socket/send serialization and outbound sequence behavior without acquiring RFB/media/application policy. It explicitly leaves receive/dispatch, logical RFB, quiescence, bridge, topology/build/test and exact build/PT_LOAD evidence incomplete.
+
+Validation revision 0004 independently gives the implemented send ordering a provisional static PASS only. V003 remains OPEN waiting for a coherent tranche. V004 is newly OPEN because transport symbol-dictionary definition completeness and generated dictionary-portal integration are incomplete; it is a pre-`VALIDATION_READY` completeness gate, not a physical-send behavioral defect.
+
+Reconstruction 0004 and validation 0004 cite audit 0006 because they were recorded before audit 0007. Audit 0007 subsequently cites global 0008. This is coherent point-in-time ancestry, not a contradiction.
+
+### Pipeline state published
+
+Global work state revision 0009 records:
+
+- `AUDIT`: none; seeded semantic audit complete;
+- `RECONSTRUCTION_READY`: A002-A006, queued behind active A001 where dependencies require;
+- `RECONSTRUCTING`: A001, framing + serialized physical send present, receive/dispatch/logical-RFB/quiescence/bridge/build/test incomplete;
+- `VALIDATION_READY`: none;
+- `PASS`: V002 plus provisional static A001 framing/send checks only;
+- `BLOCKED`: no completed tranche blocked at governance level; A001 promotion is prevented by incomplete implementation/evidence and V004 dictionary/portal completeness;
+- `HARDWARE_PENDING`: none because no reconstructed tranche has completed machine validation with an exact DUT/PT_LOAD identity.
+
+### Continuity / architecture checks
+
+- A001-A006 readiness has explicit audit dispositions and A007 closes residual completeness: PASS;
+- reconstruction consumes only ready A001: PASS;
+- one physical PSTV owner and descriptor privacy preserved: PASS;
+- validation findings V001-V004 represented without promotion or suppression: PASS;
+- receiver-dispatch quiescence, false-EOF prohibition, input dormancy/fail-closed reuse, and no-success-by-timeout cautions remain explicit: PASS;
+- historical CP2O clock-arm semantics are not misread over current A003/A004 first-presentation authority: PASS;
+- no machine/static result is promoted to physical PS2 qualification: PASS.
+
+### Continuity gap recorded
+
+`LEDGE_WORK_LOG.md` was still revision 0006 even though global state had advanced through revisions 0007 and 0008. Those state snapshots remain valid point-in-time repository authority, but their governance events were not appended to this chronological log. This entry records that omission explicitly. It does not invent retroactive L007/L008 timestamps or rewrite earlier entries.
+
+### Limitations and blockers
+
+The repository connector exposes committed GitHub authority but not an external Pi worktree's `git status`, staged/unstaged/untracked files, or local executable environment. No external-worktree-clean claim is made. Local `scripts/resume-state.sh`, `scripts/check.sh`, PS2DEV-dependent builds/tests and physical PS2 checks were not claimed from this surface.
+
+A001 remains incomplete. V004 must be resolved before `VALIDATION_READY`. Audit has no seeded backlog.
+
+### Exact next safe actions
+
+Audit remains idle unless new evidence exposes an unexplained H1 responsibility. Reconstruction implements sole receive/inbound sequence/logical RFB dispatch next, then logical-RFB accounting/fragmentation, explicit dispatch quiescence, bridge/topology/build/test integration, V004 dictionary/portal repair, canonical checks and exact ELF/PT_LOAD evidence before handoff. Validation preserves V003/V004, reviews only new increments until coherent handoff, then independently performs the complete machine-validation suite and classifies physical PS2 qualification separately. Continuity next reconciles reconstruction after 0004 and validation after 0004, with audit 0007 remaining current unless narrowly reopened by evidence.
