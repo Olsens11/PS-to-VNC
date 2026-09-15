@@ -139,3 +139,63 @@ Findings opened/closed:
 Exact next pickup:
 
 Inspect only newly reconstructed A001 increments while the tranche remains in progress. When reconstruction marks A001 `VALIDATION_READY`, execute the full A001 static/host/build/reproducibility obligation set, then keep physical PS2 qualification explicitly separate as `HARDWARE_PENDING` until operator/hardware evidence exists.
+
+## VL004 — 2026-09-15T17:00:39-04:00 — interactive review of A001 physical-send increment
+
+STARTED_AT=2026-09-15T16:53:58-04:00
+COMPLETED_AT=2026-09-15T17:00:39-04:00
+ELAPSED_SHIFT_DURATION=00:06:41
+WORKER=INTERACTIVE_VALIDATION_SHIFT
+STARTING_BRANCH_AUTHORITY=c30b3795bf059d024ad2bc76e663fee05ea61165
+STARTING_VALIDATION_STATE_REVISION=0003
+REVIEWED_RECONSTRUCTION_STATE_REVISION=0004
+STARTING_GLOBAL_STATE_REVISION=0008
+STARTING_AUDIT_STATE_REVISION=0006
+
+Evidence inspected:
+
+- `AGENTS.md`, `CONTRIBUTING.md`, `docs/CLEAN_ARCHITECTURE.md`, `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md`, and `docs/ledge/LEDGE_RECONSTRUCTION_CONTRACT.md`;
+- A001 semantic audit authority and current reconstruction/validation/global lane states;
+- `src/transport/physical_stream.h`, `src/transport/physical_stream.c`, `protocol.h/.c`, `transport.h`, and `src/transport/SYMBOLS.md`;
+- `docs/development/source-naming-and-symbols.md`, `docs/development/source-topology.md`, generated `docs/reference/SOURCE_SYMBOL_DICTIONARIES.md`, and complete `src/rfb/SYMBOLS.md` as the current dictionary-policy exemplar;
+- forensic H1 `h1_transport_runtime.c` serialized-send path at `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`;
+- repository CI/status surface for reviewed branch authority, which exposed no status checks.
+
+Work performed:
+
+- kept validation lane separation despite the live assistant having authored the preceding interactive reconstruction increment: no reconstructed product source was repaired or changed during validation;
+- compared the clean physical-stream send unit against the proven H1 send ordering and the ledge architecture overlay;
+- verified the physical socket remains transport-owned and transport-internal, with no RFB/media/application policy leakage;
+- verified one semaphore covers the complete frame transaction, exact-send loops handle partial socket writes, and outbound sequence advances only after header and payload have both completed;
+- verified the historical receiver-dispatch quiescence defect remains explicitly unresolved rather than being silently claimed fixed;
+- identified a concrete clean-source completeness discrepancy: `src/transport/SYMBOLS.md` is not yet definition-complete and the generated dictionary portal omits the new transport domain;
+- opened V004 rather than altering reconstruction-owned source/documentation;
+- advanced validation state to revision 0004 while preserving V003's coherent-tranche wait.
+
+Checks/results:
+
+- physical-stream ownership/dependency boundary: PROVISIONAL PASS by static inspection;
+- H1 serialized-send ordering parity for implemented behavior: PROVISIONAL PASS by source comparison;
+- descriptor privacy: PASS by static inspection;
+- known-defect accounting: PASS;
+- send-failure convergence/repeated-session lifecycle: NOT_YET_PROVEN because higher transport runtime is incomplete;
+- sole receiver/inbound sequence/logical dispatch: NOT_YET_IMPLEMENTED;
+- transport symbol-dictionary completeness and generated portal: OPEN V004;
+- host compile/tests, canonical checks, clean build and PT_LOAD identity: no PASS evidence supplied; remain pending/inapplicable until coherent integration;
+- hardware qualification: not performed and not claimed.
+
+Findings opened/closed:
+
+- opened V004 `INFO/OPEN`, disposition `REQUIRED_BEFORE_VALIDATION_READY`;
+- V003 remains `INFO/OPEN` / `WAIT_FOR_COHERENT_TRANCHE`;
+- V001 remains resolved and V002 remains PASS;
+- no product-behavior defect was opened against `physical_stream.*` in this partial static review.
+
+Validation-owned commits produced before this log write:
+
+- `ec633cf7c262ccac64bf77acd2a1ed23f09012f3` — findings revision 0003 / V004;
+- `5748993be9b66cb408b6b7e2b8d974a8ade5c8bb` — validation state revision 0004.
+
+Exact next pickup:
+
+On the next validation shift, re-read current branch/reconstruction/audit authority first. Inspect the next A001 runtime increment—expected sole receive, inbound sequence validation, and logical RFB dispatch/storage—without manufacturing a full tranche PASS. Require V004 dictionary/portal/topology resolution before accepting `VALIDATION_READY`; then execute the complete A001 host/build/reproducibility/PT_LOAD obligation set and keep physical PS2 qualification separately hardware-gated.
