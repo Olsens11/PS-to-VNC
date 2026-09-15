@@ -1,8 +1,8 @@
 # Ledge Semantic Audit — Append-only Lane Log
 
 DOCUMENT=LEDGE_AUDIT_LOG
-DOCUMENT_REVISION=0005
-RECORDED_AT=2026-09-15T14:18:00-04:00
+DOCUMENT_REVISION=0006
+RECORDED_AT=2026-09-15T15:00:35-04:00
 SOURCE_COMMIT=SELF
 TEMPORAL_CLASS=WORK_EVENT_LOG
 TEMPORAL_SEMANTICS=EACH_ENTRY_TRUE_AS_KNOWN_AT_ITS_COMPLETION_TIME
@@ -17,35 +17,19 @@ FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
 TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_AUDIT_KNOWLEDGE_AT_COMPLETION_TIME
 
 ### Objective
-
 Advance exact dependency closure and classify one coherent H1 behavioral process without modifying reconstructed product source.
 
 ### Evidence inspected
-
 `AGENTS.md`, `CONTRIBUTING.md`, `docs/CLEAN_ARCHITECTURE.md`, ledge contract/state/audit/simplification/log documents, H1 integration intent, H1 base/cumulative/CP2O/CP2P build files, `h1_config.h`, transport runtime header, logical RFB channel/resource/credit/live/mux-I/O/session headers, and the latest forensic RFB shutdown-fence commit.
 
 ### Findings and decisions
-
-The all-guns build is a recursive composition rather than a standalone H1-directory Makefile. The one-physical-PSTV-stream invariant is explicit in both build/source authority and H1 integration intent. Logical RFB queue/credit/fragmentation and exact-byte-stream semantics are required behavior. The build-time preprocessor I/O rename/global-bind technique is experiment scaffolding suitable for replacement by an explicit RFB byte-stream boundary. The latest counter+DelayThread shutdown fence protects a real dispatch-ownership invariant, but its diagnostic-counter/sleep implementation should be rewritten as explicit synchronization rather than copied.
-
-A001 was marked reconstruction-ready at responsibility granularity with clean ownership, bridge process, defect treatment, and validation obligations. Diagnostic witness fields/counters remain under audit and are not implicitly promoted into product state.
+The all-guns build is recursive composition. A001 classified one physical PSTV stream, logical RFB, exact-byte-stream behavior and receiver-dispatch quiescence. Symbol-renaming/global-bind is scaffolding; the dispatch fence invariant survives while counter/sleep evidence may be rewritten.
 
 ### Repository changes
-
-- semantic audit revision `0002`;
-- simplification register revision `0002`;
-- audit lane state revision `0001`;
-- this audit lane log revision `0001`.
-
-No product source, H1 forensic source, validation findings, or reconstruction-lane state was modified.
-
-### Validation performed
-
-Repository/API inspection verified the exact source/build declarations and forensic commit identities used by this classification. No executable build or hardware test was claimed in this audit-only shift.
+Semantic audit rev 0002; simplification rev 0002; audit state rev 0001; log rev 0001. No product/H1/validation/reconstruction state modified.
 
 ### Exact next pickup
-
-Trace CONFIG/profile + PCM/audio + media clock. Classify the 61-field laboratory CONFIG vocabulary and finite PCM producer/audio lifecycle before marking that process reconstruction-ready.
+CONFIG/profile + PCM/audio + media clock.
 
 ## Audit Entry A002
 
@@ -59,40 +43,19 @@ FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
 TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_AUDIT_KNOWLEDGE_AT_COMPLETION_TIME
 
 ### Objective
-
-Classify CONFIG/profile + PCM/AUDSRV audio + shared media-clock behavior as one coherent process tranche, including all 61 H1 CONFIG field IDs, without changing reconstructed product source.
+Classify CONFIG/profile + PCM/AUDSRV + shared media clock, including all 61 H1 CONFIG fields.
 
 ### Evidence inspected
-
-Current branch/global/audit authority; `h1_config.{c,h}`; `h1_audio_runtime.{c,h}`; `h1_media_clock.{c,h}`; `H1_INTEGRATION_INTENT.md`; prior semantic audit and simplification register; forensic H1 source commit.
+Current authority; `h1_config.{c,h}`; `h1_audio_runtime.{c,h}`; `h1_media_clock.{c,h}`; H1 integration intent; prior audit/register.
 
 ### Findings and decisions
-
-A002 establishes that H1's complete dynamic 61-field CONFIG is laboratory exploration machinery around a smaller set of real product/profile semantics. All 61 IDs are now classified. Production should use narrow owner-specific immutable profile values and selected qualified defaults rather than expose the entire H1 sweep vocabulary as a mandatory per-session API.
-
-PCM playback semantics are reconstruction-ready: transport-owned AUDIO bytes, preserved AUDSRV wait->play ordering, finite MEDIA_END+empty retirement, resident-ELF AUDSRV service lifetime, session-scoped worker/buffer lifecycle, and reservoir-before-epoch startup ordering. The common media epoch/deadline contract is also ready, while its exact video arm callsite remains deferred to MPEG/presentation audit. Publication ordering is essential; H1's volatile/EE_SYNCL representation is not sacred.
-
-`VIDEO_STAGE_MARKERS` and `VIDEO_STAGE_HOLD_VSYNCS` are diagnostic-only. `VIDEO_IPU_RESET_EACH_SESSION` remains deliberately unresolved pending decoder lifecycle audit. Reserved compressed-audio enum values are not current product behavior.
+All 61 CONFIG IDs classified. Production uses narrow qualified profile semantics, not the laboratory surface. PCM wait/play, finite MEDIA_END+empty retirement, resident AUDSRV service, session worker/buffer lifecycle and shared clock contract are ready. Stage controls diagnostic-only; IPU reset deferred to A003.
 
 ### Repository changes
-
-- created `LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md` revision `0001` with detailed evidence, field classification, responsibility dispositions and validation obligations;
-- advanced audit lane state to revision `0002`;
-- advanced this append-only lane log to revision `0002`.
-
-No reconstructed product source, forensic H1 source, reconstruction state, validation finding, or global state was modified.
-
-### Validation performed
-
-Repository-source inspection verified the CONFIG field vocabulary, decoder/validator structure, PCM consumer ordering/lifecycle, and media-clock publication/deadline mechanism. No executable build, PT_LOAD comparison, or hardware test was performed or claimed.
-
-### Progress
-
-Two coherent tranches are now classified. A002 contributes six reconstruction-ready responsibility rows; 61/61 CONFIG IDs have a production-disposition classification. Five seeded major process families remain, and whole-build recursive file/symbol completeness proof remains incomplete.
+Created A002 detailed audit; audit state/log rev 0002. No product/reconstruction/validation/global state modified.
 
 ### Exact next pickup
-
-Audit MPEG ingest/decode plus CP2P generation/start/retire as A003. Resolve the IPU reset field, MPEG/video tuning fields, finite producer lifecycle, and the exact qualified video presentation boundary that arms the already-ready shared media clock before broadening into calibration/compositor behavior.
+MPEG ingest/decode + generation START/retire.
 
 ## Audit Entry A003
 
@@ -106,46 +69,19 @@ FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
 TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_AUDIT_KNOWLEDGE_AT_COMPLETION_TIME
 
 ### Objective
-
-Classify MPEG ingest/decode and CP2P exact-generation START/retire lifecycle as one coherent behavioral process without modifying reconstructed product source.
+Classify MPEG ingest/decode and exact-generation START/retire lifecycle.
 
 ### Evidence inspected
-
-Current branch/global/audit authority; `h1_video_runtime.c`; `h1_config.h`; CP2P START validation, live-generation boundary, all-guns activation, MPEG event-wake hardware result, safe-stop lifecycle, H1 integration intent, A002 clock/profile audit, semantic ledger and simplification register.
+Current authority; `h1_video_runtime.c`; `h1_config.h`; CP2P START/live-generation/all-guns/event-wake/safe-stop evidence; integration intent; A002.
 
 ### Findings and decisions
-
-A003 marks the transport-to-MPEG event-wake consumer, decoder acquisition/feed/release lifecycle, exact START/prepared generation, exact-generation emission fence, safe decoder stop boundary, retirement/final residual discard/credit return, and narrow first-presentation media-clock arm contract reconstruction-ready.
-
-The known false-EOF stop defect is explicitly preserved as a defect to prevent: owner stop must be observed after `MPEG_Picture()` returns, never by making the active libmpeg data callback synthesize EOF. The 600-second event-wake proof and later safe-stop proof remain separate temporal evidence and are not flattened into a repeated-session hardware claim.
-
-Field 44 is resolved: discard `VIDEO_IPU_RESET_EACH_SESSION` as a product toggle, but preserve the known-state IPU/DMAC preparation it guarded as decoder-acquisition lifecycle. MPEG timer-backed empty-queue polling is likewise not promoted to production; the qualified receiver-driven event wake is the semantic direction.
-
-The common media epoch is now tied to the first real video presentation boundary. Presentation/calibration owns the concrete compositor callsite in A004; CONFIG, START, prefill and decode start do not arm the clock.
+Transport-to-MPEG event wake, decoder acquisition/feed/release, exact START/prepared generation, emission fence, safe stop, retirement/residual credit and first-presentation clock-arm contract ready. False-EOF stop defect explicitly prohibited. IPU reset toggle discarded while known-state acquisition survives.
 
 ### Repository changes
-
-- created `LEDGE_AUDIT_A003_MPEG_GENERATION.md` revision `0001` with detailed required behavior, field dispositions, ownership, defect treatment and validation obligations;
-- advanced audit lane state to revision `0003`;
-- advanced this append-only lane log to revision `0003`.
-
-No reconstructed product source, forensic H1 source, reconstruction state, validation finding, or global state was modified.
-
-### Validation performed
-
-Repository-source and durable hardware-result inspection verified the source-level decoder/feed/presentation boundary, exact-generation ordered-fence contract, event-wake qualification boundary and safe-stop lifecycle evidence. No reconstructed build, PT_LOAD comparison, or new hardware test was performed or claimed.
-
-### Progress
-
-Three coherent tranches are now classified. A003 contributes seven reconstruction-ready responsibility groups plus one narrow ready media-clock arm contract. Four seeded major process families remain; whole-build recursive file/symbol completeness proof remains incomplete.
-
-### Unresolved questions
-
-Final scheduler/drop policy, draw/capture/suppression geometry ownership, calibration acceptance, RFB matte/suppression alignment, presentation ownership transitions, cursor/OSK layering, interaction and top-level shutdown remain unaudited.
+Created A003 detailed audit; audit state/log rev 0003. No product/reconstruction/validation/global state modified.
 
 ### Exact next pickup
-
-Audit presentation/compositor/calibration as A004. Trace calibration acceptance, draw/capture/suppression geometry, RFB suppression/matte alignment, `RFB_ONLY`/MPEG ownership transitions, cursor/OSK/local-UI layering and scheduler/drop policy. Preserve the A003 first-presentation epoch-arm contract and do not broaden into general interaction except where calibration UI input is necessary.
+Presentation/compositor/calibration.
 
 ## Audit Entry A004
 
@@ -158,49 +94,19 @@ FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
 TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_AUDIT_KNOWLEDGE_AT_COMPLETION_TIME
 
 ### Objective
-
-Classify presentation/compositor/calibration as one coherent behavioral process, including the concrete A003 first-presentation clock-arm boundary and final disposition of the deferred presentation geometry/scheduler/drop fields, without modifying reconstructed product source.
+Classify presentation/compositor/calibration and concrete first-presentation clock-arm boundary.
 
 ### Evidence inspected
-
-Current branch/global/audit authority; `AGENTS.md`; `CONTRIBUTING.md`; `docs/CLEAN_ARCHITECTURE.md`; ledge reconstruction contract; `h1_video_runtime.c`; the durable `CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md`; A003 audit; and the simplification register. Historical entries were interpreted with point-in-time semantics and later qualified/current-path entries were not projected backward into earlier checkpoints.
+Current authority; governance docs; `h1_video_runtime.c`; CP2P MPEG calibration experiment history; A003; simplification register.
 
 ### Findings and decisions
-
-A004 marks calibration foreground/acceptance, base/inner/outer geometry authority, RFB freeze/request scheduling, accept-to-first-frame protection, first physical MPEG ownership/common-clock arm, one shared compositor/GS owner, exact-generation RFB suppression, ordered restoration, and qualified absolute scheduler/drop policy reconstruction-ready.
-
-The geometry authorities are explicit: base is capture plus MPEG presentation; inner matte is PS2-local presentation only; outer matte determines the RFB suppression footprint without changing capture. Accepted generation geometry replaces independent live draw/encode CONFIG authorities.
-
-Acceptance is not presentation ownership. MPEG ownership and the shared media epoch begin only at the first valid physically presented MPEG frame. RFB remains protected in the gap. Exact Pi retirement must prove generation suppression/capture is gone before local retirement allows the one fresh FULL RFB restoration request.
-
-The recovered cumulative39 compositor is evidence for one graphics owner, not two modules. Its source-inclusion/private-renaming technique is reconstruction scaffolding. The clean presentation component should directly own the combined remote-desktop/matte/MPEG/local-overlay composition through one physical synchronization/flip path.
-
-Scheduler comparison modes, stage holds and dynamic draw/encode knobs are experimental surface. The qualified absolute common-clock scheduler, presentation offset, narrow lateness/drop semantics and exact generation geometry survive as profile/owned state.
+Calibration acceptance/geometry, RFB freeze/request policy, first physical MPEG ownership/clock arm, one GS owner, exact-generation suppression/restoration and qualified absolute scheduler ready. Acceptance is not presentation ownership. Cumulative39 wrapper mechanics are scaffolding.
 
 ### Repository changes
-
-- created `LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` revision `0001`;
-- advanced simplification register to revision `0003` with S005-S008;
-- advanced audit lane state to revision `0004`;
-- advanced this append-only lane log to revision `0004`.
-
-No reconstructed product source, forensic H1 source, reconstruction state, validation finding, or global state was modified.
-
-### Validation performed
-
-Repository/source/history inspection established the ownership and process contracts above. No executable build, PT_LOAD comparison, reconstructed host test, or new hardware test was performed or claimed. The repository connector cannot inspect an external Pi worktree's uncommitted status, so no external-worktree-clean claim is made.
-
-### Progress
-
-Four coherent tranches are now classified. A004 contributes nine reconstruction-ready responsibility groups plus one diagnostic-only group. All 61 CONFIG fields remain classified, including the presentation-deferred fields resolved here. Three seeded major process families remain, and exhaustive recursive file/symbol completeness proof remains incomplete.
-
-### Unresolved questions
-
-General interaction composition, top-level all-guns orchestration/shutdown/recovery, residual diagnostics, and exhaustive recursive dependency/source/symbol closure remain unaudited. Historical H1 hardware evidence remains forensic evidence only and does not qualify reconstructed presentation code.
+Created A004; simplification rev 0003 S005-S008; audit state/log rev 0004. No product/reconstruction/validation/global state modified.
 
 ### Exact next pickup
-
-Audit A005 interaction/input composition: physical controller acquisition versus semantic ownership, pointer/button/scroll routing, OSK/local-UI foreground transitions, keyboard tap/modifier serialization, calibration entry/exit handoff, release quarantine, and RFB safe-boundary interaction servicing. Do not reopen A004 geometry/presentation policy except where an interaction transition consumes its already-classified foreground/ownership contract.
+A005 interaction/input composition.
 
 ## Audit Entry A005
 
@@ -214,43 +120,72 @@ FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
 TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_AUDIT_KNOWLEDGE_AT_COMPLETION_TIME
 
 ### Objective
-
-Classify the proven H1 interaction/input composition as one coherent process: physical controller acquisition versus semantic ownership, pointer/button/wheel publication, keyboard/OSK semantics, local foreground transitions, calibration handoff, release quarantine, safe-boundary RFB servicing and input-worker shutdown.
+Classify controller/input, pointer/wheel, keyboard/OSK, local foreground, calibration handoff, quarantine, RFB safe-boundary service and input shutdown.
 
 ### Evidence inspected
+Current authority; governance docs; H1 integration intent; CP2O main; interaction coordinator; RFB session runtime; calibration binding; clean app/input/keyboard/UI/OSK; CP2P workflow.
 
-Current branch/global/audit authority; `AGENTS.md`; `CONTRIBUTING.md`; `docs/CLEAN_ARCHITECTURE.md`; ledge reconstruction contract; `H1_INTEGRATION_INTENT.md`; `h1_main_rfb_visible_interaction_pcm.c`; `h1_interaction_coordinator.{c,h}`; `h1_rfb_session_runtime.h`; calibration interaction binding; clean `src/app.c`, `src/input/input_runtime.h`, `src/input/keyboard.h`, `src/ui/local_controller.h`, `src/ui/local_ui.h`, `src/ui/osk.h`; and the CP2P application-link workflow.
+### Findings and decisions
+A005 ready. H1 reused real clean owners; experiment coordinator is scaffolding. Preserve published-pointer authority, balanced key serialization, suspend-neutralize-rebase-release-resume, physical-release quarantine, calibration first refusal, safe RFB service and fail-closed input shutdown. Discard transient CP2M keyboard gesture and temporary START+SELECT calibration trigger only. Preserve historical OSK unequal-row mapping during migration.
+
+### Repository changes
+Created A005; audit state/log rev 0005. No product/reconstruction/validation/global state modified.
+
+### Exact next pickup
+A006 top-level orchestration/shutdown/recovery.
+
+## Audit Entry A006
+
+STARTED_AT=2026-09-15T15:00:35-04:00
+COMPLETED_AT=2026-09-15T15:00:35-04:00
+STARTING_GLOBAL_STATE_REVISION=0006
+STARTING_AUDIT_STATE_REVISION=0005
+ENDING_AUDIT_STATE_REVISION=0006
+FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
+TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_AUDIT_KNOWLEDGE_AT_COMPLETION_TIME
+
+### Objective
+
+Classify resident boot/session admission, CONFIG-to-domain activation, steady-state cross-domain coordination, finite shutdown, failure convergence, terminal END/RESULT semantics and repeated-session recovery as one coherent behavioral process.
+
+### Exact evidence inspected
+
+`AGENTS.md`; `CONTRIBUTING.md`; `docs/CLEAN_ARCHITECTURE.md`; `docs/ledge/LEDGE_RECONSTRUCTION_CONTRACT.md`; global work state revision 0006; audit state revision 0005; this log revision 0005; `docs/ledge/LEDGE_SEMANTIC_AUDIT.md` revision 0003; `docs/ledge/LEDGE_SIMPLIFICATION_REGISTER.md` revision 0003; A001-A005 detailed audits; forensic `experiments/media-harness-h1/H1_INTEGRATION_INTENT.md`; `experiments/media-harness-h1/h1_main_rfb_visible_interaction_pcm.c`; `experiments/media-harness-h1/h1_rfb_session_runtime.h`; `.github/workflows/h1-cp2p-application-link.yml`; branch authority for `ledge/h1-all-guns`; forensic H1 commit `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`.
+
+### Items classified
+
+Ten A006 responsibility groups are reconstruction-ready: resident boot prerequisites; session admission/retry; CONFIG/profile admission; dependency-owned component startup; steady-state coordination; RFB finite quiescence; PCM/MPEG finite retirement; terminal RESULT/accounting; reverse-dependency teardown; repeated-session re-admission. Checkpoint banners/counters/return codes are diagnostic-only and remain part of A007 residual closure.
 
 ### Findings and decisions
 
-A005 is `RECONSTRUCTION_READY`. H1 did not prove a new interaction architecture: it deliberately reused the real through-Issue-39 input/mouse/keyboard/OSK/UI modules and added an experiment-local coordinator because H1 owned the mux transport and finite-session lifecycle. Reconstruction should therefore retain those existing domain owners and collapse only the duplicated cross-domain orchestration into process-organized application/component bridge sections.
+The durable product behavior is a resident application lifecycle over independently owned components, not a literal checkpoint runner. Transport/config precede optional consumers; failure converges monotonically to shutdown; owners prove dormancy/retirement before storage reuse; transport stays alive through required terminal protocol and retirement; RESULT-send success cannot erase an earlier local failure; and generic timeouts must not turn unexplained silence into successful recovery.
 
-Required semantics include: main-thread-only RFB interaction publication; successfully-published pointer state as rebase authority; wheel as a momentary RFB pulse preserving held ordinary buttons; deterministic balanced keyboard modifier sequencing; OSK printable Shift-layer versus real modifier distinction; mouse suspension before local foreground; remote held-click neutralization at frozen published coordinates; rebase before foreground; continued physical polling during ordinary local foreground; physical-release rather than timer completion of quarantine; no desktop mouse resume until the disappearing overlay generation has actually presented; calibration first refusal once it owns foreground; safe complete-message RFB service boundaries; and fail-closed cooperative input-worker shutdown.
+Temporal reconciliation is explicit: CP2O's immediate media-clock arm belongs to its pre-MPEG checkpoint. It does not override A003/A004, where first valid physical MPEG presentation is the all-guns clock-arm boundary.
 
-The CP2M L1+D-pad keyboard gesture is explicitly discarded as a rejected transient experiment path. The START+SELECT 750 ms calibration chord is likewise classified as a temporary hardware-test trigger, not product binding; the trigger-agnostic calibration foreground/quarantine lifecycle survives.
-
-The historical OSK proportional vertical mapping remains a known deferred imperfection: unequal-row transitions are not perfectly reversible. Structural reconstruction must preserve it unless a separate behavior-change disposition later authorizes correction. Input shutdown must also remain fail-closed when worker dormancy cannot be proven.
+S009 records the accepted simplification from checkpoint runner mechanics to explicit application lifecycle state/events and process-organized bridges while retaining repeated finite sessions and fail-closed ownership semantics.
 
 ### Repository changes
 
-- created `LEDGE_AUDIT_A005_INTERACTION_INPUT.md` revision `0001`;
-- advanced audit lane state to revision `0005`;
-- advanced this append-only lane log to revision `0005`.
+- created `LEDGE_AUDIT_A006_ORCHESTRATION_SHUTDOWN.md` revision 0001;
+- advanced semantic ledger to revision 0004;
+- advanced simplification register to revision 0004 with S009;
+- advanced audit state to revision 0006;
+- advanced this append-only log to revision 0006.
 
-No reconstructed product source, forensic H1 source, reconstruction state, validation finding, global state, or audit history entry was rewritten.
+No reconstructed product source, reconstruction-lane state, validation finding or global work state was modified.
 
-### Validation performed
+### Validation / authority checks
 
-Repository/source inspection established the clean owner boundaries, H1 reuse relationship, safe RFB service seam, transition ordering and known-defect treatment. Branch authority was `55dec26d05a46feb1ffe570cd8955c0cd749fc8f` at start and identical on recheck immediately before audit writes. No executable build, PT_LOAD comparison, reconstructed host test or new hardware test was performed or claimed. The repository connector cannot inspect an external Pi worktree's uncommitted status, so no external-worktree-clean claim is made.
+Repository-visible branch authority remained a fast-forward descendant of the global revision 0006 authority throughout the sequential audit-only writes. No physical/hardware qualification, executable build or PT_LOAD claim is made. The connector cannot inspect an external Pi worktree's uncommitted status; unknown external dirty work is therefore neither overwritten nor declared absent.
 
-### Progress
+### Progress counts
 
-Five coherent tranches are now classified. A005 contributes ten reconstruction-ready behavioral responsibility groups plus diagnostic-only interaction counters and two discarded experiment-only trigger bindings. All 61 CONFIG fields remain classified. Two seeded major process families remain: top-level orchestration/shutdown/recovery and residual diagnostics/completeness closure. Exhaustive recursive build/source/symbol closure remains incomplete.
+Six coherent process tranches are now fully classified. A006 contributes 10 reconstruction-ready responsibility groups. CONFIG remains 61/61 classified. Simplification register contains 9 entries. One seeded major family remains: A007 residual diagnostics/completeness closure. Recursive all-guns dependency route is known, but exhaustive project-defined file/object/symbol proof remains incomplete.
 
 ### Unresolved questions
 
-Top-level all-guns startup, CONFIG-to-domain activation order, finite transport/media/input shutdown, failure convergence, repeated-session semantics, residual diagnostic witnesses, and exhaustive recursive dependency/source/symbol completeness remain unaudited. Historical H1 interaction evidence does not qualify reconstructed A005 code.
+Residual diagnostics/stats/stage/qualification-only surfaces still require explicit disposition. Exhaustive recursive all-guns source/object/symbol closure must prove that no project-defined responsibility lies outside A001-A006 or an explicit diagnostic/development/discard disposition. Historical repeated-session evidence remains checkpoint-specific and is not reconstructed qualification.
 
 ### Exact next pickup
 
-Audit A006 top-level all-guns orchestration, finite shutdown and recovery. Trace boot/session-loop ordering, CONFIG admission, transport/RFB/audio/MPEG startup dependencies, steady-state coordination, generation retirement, END/RESULT accounting, input/media shutdown ordering, failure convergence, repeated-session behavior, and resident-loop/test-control scaffolding. Preserve the current no-generic-timeout policy for unexplained silent waits unless contrary proven authority is found.
+A007: enumerate the recursive all-guns project-defined source/object/symbol closure; classify remaining diagnostics/stats/stage witnesses and qualification-only surfaces; reconcile every residual responsibility to A001-A006 or explicit diagnostic/development/discard ownership; run applicable canonical docs/dependency checks; stop rather than declare semantic-audit completion if any unexplained project-defined owner/process/symbol remains.
