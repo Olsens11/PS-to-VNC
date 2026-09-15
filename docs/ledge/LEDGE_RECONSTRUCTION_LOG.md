@@ -102,3 +102,50 @@ STARTING_VALIDATION_STATE_REVISION=0002
 Shift intent: continue only A001 from the shared reconstruction authority. Inspect the proven H1 physical mux, sole receiver, logical-RFB queue/credit/fragmentation, serialized-send and quiescence mechanisms and reconstruct the smallest coherent transport-owned body. Unknown external Pi-local dirty state remains outside this GitHub-native worker's mutation surface and is neither overwritten nor declared absent.
 
 Status at start: IN_PROGRESS; completion details will be appended in a later reconstruction log event after repository authority is rechecked.
+
+## R004 — 2026-09-15T16:13:55-04:00 — Reconstruction Shift B completes framing subtranche
+
+COMPLETED_AT=2026-09-15T16:13:55-04:00
+ELAPSED_SHIFT_DURATION=00:04:05
+WORKER=RECONSTRUCTION_SHIFT_B
+ENDING_RECONSTRUCTION_STATE_REVISION=0003
+ENDING_BRANCH_AUTHORITY_BEFORE_LOG_WRITE=9da9ba1ac499a47300dd041f93c834d38fe269a7
+SELF_PAUSED=NO
+
+Work completed:
+
+- inspected A001 semantic authority and the proven H1 `h1_transport_runtime.*` plus portable `transport_protocol.*` framing implementation;
+- reconstructed `src/transport/protocol.h` and `src/transport/protocol.c` as a transport-owned, backend-independent PSTV v1 framing layer;
+- preserved magic/version, fixed 16-byte header, 8192-byte payload ceiling, direction-local sequence field representation, stable channel identities and big-endian wire encoding;
+- kept socket, dispatch, queue, RFB, media and threading policy out of the framing layer;
+- updated `src/transport/SYMBOLS.md` for the new clean-generation symbols;
+- advanced shared reconstruction state to revision `0003`.
+
+Commits/files:
+
+- `4d92cac4860259ed6956858eaedd16ac3e60dc09` — `docs/ledge/LEDGE_RECONSTRUCTION_LOG.md` STARTED_AT event;
+- `259be4a074bd6c84f9822f0ad06551b991055011` — `src/transport/protocol.h`;
+- `5aaf4b07702c4f85ae5cfc66e9d144889fc215fc` — `src/transport/protocol.c`;
+- `cf4f10a45ca33300314f5a177142473e2eef3721` — `src/transport/SYMBOLS.md`;
+- `9da9ba1ac499a47300dd041f93c834d38fe269a7` — `docs/ledge/LEDGE_RECONSTRUCTION_STATE.md` revision 0003.
+
+Checks/evidence:
+
+- repository authority and reconstruction state were re-read before every GitHub write: PASS;
+- no competing reconstruction advancement or overlapping committed tranche appeared during this shift: PASS;
+- semantic comparison against A001 and proven portable H1 framing source: PASS by source inspection;
+- build/compile/host execution: PENDING_LOCAL because this GitHub-native worker has no repository execution/toolchain surface;
+- canonical `scripts/check.sh`, strict source-dictionary/topology gates, clean-product build and exact ELF/PT_LOAD identity: PENDING_LOCAL;
+- PS2 hardware qualification: not yet eligible; A001 is not machine-validation complete and no hardware PASS is claimed.
+
+Behavioral parity / known defects:
+
+No known defect was silently fixed. Diagnostic stages/counters and H1's bounded-delay/counter shutdown mechanism were not copied into framing because they are not framing semantics. The receiver-dispatch race-prevention invariant remains an explicit obligation for the upcoming runtime/quiescence body.
+
+Work remaining:
+
+A001 remains IN_PROGRESS and not VALIDATION_READY. Physical socket/session ownership, serialized framed send, sole receiver, sequence-state enforcement, logical RFB queue/activity/credit/residual behavior, outbound fragmentation, explicit dispatch/quiescence state, RFB bridge adaptation, topology/build integration, host tests, canonical checks, exact build/PT_LOAD identity and later hardware qualification remain incomplete.
+
+Exact next pickup:
+
+Build on `src/transport/protocol.*` and `transport.h`: implement the smallest transport runtime body that adopts one physical socket and owns serialized framed sends, then add the sole receive/sequence-validation path and logical RFB dispatch. Keep the physical descriptor private to transport, preserve explicit dispatch quiescence before resource reclamation, and do not start A002 transport-facing media work until this A001 foundation is coherent.
