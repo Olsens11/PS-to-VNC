@@ -9,7 +9,7 @@ SUPERSEDES_STATE_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-`SOURCE_COMMIT=SELF` means this snapshot is authoritative as committed in the Git commit containing this file; use `git rev-parse HEAD`/repository branch authority rather than embedding a self-referential commit hash that would necessarily change the commit being named.
+`SOURCE_COMMIT=SELF` means this snapshot is authoritative as committed in the Git commit containing this file; use repository branch/commit authority rather than embedding a self-referential commit hash that would necessarily change the commit being named.
 
 This file is a point-in-time statement. Its claims describe reconstruction state known at `RECORDED_AT`; historical revisions are not present-state authority. Later valid revisions supersede conflicting state while preserving earlier revisions as historical evidence.
 
