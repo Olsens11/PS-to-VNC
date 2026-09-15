@@ -1,14 +1,14 @@
 # Ledge Simplification Register
 
 DOCUMENT=LEDGE_SIMPLIFICATION_REGISTER
-DOCUMENT_REVISION=0004
-RECORDED_AT=2026-09-15T15:00:35-04:00
+DOCUMENT_REVISION=0005
+RECORDED_AT=2026-09-15T17:27:46-04:00
 SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
-BASED_ON_DOCUMENT_REVISION=0003
+BASED_ON_DOCUMENT_REVISION=0004
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=REGISTER_TRUE_AS_KNOWN_AT_RECORDED_TIME
 
-A simplification is not permission to remove behavior. Each accepted entry identifies the historical mechanism, essential semantics, proposed clean mechanism, why the reduction is legitimate, and validation needed. Detailed rationale for S001-S008 remains as recorded in revision 0003 and their status is unchanged.
+A simplification is not permission to remove behavior. Each accepted entry identifies the historical mechanism, essential semantics, proposed clean mechanism, why the reduction is legitimate, and validation needed. Detailed rationale for S001-S009 remains authoritative as recorded in their originating revisions.
 
 ## S001 — RFB commit-dispatch shutdown fence
 STATUS=SEMANTIC_ACCEPTED_IMPLEMENTATION_REWRITE
@@ -55,3 +55,17 @@ Clean mechanism: application-owned lifecycle state/process sections (`resident s
 Why legitimate: H1 integration intent explicitly defines the harness as a proving ground rather than alternate product architecture. The checkpoint main exists to drive and observe the experiment. A001-A005 already identify the durable component owners and the exact lifecycle facts that must survive.
 
 Validation required: deterministic startup-failure matrix; dependency-order assertions; missing/invalid/incompatible CONFIG; disconnect/reconnect; component failure during steady state; result-send failure after prior local failure; receiver/input/decoder dormancy barriers; at least two clean sessions with no stale config/generation/credit/pointer state; canonical PS2 build/PT_LOAD identity; and repeated-session hardware qualification.
+
+## S010 — Direct product implementation replaces H1 source-generation and diagnostic-wrapper stack
+
+STATUS=SEMANTIC_ACCEPTED_IMPLEMENTATION_REWRITE
+
+Historical mechanism: the final H1 capability is assembled through a recursive checkpoint build that uses source transformation (`generate_h1_video_runtime_cp2p.py`), source inclusion and symbol renaming, visible/diagnostic wrappers, checkpoint activation gates, monkeypatch-style Pi composition, thread-census wrappers, stage markers and other qualification-specific adapters. These techniques deliberately allowed new facts to be proven without destabilizing earlier qualified checkpoints.
+
+Essential semantic: only the behaviors classified in A001-A006 survive: transport/channel ordering, qualified profile relationships, PCM/media-clock semantics, decoder/generation safe-stop behavior, one shared presentation owner, calibration/suppression, interaction composition and resident lifecycle. A007 confirms that thread census, stage markers, snapshots, wrappers, generated-source mechanics and checkpoint/reporting vocabulary are observers or construction/qualification apparatus, not hidden product owners.
+
+Clean mechanism: implement the final behaviors directly in their clean component owners and process-organized bridges. Preserve optional diagnostics as observers that can be removed or disabled without affecting correctness. Use normal source/build dependencies rather than runtime behavior being created by textual source transformation, global symbol renaming or test-harness monkeypatching.
+
+Why legitimate: A007 traced the complete recursive project-defined definition-bearing source/object topology and found no product-semantic responsibility outside A001-A006. The CP2P/CP2O/cumulative/base makefile topology is unchanged between the strongest active-runtime source checkpoint and the forensic closure commit, so these wrappers are not an unexplained later product layer.
+
+Validation required: architecture/dependency checks proving no foreign-owner reach-through; diagnostics-disabled behavioral tests; direct clean-source equivalence for A001-A006 contracts; source-dictionary completeness; canonical linked build and symbol checks; reproducibility/PT_LOAD comparison; and physical PS2 qualification for behavior-changing reconstructed DUTs.
