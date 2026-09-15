@@ -17,13 +17,14 @@
 #include "h1_rfb_mux_io.h"
 #include "h1_transport_runtime.h"
 
-
+#include <delaythread.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define H1_RFB_IDLE_DELAY_US 1000u
 #define H1_RFB_QUIESCE_WAIT_US 1000u
+#define H1_RFB_COMMIT_DISPATCH_WAIT_STEPS 1000u
 #define H1_RFB_DIAGNOSTIC_MARKER 0xA0000000u
 
 /*
@@ -230,6 +231,48 @@ static int h1_rfb_wait_for_commit(
     return 1;
 }
 
+/*
+ * Commit-dispatch handoff fence.
+ *
+ * CONFIG is counted before the receiver thread starts. Once that thread is
+ * blocked in recv() between PSTV frames, frames_received and receiver_loop_count
+ * are therefore equal. A one-frame lead means the current frame has been fully
+ * counted but its accept/dispatch path has not yet returned to the loop top.
+ *
+ * The EE kernel may immediately schedule the RFB owner when the receiver
+ * signals the activity event. Do not let the owner race into quiesce completion
+ * and media shutdown while the receiver is still suspended inside that signal
+ * path. A short bounded sleep here deliberately gives the sole receiver a
+ * scheduling window and requires proof that it re-entered the receive loop.
+ */
+static int h1_rfb_wait_for_receiver_commit_dispatch(
+    pstvnc_h1_transport_runtime_t *transport)
+{
+    unsigned int wait_step;
+
+    if (transport == NULL)
+        return 0;
+
+    for (wait_step = 0u;
+         wait_step < H1_RFB_COMMIT_DISPATCH_WAIT_STEPS;
+         ++wait_step) {
+        if (pstvnc_h1_transport_last_error(transport) !=
+                PSTVNC_H1_ERROR_NONE ||
+            transport->receiver_done ||
+            transport->stop_requested)
+            return 0;
+
+        if (transport->stats.receiver_loop_count ==
+            transport->stats.frames_received)
+            return 1;
+
+        if (DelayThread(H1_RFB_QUIESCE_WAIT_US) < 0)
+            return 0;
+    }
+
+    return 0;
+}
+
 static int h1_rfb_complete_quiesce_at_boundary(
     pstvnc_h1_rfb_session_runtime_t *runtime,
     pstvnc_h1_transport_runtime_t *transport)
@@ -256,6 +299,9 @@ static int h1_rfb_complete_quiesce_at_boundary(
     h1_rfb_publish_diagnostic(runtime, transport);
 
     if (!h1_rfb_wait_for_commit(runtime, transport))
+        return -1;
+
+    if (!h1_rfb_wait_for_receiver_commit_dispatch(transport))
         return -1;
 
     pstvnc_h1_rfb_mux_io_diag_stage(
