@@ -1,8 +1,8 @@
 /*
  * File synopsis:
  * Defines the transport-internal owner for the one adopted physical PSTV
- * socket and its serialized framed-send state. This boundary owns only physical
- * stream transmission state; it does not own receive dispatch, logical-channel
+ * socket and its serialized framed-send and sole-receive sequencing state.
+ * This boundary owns physical framing only; it does not own logical-channel
  * queues, RFB semantics, media policy, or application lifecycle policy.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
@@ -20,6 +20,7 @@ typedef struct pstvnc_transport_physical_stream {
     int socket_fd;
     int send_semaphore_id;
     uint32_t next_send_sequence;
+    uint32_t expected_receive_sequence;
 } pstvnc_transport_physical_stream_t;
 
 /* Ownership of socket_fd transfers to stream only when this call succeeds. */
@@ -38,6 +39,17 @@ int pstvnc_transport_physical_stream_send_frame(
     uint8_t flags,
     const void *payload,
     size_t payload_length);
+
+/*
+ * Receives exactly one complete PSTV frame from the sole physical socket.
+ * The caller supplies storage large enough for the accepted payload ceiling.
+ * Inbound sequence advances only after the complete payload has been read.
+ */
+int pstvnc_transport_physical_stream_receive_frame(
+    pstvnc_transport_physical_stream_t *stream,
+    pstvnc_transport_header_t *header,
+    void *payload,
+    size_t payload_capacity);
 
 /*
  * Releases the adopted socket and send lock. The higher transport runtime must
