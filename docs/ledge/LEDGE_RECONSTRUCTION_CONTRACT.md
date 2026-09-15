@@ -1,13 +1,17 @@
 # Ledge Reconstruction Contract
 
 DOCUMENT=LEDGE_RECONSTRUCTION_CONTRACT
-DOCUMENT_REVISION=0001
-RECORDED_AT=2026-09-15T09:43:34-04:00
+DOCUMENT_REVISION=0002
+RECORDED_AT=2026-09-15T17:46:23-04:00
 SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
+BASED_ON_DOCUMENT_REVISION=0001
+SUPERSEDES_DOCUMENT_REVISION=0001
 TEMPORAL_CLASS=POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_POLICY_AT_RECORDED_TIME
 
 This revision records the governing reconstruction policy at the recorded time. Later valid policy revisions supersede conflicting earlier policy; earlier revisions remain authoritative evidence of the rules under which earlier work was performed.
+
+Revision 0002 changes worker-history recording from shared append-only files to immutable one-file-per-shift records under `docs/ledge/work-log/`. This removes a demonstrated GitHub-native write-contention point without weakening temporal provenance. Pre-cutover append-only logs remain read-only historical evidence.
 
 ## Objective
 
@@ -33,16 +37,42 @@ The forensic starting point is commit `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`
 
 ## Worker continuity contract
 
-Each worker begins from the newest valid `LEDGE_WORK_STATE.md`, verifies its ancestry and repository authority, reads this contract and the relevant ledgers/log entries, then resumes the exact active work item. Each worker performs bounded coherent work and stops rather than guessing across an unresolved authority conflict.
+Each worker begins from the newest valid current-state authority, verifies its ancestry and repository authority, reads this contract, and then inspects the immutable work-log directory defined by `docs/ledge/work-log/README.md`.
+
+At shift start every worker must:
+
+- capture exact `STARTED_AT` for the eventual immutable shift record;
+- list `docs/ledge/work-log/` newest-first;
+- read the newest logs relevant to its role/work item plus enough recent cross-lane entries to understand current branch movement;
+- reuse the exact existing `WORK_ITEM_KEY` when continuing an established task;
+- inspect current branch/HEAD and current lane/global state before mutation;
+- stop rather than guess across an unresolved authority conflict.
+
+Workers do **not** append new shift history to the pre-cutover shared lane/global append-only logs. Those files are frozen historical evidence for the periods they cover.
 
 Before ending, every worker must:
 
-- record exact work/evidence/validation and decisions in the append-only work log;
-- update semantic and simplification ledgers for facts learned during the shift;
-- create the next point-in-time work-state snapshot with explicit revision ancestry;
-- identify incomplete work and one exact pickup point for the next worker;
+- create exactly one new immutable shift record in `docs/ledge/work-log/` using the canonical filename/content schema from `docs/ledge/work-log/README.md`;
+- record exact work/evidence/validation, files/commits, state/contract revisions, pending local/hardware gates, blockers, self-pause state when applicable, and decisions in that shift record;
+- update only the current-state/ledger files owned by its lane when a point-in-time state advance is actually required;
+- identify incomplete work and one exact pickup point for the next worker, or explicitly record `NONE` when the work family is complete;
 - distinguish proven, inferred, provisional, and unproven claims;
-- bind repository-changing work to exact commit identity where possible.
+- bind repository-changing work to exact commit identity where possible;
+- re-read branch authority immediately before creating the final immutable log record.
+
+A worker must never rewrite, append to, rename, replace, or delete another worker's immutable shift record. If a later worker discovers an error in an earlier entry, preserve the earlier file and record the correction in the later shift's own log.
+
+The canonical project check validates work-log naming and required metadata through `scripts/work-log-check.py`.
+
+## Current state versus work history
+
+Current-state snapshots and immutable work logs have different jobs:
+
+- current state is the baton that says what is authoritative now;
+- `docs/ledge/work-log/*.md` records how workers advanced, blocked, validated, or reconciled that baton;
+- historical pre-cutover append-only logs remain true-at-time evidence but are no longer the write target for new shifts.
+
+A worker should not replay the entire project diary when current state plus the newest relevant immutable logs are sufficient. Conversely, a current-state summary must not erase historical evidence.
 
 ## Temporal interpretation
 
