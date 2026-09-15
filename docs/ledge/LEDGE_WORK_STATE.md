@@ -1,55 +1,70 @@
 # Ledge Reconstruction — Current Work State
 
 DOCUMENT=LEDGE_WORK_STATE
-STATE_REVISION=0002
-RECORDED_AT=2026-09-15T09:48:00-04:00
+STATE_REVISION=0003
+RECORDED_AT=2026-09-15T10:30:00-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_STATE_REVISION=0001
-SUPERSEDES_STATE_REVISION=0001
+BASED_ON_STATE_REVISION=0002
+SUPERSEDES_STATE_REVISION=0002
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-`SOURCE_COMMIT=SELF` means this snapshot is authoritative as committed in the Git commit containing this file; use repository branch/commit authority rather than embedding a self-referential commit hash that would necessarily change the commit being named.
+`SOURCE_COMMIT=SELF` means this snapshot is authoritative as committed in the Git commit containing this file; repository branch/commit authority supplies the exact SHA.
 
-This file is a point-in-time statement. Its claims describe reconstruction state known at `RECORDED_AT`; historical revisions are not present-state authority. Later valid revisions supersede conflicting state while preserving earlier revisions as historical evidence.
+This file is a point-in-time synthesis of the latest valid lane states. Earlier state revisions remain historical evidence and are not present-state authority when superseded here.
 
 ## Authority
 
 - Ledge branch: `ledge/h1-all-guns`
 - Forensic H1 starting commit: `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`
-- Bootstrap continuity commit: `0fe5ed56a6672290c3d05aca1f3d8aecd37a8bea`
-- Governing reconstruction contract revision: `0001`
+- Governing reconstruction contract: `LEDGE_RECONSTRUCTION_CONTRACT` revision `0001`
+- Base clean architecture: `docs/CLEAN_ARCHITECTURE.md` version 1
+- Governing ledge architecture amendment: `LEDGE_ARCHITECTURE_OVERLAY` revision `0001`
+- Audit state synthesized: revision `0001`, semantic audit revision `0002`
+- Reconstruction state synthesized: revision `0001`
+- Validation state synthesized: revision `0001`, findings revision `0001`
 
 ## Current phase
 
-`BOOTSTRAP_AND_DEPENDENCY_CLOSURE`
+`PIPELINED_AUDIT_AND_A001_RECONSTRUCTION`
 
-## Completed at this snapshot
+## Reconciled architecture decision
 
-- Repository-owned reconstruction contract exists.
-- Explicit temporal semantics, revision ancestry, append-only work logging, semantic audit, and simplification register exist.
-- Ledge branch/start authority was verified.
-- Initial semantic inventory was seeded without moving H1 product behavior.
-- Bootstrap was committed as one coherent repository transaction.
+The A001 authority contradiction recorded by reconstruction and validation is resolved prospectively for the ledge branch by `LEDGE_ARCHITECTURE_OVERLAY.md` revision `0001`.
 
-## Active work item
+The base clean architecture predates the all-guns shared transport. For ledge reconstruction, one PSTV transport owner now owns the one physical socket, sole receiver, physical framing/sequence validation, logical-channel dispatch, serialized send, and explicit receiver-dispatch/quiescence state. RFB retains RFB protocol/session semantics but consumes a logical RFB byte stream through its bridge rather than owning a second physical socket.
 
-Complete dependency closure for the H1 all-guns implementation and turn the seeded inventory into an exhaustive responsibility/process inventory before moving product behavior into a clean source hierarchy.
+This architecture decision does not retroactively change the validity of reconstruction state 0001 or validation finding V001: both correctly reported the contradiction at their recorded times. V001 remains validation-owned and OPEN until the validation lane observes this governance revision and applies its own disposition.
 
-## Required next actions
+## Pipeline queue at this snapshot
 
-1. Enumerate the complete H1 build/source closure at the forensic starting commit, including build files and headers not discoverable from filename search alone.
-2. Enumerate project-defined functions/types/state and classify them by responsibility rather than merely by file.
-3. Identify coherent cross-component processes, especially session lifecycle, transport receive/dispatch, RFB update/input/quiesce, PCM production/playback, MPEG ingest/decode/presentation, controller/calibration, and shutdown.
-4. Update semantic and simplification ledgers with evidence and validation requirements.
-5. Establish a completeness check before clean product migration.
+- `AUDIT`: CONFIG/profile + PCM/audio + shared media clock; MPEG, compositor/presentation/calibration, interaction, and top-level shutdown remain later audit families.
+- `RECONSTRUCTION_READY`: A001 — shared PSTV transport + logical RFB stream + RFB safe-boundary/quiescence semantics. Architecture prerequisite is now satisfied prospectively.
+- `RECONSTRUCTING`: none at this exact snapshot; reconstruction lane may begin A001 on its next run.
+- `VALIDATION_READY`: none; no reconstructed A001 source tranche exists yet.
+- `PASS`: A001 gate-handling discipline only (validation V002); this is not behavioral A001 PASS.
+- `BLOCKED`: validation V001 remains recorded OPEN/GATE until validation re-evaluates after architecture reconciliation; the underlying governance prerequisite has now been supplied.
+- `HARDWARE_PENDING`: none. No reconstructed PT_LOAD-changing candidate exists.
 
-## Known constraints
+## Continuity checks
 
-- The latest H1 commit contains an RFB commit-dispatch handoff fence before shutdown; audit semantic necessity versus experimental form rather than copying it automatically.
-- The current clean architecture historically deferred MPEG/hybrid video; ledge work may prove an expanded architecture but must not silently rewrite main current architecture authority during audit.
-- Physical qualification remains outside unattended worker authority.
+- Audit A001 readiness has explicit required behavior, mechanism/disposition, intended clean ownership, known shutdown invariant, simplification rationale, and validation obligations: PASS for reconstruction consumption.
+- Reconstruction consumed only audit-ready A001 and stopped before source mutation when architecture authority conflicted: PASS.
+- Validation represented the same conflict as V001 and explicitly avoided fabricated source/hardware validation: PASS.
+- Lane temporal ordering is coherent: audit 10:10 -> reconstruction 10:18 -> validation 10:28 -> governance synthesis 10:30.
+- Historical states are preserved as true-at-recorded-time rather than rewritten.
+- No physical/hardware qualification is claimed.
 
-## Exact pickup point
+## Exact next actions by lane
 
-Begin by enumerating the exact files and build inputs that constitute `experiments/media-harness-h1/` at the forensic starting commit. Reconcile every discovered source/header/build input against `LEDGE_SEMANTIC_AUDIT.md`; do not begin clean product-code migration yet.
+### Audit
+Continue the recorded next tranche: CONFIG/profile + PCM/audio + shared media clock. Do not treat this architecture overlay as pre-approval of unaudited PCM/MPEG behavior.
+
+### Reconstruction
+Re-read architecture overlay revision 0001, audit A001, and validation V001. The prior architecture gate is cleared prospectively. Implement A001 as the bounded transport ownership + logical RFB stream + explicit quiescence tranche, with required symbol/docs/tests, then hand the exact source commit to validation.
+
+### Validation
+Re-read architecture overlay revision 0001. Record that the governance prerequisite in V001 has been supplied, but do not mark A001 behavioral PASS until an actual reconstructed source tranche exists and the queued checks succeed.
+
+### Continuity/governance
+On the next synthesis, verify all lanes consumed this state/overlay, reconcile any new audit/reconstruction/validation revisions, and keep the queue status point-in-time accurate.
