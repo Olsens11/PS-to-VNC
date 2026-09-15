@@ -40,6 +40,15 @@ int pstvnc_transport_rfb_channel_read_exact(
     void *buffer,
     size_t count);
 
+/*
+ * Terminally discards exactly the expected residual queue without classifying
+ * those bytes as parser consumption or advancing producer activity.
+ */
+int pstvnc_transport_rfb_channel_discard_residual(
+    pstvnc_transport_rfb_channel_t *channel,
+    size_t expected_count,
+    size_t *discarded_count);
+
 size_t pstvnc_transport_rfb_channel_available(
     const pstvnc_transport_rfb_channel_t *channel);
 
