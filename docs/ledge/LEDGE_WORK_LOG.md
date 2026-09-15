@@ -1,8 +1,8 @@
 # Ledge Reconstruction Work Log
 
 DOCUMENT=LEDGE_WORK_LOG
-DOCUMENT_REVISION=0005
-RECORDED_AT=2026-09-15T12:33:00-04:00
+DOCUMENT_REVISION=0006
+RECORDED_AT=2026-09-15T14:34:00-04:00
 SOURCE_COMMIT=SELF
 TEMPORAL_CLASS=WORK_EVENT_LOG
 TEMPORAL_SEMANTICS=EACH_ENTRY_TRUE_AS_KNOWN_AT_ITS_COMPLETION_TIME
@@ -252,3 +252,75 @@ A001 remains incomplete as a buildable transport tranche. Whole-build recursive 
 ### Exact next safe actions
 
 Audit executes A004 only. Reconstruction continues A001 to a coherent common transport foundation and exact build/PT_LOAD identity before consuming queued A002/A003 source behavior. Validation preserves V003 until explicit A001 `VALIDATION_READY`, then performs the independent queued machine checks and keeps PS2 hardware qualification separate. Continuity next reconciles any A004, reconstruction-after-0002, or validation-after-0002 revision and stops on any new authority contradiction.
+
+## Work Entry L005
+
+STARTED_AT=2026-09-15T14:33:01-04:00
+COMPLETED_AT=2026-09-15T14:34:00-04:00
+STARTING_STATE_REVISION=0005
+ENDING_STATE_REVISION=0006
+STARTING_COMMIT=b86baab399c26c7ded5816c69491c8c10e44c128
+ENDING_COMMIT=SELF
+TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_KNOWLEDGE_AND_WORK_AT_COMPLETION_TIME
+
+### Objective
+
+Reconcile A004 and A005 semantic-audit completion into the single global pipeline snapshot while preserving the still-active A001 reconstruction and validation wait state, and verify that newer audit readiness has not been misread as implementation or qualification.
+
+### Evidence inspected
+
+- `AGENTS.md`, `CONTRIBUTING.md`, `docs/CLEAN_ARCHITECTURE.md` version 1, reconstruction contract revision 0001, and governing architecture overlay revision 0001;
+- branch `ledge/h1-all-guns` at `b86baab399c26c7ded5816c69491c8c10e44c128` before governance writes;
+- compare authority showing the branch head ahead of global revision 0005's containing commit `a65d483866ba795bb794c3cda08a25d813bb75c6` by 9 commits and behind by 0;
+- global state/log revision 0005;
+- audit state/log revision 0005, including A004 and A005 detailed audit dispositions;
+- reconstruction state revision 0002 and log through R002;
+- validation state revision 0002 and log through VL002/V001-V003.
+
+### Reconciliation
+
+Audit A004 and A005 are legitimately `RECONSTRUCTION_READY`. A004 supplies explicit presentation/calibration ownership, geometry, suppression/restoration, first-presentation clock-arm, one-GS-owner and scheduler/drop dispositions. A005 supplies explicit interaction/input required behavior, current mechanisms, clean owner/process/bridge mapping, known-defect treatment, simplification/discard rationale, and validation obligations. A005 also explicitly states that readiness does not override active A001 dependency ordering.
+
+Reconstruction remains at state 0002 and has consumed only A001. No later reconstruction record claims that the transport body, RFB adaptation, topology/build/test integration, exact build identity, or PT_LOAD evidence exists. Therefore A002-A005 are queued readiness, not reconstructed behavior.
+
+Validation remains at state 0002. V001 is resolved only as the architecture prerequisite, V002 remains lane-discipline PASS, and V003 remains an OPEN informational wait for a coherent A001 handoff. No validation finding has been superseded by the newer audit work.
+
+### Pipeline state published
+
+Global work state revision 0006 records:
+
+- `AUDIT`: A006 top-level orchestration/shutdown/recovery, with A007 residual diagnostics/completeness closure next;
+- `RECONSTRUCTION_READY`: A002, A003, A004 and A005, queued behind A001 as dependencies require;
+- `RECONSTRUCTING`: A001 shared transport/logical RFB/quiescence;
+- `VALIDATION_READY`: none;
+- `PASS`: V002 discipline plus provisional A001 interface/SYMBOLS checks only;
+- `BLOCKED`: none at governance level; V003 remains an informational wait;
+- `HARDWARE_PENDING`: none for reconstructed product tranches.
+
+### Continuity / architecture checks
+
+- revision chronology global 0005 -> audit 0004 -> audit 0005 -> global 0006: coherent;
+- repository-visible ancestry is fast-forward from global 0005 authority to the pre-write head;
+- audit readiness versus reconstruction consumption: coherent;
+- reconstruction 0002 and validation 0002 are stale in age but not stale in their still-current claims;
+- one physical PSTV owner remains enforced; later media/input/presentation tranches do not gain competing physical transport authority;
+- A004 one-GS-owner and A005 input transport/GS boundaries remain consistent with clean architecture and overlay;
+- known-defect accounting remains explicit, including A003 false-EOF prevention and A005 OSK/navigation plus fail-closed shutdown cautions;
+- historical H1 hardware evidence remains forensic only; no reconstructed hardware qualification is claimed;
+- no reconstructed product source, audit disposition, reconstruction state, or validation finding was modified by this governance shift.
+
+### Stale/conflicting state and limitations
+
+Global revision 0005 is now historical because A004/A005 completed afterward; it is not rewritten. No cross-lane semantic contradiction was found in committed repository authority.
+
+The repository connector cannot expose an external Pi worktree's uncommitted status, so no external-worktree-clean claim is made. Unknown local dirty work remains protected by lane policy.
+
+Canonical executable/docs checks were not runnable from this repository-only governance surface. Applicable continuity checks performed here were branch authority, compare/ancestry, revision chain, temporal semantics, stage-transition, lane-boundary, known-issue, readiness, and hardware-claim checks.
+
+### Current blockers
+
+A001 remains incomplete as a coherent buildable transport tranche. Exhaustive whole-build dependency/source/symbol closure remains unfinished and is reserved for A007. Neither is a governance contradiction.
+
+### Exact next safe actions
+
+Audit executes A006, then A007 closure. Reconstruction continues A001 through physical framing/sequence, sole receiver/dispatch, serialized send, logical RFB buffering/credit/fragmentation, explicit quiescence, RFB bridge adaptation, topology/dictionary/build/test obligations, canonical checks and exact build/PT_LOAD identity before handoff. Validation preserves V003 until explicit A001 `VALIDATION_READY`, then independently validates the coherent tranche and classifies physical PS2 work separately as `HARDWARE_PENDING`. Continuity next reconciles any A006/A007, reconstruction-after-0002, or validation-after-0002 transition and records rather than guesses across any contradiction.
