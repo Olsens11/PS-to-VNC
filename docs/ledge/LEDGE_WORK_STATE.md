@@ -3,7 +3,7 @@
 DOCUMENT=LEDGE_WORK_STATE
 STATE_REVISION=0002
 RECORDED_AT=2026-09-15T09:48:00-04:00
-SOURCE_COMMIT=0fe5ed56a6672290c3d05aca1f3d8aecd37a8bea
+SOURCE_COMMIT=b7b655d25edc4929f85d08be8c1a9bd985596193
 BASED_ON_STATE_REVISION=0001
 SUPERSEDES_STATE_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
@@ -16,6 +16,7 @@ This file is a point-in-time statement. Its claims describe reconstruction state
 - Ledge branch: `ledge/h1-all-guns`
 - Forensic H1 starting commit: `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`
 - Bootstrap continuity commit: `0fe5ed56a6672290c3d05aca1f3d8aecd37a8bea`
+- First-shift state/log commit: `b7b655d25edc4929f85d08be8c1a9bd985596193`
 - Governing reconstruction contract revision: `0001`
 
 ## Current phase
