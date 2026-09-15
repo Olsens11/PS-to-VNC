@@ -361,3 +361,18 @@ $(GEOMETRY_TEST): unit/video_geometry_test.c ../src/video/geometry.c ../src/vide
 		../src/video/geometry.c \
 		../src/video/mode.c \
 		-o $(GEOMETRY_TEST)
+
+TRANSPORT_RFB_CHANNEL_TEST := .build/transport_rfb_channel_test
+
+.PHONY: transport-rfb-channel-unit
+unit: transport-rfb-channel-unit
+
+transport-rfb-channel-unit: $(TRANSPORT_RFB_CHANNEL_TEST)
+	./$(TRANSPORT_RFB_CHANNEL_TEST)
+
+$(TRANSPORT_RFB_CHANNEL_TEST): unit/transport_rfb_channel_test.c ../src/transport/rfb_channel.c ../src/transport/rfb_channel.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/transport_rfb_channel_test.c \
+		../src/transport/rfb_channel.c \
+		-o $(TRANSPORT_RFB_CHANNEL_TEST)
