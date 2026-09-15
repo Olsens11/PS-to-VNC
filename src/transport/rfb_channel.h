@@ -41,6 +41,16 @@ int pstvnc_transport_rfb_channel_read_exact(
     size_t count);
 
 /*
+ * Consumes up to maximum_count bytes already committed to the channel. This is
+ * the streaming primitive used by an exact parser read so queue capacity never
+ * has to hold the parser's entire requested span before credit can return.
+ */
+size_t pstvnc_transport_rfb_channel_read_available(
+    pstvnc_transport_rfb_channel_t *channel,
+    void *buffer,
+    size_t maximum_count);
+
+/*
  * Terminally discards exactly the expected residual queue without classifying
  * those bytes as parser consumption or advancing producer activity.
  */
