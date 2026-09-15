@@ -29,3 +29,9 @@ Context: `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` and `docs/ledge/LEDGE_AUDIT_
 | `pstvnc_transport_physical_stream_release` | function | `src/transport/physical_stream.c` | transport | internal | Releases the adopted socket and send mutex after higher-level quiescence is proven and resets direction-local sequences. |
 | `pstvnc_transport_physical_stream_send_exact` | function | `src/transport/physical_stream.c` | transport | file-local | Repeats socket send until the requested bytes are committed or a send fails. |
 | `pstvnc_transport_physical_stream_receive_exact` | function | `src/transport/physical_stream.c` | transport | file-local | Repeats socket receive until the requested bytes are complete or receive fails. |
+| `pstvnc_transport_rfb_channel_t` | struct type | `src/transport/rfb_channel.h` | transport | internal | Owns committed logical RFB bytes, circular-buffer accounting, and producer activity generation for one session. |
+| `pstvnc_transport_rfb_channel_initialize` | function | `src/transport/rfb_channel.c` | transport | internal | Binds caller-owned session storage and initializes an empty logical RFB stream. |
+| `pstvnc_transport_rfb_channel_commit` | function | `src/transport/rfb_channel.c` | transport | internal | Atomically commits one complete received channel-1 DATA payload when sufficient capacity exists. |
+| `pstvnc_transport_rfb_channel_read_exact` | function | `src/transport/rfb_channel.c` | transport | internal | Consumes exactly the requested committed logical RFB bytes or leaves stream state unchanged. |
+| `pstvnc_transport_rfb_channel_available` | function | `src/transport/rfb_channel.c` | transport | internal | Reports the number of committed logical RFB bytes currently available. |
+| `pstvnc_transport_rfb_channel_activity_generation` | function | `src/transport/rfb_channel.c` | transport | internal | Reports the monotonically advancing producer generation used by the higher runtime for activity rendezvous. |
