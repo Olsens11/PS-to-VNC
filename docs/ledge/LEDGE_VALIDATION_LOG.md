@@ -43,3 +43,52 @@ Findings opened/closed:
 Exact next pickup:
 
 Inspect the latest architecture authority and reconstruction state. Do not validate hypothetical source. When an A001 source tranche exists after explicit architecture reconciliation, run the full queued host/static/build/reproducibility checks and classify any remaining discrepancies before hardware qualification.
+
+## VL002 — 2026-09-15T11:30:00-04:00 — validate A001 interface-stage progress
+
+Starting authority:
+
+- branch `ledge/h1-all-guns` at `d5692267600c29c98219502ecf4b5fb43a2788c7`;
+- semantic audit revision `0002`;
+- reconstruction state revision `0002` / log R002;
+- architecture overlay revision `0001`;
+- validation state revision `0001`, V001 OPEN and V002 PASS.
+
+Evidence inspected:
+
+- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision 0001;
+- `docs/ledge/LEDGE_RECONSTRUCTION_STATE.md` revision 0002 and R002 log evidence;
+- `src/transport/transport.h`;
+- `src/transport/SYMBOLS.md`;
+- prior validation findings/state/log.
+
+Work performed:
+
+- verified governance explicitly reconciled the V001 ownership contradiction before reconstruction consumed it;
+- verified the new transport interface withholds physical socket operations from RFB-facing logical-stream calls and makes session lifecycle/quiescence transport-owned;
+- verified the local symbol dictionary accounts for the currently introduced public interface symbols;
+- verified reconstruction does not claim physical framing, sole receiver, logical buffering, serialized send, quiescence implementation, build adoption, PT_LOAD change, or hardware qualification that does not yet exist;
+- resolved V001's architecture prerequisite and opened V003 to make the incomplete/not-yet-validation-ready boundary explicit;
+- advanced validation state to revision 0002 without modifying product source, audit records, reconstruction records, or governance authority.
+
+Checks/results:
+
+- authority/temporal chain: PASS;
+- V001 governance prerequisite: RESOLVED by architecture overlay 0001;
+- interface ownership/dependency shape: PROVISIONAL PASS;
+- current public transport symbol dictionary coverage: PASS;
+- complete topology/portal/build/test integration: INCOMPLETE, explicitly recorded by reconstruction;
+- one-bridge/process-section validation: NOT_APPLICABLE because no bridge/body exists yet;
+- host behavioral tests: NOT_APPLICABLE because no implementation body exists yet;
+- canonical DUT build/reproducibility/PT_LOAD: NOT_APPLICABLE because transport is not wired into the build;
+- hardware qualification: not performed and not claimed.
+
+Findings opened/closed:
+
+- V001 changed `GATE/OPEN` -> `GATE/RESOLVED` for the architecture prerequisite only;
+- V002 remains `INFO/PASS`;
+- opened V003 `INFO/OPEN`, disposition `WAIT_FOR_COHERENT_TRANCHE`.
+
+Exact next pickup:
+
+Wait for reconstruction to finish and explicitly hand off a coherent A001 `VALIDATION_READY` implementation. Then run the complete queued A001 static/host/build/reproducibility validation set and classify the physical PS2 qualification boundary separately as `HARDWARE_PENDING`.
