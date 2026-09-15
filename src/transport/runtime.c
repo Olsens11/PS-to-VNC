@@ -16,6 +16,7 @@
 
 #include <kernel.h>
 
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,6 +60,7 @@ static int pstvnc_transport_runtime_config_valid(
     if (config == NULL ||
         config->rfb_queue_capacity == 0u ||
         config->receiver_thread_stack_size == 0u ||
+        config->receiver_thread_stack_size > (uint32_t)INT_MAX ||
         config->max_data_payload == 0u ||
         config->max_data_payload > PSTVNC_TRANSPORT_MAX_PAYLOAD ||
         config->max_data_payload > config->rfb_queue_capacity ||
@@ -100,10 +102,7 @@ static int pstvnc_transport_runtime_send_credit(
         sizeof(payload));
 }
 
-/*
- * Caller holds rfb_queue_semaphore_id. The sequence advances only after the
- * associated producer state is visible under the same lock.
- */
+/* Caller holds rfb_queue_semaphore_id. */
 static int pstvnc_transport_runtime_publish_activity_locked(
     pstvnc_transport_runtime_t *runtime)
 {
@@ -176,7 +175,7 @@ static int pstvnc_transport_runtime_accept_rfb_frame(
         accepted = pstvnc_transport_rfb_channel_commit(
             &runtime->rfb_channel,
             runtime->receiver_payload,
-            header->payload_length);
+            header->payload_length) == 0;
     }
 
     signal_waiter = accepted
@@ -219,10 +218,7 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
 
     runtime->receiver_done = 1;
 
-    /*
-     * Wake an RFB owner that is waiting for producer activity so it can observe
-     * terminal receiver state without timer polling.
-     */
+    /* Wake an RFB owner so terminal receiver state is observed without polling. */
     if (runtime->rfb_queue_semaphore_id >= 0 &&
         WaitSema(runtime->rfb_queue_semaphore_id) >= 0) {
         int signal_waiter =
@@ -265,10 +261,10 @@ int pstvnc_transport_runtime_initialize(
     if (runtime->rfb_queue_storage == NULL)
         return 0;
 
-    if (!pstvnc_transport_rfb_channel_initialize(
+    if (pstvnc_transport_rfb_channel_initialize(
             &runtime->rfb_channel,
             runtime->rfb_queue_storage,
-            (size_t)config->rfb_queue_capacity))
+            (size_t)config->rfb_queue_capacity) != 0)
         goto fail;
 
     runtime->rfb_queue_semaphore_id =
@@ -507,7 +503,7 @@ int pstvnc_transport_runtime_rfb_read_exact(
         if (pstvnc_transport_rfb_channel_available(&runtime->rfb_channel) >=
                 count) {
             read_succeeded = pstvnc_transport_rfb_channel_read_exact(
-                &runtime->rfb_channel, buffer, count);
+                &runtime->rfb_channel, buffer, count) == 0;
             queue_empty =
                 pstvnc_transport_rfb_channel_available(&runtime->rfb_channel) ==
                 0u;
