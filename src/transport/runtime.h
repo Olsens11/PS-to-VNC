@@ -71,8 +71,7 @@ typedef struct pstvnc_transport_runtime {
     /*
      * Zero-length channel-1 DATA carries only the audited finite-session RFB
      * request/commit markers. These flags are product synchronization state,
-     * not diagnostics. Boundary/complete publication is added by the quiesce
-     * layer that consumes them.
+     * not diagnostics.
      */
     volatile uint32_t rfb_quiesce_request_received;
     volatile uint32_t rfb_quiesce_boundary_sent;
@@ -114,6 +113,27 @@ int pstvnc_transport_runtime_rfb_write_exact(
     pstvnc_transport_runtime_t *runtime,
     const void *buffer,
     size_t count);
+
+/*
+ * Ordered finite-RFB shutdown: Pi REQUEST -> PS2 BOUNDARY -> Pi COMMIT -> PS2
+ * COMPLETE. Residual bytes after COMMIT are snapshotted/discarded explicitly and
+ * never earn parser-consumption credit.
+ */
+int pstvnc_transport_runtime_rfb_quiesce_requested(
+    pstvnc_transport_runtime_t *runtime);
+int pstvnc_transport_runtime_rfb_send_quiesce_boundary(
+    pstvnc_transport_runtime_t *runtime);
+int pstvnc_transport_runtime_rfb_wait_quiesce_commit(
+    pstvnc_transport_runtime_t *runtime);
+int pstvnc_transport_runtime_rfb_snapshot_residual(
+    pstvnc_transport_runtime_t *runtime,
+    size_t *residual_count);
+int pstvnc_transport_runtime_rfb_discard_quiesce_residual(
+    pstvnc_transport_runtime_t *runtime,
+    size_t expected_count,
+    size_t *discarded_count);
+int pstvnc_transport_runtime_rfb_send_quiesce_complete(
+    pstvnc_transport_runtime_t *runtime);
 
 /*
  * Receiver completion is an explicit event. Resource release is legal only
