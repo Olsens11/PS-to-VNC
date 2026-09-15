@@ -2,8 +2,11 @@
  * File synopsis:
  * Implements Transport's logical RFB byte-stream storage. Complete PSTV RFB
  * payloads are committed as bytes, and exact reads consume only already
- * committed bytes. This file deliberately contains no physical socket, RFB
- * parser, thread, semaphore, credit-policy, or application lifecycle logic.
+ * committed bytes. Terminal residual discard is explicit and deliberately does
+ * not count discarded bytes as parser consumption or producer activity.
+ *
+ * This file deliberately contains no physical socket, RFB parser, thread,
+ * semaphore, credit-policy, or application lifecycle logic.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
  */
@@ -95,6 +98,29 @@ int pstvnc_transport_rfb_channel_read_exact(
 
     channel->read_offset = (channel->read_offset + count) % channel->capacity;
     channel->byte_count -= count;
+    return 0;
+}
+
+int pstvnc_transport_rfb_channel_discard_residual(
+    pstvnc_transport_rfb_channel_t *channel,
+    size_t expected_count,
+    size_t *discarded_count)
+{
+    if (discarded_count != NULL) {
+        *discarded_count = 0;
+    }
+
+    if (channel == NULL || channel->storage == NULL ||
+        channel->byte_count != expected_count) {
+        return -1;
+    }
+
+    if (discarded_count != NULL) {
+        *discarded_count = channel->byte_count;
+    }
+
+    channel->read_offset = 0;
+    channel->byte_count = 0;
     return 0;
 }
 
