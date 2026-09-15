@@ -1,8 +1,8 @@
 # Ledge Reconstruction Work Log
 
 DOCUMENT=LEDGE_WORK_LOG
-DOCUMENT_REVISION=0002
-RECORDED_AT=2026-09-15T09:48:00-04:00
+DOCUMENT_REVISION=0003
+RECORDED_AT=2026-09-15T10:31:00-04:00
 SOURCE_COMMIT=SELF
 TEMPORAL_CLASS=WORK_EVENT_LOG
 TEMPORAL_SEMANTICS=EACH_ENTRY_TRUE_AS_KNOWN_AT_ITS_COMPLETION_TIME
@@ -54,3 +54,68 @@ The H1 dependency closure and symbol/responsibility inventory are not yet exhaus
 ### Next worker starts here
 
 Enumerate the complete H1 source/header/build closure at the forensic starting commit, then expand `LEDGE_SEMANTIC_AUDIT.md` until every discovered responsibility has a disposition or explicit `UNCLASSIFIED` state. Establish a completeness checker before product migration. Do not begin product-code migration yet.
+
+## Work Entry L002
+
+STARTED_AT=2026-09-15T10:28:59-04:00
+COMPLETED_AT=2026-09-15T10:31:00-04:00
+STARTING_STATE_REVISION=0002
+ENDING_STATE_REVISION=0003
+STARTING_COMMIT=7adb89b1c4d3a1bca752a7c0df4db7d5048c3074
+ENDING_COMMIT=SELF
+TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_KNOWLEDGE_AND_WORK_AT_COMPLETION_TIME
+
+### Objective
+
+Reconcile the first audit, reconstruction, and validation lane handoffs; resolve architecture-governance contradictions where evidence supports a prospective decision; and publish one current global pipeline state without rewriting lane history.
+
+### Evidence inspected
+
+- `AGENTS.md`, `CONTRIBUTING.md`, `docs/CLEAN_ARCHITECTURE.md` version 1, and reconstruction contract revision 0001;
+- global work state revision 0002 and work log revision 0002;
+- audit state revision 0001 / semantic audit revision 0002;
+- reconstruction state revision 0001;
+- validation state revision 0001 and findings V001/V002;
+- branch authority at shift start: `7adb89b1c4d3a1bca752a7c0df4db7d5048c3074`.
+
+### Reconciliation
+
+Audit A001 is legitimately reconstruction-ready: it identifies the proven one-physical-PSTV-stream/sole-receiver behavior, logical RFB channel semantics, safe RFB boundary, shutdown ordering invariant, clean ownership intent, simplifications, and validation obligations.
+
+Reconstruction correctly consumed A001 but stopped before product-source mutation because `docs/CLEAN_ARCHITECTURE.md` version 1 still assigned VNC socket ownership to the main/RFB design. Validation independently recorded the same contradiction as V001 OPEN/GATE and passed the reconstruction lane's boundary discipline as V002 INFO/PASS.
+
+These statements are temporally compatible rather than contradictory: each was true when recorded.
+
+### Architecture-governance decision
+
+Created `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision 0001 as the prospective ledge-only amendment to clean architecture version 1. The overlay explicitly assigns the one physical PSTV socket, sole receiver, physical framing/sequence state, logical-channel dispatch, serialized sends, and receiver-dispatch/quiescence state to one transport owner. RFB retains RFB protocol/session semantics and consumes an explicit logical RFB byte stream rather than owning a competing physical socket.
+
+The overlay preserves application ownership of product policy and cross-domain side effects, preserves the complete-RFB-message safe service boundary, and requires explicit production quiescence state rather than H1 diagnostic counters/sleeps as synchronization authority.
+
+This clears the governance prerequisite for A001 reconstruction prospectively. It does not mark V001 closed on validation's behalf and does not claim implementation, machine validation, PT_LOAD qualification, or hardware qualification.
+
+### Pipeline state published
+
+Global work state revision 0003 records:
+
+- AUDIT: CONFIG/profile + PCM/audio + shared media clock;
+- RECONSTRUCTION_READY: A001 with architecture prerequisite supplied;
+- RECONSTRUCTING: none at this snapshot;
+- VALIDATION_READY: none;
+- PASS: only V002 gate-handling discipline;
+- BLOCKED: V001 remains validation-owned OPEN/GATE pending re-evaluation;
+- HARDWARE_PENDING: none.
+
+### Checks and boundaries
+
+- temporal lane order and revision ancestry: coherent;
+- audit readiness versus reconstruction consumption: coherent;
+- reconstruction and validation lane ownership: preserved;
+- architecture conflict: explicitly reconciled prospectively rather than silently overwritten;
+- reconstructed product source: untouched by this lane;
+- audit dispositions and validation findings: untouched;
+- physical/hardware claims: none.
+
+### Exact next safe actions
+
+Audit continues A002 CONFIG/profile + PCM/audio + shared media clock. Reconstruction may now implement A001 under overlay revision 0001. Validation should acknowledge the supplied governance prerequisite but wait for an actual A001 source tranche before behavioral PASS. The next continuity shift should verify those lanes consumed the overlay/state and reconcile their new revisions.
