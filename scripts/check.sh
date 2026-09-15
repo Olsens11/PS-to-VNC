@@ -10,6 +10,9 @@ DIR="$(
 "$DIR/docs-check.sh"
 "$DIR/continuity-check.sh"
 
+echo '===== WORK LOG CHECK ====='
+python3 "$DIR/work-log-check.py"
+
 echo '===== SOURCE DICTIONARY CHECK ====='
 python3 "$DIR/source-dictionary.py" check
 
