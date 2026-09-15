@@ -92,3 +92,50 @@ Findings opened/closed:
 Exact next pickup:
 
 Wait for reconstruction to finish and explicitly hand off a coherent A001 `VALIDATION_READY` implementation. Then run the complete queued A001 static/host/build/reproducibility validation set and classify the physical PS2 qualification boundary separately as `HARDWARE_PENDING`.
+
+## VL003 — 2026-09-15T16:19:27-04:00 — review A001 framing increment
+
+Starting authority:
+
+- branch `ledge/h1-all-guns` at `43f95f7de834bd45097abcb4479e109f4225699a`;
+- reconstruction state revision `0003`;
+- semantic audit state revision `0006`;
+- global ledge state revision `0007`;
+- validation state revision `0002`, V003 OPEN.
+
+Evidence inspected:
+
+- `src/transport/protocol.h`;
+- `src/transport/protocol.c`;
+- reconstruction state revision `0003`;
+- prior validation state/findings/log.
+
+Work performed:
+
+- statically reviewed the new PSTV framing increment without modifying reconstructed source;
+- verified framing remains backend-independent and inside transport ownership;
+- verified file synopses explicitly exclude sockets, dispatch, queues, RFB parsing, media policy, and threading;
+- verified readable transport-prefixed naming and explicit fixed-header/big-endian encode/decode structure;
+- verified reconstruction continues to account for omitted runtime/diagnostic machinery rather than silently presenting it as framing behavior;
+- preserved V003 because A001 is still not a coherent validation-ready implementation.
+
+Checks/results:
+
+- authority/temporal chain: PASS;
+- lane write boundary: PASS;
+- framing ownership/dependency shape: PROVISIONAL PASS by static inspection;
+- naming/file synopsis: PASS by static inspection;
+- one-bridge/process-section check: NOT_APPLICABLE; bridge not yet reconstructed;
+- complete topology/build/test integration: INCOMPLETE by reconstruction declaration;
+- host/canonical build/reproducibility/PT_LOAD: NOT_APPLICABLE to validation handoff yet;
+- hardware qualification: not performed and not claimed.
+
+Findings opened/closed:
+
+- none opened;
+- none closed;
+- V003 remains `INFO/OPEN` / `WAIT_FOR_COHERENT_TRANCHE`.
+
+Exact next pickup:
+
+Inspect only newly reconstructed A001 increments while the tranche remains in progress. When reconstruction marks A001 `VALIDATION_READY`, execute the full A001 static/host/build/reproducibility obligation set, then keep physical PS2 qualification explicitly separate as `HARDWARE_PENDING` until operator/hardware evidence exists.
