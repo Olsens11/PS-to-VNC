@@ -1,6 +1,6 @@
 # `src/transport` Symbol Dictionary
 
-Context: `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md`.
+Context: `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` and `docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md`.
 
 | Symbol | Kind | File | Owner | Scope | Meaning |
 |---|---|---|---|---|---|
@@ -15,3 +15,10 @@ Context: `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md`.
 | `pstvnc_transport_session_open` | function | `src/transport/transport.h` | transport | public | Adopts the application-established physical socket and allocates only enabled logical channels. |
 | `pstvnc_transport_session_quiesce` | function | `src/transport/transport.h` | transport | public | Waits for explicit receiver-dispatch quiescence before channel resources may retire. |
 | `pstvnc_transport_session_close` | function | `src/transport/transport.h` | transport | public | Retires transport-owned session/channel state after quiescence. |
+| `pstvnc_transport_frame_kind_t` | enum type | `src/transport/protocol.h` | transport | internal/public wire value | Stable PSTV v1 frame-kind vocabulary. |
+| `pstvnc_transport_channel_t` | enum type | `src/transport/protocol.h` | transport | internal/public wire value | Stable logical channel identities for control, RFB, audio, telemetry, and MPEG2. |
+| `pstvnc_transport_header_t` | struct type | `src/transport/protocol.h` | transport | internal | Decoded fixed PSTV frame-header representation. |
+| `pstvnc_transport_header_encode` | function | `src/transport/protocol.c` | transport | internal | Validates and encodes one fixed PSTV v1 wire header. |
+| `pstvnc_transport_header_decode` | function | `src/transport/protocol.c` | transport | internal | Validates magic/version/payload ceiling and decodes one PSTV v1 wire header. |
+| `pstvnc_transport_read_be32` | function | `src/transport/protocol.c` | transport | internal | Reads one big-endian 32-bit wire value. |
+| `pstvnc_transport_write_be32` | function | `src/transport/protocol.c` | transport | internal | Writes one big-endian 32-bit wire value. |
