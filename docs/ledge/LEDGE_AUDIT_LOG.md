@@ -1,8 +1,8 @@
 # Ledge Semantic Audit — Append-only Lane Log
 
 DOCUMENT=LEDGE_AUDIT_LOG
-DOCUMENT_REVISION=0002
-RECORDED_AT=2026-09-15T11:08:00-04:00
+DOCUMENT_REVISION=0003
+RECORDED_AT=2026-09-15T12:13:00-04:00
 SOURCE_COMMIT=SELF
 TEMPORAL_CLASS=WORK_EVENT_LOG
 TEMPORAL_SEMANTICS=EACH_ENTRY_TRUE_AS_KNOWN_AT_ITS_COMPLETION_TIME
@@ -93,3 +93,56 @@ Two coherent tranches are now classified. A002 contributes six reconstruction-re
 ### Exact next pickup
 
 Audit MPEG ingest/decode plus CP2P generation/start/retire as A003. Resolve the IPU reset field, MPEG/video tuning fields, finite producer lifecycle, and the exact qualified video presentation boundary that arms the already-ready shared media clock before broadening into calibration/compositor behavior.
+
+## Audit Entry A003
+
+STARTED_AT=2026-09-15T11:58:11-04:00
+COMPLETED_AT=2026-09-15T12:13:00-04:00
+STARTING_GLOBAL_STATE_REVISION=0004
+STARTING_AUDIT_STATE_REVISION=0002
+ENDING_AUDIT_STATE_REVISION=0003
+STARTING_BRANCH_COMMIT=1c317d429d8a6320c8e24ebf44e926565301d472
+FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
+TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_AUDIT_KNOWLEDGE_AT_COMPLETION_TIME
+
+### Objective
+
+Classify MPEG ingest/decode and CP2P exact-generation START/retire lifecycle as one coherent behavioral process without modifying reconstructed product source.
+
+### Evidence inspected
+
+Current branch/global/audit authority; `h1_video_runtime.c`; `h1_config.h`; CP2P START validation, live-generation boundary, all-guns activation, MPEG event-wake hardware result, safe-stop lifecycle, H1 integration intent, A002 clock/profile audit, semantic ledger and simplification register.
+
+### Findings and decisions
+
+A003 marks the transport-to-MPEG event-wake consumer, decoder acquisition/feed/release lifecycle, exact START/prepared generation, exact-generation emission fence, safe decoder stop boundary, retirement/final residual discard/credit return, and narrow first-presentation media-clock arm contract reconstruction-ready.
+
+The known false-EOF stop defect is explicitly preserved as a defect to prevent: owner stop must be observed after `MPEG_Picture()` returns, never by making the active libmpeg data callback synthesize EOF. The 600-second event-wake proof and later safe-stop proof remain separate temporal evidence and are not flattened into a repeated-session hardware claim.
+
+Field 44 is resolved: discard `VIDEO_IPU_RESET_EACH_SESSION` as a product toggle, but preserve the known-state IPU/DMAC preparation it guarded as decoder-acquisition lifecycle. MPEG timer-backed empty-queue polling is likewise not promoted to production; the qualified receiver-driven event wake is the semantic direction.
+
+The common media epoch is now tied to the first real video presentation boundary. Presentation/calibration owns the concrete compositor callsite in A004; CONFIG, START, prefill and decode start do not arm the clock.
+
+### Repository changes
+
+- created `LEDGE_AUDIT_A003_MPEG_GENERATION.md` revision `0001` with detailed required behavior, field dispositions, ownership, defect treatment and validation obligations;
+- advanced audit lane state to revision `0003`;
+- advanced this append-only lane log to revision `0003`.
+
+No reconstructed product source, forensic H1 source, reconstruction state, validation finding, or global state was modified.
+
+### Validation performed
+
+Repository-source and durable hardware-result inspection verified the source-level decoder/feed/presentation boundary, exact-generation ordered-fence contract, event-wake qualification boundary and safe-stop lifecycle evidence. No reconstructed build, PT_LOAD comparison, or new hardware test was performed or claimed.
+
+### Progress
+
+Three coherent tranches are now classified. A003 contributes seven reconstruction-ready responsibility groups plus one narrow ready media-clock arm contract. Four seeded major process families remain; whole-build recursive file/symbol completeness proof remains incomplete.
+
+### Unresolved questions
+
+Final scheduler/drop policy, draw/capture/suppression geometry ownership, calibration acceptance, RFB matte/suppression alignment, presentation ownership transitions, cursor/OSK layering, interaction and top-level shutdown remain unaudited.
+
+### Exact next pickup
+
+Audit presentation/compositor/calibration as A004. Trace calibration acceptance, draw/capture/suppression geometry, RFB suppression/matte alignment, `RFB_ONLY`/MPEG ownership transitions, cursor/OSK/local-UI layering and scheduler/drop policy. Preserve the A003 first-presentation epoch-arm contract and do not broaden into general interaction except where calibration UI input is necessary.
