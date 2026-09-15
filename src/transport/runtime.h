@@ -65,6 +65,9 @@ typedef struct pstvnc_transport_runtime {
     int rfb_credit_return_enabled;
     uint32_t max_data_payload;
 
+    uint32_t receiver_thread_stack_size;
+    int receiver_thread_priority;
+
     /*
      * Zero-length channel-1 DATA carries only the audited finite-session RFB
      * request/commit markers. These flags are product synchronization state,
