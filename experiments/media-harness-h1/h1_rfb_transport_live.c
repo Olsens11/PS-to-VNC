@@ -26,7 +26,6 @@
 #include "h1_transport_runtime.h"
 #include "transport_protocol.h"
 
-#include <delaythread.h>
 #include <kernel.h>
 
 #include <stdint.h>
@@ -204,12 +203,13 @@ int pstvnc_h1_rfb_transport_activity_snapshot(
 int pstvnc_h1_rfb_transport_notify_activity(
     pstvnc_h1_transport_runtime_t *runtime)
 {
-    int waiter_thread_id = -1;
+    int signal_waiter = 0;
     int witness_lifecycle = 0;
 
     if (runtime == NULL ||
         !runtime->rfb_resources.active ||
-        runtime->rfb_resources.queue_sema_id < 0)
+        runtime->rfb_resources.queue_sema_id < 0 ||
+        runtime->rfb_resources.activity_sema_id < 0)
         return 0;
 
     witness_lifecycle =
@@ -231,10 +231,15 @@ int pstvnc_h1_rfb_transport_notify_activity(
 
     runtime->rfb_resources.activity_sequence++;
 
-    if (runtime->rfb_resources.wait_thread_id >= 0) {
-        waiter_thread_id =
-            runtime->rfb_resources.wait_thread_id;
-        runtime->rfb_resources.wait_thread_id = -1;
+    /*
+     * Exactly one event token is published for an armed owner. Clearing the
+     * armed bit while holding the queue mutex makes concurrent producer
+     * notifications coalesce without carrying a raw EE thread id across the
+     * synchronization boundary.
+     */
+    if (runtime->rfb_resources.activity_wait_armed != 0) {
+        runtime->rfb_resources.activity_wait_armed = 0;
+        signal_waiter = 1;
     }
 
     if (witness_lifecycle)
@@ -250,18 +255,13 @@ int pstvnc_h1_rfb_transport_notify_activity(
         runtime->receiver_diag_stage =
             PSTVNC_H1_RX_DIAG_RFB_SIGNAL_RETURN;
 
-    /*
-     * Clearing the waiter before WakeupThread coalesces concurrent producers.
-     * Wake-before-SleepThread is safe because EE wakeup count is pending state,
-     * the same ordering already hardware-qualified by the MPEG event wake.
-     */
-    if (waiter_thread_id >= 0) {
+    if (signal_waiter) {
         if (witness_lifecycle)
             runtime->receiver_diag_stage =
                 PSTVNC_H1_RX_DIAG_RFB_WAKE_ENTER;
 
-        if (WakeupThread(waiter_thread_id) < 0) {
-            h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
+        if (SignalSema(runtime->rfb_resources.activity_sema_id) < 0) {
+            h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
             return 0;
         }
 
@@ -277,19 +277,12 @@ int pstvnc_h1_rfb_transport_wait_for_activity(
     pstvnc_h1_transport_runtime_t *runtime,
     uint32_t *activity_sequence)
 {
-    int current_thread_id;
-
     if (runtime == NULL ||
         activity_sequence == NULL ||
         !runtime->rfb_resources.active ||
-        runtime->rfb_resources.queue_sema_id < 0)
+        runtime->rfb_resources.queue_sema_id < 0 ||
+        runtime->rfb_resources.activity_sema_id < 0)
         return 0;
-
-    current_thread_id = GetThreadId();
-    if (current_thread_id < 0) {
-        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
-        return 0;
-    }
 
     if (WaitSema(runtime->rfb_resources.queue_sema_id) < 0) {
         h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
@@ -297,9 +290,10 @@ int pstvnc_h1_rfb_transport_wait_for_activity(
     }
 
     /*
-     * This comparison closes the producer-before-registration race. A producer
-     * that ran since the caller's snapshot already changed the ticket, so the
-     * owner returns immediately instead of sleeping through that work.
+     * This comparison closes the producer-before-arm race. A producer that ran
+     * since the caller's snapshot already changed the ticket, so the owner
+     * returns immediately instead of waiting through work that is already
+     * visible.
      */
     if (runtime->rfb_resources.activity_sequence !=
             *activity_sequence ||
@@ -318,31 +312,32 @@ int pstvnc_h1_rfb_transport_wait_for_activity(
         return 1;
     }
 
-    if (runtime->rfb_resources.wait_thread_id >= 0) {
+    if (runtime->rfb_resources.activity_wait_armed != 0) {
         (void)SignalSema(runtime->rfb_resources.queue_sema_id);
         h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
         return 0;
     }
 
-    runtime->rfb_resources.wait_thread_id =
-        current_thread_id;
+    runtime->rfb_resources.activity_wait_armed = 1;
 
     if (SignalSema(runtime->rfb_resources.queue_sema_id) < 0) {
         h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
         return 0;
     }
 
-    if (SleepThread() < 0) {
+    /*
+     * The event semaphore starts empty. A producer that observes the armed bit
+     * clears it under the queue mutex before signaling this semaphore. That
+     * makes signal-before-wait safe without relying on SleepThread/WakeupThread
+     * pending wake state or a stored thread identity.
+     */
+    if (WaitSema(runtime->rfb_resources.activity_sema_id) < 0) {
         if (WaitSema(runtime->rfb_resources.queue_sema_id) >= 0) {
-            if (runtime->rfb_resources.wait_thread_id ==
-                    current_thread_id)
-                runtime->rfb_resources.wait_thread_id = -1;
-
-            (void)SignalSema(
-                runtime->rfb_resources.queue_sema_id);
+            runtime->rfb_resources.activity_wait_armed = 0;
+            (void)SignalSema(runtime->rfb_resources.queue_sema_id);
         }
 
-        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_THREAD_DELAY);
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
         return 0;
     }
 
@@ -352,12 +347,16 @@ int pstvnc_h1_rfb_transport_wait_for_activity(
     }
 
     /*
-     * A normal producer clears this before waking us. Clear it here as well so
-     * a spurious/pending wake can never leave a stale waiter registration.
+     * A successful event wait must correspond to a producer that already
+     * cleared the armed bit. If it did not, the event token and protected state
+     * are out of phase; fail rather than carrying that mismatch forward.
      */
-    if (runtime->rfb_resources.wait_thread_id ==
-            current_thread_id)
-        runtime->rfb_resources.wait_thread_id = -1;
+    if (runtime->rfb_resources.activity_wait_armed != 0) {
+        runtime->rfb_resources.activity_wait_armed = 0;
+        (void)SignalSema(runtime->rfb_resources.queue_sema_id);
+        h1_rfb_record_error(runtime, PSTVNC_H1_ERROR_SEMAPHORE);
+        return 0;
+    }
 
     *activity_sequence =
         runtime->rfb_resources.activity_sequence;

@@ -4,9 +4,10 @@
  *
  * The resources are intentionally separable from CONFIG activation and live
  * transport dispatch. An OFF path allocates nothing. An ON preparation path
- * owns exactly one queue allocation of the CONFIG-selected capacity and one
- * mutex semaphore, then initializes the tested logical RFB channel over that
- * storage. No socket I/O or RFB protocol work occurs here.
+ * owns exactly one queue allocation of the CONFIG-selected capacity, one queue
+ * mutex semaphore, and one producer-driven activity event semaphore, then
+ * initializes the tested logical RFB channel over that storage. No socket I/O
+ * or RFB protocol work occurs here.
  *
  * Context: RFB_MUX_INTEGRATION_PREP.md, P2; RFB_CREDIT_POLICY_DECISION.md.
  */
@@ -29,6 +30,17 @@ static int h1_rfb_create_mutex(void)
     return CreateSema(&semaphore);
 }
 
+static int h1_rfb_create_activity_event(void)
+{
+    ee_sema_t semaphore;
+
+    memset(&semaphore, 0, sizeof(semaphore));
+    semaphore.init_count = 0;
+    semaphore.max_count = 1;
+    semaphore.option = 0;
+    return CreateSema(&semaphore);
+}
+
 void pstvnc_h1_rfb_runtime_resources_init(
     pstvnc_h1_rfb_runtime_resources_t *resources)
 {
@@ -37,7 +49,7 @@ void pstvnc_h1_rfb_runtime_resources_init(
 
     memset(resources, 0, sizeof(*resources));
     resources->queue_sema_id = -1;
-    resources->wait_thread_id = -1;
+    resources->activity_sema_id = -1;
 }
 
 int pstvnc_h1_rfb_runtime_resources_activate(
@@ -53,13 +65,15 @@ int pstvnc_h1_rfb_runtime_resources_activate(
             !resources->active &&
             resources->queue_storage == NULL &&
             resources->queue_capacity == 0u &&
-            resources->queue_sema_id < 0;
+            resources->queue_sema_id < 0 &&
+            resources->activity_sema_id < 0;
 
     if (queue_capacity == 0u ||
         resources->active ||
         resources->queue_storage != NULL ||
         resources->queue_capacity != 0u ||
-        resources->queue_sema_id >= 0)
+        resources->queue_sema_id >= 0 ||
+        resources->activity_sema_id >= 0)
         return 0;
 
     resources->queue_storage = (uint8_t *)malloc((size_t)queue_capacity);
@@ -75,10 +89,22 @@ int pstvnc_h1_rfb_runtime_resources_activate(
         return 0;
     }
 
+    resources->activity_sema_id = h1_rfb_create_activity_event();
+    if (resources->activity_sema_id < 0) {
+        (void)DeleteSema(resources->queue_sema_id);
+        resources->queue_sema_id = -1;
+        free(resources->queue_storage);
+        resources->queue_storage = NULL;
+        resources->queue_capacity = 0u;
+        return 0;
+    }
+
     if (!pstvnc_h1_rfb_channel_init(
             &resources->channel,
             resources->queue_storage,
             (size_t)resources->queue_capacity)) {
+        (void)DeleteSema(resources->activity_sema_id);
+        resources->activity_sema_id = -1;
         (void)DeleteSema(resources->queue_sema_id);
         resources->queue_sema_id = -1;
         free(resources->queue_storage);
@@ -102,9 +128,9 @@ int pstvnc_h1_rfb_runtime_resources_release(
     /*
      * The enclosing H1 runtime is memset() at connection start. If startup
      * fails before the RFB preparation hook has normalized this embedded bundle,
-     * queue_sema_id is therefore zero rather than our usual -1 sentinel. Treat
-     * a structurally empty/inactive bundle as unowned instead of attempting to
-     * delete semaphore id 0.
+     * semaphore ids are therefore zero rather than our usual -1 sentinels.
+     * Treat a structurally empty/inactive bundle as unowned instead of
+     * attempting to delete semaphore id 0.
      */
     if (!resources->active &&
         resources->queue_storage == NULL &&
@@ -112,6 +138,10 @@ int pstvnc_h1_rfb_runtime_resources_release(
         pstvnc_h1_rfb_runtime_resources_init(resources);
         return 1;
     }
+
+    if (resources->activity_sema_id >= 0 &&
+        DeleteSema(resources->activity_sema_id) < 0)
+        result = 0;
 
     if (resources->queue_sema_id >= 0 &&
         DeleteSema(resources->queue_sema_id) < 0)
