@@ -1,70 +1,65 @@
 # Ledge Semantic Audit — Lane State
 
 DOCUMENT=LEDGE_AUDIT_STATE
-STATE_REVISION=0005
-RECORDED_AT=2026-09-15T14:19:00-04:00
+STATE_REVISION=0006
+RECORDED_AT=2026-09-15T15:00:35-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_STATE_REVISION=0004
-BASED_ON_GLOBAL_STATE_REVISION=0005
+BASED_ON_STATE_REVISION=0005
+BASED_ON_GLOBAL_STATE_REVISION=0006
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-This lane state owns semantic-audit continuity only. It does not supersede the global ledge state or another lane's state.
+This lane state owns semantic-audit continuity only. It does not supersede global state or another lane's state.
 
 ## Authority inspected
 
-- branch `ledge/h1-all-guns` at audit start: `55dec26d05a46feb1ffe570cd8955c0cd749fc8f`, rechecked identical immediately before audit writes;
+- branch `ledge/h1-all-guns` at audit start: repository-visible fast-forward descendant of global revision 0006 authority;
 - forensic H1 source: `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`;
-- governing reconstruction contract: revision `0001`;
-- global work state consumed: revision `0005`;
-- prior audit state: revision `0004`;
-- A004 detailed audit: revision `0001`;
-- A005 detailed audit: `docs/ledge/LEDGE_AUDIT_A005_INTERACTION_INPUT.md` revision `0001`.
+- governing reconstruction contract revision `0001`;
+- global work state revision `0006`;
+- prior audit state revision `0005` and audit log revision `0005`;
+- A001-A005 detailed audit authorities;
+- A006 detailed audit: `LEDGE_AUDIT_A006_ORCHESTRATION_SHUTDOWN.md` revision `0001`.
 
-The repository connector exposes committed branch authority but not an external Pi worktree's uncommitted status. This audit therefore makes no claim that such a worktree is clean and did not modify reconstructed product source.
+The repository connector exposes committed branch authority but not an external Pi worktree's uncommitted status. No external-worktree-clean claim is made. This audit modified no reconstructed product source.
 
 ## Current audit phase
 
-`DEPENDENCY_CLOSURE_AND_PROCESS_CLASSIFICATION`
+`FINAL_DIAGNOSTIC_AND_DEPENDENCY_CLOSURE`
 
 ## Completed this lane snapshot
 
-- Preserved A001-A004 readiness unchanged.
-- Completed coherent audit tranche A005: physical controller observation versus semantic ownership; mouse pointer/button/wheel routing; successfully-published pointer authority; deterministic keyboard tap/modifier sequencing; OSK/local-UI foreground transitions; suspend/neutralize/rebase/release/resume ordering; physical-release quarantine; calibration foreground arbitration; safe-boundary RFB interaction servicing; and fail-closed input-worker shutdown.
-- Confirmed that H1 intentionally reused the real through-Issue-39 input/mouse/keyboard/OSK/UI owners. `h1_interaction_coordinator` is experiment-local composition scaffolding, not a second product interaction owner.
-- Classified the CP2M L1+D-pad keyboard gesture as discarded historical experiment behavior and the START+SELECT 750 ms calibration entry chord as a temporary hardware-test trigger rather than product binding. The trigger-agnostic calibration lifecycle survives.
-- Preserved the recorded OSK proportional vertical-navigation imperfection during structural migration; correction remains a separate future behavioral change.
-- Preserved main/application-thread RFB publication and complete-server-message safe-boundary servicing. The controller worker remains transport-agnostic and GS-agnostic.
-- No reconstructed product source, reconstruction state, validation findings, global state, or prior audit history entry was modified.
+- Preserved A001-A005 readiness unchanged.
+- Completed A006 resident startup/session admission/orchestration/finite shutdown/recovery classification and marked it `RECONSTRUCTION_READY`.
+- Classified boot prerequisites, transport-before-CONFIG admission, qualified profile admission, dependency-owned component startup, steady-state application coordination, explicit finite producer retirement, monotonic failure convergence, terminal RESULT accounting, reverse-dependency teardown and repeated-session reuse.
+- Reconciled checkpoint temporal semantics: CP2O's immediate clock arm is historical pre-MPEG behavior; A003/A004 first physical MPEG presentation remains current all-guns arm authority.
+- Preserved A001 receiver-dispatch quiescence, A003 safe MPEG stop/false-EOF prohibition and A005 fail-closed input dormancy as top-level teardown constraints.
+- Added simplification S009: retain resident/repeated-session lifecycle semantics while replacing checkpoint runner predicates/polling/delay/static-storage mechanics with explicit application lifecycle state/events and process-organized bridges.
+- No reconstruction state, validation finding or global state was modified.
 
 ## Progress counts at this snapshot
 
-- coherent process tranches fully classified: 5 (A001, A002, A003, A004, A005)
-- A001 responsibility/invariant rows reconstruction-ready: 8
-- A002 responsibility rows reconstruction-ready: 6
-- A003 reconstruction-ready responsibility groups: 7 plus 1 narrow media-clock arm contract
-- A004 reconstruction-ready responsibility groups: 9 plus 1 diagnostic-only group
-- A005 reconstruction-ready behavioral responsibility groups: 10, plus diagnostic-only counters and 2 discarded experiment-only trigger bindings
+- coherent process tranches fully classified: 6 (A001-A006)
+- A006 reconstruction-ready responsibility groups: 10, plus checkpoint diagnostics deferred to A007
 - CONFIG field IDs classified: 61/61
-- simplification register entries: 8; A005 simplification rationale is recorded in its detailed audit and does not alter prior S001-S008
-- remaining seeded major process families: 2 (top-level orchestration/shutdown/recovery; residual diagnostics/completeness closure)
-- whole-build dependency closure: recursive route identified; exhaustive file/symbol proof still incomplete
+- simplification register entries: 9
+- remaining seeded major process families: 1 (A007 residual diagnostics/completeness closure)
+- whole-build dependency closure: recursive route identified; exhaustive project-defined file/object/symbol proof still incomplete
 
 ## Known-defect / caution accounting
 
-- A003 false-EOF decoder-stop defect remains explicitly prohibited from reintroduction.
-- A005 preserves the historical OSK unequal-row proportional vertical-navigation imperfection during migration; no silent behavior fix is authorized.
-- A005 input-runtime shutdown remains fail-closed when worker dormancy cannot be proven; force termination is not an accepted simplification.
-- A005 physical continuity loss during a mouse-suspension epoch remains a hard reset boundary.
-- Historical H1 hardware/checkpoint evidence remains forensic evidence only and does not qualify reconstructed A005 code.
+- A001 receiver-dispatch fence remains mandatory before reclaiming resources touched by receiver dispatch.
+- A003 false-EOF decoder-stop defect remains explicitly prohibited.
+- A005 unproven input-worker dormancy remains fatal to safe reuse; no force-delete shortcut is authorized.
+- No generic timeout may convert unexplained lack of progress into successful retirement/recovery.
+- Historical H1 repeated-session/hardware evidence remains exact-checkpoint forensic evidence and does not qualify reconstructed source.
 
 ## Unresolved questions
 
-- Top-level all-guns startup, CONFIG-to-domain activation order, steady-state coordination, finite shutdown, failure/recovery and repeated-session sequencing remain unaudited.
-- Residual diagnostic witnesses and exhaustive recursive build/source/symbol completeness proof remain open.
-- Exact repeated-session qualification status across final H1 mechanisms remains evidence-specific; do not infer reconstructed qualification from historical checkpoints.
-- Dependency ordering for reconstruction remains global/reconstruction-lane authority: A005 readiness does not authorize bypassing active A001 transport reconstruction.
+- Residual diagnostic witnesses/stats/stage fields and qualification-only surfaces still need explicit disposition.
+- Exhaustive recursive all-guns project-defined source/object/symbol closure is not yet proven; unexplained residual responsibility must block semantic-audit completion.
+- Reconstruction dependency ordering remains global/reconstruction-lane authority; A006 readiness does not authorize skipping active prerequisites.
 
 ## Exact next pickup
 
-Audit A006 top-level all-guns orchestration, finite shutdown and recovery. Trace boot/session-loop ordering, CONFIG admission, transport/RFB/audio/MPEG startup dependencies, steady-state coordination, generation retirement, END/RESULT accounting, input/media shutdown ordering, failure convergence, repeated-session behavior, and resident-loop/test-control scaffolding. Preserve the current no-generic-timeout policy for unexplained silent waits unless contrary proven authority is found. After A006, perform A007 residual diagnostics plus exhaustive recursive dependency/source/symbol completeness closure.
+Execute A007 residual diagnostics plus exhaustive dependency/source/object/symbol completeness closure. Enumerate the recursive all-guns build closure, reconcile every project-defined responsibility to A001-A006 or an explicit diagnostic/development/discard disposition, classify remaining witnesses/stats/stage/qualification surfaces, run applicable canonical docs/dependency checks, and declare semantic audit complete only if no unexplained owner/process/symbol remains.
