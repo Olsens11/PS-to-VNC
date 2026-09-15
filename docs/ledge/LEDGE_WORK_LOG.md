@@ -1,8 +1,8 @@
 # Ledge Reconstruction Work Log
 
 DOCUMENT=LEDGE_WORK_LOG
-DOCUMENT_REVISION=0003
-RECORDED_AT=2026-09-15T10:31:00-04:00
+DOCUMENT_REVISION=0004
+RECORDED_AT=2026-09-15T11:35:00-04:00
 SOURCE_COMMIT=SELF
 TEMPORAL_CLASS=WORK_EVENT_LOG
 TEMPORAL_SEMANTICS=EACH_ENTRY_TRUE_AS_KNOWN_AT_ITS_COMPLETION_TIME
@@ -119,3 +119,65 @@ Global work state revision 0003 records:
 ### Exact next safe actions
 
 Audit continues A002 CONFIG/profile + PCM/audio + shared media clock. Reconstruction may now implement A001 under overlay revision 0001. Validation should acknowledge the supplied governance prerequisite but wait for an actual A001 source tranche before behavioral PASS. The next continuity shift should verify those lanes consumed the overlay/state and reconcile their new revisions.
+
+## Work Entry L003
+
+STARTED_AT=2026-09-15T11:30:45-04:00
+COMPLETED_AT=2026-09-15T11:35:00-04:00
+STARTING_STATE_REVISION=0003
+ENDING_STATE_REVISION=0004
+STARTING_COMMIT=8e1b51ec9cd92230b46a71b4b33ee748bf858822
+ENDING_COMMIT=SELF
+TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_KNOWLEDGE_AND_WORK_AT_COMPLETION_TIME
+
+### Objective
+
+Reconcile the second pipelined audit/reconstruction/validation cycle into one current global state, verify consumption of the architecture overlay, and keep stage transitions and historical semantics exact without touching lane-owned source or findings.
+
+### Evidence inspected
+
+- branch authority `8e1b51ec9cd92230b46a71b4b33ee748bf858822` at governance start;
+- global state revision 0003 and global log revision 0003;
+- audit state revision 0002, based on global 0003;
+- reconstruction state revision 0002, based on audit 0002 and global 0003;
+- validation state revision 0002, based on reconstruction 0002, semantic audit 0002, and architecture overlay 0001;
+- governing architecture overlay revision 0001 and reconstruction contract revision 0001.
+
+### Reconciliation
+
+All lanes consumed the previous governance decision coherently. Audit completed A002 and made its qualified-profile, PCM/AUDSRV lifecycle, audio worker/startup, and common media-clock responsibilities reconstruction-ready while explicitly deferring MPEG/video callsite semantics to A003.
+
+Reconstruction consumed only A001 and began the clean transport boundary with `src/transport/transport.h` plus local `SYMBOLS.md`. It explicitly did not claim physical mux framing, sole receiver, logical buffering/credit/fragmentation, serialized send, quiescence implementation, build integration, PT_LOAD evidence, or hardware qualification. A002 remains queued behind the transport foundation.
+
+Validation independently consumed the partial A001 tranche. It resolved V001 only as the architecture-governance prerequisite, retained V002 PASS for prior boundary discipline, and opened V003 INFO/OPEN as a wait for a coherent implementation/build/test tranche. The interface received provisional ownership/SYMBOLS validation only.
+
+### Pipeline state published
+
+Global work state revision 0004 records:
+
+- AUDIT: A003 MPEG ingest/decode + CP2P generation/start/retire lifecycle;
+- RECONSTRUCTION_READY: A002, queued behind A001 foundation;
+- RECONSTRUCTING: A001, interface present but implementation/build/test incomplete;
+- VALIDATION_READY: none;
+- PASS: V002 discipline plus provisional interface-level checks only, explicitly not behavioral A001 PASS;
+- BLOCKED: none at governance level; V003 is a wait state rather than a defect blocker;
+- HARDWARE_PENDING: none because no reconstructed PT_LOAD-changing candidate exists.
+
+### Continuity / architecture checks
+
+- revision ancestry across global 0003 -> audit 0002 -> reconstruction 0002 -> validation 0002 -> global 0004: coherent;
+- audit readiness versus reconstruction consumption: coherent;
+- A002 sequencing behind shared transport: coherent and prevents parallel physical transport ownership;
+- historical V001 OPEN versus current V001 RESOLVED: temporally compatible;
+- validation claims remain bounded to available evidence;
+- new transport-domain topology obligations remain explicit and reconstruction-owned;
+- no audit disposition, reconstruction source, validation finding, or historical lane state was rewritten by governance;
+- no physical/hardware qualification was claimed.
+
+### Risks / incomplete work
+
+Whole-build dependency/source/symbol completeness remains unfinished. A001 is not yet buildable or validation-ready. The new transport domain still owes topology/dictionary/build/test integration and canonical checks. A002 must remain queued until A001 provides the common transport foundation. A003 still owns unresolved MPEG/video field and media-epoch arming semantics.
+
+### Exact next safe actions
+
+Audit proceeds with A003 only. Reconstruction continues A001 through a coherent physical transport/logical RFB/quiescence implementation plus topology/build/test obligations and exact build identity. Validation preserves V003 until that handoff exists, then performs the full independent machine-validation suite and separates any successful machine result from physical PS2 qualification. Continuity next verifies those transitions and keeps A002 visibly queued behind A001.
