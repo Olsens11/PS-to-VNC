@@ -1,8 +1,8 @@
 # Ledge Semantic Audit — Append-only Lane Log
 
 DOCUMENT=LEDGE_AUDIT_LOG
-DOCUMENT_REVISION=0004
-RECORDED_AT=2026-09-15T13:11:00-04:00
+DOCUMENT_REVISION=0005
+RECORDED_AT=2026-09-15T14:18:00-04:00
 SOURCE_COMMIT=SELF
 TEMPORAL_CLASS=WORK_EVENT_LOG
 TEMPORAL_SEMANTICS=EACH_ENTRY_TRUE_AS_KNOWN_AT_ITS_COMPLETION_TIME
@@ -201,3 +201,56 @@ General interaction composition, top-level all-guns orchestration/shutdown/recov
 ### Exact next pickup
 
 Audit A005 interaction/input composition: physical controller acquisition versus semantic ownership, pointer/button/scroll routing, OSK/local-UI foreground transitions, keyboard tap/modifier serialization, calibration entry/exit handoff, release quarantine, and RFB safe-boundary interaction servicing. Do not reopen A004 geometry/presentation policy except where an interaction transition consumes its already-classified foreground/ownership contract.
+
+## Audit Entry A005
+
+STARTED_AT=2026-09-15T14:02:16-04:00
+COMPLETED_AT=2026-09-15T14:18:00-04:00
+STARTING_GLOBAL_STATE_REVISION=0005
+STARTING_AUDIT_STATE_REVISION=0004
+ENDING_AUDIT_STATE_REVISION=0005
+STARTING_BRANCH_COMMIT=55dec26d05a46feb1ffe570cd8955c0cd749fc8f
+FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
+TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_AUDIT_KNOWLEDGE_AT_COMPLETION_TIME
+
+### Objective
+
+Classify the proven H1 interaction/input composition as one coherent process: physical controller acquisition versus semantic ownership, pointer/button/wheel publication, keyboard/OSK semantics, local foreground transitions, calibration handoff, release quarantine, safe-boundary RFB servicing and input-worker shutdown.
+
+### Evidence inspected
+
+Current branch/global/audit authority; `AGENTS.md`; `CONTRIBUTING.md`; `docs/CLEAN_ARCHITECTURE.md`; ledge reconstruction contract; `H1_INTEGRATION_INTENT.md`; `h1_main_rfb_visible_interaction_pcm.c`; `h1_interaction_coordinator.{c,h}`; `h1_rfb_session_runtime.h`; calibration interaction binding; clean `src/app.c`, `src/input/input_runtime.h`, `src/input/keyboard.h`, `src/ui/local_controller.h`, `src/ui/local_ui.h`, `src/ui/osk.h`; and the CP2P application-link workflow.
+
+### Findings and decisions
+
+A005 is `RECONSTRUCTION_READY`. H1 did not prove a new interaction architecture: it deliberately reused the real through-Issue-39 input/mouse/keyboard/OSK/UI modules and added an experiment-local coordinator because H1 owned the mux transport and finite-session lifecycle. Reconstruction should therefore retain those existing domain owners and collapse only the duplicated cross-domain orchestration into process-organized application/component bridge sections.
+
+Required semantics include: main-thread-only RFB interaction publication; successfully-published pointer state as rebase authority; wheel as a momentary RFB pulse preserving held ordinary buttons; deterministic balanced keyboard modifier sequencing; OSK printable Shift-layer versus real modifier distinction; mouse suspension before local foreground; remote held-click neutralization at frozen published coordinates; rebase before foreground; continued physical polling during ordinary local foreground; physical-release rather than timer completion of quarantine; no desktop mouse resume until the disappearing overlay generation has actually presented; calibration first refusal once it owns foreground; safe complete-message RFB service boundaries; and fail-closed cooperative input-worker shutdown.
+
+The CP2M L1+D-pad keyboard gesture is explicitly discarded as a rejected transient experiment path. The START+SELECT 750 ms calibration chord is likewise classified as a temporary hardware-test trigger, not product binding; the trigger-agnostic calibration foreground/quarantine lifecycle survives.
+
+The historical OSK proportional vertical mapping remains a known deferred imperfection: unequal-row transitions are not perfectly reversible. Structural reconstruction must preserve it unless a separate behavior-change disposition later authorizes correction. Input shutdown must also remain fail-closed when worker dormancy cannot be proven.
+
+### Repository changes
+
+- created `LEDGE_AUDIT_A005_INTERACTION_INPUT.md` revision `0001`;
+- advanced audit lane state to revision `0005`;
+- advanced this append-only lane log to revision `0005`.
+
+No reconstructed product source, forensic H1 source, reconstruction state, validation finding, global state, or audit history entry was rewritten.
+
+### Validation performed
+
+Repository/source inspection established the clean owner boundaries, H1 reuse relationship, safe RFB service seam, transition ordering and known-defect treatment. Branch authority was `55dec26d05a46feb1ffe570cd8955c0cd749fc8f` at start and identical on recheck immediately before audit writes. No executable build, PT_LOAD comparison, reconstructed host test or new hardware test was performed or claimed. The repository connector cannot inspect an external Pi worktree's uncommitted status, so no external-worktree-clean claim is made.
+
+### Progress
+
+Five coherent tranches are now classified. A005 contributes ten reconstruction-ready behavioral responsibility groups plus diagnostic-only interaction counters and two discarded experiment-only trigger bindings. All 61 CONFIG fields remain classified. Two seeded major process families remain: top-level orchestration/shutdown/recovery and residual diagnostics/completeness closure. Exhaustive recursive build/source/symbol closure remains incomplete.
+
+### Unresolved questions
+
+Top-level all-guns startup, CONFIG-to-domain activation order, finite transport/media/input shutdown, failure convergence, repeated-session semantics, residual diagnostic witnesses, and exhaustive recursive dependency/source/symbol completeness remain unaudited. Historical H1 interaction evidence does not qualify reconstructed A005 code.
+
+### Exact next pickup
+
+Audit A006 top-level all-guns orchestration, finite shutdown and recovery. Trace boot/session-loop ordering, CONFIG admission, transport/RFB/audio/MPEG startup dependencies, steady-state coordination, generation retirement, END/RESULT accounting, input/media shutdown ordering, failure convergence, repeated-session behavior, and resident-loop/test-control scaffolding. Preserve the current no-generic-timeout policy for unexplained silent waits unless contrary proven authority is found.
