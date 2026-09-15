@@ -1,8 +1,8 @@
 # Ledge Validation — Findings
 
 DOCUMENT=LEDGE_VALIDATION_FINDINGS
-DOCUMENT_REVISION=0002
-RECORDED_AT=2026-09-15T11:28:00-04:00
+DOCUMENT_REVISION=0003
+RECORDED_AT=2026-09-15T16:59:04-04:00
 TEMPORAL_CLASS=APPEND_ONLY_FINDING_REGISTER
 
 Findings are validation-owned. They describe evidence and required disposition; they do not redesign product behavior or rewrite audit/reconstruction history.
@@ -66,3 +66,26 @@ Validation disposition:
 Required resolution:
 
 Reconstruction must finish the coherent A001 implementation and new-domain integration obligations, add the queued host tests, run canonical checks/builds, and hand the tranche to validation with exact source/build identity. Validation must then independently execute the A001 obligation set before changing this finding to PASS/HARDWARE_PENDING or opening defects.
+
+## V004 — Transport symbol dictionary is not yet complete enough for a clean-source PASS
+
+SEVERITY=INFO
+STATUS=OPEN
+AFFECTED_TRANCHE=A001
+AFFECTED_RECONSTRUCTION_STATE=0004
+
+Evidence:
+
+- `docs/development/source-naming-and-symbols.md` requires every project-defined clean-generation symbol, including parameters, local variables, structure fields, macros/constants, and prototypes, to be represented in the owning directory's `SYMBOLS.md`;
+- current `src/transport/SYMBOLS.md` indexes the high-level transport, framing, and physical-stream symbols, but does not describe many project definitions already introduced in `physical_stream.h/.c`, including structure fields, function parameters, and local variables, and it lacks the standard `DIRECTORY`, `GENERATION`, and `COVERAGE` metadata used by complete clean dictionaries;
+- `docs/reference/SOURCE_SYMBOL_DICTIONARIES.md` still omits `src/transport`, so the generated product dictionary portal is not synchronized to the new clean domain;
+- complete clean dictionaries such as `src/rfb/SYMBOLS.md` demonstrate definition-level coverage rather than only public/high-level symbol indexing;
+- reconstruction state 0004 correctly leaves strict dictionary/topology checks `PENDING_LOCAL`, so A001 is not falsely marked complete; however reconstruction log R006's narrower claim that introduced-symbol accounting passed by repository inspection is not supported by the current dictionary under the governing completeness policy.
+
+Validation disposition:
+
+`REQUIRED_BEFORE_VALIDATION_READY`. This is a documentation/completeness gate, not evidence that the physical-stream runtime behavior is incorrect.
+
+Required resolution:
+
+Reconstruction must complete `src/transport/SYMBOLS.md` definition coverage and metadata, finish the new-domain topology/portal/build integration, regenerate the product dictionary portal, and run the long/complete/strict dictionary/topology gates before A001 may become `VALIDATION_READY`.
