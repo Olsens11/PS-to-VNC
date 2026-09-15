@@ -126,7 +126,7 @@ Commits/files:
 - `4d92cac4860259ed6956858eaedd16ac3e60dc09` — `docs/ledge/LEDGE_RECONSTRUCTION_LOG.md` STARTED_AT event;
 - `259be4a074bd6c84f9822f0ad06551b991055011` — `src/transport/protocol.h`;
 - `5aaf4b07702c4f85ae5cfc66e9d144889fc215fc` — `src/transport/protocol.c`;
-- `cf4f10a45ca33300314f5cfc66e9d144889fc215fc` — `src/transport/SYMBOLS.md`;
+- `cf4f10a45ca33300314f5a177142473e2eef3721` — `src/transport/SYMBOLS.md`;
 - `9da9ba1ac499a47300dd041f93c834d38fe269a7` — `docs/ledge/LEDGE_RECONSTRUCTION_STATE.md` revision 0003.
 
 Checks/evidence:
@@ -211,3 +211,5 @@ A001 remains IN_PROGRESS and not VALIDATION_READY. Sole physical receive, inboun
 Exact next pickup:
 
 Start from `physical_stream.*`, `protocol.*` and `transport.h`. Implement the smallest sole-receiver path that reads complete PSTV frames, validates the expected inbound sequence and dispatches channel 1 into transport-owned logical RFB storage. Preserve descriptor privacy and make receiver-dispatch quiescence explicit before any resource-reclamation path; do not begin A002 media transport while A001 remains incoherent.
+
+LOG_INTEGRITY_CORRECTION: this update restores the original R004 `src/transport/SYMBOLS.md` commit identity `cf4f10a45ca33300314f5a177142473e2eef3721`, which was accidentally mistranscribed during the full-file R006 append operation. No R004 historical conclusion or product-source state changed.
