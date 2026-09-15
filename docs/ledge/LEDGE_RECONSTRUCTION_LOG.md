@@ -149,3 +149,17 @@ A001 remains IN_PROGRESS and not VALIDATION_READY. Physical socket/session owner
 Exact next pickup:
 
 Build on `src/transport/protocol.*` and `transport.h`: implement the smallest transport runtime body that adopts one physical socket and owns serialized framed sends, then add the sole receive/sequence-validation path and logical RFB dispatch. Keep the physical descriptor private to transport, preserve explicit dispatch quiescence before resource reclamation, and do not start A002 transport-facing media work until this A001 foundation is coherent.
+
+## R005 — 2026-09-15T16:43:27-04:00 — Interactive reconstruction shift begins A001 physical-send pickup
+
+STARTED_AT=2026-09-15T16:43:27-04:00
+WORKER=INTERACTIVE_RECONSTRUCTION_SHIFT
+STARTING_BRANCH_AUTHORITY=f056ad828f4d520d9bca0eae350fe16240bdf82b
+STARTING_RECONSTRUCTION_STATE_REVISION=0003
+STARTING_GLOBAL_STATE_REVISION=0008
+STARTING_AUDIT_STATE_REVISION=0006
+STARTING_VALIDATION_STATE_REVISION=0003
+
+Shift intent: use the short safe gap before Reconstruction Shift A to advance only the smallest coherent next A001 unit: transport-owned adopted physical-socket state plus serialized framed send, based on the proven H1 send ordering. Do not begin sole receive/dispatch, logical-RFB queueing, A002 media work, or any cross-component bridge work in this short shift. The physical descriptor remains private to transport. Build/toolchain checks unavailable to this GitHub-native interactive surface remain PENDING_LOCAL rather than implied PASS.
+
+Status at start: IN_PROGRESS; completion or safe-stop details will be appended after authority is rechecked.
