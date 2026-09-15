@@ -3,11 +3,13 @@
 DOCUMENT=LEDGE_WORK_STATE
 STATE_REVISION=0002
 RECORDED_AT=2026-09-15T09:48:00-04:00
-SOURCE_COMMIT=b7b655d25edc4929f85d08be8c1a9bd985596193
+SOURCE_COMMIT=SELF
 BASED_ON_STATE_REVISION=0001
 SUPERSEDES_STATE_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+`SOURCE_COMMIT=SELF` means this snapshot is authoritative as committed in the Git commit containing this file; use `git rev-parse HEAD`/repository branch authority rather than embedding a self-referential commit hash that would necessarily change the commit being named.
 
 This file is a point-in-time statement. Its claims describe reconstruction state known at `RECORDED_AT`; historical revisions are not present-state authority. Later valid revisions supersede conflicting state while preserving earlier revisions as historical evidence.
 
@@ -16,7 +18,6 @@ This file is a point-in-time statement. Its claims describe reconstruction state
 - Ledge branch: `ledge/h1-all-guns`
 - Forensic H1 starting commit: `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`
 - Bootstrap continuity commit: `0fe5ed56a6672290c3d05aca1f3d8aecd37a8bea`
-- First-shift state/log commit: `b7b655d25edc4929f85d08be8c1a9bd985596193`
 - Governing reconstruction contract revision: `0001`
 
 ## Current phase
