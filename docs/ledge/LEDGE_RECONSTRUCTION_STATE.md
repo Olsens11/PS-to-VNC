@@ -1,12 +1,12 @@
 # Ledge Reconstruction — Lane State
 
 DOCUMENT=LEDGE_RECONSTRUCTION_STATE
-STATE_REVISION=0002
-RECORDED_AT=2026-09-15T11:24:00-04:00
+STATE_REVISION=0003
+RECORDED_AT=2026-09-15T16:13:18-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_STATE_REVISION=0001
-BASED_ON_AUDIT_STATE_REVISION=0002
-BASED_ON_GLOBAL_STATE_REVISION=0003
+BASED_ON_STATE_REVISION=0002
+BASED_ON_AUDIT_STATE_REVISION=0006
+BASED_ON_GLOBAL_STATE_REVISION=0007
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
@@ -14,49 +14,48 @@ This lane state owns reconstruction/integration continuity only. It does not sup
 
 ## Authority inspected
 
-- branch at run start: `5d376fe67eecfdad8f96ee1553177f82d753a31d`;
+- branch at shift start: `a2b4dbf27dc9897a49480edcfceddce38b51e8b0`;
+- branch before this state write: `cf4f10a45ca33300314f5a177142473e2eef3721`;
 - forensic H1 source authority remains `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`;
-- audit state revision `0002` preserves A001 ready and adds A002 ready;
-- global state revision `0003` plus `LEDGE_ARCHITECTURE_OVERLAY` revision `0001` explicitly clears the A001 shared-transport architecture gate;
-- validation finding V001 remains OPEN pending reconstruction/validation; V002 remains PASS for prior gate handling.
+- audit state revision `0006` marks A001-A006 reconstruction-ready;
+- global state revision `0007` keeps A001 as the active dependency foundation;
+- validation state revision `0002` / V003 still waits for a coherent A001 implementation/build/test handoff.
+
+The repository connector exposes committed GitHub authority but not external Pi-local dirty state. This shift neither overwrote nor declared absent any unseen local work.
 
 ## Current reconstruction phase
 
-`A001_SHARED_TRANSPORT_INTERFACE_IN_PROGRESS`
+`A001_SHARED_TRANSPORT_FRAMING_IN_PROGRESS`
 
-## Progress this shift
+## Progress
 
-The architecture gate is cleared. Reconstruction began with the smallest non-fabricated A001 source boundary: `src/transport/transport.h` and its local `SYMBOLS.md`.
+A001 now contains the first implementation body behind the previously declared transport interface: `src/transport/protocol.h` and `src/transport/protocol.c` reconstruct the proven PSTV v1 fixed-header vocabulary, stable logical channel identities, 16-byte header, 8192-byte payload ceiling, big-endian integer encoding, magic/version validation, and payload-length validation.
 
-The interface deliberately removes the physical socket descriptor from RFB-facing byte-stream operations and defines application-requested/transport-owned session open, quiesce, and close operations. The comments preserve the essential invariant that quiesce cannot complete while receiver dispatch may still touch channel resources and that diagnostics are not synchronization authority.
+This is deliberately backend-independent framing logic. It does not own sockets, dispatch, queues, RFB parsing, media policy, or threading. The implementation is reconstructed from the proven portable H1 framing authority rather than copying H1 runtime scaffolding. `src/transport/SYMBOLS.md` now indexes the added framing symbols.
 
-This is an interface/topology tranche only. It does **not** claim that physical framing, the sole receiver, logical RFB buffering, fragmentation, serialized send, or quiescence mechanism are implemented yet. It is intentionally not wired into the product build or RFB session yet, so no PT_LOAD or hardware claim is made from this shift.
+## Behavioral parity / defect treatment
 
-## Incomplete topology obligations
-
-Creating `src/transport/` triggers the clean topology policy. Before this source tranche may be considered complete, the reconstruction lane must update the active topology policy, continuity topology contract, generated dictionary portal, build/include/test paths, and relevant architecture/navigation documentation, then run the long/complete/strict dictionary gate and canonical checks. Those obligations were not silently bypassed; the new directory remains explicitly IN_PROGRESS until they are satisfied.
-
-## A001 implementation order from here
-
-1. Implement transport-owned physical PSTV framing/sequence validation, sole receive/dispatch, serialized send, and explicit dispatch/quiescence state using the proven H1 behavior as semantic authority.
-2. Implement transport-owned logical RFB channel storage/activity/credit accounting and outbound fragmentation, allocated only when RFB is enabled.
-3. Adapt the RFB component's single bridge process section to the new logical byte-stream operations; remove direct physical socket authority without preserving H1 symbol-renaming/global-bind scaffolding.
-4. Complete the new-domain topology obligations in the same coherent A001 source tranche.
-5. Add host framing/dispatch/sequence/error, logical queue/residual/credit, disabled-channel, repeated-session, and quiescence-order tests.
-6. Run canonical source/docs/build checks and produce exact build/PT_LOAD identity before handing the tranche to validation.
-
-## A002 handling
-
-A002 is reconstruction-ready but is not consumed into source in this shift. Do not begin audio/profile/media-clock implementation until A001 has at least a coherent buildable transport foundation; A002's PCM logical channel should attach to that owner rather than create a parallel transport mechanism.
-
-## Known-defect treatment
-
-No known defect was silently fixed. The H1 counter-equality + bounded-delay shutdown mechanism remains classified as experimental evidence machinery; its receiver-dispatch ordering invariant must be preserved by explicit quiescence state when implementation lands.
+The wire values and validation behavior are preserved. No known defect was silently corrected. H1 diagnostic counters/stages, symbol-renaming adapters, and shutdown delay/counter machinery were not introduced into this pure framing layer because they are not framing semantics.
 
 ## Validation status
 
-A001 is not VALIDATION_READY. V001's governance prerequisite is satisfied, but source validation must wait for the buildable implementation tranche. No hardware qualification has occurred.
+A001 remains **not VALIDATION_READY**. This shift did not wire the new framing files into the clean product build and did not implement the sole physical receiver, sequence-state enforcement, logical RFB queue/credit/fragmentation, serialized send, dispatch/quiescence state, or RFB bridge adaptation.
+
+PENDING_LOCAL: canonical clean-product build, source/dictionary checks that require the repository's execution environment, exact ELF/PT_LOAD identity, and any PS2DEV-dependent checks. No such check is claimed PASS from repository inspection alone.
+
+HARDWARE_PENDING: none yet as a handoff state because A001 has not reached machine-validation completion; historical H1 hardware evidence remains forensic only.
+
+## Commits in this shift so far
+
+- `4d92cac4860259ed6956858eaedd16ac3e60dc09` — Reconstruction B STARTED_AT log event;
+- `259be4a074bd6c84f9822f0ad06551b991055011` — reconstructed PSTV framing contract;
+- `5aaf4b07702c4f85ae5cfc66e9d144889fc215fc` — reconstructed portable framing implementation;
+- `cf4f10a45ca33300314f5a177142473e2eef3721` — transport symbol dictionary update.
+
+## Work remaining
+
+Continue A001 only: implement transport-owned physical socket/session state, direction-local sequence validation, sole receive/dispatch, serialized send, logical RFB queue/activity/credit accounting and outbound fragmentation, explicit dispatch/quiescence state, RFB bridge adaptation, topology/build/test integration, and host tests. Then run canonical checks and produce exact build/PT_LOAD evidence before `VALIDATION_READY`.
 
 ## Exact next pickup
 
-Continue A001, not A002: inspect the proven H1 mux framing/channel implementation and current PS2 network owner, then implement the smallest coherent transport body for one physical socket, sole receive/dispatch, logical RFB buffering, serialized send, and explicit quiescence. In that same tranche satisfy the new-directory topology/dictionary/build/test obligations. Do not wire PCM/MPEG until their transport-facing behavior is consumed deliberately from ready audit tranches.
+Start from `src/transport/protocol.*` plus `transport.h`. Reconstruct the smallest transport runtime body that owns one adopted physical socket and serialized framed sends, then add sole receive/sequence validation and logical RFB dispatch without exposing the socket to RFB. Preserve the receiver-dispatch quiescence invariant explicitly; do not reproduce diagnostic counters as synchronization authority and do not begin A002 media transport in parallel with an incomplete A001 foundation.
