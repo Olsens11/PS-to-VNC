@@ -24,42 +24,67 @@ Work performed:
 - created reconstruction-lane continuity state and this append-only log;
 - prepared an exact source reconstruction order and validation queue behind the architecture gate.
 
-Source changes:
+Source changes: reconstructed product source none; forensic H1 source none; audit/simplification records none; validation records none; reconstruction-owned docs only.
 
-- reconstructed product source: none;
-- forensic H1 source: none;
-- audit/simplification records: none;
-- validation records: none;
-- reconstruction-owned docs only: `docs/ledge/LEDGE_RECONSTRUCTION_STATE.md`, `docs/ledge/LEDGE_RECONSTRUCTION_LOG.md`.
+Decision: do not manufacture a new transport authority while declared architecture contradicts that ownership. Preserve A001 ready semantics and block only source migration until governance reconciliation is explicit.
 
-Checks/evidence:
+Exact next pickup: re-read architecture and lane states; implement A001 only after explicit reconciliation.
 
-- verified branch head before write;
-- verified A001 readiness and intended owner/process/bridge directly from semantic audit revision `0002`;
-- verified primary architecture declares itself `PRIMARY_ARCHITECTURE_AUTHORITY=YES`;
-- verified architecture version 1 says main/application thread is sole owner of VNC socket operations and RFB depends on socket/PS2IP facilities;
-- verified current clean source has RFB/framebuffer/etc. domains but no established transport component at the inspected branch state.
+## R002 — 2026-09-15T11:24:00-04:00 — A001 shared-transport interface begins
 
-Decision:
+Starting authority:
 
-Do not manufacture a new `src/transport` authority or rewire RFB while the declared primary architecture contradicts that ownership. This would be silent architecture replacement, which the reconstruction contract forbids. Preserve A001 as ready semantics and block only its source migration until architecture/governance reconciliation is explicit.
+- branch `ledge/h1-all-guns` at `5d376fe67eecfdad8f96ee1553177f82d753a31d`;
+- global state revision `0003`;
+- audit state revision `0002`;
+- `LEDGE_ARCHITECTURE_OVERLAY` revision `0001`, which explicitly authorizes the A001 shared-transport owner;
+- validation V001 still OPEN pending actual source reconstruction/validation.
+
+Work performed:
+
+- confirmed the former architecture gate is resolved prospectively by governance;
+- created `src/transport/transport.h` as the explicit shared-transport ownership interface;
+- created `src/transport/SYMBOLS.md` as the new domain's local dictionary;
+- removed physical socket authority from the RFB-facing byte-stream API shape;
+- made application-requested session open/quiesce/close explicit while documenting that receiver-dispatch quiescence, not diagnostic counters, is synchronization authority;
+- advanced reconstruction lane state to revision `0002`.
+
+Commits produced during the tranche:
+
+- `8733754fac4b7ed8a66c241e64f5eb248294f544` — transport interface;
+- `37f2a626e62aafb4cf4626091ef9421b205768f5` — transport local symbol dictionary;
+- `0d2b250966d85bf9437d3db5862b46ea02356bfe` — reconstruction state revision `0002`.
+
+Evidence/validation:
+
+- source interface was checked against A001 audit semantics and the governing overlay;
+- no physical framing/receiver/channel implementation exists yet, so behavioral tests and build qualification were not claimed;
+- the interface is not wired into the build, therefore this shift does not claim a changed DUT/PT_LOAD;
+- the new-directory topology policy was inspected and its remaining obligations are explicitly recorded rather than silently bypassed.
+
+Simplification/decision:
+
+The H1 symbol-renaming/fake-socket adapter is not reproduced. The clean boundary names logical RFB stream operations directly and withholds the physical socket descriptor from RFB consumers. The counter-equality/delay shutdown fence is likewise not encoded into the interface; quiescence is a semantic operation whose implementation must prove the same ordering invariant explicitly.
 
 Incomplete work:
 
-- A001 product-source reconstruction has not begun;
-- canonical source/build tests are not applicable yet because product source was intentionally unchanged;
-- PS2 qualification remains untouched.
+- physical PSTV framing/sequence validation;
+- sole receiver and logical-channel dispatch;
+- logical RFB storage/credit/residual behavior and outbound fragmentation;
+- serialized physical send;
+- explicit receiver-dispatch state implementation;
+- RFB bridge adaptation;
+- new-domain topology/continuity/build/dictionary-portal integration;
+- host tests, canonical checks, build identity, PT_LOAD comparison, and PS2 qualification.
 
 Risk/discovery:
 
-The audit correctly notes that clean architecture version 1 is pre-media. The first all-guns reconstruction tranche exposes the exact point where that architecture must be extended: physical PSTV transport ownership and logical channel delivery. Treating the old direct-RFB-socket concurrency rule as still final would recreate competing streams; ignoring it without revision would violate repository authority.
+The topology policy intentionally makes a new clean domain a multi-surface change. The interface files are therefore an IN_PROGRESS reconstruction boundary, not a completed architecture stage. Future workers must not mistake file presence for build adoption or validation.
 
 Ending authority:
 
-- reconstruction lane state revision `0001` records `A001_ARCHITECTURE_GATE`;
-- product behavior remains unchanged;
-- A001 semantic requirements remain the source of truth for the gated tranche.
+Reconstruction state revision `0002` is the current lane handoff. A001 remains IN_PROGRESS and not VALIDATION_READY. A002 is ready but intentionally queued behind a coherent A001 transport foundation.
 
 Exact next pickup:
 
-Re-read architecture and lane states. If architecture has been explicitly reconciled for all-guns transport, implement the queued A001 order and hand it to validation. If not, preserve the gate and avoid conflicting product-source edits.
+Continue A001 by reconstructing the proven H1 physical mux/sole-receiver/logical-RFB/quiescence mechanism into the transport owner, then satisfy the new-domain topology/build/test/dictionary obligations and run canonical checks before handing any tranche to validation.
