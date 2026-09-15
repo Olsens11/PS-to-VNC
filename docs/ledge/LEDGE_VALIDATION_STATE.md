@@ -1,13 +1,13 @@
 # Ledge Validation — Lane State
 
 DOCUMENT=LEDGE_VALIDATION_STATE
-STATE_REVISION=0002
-RECORDED_AT=2026-09-15T11:29:00-04:00
+STATE_REVISION=0003
+RECORDED_AT=2026-09-15T16:19:27-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_STATE_REVISION=0001
-BASED_ON_RECONSTRUCTION_STATE_REVISION=0002
-BASED_ON_SEMANTIC_AUDIT_REVISION=0002
-BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0001
+BASED_ON_STATE_REVISION=0002
+BASED_ON_RECONSTRUCTION_STATE_REVISION=0003
+BASED_ON_SEMANTIC_AUDIT_REVISION=0006
+BASED_ON_GLOBAL_STATE_REVISION=0007
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
@@ -15,45 +15,45 @@ This state owns validation continuity only. It does not supersede the global led
 
 ## Authority inspected
 
-- branch `ledge/h1-all-guns` before validation writes: `d5692267600c29c98219502ecf4b5fb43a2788c7`;
+- branch `ledge/h1-all-guns` at validation start: `43f95f7de834bd45097abcb4479e109f4225699a`;
 - forensic H1 authority remains `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`;
-- semantic audit revision `0002`;
-- reconstruction state revision `0002` / log R002;
-- global architecture overlay revision `0001`;
-- prior validation state revision `0001`, findings V001/V002, and log VL001.
+- reconstruction state revision `0003`;
+- semantic audit state revision `0006`;
+- global state revision `0007`;
+- prior validation state revision `0002`, findings V001-V003, and log through VL002.
+
+The repository connector exposes committed GitHub authority but not Pi-local dirty state. This validation shift did not overwrite or declare absent unseen local work.
 
 ## Current validation phase
 
-`A001_INTERFACE_IN_PROGRESS_WAITING_FOR_COHERENT_TRANCHE`
+`A001_IMPLEMENTATION_IN_PROGRESS_WAITING_FOR_COHERENT_TRANCHE`
 
 ## Validation result
 
-The former architecture contradiction is explicitly reconciled by `LEDGE_ARCHITECTURE_OVERLAY` revision 0001, so V001 is resolved as a governance prerequisite. Reconstruction has now introduced `src/transport/transport.h` and `src/transport/SYMBOLS.md`; the interface shape is provisionally consistent with the overlay and A001 audit semantics because physical socket authority is withheld from RFB-facing operations and lifecycle/quiescence is transport-owned.
+A001 remains intentionally incomplete and is not `VALIDATION_READY`. Reconstruction revision 0003 adds backend-independent PSTV v1 framing vocabulary/encoding/decoding in `src/transport/protocol.h` and `src/transport/protocol.c`. Static inspection finds that this increment stays inside transport ownership: it contains no socket, queue, scheduler, RFB, media, threading, or application-policy mechanism; file synopses state those exclusions; fixed framing constants and big-endian encode/decode behavior are explicit.
 
-A001 is still intentionally incomplete and is not `VALIDATION_READY`. There is no implementation body or build integration, so behavioral tests, canonical DUT build comparison, reproducibility/PT_LOAD evidence, one-stream runtime evidence, and hardware qualification remain unavailable and are not inferred.
-
-Finding V003 records this explicit wait state rather than treating partial interface presence as a validation failure or PASS.
+No new validation defect is opened from this partial increment. V003 remains OPEN with disposition `WAIT_FOR_COHERENT_TRANCHE`. This is a provisional static review only, not behavioral PASS. Reconstruction still explicitly lacks build integration, sole physical receiver, sequence-state enforcement, logical RFB queue/credit/fragmentation, serialized send, dispatch/quiescence implementation, RFB bridge adaptation, host tests, canonical build/reproducibility evidence, and hardware qualification.
 
 ## Checks applicable this shift
 
 - authority and temporal-chain inspection: PASS;
-- architecture reconciliation prerequisite: PASS; V001 RESOLVED;
-- audit readiness versus reconstruction consumption: PASS;
 - lane write-boundary compliance: PASS;
-- transport public interface versus overlay/A001 ownership: PROVISIONAL PASS;
-- local `src/transport/SYMBOLS.md` coverage for introduced public interface: PASS;
-- one-bridge-per-component/process-section check: NOT_APPLICABLE yet; no transport bridge/body exists;
-- complete topology/dictionary portal/build integration: INCOMPLETE and explicitly owned by reconstruction state 0002;
-- host behavioral tests: NOT_APPLICABLE yet; no implementation body exists;
-- canonical DUT build/reproducibility/PT_LOAD comparison: NOT_APPLICABLE; interface is not wired into build;
+- framing file synopsis/ownership exclusions: PASS by static inspection;
+- framing naming/readability: PASS by static inspection;
+- transport framing dependency boundary: PASS by static inspection; protocol layer has no foreign-domain dependency;
+- known-defect accounting: no silent correction identified in this partial framing increment; reconstruction explicitly records diagnostic/runtime machinery as excluded from pure framing;
+- one-bridge-per-component/process-section check: NOT_APPLICABLE yet; no transport bridge exists;
+- complete topology/dictionary portal/build integration: INCOMPLETE and explicitly owned by reconstruction state 0003;
+- host behavioral tests: NOT_APPLICABLE to validation handoff yet; reconstruction has not supplied/wired the coherent tranche;
+- canonical DUT build/reproducibility/PT_LOAD comparison: NOT_APPLICABLE; framing is not wired into clean product build;
 - hardware qualification: NOT_APPLICABLE and not claimed.
 
 ## Findings
 
 - V001 `GATE/RESOLVED` — architecture prerequisite reconciled by overlay 0001;
-- V002 `INFO/PASS` — prior reconstruction gate handling/lane discipline;
-- V003 `INFO/OPEN` — wait for coherent A001 implementation/build/test tranche.
+- V002 `INFO/PASS` — reconstruction gate handling/lane discipline;
+- V003 `INFO/OPEN` — A001 remains incomplete; partial framing increment introduces no independent validation blocker.
 
 ## Exact next pickup
 
-Re-read branch authority, reconstruction state/log, audit A001 obligations, and V003. If A001 remains an interface-only/incomplete tranche, verify no unauthorized source/build claims appeared and preserve the wait state. When reconstruction marks A001 `VALIDATION_READY` with a coherent implementation and exact build identity, independently validate physical framing/sequence/error behavior, sole receiver and logical dispatch, RFB queue/residual/credit/fragmentation, disabled-channel allocation, repeated lifecycle, explicit dispatch/quiescence ordering, RFB-over-logical-stream operation, architecture/include/bridge/SYMBOLS/topology gates, host tests, canonical build/reproducibility/PT_LOAD identity, then classify remaining hardware work as `HARDWARE_PENDING` rather than PASS.
+Re-read branch authority, reconstruction state/log, audit A001 obligations, and V003. If A001 remains incomplete, inspect only newly reconstructed increments for boundary/naming/defect-accounting regressions and preserve the wait state. When reconstruction explicitly marks A001 `VALIDATION_READY` with coherent implementation, tests, and exact build identity, independently validate framing/sequence/error behavior, sole receiver/logical dispatch, RFB queue/residual/credit/fragmentation, disabled-channel allocation, repeated lifecycle, dispatch/quiescence ordering, RFB-over-logical-stream operation, architecture/include/bridge/SYMBOLS/topology gates, host tests, canonical build/reproducibility/PT_LOAD identity, then classify remaining physical PS2 work as `HARDWARE_PENDING` rather than claiming hardware PASS.
