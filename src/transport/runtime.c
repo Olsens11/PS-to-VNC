@@ -480,7 +480,9 @@ int pstvnc_transport_runtime_rfb_read_exact(
     void *buffer,
     size_t count)
 {
+    uint8_t *destination = (uint8_t *)buffer;
     uint32_t activity_sequence;
+    size_t done = 0u;
 
     if (runtime == NULL || (buffer == NULL && count != 0u) ||
         count > UINT32_MAX || !runtime->initialized)
@@ -493,38 +495,47 @@ int pstvnc_transport_runtime_rfb_read_exact(
             runtime, &activity_sequence))
         return 0;
 
-    for (;;) {
-        int read_succeeded = 0;
-        int queue_empty = 0;
+    while (done < count) {
+        size_t taken;
+        int queue_empty;
+
+        if (runtime->failed)
+            return 0;
 
         if (WaitSema(runtime->rfb_queue_semaphore_id) < 0)
             return 0;
 
-        if (pstvnc_transport_rfb_channel_available(&runtime->rfb_channel) >=
-                count) {
-            read_succeeded = pstvnc_transport_rfb_channel_read_exact(
-                &runtime->rfb_channel, buffer, count) == 0;
-            queue_empty =
-                pstvnc_transport_rfb_channel_available(&runtime->rfb_channel) ==
-                0u;
-        }
+        taken = pstvnc_transport_rfb_channel_read_available(
+            &runtime->rfb_channel,
+            destination + done,
+            count - done);
+        queue_empty =
+            pstvnc_transport_rfb_channel_available(&runtime->rfb_channel) == 0u;
 
         if (SignalSema(runtime->rfb_queue_semaphore_id) < 0) {
             runtime->failed = 1;
             return 0;
         }
 
-        if (read_succeeded)
-            return pstvnc_transport_runtime_return_consumed_credit(
-                runtime, (uint32_t)count, queue_empty);
+        if (taken != 0u) {
+            if (taken > UINT32_MAX ||
+                !pstvnc_transport_runtime_return_consumed_credit(
+                    runtime, (uint32_t)taken, queue_empty))
+                return 0;
 
-        if (runtime->failed || runtime->receiver_done)
+            done += taken;
+            continue;
+        }
+
+        if (runtime->receiver_done)
             return 0;
 
         if (!pstvnc_transport_runtime_rfb_wait_activity(
                 runtime, &activity_sequence))
             return 0;
     }
+
+    return 1;
 }
 
 int pstvnc_transport_runtime_rfb_poll_receive(
