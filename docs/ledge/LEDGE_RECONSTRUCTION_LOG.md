@@ -126,7 +126,7 @@ Commits/files:
 - `4d92cac4860259ed6956858eaedd16ac3e60dc09` — `docs/ledge/LEDGE_RECONSTRUCTION_LOG.md` STARTED_AT event;
 - `259be4a074bd6c84f9822f0ad06551b991055011` — `src/transport/protocol.h`;
 - `5aaf4b07702c4f85ae5cfc66e9d144889fc215fc` — `src/transport/protocol.c`;
-- `cf4f10a45ca33300314f5a177142473e2eef3721` — `src/transport/SYMBOLS.md`;
+- `cf4f10a45ca33300314f5cfc66e9d144889fc215fc` — `src/transport/SYMBOLS.md`;
 - `9da9ba1ac499a47300dd041f93c834d38fe269a7` — `docs/ledge/LEDGE_RECONSTRUCTION_STATE.md` revision 0003.
 
 Checks/evidence:
@@ -163,3 +163,51 @@ STARTING_VALIDATION_STATE_REVISION=0003
 Shift intent: use the short safe gap before Reconstruction Shift A to advance only the smallest coherent next A001 unit: transport-owned adopted physical-socket state plus serialized framed send, based on the proven H1 send ordering. Do not begin sole receive/dispatch, logical-RFB queueing, A002 media work, or any cross-component bridge work in this short shift. The physical descriptor remains private to transport. Build/toolchain checks unavailable to this GitHub-native interactive surface remain PENDING_LOCAL rather than implied PASS.
 
 Status at start: IN_PROGRESS; completion or safe-stop details will be appended after authority is rechecked.
+
+## R006 — 2026-09-15T16:47:47-04:00 — Interactive reconstruction shift completes A001 physical-send subtranche
+
+COMPLETED_AT=2026-09-15T16:47:47-04:00
+ELAPSED_SHIFT_DURATION=00:04:20
+WORKER=INTERACTIVE_RECONSTRUCTION_SHIFT
+ENDING_RECONSTRUCTION_STATE_REVISION=0004
+ENDING_BRANCH_AUTHORITY_BEFORE_LOG_WRITE=b4cf384c04645c6a7a732a01b87186d72350f372
+SELF_PAUSED=NO
+
+Work completed:
+
+- re-read current branch/reconstruction authority throughout the shift and found no competing reconstruction advancement;
+- inspected the proven H1 serialized physical-send ordering and reconstructed it as transport-internal `physical_stream.h/.c`;
+- established explicit ownership of one adopted physical socket, one send semaphore and outbound sequence state;
+- preserved exact-send behavior for header and payload, one lock across the complete frame transaction, initial outbound sequence 1, and sequence advancement only after complete frame send;
+- kept the physical descriptor private to transport and excluded receive/dispatch, logical-channel queues, RFB parsing, media policy and application lifecycle from this unit;
+- made release explicitly dependent on higher-level receiver/dispatch quiescence once receive exists rather than reproducing H1 diagnostic-counter synchronization;
+- updated `src/transport/SYMBOLS.md` and advanced reconstruction state to revision 0004.
+
+Commits/files:
+
+- `ef37c18cf35fe58f1b696c14d82dcb8248405392` — STARTED_AT log event;
+- `e7d2196198391d3d17443fb8c7103f4278f46ab7` — `src/transport/physical_stream.h`;
+- `6de2203a6af44b8488c3241125a59a61947bd0a0` — `src/transport/physical_stream.c`;
+- `ed6d929b24f1636603905926f93bc81051cb3e4c` — `src/transport/SYMBOLS.md`;
+- `b4cf384c04645c6a7a732a01b87186d72350f372` — `LEDGE_RECONSTRUCTION_STATE` revision 0004.
+
+Checks/evidence:
+
+- H1 source-ordering comparison: PASS by source inspection;
+- ownership/boundary review: PASS by source inspection; no physical descriptor escapes transport;
+- symbol-dictionary accounting for introduced project-defined symbols: PASS by repository inspection;
+- compile/build/host execution of new physical-stream unit: PENDING_LOCAL;
+- canonical `scripts/check.sh`, strict topology/dictionary gates, build integration and exact ELF/PT_LOAD identity: PENDING_LOCAL;
+- hardware qualification: not yet eligible and not claimed.
+
+Behavioral parity / known defects:
+
+No known defect was silently fixed. The send-side H1 ordering was retained without carrying diagnostic stages/counters into correctness. The receiver-dispatch shutdown race remains explicitly outstanding; this subtranche does not claim to solve it.
+
+Work remaining:
+
+A001 remains IN_PROGRESS and not VALIDATION_READY. Sole physical receive, inbound sequence enforcement, logical dispatch, RFB queue/activity/credit/residual behavior, outbound RFB fragmentation, explicit receiver-dispatch quiescence, RFB bridge adaptation, build/topology/test integration, canonical checks and exact build/PT_LOAD evidence remain.
+
+Exact next pickup:
+
+Start from `physical_stream.*`, `protocol.*` and `transport.h`. Implement the smallest sole-receiver path that reads complete PSTV frames, validates the expected inbound sequence and dispatches channel 1 into transport-owned logical RFB storage. Preserve descriptor privacy and make receiver-dispatch quiescence explicit before any resource-reclamation path; do not begin A002 media transport while A001 remains incoherent.
