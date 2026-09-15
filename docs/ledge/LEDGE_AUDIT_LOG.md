@@ -1,8 +1,8 @@
 # Ledge Semantic Audit — Append-only Lane Log
 
 DOCUMENT=LEDGE_AUDIT_LOG
-DOCUMENT_REVISION=0003
-RECORDED_AT=2026-09-15T12:13:00-04:00
+DOCUMENT_REVISION=0004
+RECORDED_AT=2026-09-15T13:11:00-04:00
 SOURCE_COMMIT=SELF
 TEMPORAL_CLASS=WORK_EVENT_LOG
 TEMPORAL_SEMANTICS=EACH_ENTRY_TRUE_AS_KNOWN_AT_ITS_COMPLETION_TIME
@@ -146,3 +146,58 @@ Final scheduler/drop policy, draw/capture/suppression geometry ownership, calibr
 ### Exact next pickup
 
 Audit presentation/compositor/calibration as A004. Trace calibration acceptance, draw/capture/suppression geometry, RFB suppression/matte alignment, `RFB_ONLY`/MPEG ownership transitions, cursor/OSK/local-UI layering and scheduler/drop policy. Preserve the A003 first-presentation epoch-arm contract and do not broaden into general interaction except where calibration UI input is necessary.
+
+## Audit Entry A004
+
+STARTED_AT=2026-09-15T13:01:52-04:00
+COMPLETED_AT=2026-09-15T13:11:00-04:00
+STARTING_GLOBAL_STATE_REVISION=0005
+STARTING_AUDIT_STATE_REVISION=0003
+ENDING_AUDIT_STATE_REVISION=0004
+FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
+TEMPORAL_SEMANTICS=ENTRY_DESCRIBES_AUDIT_KNOWLEDGE_AT_COMPLETION_TIME
+
+### Objective
+
+Classify presentation/compositor/calibration as one coherent behavioral process, including the concrete A003 first-presentation clock-arm boundary and final disposition of the deferred presentation geometry/scheduler/drop fields, without modifying reconstructed product source.
+
+### Evidence inspected
+
+Current branch/global/audit authority; `AGENTS.md`; `CONTRIBUTING.md`; `docs/CLEAN_ARCHITECTURE.md`; ledge reconstruction contract; `h1_video_runtime.c`; the durable `CP2P_MPEG_CALIBRATION_EXPERIMENT_HISTORY.md`; A003 audit; and the simplification register. Historical entries were interpreted with point-in-time semantics and later qualified/current-path entries were not projected backward into earlier checkpoints.
+
+### Findings and decisions
+
+A004 marks calibration foreground/acceptance, base/inner/outer geometry authority, RFB freeze/request scheduling, accept-to-first-frame protection, first physical MPEG ownership/common-clock arm, one shared compositor/GS owner, exact-generation RFB suppression, ordered restoration, and qualified absolute scheduler/drop policy reconstruction-ready.
+
+The geometry authorities are explicit: base is capture plus MPEG presentation; inner matte is PS2-local presentation only; outer matte determines the RFB suppression footprint without changing capture. Accepted generation geometry replaces independent live draw/encode CONFIG authorities.
+
+Acceptance is not presentation ownership. MPEG ownership and the shared media epoch begin only at the first valid physically presented MPEG frame. RFB remains protected in the gap. Exact Pi retirement must prove generation suppression/capture is gone before local retirement allows the one fresh FULL RFB restoration request.
+
+The recovered cumulative39 compositor is evidence for one graphics owner, not two modules. Its source-inclusion/private-renaming technique is reconstruction scaffolding. The clean presentation component should directly own the combined remote-desktop/matte/MPEG/local-overlay composition through one physical synchronization/flip path.
+
+Scheduler comparison modes, stage holds and dynamic draw/encode knobs are experimental surface. The qualified absolute common-clock scheduler, presentation offset, narrow lateness/drop semantics and exact generation geometry survive as profile/owned state.
+
+### Repository changes
+
+- created `LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` revision `0001`;
+- advanced simplification register to revision `0003` with S005-S008;
+- advanced audit lane state to revision `0004`;
+- advanced this append-only lane log to revision `0004`.
+
+No reconstructed product source, forensic H1 source, reconstruction state, validation finding, or global state was modified.
+
+### Validation performed
+
+Repository/source/history inspection established the ownership and process contracts above. No executable build, PT_LOAD comparison, reconstructed host test, or new hardware test was performed or claimed. The repository connector cannot inspect an external Pi worktree's uncommitted status, so no external-worktree-clean claim is made.
+
+### Progress
+
+Four coherent tranches are now classified. A004 contributes nine reconstruction-ready responsibility groups plus one diagnostic-only group. All 61 CONFIG fields remain classified, including the presentation-deferred fields resolved here. Three seeded major process families remain, and exhaustive recursive file/symbol completeness proof remains incomplete.
+
+### Unresolved questions
+
+General interaction composition, top-level all-guns orchestration/shutdown/recovery, residual diagnostics, and exhaustive recursive dependency/source/symbol closure remain unaudited. Historical H1 hardware evidence remains forensic evidence only and does not qualify reconstructed presentation code.
+
+### Exact next pickup
+
+Audit A005 interaction/input composition: physical controller acquisition versus semantic ownership, pointer/button/scroll routing, OSK/local-UI foreground transitions, keyboard tap/modifier serialization, calibration entry/exit handoff, release quarantine, and RFB safe-boundary interaction servicing. Do not reopen A004 geometry/presentation policy except where an interaction transition consumes its already-classified foreground/ownership contract.
