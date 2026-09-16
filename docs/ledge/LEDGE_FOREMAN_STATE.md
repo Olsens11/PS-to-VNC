@@ -1,197 +1,224 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0009
-RECORDED_AT=2026-09-16T10:34:10-04:00
+STATE_REVISION=0010
+RECORDED_AT=2026-09-16T12:27:51-04:00
 SOURCE_COMMIT=SELF
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0005
-BASED_ON_WORK_LOG_CONTRACT_REVISION=0003
+BASED_ON_WORK_LOG_CONTRACT_REVISION=0004
 BASED_ON_RECONSTRUCTION_STATE_REVISION=0007
-BASED_ON_GLOBAL_STATE_REVISION=0026
+BASED_ON_GLOBAL_STATE_REVISION=0027
 BASED_ON_VALIDATION_STATE_REVISION=0006
 BASED_ON_VALIDATION_FINDINGS_REVISION=0005
 BASED_ON_A002_AUDIT_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-This interactive Foreman revision consumes the completed A002 common-media-clock Reconstruction handoff, the independent provisional Validation review of that source, Continuity global revision 0026, and the Foreman-owned canonical integration/evidence performed after the baton returned. The live branch was re-read immediately before this state write at generated dictionary/portal authority `e78d1834d2eecdeae5904478bdd613c406c3b9b6`.
+This interactive Foreman revision consumes the completed A002 Transport AUDIO-channel Reconstruction handoff, post-handoff Architecture/Dictionary/Integration support records, a concurrent Validation self-pause during the moving integration tree, the Foreman-owned canonical integration/evidence performed after the baton returned, and the diagnostics sentinel that correctly classified the pre-reconciliation project-check red as mechanical integration debt rather than product behavior failure.
 
-A001 machine/source PASS remains independent Validation authority. A001 physical PS2 qualification remains `HARDWARE_PENDING`. No statement below converts Foreman machine evidence into Validation PASS or physical qualification.
+The live branch was re-read immediately before this state write at `13f7e6cc13d839a3b9183928da2185d9a29abf9f`. Unknown external/Pi-local dirty work is outside this GitHub-native surface and is neither overwritten nor declared absent.
 
-## Current foreman phase
+A001 machine/source PASS remains independent Validation authority. A001 physical PS2 qualification remains `HARDWARE_PENDING`. Nothing below converts Foreman machine evidence into Validation PASS or physical qualification.
 
-`A002_AUDIO_CHANNEL_PACKET_ISSUED`
+## Current Foreman phase
 
-The A002 common-media-clock M1-M8 packet is complete from Reconstruction's side and is accepted by Foreman as `MET` after direct source/test inspection. Independent Validation has reviewed the source provisionally, opened no product-source finding, and correctly withheld PASS until integrated canonical evidence is independently consumed.
+`A002_PCM_PLAYBACK_CORE_PACKET_ISSUED`
 
-The next dependency-ordered A002 behavior is the Transport-owned AUDIO logical byte channel that the PCM owner will later consume. Current clean Transport already defines protocol channel `AUDIO=2` but its runtime receiver/bridge behavior remains RFB-only. The next worker packet therefore reconstructs the AUDIO queue/credit/finite-producer seam on the existing sole receiver before any AUDSRV playback worker is built on top of it.
+The A002 Transport AUDIO-channel A1-A8 packet is Reconstruction-complete and Foreman-accepted as `MET` after direct source/test inspection. The worker established a real Transport-owned AUDIO logical byte source behind the existing sole physical receiver, so the next dependency-ordered A002 responsibility is the PCM/AUDSRV playback core that consumes that seam.
+
+The next packet deliberately stops before playback-worker allocation/thread lifecycle and before startup-reservoir/common-clock gating. Those concerns depend on still-unqualified tuning/resource policy and can follow once the byte-consumer/playback semantics are clean and testable.
 
 ## Reconstruction result consumed
 
 WORK_ITEM_KEY=`a002-audio-clock`
 WORKER=`interactive`
-WORKER_STARTING_HEAD=`a0d09656306e8e17ec3b67d777536bf39241134f`
-WORKER_LOG_COMMIT=`911b846e7f604c1e0d690a47f54f7bc87a80b6c4`
+WORKER_LOG_COMMIT=`6b3cb3ebab4c5ec84d3e514090c35350eab23370`
+WORKER_LOG=`docs/ledge/work-log/20260916T103630-0400__reconstruction__a002-audio-clock__interactive.md`
+WORKER_RESULT=`FOREMAN_GOAL_RESULT=MET`
 
 Substantive worker commits inspected:
 
-- `9f13f5875dcba5a679126961b0840b3b1fa7157e` — clean common-media-clock boundary;
-- `dfc211a217687ff0d79869511c62d6ca935610aa` — one-shot publication, deadline math, and wait semantics;
-- `8e132c46aa3842cdbfe6ae35f700e6eaedb5cc76` — deterministic common-media-clock host fixture;
-- `636990a432d5e133ef441d55d53bf38a2fc7be75` — media source dictionary inventory;
-- `8edf4e7e8a1a301eb8169a6c34f2a4f9d1350efa` / `1fe64b7ccc85d51f10e3fc7968b208a9649bb38e` — clean media topology/ownership documentation;
-- `4b13b4c658b604061c268c4e975e300da7fb7e56` — immutable publication-contract clarification.
+- `95e4a816...` / `41b9297a...` — bounded logical AUDIO byte-channel storage;
+- `f357b5c5...` — explicit AUDIO Transport configuration/result vocabulary;
+- `208de2c5...` / `c39fda05...` — sole-receiver runtime dispatch with independent AUDIO queue/credit/activity state;
+- `20758568...` / `7dd9b56c...` — opt-in logical AUDIO bridge preserving the existing RFB-only open path;
+- `f09490c3...` — deterministic AUDIO behavior fixture;
+- `c8401803...` — RFB/lifecycle regression preservation;
+- exploratory waiter state `23fd27de...` reverted by `74b9620a...`;
+- `f61fe39f...` / `894d0c52...` / `d5934757...` — coherent AUDIO waiter-lifetime/reclaim fence and terminal-path assertions.
 
-Files directly inspected included `src/media/clock.h`, `src/media/clock.c`, `src/media/SYMBOLS.md`, `tests/unit/media_clock_test.c`, `src/config/profile.h`, current Transport runtime/protocol/bridge headers and source, the A001 Transport/RFB audit, and A002 CONFIG/audio/clock audit authority.
+Files directly inspected included `src/transport/audio_channel.{c,h}`, `src/transport/transport.h`, `src/transport/runtime.{c,h}`, `src/transport/bridge.{c,h}`, `tests/unit/transport_audio_test.c`, canonical `tests/Makefile`, clean linked-build authority, and A001/A002 audit authority.
 
-### M1-M8 disposition
+### A1-A8 Foreman disposition
 
-M1 `MET` — one session-scoped common media-clock owner consumes the narrow immutable media-clock profile without leaking mutable timing ownership into CONFIG, application, or Transport.
+A1 `MET` — Transport owns an explicit narrow AUDIO-channel configuration boundary for queue capacity, initial credit, batching/flush, and credit-return enablement. The existing eight A001 Transport session fields remain intact; no application magic defaults or H1 61-field public profile were introduced.
 
-M2 `MET` — epoch publication is lock-protected, writes the epoch before exposing `armed`, and repeated arm is idempotent without moving the session origin.
+A2 `MET` — exactly one Transport receiver thread owns the physical receive loop and dispatches valid RFB and AUDIO DATA to independent logical paths. No competing socket reader was added.
 
-M3 `MET` — audio and neutral-video deadlines derive from one shared epoch with exact signed `int32_t` offsets, saturating underflow/overflow, saturating additional-tick addition, and fail-closed unarmed behavior.
+A3 `MET` — AUDIO owns separate storage, occupancy, activity/wait state, earned-credit batching, and credit-return accounting. Credit is earned only for bytes actually dequeued by the AUDIO consumer.
 
-M4 `MET` — state/math uses injected synchronization and time/delay seams rather than embedding PS2 timer/fence mechanics, so the contract is deterministic on host and leaves the concrete PS2 binding separable.
+A4 `MET` — zero-length AUDIO DATA is an ordered one-shot producer-done marker; producer-done plus empty queue yields normal exhaustion; later non-empty AUDIO payload is rejected and drives terminal failure rather than silently reopening the producer.
 
-M5 `MET` — waits distinguish unarmed/not-ready from ready, honor stop, surface synchronization/timer/delay failures, and reject zero polling cadence instead of accidentally busy-spinning.
+A5 `MET` — the bridge exposes bounded AUDIO reads plus status/activity/wait primitives sufficient for a future audio owner to distinguish availability, normal finite exhaustion, stop, and terminal Transport failure without reaching into Transport internals.
 
-M6 `MET` — behavior tests cover initialization/unarmed state, one-shot/idempotent arm, publication witness, shared A/V epoch, normal signed offsets, `INT32_MIN`/`INT32_MAX`, saturation, stop, timer/delay failure, synchronization failure, and zero-poll rejection.
+A6 `MET` — existing A001 RFB/receiver/quiesce semantics remain present; fatal EOF/protocol/overflow paths wake AUDIO observers and preserve terminal state. Release refuses to reclaim a signaled-but-not-returned AUDIO waiter, preserving the worker-lifetime fence.
 
-M7 `MET` — A001 Transport/RFB and completed A002 CONFIG/profile behavior were not changed by the worker; no timing default was invented.
+A7 `MET` — deterministic tests cover AUDIO-only reads, bounded partial reads, RFB/AUDIO interleaving through one receiver, independent initial credit and dequeue-driven batching/flush, finite marker/exhaustion/post-marker rejection, overflow/drain/terminal failure, EOF/invalid/stop wakeups, one-receiver identity, and reclaim-fence behavior. Existing Transport/RFB fixtures remain regression authority.
 
-M8 `MET` — no PCM/AUDSRV runtime, MPEG decoder/presentation callsite, late-frame policy, or hardware claim was introduced.
+A8 `MET` — no AUDSRV/LIBSD playback, PCM worker, startup reservoir, audio media-clock callsite, MPEG/presentation, application orchestration, inherited H1 receive-poison repair, or hardware qualification was introduced.
 
-No product-source correction packet is required from this handoff.
+No product-behavior correction packet is required.
 
-## Validation consumed
+## Concurrent/support movement consumed
 
-Validation commit `6880801d288bf049a32fadb0b3e51454856fd92c` independently reviewed the common-clock source. It opened no product-source finding and classified the clock `REVIEWED_SOURCE_PROVISIONAL`. Validation explicitly did not claim canonical host/project/PS2-link/reproducibility evidence or A002 PASS, and handed canonical registration/topology/dictionary/build evidence to Foreman.
+Architecture packet-scout commit `72d4b5ed887a68d7975b4ce7b52272ab463576f5` is non-authoritative support evidence only. It independently identified the same dependency order: once the AUDIO seam is accepted, the next coherent A002 owner is a clean audio component consuming Transport bytes and preserving audited AUDSRV ordering/lifetime semantics.
 
-This Foreman state preserves that lane boundary. The common clock is Reconstruction-complete and Foreman-integrated; independent A002 readiness/PASS remains Validation-owned.
+Dictionary preparation commit `3e4560b8fe99291c6352b09956ac04680f235f0f` and integration record `82d978d30393038c1cab64fcd1127147db341c76` were consumed as support records, not as behavior authority.
+
+Validation commit `defbbe8635eb510e5f4f20fddb2082aa61833fab` landed while Foreman integration was moving and correctly self-paused instead of independently judging a non-settled tree. No Validation PASS is inferred from that record.
+
+Diagnostics sentinel commit `13f7e6cc13d839a3b9183928da2185d9a29abf9f` inspected the integration-trigger CI and classified the red project-check as mechanical source-topology/dictionary coverage on the pre-generated tree, not a product defect. It also confirmed host-unit, PS2 compile, and PS2 link/reproducibility were green and routed the remaining topology coverage back to Foreman. The deterministic dictionary child subsequently populated the missing AUDIO file coverage, so this state write triggers the required settled-tree recheck.
 
 ## Foreman-owned integration and evidence
 
-Foreman performed only non-behavioral integration/evidence work:
+Foreman performed only canonical non-behavioral integration/evidence work:
 
-- `44a42d47c311f64db8f9c805b445338906a4edf9` — registered `media_clock_test` in the canonical host `unit` graph;
-- `3689de2a082915259d2db74831fa71b73823aaf9` — linked `src/media/clock.c` into the clean PS2 build graph;
-- `b52a9a5ab9e00dd1507d1178a7cbf7aa890771e3` — adopted `src/media` in deterministic dictionary reconciliation;
-- `3ccc340167135adcc3703cc382c69c23f2ce1f7d` — allowed the reconciliation workflow to stage the media dictionary;
-- `01838f361ee7b23859ad3b93651aec254708844c` — adopted `src/media` in the clean source-topology checker;
-- `020c9674cfe94035e75fbb8617513283ba12e456` — exact deterministic reconciliation trigger;
-- generated child `e78d1834d2eecdeae5904478bdd613c406c3b9b6` — regenerated the canonical dictionary portal with `src/media` COMPLETE, count 146; the worker-authored `src/media/SYMBOLS.md` itself already matched mechanically discovered authority and needed no generated row correction.
+- `b1b9a68112cb684bd1f1ce6c802dbd3acb907215` — registered `transport_audio_test` in canonical `make -C tests unit` and linked `audio_channel.c` into the existing Transport runtime fixture;
+- `5913401208aa3ac3c6c09ae34881e1d6198804c0` — linked `src/transport/audio_channel.c` as `transport_audio_channel.o` in the clean PS2 build graph;
+- `7ddc22068692474662f4a39f4980c356f3425290` — adopted `src/transport` into deterministic dictionary reconciliation;
+- `3bd92974e988b68278aac3fa8de7efb9f4a60121` — allowed the reconciliation workflow to stage `src/transport/SYMBOLS.md`;
+- `688dc1031e83bfa1734f286a91882af3dd4d02f5` — exact deterministic dictionary-reconciliation trigger;
+- generated child `88cbb73332d5f20b24bf9cb8a9a05612b53169b7` — reconciled current Transport definitions and regenerated the canonical source-dictionary portal.
 
-Workflow run `35109206736` at integration trigger `020c9674...` reports:
+Deterministic reconciliation reported:
 
-- canonical host-unit job `PASS` with the registered common-media-clock fixture in the `unit` graph;
-- strict long dictionary job `PASS`;
-- pinned PS2 compile job `PASS`;
-- clean PS2 linked-build job `PASS`, including the new `media_clock.o` build graph and current-source linked reproducibility `PASS`;
-- deterministic dictionary reconciliation job `PASS`, producing `e78d1834...`;
-- project-check `FAIL` on that pre-generated-portal trigger tree. That trigger-tree project result is not a settled-tree disposition because the generated portal child had not yet landed there.
+- `DICTIONARY_RECONCILED=src/transport before=422 removed=11 added=192`;
+- other selected domains removed/added `0`;
+- `DICTIONARY_RECONCILIATION_REMOVED=11`;
+- `DICTIONARY_RECONCILIATION_ADDED=192`;
+- `SOURCE_DICTIONARY_CHECK_MODE=LONG`;
+- `DEFINITION_SCOPE_COUNT=64`;
+- `SOURCE_DICTIONARIES=PASS`;
+- generated portal `src/transport` count `603`.
 
-This state write occurs on the settled generated portal tree and intentionally triggers a standard workflow pass for final Foreman evidence. The immutable Foreman round log must inspect that result before closure.
+Workflow run `35121707966` at trigger authority `688dc103...` reports:
 
-The concrete PS2 synchronization/timer/delay binding for the common clock is still a future runtime-integration obligation. Its absence is not a defect in the pure clock contract and is not a blocker for the next Transport AUDIO-channel packet.
+- canonical host-unit `PASS`;
+- `transport_runtime_test: PASS` with `audio_channel.c` linked into that regression fixture;
+- `transport_audio_test: PASS` in the canonical unit graph;
+- existing Transport protocol/channel/bridge, RFB, CONFIG/profile, common-clock, application, input/UI, and other registered host fixtures remained passing;
+- pinned PS2 compile `PASS`;
+- clean PS2 linked-build `PASS`;
+- `src/transport/audio_channel.c` explicitly compiled to `transport_audio_channel.o` and linked into the ELF;
+- pristine linked ELF SHA256 `668215f9c4bd1eef0cefbda9dbf342bc7b22bbe871c0b2256e8255b9f3cc84c6` on both builds;
+- `PT_LOAD_SEGMENTS=1`;
+- PT_LOAD SHA256 `267f42a61ce0bdff47dfcaca9d363cd497ddf25bcc797a94a0e631dcda34cef1`;
+- `PT_LOAD_BYTES=420488`;
+- `ISSUE7_LINKED_BUILD=PASS`;
+- `ISSUE7_RUNTIME_IDENTITY_LINKED=YES`;
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
 
-PENDING_LOCAL=settled-tree canonical workflow result after this state write; concrete PS2 media-clock synchronization/time binding when a runtime media owner is wired; independent Validation disposition
+The trigger-tree ordinary strict dictionary and project-check jobs were expectedly red before generated Transport dictionary coverage landed. The dictionary reconciliation job then passed strict long checking and produced `88cbb733...`. This state write occurs after that generated child and intentionally triggers a settled-tree workflow; Foreman must inspect that result before closing this round.
+
+PENDING_LOCAL=settled-tree workflow after state revision 0010; independent Validation disposition for integrated A002 Transport AUDIO/common-clock authority; later concrete PS2 AUDSRV/media-clock runtime binding and physical qualification
 HARDWARE_PENDING=A001 physical PS2 qualification remains pending; no A002 physical qualification is claimed
 
-## Dependency conclusion for next Reconstruction work
+## Dependency conclusion for the next Reconstruction packet
 
-A002 audit revision 0001 requires PCM playback to consume bytes from the Transport-owned AUDIO logical channel and to treat finite producer completion normally. A001 architecture already requires AUDIO/RFB/MPEG logical channels to share one physical PSTV connection with one sole Transport receiver. Current protocol vocabulary defines AUDIO channel 2, but current clean runtime dispatches only RFB DATA and exposes only the RFB logical bridge.
+A002 audit revision 0001 requires PCM playback to consume the Transport-owned AUDIO logical channel, preserve `audsrv_wait_audio(bytes)` -> `audsrv_play_audio(bytes)` ordering, count consumption only after successful playback submission, treat producer-done plus empty queue as normal finite completion, preserve resident-ELF AUDSRV/LIBSD service lifetime, and stop/mute per session without `audsrv_quit()`.
 
-Building an AUDSRV worker before the AUDIO Transport seam exists would force the audio component to invent or bypass its byte source. The next clean dependency is therefore a bounded Transport AUDIO-channel packet: add an independent AUDIO byte queue and credit state behind the existing sole receiver, expose a narrow consumer seam, and prove ordered finite-producer completion. Playback, AUDSRV lifetime, audio worker allocation, startup-reservoir timing, and media-clock presentation gating remain later A002 packets.
+The newly accepted Transport seam now supplies the required clean byte source and terminal/exhaustion distinction. CONFIG already supplies a narrow immutable PCM profile (`rate_hz`, `channels`, `bits_per_sample`, `volume_percent`). Therefore the next coherent unit is a synchronous/testable PCM playback core and AUDSRV service boundary.
 
-H1 is evidence, not an implementation template. Preserve the one-receiver/multi-logical-channel semantics, independent queue/credit accounting, and ordered finite producer marker, but do not copy H1's giant profile or arbitrary experimental tuning as public runtime knobs.
+Worker thread stack/priority/chunk sizing, startup-reservoir policy, and common-clock presentation gating remain a subsequent packet. The current production CONFIG intentionally does not expose H1's laboratory audio worker/chunk/reservoir tuning. This packet must not reintroduce those knobs as guessed defaults merely to make a worker loop convenient.
 
 ## Fresh interactive Reconstruction packet
 
 WORK_ITEM_KEY=`a002-audio-clock`
 TARGET_WORKER=`interactive`
-ASSIGNING_HEAD=`e78d1834d2eecdeae5904478bdd613c406c3b9b6`
+ASSIGNING_HEAD=`13f7e6cc13d839a3b9183928da2185d9a29abf9f`
 ASSIGNING_AUDIT=`LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md:0001`
-ASSIGNING_FOREMAN_STATE=`0009`
+ASSIGNING_FOREMAN_STATE=`0010`
 
 ### Objective
 
-Reconstruct the A002 Transport-owned AUDIO logical byte-channel seam on the existing sole physical receiver. Add only the queue/credit/finite-producer behavior needed for a future PCM consumer to read AUDIO bytes safely and independently of RFB. Preserve A001's one-socket/one-recv-owner architecture and do not begin AUDSRV playback or audio worker lifecycle.
+Reconstruct A002's clean PCM/AUDSRV playback core on top of the accepted Transport AUDIO logical-consumer seam and immutable PCM profile. Establish exact per-session format/volume setup, finite Transport consumption, strict `wait_audio(bytes)` then `play_audio(bytes)` submission ordering, truthful post-submit byte accounting, resident-service lifetime semantics, and deterministic stop/error handling without yet creating the playback worker thread or startup/presentation timing policy.
 
-This packet is deliberately substantial Transport behavior, but it stops at the logical byte source. The following Reconstruction packet can then build the PCM/AUDSRV consumer against a real clean seam rather than combining two major responsibilities in one round.
+This packet should leave a complete reusable synchronous audio-playback component that a later lifecycle/timing packet can run in a session worker without changing its byte-consumption or AUDSRV correctness semantics.
 
 ### Required deliverables
 
-1. **Explicit narrow AUDIO Transport authority.** Introduce the smallest immutable Transport-owned audio-channel configuration needed by the queue/credit mechanism. Queue capacity and credit behavior must be explicit caller/profile authority in the clean type boundary; do not invent application magic defaults and do not import the H1 61-field public profile. If qualification has not selected production tuning values, keep the values explicit at the owner boundary rather than guessing them.
+1. **Clean audio owner and narrow dependencies.** Add the smallest coherent clean audio component (a new `src/audio/` domain is appropriate if justified by current topology policy). It consumes only the immutable `pstvnc_config_pcm_profile_t`, the public/narrow Transport AUDIO bridge, and a narrow injected AUDSRV/service operation boundary. Audio must not inspect Transport queue internals, mutate Transport diagnostics, or make CONFIG/application own playback state.
 
-2. **One sole receiver, two independent logical DATA paths.** Extend the existing Transport receiver so valid RFB DATA continues to reach the current RFB path and valid AUDIO DATA reaches a Transport-owned AUDIO queue. Do not create a second socket reader or receiver thread. CONTROL and unsupported/invalid channel/kind behavior must remain fail-closed according to current protocol ownership.
+2. **Resident service contract.** Represent the audited service lifetime explicitly: LIBSD/AUDSRV is ELF-resident service authority; session playback may initialize/use the service as required by the proven API contract, set the session format/volume, and stop/mute the current stream at session completion, but this component must not call or expose per-session `audsrv_quit()`. Keep host-testable service operations injectable; do not hide a second mutable service owner in application code.
 
-3. **Independent AUDIO queue/credit accounting.** AUDIO storage, occupancy, earned credit, batching/flush policy, and wakeup state must be independent from RFB so backpressure on one logical channel does not corrupt accounting on the other. Consumer dequeue earns AUDIO credit only for bytes actually removed from the AUDIO queue.
+3. **Exact immutable PCM setup.** Apply rate/channels/bits/volume from the decoded PCM subprofile exactly. Do not invent fallback values. If an AUDSRV-facing representation cannot express a profile value, reject/fail before playback rather than silently coercing it.
 
-4. **Finite producer marker.** Preserve the audited ordered finite-producer semantic using a zero-length AUDIO DATA marker (or the clean equivalent proven from current protocol framing) after all PCM payload. Once the marker is accepted, Transport exposes producer-done state; `producer_done && audio_queue_empty` is normal AUDIO exhaustion. Non-empty AUDIO DATA after producer-done must be rejected rather than silently reopening the producer.
+4. **Finite Transport consumption without busy polling.** Consume AUDIO bytes only through the accepted public Transport bridge. Bounded nonzero chunks supplied by the caller/component buffer may be processed, but this packet must not invent a production worker chunk-size default. On temporary unavailability use the Transport activity/status seam rather than spin polling. Treat Transport `EXHAUSTED` as normal finite producer completion; distinguish `STOPPED`, `CLOSED`, invalid use, and terminal `FAILED` as separate outcomes.
 
-5. **Narrow consumer bridge.** Expose only the logical operations a later audio component needs: bounded byte read/dequeue, availability/progress as necessary, finite exhaustion observation, and terminal transport failure/stop propagation. Do not expose queue internals or require audio to mutate Transport diagnostics.
+5. **Strict AUDSRV submission ordering and accounting.** For every nonzero byte chunk selected for playback, invoke the equivalent of `audsrv_wait_audio(bytes)` before `audsrv_play_audio(bytes)`. Do not submit if the wait fails. Count/report bytes as successfully submitted/consumed only after the play call succeeds. A wait or play failure must not falsely advance accounting or consume a different semantic result.
 
-6. **Preserve terminal/quiesce semantics.** Receiver EOF/fatal protocol error/stop must wake AUDIO consumers and remain distinguishable from normal producer-done exhaustion. Do not weaken A001 terminal-error first-cause behavior or RFB quiesce guarantees.
+6. **Session completion/stop semantics.** Normal Transport exhaustion and explicit stop/failure paths must terminate deterministically. Session cleanup stops/mutes current audio through the narrow service operation and preserves first-error semantics where cleanup itself also fails. Never use `audsrv_quit()` as a session cleanup mechanism, and never continue playback after a terminal outcome.
 
-7. **Deterministic behavior tests.** Add host tests that prove at minimum:
-   - RFB-only regression remains unchanged;
-   - AUDIO-only enqueue/read and partial bounded reads;
-   - RFB/AUDIO interleaving through one receiver;
-   - independent queue pressure and credit earning/batching/flush behavior;
-   - zero-length AUDIO finite-producer marker ordering;
-   - normal `producer_done + empty` exhaustion;
-   - rejection of later non-empty AUDIO DATA after producer-done;
-   - receiver terminal failure/EOF/stop waking the AUDIO side without masquerading as normal exhaustion;
-   - invalid channel/kind combinations remain fail-closed;
-   - no second receive owner appears.
+7. **Deterministic host tests.** Add behavior-specific tests proving at minimum:
+   - exact format/volume values and setup ordering;
+   - `wait_audio(bytes)` occurs before each `play_audio(bytes)`;
+   - one partial chunk and multiple chunks preserve byte order/length;
+   - no zero-byte submission;
+   - temporary Transport unavailability uses activity/wait behavior without unbounded busy spin;
+   - normal producer-done + empty / `EXHAUSTED` retires as success;
+   - Transport stop and terminal failure are distinguishable from normal exhaustion;
+   - AUDSRV wait failure prevents play and leaves successful-byte accounting unchanged;
+   - AUDSRV play failure does not falsely count the chunk;
+   - session stop/mute executes once on completion/error as specified;
+   - cleanup failure preserves the first meaningful error rather than overwriting it;
+   - no per-session quit operation is reachable/exposed.
 
-8. **Boundary discipline.** Update clean source-side dictionary/topology ownership for any genuinely new source file. Do not perform generated portal or canonical build/test registration work owned by Foreman. Do not initialize AUDSRV/LIBSD, allocate an audio playback worker, apply PCM format/volume, implement startup-reservoir timing, arm/wait on the media clock from audio, add MPEG behavior, or claim hardware qualification.
+8. **Boundary discipline.** Obey current source synopsis/naming/topology/dictionary rules. Perform Reconstruction-owned source-side domain/dictionary adoption if `src/audio/` is created, but leave generated portal and canonical test/build registration to Foreman. Do not allocate/create the playback thread or its stack, choose production chunk/stack/priority values, implement startup-reservoir policy, wait on/arm the common media clock from audio, add application orchestration, begin MPEG/presentation, repair the inherited H1 receive-poison defect, or claim hardware qualification.
 
 ### Acceptance criteria
 
-A1. Transport exposes explicit narrow AUDIO-channel configuration with no hidden application defaults and without recreating H1's giant public profile.
+P1. A coherent clean audio playback owner exists and depends only on narrow PCM profile, public Transport AUDIO seam, and a testable AUDSRV/service boundary.
 
-A2. Exactly one Transport-owned physical receiver dispatches both RFB and AUDIO DATA; no competing socket read path exists.
+P2. Resident-service semantics are explicit and session cleanup cannot call `audsrv_quit()`; format/volume are applied from immutable profile authority without defaults.
 
-A3. AUDIO queue storage, synchronization, and credit accounting are independent from RFB and return credit only for bytes dequeued by the AUDIO consumer.
+P3. AUDIO bytes are consumed through the Transport bridge with bounded/non-spinning unavailability handling and normal finite `EXHAUSTED` completion distinct from stop/failure.
 
-A4. Ordered finite producer completion is explicit and deterministic: marker accepted once, producer-done observable, queue drain yields normal exhaustion, and payload after producer-done is rejected.
+P4. Every submitted chunk obeys wait-before-play ordering, and byte accounting advances only after successful play submission.
 
-A5. A later audio owner can consume bounded bytes and distinguish normal exhaustion, stop, and terminal Transport failure through a narrow bridge without touching Transport internals.
+P5. Wait/play/Transport/setup/cleanup failures are deterministic, preserve meaningful first-error semantics, and do not permit further playback after terminal outcome.
 
-A6. Existing A001 RFB/receiver/quiesce behavior remains stable and invalid protocol/channel cases remain fail-closed.
+P6. Deterministic host tests prove setup, ordering, chunking, temporary unavailability, finite completion, stop/failure distinction, failure injection, truthful accounting, cleanup, and no-quit behavior.
 
-A7. Deterministic host tests cover interleaving, pressure/credit behavior, finite completion, terminal paths, and RFB regression rather than only happy-path AUDIO reads.
+P7. Existing A001 RFB/Transport, completed A002 CONFIG/profile, AUDIO channel, and common media-clock behavior remain stable; no hidden production tuning defaults are introduced.
 
-A8. No AUDSRV/PCM playback worker, startup-reservoir timing, media-clock audio callsite, MPEG behavior, application orchestration, or hardware qualification is introduced.
+P8. No playback-worker allocation/thread lifecycle, startup-reservoir/common-clock presentation callsite, MPEG/presentation, application orchestration, receive-poison repair, or hardware qualification is introduced.
 
 ### Preserved invariants / non-goals
 
-- One physical PSTV socket/stream and one sole Transport recv owner remain mandatory.
-- RFB and AUDIO have independent logical queue/credit state despite sharing the physical receiver.
-- Existing A001 Transport/RFB behavior is regression authority, not a rewrite target.
-- The common media clock reconstructed in M1-M8 remains untouched by this packet.
-- Do not invent production AUDIO queue/credit numbers merely because H1 swept values; keep unresolved tuning explicit at the clean owner/profile boundary.
-- `MEDIA_END + empty AUDIO queue` / equivalent producer-done semantics are normal completion, not an error.
-- No `audsrv_wait_audio`, `audsrv_play_audio`, `audsrv_stop_audio`, `audsrv_quit`, PCM thread, or resident-service lifecycle belongs in this packet.
-- Do not begin A003 MPEG/video/presentation behavior.
+- Transport remains sole owner of the physical PSTV receiver and AUDIO logical queue/credit state.
+- Audio is a Transport consumer, never a competing socket reader.
+- `EXHAUSTED` means the ordered producer has finished and the AUDIO queue is empty; it is normal completion.
+- `audsrv_wait_audio(bytes)` must precede `audsrv_play_audio(bytes)` for each submitted chunk.
+- Successful-byte accounting occurs only after successful playback submission.
+- AUDSRV/LIBSD service lifetime is ELF-resident; session cleanup stops/mutes but does not quit/reinitialize the resident service by policy invention.
+- The common media clock remains one session timing origin, but this packet does not connect audio playback to it yet.
+- Do not resurrect H1's experimental chunk/worker/reservoir knobs as public CONFIG or hidden constants.
 - A001 physical status remains `HARDWARE_PENDING`.
 
 ### Blocker burden
 
-Physical PS2 hardware is not a blocker: queue, protocol dispatch, credit, finite-producer, terminal, and one-receiver semantics are host-testable.
+Lack of physical PS2 hardware is not a blocker for the synchronous playback contract because Transport and AUDSRV operations are deliberately injectable for host tests.
 
-Absence of final production tuning values is not a blocker and must not be solved by guessed defaults. Keep resource/credit values explicit at the Transport owner boundary and document any qualification choice still pending.
+Absence of final production chunk/thread/reservoir tuning is not a blocker. Keep the playback core buffer/chunk boundary explicit to its caller/test harness and leave resource/timing policy for the next packet rather than guessing values.
 
-If the current clean frame parser cannot represent the audited zero-length AUDIO producer marker without changing shared physical framing, prove that limitation from source/tests and return `PARTIAL` with the narrowest protocol correction required; do not smuggle completion through a different unverified sentinel.
+If exact PS2SDK AUDSRV representation or API binding cannot be proven without importing the concrete PS2 service adapter into this packet, establish the narrow operation contract and deterministic behavior tests, document the concrete binding as `PENDING_LOCAL`, and return `PARTIAL` only for the missing adapter. Do not weaken ordering/lifetime/accounting semantics or invent an API shape contradicted by repository evidence.
 
-### Stretch only if core A1-A8 are complete
+### Stretch only if P1-P8 are complete
 
-A small pure audio-start reservoir policy value/state helper may be added only if it does not consume Transport bytes, start a worker, call AUDSRV, or wait on the media clock. It must keep `reservoir-ready` distinct from `presentation-deadline-ready`. Do not use the stretch target to expand the core packet.
+No behavioral stretch target is assigned. Keep the packet focused so the subsequent worker-lifecycle + startup/presentation-timing tranche has a stable playback core to consume.
 
 ## Exact next Foreman pickup
 
-After the Reconstruction worker returns, inspect the actual AUDIO Transport source/tests and criterion-by-criterion result, verify one-receiver ownership and independent credit/exhaustion semantics, perform only canonical registration/build/dictionary/evidence chores, and then issue the next dependency-ordered A002 PCM/AUDSRV consumer packet if the AUDIO seam is coherent.
+After Reconstruction returns, inspect the actual audio source/tests and criterion-by-criterion P1-P8 result; verify that no competing receive/service owner or hidden tuning defaults appeared; perform only canonical test/build/dictionary/topology evidence; then issue the dependency-ordered playback-worker + startup-reservoir/common-clock gating packet if coherent.
 
-Validation should independently consume the fully integrated common-clock authority and later the coherent AUDIO/PCM tranche; Foreman evidence is not Validation PASS.
+Validation should independently consume the integrated Transport AUDIO/common-clock authority and later the audio tranche. Foreman evidence is not Validation PASS.
