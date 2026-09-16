@@ -1,0 +1,117 @@
+DOCUMENT=LEDGE_DICTIONARY_READY
+GENERATED_AT=2026-09-16T16:04:45-04:00
+SOURCE_HEAD=457a2fdf7b8e00db1d3d93a55253ae6e977aa039
+FOREMAN_STATE_REVISION=0012
+ACTIVE_WORK_ITEM_KEY=a003-mpeg-generation
+STATUS=READY
+TARGET_DICTIONARY=src/transport/SYMBOLS.md
+TARGET_SOURCE_FILES=src/transport/bridge.c;src/transport/bridge.h
+ROWS_REVIEWED=52
+ROWS_PREPARED=18
+ROWS_NEEDS_FOREMAN_REVIEW=0
+
+AUTHORITY_INSPECTED
+- src/transport/SYMBOLS.md blob at SOURCE_HEAD
+- src/transport/bridge.c blob ff0fd89d703f410b37dc9a07901c88c16a71fa9f
+- src/transport/bridge.h blob 0c0e465c687aee9d54f975b4652fcb70627f008a
+- docs/ledge/LEDGE_FOREMAN_STATE.md revision 0012 at SOURCE_HEAD
+- bridge file synopses and current implementation were treated as source authority; A001/A002/A003 ownership boundaries named by those synopses were preserved.
+
+BACKLOG_QUALITY_DIAGNOSIS
+The Transport bridge cluster remains mechanically complete but semantically weak. Public lifecycle/RFB bridge functions and private bridge state are predominantly tautological `Defines ...` / `Stores ...` rows. This packet improves the highest-value stable A001 bridge ownership/lifecycle seam only. Current A003 MPEG source is actively moving, so MPEG-specific bridge rows are intentionally not rewritten here.
+
+APPLY_SUMMARY
+src/transport/SYMBOLS.md: replace 18 rows, add 0, remove 0; symbol count unchanged.
+Generated portal implication: description-only replacements are count-neutral; regenerate/check portal only as required by canonical dictionary tooling after canonical integration.
+
+REPLACEMENTS
+
+SYMBOL=pstvnc_transport_bridge_finish_release
+CURRENT_ROW=| pstvnc_transport_bridge_finish_release | function | src/transport/bridge.c | Transport | file | Defines pstvnc_transport_bridge_finish_release. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_bridge_finish_release | function | src/transport/bridge.c | Transport | file | Releases the private Transport runtime after receiver ownership has converged, clears the bridge session-active latch, and reports release failure without exposing runtime internals. | A001 Transport |
+
+SYMBOL=pstvnc_transport_bridge_runtime
+CURRENT_ROW=| pstvnc_transport_bridge_runtime | variable | src/transport/bridge.c | Transport | file | Stores pstvnc_transport_bridge_runtime for Transport. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_bridge_runtime | variable | src/transport/bridge.c | Transport | file | Holds the one private Transport runtime owned by the cross-component bridge for the active physical PSTV session. | A001 Transport |
+
+SYMBOL=pstvnc_transport_bridge_session_active
+CURRENT_ROW=| pstvnc_transport_bridge_session_active | variable | src/transport/bridge.c | Transport | file | Stores pstvnc_transport_bridge_session_active for Transport. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_bridge_session_active | variable | src/transport/bridge.c | Transport | file | Latches whether the bridge currently owns an initialized Transport session, preventing overlapping session adoption and guarding all public bridge operations. | A001 Transport |
+
+SYMBOL=pstvnc_transport_bridge_terminal_result
+CURRENT_ROW=| pstvnc_transport_bridge_terminal_result | function | src/transport/bridge.c | Transport | file | Defines pstvnc_transport_bridge_terminal_result. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_bridge_terminal_result | function | src/transport/bridge.c | Transport | file | Maps private runtime terminal state into the public bridge result vocabulary, distinguishing inactive, failed, and receiver-closed sessions. | A001 Transport |
+
+SYMBOL=pstvnc_transport_session_open
+CURRENT_ROW=| pstvnc_transport_session_open | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_session_open. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_session_open | function | src/transport/bridge.c | Transport | public | Adopts the caller's connected descriptor into the single Transport runtime, starts the sole receiver, and transfers descriptor ownership on success for an RFB-only session. | A001 Transport |
+
+SYMBOL=pstvnc_transport_session_abort
+CURRENT_ROW=| pstvnc_transport_session_abort | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_session_abort. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_session_abort | function | src/transport/bridge.c | Transport | public | Requests Transport-wide stop, waits for the sole receiver to finish, then releases the private runtime so abort cannot reclaim session resources while receive ownership is live. | A001 Transport |
+
+SYMBOL=pstvnc_transport_session_wait_receiver_done
+CURRENT_ROW=| pstvnc_transport_session_wait_receiver_done | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_session_wait_receiver_done. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_session_wait_receiver_done | function | src/transport/bridge.c | Transport | public | Joins the bridge-visible receiver completion fence without releasing the Transport session, allowing a higher owner to separate receiver convergence from final close. | A001 Transport |
+
+SYMBOL=pstvnc_transport_session_close
+CURRENT_ROW=| pstvnc_transport_session_close | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_session_close. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_session_close | function | src/transport/bridge.c | Transport | public | Releases a completed Transport session only after receiver ownership is no longer live; returns WOULD_BLOCK rather than reclaiming resources beneath an active receiver. | A001 Transport |
+
+SYMBOL=pstvnc_transport_rfb_read_exact
+CURRENT_ROW=| pstvnc_transport_rfb_read_exact | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_read_exact. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_rfb_read_exact | function | src/transport/bridge.c | Transport | public | Reads exactly the requested logical RFB byte count from Transport-owned storage and converts runtime failure or closure into the bridge result vocabulary. | A001 Transport |
+
+SYMBOL=pstvnc_transport_rfb_poll_receive
+CURRENT_ROW=| pstvnc_transport_rfb_poll_receive | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_poll_receive. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_rfb_poll_receive | function | src/transport/bridge.c | Transport | public | Performs a nonblocking logical-RFB receive progress check, returning OK for progress, WOULD_BLOCK for temporary starvation, or the session terminal result. | A001 Transport |
+
+SYMBOL=pstvnc_transport_rfb_write_exact
+CURRENT_ROW=| pstvnc_transport_rfb_write_exact | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_write_exact. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_rfb_write_exact | function | src/transport/bridge.c | Transport | public | Serializes an exact logical RFB write through the private Transport runtime while keeping the physical descriptor and framing owner hidden from RFB callers. | A001 Transport |
+
+SYMBOL=pstvnc_transport_rfb_quiesce_requested
+CURRENT_ROW=| pstvnc_transport_rfb_quiesce_requested | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_quiesce_requested. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_rfb_quiesce_requested | function | src/transport/bridge.c | Transport | public | Reports whether Transport has observed the peer's finite-session RFB quiesce request so the RFB owner can stop only at its own parser-safe boundary. | A001 Transport |
+
+SYMBOL=pstvnc_transport_rfb_send_quiesce_boundary
+CURRENT_ROW=| pstvnc_transport_rfb_send_quiesce_boundary | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_send_quiesce_boundary. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_rfb_send_quiesce_boundary | function | src/transport/bridge.c | Transport | public | Publishes that the RFB owner reached its parser-safe quiesce boundary, preserving the ownership split between Transport handshake state and RFB boundary choice. | A001 Transport |
+
+SYMBOL=pstvnc_transport_rfb_wait_quiesce_commit
+CURRENT_ROW=| pstvnc_transport_rfb_wait_quiesce_commit | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_wait_quiesce_commit. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_rfb_wait_quiesce_commit | function | src/transport/bridge.c | Transport | public | Waits for Transport's quiesce commit after the RFB-safe boundary has been published, keeping finite-session ordering explicit before residual-byte handling. | A001 Transport |
+
+SYMBOL=pstvnc_transport_rfb_snapshot_quiesce_residual
+CURRENT_ROW=| pstvnc_transport_rfb_snapshot_quiesce_residual | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_snapshot_quiesce_residual. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_rfb_snapshot_quiesce_residual | function | src/transport/bridge.c | Transport | public | Snapshots the Transport-owned logical RFB residual byte count after quiesce commit so the higher RFB owner can verify the finite-session discard boundary. | A001 Transport |
+
+SYMBOL=pstvnc_transport_rfb_discard_quiesce_residual
+CURRENT_ROW=| pstvnc_transport_rfb_discard_quiesce_residual | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_discard_quiesce_residual. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_rfb_discard_quiesce_residual | function | src/transport/bridge.c | Transport | public | Discards exactly the caller-verified post-quiesce logical RFB residual and reports the removed count, preventing an unchecked drain from becoming protocol policy. | A001 Transport |
+
+SYMBOL=pstvnc_transport_rfb_send_quiesce_complete
+CURRENT_ROW=| pstvnc_transport_rfb_send_quiesce_complete | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_send_quiesce_complete. | A001 Transport |
+PROPOSED_ROW=| pstvnc_transport_rfb_send_quiesce_complete | function | src/transport/bridge.c | Transport | public | Publishes completion of the ordered RFB quiesce/residual-discard sequence through Transport without moving RFB parser policy into the bridge. | A001 Transport |
+
+SYMBOL=PSTVNC_TRANSPORT_BRIDGE_H
+CURRENT_ROW=| PSTVNC_TRANSPORT_BRIDGE_H | include guard | src/transport/bridge.h | Transport | file | Defines PSTVNC_TRANSPORT_BRIDGE_H type. | A001 Transport |
+PROPOSED_ROW=| PSTVNC_TRANSPORT_BRIDGE_H | include guard | src/transport/bridge.h | Transport | file | Guards the public Transport bridge declarations that expose session lifecycle and logical-channel seams while keeping the physical PSTV stream private. | A001 Transport |
+
+ORDERING
+All replacements are description-only and retain their existing rows and canonical ordering. Match on the complete CURRENT_ROW before replacing.
+
+MECHANICAL_DELTA_SUPPORT
+No add/remove/rename is proposed by this semantic packet. The current A003 MPEG bridge additions are intentionally excluded because active Reconstruction has not yet issued its immutable P1 handoff at this source boundary. Revisit them only after a stable handoff/current Foreman acceptance.
+
+CANONICAL_POST_APPLY_CHECKS
+- run the repository's strict source-dictionary checker/reconciler in check mode;
+- run project-check so generated portal freshness is verified;
+- regenerate docs/reference/SOURCE_SYMBOL_DICTIONARIES.md only through the canonical deterministic reconciliation path if required;
+- confirm source symbol count for src/transport is unchanged;
+- inspect the diff to verify only Description cells changed for these 18 rows.
+
+ASSUMPTIONS_LIMITATIONS
+This packet deliberately improves high-value file/public bridge symbols rather than low-value local/prototype parameters. It does not claim the rest of src/transport is semantically complete. MPEG-specific bridge rows and runtime/channel rows should be prepared after A003-P1 reaches a stable handoff because their source is currently under active Reconstruction.
+
+CONSUMPTION_RULE=Foreman must revalidate SOURCE_HEAD/current source/current row before applying; stale artifacts are prep evidence, never authority.
