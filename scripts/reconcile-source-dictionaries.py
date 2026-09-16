@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 VALIDATOR_PATH = ROOT / "scripts" / "source-dictionary.py"
 TARGET_DIRECTORIES = (
     Path("src"),
+    Path("src/audio"),
     Path("src/config"),
     Path("src/input"),
     Path("src/media"),
