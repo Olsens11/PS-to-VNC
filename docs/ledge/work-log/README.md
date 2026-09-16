@@ -1,11 +1,12 @@
 # Ledge Immutable Worker Log Contract
 
 DOCUMENT=LEDGE_WORK_LOG_CONTRACT
-DOCUMENT_REVISION=0001
-RECORDED_AT=2026-09-15T17:45:02-04:00
+DOCUMENT_REVISION=0002
+RECORDED_AT=2026-09-16T07:14:40-04:00
 TEMPORAL_CLASS=POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_POLICY_AT_RECORDED_TIME
 STATUS=OPERATIONAL
+SUPERSEDES_DOCUMENT_REVISION=0001
 
 ## Purpose
 
@@ -19,13 +20,13 @@ All new worker shift records live directly under:
 
 `docs/ledge/work-log/`
 
-`README.md` is the contract and is not a shift record. Every other Markdown file in this directory must be one worker-shift record following the filename and content schema below.
+`README.md` is the contract and is not a shift record. Except for the two immutable grandfathered Validation records named below, every other Markdown file in this directory must be one worker-shift record following the filename and content schema below.
 
-Workers normally discover history by listing this directory newest-first, then reading the newest relevant entries. A generated human index may be added later, but no index is correctness authority and workers must not depend on one being current.
+Workers normally discover history by listing this directory newest-first, then reading the newest relevant entries. A generated human index may be added later, but no index is correctness authority and workers must not depend on one being current. Individual immutable shift records are intentionally not duplicated into the shared `docs/INDEX.md`; that index contains this contract as their stable discovery route, while `scripts/work-log-check.py` validates the records themselves.
 
 ## Canonical filename
 
-Every shift record uses exactly:
+Every new shift record uses exactly:
 
 `<started-at>__<role-key>__<work-item-key>__<worker-key>.md`
 
@@ -59,6 +60,19 @@ or
 `YYYYMMDDTHHMMSS-HHMM__role-key__work-item-key__worker-key.md`
 
 The role, work-item, and worker keys must be lowercase ASCII slugs containing only `a-z`, `0-9`, and single hyphens between words. No spaces, underscores, uppercase letters, or free-form labels are permitted in those three filename fields.
+
+## Exact immutable grandfather exceptions
+
+Revision 0002 resolves a contradiction discovered after two Validation records had already been committed with noncanonical timestamp punctuation and the older Validation metadata shape. Revision 0001 simultaneously required those paths to fail the checker and prohibited renaming, replacing, deleting, or rewriting committed shift history. Destructive history cleanup would lose provenance merely to satisfy a later mechanical rule.
+
+The following **two exact existing paths only** are therefore grandfathered as immutable legacy-format shift records:
+
+- `2026-09-16T05-18-33-04-00__validation__v005-fatal-teardown__validation.md`
+- `2026-09-16T06-20-13-04-00__validation__a001-sole-receiver__validation.md`
+
+The checker must still prove for each grandfathered record that its readable core metadata names the expected `ROLE_KEY`, `WORK_ITEM_KEY`, `WORKER_KEY`, exact ISO `STARTED_AT`, and a valid ISO `COMPLETED_AT`. It may not require revision-0001-only metadata fields or the revision-0001 status vocabulary from those already-frozen records.
+
+This is not a reusable escape hatch. No later path, malformed filename, or noncanonical metadata shape is accepted through pattern matching, date ranges, role-wide exceptions, or operator discretion. Any future deviation from the canonical schema is a check failure and must be corrected before that new record is committed whenever possible; if one is nevertheless committed, a new explicit policy revision is required rather than silently extending this grandfather set.
 
 ## Stable search keys
 
@@ -104,7 +118,7 @@ At the end of every shift, including a blocked or self-paused shift that learned
 
 The create operation itself is intentionally concurrency-friendly: a new unique path is added rather than a shared historical file being replaced. Re-read branch authority immediately before creating the log file.
 
-A shift record must contain at minimum:
+A new shift record must contain at minimum:
 
 ```text
 DOCUMENT=LEDGE_WORK_LOG_ENTRY
@@ -137,12 +151,14 @@ A worker may update its lane's current-state snapshot when that lane owns the st
 
 After a shift record is committed, it is historical evidence and must not be rewritten to make later facts fit. If a later worker finds an error, the later worker records the correction and names the affected earlier log. Destructive history cleanup is prohibited.
 
+The two exact grandfather exceptions above demonstrate this rule: their noncanonical original paths remain intact, and policy/tooling records the narrowly scoped compatibility treatment rather than mutating the historical records.
+
 ## Legacy-log cutover
 
 The pre-cutover files such as lane/global append-only logs remain valid historical evidence through their final revisions. They are frozen for worker-shift history after this contract becomes operational. Workers may read them when reconstructing earlier context, but new shift history belongs here.
 
 ## Enforcement
 
-`scripts/work-log-check.py` validates every shift-record filename and the required metadata, including that the filename timestamp/role/work-item/worker keys exactly match the record body. `scripts/check.sh` runs that checker as part of the canonical project check.
+`scripts/work-log-check.py` validates every canonical shift-record filename and the required metadata, including that the filename timestamp/role/work-item/worker keys exactly match the record body. It separately validates the exact core metadata contract for the two grandfathered immutable Validation records. `scripts/check.sh` runs that checker as part of the canonical project check.
 
-A malformed name is therefore not merely a style issue: it is a repository check failure because inconsistent names would break deterministic worker discovery and search.
+A malformed new name is therefore not merely a style issue: it is a repository check failure because inconsistent names would break deterministic worker discovery and search. Only the two paths explicitly frozen by revision 0002 are accepted outside the canonical grammar.
