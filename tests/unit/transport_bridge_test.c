@@ -5,8 +5,9 @@
  *
  * The test proves socket ownership transfer is unambiguous, failed receiver
  * start retires an already-adopted descriptor through Transport, live receiver
- * state prevents resource reclamation, and logical RFB/quiesce operations expose
- * only bridge results rather than a physical socket.
+ * state prevents ordinary reclamation, and application-local fatal convergence
+ * orders stop request -> receiver completion -> release without exposing the
+ * physical descriptor. Logical RFB/quiesce operations remain a separate process.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
  */
@@ -20,6 +21,7 @@
 static int failures;
 static int initialize_result = 1;
 static int start_result = 1;
+static int request_stop_result = 1;
 static int wait_done_result = 1;
 static int release_result = 1;
 static int read_result = 1;
@@ -33,9 +35,20 @@ static int residual_discard_result = 1;
 static int quiesce_complete_result = 1;
 static int initialize_calls;
 static int start_calls;
+static int request_stop_calls;
+static int wait_done_calls;
 static int release_calls;
 static int adopted_socket_fd;
 static pstvnc_transport_runtime_t *observed_runtime;
+
+typedef enum lifecycle_event {
+    EVENT_STOP = 1,
+    EVENT_WAIT = 2,
+    EVENT_RELEASE = 3
+} lifecycle_event_t;
+
+static lifecycle_event_t lifecycle_events[8];
+static size_t lifecycle_event_count;
 
 #define CHECK(expr)                                                     \
     do {                                                                \
@@ -46,10 +59,20 @@ static pstvnc_transport_runtime_t *observed_runtime;
         }                                                               \
     } while (0)
 
+static void record_lifecycle(lifecycle_event_t event)
+{
+    CHECK(lifecycle_event_count <
+        sizeof(lifecycle_events) / sizeof(lifecycle_events[0]));
+    if (lifecycle_event_count <
+        sizeof(lifecycle_events) / sizeof(lifecycle_events[0]))
+        lifecycle_events[lifecycle_event_count++] = event;
+}
+
 static void reset_fixture(void)
 {
     initialize_result = 1;
     start_result = 1;
+    request_stop_result = 1;
     wait_done_result = 1;
     release_result = 1;
     read_result = 1;
@@ -63,9 +86,13 @@ static void reset_fixture(void)
     quiesce_complete_result = 1;
     initialize_calls = 0;
     start_calls = 0;
+    request_stop_calls = 0;
+    wait_done_calls = 0;
     release_calls = 0;
     adopted_socket_fd = -1;
     observed_runtime = NULL;
+    memset(lifecycle_events, 0, sizeof(lifecycle_events));
+    lifecycle_event_count = 0u;
 }
 
 static pstvnc_transport_session_config_t make_config(void)
@@ -117,17 +144,37 @@ int pstvnc_transport_runtime_start_receiver(
     return 1;
 }
 
+int pstvnc_transport_runtime_request_stop(
+    pstvnc_transport_runtime_t *runtime)
+{
+    request_stop_calls++;
+    record_lifecycle(EVENT_STOP);
+
+    if (!request_stop_result)
+        return 0;
+
+    runtime->stop_requested = 1;
+    return 1;
+}
+
 int pstvnc_transport_runtime_wait_receiver_done(
     pstvnc_transport_runtime_t *runtime)
 {
-    (void)runtime;
-    return wait_done_result;
+    wait_done_calls++;
+    record_lifecycle(EVENT_WAIT);
+
+    if (!wait_done_result)
+        return 0;
+
+    runtime->receiver_done = 1;
+    return 1;
 }
 
 int pstvnc_transport_runtime_release(
     pstvnc_transport_runtime_t *runtime)
 {
     release_calls++;
+    record_lifecycle(EVENT_RELEASE);
     memset(runtime, 0, sizeof(*runtime));
     runtime->physical_stream.socket_fd = -1;
     runtime->physical_stream.send_semaphore_id = -1;
@@ -273,6 +320,71 @@ static void test_failed_start_consumes_adopted_socket(void)
     CHECK(release_calls == 1);
 }
 
+static void test_fatal_abort_orders_stop_wait_release(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    int socket_fd = 29;
+
+    reset_fixture();
+    CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
+        PSTVNC_TRANSPORT_OK);
+
+    CHECK(pstvnc_transport_session_abort() == PSTVNC_TRANSPORT_OK);
+    CHECK(request_stop_calls == 1);
+    CHECK(wait_done_calls == 1);
+    CHECK(release_calls == 1);
+    CHECK(lifecycle_event_count == 3u);
+    CHECK(lifecycle_events[0] == EVENT_STOP);
+    CHECK(lifecycle_events[1] == EVENT_WAIT);
+    CHECK(lifecycle_events[2] == EVENT_RELEASE);
+
+    /* Successful abort retired the session; no second reclamation exists. */
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_INVALID);
+}
+
+static void test_abort_stop_failure_does_not_wait_or_reclaim(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    int socket_fd = 30;
+
+    reset_fixture();
+    CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
+        PSTVNC_TRANSPORT_OK);
+
+    request_stop_result = 0;
+    CHECK(pstvnc_transport_session_abort() == PSTVNC_TRANSPORT_FAILED);
+    CHECK(request_stop_calls == 1);
+    CHECK(wait_done_calls == 0);
+    CHECK(release_calls == 0);
+
+    /* Test cleanup only: prove close still refuses while receiver is live. */
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_WOULD_BLOCK);
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+}
+
+static void test_abort_wait_failure_does_not_reclaim(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    int socket_fd = 32;
+
+    reset_fixture();
+    CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
+        PSTVNC_TRANSPORT_OK);
+
+    wait_done_result = 0;
+    CHECK(pstvnc_transport_session_abort() == PSTVNC_TRANSPORT_FAILED);
+    CHECK(request_stop_calls == 1);
+    CHECK(wait_done_calls == 1);
+    CHECK(release_calls == 0);
+    CHECK(lifecycle_event_count == 2u);
+    CHECK(lifecycle_events[0] == EVENT_STOP);
+    CHECK(lifecycle_events[1] == EVENT_WAIT);
+
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+}
+
 static void test_logical_rfb_and_quiesce_result_mapping(void)
 {
     pstvnc_transport_session_config_t config = make_config();
@@ -333,6 +445,9 @@ int main(void)
     test_socket_ownership_and_close_guard();
     test_failed_initialize_keeps_caller_socket();
     test_failed_start_consumes_adopted_socket();
+    test_fatal_abort_orders_stop_wait_release();
+    test_abort_stop_failure_does_not_wait_or_reclaim();
+    test_abort_wait_failure_does_not_reclaim();
     test_logical_rfb_and_quiesce_result_mapping();
 
     if (failures != 0) {
