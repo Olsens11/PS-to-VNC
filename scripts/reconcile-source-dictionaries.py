@@ -5,9 +5,10 @@ Reconcile selected clean-source dictionaries against exact current C definitions
 This maintenance helper preserves dictionary rows that still map to a current
 mechanically discovered definition, removes rows whose defining source/lexical
 owner no longer exists, and appends current definitions that the canonical
-source-dictionary validator reports as missing. It is intentionally scoped to
-the four dictionaries changed by the A001 live-path reconstruction; it does not
-rewrite unrelated product domains or change product source.
+source-dictionary validator reports as missing. It is scoped to the clean
+product dictionaries currently participating in deterministic ledge
+reconciliation; it does not rewrite unrelated product domains or change
+product source.
 
 Run only with Universal Ctags available. After reconciliation, regenerate the
 portal and run the canonical long/complete/strict source-dictionary check.
@@ -25,6 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 VALIDATOR_PATH = ROOT / "scripts" / "source-dictionary.py"
 TARGET_DIRECTORIES = (
     Path("src"),
+    Path("src/config"),
     Path("src/input"),
     Path("src/platform"),
     Path("src/rfb"),
