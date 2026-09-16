@@ -50,7 +50,6 @@ The inventory below covers maintained clean-generation symbols defined directly 
 | PSTVNC_CONFIG_PROFILE_ENTRY_BYTES | macro | src/config/profile.h | Config profile | public | Fixed field/value entry bytes. | A002 config/profile |
 | PSTVNC_CONFIG_PROFILE_FIELD_COUNT | macro | src/config/profile.h | Config profile | public | Mandatory clean CONFIG field count. | A002 config/profile |
 | pstvnc_config_profile_field | enum | src/config/profile.h | Config profile | public | Defines clean field identities. | A002 config/profile |
-| pstvnc_config_profile_field_t | typedef | src/config/profile.h | Config profile | public | Names the clean field enum. | A002 config/profile |
 | PSTVNC_CONFIG_FIELD_SESSION_ID | enum value | src/config/profile.h | pstvnc_config_profile_field | public | Session identity field. | A002 config/profile |
 | PSTVNC_CONFIG_FIELD_RFB_MODE | enum value | src/config/profile.h | pstvnc_config_profile_field | public | RFB activation field. | A002 config/profile |
 | PSTVNC_CONFIG_FIELD_AUDIO_MODE | enum value | src/config/profile.h | pstvnc_config_profile_field | public | Audio activation field. | A002 config/profile |
@@ -71,36 +70,29 @@ The inventory below covers maintained clean-generation symbols defined directly 
 | PSTVNC_CONFIG_FIELD_RECEIVER_THREAD_PRIORITY | enum value | src/config/profile.h | pstvnc_config_profile_field | public | A001 receiver-priority field. | A002 config/profile |
 | PSTVNC_CONFIG_FIELD_MAX_DATA_PAYLOAD | enum value | src/config/profile.h | pstvnc_config_profile_field | public | A001 maximum DATA-payload field. | A002 config/profile |
 | pstvnc_config_audio_mode | enum | src/config/profile.h | Config profile | public | Defines OFF/PCM audio activation. | A002 config/profile |
-| pstvnc_config_audio_mode_t | typedef | src/config/profile.h | Config profile | public | Names audio activation values. | A002 config/profile |
 | PSTVNC_CONFIG_AUDIO_OFF | enum value | src/config/profile.h | pstvnc_config_audio_mode | public | Audio disabled. | A002 config/profile |
 | PSTVNC_CONFIG_AUDIO_PCM | enum value | src/config/profile.h | pstvnc_config_audio_mode | public | PCM audio enabled. | A002 config/profile |
 | pstvnc_config_rfb_mode | enum | src/config/profile.h | Config profile | public | Defines RFB activation. | A002 config/profile |
-| pstvnc_config_rfb_mode_t | typedef | src/config/profile.h | Config profile | public | Names RFB activation values. | A002 config/profile |
 | PSTVNC_CONFIG_RFB_OFF | enum value | src/config/profile.h | pstvnc_config_rfb_mode | public | RFB disabled. | A002 config/profile |
 | PSTVNC_CONFIG_RFB_ON | enum value | src/config/profile.h | pstvnc_config_rfb_mode | public | RFB enabled. | A002 config/profile |
 | pstvnc_config_video_mode | enum | src/config/profile.h | Config profile | public | Defines neutral video activation only. | A002 config/profile |
-| pstvnc_config_video_mode_t | typedef | src/config/profile.h | Config profile | public | Names neutral video activation values. | A002 config/profile |
 | PSTVNC_CONFIG_VIDEO_OFF | enum value | src/config/profile.h | pstvnc_config_video_mode | public | Video disabled. | A002 config/profile |
 | PSTVNC_CONFIG_VIDEO_ACTIVE | enum value | src/config/profile.h | pstvnc_config_video_mode | public | Video active without A003 tuning semantics. | A002 config/profile |
 | pstvnc_config_composition_profile | structure | src/config/profile.h | Config profile | public | Defines session composition facts. | A002 config/profile |
-| pstvnc_config_composition_profile_t | typedef | src/config/profile.h | Config profile | public | Names composition subprofile. | A002 config/profile |
 | session_id | field | src/config/profile.h | pstvnc_config_composition_profile | public | Session correlation identity. | A002 config/profile |
 | rfb_mode | field | src/config/profile.h | pstvnc_config_composition_profile | public | RFB activation fact. | A002 config/profile |
 | audio_mode | field | src/config/profile.h | pstvnc_config_composition_profile | public | Audio OFF/PCM activation fact. | A002 config/profile |
 | video_mode | field | src/config/profile.h | pstvnc_config_composition_profile | public | Neutral video activation fact. | A002 config/profile |
 | pstvnc_config_pcm_profile | structure | src/config/profile.h | Config profile | public | Defines PCM format/value authority. | A002 config/profile |
-| pstvnc_config_pcm_profile_t | typedef | src/config/profile.h | Config profile | public | Names PCM subprofile. | A002 config/profile |
 | rate_hz | field | src/config/profile.h | pstvnc_config_pcm_profile | public | PCM sample rate. | A002 config/profile |
 | channels | field | src/config/profile.h | pstvnc_config_pcm_profile | public | PCM mono/stereo channel count. | A002 config/profile |
 | bits_per_sample | field | src/config/profile.h | pstvnc_config_pcm_profile | public | PCM 8/16-bit sample width. | A002 config/profile |
 | volume_percent | field | src/config/profile.h | pstvnc_config_pcm_profile | public | PCM volume percentage. | A002 config/profile |
 | pstvnc_config_media_clock_profile | structure | src/config/profile.h | Config profile | public | Defines common-clock profile inputs. | A002 config/profile |
-| pstvnc_config_media_clock_profile_t | typedef | src/config/profile.h | Config profile | public | Names media-clock subprofile. | A002 config/profile |
 | epoch_lead_us | field | src/config/profile.h | pstvnc_config_media_clock_profile | public | Common media-epoch lead. | A002 config/profile |
 | audio_presentation_offset_us | field | src/config/profile.h | pstvnc_config_media_clock_profile | public | Signed audio offset from common epoch. | A002 config/profile |
 | video_presentation_offset_us | field | src/config/profile.h | pstvnc_config_media_clock_profile | public | Signed neutral video offset from common epoch. | A002 config/profile |
 | pstvnc_config_session_profile | structure | src/config/profile.h | Config profile | public | Aggregates immutable narrow subprofiles after one successful decode. | A002 config/profile |
-| pstvnc_config_session_profile_t | typedef | src/config/profile.h | Config profile | public | Names complete decoded session authority. | A002 config/profile |
 | composition | field | src/config/profile.h | pstvnc_config_session_profile | public | Composition subprofile. | A002 config/profile |
 | transport | field | src/config/profile.h | pstvnc_config_session_profile | public | Existing A001 Transport subprofile. | A002 config/profile |
 | pcm | field | src/config/profile.h | pstvnc_config_session_profile | public | PCM subprofile. | A002 config/profile |
@@ -143,3 +135,11 @@ The inventory below covers maintained clean-generation symbols defined directly 
 | pstvnc_config_parse_bool | function declaration | src/config/text.h | Config text | public | Declares boolean parsing. | A002 config/profile |
 | value | prototype parameter | src/config/text.h | pstvnc_config_parse_bool | prototype | Supplies boolean text. | A002 config/profile |
 | out_value | prototype parameter | src/config/text.h | pstvnc_config_parse_bool | prototype | Receives parsed boolean. | A002 config/profile |
+| pstvnc_config_audio_mode_t | type | src/config/profile.h | profile interface | public | Defines pstvnc_config_audio_mode_t as a current clean-source type. | mechanically reconciled current clean source |
+| pstvnc_config_composition_profile_t | type | src/config/profile.h | profile interface | public | Defines pstvnc_config_composition_profile_t as a current clean-source type. | mechanically reconciled current clean source |
+| pstvnc_config_media_clock_profile_t | type | src/config/profile.h | profile interface | public | Defines pstvnc_config_media_clock_profile_t as a current clean-source type. | mechanically reconciled current clean source |
+| pstvnc_config_pcm_profile_t | type | src/config/profile.h | profile interface | public | Defines pstvnc_config_pcm_profile_t as a current clean-source type. | mechanically reconciled current clean source |
+| pstvnc_config_profile_field_t | type | src/config/profile.h | profile interface | public | Defines pstvnc_config_profile_field_t as a current clean-source type. | mechanically reconciled current clean source |
+| pstvnc_config_rfb_mode_t | type | src/config/profile.h | profile interface | public | Defines pstvnc_config_rfb_mode_t as a current clean-source type. | mechanically reconciled current clean source |
+| pstvnc_config_session_profile_t | type | src/config/profile.h | profile interface | public | Defines pstvnc_config_session_profile_t as a current clean-source type. | mechanically reconciled current clean source |
+| pstvnc_config_video_mode_t | type | src/config/profile.h | profile interface | public | Defines pstvnc_config_video_mode_t as a current clean-source type. | mechanically reconciled current clean source |
