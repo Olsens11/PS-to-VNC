@@ -393,9 +393,7 @@ require_text \
     ISSUE7_STRICT_COMPILE_ORIGINAL_SYNOPSIS
 
 echo 'TOOL_SELECTION_APPLICABILITY_POLICY=PASS'
-
 echo 'ISSUE7_STAGE_LOCAL_TOOL_SAFETY=PASS'
-
 echo 'BOOTSTRAP_RULES=PASS'
 
 
@@ -444,6 +442,7 @@ CLEAN_MARKER = "File synopsis:"
 
 EXPECTED_DIRECTORIES = {
     "src",
+    "src/config",
     "src/diagnostics",
     "src/display",
     "src/framebuffer",
