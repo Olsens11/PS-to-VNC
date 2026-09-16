@@ -1,12 +1,12 @@
 # Ledge Immutable Worker Log Contract
 
 DOCUMENT=LEDGE_WORK_LOG_CONTRACT
-DOCUMENT_REVISION=0003
-RECORDED_AT=2026-09-16T07:38:30-04:00
+DOCUMENT_REVISION=0004
+RECORDED_AT=2026-09-16T10:45:36-04:00
 TEMPORAL_CLASS=POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_POLICY_AT_RECORDED_TIME
 STATUS=OPERATIONAL
-SUPERSEDES_DOCUMENT_REVISION=0002
+SUPERSEDES_DOCUMENT_REVISION=0003
 
 ## Purpose
 
@@ -63,9 +63,11 @@ The role, work-item, and worker keys must be lowercase ASCII slugs containing on
 
 ## Exact immutable grandfather exceptions
 
-Revision 0002 first resolved the contradiction between strict canonical checking and two already-committed Validation records that could not be destructively renamed or rewritten under the immutability rule. The first canonical CI execution after that policy revision exposed five additional already-frozen records with legacy or malformed schema details. Revision 0003 therefore records one final explicit compatibility set for the historical records that actually exist at this point in repository authority.
+Revision 0002 first resolved the contradiction between strict canonical checking and two already-committed Validation records that could not be destructively renamed or rewritten under the immutability rule. The first canonical CI execution after that policy revision exposed five additional already-frozen records with legacy or malformed schema details, which revision 0003 recorded explicitly.
 
-The following **seven exact existing paths only** are grandfathered as immutable legacy-format shift records:
+A later canonical A002 integration run then exposed one additional already-committed Reconstruction record whose filename stamp does not match its recorded `STARTED_AT`. That immutable record was already part of repository history when the mismatch was discovered, so revision 0004 preserves it by exact path and frozen core metadata instead of renaming or rewriting historical evidence.
+
+The following **eight exact existing paths only** are grandfathered as immutable legacy/malformed shift records:
 
 - `2026-09-16T05-18-33-04-00__validation__v005-fatal-teardown__validation.md`
 - `2026-09-16T06-20-13-04-00__validation__a001-sole-receiver__validation.md`
@@ -74,10 +76,11 @@ The following **seven exact existing paths only** are grandfathered as immutable
 - `20260915T232009-0400__validation__a001-sole-receiver__validation.md`
 - `20260915T232241-0400__reconstruction__a001-sole-receiver__interactive-b.md`
 - `20260915T233050-0400__continuity__global-reconciliation__continuity.md`
+- `20260916T085615-0400__reconstruction__a002-audio-clock__interactive.md`
 
 The checker must still prove for each grandfathered record that its readable core metadata names the expected `ROLE_KEY`, `WORK_ITEM_KEY`, `WORKER_KEY`, exact ISO `STARTED_AT`, and a valid ISO `COMPLETED_AT`. It may not require revision-0001-only metadata fields, canonical filename timestamp equality, or the revision-0001 status vocabulary from those already-frozen records.
 
-The 07:27 Continuity record was created after revision 0002 by an older automation formatting path. Its inclusion here is a historical compatibility repair, not permission for that formatting to continue. All future workers and automations are governed by the canonical schema below.
+The 07:27 Continuity record was created after revision 0002 by an older automation formatting path. The A002 Reconstruction record added by revision 0004 preserves `STARTED_AT=2026-09-16T08:33:00-04:00` while its already-frozen filename uses the `20260916T085615-0400` stamp. These inclusions are historical compatibility repairs, not permission for either formatting pattern to continue. All future workers and automations are governed by the canonical schema below.
 
 This is not a reusable escape hatch. No later path, malformed filename, or noncanonical metadata shape is accepted through pattern matching, date ranges, role-wide exceptions, or operator discretion. Any future deviation from the canonical schema is a check failure and must be corrected before that new record is committed whenever possible; if one is nevertheless committed, a new explicit policy revision is required rather than silently extending this grandfather set.
 
