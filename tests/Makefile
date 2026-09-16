@@ -363,9 +363,11 @@ $(GEOMETRY_TEST): unit/video_geometry_test.c ../src/video/geometry.c ../src/vide
 		-o $(GEOMETRY_TEST)
 
 TRANSPORT_RFB_CHANNEL_TEST := .build/transport_rfb_channel_test
+TRANSPORT_BRIDGE_TEST := .build/transport_bridge_test
+RFB_BRIDGE_TEST := .build/rfb_bridge_test
 
-.PHONY: transport-rfb-channel-unit
-unit: transport-rfb-channel-unit
+.PHONY: transport-rfb-channel-unit transport-bridge-unit rfb-bridge-unit
+unit: transport-rfb-channel-unit transport-bridge-unit rfb-bridge-unit
 
 transport-rfb-channel-unit: $(TRANSPORT_RFB_CHANNEL_TEST)
 	./$(TRANSPORT_RFB_CHANNEL_TEST)
@@ -376,3 +378,23 @@ $(TRANSPORT_RFB_CHANNEL_TEST): unit/transport_rfb_channel_test.c ../src/transpor
 		unit/transport_rfb_channel_test.c \
 		../src/transport/rfb_channel.c \
 		-o $(TRANSPORT_RFB_CHANNEL_TEST)
+
+transport-bridge-unit: $(TRANSPORT_BRIDGE_TEST)
+	./$(TRANSPORT_BRIDGE_TEST)
+
+$(TRANSPORT_BRIDGE_TEST): unit/transport_bridge_test.c ../src/transport/bridge.c ../src/transport/bridge.h ../src/transport/runtime.h ../src/transport/transport.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/transport_bridge_test.c \
+		../src/transport/bridge.c \
+		-o $(TRANSPORT_BRIDGE_TEST)
+
+rfb-bridge-unit: $(RFB_BRIDGE_TEST)
+	./$(RFB_BRIDGE_TEST)
+
+$(RFB_BRIDGE_TEST): unit/rfb_bridge_test.c ../src/rfb/bridge.c ../src/rfb/bridge.h ../src/transport/bridge.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_bridge_test.c \
+		../src/rfb/bridge.c \
+		-o $(RFB_BRIDGE_TEST)
