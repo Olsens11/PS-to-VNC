@@ -442,6 +442,7 @@ CLEAN_MARKER = "File synopsis:"
 
 EXPECTED_DIRECTORIES = {
     "src",
+    "src/audio",
     "src/config",
     "src/diagnostics",
     "src/display",
