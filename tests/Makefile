@@ -239,7 +239,7 @@ $(BUILD_DIR)/local_ui_presentation_test: \
 	../src/ui/osk.h \
 	../src/ui/osk_render.c \
 	../src/ui/osk_render.h \
-	../src/display/display.h | $(BUILD_DIR)
+	../src/input/keyboard.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/local_ui_presentation_test.c \
@@ -410,3 +410,54 @@ $(RFB_BRIDGE_TEST): unit/rfb_bridge_test.c ../src/rfb/bridge.c ../src/rfb/bridge
 		unit/rfb_bridge_test.c \
 		../src/rfb/bridge.c \
 		-o $(RFB_BRIDGE_TEST)
+
+TRANSPORT_PHYSICAL_STREAM_TEST := .build/transport_physical_stream_test
+TRANSPORT_RUNTIME_TEST := .build/transport_runtime_test
+
+.PHONY: transport-physical-stream-unit transport-runtime-unit
+unit: transport-physical-stream-unit transport-runtime-unit
+
+transport-physical-stream-unit: $(TRANSPORT_PHYSICAL_STREAM_TEST)
+	./$(TRANSPORT_PHYSICAL_STREAM_TEST)
+
+$(TRANSPORT_PHYSICAL_STREAM_TEST): \
+	unit/transport_physical_stream_test.c \
+	unit/transport_host_stubs/kernel.h \
+	unit/transport_host_stubs/ps2ip.h \
+	../src/transport/physical_stream.c \
+	../src/transport/physical_stream.h \
+	../src/transport/protocol.c \
+	../src/transport/protocol.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Iunit/transport_host_stubs \
+		-I../src \
+		unit/transport_physical_stream_test.c \
+		../src/transport/physical_stream.c \
+		../src/transport/protocol.c \
+		-o $(TRANSPORT_PHYSICAL_STREAM_TEST)
+
+transport-runtime-unit: $(TRANSPORT_RUNTIME_TEST)
+	./$(TRANSPORT_RUNTIME_TEST)
+
+$(TRANSPORT_RUNTIME_TEST): \
+	unit/transport_runtime_test.c \
+	unit/transport_host_stubs/kernel.h \
+	../src/transport/runtime.c \
+	../src/transport/runtime.h \
+	../src/transport/quiesce.c \
+	../src/transport/quiesce.h \
+	../src/transport/rfb_channel.c \
+	../src/transport/rfb_channel.h \
+	../src/transport/protocol.c \
+	../src/transport/protocol.h \
+	../src/transport/physical_stream.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Iunit/transport_host_stubs \
+		-I../src \
+		-pthread \
+		unit/transport_runtime_test.c \
+		../src/transport/runtime.c \
+		../src/transport/quiesce.c \
+		../src/transport/rfb_channel.c \
+		../src/transport/protocol.c \
+		-o $(TRANSPORT_RUNTIME_TEST)
