@@ -42,7 +42,7 @@ Current responsibility locations are:
 |---|---|
 | Executable entry / application coordination | `src/main.c`, `src/app.c`, `src/app.h` |
 | Session CONFIG/profile decoding, validation, owner-specific immutable values, and config-text helpers | `src/config/` |
-| Synchronous PCM playback ownership and resident AUDSRV adapter boundary | `src/audio/` |
+| PCM playback, resident AUDSRV adapter, and session-scoped audio worker/resource/reservoir lifecycle | `src/audio/` |
 | Session common-media epoch, signed/saturating deadlines, synchronization contract, and host-testable wait boundary | `src/media/` |
 | Controller/input/keyboard/mouse | `src/input/` |
 | Local foreground / OSK / local presentation | `src/ui/` |
@@ -69,10 +69,12 @@ media-clock wait/arming runtime, or MPEG/video behavior.
 
 `src/audio/` was deliberately adopted during the A002 PCM playback-core tranche
 on 2026-09-16. `playback.{c,h}` owns the synchronous, host-testable PCM consumer
-of the public Transport AUDIO seam, while `audsrv_service.{c,h}` owns the
-concrete resident AUDSRV adapter. This clean domain does not yet own the
-session playback worker, startup-reservoir policy, common-clock presentation
-gating, application orchestration, or MPEG/video behavior.
+of the public Transport AUDIO seam; `audsrv_service.{c,h}` owns the concrete
+resident AUDSRV adapter; and `session.{c,h}` owns the session-scoped worker,
+explicit stack/buffer authority, non-consuming startup-reservoir observation,
+common-clock audio-deadline gate, stop/join fence, and post-join reclamation.
+This domain still does not own top-level application Transport abort/close
+orchestration, epoch arming, MPEG/video presentation, or hardware qualification.
 
 `src/media/` was deliberately created during the A002 common-media-clock
 tranche on 2026-09-16. `clock.{c,h}` owns one reusable session timing boundary:
