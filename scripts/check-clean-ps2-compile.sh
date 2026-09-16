@@ -58,6 +58,7 @@ COMMON_FLAGS=(
     -I"$ROOT/src/display"
     -I"$ROOT/src/diagnostics"
     -I"$ROOT/src/platform"
+    -I"$ROOT/src/transport"
     -I"$PS2SDK/ee/include"
     -I"$PS2SDK/common/include"
     -I"$GSKIT/include"
@@ -72,6 +73,22 @@ SOURCES=(
     src/framebuffer/framebuffer.c
     src/rfb/rfb_session.c
     src/display/display.c
+    src/input/input.c
+    src/input/mouse.c
+    src/input/input_runtime.c
+    src/input/keyboard.c
+    src/input/pad.c
+    src/ui/local_controller.c
+    src/ui/local_ui.c
+    src/ui/osk.c
+    src/ui/osk_render.c
+    src/ui/local_ui_presentation.c
+    src/transport/protocol.c
+    src/transport/physical_stream.c
+    src/transport/rfb_channel.c
+    src/transport/runtime.c
+    src/transport/quiesce.c
+    src/transport/bridge.c
     src/platform/ps2_system.c
     src/platform/ps2_network.c
     src/platform/ps2_graphics.c
