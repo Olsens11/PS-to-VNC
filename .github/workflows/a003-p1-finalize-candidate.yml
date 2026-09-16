@@ -1,0 +1,340 @@
+name: A003 P1 finalize source-owned candidate
+
+on:
+  push:
+    branches:
+      - evidence/a003-p1-host-20260916
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: ${{ github.event.head_commit.message != 'fix(a003): finalize P1 source-owned candidate' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dictionary discovery tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y universal-ctags shfmt
+
+      - name: Repair source-owned dictionary semantics and topology
+        shell: bash
+        run: |
+          set -eu
+          python3 - <<'PY'
+          from pathlib import Path
+
+          transport = Path('src/transport/SYMBOLS.md')
+          lines = transport.read_text(encoding='utf-8').splitlines()
+
+          fn_purpose = {
+              'pstvnc_transport_audio_channel_available': 'Reports current AUDIO payload-byte occupancy of the bounded queue.',
+              'pstvnc_transport_audio_channel_commit_data': 'Appends one nonempty AUDIO DATA payload atomically when bounded capacity permits.',
+              'pstvnc_transport_audio_channel_initialize': 'Binds caller storage as an empty bounded AUDIO ring queue with producer completion clear.',
+              'pstvnc_transport_audio_channel_mark_producer_done': 'Records finite AUDIO producer completion separately from Transport terminal state.',
+              'pstvnc_transport_audio_channel_producer_done': 'Reports the independent one-shot finite AUDIO producer completion fact.',
+              'pstvnc_transport_audio_channel_read_available': 'Removes currently queued AUDIO bytes while preserving bounded ring-buffer order.',
+              'pstvnc_transport_audio_activity_snapshot': 'Exposes the AUDIO activity generation used for wake-before-sleep consumer waiting.',
+              'pstvnc_transport_audio_read_available': 'Exposes bounded AUDIO dequeue through the public Transport bridge without exposing the physical socket.',
+              'pstvnc_transport_audio_status': 'Exposes AUDIO queue occupancy and the independent finite-producer completion fact.',
+              'pstvnc_transport_audio_wait_activity': 'Exposes event-driven AUDIO activity waiting through the public Transport bridge.',
+              'pstvnc_transport_session_open_with_audio': 'Opens the single Transport session with explicit logical AUDIO channel authority.',
+              'pstvnc_transport_runtime_accept_audio_frame': 'Commits one validated channel-3 DATA payload into the bounded AUDIO queue owned by the sole receiver.',
+              'pstvnc_transport_runtime_audio_activity_snapshot': 'Returns the AUDIO activity generation used for event-driven consumer waits.',
+              'pstvnc_transport_runtime_audio_config_valid': 'Validates optional AUDIO queue and credit authority against the framed Transport payload limit.',
+              'pstvnc_transport_runtime_audio_read_available': 'Removes available AUDIO bytes while keeping starvation, exhaustion, stop, close, and failure distinct.',
+              'pstvnc_transport_runtime_audio_status': 'Reports AUDIO queue occupancy and the independent finite-producer completion fact.',
+              'pstvnc_transport_runtime_audio_wait_activity': 'Waits for AUDIO producer or terminal activity without timer-backed polling.',
+              'pstvnc_transport_runtime_initialize_with_audio': 'Initializes the sole Transport runtime with explicit AUDIO authority and no MPEG channel.',
+              'pstvnc_transport_runtime_publish_audio_terminal': 'Publishes AUDIO stop, close, or failure progress without inventing producer exhaustion.',
+              'pstvnc_transport_runtime_return_audio_credit': 'Returns AUDIO credit earned only by bytes actually removed from the AUDIO queue.',
+              'pstvnc_transport_runtime_publish_rfb_activity_locked': 'Advances the RFB activity generation under the RFB queue lock and records whether an armed reader must be woken.',
+              'pstvnc_transport_runtime_return_rfb_credit': 'Returns RFB credit earned only by bytes actually removed from the RFB queue.',
+              'pstvnc_transport_runtime_signal_rfb_activity': 'Signals the RFB activity semaphore only when locked publication requires a wake.',
+              'pstvnc_transport_runtime_reset_identifiers': 'Resets semaphore/thread identifiers to the unowned sentinel state used by rollback and release.',
+              'pstvnc_transport_session_open_internal': 'Centralizes one physical Transport-session open while attaching only explicitly requested logical AUDIO/MPEG channels.',
+              'pstvnc_transport_runtime_initialize_internal': 'Acquires one sole-receiver Transport runtime plus whichever logical AUDIO/MPEG channels the caller explicitly enables.',
+          }
+
+          type_purpose = {
+              'PSTVNC_TRANSPORT_AUDIO_CHANNEL_H': 'Guards the bounded logical AUDIO channel declarations.',
+              'pstvnc_transport_audio_channel': 'Owns bounded AUDIO ring-buffer state plus its independent finite-producer completion fact.',
+              'pstvnc_transport_audio_channel_t': 'Names the Transport-owned bounded AUDIO logical-channel state.',
+              'pstvnc_transport_audio_channel_config': 'Groups explicit caller-owned AUDIO queue and dequeue-credit authority with no hidden defaults.',
+              'pstvnc_transport_audio_channel_config_t': 'Names the explicit caller-owned AUDIO queue and credit configuration contract.',
+              'PSTVNC_TRANSPORT_EXHAUSTED': 'Identifies normal finite-producer exhaustion after the logical queue is empty, distinct from stop, close, failure, and temporary starvation.',
+              'PSTVNC_TRANSPORT_STOPPED': 'Identifies owner-requested Transport cancellation, distinct from normal producer exhaustion.',
+          }
+
+          field_semantics = {
+              'activity_semaphore_id': 'event semaphore that wakes the logical consumer on producer or terminal activity',
+              'activity_sequence': 'activity generation used by the wake-before-sleep protocol',
+              'activity_wait_armed': 'three-state waiter ownership marker used for safe wake and reclaim',
+              'channel': 'bounded logical ring-queue state',
+              'credit_batch_bytes': 'caller-authorized threshold for batching dequeue-earned credit',
+              'credit_flush_on_empty': 'caller-authorized policy for flushing earned credit when the queue empties',
+              'credit_pending': 'dequeue-earned bytes accumulated but not yet emitted as CREDIT',
+              'credit_return_enabled': 'whether bytes actually removed from the queue earn CREDIT returns',
+              'enabled': 'whether this logical channel is configured and owns queue/wait state',
+              'initial_credit_bytes': 'caller-authorized initial producer credit',
+              'queue_semaphore_id': 'semaphore that serializes queue state and waiter ownership',
+              'queue_storage': 'runtime-owned backing storage for the bounded logical queue',
+          }
+
+          parameter_semantics = {
+              'activity_semaphore_id': 'the event semaphore used for producer-driven wakeups',
+              'activity_sequence': 'the producer or terminal activity generation',
+              'activity_wait_armed': 'the three-state waiter ownership marker used to avoid lost wakeups and unsafe reclaim',
+              'accepted': 'whether the current framed DATA operation preserved logical-channel invariants',
+              'amount': 'the exact dequeue-earned CREDIT amount selected for emission',
+              'audio_config': 'explicit AUDIO queue and credit authority',
+              'audio_wake_ok': 'whether stop publication made AUDIO terminal state event-visible',
+              'available_count': 'the current logical queue occupancy in real payload bytes',
+              'batch_bytes': 'the configured threshold for batching dequeue-earned CREDIT',
+              'buffer': 'the caller destination buffer for dequeued logical payload bytes',
+              'capacity': 'the bounded byte capacity of the logical ring queue',
+              'channel': 'the framed logical channel identifier or bounded channel state required by the operation',
+              'config': 'explicit caller-owned Transport configuration and bounds',
+              'consumed': 'the actual dequeued byte count eligible to earn CREDIT',
+              'count': 'the actual queued payload-byte count selected for removal',
+              'credit_batch_bytes': 'the caller-authorized dequeue-credit batching threshold',
+              'credit_flush_on_empty': 'the caller-authorized policy for flushing earned credit when the queue empties',
+              'credit_return_enabled': 'whether bytes actually dequeued earn CREDIT returns',
+              'current_sequence': 'the activity generation read while holding the corresponding queue lock',
+              'destination': 'the caller destination buffer for dequeued logical payload bytes',
+              'enabled': 'whether the selected logical media channel exists and therefore has state to inspect or publish',
+              'first_count': 'the first contiguous ring-buffer span handled before wraparound',
+              'flush_on_empty': 'the configured policy for flushing dequeue-earned CREDIT when the queue becomes empty',
+              'header': 'the validated framed Transport header received by the sole physical receiver',
+              'initial_credit_bytes': 'the caller-authorized initial producer credit',
+              'initialized': 'whether Transport runtime acquisition completed so rollback/release touches only owned state',
+              'maximum_count': 'the maximum queued payload-byte count this dequeue may remove',
+              'mpeg_config': 'explicit MPEG queue and credit authority',
+              'mpeg_wake_ok': 'whether stop publication made MPEG terminal state event-visible',
+              'observed_sequence': 'the activity generation previously observed by the consumer',
+              'payload': 'the real logical DATA payload bytes, excluding framing and decoder padding',
+              'payload_length': 'the real logical DATA payload byte count',
+              'pending': 'the accumulator of earned but not yet emitted CREDIT bytes',
+              'producer_done': 'the independent one-shot finite-producer completion fact',
+              'queue_capacity': 'the bounded logical queue capacity in bytes',
+              'queue_empty': 'whether the logical queue is empty after the current dequeue',
+              'queue_semaphore_id': 'the lock serializing queue data and waiter-visible state',
+              'read_count': 'the number of payload bytes actually removed from the logical queue',
+              'return_enabled': 'whether dequeue-earned CREDIT emission is enabled for this logical channel',
+              'runtime': 'the sole-receiver Transport runtime instance',
+              'shutdown_ok': 'whether physical-stream shutdown succeeded during the stop request',
+              'signal_waiter': 'whether the newly published activity generation must wake an armed consumer',
+              'snapshot': 'the caller output receiving the activity generation snapshot',
+              'socket_fd': 'the already-owned physical PSTV socket descriptor',
+              'storage': 'caller-provided backing storage for the bounded ring queue',
+              'taken': 'the number of bytes actually removed and therefore eligible to earn CREDIT',
+              'waiter_live': 'whether the consumer still owns an activity rendezvous that release must preserve',
+              'write_offset': 'the ring offset where the next payload byte is appended',
+          }
+
+          def domain_for(name, file_name, owner):
+              joined = f'{name} {file_name} {owner}'.lower()
+              if '_rfb_' in joined or 'rfb_channel' in joined:
+                  return 'rfb'
+              if 'audio_channel' in file_name or '_audio_' in joined or name.startswith('audio_'):
+                  if 'audio_mpeg' not in joined:
+                      return 'audio'
+              if 'mpeg_channel' in file_name or '_mpeg_' in joined or name.startswith('mpeg_'):
+                  return 'mpeg'
+              if name in ('PSTVNC_TRANSPORT_STOPPED',):
+                  return 'audio'
+              if name in ('PSTVNC_TRANSPORT_EXHAUSTED',):
+                  return 'shared'
+              return 'shared'
+
+          def context_for(domain):
+              return {
+                  'rfb': 'A001 Transport',
+                  'audio': 'A002 AUDIO Transport core',
+                  'mpeg': 'A003 MPEG Transport core',
+                  'shared': 'A003 shared media Transport core',
+              }[domain]
+
+          def function_description(name, kind):
+              base = fn_purpose.get(name)
+              if base is None:
+                  return None
+              if kind == 'function declaration':
+                  return 'Declares the interface that ' + base[0].lower() + base[1:]
+              return base
+
+          def repair_description(name, kind, file_name, owner, description, domain):
+              mapped = function_description(name, kind)
+              if mapped is not None:
+                  return mapped
+              if name in type_purpose:
+                  return type_purpose[name]
+
+              label = {'rfb': 'RFB', 'audio': 'AUDIO', 'mpeg': 'MPEG', 'shared': 'logical media'}[domain]
+
+              if kind == 'field':
+                  prefix = None
+                  suffix = name
+                  for candidate, candidate_label in (('audio_', 'AUDIO'), ('mpeg_', 'MPEG')):
+                      if name.startswith(candidate):
+                          prefix = candidate_label
+                          suffix = name[len(candidate):]
+                          break
+                  if suffix in field_semantics:
+                      owner_label = prefix or label
+                      return f'Stores {owner_label} {field_semantics[suffix]} in the owning Transport state.'
+                  if name == 'byte_count':
+                      return f'Stores the number of real {label} payload bytes currently queued.'
+                  if name == 'read_offset':
+                      return f'Stores the ring offset of the next {label} payload byte to remove.'
+                  if name == 'storage':
+                      return f'Stores caller-owned byte storage backing the bounded {label} ring queue.'
+                  if name == 'producer_done':
+                      return f'Stores the independent finite-producer completion fact for {label}.'
+                  if name == 'capacity':
+                      return f'Stores the bounded byte capacity of the {label} ring queue.'
+                  if name in ('credit_batch_bytes','credit_flush_on_empty','credit_return_enabled','initial_credit_bytes','queue_capacity'):
+                      phrase = parameter_semantics[name]
+                      return f'Stores {phrase} for the {label} channel.'
+
+              if kind in ('parameter', 'prototype parameter', 'variable', 'constant', 'array'):
+                  semantic = parameter_semantics.get(name)
+                  if semantic is not None:
+                      if name == 'channel' and 'return_credit' in owner:
+                          semantic = 'the framed logical channel identifier whose actual dequeues earned this CREDIT'
+                      if file_name.endswith('audio_channel.c') or file_name.endswith('audio_channel.h'):
+                          semantic = semantic.replace('logical payload', 'AUDIO payload').replace('logical ring', 'AUDIO ring')
+                      elif file_name.endswith('mpeg_channel.c') or file_name.endswith('mpeg_channel.h'):
+                          semantic = semantic.replace('logical payload', 'MPEG payload').replace('logical ring', 'MPEG ring')
+                      if kind in ('parameter', 'prototype parameter'):
+                          return f'Supplies {semantic} to {owner}.'
+                      return f'Tracks {semantic} while {owner} executes.'
+
+              # Correct domain vocabulary in already-useful descriptions.
+              result = description
+              if domain == 'audio':
+                  result = result.replace('MPEG', 'AUDIO').replace('channel-4', 'channel-3')
+              if name == 'call_active':
+                  return 'Tracks whether a decoder picture call still owns decoder-visible resources and therefore forbids reclamation.'
+              return result
+
+          repaired = 0
+          unresolved = []
+          out = []
+          for line in lines:
+              if line.startswith('| ') and line.endswith(' |'):
+                  cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+                  if len(cells) == 7 and cells[6] == 'A003 MPEG Transport/decoder core':
+                      name, kind, file_name, owner, scope, description, _context = cells
+                      domain = domain_for(name, file_name, owner)
+                      cells[5] = repair_description(name, kind, file_name, owner, description, domain)
+                      cells[6] = context_for(domain)
+                      line = '| ' + ' | '.join(cells) + ' |'
+                      repaired += 1
+                      if cells[5].startswith('Represents ') or cells[5].startswith('Defines '):
+                          unresolved.append(line)
+              out.append(line)
+
+          if unresolved:
+              print('\n'.join(unresolved))
+              raise SystemExit(f'unresolved tautological rows: {len(unresolved)}')
+
+          transport.write_text('\n'.join(out).rstrip() + '\n', encoding='utf-8')
+          print(f'TRANSPORT_ROWS_REPAIRED={repaired}')
+
+          mpeg = Path('src/mpeg/SYMBOLS.md')
+          text = mpeg.read_text(encoding='utf-8')
+          text = text.replace(
+              '| call_active | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_release | local | Tracks call active while pstvnc_mpeg_decoder_release executes. | A003 MPEG Transport/decoder core |',
+              '| call_active | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_release | local | Tracks whether a decoder picture call still owns decoder-visible resources and therefore forbids reclamation. | A003 MPEG Transport/decoder core |',
+          )
+          mpeg.write_text(text, encoding='utf-8')
+
+          topology = Path('docs/development/source-topology.md')
+          text = topology.read_text(encoding='utf-8')
+          if '| `src/mpeg/` |' not in text:
+              raise SystemExit('candidate is missing MPEG topology adoption')
+          topology.write_text(text, encoding='utf-8')
+
+          continuity = Path('scripts/continuity-check.sh')
+          text = continuity.read_text(encoding='utf-8')
+          needle = '    "src/media",\n    "src/platform",'
+          replacement = '    "src/media",\n    "src/mpeg",\n    "src/platform",'
+          if '    "src/mpeg",' not in text:
+              if needle not in text:
+                  raise SystemExit('continuity topology anchor changed')
+              text = text.replace(needle, replacement, 1)
+          continuity.write_text(text, encoding='utf-8')
+          PY
+
+          python3 scripts/source-dictionary.py check --long --require-complete --strict
+          git diff --check
+          grep -Fq '| `src/mpeg/` |' docs/development/source-topology.md
+          grep -Fq '    "src/mpeg",' scripts/continuity-check.sh
+          test -s src/mpeg/SYMBOLS.md
+          ! grep -E '\| (A001 Transport|A002 AUDIO Transport core|A003 MPEG Transport core|A003 shared media Transport core) \|$' src/transport/SYMBOLS.md | grep -E '\| (Represents|Defines) '
+
+      - name: Run A003 and accepted regression evidence
+        shell: bash
+        run: |
+          set -eu
+          cd tests
+          mkdir -p .build
+          COMMON='-O2 -std=c99 -Wall -Wextra -Werror -pedantic -I../src -I../src/input -I../src/ui -I../src/rfb -I../src/framebuffer -I../src/display -I../src/diagnostics -I../src/platform -I../src/transport'
+
+          make transport-protocol-unit transport-rfb-channel-unit transport-bridge-unit rfb-bridge-unit transport-physical-stream-unit
+
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread \
+            unit/transport_runtime_test.c \
+            ../src/transport/runtime.c ../src/transport/quiesce.c \
+            ../src/transport/audio_channel.c ../src/transport/mpeg_channel.c \
+            ../src/transport/rfb_channel.c ../src/transport/protocol.c \
+            -o .build/transport_runtime_a003_test
+          ./.build/transport_runtime_a003_test
+
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread \
+            unit/transport_audio_test.c \
+            ../src/transport/runtime.c ../src/transport/quiesce.c \
+            ../src/transport/audio_channel.c ../src/transport/mpeg_channel.c \
+            ../src/transport/rfb_channel.c ../src/transport/protocol.c \
+            -o .build/transport_audio_a003_test
+          ./.build/transport_audio_a003_test
+
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread \
+            unit/transport_mpeg_test.c \
+            ../src/transport/runtime.c ../src/transport/quiesce.c \
+            ../src/transport/audio_channel.c ../src/transport/mpeg_channel.c \
+            ../src/transport/rfb_channel.c ../src/transport/protocol.c \
+            -o .build/transport_mpeg_test
+          ./.build/transport_mpeg_test
+
+          cc $COMMON -I../src unit/mpeg_decoder_test.c ../src/mpeg/decoder.c \
+            -o .build/mpeg_decoder_test
+          ./.build/mpeg_decoder_test
+
+          make audio-playback-unit audio-audsrv-service-unit audio-session-unit media-clock-unit config-profile-unit
+
+      - name: Commit source-owned final candidate
+        shell: bash
+        run: |
+          set -eu
+          git config user.name 'PS-to-VNC A003 reconstruction evidence'
+          git config user.email '39144541+Olsens11@users.noreply.github.com'
+          git add \
+            tests/unit/transport_mpeg_test.c \
+            src/transport/SYMBOLS.md \
+            src/mpeg/SYMBOLS.md \
+            docs/development/source-topology.md \
+            scripts/continuity-check.sh
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'FINAL_CANDIDATE_NO_CHANGES=YES'
+            exit 0
+          fi
+          git commit -m 'fix(a003): finalize P1 source-owned candidate'
+          git push origin HEAD:evidence/a003-p1-host-20260916
