@@ -31,6 +31,14 @@ pstvnc_transport_result_t pstvnc_transport_session_open(
     int *socket_fd,
     const pstvnc_transport_session_config_t *config);
 
+/*
+ * Application-local fatal convergence. Transport first requests its sole
+ * receiver to stop and interrupts its own blocking physical I/O, then waits for
+ * receiver completion, and only then reclaims the session. This is deliberately
+ * distinct from the server-driven finite-RFB quiesce process below.
+ */
+pstvnc_transport_result_t pstvnc_transport_session_abort(void);
+
 /* Wait for explicit sole-receiver completion; this is not timer polling. */
 pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void);
 
