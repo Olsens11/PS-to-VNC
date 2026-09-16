@@ -1,0 +1,89 @@
+name: A003 P1 isolated host evidence
+
+on:
+  push:
+    branches:
+      - evidence/a003-p1-host-20260916
+
+permissions:
+  contents: read
+
+jobs:
+  a003-p1-host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record exact evidence authority
+        run: |
+          echo "EVIDENCE_HEAD=$(git rev-parse HEAD)"
+          echo "EVIDENCE_PARENT=$(git rev-parse HEAD^)"
+          git diff --name-only HEAD^ HEAD
+      - name: Run accepted Transport and RFB regressions
+        run: |
+          set -eu
+          make -C tests \
+            transport-protocol-unit \
+            transport-rfb-channel-unit \
+            transport-bridge-unit \
+            rfb-bridge-unit \
+            transport-physical-stream-unit
+      - name: Run corrected exact-source Transport runtime and AUDIO regressions
+        run: |
+          set -eu
+          cd tests
+          mkdir -p .build
+          COMMON='-O2 -std=c99 -Wall -Wextra -Werror -pedantic -I../src -I../src/input -I../src/ui -I../src/rfb -I../src/framebuffer -I../src/display -I../src/diagnostics -I../src/platform -I../src/transport'
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread \
+            unit/transport_runtime_test.c \
+            ../src/transport/runtime.c \
+            ../src/transport/quiesce.c \
+            ../src/transport/audio_channel.c \
+            ../src/transport/mpeg_channel.c \
+            ../src/transport/rfb_channel.c \
+            ../src/transport/protocol.c \
+            -o .build/transport_runtime_a003_test
+          ./.build/transport_runtime_a003_test
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread \
+            unit/transport_audio_test.c \
+            ../src/transport/runtime.c \
+            ../src/transport/quiesce.c \
+            ../src/transport/audio_channel.c \
+            ../src/transport/mpeg_channel.c \
+            ../src/transport/rfb_channel.c \
+            ../src/transport/protocol.c \
+            -o .build/transport_audio_a003_test
+          ./.build/transport_audio_a003_test
+      - name: Run A003 Transport MPEG fixture
+        run: |
+          set -eu
+          cd tests
+          COMMON='-O2 -std=c99 -Wall -Wextra -Werror -pedantic -I../src -I../src/input -I../src/ui -I../src/rfb -I../src/framebuffer -I../src/display -I../src/diagnostics -I../src/platform -I../src/transport'
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread \
+            unit/transport_mpeg_test.c \
+            ../src/transport/runtime.c \
+            ../src/transport/quiesce.c \
+            ../src/transport/audio_channel.c \
+            ../src/transport/mpeg_channel.c \
+            ../src/transport/rfb_channel.c \
+            ../src/transport/protocol.c \
+            -o .build/transport_mpeg_test
+          ./.build/transport_mpeg_test
+      - name: Run A003 MPEG decoder ownership and safe-stop fixture
+        run: |
+          set -eu
+          cd tests
+          COMMON='-O2 -std=c99 -Wall -Wextra -Werror -pedantic -I../src -I../src/input -I../src/ui -I../src/rfb -I../src/framebuffer -I../src/display -I../src/diagnostics -I../src/platform -I../src/transport'
+          cc $COMMON -I../src \
+            unit/mpeg_decoder_test.c \
+            ../src/mpeg/decoder.c \
+            -o .build/mpeg_decoder_test
+          ./.build/mpeg_decoder_test
+      - name: Run accepted A002 logical consumer regressions
+        run: |
+          set -eu
+          make -C tests \
+            audio-playback-unit \
+            audio-audsrv-service-unit \
+            audio-session-unit \
+            media-clock-unit \
+            config-profile-unit
