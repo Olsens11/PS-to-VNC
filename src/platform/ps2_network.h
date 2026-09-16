@@ -1,10 +1,11 @@
 /*
  * File synopsis:
- * Declares PS2 private-link and socket lifecycle operations while leaving RFB
- * semantics to the protocol layer.
+ * Declares PS2 private-link setup and pre-adoption socket lifecycle operations.
+ * After successful Transport adoption, the platform network seam no longer owns
+ * or receives from the physical PSTV descriptor.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "PS2 system and
- * private-Ethernet platform seam".
+ * private-Ethernet platform seam"; docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md.
  */
 
 #ifndef PSTVNC_PS2_NETWORK_H
@@ -16,19 +17,13 @@
 #define PSTVNC_PS2_VNC_SERVER_IP "192.168.50.1"
 #define PSTVNC_PS2_VNC_SERVER_PORT 5900
 
-/*
- * Load the qualified PS2 Ethernet module stack and initialize PS2IP for the
- * fixed private-link bootstrap topology. The IOP must already be prepared.
- */
 int pstvnc_ps2_network_init(void);
-
-/* Wait for the Ethernet carrier using the bounded qualified startup policy. */
 int pstvnc_ps2_network_wait_link(void);
 
-/* Open one blocking TCP connection to the fixed PS2-facing VNC endpoint. */
+/* Return one caller-owned descriptor. Transport adoption is a later operation. */
 int pstvnc_ps2_network_connect_vnc(void);
 
-/* Close a socket and discard any buffered RFB bytes owned by that socket. */
+/* Close only a descriptor still owned by the caller (never an adopted one). */
 void pstvnc_ps2_network_close(int socket_fd);
 
 #endif
