@@ -42,6 +42,7 @@ Current responsibility locations are:
 |---|---|
 | Executable entry / application coordination | `src/main.c`, `src/app.c`, `src/app.h` |
 | Session CONFIG/profile decoding, validation, owner-specific immutable values, and config-text helpers | `src/config/` |
+| Session common-media epoch, signed/saturating deadlines, synchronization contract, and host-testable wait boundary | `src/media/` |
 | Controller/input/keyboard/mouse | `src/input/` |
 | Local foreground / OSK / local presentation | `src/ui/` |
 | RFB wire/session parsing and logical-stream adaptation | `src/rfb/` |
@@ -64,6 +65,13 @@ versioned, side-effect-free production CONFIG value boundary; `text.{c,h}` is
 retained behavior-identically as clean local configuration utility code. This
 ownership does not include live CONFIG negotiation, PCM/AUDSRV runtime,
 media-clock wait/arming runtime, or MPEG/video behavior.
+
+`src/media/` was deliberately created during the A002 common-media-clock
+tranche on 2026-09-16. `clock.{c,h}` owns one reusable session timing boundary:
+one common epoch, signed/saturating audio and neutral-video deadlines, required
+synchronization semantics, and injected timer/delay/stop observers. It does not
+own PCM/AUDSRV runtime, MPEG/video presentation policy, or concrete PS2
+lock/timer bindings.
 
 `src/video/` still contains retained pre-refresh source. Its presence remains
 historical/reference state and does not make it a current clean domain until a
