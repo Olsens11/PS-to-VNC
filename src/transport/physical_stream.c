@@ -168,6 +168,19 @@ int pstvnc_transport_physical_stream_receive_frame(
     return 1;
 }
 
+int pstvnc_transport_physical_stream_shutdown_io(
+    pstvnc_transport_physical_stream_t *stream)
+{
+    if (stream == NULL || stream->socket_fd < 0)
+        return 0;
+
+    /*
+     * This is intentionally not close(). Transport retains the descriptor and
+     * releases it only after the sole receiver has published completion.
+     */
+    return shutdown(stream->socket_fd, SHUT_RDWR) == 0;
+}
+
 void pstvnc_transport_physical_stream_release(
     pstvnc_transport_physical_stream_t *stream)
 {
