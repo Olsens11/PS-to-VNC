@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "transport_host_stubs/kernel.h"
 #include "transport/physical_stream.h"
 #include "transport/protocol.h"
 
