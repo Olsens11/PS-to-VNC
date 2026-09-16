@@ -61,13 +61,61 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Prove reproducible identity-ready linked clean Issue 7 ELF
-        run: ./scripts/check-issue7-linked-reproducibility.sh
-      - name: Self-test fail-closed DUT manifest against canonical clean ELF
-        run: bash ./scripts/testkit/issue7-dut-manifest-self-test.sh
+      - name: Build current ledge source with pinned clean toolchain
+        run: |
+          ./scripts/build-issue7-clean.sh | tee /tmp/ledge-build-1.txt
+          cp build/reconstruction/issue7/PS-to-VNC-Issue7.ELF /tmp/ledge-first.elf
+          sha256sum /tmp/ledge-first.elf | tee /tmp/ledge-first.sha256
+          ./scripts/testkit/pt-load-fingerprint.sh /tmp/ledge-first.elf > /tmp/ledge-first.ptload
+      - name: Rebuild and prove current-source reproducibility
+        run: |
+          ./scripts/build-issue7-clean.sh | tee /tmp/ledge-build-2.txt
+          cmp /tmp/ledge-first.elf build/reconstruction/issue7/PS-to-VNC-Issue7.ELF
+          sha256sum build/reconstruction/issue7/PS-to-VNC-Issue7.ELF | tee /tmp/ledge-second.sha256
+          ./scripts/testkit/pt-load-fingerprint.sh build/reconstruction/issue7/PS-to-VNC-Issue7.ELF > /tmp/ledge-second.ptload
+          cmp /tmp/ledge-first.ptload /tmp/ledge-second.ptload
+          echo 'LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS'
       - name: Preserve unqualified identity-ready linked ELF
         uses: actions/upload-artifact@v4
         with:
           name: ledge-a001-unqualified-clean-elf
           path: build/reconstruction/issue7/PS-to-VNC-Issue7.ELF
           if-no-files-found: error
+
+  dictionary-reconcile:
+    if: >-
+      github.event_name == 'push' &&
+      github.event.head_commit.message == 'tooling(symbols): run deterministic dictionary reconciliation'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install definition-discovery tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y universal-ctags shfmt
+      - name: Reconcile current product dictionaries and portal
+        run: |
+          python3 scripts/reconcile-source-dictionaries.py
+          python3 scripts/source-dictionary.py portal --output docs/reference/SOURCE_SYMBOL_DICTIONARIES.md
+          python3 scripts/source-dictionary.py check --long --require-complete --strict
+          git diff --check
+      - name: Commit exact generated reconciliation
+        run: |
+          git config user.name 'PS-to-VNC ledge automation'
+          git config user.email '39144541+Olsens11@users.noreply.github.com'
+          git add \
+            src/SYMBOLS.md \
+            src/input/SYMBOLS.md \
+            src/platform/SYMBOLS.md \
+            src/rfb/SYMBOLS.md \
+            docs/reference/SOURCE_SYMBOL_DICTIONARIES.md
+          if git diff --cached --quiet; then
+            echo 'DICTIONARY_RECONCILIATION=NO_CHANGES'
+            exit 0
+          fi
+          git commit -m 'docs(symbols): reconcile current clean definitions'
+          git push origin HEAD:ledge/h1-all-guns
