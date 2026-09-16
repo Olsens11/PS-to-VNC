@@ -236,7 +236,11 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
             runtime->failed = 1;
     }
 
-    /* receiver_done is published before the completion event is signaled. */
+    /*
+     * receiver_done is published before the completion event is signaled. The
+     * releaser additionally proves this thread dormant (or terminates it only
+     * after this quiescent point) before reclaiming the dynamic receiver stack.
+     */
     if (runtime->receiver_done_semaphore_id >= 0 &&
         SignalSema(runtime->receiver_done_semaphore_id) < 0)
         runtime->failed = 1;
@@ -379,10 +383,12 @@ int pstvnc_transport_runtime_request_stop(
     if (runtime->receiver_done)
         return 1;
 
-    if (runtime->stop_requested)
-        return 1;
-
-    /* Publish intent before shutdown makes the blocked recv() return. */
+    /*
+     * Publish intent before shutdown makes the blocked recv() return. Repeated
+     * calls deliberately reissue the Transport-owned interrupt if a previous
+     * shutdown call reported failure; no retry path can turn stop_requested
+     * alone into permission to wait forever.
+     */
     runtime->stop_requested = 1;
     return pstvnc_transport_physical_stream_shutdown_io(
         &runtime->physical_stream);
@@ -654,9 +660,39 @@ int pstvnc_transport_runtime_release(
     if (runtime->receiver_thread_started && !runtime->receiver_done)
         return 0;
 
-    if (runtime->receiver_thread_id >= 0 &&
-        DeleteThread(runtime->receiver_thread_id) < 0)
-        result = 0;
+    if (runtime->receiver_thread_started) {
+        ee_thread_status_t status;
+
+        if (runtime->receiver_thread_id < 0)
+            return 0;
+
+        memset(&status, 0, sizeof(status));
+        if (ReferThreadStatus(runtime->receiver_thread_id, &status) < 0)
+            return 0;
+
+        /*
+         * The receiver has already published its quiescent done point and will
+         * touch no Transport/session memory again. If its final ExitThread has
+         * not yet run because the waiter preempted it, terminate only that
+         * already-quiescent thread and then prove dormant status. This replaces
+         * H1's bounded DelayThread polling with an explicit no-timeout fence.
+         */
+        if (status.status != THS_DORMANT) {
+            if (TerminateThread(runtime->receiver_thread_id) < 0)
+                return 0;
+
+            memset(&status, 0, sizeof(status));
+            if (ReferThreadStatus(runtime->receiver_thread_id, &status) < 0 ||
+                status.status != THS_DORMANT)
+                return 0;
+        }
+
+        if (DeleteThread(runtime->receiver_thread_id) < 0)
+            return 0;
+
+        runtime->receiver_thread_id = -1;
+        runtime->receiver_thread_started = 0;
+    }
 
     if (runtime->receiver_done_semaphore_id >= 0 &&
         DeleteSema(runtime->receiver_done_semaphore_id) < 0)
