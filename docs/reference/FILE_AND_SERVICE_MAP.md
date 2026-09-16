@@ -43,7 +43,8 @@ Current responsibility locations are:
 | Executable entry / application coordination | `src/main.c`, `src/app.c`, `src/app.h` |
 | Controller/input/keyboard/mouse | `src/input/` |
 | Local foreground / OSK / local presentation | `src/ui/` |
-| RFB wire/session | `src/rfb/` |
+| RFB wire/session parsing and logical-stream adaptation | `src/rfb/` |
+| PSTV physical stream, sole receiver, logical channels, flow control, and Transport lifecycle | `src/transport/` |
 | Authoritative desktop framebuffer | `src/framebuffer/` |
 | Platform-neutral display conversion | `src/display/` |
 | Diagnostics/runtime identity | `src/diagnostics/` |
