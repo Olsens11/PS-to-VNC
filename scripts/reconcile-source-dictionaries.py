@@ -31,6 +31,7 @@ TARGET_DIRECTORIES = (
     Path("src/media"),
     Path("src/platform"),
     Path("src/rfb"),
+    Path("src/transport"),
 )
 TABLE_HEADER = "| Name | Kind | File | Owner | Scope | Description | Context |"
 TABLE_SEPARATOR = "|---|---|---|---|---|---|---|"
