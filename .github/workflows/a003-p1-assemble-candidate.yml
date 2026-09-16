@@ -1,0 +1,131 @@
+name: A003 P1 assemble continuation candidate
+
+on:
+  push:
+    branches:
+      - evidence/a003-p1-host-20260916
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    if: github.event.head_commit.message == 'test(a003) assemble P1 continuation candidate'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install definition discovery tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y universal-ctags shfmt
+      - name: Assemble Reconstruction-owned continuation files
+        run: |
+          set -eu
+          python3 - <<'PY'
+          from pathlib import Path
+
+          helper = Path('.github/a003_dictionary_candidate.py')
+          text = helper.read_text(encoding='utf-8')
+          text = text.replace('import importlib.util\n', 'import importlib.util\nimport sys\n', 1)
+          old = '    module = importlib.util.module_from_spec(spec)\n    spec.loader.exec_module(module)\n'
+          new = '    module = importlib.util.module_from_spec(spec)\n    sys.modules[name] = module\n    spec.loader.exec_module(module)\n'
+          if old not in text:
+              raise SystemExit('dictionary helper import hook changed')
+          helper.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          fixture = Path('tests/unit/transport_mpeg_test.c')
+          text = fixture.read_text(encoding='utf-8')
+          needle = '#include "transport/runtime.h"\n\n'
+          replacement = '#include "transport/runtime.h"\n\n#include <kernel.h>\n'
+          if '#include <kernel.h>' not in text:
+              if needle not in text:
+                  raise SystemExit('MPEG fixture include anchor changed')
+              text = text.replace(needle, replacement, 1)
+          fixture.write_text(text, encoding='utf-8')
+
+          topology = Path('docs/development/source-topology.md')
+          text = topology.read_text(encoding='utf-8')
+          table_anchor = '| `src/media/` | session-scoped common media epoch, signed/saturating deadline math, synchronization contract, and host-testable wait boundary |\n| `src/platform/` |'
+          table_replacement = '| `src/media/` | session-scoped common media epoch, signed/saturating deadline math, synchronization contract, and host-testable wait boundary |\n| `src/mpeg/` | session-scoped MPEG decoder resource/call ownership, explicit feed and sequence bounds, safe-stop lifetime fencing, and payload-versus-transfer accounting |\n| `src/platform/` |'
+          if '| `src/mpeg/` |' not in text:
+              if table_anchor not in text:
+                  raise SystemExit('topology table anchor changed')
+              text = text.replace(table_anchor, table_replacement, 1)
+
+          paragraph_anchor = "`src/audio/` was deliberately created during the A002 synchronous PCM playback\ncore reconstruction on 2026-09-16."
+          paragraph = (
+              "`src/mpeg/` was deliberately created during A003 MPEG Transport/decoder-core\n"
+              "reconstruction on 2026-09-16 because decoder-visible resource lifetime, sequence/feed\n"
+              "bounds, and safe-stop semantics are neither Transport physical-stream ownership nor\n"
+              "application/presentation policy. `decoder.{c,h}` owns known-state\n"
+              "prepare/initialize/picture/destroy ordering, explicit caller-supplied sequence and feed\n"
+              "bounds, truthful Transport data/exhaustion/failure consumption, decoder-call lifetime\n"
+              "fencing, and separate real-payload versus padded-transfer accounting. It does not own\n"
+              "the physical PSTV receiver, exact-generation START/retirement orchestration, Pi\n"
+              "producer/capture control, presentation/compositor work, first-presentation clock arm,\n"
+              "scheduler/drop policy, calibration, application orchestration, or hardware\n"
+              "qualification.\n\n"
+          )
+          if paragraph not in text:
+              if paragraph_anchor not in text:
+                  raise SystemExit('topology adoption anchor changed')
+              text = text.replace(paragraph_anchor, paragraph + paragraph_anchor, 1)
+          topology.write_text(text, encoding='utf-8')
+          PY
+
+          python3 .github/a003_dictionary_candidate.py
+          python3 scripts/source-dictionary.py check --long --require-complete --strict
+          git diff --check
+      - name: Run A003 and accepted regression evidence on candidate
+        run: |
+          set -eu
+          cd tests
+          mkdir -p .build
+          COMMON='-O2 -std=c99 -Wall -Wextra -Werror -pedantic -I../src -I../src/input -I../src/ui -I../src/rfb -I../src/framebuffer -I../src/display -I../src/diagnostics -I../src/platform -I../src/transport'
+
+          make transport-protocol-unit transport-rfb-channel-unit transport-bridge-unit rfb-bridge-unit transport-physical-stream-unit
+
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread \
+            unit/transport_runtime_test.c \
+            ../src/transport/runtime.c ../src/transport/quiesce.c \
+            ../src/transport/audio_channel.c ../src/transport/mpeg_channel.c \
+            ../src/transport/rfb_channel.c ../src/transport/protocol.c \
+            -o .build/transport_runtime_a003_test
+          ./.build/transport_runtime_a003_test
+
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread \
+            unit/transport_audio_test.c \
+            ../src/transport/runtime.c ../src/transport/quiesce.c \
+            ../src/transport/audio_channel.c ../src/transport/mpeg_channel.c \
+            ../src/transport/rfb_channel.c ../src/transport/protocol.c \
+            -o .build/transport_audio_a003_test
+          ./.build/transport_audio_a003_test
+
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread \
+            unit/transport_mpeg_test.c \
+            ../src/transport/runtime.c ../src/transport/quiesce.c \
+            ../src/transport/audio_channel.c ../src/transport/mpeg_channel.c \
+            ../src/transport/rfb_channel.c ../src/transport/protocol.c \
+            -o .build/transport_mpeg_test
+          ./.build/transport_mpeg_test
+
+          cc $COMMON -I../src unit/mpeg_decoder_test.c ../src/mpeg/decoder.c \
+            -o .build/mpeg_decoder_test
+          ./.build/mpeg_decoder_test
+
+          make audio-playback-unit audio-audsrv-service-unit audio-session-unit media-clock-unit config-profile-unit
+      - name: Commit only Reconstruction-owned candidate files
+        run: |
+          set -eu
+          git config user.name 'PS-to-VNC A003 reconstruction evidence'
+          git config user.email '39144541+Olsens11@users.noreply.github.com'
+          git add \
+            tests/unit/transport_mpeg_test.c \
+            src/transport/SYMBOLS.md \
+            src/mpeg/SYMBOLS.md \
+            docs/development/source-topology.md
+          git diff --cached --check
+          git commit -m 'docs(a003): stage P1 continuation candidate'
+          git push origin HEAD:evidence/a003-p1-host-20260916
