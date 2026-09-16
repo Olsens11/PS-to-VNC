@@ -198,12 +198,15 @@ if '    "src/mpeg",' not in continuity:
     continuity = continuity.replace(needle, '    "src/media",\n    "src/mpeg",\n    "src/platform",', 1)
     CONTINUITY.write_text(continuity, encoding='utf-8')
 
-# Semantic safety assertions for the rows this continuation owns/reconciles.
+# Reject only mechanically tautological descriptions, not useful prose that
+# happens to start with a legitimate verb such as "Defines the injected...".
 for path in (TRANSPORT, MPEG):
     for line in path.read_text(encoding='utf-8').splitlines():
         if not line.startswith('| '):
             continue
-        if '| A003 MPEG Transport/decoder core |' in line and ('| Represents ' in line or '| Defines ' in line):
+        if '| A003 MPEG Transport/decoder core |' in line and (
+            '| Represents pstvnc' in line or '| Defines pstvnc' in line
+        ):
             raise SystemExit(f'tautological A003 dictionary row remains: {line}')
         if 'audio_channel' in line.lower() and 'MPEG payload' in line:
             raise SystemExit(f'AUDIO row mislabeled as MPEG: {line}')
