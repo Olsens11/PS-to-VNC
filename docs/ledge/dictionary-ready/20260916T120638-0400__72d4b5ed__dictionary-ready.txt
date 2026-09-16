@@ -1,0 +1,83 @@
+DOCUMENT=LEDGE_DICTIONARY_READY
+GENERATED_AT=2026-09-16T12:06:38-04:00
+SOURCE_HEAD=72d4b5ed887a68d7975b4ce7b52272ab463576f5
+SOURCE_BEHAVIOR_HANDOFF=6b3cb3ebab4c5ec84d3e514090c35350eab23370
+FOREMAN_STATE_REVISION=0009
+ACTIVE_WORK_ITEM_KEY=a002-audio-clock
+STATUS=READY
+
+PURPOSE
+Prepare the mechanical dictionary/integration consequences of the completed A002 Transport AUDIO-channel Reconstruction handoff for later Foreman consumption. This artifact is staging evidence only and changes no canonical dictionary, portal, topology, build graph, test graph, or product behavior.
+
+STABLE_BOUNDARY
+The completed Reconstruction handoff is immutable log commit 6b3cb3ebab4c5ec84d3e514090c35350eab23370. Current HEAD 72d4b5ed887a68d7975b4ce7b52272ab463576f5 adds only the packet-scout documentation after that handoff, so the clean-source boundary is stable for dictionary preparation.
+
+SOURCE_FILES_INSPECTED_OR_IDENTIFIED_FROM_HANDOFF
+- src/transport/audio_channel.c (new)
+- src/transport/audio_channel.h (new)
+- src/transport/runtime.c (modified by AUDIO runtime integration)
+- src/transport/runtime.h (modified by AUDIO runtime integration)
+- src/transport/bridge.c (modified by opt-in AUDIO bridge)
+- src/transport/bridge.h (modified by opt-in AUDIO bridge)
+- src/transport/profile.h (modified by explicit AUDIO channel configuration/result vocabulary)
+- tests/unit/transport_audio_channel_test.c (new behavior fixture; tests are outside product dictionary completeness scope)
+- tests/unit/transport_bridge_test.c and existing Transport fixtures were adjusted for private runtime/API expansion; tests remain outside product dictionary scope.
+
+DICTIONARY_AND_POLICY_AUTHORITY_INSPECTED
+- src/transport/SYMBOLS.md @ blob 64c17443acfd36261e6fe3a8d9528af7267bcd6f was NOT the dictionary blob; current fetch authority for src/transport/SYMBOLS.md is the branch version observed during this shift and still describes the directory as A001/RFB-only at its header, demonstrating maintenance lag.
+- docs/development/source-naming-and-symbols.md @ blob c004c3b894e6f48698975bcaa36434eba89219b5
+- docs/reference/SOURCE_SYMBOL_DICTIONARIES.md is generated portal authority and must be regenerated only after canonical dictionary reconciliation.
+- src/transport remains an already-adopted clean topology domain; the new audio_channel.c/.h files do not create a new source directory or new domain boundary.
+
+EXACT_DEFINITION_DELTA_BY_DIRECTORY
+DIRECTORY=src/transport
+ADDED_FILES=src/transport/audio_channel.c,src/transport/audio_channel.h
+MODIFIED_DEFINITION_FILES=src/transport/runtime.c,src/transport/runtime.h,src/transport/bridge.c,src/transport/bridge.h,src/transport/profile.h
+REMOVED_FILES=NONE_OBSERVED
+RENAMED_FILES=NONE_OBSERVED
+
+The new audio_channel owner defines at minimum these mechanically discoverable public/file definitions and their parameters/fields, all of which must appear in the regenerated src/transport/SYMBOLS.md inventory:
+- type pstvnc_transport_audio_channel_t / struct pstvnc_transport_audio_channel
+- fields storage, capacity, read_offset, byte_count, producer_done
+- pstvnc_transport_audio_channel_initialize
+- pstvnc_transport_audio_channel_commit_data
+- pstvnc_transport_audio_channel_mark_producer_done
+- pstvnc_transport_audio_channel_read_available
+- pstvnc_transport_audio_channel_available
+- pstvnc_transport_audio_channel_producer_done
+- include guard PSTVNC_TRANSPORT_AUDIO_CHANNEL_H
+- function parameters/local definitions mechanically discovered from audio_channel.c/.h
+
+The modified runtime/bridge/profile files also add AUDIO configuration, result vocabulary, queue/credit/activity/waiter-lifetime state, opt-in session opening, bounded read/status/wait operations, and supporting locals/parameters. Do not hand-maintain a partial row list: canonical policy requires complete project-definition discovery, including locals/parameters/fields. Use the deterministic reconciliation generator so every exact row is derived from current source structure.
+
+PROPOSED_DICTIONARY_CHANGE
+1. Run deterministic reconciliation for current clean definitions with src/transport included.
+2. Accept only the generated replacement of src/transport/SYMBOLS.md that corresponds to current SOURCE_HEAD/source blobs.
+3. Review that its directory synopsis/ownership description now includes the independent Transport-owned AUDIO logical queue/credit/finite-producer seam alongside RFB, while preserving sole physical receive ownership.
+4. Verify no stale rows from exploratory/reverted AUDIO waiter state remain.
+5. Regenerate docs/reference/SOURCE_SYMBOL_DICTIONARIES.md after the canonical child dictionary is reconciled.
+
+EXACT_ROW_IMPLEMENTATION_METHOD
+The exact row set should be the deterministic output of scripts/source-dictionary.py reconciliation/discovery rather than a hand-authored patch. This is required because policy covers functions, parameters, locals, types, structures, fields, enum values, macros/constants, and ownership metadata; a manually abbreviated patch would be incomplete by construction. The ready-to-implement action is therefore the deterministic generated replacement for src/transport/SYMBOLS.md plus generated portal refresh, not behavior judgment.
+
+TOPOLOGY_IMPLICATION
+NO_NEW_DOMAIN_REQUIRED. src/transport is already an adopted clean topology directory. New src/transport/audio_channel.c/.h belong to Transport's existing logical-channel storage/flow-control responsibility. Foreman should run the current topology checker to confirm the new files are accepted; change topology authority only if that checker proves an explicit file allowlist requires mechanical registration.
+
+TEST_BUILD_REGISTRATION_IMPLICATION
+The Reconstruction handoff explicitly leaves canonical registration to Foreman. Mechanically inspect whether transport_audio_channel_test is already in the canonical host unit graph and whether src/transport/audio_channel.c is already in the PS2 build graph. If absent, register those exact existing source/test files without altering behavior. Existing Transport bridge/runtime fixtures should remain registered unchanged.
+
+CANONICAL_CHECKS_AFTER_APPLYING
+- python3 scripts/source-dictionary.py check --long --require-complete --strict
+- current deterministic dictionary reconciliation workflow/command used by Foreman authority
+- scripts/check.sh
+- canonical host unit suite including transport_audio_channel_test and existing Transport/RFB regression fixtures
+- pinned PS2 compile/build graph
+- clean linked ELF/reproducibility/PT_LOAD evidence if build registration changes linked source
+
+ASSUMPTIONS_LIMITATIONS
+- This support seat intentionally did not mutate src/transport/SYMBOLS.md, generated portal, topology, Makefile/build registration, tests, or product source.
+- GitHub connector code search indexes the default branch rather than this ledge branch, so exact complete definition rows were not inferred from search results. Current branch file fetch plus the completed Reconstruction immutable handoff are the evidence boundary.
+- Any dictionary wording that would assert new behavioral semantics beyond mechanically observed source ownership requires Foreman judgment; do not manufacture it here.
+- If interactive Foreman/Reconstruction advances clean source beyond SOURCE_HEAD before consumption, this artifact becomes stale and must be regenerated/revalidated rather than applied verbatim.
+
+CONSUMPTION_RULE=Foreman must revalidate SOURCE_HEAD/current blobs before applying; stale artifacts are evidence/prep, never authority.
