@@ -253,7 +253,6 @@ $(BUILD_DIR)/input_test: \
 	unit/input_test.c \
 	../src/input/input.c \
 	../src/input/input.h \
-	../src/input/keyboard.h \
 	../src/input/mouse.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
@@ -480,3 +479,22 @@ $(CONFIG_PROFILE_TEST): \
 		unit/config_profile_test.c \
 		../src/config/profile.c \
 		-o $(CONFIG_PROFILE_TEST)
+
+MEDIA_CLOCK_TEST := .build/media_clock_test
+
+.PHONY: media-clock-unit
+unit: media-clock-unit
+
+media-clock-unit: $(MEDIA_CLOCK_TEST)
+	./$(MEDIA_CLOCK_TEST)
+
+$(MEDIA_CLOCK_TEST): \
+	unit/media_clock_test.c \
+	../src/media/clock.c \
+	../src/media/clock.h \
+	../src/config/profile.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/media_clock_test.c \
+		../src/media/clock.c \
+		-o $(MEDIA_CLOCK_TEST)
