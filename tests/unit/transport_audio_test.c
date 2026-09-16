@@ -794,6 +794,7 @@ static void run_terminal_wakeup_case(int mode)
 
     CHECK(pthread_join(waiter_thread, NULL) == 0);
     CHECK(waiter.result == 1);
+    CHECK(runtime.audio_activity_wait_armed == 0);
     CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
 
     if (mode == 2) {
@@ -814,6 +815,34 @@ static void test_terminal_wakeups(void)
     run_terminal_wakeup_case(2);
 }
 
+static void test_release_preserves_signaled_audio_waiter_resources(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    int activity_semaphore_id;
+
+    reset_fixture();
+    initialize_audio_runtime(&runtime, 8u);
+    activity_semaphore_id = runtime.audio_activity_semaphore_id;
+
+    CHECK(WaitSema(runtime.audio_queue_semaphore_id) == 0);
+    runtime.receiver_done = 1;
+    runtime.audio_activity_wait_armed = 2;
+    CHECK(SignalSema(runtime.audio_queue_semaphore_id) == 0);
+
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 0);
+    CHECK(runtime.initialized == 1);
+    CHECK(release_calls == 0);
+    CHECK(activity_semaphore_id > 0 && activity_semaphore_id < MAX_SEMAS);
+    CHECK(semaphores[activity_semaphore_id].used == 1);
+
+    CHECK(WaitSema(runtime.audio_queue_semaphore_id) == 0);
+    runtime.audio_activity_wait_armed = 0;
+    CHECK(SignalSema(runtime.audio_queue_semaphore_id) == 0);
+
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+    CHECK(release_calls == 1);
+}
+
 int main(void)
 {
     test_explicit_audio_config_and_rfb_only_regression();
@@ -821,6 +850,7 @@ int main(void)
     test_marker_drain_exhaust_and_post_marker_reject();
     test_overflow_fails_but_committed_bytes_drain();
     test_terminal_wakeups();
+    test_release_preserves_signaled_audio_waiter_resources();
     reset_fixture();
 
     if (failures != 0) {
