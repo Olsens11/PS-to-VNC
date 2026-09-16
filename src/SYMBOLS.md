@@ -17,15 +17,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | text | parameter | src/app.c | send_diagnostic_literal | local | Points to the caller-owned diagnostic bytes to transmit. | clean diagnostics |
 | length | parameter | src/app.c | send_diagnostic_literal | local | Gives the exact diagnostic byte count to transmit. | clean diagnostics |
 | pstvnc_app_run | function | src/app.c | application coordinator | public | Runs ordered startup, the blocking live loop, and fatal cleanup convergence. | ISSUE7_MINIMAL_CORE: Complete application coordinator |
-| net_ready | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic stage record emitted after the private link and required VNC endpoint are connected. | clean diagnostics |
-| gs_ready | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic stage record emitted after graphics initialization. | clean diagnostics |
-| desktop_ready | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic stage record emitted after first authoritative presentation. | clean diagnostics |
-| fatal | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic record emitted when the coordinator enters fatal convergence. | failure policy |
-| framebuffer | variable | src/app.c | pstvnc_app_run | local | Holds metadata and authority state for the caller-owned remote pixel storage. | CLEAN_ARCHITECTURE: Desktop framebuffer |
-| session | variable | src/app.c | pstvnc_app_run | local | Holds the synchronized RFB protocol/session state owned by the main loop. | CLEAN_ARCHITECTURE: RFB client/session |
-| socket_fd | variable | src/app.c | pstvnc_app_run | local | Tracks ownership of the connected VNC socket for fail-path cleanup. | application coordinator cleanup |
-| graphics_ready | variable | src/app.c | pstvnc_app_run | local | Tracks whether GS resources were acquired and therefore require shutdown. | application coordinator cleanup |
-| diagnostics_ready | variable | src/app.c | pstvnc_app_run | local | Tracks whether optional diagnostics resources require shutdown. | application coordinator cleanup |
 | PSTVNC_APP_H | include guard | src/app.h | application coordinator interface | file | Prevents repeated inclusion of the coordinator public declaration. | clean source interface |
 | pstvnc_app_run | function declaration | src/app.h | application coordinator interface | public | Declares the single top-level clean application lifecycle entry point. | CLEAN_ARCHITECTURE: Application coordinator |
 | main | function | src/main.c | process entry | process | Delegates product lifecycle to the coordinator and always converges on OSDSYS. | CLEAN_ARCHITECTURE: Startup lifecycle |
@@ -87,10 +78,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | local_ui | parameter | src/app.c | service_semantic_input_events | local | Supplies local ui to service_semantic_input_events. | Issue #39: keyboard, OSK and local UI foreground model |
 | osk | parameter | src/app.c | service_semantic_input_events | local | Supplies osk to service_semantic_input_events. | Issue #39: keyboard, OSK and local UI foreground model |
 | mouse_interpretation_suspended | parameter | src/app.c | service_semantic_input_events | local | Supplies mouse interpretation suspended to service_semantic_input_events. | Issue #39: keyboard, OSK and local UI foreground model |
-| local_controller | variable | src/app.c | pstvnc_app_run | local | Stores local controller while pstvnc_app_run runs. | Issue #39: keyboard, OSK and local UI foreground model |
-| local_ui | variable | src/app.c | pstvnc_app_run | local | Stores local ui while pstvnc_app_run runs. | Issue #39: keyboard, OSK and local UI foreground model |
-| osk | variable | src/app.c | pstvnc_app_run | local | Stores osk while pstvnc_app_run runs. | Issue #39: keyboard, OSK and local UI foreground model |
-| mouse_interpretation_suspended | variable | src/app.c | pstvnc_app_run | local | Stores mouse interpretation suspended while pstvnc_app_run runs. | Issue #39: keyboard, OSK and local UI foreground model |
 | PSTVNC_APP_CONTROLLER_PORT | macro | src/app.c | application coordinator | file | Names the direct-libpad controller port owned by the Stage 1 input runtime. | Issue #38 controller input integration |
 | PSTVNC_APP_CONTROLLER_SLOT | macro | src/app.c | application coordinator | file | Names the direct-libpad controller slot owned by the Stage 1 input runtime. | Issue #38 controller input integration |
 | PSTVNC_APP_IDLE_POLL_DELAY_US | macro | src/app.c | application coordinator | file | Defines the short cooperative delay used when responsive RFB receive polling reports no server message ready. | Issue #38 responsive RFB scheduling |
@@ -118,11 +105,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | published_pointer | parameter | src/app.c | service_semantic_input_events | local | Supplies mutable remote pointer publication authority shared across drained semantic input events. | Issue #38 published-state authority |
 | event | variable | src/app.c | service_semantic_input_events | local | Holds one semantic input event removed from the bounded runtime queue for main-thread processing. | Issue #38 semantic input pipeline |
 | pop_result | variable | src/app.c | service_semantic_input_events | local | Stores the semantic-queue pop result used to distinguish an event, an empty queue, and runtime failure. | Issue #38 semantic input pipeline |
-| input_ready | variable | src/app.c | pstvnc_app_run | local | Holds the fixed diagnostic stage record emitted after the controller/input runtime has successfully started. | Issue #38 diagnostics |
-| input_runtime | variable | src/app.c | pstvnc_app_run | local | Owns the persistent controller producer, mouse interpreter, semantic queue, and handoff state for the live application lifetime. | Issue #38 controller input owner |
-| published_pointer | variable | src/app.c | pstvnc_app_run | local | Tracks the remote pointer coordinates and ordinary clicks last proven published successfully to the VNC server. | Issue #38 published-state authority |
-| input_runtime_ready | variable | src/app.c | pstvnc_app_run | local | Tracks whether the controller/input runtime was started and therefore requires cooperative shutdown during cleanup. | Issue #38 lifecycle |
-| receive_result | variable | src/app.c | pstvnc_app_run | local | Stores the responsive RFB receive-service result used to distinguish idle polling, a completed update, and session failure. | Issue #38 responsive RFB scheduling |
 | pstvnc_app_run_with_transport_config | function | src/app.c | app | file | Defines pstvnc_app_run_with_transport_config as a current clean-source function. | mechanically reconciled current clean source |
 | transport_config | parameter | src/app.c | pstvnc_app_run_with_transport_config | local | Defines transport_config as a current clean-source parameter. | mechanically reconciled current clean source |
 | desktop_ready | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines desktop_ready as a current clean-source variable. | mechanically reconciled current clean source |
