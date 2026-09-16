@@ -34,6 +34,27 @@ static pstvnc_transport_result_t pstvnc_transport_bridge_terminal_result(void)
     return PSTVNC_TRANSPORT_FAILED;
 }
 
+/*
+ * Interpret runtime release by ownership state rather than by diagnostics alone.
+ * A false result with initialized still set means receiver/session resources are
+ * still Transport-owned and must remain retryable. A false result after runtime
+ * reset means reclaim did complete but one cleanup primitive reported failure;
+ * bridge authority is still retired so a second close cannot target stale state.
+ */
+static pstvnc_transport_result_t pstvnc_transport_bridge_finish_release(void)
+{
+    int released = pstvnc_transport_runtime_release(
+        &pstvnc_transport_bridge_runtime);
+
+    if (!released && pstvnc_transport_bridge_runtime.initialized)
+        return PSTVNC_TRANSPORT_FAILED;
+
+    pstvnc_transport_bridge_session_active = 0;
+    return released
+        ? PSTVNC_TRANSPORT_OK
+        : PSTVNC_TRANSPORT_FAILED;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Application session lifecycle process.                                    */
 /* ------------------------------------------------------------------------- */
@@ -93,17 +114,7 @@ pstvnc_transport_result_t pstvnc_transport_session_abort(void)
             &pstvnc_transport_bridge_runtime))
         return PSTVNC_TRANSPORT_FAILED;
 
-    /*
-     * A release failure before reclaim keeps the bridge session active and
-     * retryable. Session authority is cleared only after Transport confirms the
-     * owned descriptor and receiver-touched resources are actually reclaimed.
-     */
-    if (!pstvnc_transport_runtime_release(
-            &pstvnc_transport_bridge_runtime))
-        return PSTVNC_TRANSPORT_FAILED;
-
-    pstvnc_transport_bridge_session_active = 0;
-    return PSTVNC_TRANSPORT_OK;
+    return pstvnc_transport_bridge_finish_release();
 }
 
 pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void)
@@ -131,12 +142,7 @@ pstvnc_transport_result_t pstvnc_transport_session_close(void)
         !pstvnc_transport_bridge_runtime.receiver_done)
         return PSTVNC_TRANSPORT_WOULD_BLOCK;
 
-    if (!pstvnc_transport_runtime_release(
-            &pstvnc_transport_bridge_runtime))
-        return PSTVNC_TRANSPORT_FAILED;
-
-    pstvnc_transport_bridge_session_active = 0;
-    return PSTVNC_TRANSPORT_OK;
+    return pstvnc_transport_bridge_finish_release();
 }
 
 /* ------------------------------------------------------------------------- */
