@@ -1169,16 +1169,17 @@ static int pstvnc_transport_runtime_media_activity_snapshot(
     pstvnc_transport_runtime_t *runtime,
     int enabled,
     int queue_semaphore_id,
-    uint32_t activity_sequence,
+    uint32_t *current_sequence,
     uint32_t *snapshot)
 {
-    if (runtime == NULL || snapshot == NULL || !runtime->initialized || !enabled)
+    if (runtime == NULL || snapshot == NULL || current_sequence == NULL ||
+        !runtime->initialized || !enabled)
         return 0;
 
     if (WaitSema(queue_semaphore_id) < 0)
         return 0;
 
-    *snapshot = activity_sequence;
+    *snapshot = *current_sequence;
 
     if (SignalSema(queue_semaphore_id) < 0) {
         runtime->failed = 1;
@@ -1265,7 +1266,7 @@ int pstvnc_transport_runtime_audio_activity_snapshot(
         runtime,
         runtime != NULL ? runtime->audio_enabled : 0,
         runtime != NULL ? runtime->audio_queue_semaphore_id : -1,
-        runtime != NULL ? runtime->audio_activity_sequence : 0u,
+        runtime != NULL ? &runtime->audio_activity_sequence : NULL,
         activity_sequence);
 }
 
@@ -1377,7 +1378,7 @@ int pstvnc_transport_runtime_mpeg_activity_snapshot(
         runtime,
         runtime != NULL ? runtime->mpeg_enabled : 0,
         runtime != NULL ? runtime->mpeg_queue_semaphore_id : -1,
-        runtime != NULL ? runtime->mpeg_activity_sequence : 0u,
+        runtime != NULL ? &runtime->mpeg_activity_sequence : NULL,
         activity_sequence);
 }
 
@@ -1454,9 +1455,12 @@ static int pstvnc_transport_runtime_media_waiter_live(
     pstvnc_transport_runtime_t *runtime,
     int enabled,
     int queue_semaphore_id,
-    int activity_wait_armed,
+    int *activity_wait_armed,
     int *waiter_live)
 {
+    if (waiter_live == NULL || activity_wait_armed == NULL)
+        return 0;
+
     if (!enabled) {
         *waiter_live = 0;
         return 1;
@@ -1465,7 +1469,7 @@ static int pstvnc_transport_runtime_media_waiter_live(
     if (WaitSema(queue_semaphore_id) < 0)
         return 0;
 
-    *waiter_live = activity_wait_armed != 0;
+    *waiter_live = *activity_wait_armed != 0;
 
     if (SignalSema(queue_semaphore_id) < 0) {
         runtime->failed = 1;
@@ -1497,7 +1501,7 @@ int pstvnc_transport_runtime_release(
             runtime,
             runtime->audio_enabled,
             runtime->audio_queue_semaphore_id,
-            runtime->audio_activity_wait_armed,
+            &runtime->audio_activity_wait_armed,
             &waiter_live) || waiter_live)
         return 0;
 
@@ -1505,7 +1509,7 @@ int pstvnc_transport_runtime_release(
             runtime,
             runtime->mpeg_enabled,
             runtime->mpeg_queue_semaphore_id,
-            runtime->mpeg_activity_wait_armed,
+            &runtime->mpeg_activity_wait_armed,
             &waiter_live) || waiter_live)
         return 0;
 
