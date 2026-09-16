@@ -1,3 +1,13 @@
+/*
+ * File synopsis:
+ * Implements bounded configuration-text whitespace, integer, and boolean
+ * helpers. The integer parser preserves the PS2-libc overflow workaround; this
+ * file is utility code and does not decode or own the production session
+ * profile.
+ *
+ * Context: docs/development/source-topology.md and src/config/profile.h.
+ */
+
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -13,7 +23,6 @@ char *pstvnc_config_trim_left(char *text)
     return text;
 }
 
-
 void pstvnc_config_trim_right(char *text)
 {
     size_t len = strlen(text);
@@ -26,7 +35,6 @@ void pstvnc_config_trim_right(char *text)
         len--;
     }
 }
-
 
 int pstvnc_config_parse_int(
     const char *text,
@@ -149,7 +157,6 @@ int pstvnc_config_parse_int(
 
     return 1;
 }
-
 
 int pstvnc_config_parse_bool(
     const char *value,
