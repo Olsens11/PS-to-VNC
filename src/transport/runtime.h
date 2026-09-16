@@ -47,6 +47,7 @@ typedef struct pstvnc_transport_runtime {
     int initialized;
     int receiver_thread_started;
     volatile int receiver_done;
+    volatile int stop_requested;
     volatile int failed;
 
     /*
@@ -91,6 +92,14 @@ int pstvnc_transport_runtime_initialize(
 
 /* Start the sole physical receiver after all receiver-visible resources exist. */
 int pstvnc_transport_runtime_start_receiver(
+    pstvnc_transport_runtime_t *runtime);
+
+/*
+ * Request application-local fatal convergence. Transport marks the request
+ * before interrupting its still-owned physical socket so a blocked sole recv()
+ * returns and the receiver can publish the normal completion event.
+ */
+int pstvnc_transport_runtime_request_stop(
     pstvnc_transport_runtime_t *runtime);
 
 /* Snapshot/wait pair for timer-free producer activity rendezvous. */
