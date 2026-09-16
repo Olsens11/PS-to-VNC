@@ -445,7 +445,6 @@ $(TRANSPORT_RUNTIME_TEST): \
 	../src/transport/runtime.c \
 	../src/transport/runtime.h \
 	../src/transport/quiesce.c \
-	../src/transport/quiesce.h \
 	../src/transport/rfb_channel.c \
 	../src/transport/rfb_channel.h \
 	../src/transport/protocol.c \
