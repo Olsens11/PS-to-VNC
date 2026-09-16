@@ -54,6 +54,7 @@ COMMON_FLAGS=(
     -I"$ROOT/src/audio"
     -I"$ROOT/src/config"
     -I"$ROOT/src/media"
+    -I"$ROOT/src/mpeg"
     -I"$ROOT/src/input"
     -I"$ROOT/src/ui"
     -I"$ROOT/src/rfb"
@@ -76,6 +77,7 @@ SOURCES=(
     src/config/profile.c
     src/config/text.c
     src/media/clock.c
+    src/mpeg/decoder.c
     src/diagnostics/diagnostics.c
     src/diagnostics/identity.c
     src/rfb/rfb.c
@@ -97,6 +99,7 @@ SOURCES=(
     src/transport/physical_stream.c
     src/transport/rfb_channel.c
     src/transport/audio_channel.c
+    src/transport/mpeg_channel.c
     src/transport/runtime.c
     src/transport/quiesce.c
     src/transport/bridge.c
