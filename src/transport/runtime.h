@@ -23,6 +23,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/*
+ * Transitional internal spelling retained only so the already-written runtime
+ * implementation and the promoted stable session value remain one C type while
+ * the public bridge tranche is assembled. No second configuration structure or
+ * independent defaults exist behind this alias.
+ */
+typedef pstvnc_transport_session_config_t pstvnc_transport_runtime_config_t;
+
 typedef struct pstvnc_transport_runtime {
     pstvnc_transport_physical_stream_t physical_stream;
     pstvnc_transport_rfb_channel_t rfb_channel;
