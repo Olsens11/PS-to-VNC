@@ -210,6 +210,46 @@ static void test_no_default_transport_and_rfb_off_inert_policy(void)
     CHECK(profile.transport.max_data_payload == 4096u);
 }
 
+static void test_each_transport_field_is_mandatory(void)
+{
+    static const uint32_t transport_fields[] = {
+        PSTVNC_CONFIG_FIELD_RFB_QUEUE_CAPACITY,
+        PSTVNC_CONFIG_FIELD_RFB_INITIAL_CREDIT_BYTES,
+        PSTVNC_CONFIG_FIELD_RFB_CREDIT_BATCH_BYTES,
+        PSTVNC_CONFIG_FIELD_RFB_CREDIT_FLUSH_ON_EMPTY,
+        PSTVNC_CONFIG_FIELD_RFB_CREDIT_RETURN_ENABLED,
+        PSTVNC_CONFIG_FIELD_RECEIVER_THREAD_STACK_SIZE,
+        PSTVNC_CONFIG_FIELD_RECEIVER_THREAD_PRIORITY,
+        PSTVNC_CONFIG_FIELD_MAX_DATA_PAYLOAD
+    };
+    uint8_t payload[TEST_PAYLOAD_BYTES];
+    pstvnc_config_session_profile_t profile;
+    size_t field_index;
+
+    for (field_index = 0u;
+         field_index < sizeof(transport_fields) / sizeof(transport_fields[0]);
+         field_index++) {
+        uint32_t missing = transport_fields[field_index];
+        size_t missing_offset;
+        size_t trailing;
+
+        make_valid_profile(payload);
+        missing_offset = field_offset(missing);
+        trailing = TEST_PAYLOAD_BYTES -
+            (missing_offset + PSTVNC_CONFIG_PROFILE_ENTRY_BYTES);
+        memmove(
+            &payload[missing_offset],
+            &payload[missing_offset + PSTVNC_CONFIG_PROFILE_ENTRY_BYTES],
+            trailing);
+        write_be32(&payload[4], PSTVNC_CONFIG_PROFILE_FIELD_COUNT - 1u);
+
+        CHECK(pstvnc_config_profile_decode(
+            &profile,
+            payload,
+            TEST_PAYLOAD_BYTES - PSTVNC_CONFIG_PROFILE_ENTRY_BYTES) == 0);
+    }
+}
+
 static void test_pcm_format_volume_and_activation_rejection(void)
 {
     uint8_t payload[TEST_PAYLOAD_BYTES];
@@ -287,6 +327,7 @@ int main(void)
     test_unknown_duplicate_and_missing_fields();
     test_transport_relationship_rejection();
     test_no_default_transport_and_rfb_off_inert_policy();
+    test_each_transport_field_is_mandatory();
     test_pcm_format_volume_and_activation_rejection();
     test_video_activation_and_signed_offsets();
     test_failure_does_not_publish_partial_profile();
