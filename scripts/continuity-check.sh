@@ -450,6 +450,7 @@ EXPECTED_DIRECTORIES = {
     "src/input",
     "src/platform",
     "src/rfb",
+    "src/transport",
     "src/ui",
 }
 
