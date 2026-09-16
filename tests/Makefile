@@ -460,3 +460,23 @@ $(TRANSPORT_RUNTIME_TEST): \
 		../src/transport/rfb_channel.c \
 		../src/transport/protocol.c \
 		-o $(TRANSPORT_RUNTIME_TEST)
+
+CONFIG_PROFILE_TEST := .build/config_profile_test
+
+.PHONY: config-profile-unit
+unit: config-profile-unit
+
+config-profile-unit: $(CONFIG_PROFILE_TEST)
+	./$(CONFIG_PROFILE_TEST)
+
+$(CONFIG_PROFILE_TEST): \
+	unit/config_profile_test.c \
+	../src/config/profile.c \
+	../src/config/profile.h \
+	../src/transport/transport.h \
+	../src/transport/protocol.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/config_profile_test.c \
+		../src/config/profile.c \
+		-o $(CONFIG_PROFILE_TEST)
