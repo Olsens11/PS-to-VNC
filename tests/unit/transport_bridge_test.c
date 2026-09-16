@@ -1,12 +1,12 @@
 /*
  * File synopsis:
  * Host-tests Transport's cross-component bridge ownership/result mapping with
- * deterministic private-runtime stubs. The fixture preserves the established
- * RFB/session lifecycle proofs and adds the A002 opt-in logical AUDIO opening,
- * bounded consumer, status, and activity-result seams without exposing physical
- * descriptor authority or introducing playback policy.
+ * deterministic private-runtime stubs. The fixture preserves established
+ * RFB/AUDIO/session lifecycle proofs and adds A003 opt-in logical MPEG opening,
+ * bounded consumer, status, activity, and producer-completion result seams
+ * without exposing physical descriptor authority or decoder policy.
  *
- * Context: LEDGE_FOREMAN_STATE revision 0009, packet A1-A8.
+ * Context: LEDGE_FOREMAN_STATE revisions 0009 and 0012.
  */
 
 #include <stdint.h>
@@ -19,6 +19,8 @@
 static int failures;
 static int initialize_result = 1;
 static int initialize_audio_result = 1;
+static int initialize_mpeg_result = 1;
+static int initialize_audio_mpeg_result = 1;
 static int start_result = 1;
 static int request_stop_result = 1;
 static int wait_done_result = 1;
@@ -30,6 +32,11 @@ static pstvnc_transport_result_t audio_read_result = PSTVNC_TRANSPORT_OK;
 static pstvnc_transport_result_t audio_status_result = PSTVNC_TRANSPORT_OK;
 static int audio_snapshot_result = 1;
 static int audio_wait_result = 1;
+static pstvnc_transport_result_t mpeg_read_result = PSTVNC_TRANSPORT_OK;
+static pstvnc_transport_result_t mpeg_status_result = PSTVNC_TRANSPORT_OK;
+static int mpeg_snapshot_result = 1;
+static int mpeg_wait_result = 1;
+static int mpeg_done_result = 1;
 static int quiesce_requested_result = 1;
 static int quiesce_boundary_result = 1;
 static int quiesce_commit_result = 1;
@@ -38,12 +45,15 @@ static int residual_discard_result = 1;
 static int quiesce_complete_result = 1;
 static int initialize_calls;
 static int initialize_audio_calls;
+static int initialize_mpeg_calls;
+static int initialize_audio_mpeg_calls;
 static int start_calls;
 static int request_stop_calls;
 static int wait_done_calls;
 static int release_calls;
 static int adopted_socket_fd;
 static pstvnc_transport_audio_channel_config_t observed_audio_config;
+static pstvnc_transport_mpeg_channel_config_t observed_mpeg_config;
 static pstvnc_transport_runtime_t *observed_runtime;
 
 typedef enum lifecycle_event {
@@ -77,6 +87,8 @@ static void reset_fixture(void)
 {
     initialize_result = 1;
     initialize_audio_result = 1;
+    initialize_mpeg_result = 1;
+    initialize_audio_mpeg_result = 1;
     start_result = 1;
     request_stop_result = 1;
     wait_done_result = 1;
@@ -88,6 +100,11 @@ static void reset_fixture(void)
     audio_status_result = PSTVNC_TRANSPORT_OK;
     audio_snapshot_result = 1;
     audio_wait_result = 1;
+    mpeg_read_result = PSTVNC_TRANSPORT_OK;
+    mpeg_status_result = PSTVNC_TRANSPORT_OK;
+    mpeg_snapshot_result = 1;
+    mpeg_wait_result = 1;
+    mpeg_done_result = 1;
     quiesce_requested_result = 1;
     quiesce_boundary_result = 1;
     quiesce_commit_result = 1;
@@ -96,12 +113,15 @@ static void reset_fixture(void)
     quiesce_complete_result = 1;
     initialize_calls = 0;
     initialize_audio_calls = 0;
+    initialize_mpeg_calls = 0;
+    initialize_audio_mpeg_calls = 0;
     start_calls = 0;
     request_stop_calls = 0;
     wait_done_calls = 0;
     release_calls = 0;
     adopted_socket_fd = -1;
     memset(&observed_audio_config, 0, sizeof(observed_audio_config));
+    memset(&observed_mpeg_config, 0, sizeof(observed_mpeg_config));
     observed_runtime = NULL;
     memset(lifecycle_events, 0, sizeof(lifecycle_events));
     lifecycle_event_count = 0u;
@@ -136,14 +156,29 @@ static pstvnc_transport_audio_channel_config_t make_audio_config(void)
     return config;
 }
 
+static pstvnc_transport_mpeg_channel_config_t make_mpeg_config(void)
+{
+    pstvnc_transport_mpeg_channel_config_t config;
+
+    memset(&config, 0, sizeof(config));
+    config.queue_capacity = 12288u;
+    config.initial_credit_bytes = 6144u;
+    config.credit_batch_bytes = 2048u;
+    config.credit_flush_on_empty = 1;
+    config.credit_return_enabled = 1;
+    return config;
+}
+
 static void initialize_stub_runtime(
     pstvnc_transport_runtime_t *runtime,
     int socket_fd,
-    int audio_enabled)
+    int audio_enabled,
+    int mpeg_enabled)
 {
     memset(runtime, 0, sizeof(*runtime));
     runtime->initialized = 1;
     runtime->audio_enabled = audio_enabled;
+    runtime->mpeg_enabled = mpeg_enabled;
     runtime->physical_stream.socket_fd = socket_fd;
     runtime->physical_stream.send_semaphore_id = 1;
     runtime->receiver_thread_id = -1;
@@ -157,11 +192,9 @@ int pstvnc_transport_runtime_initialize(
 {
     initialize_calls++;
     adopted_socket_fd = socket_fd;
-
     if (!initialize_result || runtime == NULL || config == NULL)
         return 0;
-
-    initialize_stub_runtime(runtime, socket_fd, 0);
+    initialize_stub_runtime(runtime, socket_fd, 0, 0);
     return 1;
 }
 
@@ -173,13 +206,45 @@ int pstvnc_transport_runtime_initialize_with_audio(
 {
     initialize_audio_calls++;
     adopted_socket_fd = socket_fd;
-
     if (!initialize_audio_result || runtime == NULL || config == NULL ||
         audio_config == NULL)
         return 0;
-
     observed_audio_config = *audio_config;
-    initialize_stub_runtime(runtime, socket_fd, 1);
+    initialize_stub_runtime(runtime, socket_fd, 1, 0);
+    return 1;
+}
+
+int pstvnc_transport_runtime_initialize_with_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    int socket_fd,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    initialize_mpeg_calls++;
+    adopted_socket_fd = socket_fd;
+    if (!initialize_mpeg_result || runtime == NULL || config == NULL ||
+        mpeg_config == NULL)
+        return 0;
+    observed_mpeg_config = *mpeg_config;
+    initialize_stub_runtime(runtime, socket_fd, 0, 1);
+    return 1;
+}
+
+int pstvnc_transport_runtime_initialize_with_audio_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    int socket_fd,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    initialize_audio_mpeg_calls++;
+    adopted_socket_fd = socket_fd;
+    if (!initialize_audio_mpeg_result || runtime == NULL || config == NULL ||
+        audio_config == NULL || mpeg_config == NULL)
+        return 0;
+    observed_audio_config = *audio_config;
+    observed_mpeg_config = *mpeg_config;
+    initialize_stub_runtime(runtime, socket_fd, 1, 1);
     return 1;
 }
 
@@ -304,6 +369,60 @@ int pstvnc_transport_runtime_audio_wait_activity(
     return audio_wait_result;
 }
 
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_read_available(
+    pstvnc_transport_runtime_t *runtime,
+    void *buffer,
+    size_t maximum_count,
+    size_t *read_count)
+{
+    (void)runtime;
+    (void)buffer;
+    (void)maximum_count;
+    if (read_count != NULL)
+        *read_count = mpeg_read_result == PSTVNC_TRANSPORT_OK ? 4u : 0u;
+    return mpeg_read_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_status(
+    pstvnc_transport_runtime_t *runtime,
+    size_t *available_count,
+    int *producer_done)
+{
+    (void)runtime;
+    if (available_count != NULL)
+        *available_count = 6u;
+    if (producer_done != NULL)
+        *producer_done = 0;
+    return mpeg_status_result;
+}
+
+int pstvnc_transport_runtime_mpeg_activity_snapshot(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t *activity_sequence)
+{
+    (void)runtime;
+    if (activity_sequence != NULL)
+        *activity_sequence = 11u;
+    return mpeg_snapshot_result;
+}
+
+int pstvnc_transport_runtime_mpeg_wait_activity(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t *activity_sequence)
+{
+    (void)runtime;
+    if (activity_sequence != NULL)
+        *activity_sequence += 2u;
+    return mpeg_wait_result;
+}
+
+int pstvnc_transport_runtime_mpeg_mark_producer_done(
+    pstvnc_transport_runtime_t *runtime)
+{
+    (void)runtime;
+    return mpeg_done_result;
+}
+
 int pstvnc_transport_runtime_rfb_quiesce_requested(
     pstvnc_transport_runtime_t *runtime)
 {
@@ -371,8 +490,10 @@ static void test_rfb_only_open_and_close_regression(void)
     CHECK(adopted_socket_fd == 42);
     CHECK(initialize_calls == 1);
     CHECK(initialize_audio_calls == 0);
+    CHECK(initialize_mpeg_calls == 0);
     CHECK(start_calls == 1);
-    CHECK(observed_runtime != NULL && observed_runtime->audio_enabled == 0);
+    CHECK(observed_runtime != NULL && observed_runtime->audio_enabled == 0 &&
+        observed_runtime->mpeg_enabled == 0);
     CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_WOULD_BLOCK);
     complete_and_close();
 }
@@ -394,8 +515,44 @@ static void test_audio_open_requires_explicit_config(void)
     CHECK(socket_fd == -1);
     CHECK(initialize_calls == 0);
     CHECK(initialize_audio_calls == 1);
-    CHECK(observed_runtime != NULL && observed_runtime->audio_enabled == 1);
+    CHECK(observed_runtime != NULL && observed_runtime->audio_enabled == 1 &&
+        observed_runtime->mpeg_enabled == 0);
     CHECK(memcmp(&observed_audio_config, &audio, sizeof(audio)) == 0);
+    complete_and_close();
+}
+
+static void test_mpeg_open_and_combined_authority(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_audio_channel_config_t audio = make_audio_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    int socket_fd = 44;
+
+    reset_fixture();
+    CHECK(pstvnc_transport_session_open_with_mpeg(
+        &socket_fd, &config, NULL) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(socket_fd == 44);
+    CHECK(initialize_mpeg_calls == 0);
+
+    CHECK(pstvnc_transport_session_open_with_mpeg(
+        &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
+    CHECK(socket_fd == -1);
+    CHECK(initialize_mpeg_calls == 1);
+    CHECK(observed_runtime != NULL && observed_runtime->mpeg_enabled == 1 &&
+        observed_runtime->audio_enabled == 0);
+    CHECK(memcmp(&observed_mpeg_config, &mpeg, sizeof(mpeg)) == 0);
+    complete_and_close();
+
+    reset_fixture();
+    socket_fd = 45;
+    CHECK(pstvnc_transport_session_open_with_audio_mpeg(
+        &socket_fd, &config, &audio, &mpeg) == PSTVNC_TRANSPORT_OK);
+    CHECK(socket_fd == -1);
+    CHECK(initialize_audio_mpeg_calls == 1);
+    CHECK(observed_runtime != NULL && observed_runtime->audio_enabled == 1 &&
+        observed_runtime->mpeg_enabled == 1);
+    CHECK(memcmp(&observed_audio_config, &audio, sizeof(audio)) == 0);
+    CHECK(memcmp(&observed_mpeg_config, &mpeg, sizeof(mpeg)) == 0);
     complete_and_close();
 }
 
@@ -506,14 +663,60 @@ static void test_audio_result_mapping(void)
     complete_and_close();
 }
 
+static void test_mpeg_result_mapping(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    unsigned char bytes[8];
+    size_t count = 0u;
+    size_t available = 0u;
+    int producer_done = 1;
+    uint32_t sequence = 0u;
+    int socket_fd = 34;
+
+    reset_fixture();
+    CHECK(pstvnc_transport_session_open_with_mpeg(
+        &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
+
+    CHECK(pstvnc_transport_mpeg_read_available(
+        bytes, sizeof(bytes), &count) == PSTVNC_TRANSPORT_OK);
+    CHECK(count == 4u);
+    CHECK(pstvnc_transport_mpeg_status(
+        &available, &producer_done) == PSTVNC_TRANSPORT_OK);
+    CHECK(available == 6u && producer_done == 0);
+    CHECK(pstvnc_transport_mpeg_activity_snapshot(&sequence) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(sequence == 11u);
+    CHECK(pstvnc_transport_mpeg_wait_activity(&sequence) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(sequence == 13u);
+    CHECK(pstvnc_transport_mpeg_mark_producer_done() == PSTVNC_TRANSPORT_OK);
+
+    mpeg_read_result = PSTVNC_TRANSPORT_EXHAUSTED;
+    CHECK(pstvnc_transport_mpeg_read_available(
+        bytes, sizeof(bytes), &count) == PSTVNC_TRANSPORT_EXHAUSTED);
+    mpeg_read_result = PSTVNC_TRANSPORT_STOPPED;
+    CHECK(pstvnc_transport_mpeg_read_available(
+        bytes, sizeof(bytes), &count) == PSTVNC_TRANSPORT_STOPPED);
+    mpeg_done_result = 0;
+    observed_runtime->failed = 1;
+    CHECK(pstvnc_transport_mpeg_mark_producer_done() ==
+        PSTVNC_TRANSPORT_FAILED);
+
+    observed_runtime->failed = 0;
+    complete_and_close();
+}
+
 int main(void)
 {
     test_rfb_only_open_and_close_regression();
     test_audio_open_requires_explicit_config();
+    test_mpeg_open_and_combined_authority();
     test_failed_open_ownership_regression();
     test_fatal_abort_order_regression();
     test_rfb_result_mapping_regression();
     test_audio_result_mapping();
+    test_mpeg_result_mapping();
 
     if (failures != 0) {
         fprintf(stderr, "%d transport bridge test(s) failed\n", failures);
