@@ -44,13 +44,10 @@ static void append_input(
     input_size += count;
 }
 
-int pstvnc_rfb_io_read_exact(
-    int socket_fd,
+int pstvnc_rfb_bridge_read_exact(
     void *buffer,
     size_t count)
 {
-    (void)socket_fd;
-
     if (input_pos + count > input_size)
         return -1;
 
@@ -59,20 +56,15 @@ int pstvnc_rfb_io_read_exact(
     return 0;
 }
 
-int pstvnc_rfb_io_poll_receive(int socket_fd)
+int pstvnc_rfb_bridge_poll_receive(void)
 {
-    (void)socket_fd;
-
     return input_pos < input_size ? 1 : 0;
 }
 
-int pstvnc_rfb_io_write_exact(
-    int socket_fd,
+int pstvnc_rfb_bridge_write_exact(
     const void *buffer,
     size_t count)
 {
-    (void)socket_fd;
-
     if (force_write_failure)
         return -1;
 
@@ -81,6 +73,16 @@ int pstvnc_rfb_io_write_exact(
 
     memcpy(&output[output_size], buffer, count);
     output_size += count;
+    return 0;
+}
+
+int pstvnc_rfb_bridge_quiesce_requested(void)
+{
+    return 0;
+}
+
+int pstvnc_rfb_bridge_complete_quiesce_at_message_boundary(void)
+{
     return 0;
 }
 
@@ -160,7 +162,7 @@ static void test_success(void)
     script_reset();
     build_success_input(name, sizeof(name) - 1);
 
-    CHECK(pstvnc_rfb_session_start(&session, 7, 704, 462));
+    CHECK(pstvnc_rfb_session_start(&session, 704, 462));
     CHECK(session.state == PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME);
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
     CHECK(session.server_major == 3);
@@ -203,7 +205,6 @@ static void test_live_update_request(void)
 
     script_reset();
     pstvnc_rfb_session_init(&session);
-    session.socket_fd = 7;
     session.state = PSTVNC_RFB_SESSION_READY;
     session.server_init.width = 704;
     session.server_init.height = 462;
@@ -223,7 +224,6 @@ static void test_live_update_request(void)
     CHECK(output_size == 0);
 }
 
-
 static void test_key_event_send(void)
 {
     static const unsigned char expected[16] = {
@@ -238,7 +238,6 @@ static void test_key_event_send(void)
     script_reset();
     pstvnc_rfb_session_init(&session);
 
-    session.socket_fd = 7;
     session.state = PSTVNC_RFB_SESSION_READY;
     session.server_init.width = 704;
     session.server_init.height = 462;
@@ -285,13 +284,12 @@ static void test_key_event_send(void)
             0x00000061u));
 
     /*
-     * Once an exact KeyEvent write is attempted, transport failure is a real
-     * synchronized-session failure just like PointerEvent publication.
+     * Once an exact KeyEvent write is attempted, logical-stream failure is a
+     * real synchronized-session failure just like PointerEvent publication.
      */
     script_reset();
     pstvnc_rfb_session_init(&session);
 
-    session.socket_fd = 7;
     session.state = PSTVNC_RFB_SESSION_READY;
     session.server_init.width = 704;
     session.server_init.height = 462;
@@ -322,7 +320,6 @@ static void test_pointer_event_send(void)
     script_reset();
     pstvnc_rfb_session_init(&session);
 
-    session.socket_fd = 7;
     session.state = PSTVNC_RFB_SESSION_READY;
     session.server_init.width = 704;
     session.server_init.height = 462;
@@ -383,13 +380,12 @@ static void test_pointer_event_send(void)
             0));
 
     /*
-     * A transport failure is a session failure, matching the existing
+     * A logical-stream failure is a session failure, matching the existing
      * FramebufferUpdateRequest send contract.
      */
     script_reset();
     pstvnc_rfb_session_init(&session);
 
-    session.socket_fd = 7;
     session.state = PSTVNC_RFB_SESSION_READY;
     session.server_init.width = 704;
     session.server_init.height = 462;
@@ -418,7 +414,7 @@ static void test_none_missing(void)
     append_input(banner, sizeof(banner));
     append_input(security, sizeof(security));
 
-    CHECK(!pstvnc_rfb_session_start(&session, 7, 704, 462));
+    CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
     CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
     CHECK(session.error ==
         PSTVNC_RFB_SESSION_ERROR_SECURITY_NONE_UNAVAILABLE);
@@ -440,7 +436,7 @@ static void test_server_rejection(void)
     append_input(rejection_header, sizeof(rejection_header));
     append_input(reason, 5);
 
-    CHECK(!pstvnc_rfb_session_start(&session, 7, 704, 462));
+    CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_SERVER_REJECTED);
     CHECK(strcmp(session.server_rejection, "nope!") == 0);
     CHECK(input_pos == input_size);
@@ -459,7 +455,7 @@ static void test_geometry_mismatch(void)
     append_input(result, sizeof(result));
     append_server_init(640, 480, 0);
 
-    CHECK(!pstvnc_rfb_session_start(&session, 7, 704, 462));
+    CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_GEOMETRY);
 }
 
@@ -475,23 +471,25 @@ static void test_long_name_consumed(void)
     script_reset();
     build_success_input(name, sizeof(name));
 
-    CHECK(pstvnc_rfb_session_start(&session, 7, 704, 462));
+    CHECK(pstvnc_rfb_session_start(&session, 704, 462));
     CHECK(strlen(session.desktop_name) == PSTVNC_RFB_SESSION_TEXT_MAX);
     CHECK(input_pos == input_size);
 }
 
-static void test_bad_version_and_short_io(void)
+static void test_bad_version_and_logical_read_failure(void)
 {
     static const unsigned char old_banner[12] = "RFB 003.003\n";
     pstvnc_rfb_session_t session;
 
     script_reset();
     append_input(old_banner, sizeof(old_banner));
-    CHECK(!pstvnc_rfb_session_start(&session, 7, 704, 462));
+    CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_PROTOCOL_VERSION);
 
+    /* Empty scripted logical stream makes the bridge exact-read fail. */
     script_reset();
-    CHECK(!pstvnc_rfb_session_start(&session, 7, 704, 462));
+    CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
+    CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_IO);
 }
 
@@ -505,7 +503,7 @@ int main(void)
     test_server_rejection();
     test_geometry_mismatch();
     test_long_name_consumed();
-    test_bad_version_and_short_io();
+    test_bad_version_and_logical_read_failure();
 
     if (failures != 0) {
         fprintf(stderr, "rfb_session_test: %d failure(s)\n", failures);

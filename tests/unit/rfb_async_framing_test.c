@@ -1,12 +1,14 @@
 /*
  * File synopsis:
- * Exercises live RFB server-message framing negatives that must fail closed
- * after framebuffer authority has already been established.
+ * Exercises live RFB server-message framing negatives, idle safe-boundary
+ * service, and finite-session quiesce ordering against a logical bridge fixture.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Shared Raw
- * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session".
+ * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session";
+ * docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
  */
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,10 +26,16 @@ static int failures = 0;
         }                                                               \
     } while (0)
 
+#define QUIESCE_NEVER ((size_t)-1)
+
 static unsigned char input[128];
 static size_t input_size;
 static size_t input_pos;
 static int force_poll_failure;
+static int force_quiesce_request_failure;
+static int force_quiesce_complete_failure;
+static size_t quiesce_after_input_pos;
+static int quiesce_complete_calls;
 
 static void script_reset(void)
 {
@@ -35,6 +43,10 @@ static void script_reset(void)
     input_size = 0;
     input_pos = 0;
     force_poll_failure = 0;
+    force_quiesce_request_failure = 0;
+    force_quiesce_complete_failure = 0;
+    quiesce_after_input_pos = QUIESCE_NEVER;
+    quiesce_complete_calls = 0;
 }
 
 static void append_input(const void *bytes, size_t count)
@@ -47,10 +59,8 @@ static void append_input(const void *bytes, size_t count)
     input_size += count;
 }
 
-int pstvnc_rfb_io_read_exact(int socket_fd, void *buffer, size_t count)
+int pstvnc_rfb_bridge_read_exact(void *buffer, size_t count)
 {
-    (void)socket_fd;
-
     if (input_pos + count > input_size)
         return -1;
 
@@ -59,24 +69,43 @@ int pstvnc_rfb_io_read_exact(int socket_fd, void *buffer, size_t count)
     return 0;
 }
 
-int pstvnc_rfb_io_poll_receive(int socket_fd)
+int pstvnc_rfb_bridge_poll_receive(void)
 {
-    (void)socket_fd;
-
     if (force_poll_failure)
         return -1;
 
     return input_pos < input_size ? 1 : 0;
 }
 
-int pstvnc_rfb_io_write_exact(
-    int socket_fd,
+int pstvnc_rfb_bridge_write_exact(
     const void *buffer,
     size_t count)
 {
-    (void)socket_fd;
     (void)buffer;
     (void)count;
+    return 0;
+}
+
+int pstvnc_rfb_bridge_quiesce_requested(void)
+{
+    if (force_quiesce_request_failure)
+        return -1;
+
+    if (quiesce_after_input_pos != QUIESCE_NEVER &&
+        input_pos >= quiesce_after_input_pos)
+        return 1;
+
+    return 0;
+}
+
+int pstvnc_rfb_bridge_complete_quiesce_at_message_boundary(void)
+{
+    quiesce_complete_calls++;
+
+    if (force_quiesce_complete_failure)
+        return -1;
+
+    quiesce_after_input_pos = QUIESCE_NEVER;
     return 0;
 }
 
@@ -86,7 +115,6 @@ static void prepare_live(
     uint16_t pixels[12])
 {
     pstvnc_rfb_session_init(session);
-    session->socket_fd = 7;
     session->state = PSTVNC_RFB_SESSION_READY;
     session->server_init.width = 4;
     session->server_init.height = 3;
@@ -191,7 +219,6 @@ static void test_bell_then_empty_update_preserves_authority(void)
     CHECK(!framebuffer.dirty);
     CHECK(input_pos == input_size);
 }
-
 
 static void test_try_receive_idle_preserves_authority(void)
 {
@@ -324,6 +351,70 @@ static void test_try_receive_poll_failure_fails_closed(void)
     CHECK(!framebuffer.dirty);
 }
 
+static void test_quiesce_after_complete_message_stops_before_next_byte(void)
+{
+    static const unsigned char stream[] = {
+        2,
+        99
+    };
+    uint16_t pixels[12] = { 0 };
+    pstvnc_rfb_session_t session;
+    pstvnc_framebuffer_t framebuffer;
+
+    script_reset();
+    prepare_live(&session, &framebuffer, pixels);
+    append_input(stream, sizeof(stream));
+
+    /*
+     * REQUEST becomes visible only after Bell's one-byte complete message has
+     * been consumed. The following unsupported message byte must remain unread
+     * when quiesce completes at that proven boundary.
+     */
+    quiesce_after_input_pos = 1;
+
+    CHECK(
+        pstvnc_rfb_session_try_receive_update(
+            &session,
+            &framebuffer) ==
+        PSTVNC_RFB_SESSION_RECEIVE_IDLE);
+
+    CHECK(quiesce_complete_calls == 1);
+    CHECK(input_pos == 1);
+    CHECK(input[1] == 99);
+    CHECK(session.state == PSTVNC_RFB_SESSION_READY);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
+    CHECK(framebuffer.valid);
+}
+
+static void test_quiesce_completion_failure_fails_closed_at_boundary(void)
+{
+    static const unsigned char stream[] = {
+        2,
+        99
+    };
+    uint16_t pixels[12] = { 0 };
+    pstvnc_rfb_session_t session;
+    pstvnc_framebuffer_t framebuffer;
+
+    script_reset();
+    prepare_live(&session, &framebuffer, pixels);
+    append_input(stream, sizeof(stream));
+    quiesce_after_input_pos = 1;
+    force_quiesce_complete_failure = 1;
+
+    CHECK(
+        pstvnc_rfb_session_try_receive_update(
+            &session,
+            &framebuffer) ==
+        PSTVNC_RFB_SESSION_RECEIVE_FAILED);
+
+    CHECK(quiesce_complete_calls == 1);
+    CHECK(input_pos == 1);
+    CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_IO);
+    CHECK(!framebuffer.valid);
+}
+
 int main(void)
 {
     test_server_cut_text_truncation();
@@ -336,6 +427,8 @@ int main(void)
     test_try_receive_bell_then_idle_yields_at_boundary();
     test_try_receive_never_yields_mid_message();
     test_try_receive_poll_failure_fails_closed();
+    test_quiesce_after_complete_message_stops_before_next_byte();
+    test_quiesce_completion_failure_fails_closed_at_boundary();
 
     if (failures != 0) {
         fprintf(stderr, "rfb_async_framing_test: %d failure(s)\n", failures);

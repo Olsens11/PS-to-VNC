@@ -1,10 +1,13 @@
 /*
  * File synopsis:
- * Defines session state, errors, bounded scratch storage, and lifecycle while
- * leaving recovery policy with the coordinator.
+ * Defines synchronized RFB session state, errors, bounded scratch storage, and
+ * lifecycle over the logical RFB bridge while leaving Transport lifecycle and
+ * application recovery policy with their owning components.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Shared Raw
- * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session".
+ * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session";
+ * docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md, "RFB ownership under shared
+ * transport".
  */
 
 #ifndef PSTVNC_RFB_SESSION_H
@@ -32,7 +35,8 @@ typedef enum pstvnc_rfb_session_state {
  *
  * IDLE is a normal scheduling result: no byte of the next server message was
  * consumed, the session remains READY, and application/main may service other
- * work before trying again.
+ * work before trying again. A completed finite-session quiesce also returns at
+ * this same proven boundary without consuming the next RFB message.
  */
 typedef enum pstvnc_rfb_session_receive_result {
     PSTVNC_RFB_SESSION_RECEIVE_FAILED = -1,
@@ -59,7 +63,6 @@ typedef enum pstvnc_rfb_session_error {
 } pstvnc_rfb_session_error_t;
 
 typedef struct pstvnc_rfb_session {
-    int socket_fd;
     pstvnc_rfb_session_state_t state;
     pstvnc_rfb_session_error_t error;
     unsigned int server_major;
@@ -73,9 +76,13 @@ typedef struct pstvnc_rfb_session {
 void pstvnc_rfb_session_init(
     pstvnc_rfb_session_t *session);
 
+/*
+ * Start RFB protocol negotiation over the already-established logical RFB
+ * bridge. Physical descriptor ownership and Transport startup are deliberately
+ * outside this protocol-session contract.
+ */
 int pstvnc_rfb_session_start(
     pstvnc_rfb_session_t *session,
-    int socket_fd,
     uint16_t expected_width,
     uint16_t expected_height);
 
@@ -93,8 +100,8 @@ int pstvnc_rfb_session_request_update(
  * READY session.
  *
  * This boundary owns only session validity, exact wire serialization, and
- * transport failure. The caller owns X11 keysym choice, logical tap/modifier
- * sequencing, OSK state, and controller/action meaning.
+ * logical-stream failure. The caller owns X11 keysym choice, logical
+ * tap/modifier sequencing, OSK state, and controller/action meaning.
  */
 int pstvnc_rfb_session_send_key_event(
     pstvnc_rfb_session_t *session,
@@ -105,7 +112,7 @@ int pstvnc_rfb_session_send_key_event(
  * Serialize and send one already-mapped native RFB PointerEvent through the
  * main-thread-owned READY session.
  *
- * This is a transport/wire boundary only. The caller owns semantic-to-RFB
+ * This is a protocol/wire boundary only. The caller owns semantic-to-RFB
  * button mapping, wheel press/release policy, and the distinction between
  * locally interpreted, queued, and successfully published pointer state.
  *
@@ -130,9 +137,11 @@ int pstvnc_rfb_session_receive_update(
  * idle.
  *
  * The session may return IDLE only at a complete server-message boundary,
- * before consuming the first byte of the next server message. Once a message
- * begins, exact protocol reads complete that message before another benign
- * scheduling yield is permitted.
+ * before consuming the first byte of the next server message. At that boundary
+ * it also observes Transport's finite-session quiesce request and, when
+ * requested, performs the bridge's ordered boundary completion before any next
+ * message byte is consumed. Once a message begins, exact protocol reads finish
+ * that message before another benign scheduling/quiesce yield is permitted.
  *
  * This keeps RFB framing authoritative while allowing application/main to
  * publish controller input between idle receive attempts.

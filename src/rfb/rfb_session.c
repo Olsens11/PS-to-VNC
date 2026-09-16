@@ -1,17 +1,20 @@
 /*
  * File synopsis:
  * Owns the synchronized RFB handshake, requests, server-message framing, Raw
- * decoding, initial coverage proof, and fail-closed state.
+ * decoding, initial coverage proof, parser-safe finite-session quiesce, and
+ * fail-closed state over RFB's logical Transport bridge.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Shared Raw
- * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session".
+ * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session";
+ * docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md, "RFB ownership under shared
+ * transport".
  */
 
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
-#include "rfb_io.h"
+#include "bridge.h"
 #include "rfb_session.h"
 
 #define PSTVNC_RFB_INITIAL_COVERAGE_BYTES \
@@ -47,18 +50,17 @@ static uint16_t read_be16(const uint8_t bytes[2])
     return (uint16_t)(((uint16_t)bytes[0] << 8) | bytes[1]);
 }
 
-static int read_exact(int socket_fd, void *buffer, size_t count)
+static int read_exact(void *buffer, size_t count)
 {
-    return pstvnc_rfb_io_read_exact(socket_fd, buffer, count) == 0;
+    return pstvnc_rfb_bridge_read_exact(buffer, count) == 0;
 }
 
-static int write_exact(int socket_fd, const void *buffer, size_t count)
+static int write_exact(const void *buffer, size_t count)
 {
-    return pstvnc_rfb_io_write_exact(socket_fd, buffer, count) == 0;
+    return pstvnc_rfb_bridge_write_exact(buffer, count) == 0;
 }
 
 static int read_bounded_text(
-    int socket_fd,
     uint32_t length,
     char out[PSTVNC_RFB_SESSION_TEXT_MAX + 1u])
 {
@@ -74,7 +76,7 @@ static int read_bounded_text(
     if (take > PSTVNC_RFB_SESSION_TEXT_MAX)
         take = PSTVNC_RFB_SESSION_TEXT_MAX;
 
-    if (take > 0 && !read_exact(socket_fd, out, take))
+    if (take > 0 && !read_exact(out, take))
         return 0;
 
     out[take] = '\0';
@@ -86,7 +88,7 @@ static int read_bounded_text(
         if (chunk > sizeof(discard))
             chunk = sizeof(discard);
 
-        if (!read_exact(socket_fd, discard, chunk))
+        if (!read_exact(discard, chunk))
             return 0;
 
         remaining -= (uint32_t)chunk;
@@ -95,7 +97,7 @@ static int read_bounded_text(
     return 1;
 }
 
-static int discard_exact(int socket_fd, uint32_t count)
+static int discard_exact(uint32_t count)
 {
     uint8_t discard[64];
 
@@ -105,7 +107,7 @@ static int discard_exact(int socket_fd, uint32_t count)
         if (chunk > sizeof(discard))
             chunk = sizeof(discard);
 
-        if (!read_exact(socket_fd, discard, chunk))
+        if (!read_exact(discard, chunk))
             return 0;
 
         count -= (uint32_t)chunk;
@@ -143,7 +145,6 @@ static int framebuffer_matches_session(
 {
     return session != NULL &&
            framebuffer != NULL &&
-           session->socket_fd >= 0 &&
            framebuffer->width != 0 &&
            framebuffer->height != 0 &&
            framebuffer->width == session->server_init.width &&
@@ -204,7 +205,7 @@ static int read_raw_row(
     uint16_t column;
     size_t byte_count = (size_t)width * 2u;
 
-    if (!read_exact(session->socket_fd, bytes, byte_count))
+    if (!read_exact(bytes, byte_count))
         return 0;
 
     for (column = 0; column < width; column++) {
@@ -226,25 +227,47 @@ receive_framebuffer_update(
     /*
      * Bell, clipboard, and color-map messages may legally arrive before the
      * requested framebuffer update. They are consumed to exact boundaries so
-     * the single blocking stream remains synchronized; only a completed type-0
-     * update returns control to the application.
+     * the synchronized logical stream remains synchronized; only a completed
+     * type-0 update returns UPDATE to the application.
      */
     for (;;) {
         uint8_t message_type;
 
         /*
-         * Responsive live operation may yield only before consuming the first
-         * byte of a complete server message. pstvnc_rfb_io_poll_receive() may
-         * prefetch bytes into transport-owned buffering, but that does not
-         * advance protocol parsing.
+         * Responsive live operation may yield or complete finite-session
+         * quiescence only here: a proven complete server-message boundary,
+         * before any byte of the next message is consumed.
          *
-         * Once message_type is consumed, every exact read belonging to that
-         * server message remains blocking/atomic. We never return IDLE from the
-         * middle of a header, payload, rectangle, or Raw row.
+         * Bridge polling may observe already-buffered logical bytes, but it
+         * does not advance RFB parsing. Once message_type is consumed, every
+         * exact read belonging to that server message remains atomic from the
+         * parser's perspective. Bell/clipboard/color-map paths return here only
+         * after their complete payload has been consumed.
          */
         if (allow_idle) {
-            int receive_ready =
-                pstvnc_rfb_io_poll_receive(session->socket_fd);
+            int quiesce_requested =
+                pstvnc_rfb_bridge_quiesce_requested();
+            int receive_ready;
+
+            if (quiesce_requested < 0)
+                return (pstvnc_rfb_receive_update_result_t)fail_frame(
+                    session,
+                    framebuffer,
+                    PSTVNC_RFB_SESSION_ERROR_IO);
+
+            if (quiesce_requested > 0) {
+                if (pstvnc_rfb_bridge_complete_quiesce_at_message_boundary() !=
+                    0)
+                    return (pstvnc_rfb_receive_update_result_t)fail_frame(
+                        session,
+                        framebuffer,
+                        PSTVNC_RFB_SESSION_ERROR_IO);
+
+                session->error = PSTVNC_RFB_SESSION_ERROR_NONE;
+                return PSTVNC_RFB_RECEIVE_UPDATE_IDLE;
+            }
+
+            receive_ready = pstvnc_rfb_bridge_poll_receive();
 
             if (receive_ready < 0)
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
@@ -258,7 +281,7 @@ receive_framebuffer_update(
             }
         }
 
-        if (!read_exact(session->socket_fd, &message_type, 1))
+        if (!read_exact(&message_type, 1))
             return (pstvnc_rfb_receive_update_result_t)fail_frame(
                 session,
                 framebuffer,
@@ -271,17 +294,14 @@ receive_framebuffer_update(
             uint8_t cut_header[7];
             uint32_t text_length;
 
-            if (!read_exact(
-                    session->socket_fd,
-                    cut_header,
-                    sizeof(cut_header)))
+            if (!read_exact(cut_header, sizeof(cut_header)))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
                     PSTVNC_RFB_SESSION_ERROR_IO);
 
             text_length = read_be32(&cut_header[3]);
-            if (!discard_exact(session->socket_fd, text_length))
+            if (!discard_exact(text_length))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
@@ -295,10 +315,7 @@ receive_framebuffer_update(
             uint16_t color_count;
             uint32_t payload_length;
 
-            if (!read_exact(
-                    session->socket_fd,
-                    color_header,
-                    sizeof(color_header)))
+            if (!read_exact(color_header, sizeof(color_header)))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
@@ -307,7 +324,7 @@ receive_framebuffer_update(
             color_count = read_be16(&color_header[3]);
             payload_length = (uint32_t)color_count * 6u;
 
-            if (!discard_exact(session->socket_fd, payload_length))
+            if (!discard_exact(payload_length))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
@@ -340,10 +357,7 @@ receive_framebuffer_update(
                 memset(initial_frame_coverage, 0, coverage_bytes);
             }
 
-            if (!read_exact(
-                    session->socket_fd,
-                    update_header,
-                    sizeof(update_header)))
+            if (!read_exact(update_header, sizeof(update_header)))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
@@ -369,10 +383,7 @@ receive_framebuffer_update(
                 uint32_t encoding;
                 uint16_t row;
 
-                if (!read_exact(
-                        session->socket_fd,
-                        rectangle_header,
-                        sizeof(rectangle_header)))
+                if (!read_exact(rectangle_header, sizeof(rectangle_header)))
                     return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
@@ -482,13 +493,11 @@ void pstvnc_rfb_session_init(pstvnc_rfb_session_t *session)
         return;
 
     memset(session, 0, sizeof(*session));
-    session->socket_fd = -1;
     session->state = PSTVNC_RFB_SESSION_NEW;
 }
 
 int pstvnc_rfb_session_start(
     pstvnc_rfb_session_t *session,
-    int socket_fd,
     uint16_t expected_width,
     uint16_t expected_height)
 {
@@ -503,14 +512,12 @@ int pstvnc_rfb_session_start(
     uint8_t reason_length_bytes[4];
     uint32_t reason_length;
 
-    if (session == NULL || socket_fd < 0 ||
-        expected_width == 0 || expected_height == 0)
+    if (session == NULL || expected_width == 0 || expected_height == 0)
         return 0;
 
     pstvnc_rfb_session_init(session);
-    session->socket_fd = socket_fd;
 
-    if (!read_exact(socket_fd, banner, sizeof(banner)))
+    if (!read_exact(banner, sizeof(banner)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (!pstvnc_rfb_parse_protocol_version(
@@ -519,25 +526,24 @@ int pstvnc_rfb_session_start(
         return fail(session, PSTVNC_RFB_SESSION_ERROR_PROTOCOL_VERSION);
 
     pstvnc_rfb_build_client_version(banner);
-    if (!write_exact(socket_fd, banner, sizeof(banner)))
+    if (!write_exact(banner, sizeof(banner)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
-    if (!read_exact(socket_fd, &security_count, 1))
+    if (!read_exact(&security_count, 1))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (security_count == 0) {
-        if (!read_exact(socket_fd, reason_length_bytes, 4))
+        if (!read_exact(reason_length_bytes, 4))
             return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
         reason_length = read_be32(reason_length_bytes);
-        if (!read_bounded_text(
-                socket_fd, reason_length, session->server_rejection))
+        if (!read_bounded_text(reason_length, session->server_rejection))
             return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
         return fail(session, PSTVNC_RFB_SESSION_ERROR_SERVER_REJECTED);
     }
 
-    if (!read_exact(socket_fd, security_types, security_count))
+    if (!read_exact(security_types, security_count))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (!pstvnc_rfb_choose_security_none(
@@ -546,20 +552,20 @@ int pstvnc_rfb_session_start(
             session,
             PSTVNC_RFB_SESSION_ERROR_SECURITY_NONE_UNAVAILABLE);
 
-    if (!write_exact(socket_fd, &security_choice, 1))
+    if (!write_exact(&security_choice, 1))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
-    if (!read_exact(socket_fd, security_result, sizeof(security_result)))
+    if (!read_exact(security_result, sizeof(security_result)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (!pstvnc_rfb_security_result_ok(security_result))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_SECURITY_RESULT);
 
     shared_flag = pstvnc_rfb_client_init_shared();
-    if (!write_exact(socket_fd, &shared_flag, 1))
+    if (!write_exact(&shared_flag, 1))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
-    if (!read_exact(socket_fd, server_init_bytes, sizeof(server_init_bytes)))
+    if (!read_exact(server_init_bytes, sizeof(server_init_bytes)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (!pstvnc_rfb_parse_server_init(
@@ -571,19 +577,16 @@ int pstvnc_rfb_session_start(
         return fail(session, PSTVNC_RFB_SESSION_ERROR_GEOMETRY);
 
     if (!read_bounded_text(
-            socket_fd,
             session->server_init.name_length,
             session->desktop_name))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     pstvnc_rfb_build_set_pixel_format_gs555(message);
-    if (!write_exact(
-            socket_fd, message, PSTVNC_RFB_SET_PIXEL_FORMAT_SIZE))
+    if (!write_exact(message, PSTVNC_RFB_SET_PIXEL_FORMAT_SIZE))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     pstvnc_rfb_build_set_encodings_raw(message);
-    if (!write_exact(
-            socket_fd, message, PSTVNC_RFB_SET_ENCODINGS_RAW_SIZE))
+    if (!write_exact(message, PSTVNC_RFB_SET_ENCODINGS_RAW_SIZE))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     /*
@@ -593,8 +596,7 @@ int pstvnc_rfb_session_start(
      */
     pstvnc_rfb_build_framebuffer_update_request(
         message, 0, 0, 0, expected_width, expected_height);
-    if (!write_exact(
-            socket_fd, message, PSTVNC_RFB_FRAMEBUFFER_REQUEST_SIZE))
+    if (!write_exact(message, PSTVNC_RFB_FRAMEBUFFER_REQUEST_SIZE))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     session->state = PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME;
@@ -609,7 +611,6 @@ int pstvnc_rfb_session_request_update(
     uint8_t message[PSTVNC_RFB_FRAMEBUFFER_REQUEST_SIZE];
 
     if (session == NULL ||
-        session->socket_fd < 0 ||
         session->state != PSTVNC_RFB_SESSION_READY ||
         session->server_init.width == 0 ||
         session->server_init.height == 0)
@@ -623,10 +624,7 @@ int pstvnc_rfb_session_request_update(
         session->server_init.width,
         session->server_init.height);
 
-    if (!write_exact(
-            session->socket_fd,
-            message,
-            sizeof(message)))
+    if (!write_exact(message, sizeof(message)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     session->error = PSTVNC_RFB_SESSION_ERROR_NONE;
@@ -648,19 +646,12 @@ int pstvnc_rfb_session_send_key_event(
      * complete native 32-bit X11 keysym space and owns only its RFB encoding.
      */
     if (session == NULL ||
-        session->socket_fd < 0 ||
         session->state != PSTVNC_RFB_SESSION_READY)
         return 0;
 
-    pstvnc_rfb_build_key_event(
-        message,
-        down,
-        keysym);
+    pstvnc_rfb_build_key_event(message, down, keysym);
 
-    if (!write_exact(
-            session->socket_fd,
-            message,
-            sizeof(message)))
+    if (!write_exact(message, sizeof(message)))
         return fail(
             session,
             PSTVNC_RFB_SESSION_ERROR_IO);
@@ -687,7 +678,6 @@ int pstvnc_rfb_session_send_pointer_event(
      * domain was expected to validate it first.
      */
     if (session == NULL ||
-        session->socket_fd < 0 ||
         session->state != PSTVNC_RFB_SESSION_READY ||
         session->server_init.width == 0 ||
         session->server_init.height == 0 ||
@@ -695,16 +685,9 @@ int pstvnc_rfb_session_send_pointer_event(
         y >= session->server_init.height)
         return 0;
 
-    pstvnc_rfb_build_pointer_event(
-        message,
-        button_mask,
-        x,
-        y);
+    pstvnc_rfb_build_pointer_event(message, button_mask, x, y);
 
-    if (!write_exact(
-            session->socket_fd,
-            message,
-            sizeof(message)))
+    if (!write_exact(message, sizeof(message)))
         return fail(
             session,
             PSTVNC_RFB_SESSION_ERROR_IO);

@@ -38,13 +38,10 @@ static void append_input(
     input_size += count;
 }
 
-int pstvnc_rfb_io_read_exact(
-    int socket_fd,
+int pstvnc_rfb_bridge_read_exact(
     void *buffer,
     size_t count)
 {
-    (void)socket_fd;
-
     if (input_pos + count > input_size)
         return -1;
 
@@ -53,21 +50,27 @@ int pstvnc_rfb_io_read_exact(
     return 0;
 }
 
-int pstvnc_rfb_io_poll_receive(int socket_fd)
+int pstvnc_rfb_bridge_poll_receive(void)
 {
-    (void)socket_fd;
-
     return input_pos < input_size ? 1 : 0;
 }
 
-int pstvnc_rfb_io_write_exact(
-    int socket_fd,
+int pstvnc_rfb_bridge_write_exact(
     const void *buffer,
     size_t count)
 {
-    (void)socket_fd;
     (void)buffer;
     (void)count;
+    return 0;
+}
+
+int pstvnc_rfb_bridge_quiesce_requested(void)
+{
+    return 0;
+}
+
+int pstvnc_rfb_bridge_complete_quiesce_at_message_boundary(void)
+{
     return 0;
 }
 
@@ -132,7 +135,6 @@ static void prepare(
     uint16_t *pixels)
 {
     pstvnc_rfb_session_init(session);
-    session->socket_fd = 7;
     session->state = PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME;
     session->server_init.width = 4;
     session->server_init.height = 3;
