@@ -1,17 +1,17 @@
 # Ledge Reconstruction Contract
 
 DOCUMENT=LEDGE_RECONSTRUCTION_CONTRACT
-DOCUMENT_REVISION=0003
-RECORDED_AT=2026-09-15T21:14:19-04:00
+DOCUMENT_REVISION=0004
+RECORDED_AT=2026-09-15T21:23:22-04:00
 SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
-BASED_ON_DOCUMENT_REVISION=0002
-SUPERSEDES_DOCUMENT_REVISION=0002
+BASED_ON_DOCUMENT_REVISION=0003
+SUPERSEDES_DOCUMENT_REVISION=0003
 TEMPORAL_CLASS=POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_POLICY_AT_RECORDED_TIME
 
 This revision records the governing reconstruction policy at the recorded time. Later valid policy revisions supersede conflicting earlier policy; earlier revisions remain authoritative evidence of the rules under which earlier work was performed.
 
-Revision 0003 clarifies the reconstruction worker's job as a sustained engineering shift rather than a one-microtask invocation. It separates architecture granularity from shift granularity, defines the continue-work loop, and requires a real end-of-shift condition before a reconstruction worker may hand off while useful authorized work remains.
+Revision 0004 adds a dedicated Reconstruction Integration/Evidence lane so behavior reconstruction and non-behavioral integration work no longer compete for the same worker attention. Reconstruction A/B remain behavior/source engineering seats. The Integration/Evidence seat owns repository integration, evidence plumbing, and preflight work that does not define product behavior. Validation remains the independent judge of the resulting evidence.
 
 ## Objective
 
@@ -85,6 +85,49 @@ Reconstruction workers must correct defects they discover in the current reconst
 
 That is distinct from a known inherited H1 defect. An inherited defect remains visible and must not be silently behavior-changed during structural migration unless separate authority explicitly permits the change.
 
+## Reconstruction Integration / Evidence lane
+
+The Integration/Evidence seat exists to keep behavior engineers engineering while repository integration and proof plumbing advance in parallel. It is part of the reconstruction pipeline but is not a third product-behavior owner and is not a substitute for Validation.
+
+### Integration/Evidence ownership
+
+The lane owns non-behavioral reconstruction integration work created by A/B, including when applicable:
+
+- registering/wiring host tests into canonical test entry points such as `tests/Makefile`;
+- build inclusion/manifests and other linkage plumbing that does not define product behavior;
+- directory `SYMBOLS.md` completeness and generated source-dictionary portal synchronization;
+- `docs/development/source-topology.md` and reconstruction-related topology/checker allowlists;
+- canonical repository checker/build invocation and preservation of machine-visible evidence that is actually executable from the worker environment;
+- reproducibility/evidence scaffolding, identity manifests, and qualification-preparation metadata that do not alter DUT behavior;
+- integration-only fixtures or checker support whose contents cannot change product runtime behavior;
+- preflight analysis for the next reconstruction tranche when the immediate integration queue is empty: dependency/call-chain/config-owner mapping, forensic comparison, and explicit readiness notes, without implementing the product behavior itself.
+
+### Integration/Evidence exclusions
+
+The lane does **not** own product-behavior source. It must not redesign protocol behavior, lifecycle policy, ownership semantics, flow-control behavior, presentation policy, or other DUT semantics. If integration work reveals a likely product-source defect, the lane records the exact evidence and hands it to Reconstruction A/B; it does not silently repair product behavior.
+
+The lane does not declare validation PASS or hardware qualification. It may run checks and preserve their outputs; Validation owns interpretation/disposition of validation findings and readiness gates.
+
+### Cooperation with Reconstruction A/B
+
+Reconstruction A/B own product behavior and may create behavior-specific test source needed to explain or exercise their implementation. They should normally hand off the non-behavioral wiring/metadata/inventory/build-evidence chores above to Integration/Evidence rather than ending a behavior shift after one such microtask.
+
+Integration/Evidence may work concurrently with A/B only on clearly disjoint files/responsibilities. Before every repository write it re-reads HEAD and the newest reconstruction/integration authority. If an A/B shift is actively touching the same file or responsibility, Integration/Evidence defers or pivots rather than competing.
+
+### Integration/Evidence shift model
+
+The Integration/Evidence seat is also a sustained engineering shift. It consumes the newest A/B handoffs and advances the highest-priority safe integration backlog continuously rather than performing one wiring or dictionary edit and stopping.
+
+Its priority order is:
+
+1. make the newest reconstructed behavior actually reachable by canonical host/build/check infrastructure without changing behavior;
+2. close stale inventories/topology/generated metadata around that behavior;
+3. run/preserve executable repository-native evidence;
+4. prepare reproducibility/identity/qualification evidence scaffolding;
+5. if the immediate integration queue is empty, preflight the next dependency-permitted reconstruction tranche and leave a concrete evidence-backed runway for A/B.
+
+Before ending, it performs the same continue-work discipline: if another safe integration/evidence/preflight increment is available, it continues. A short shift requires a real blocker, collision, exhausted authorized backlog, tool limitation, or insufficient safe window.
+
 ## Worker continuity contract
 
 Each worker begins from the newest valid current-state authority, verifies its ancestry and repository authority, reads this contract, and then inspects the immutable work-log directory defined by `docs/ledge/work-log/README.md`.
@@ -96,7 +139,7 @@ At shift start every worker must:
 - read the newest logs relevant to its role/work item plus enough recent cross-lane entries to understand current branch movement;
 - reuse the exact existing `WORK_ITEM_KEY` when continuing an established task;
 - inspect current branch/HEAD and current lane/global state before mutation;
-- identify the highest-priority safe reconstruction work, not merely the smallest immediately visible edit;
+- identify the highest-priority safe work owned by its lane, not merely the smallest immediately visible edit;
 - stop rather than guess across an unresolved authority conflict.
 
 Workers do **not** append new shift history to the pre-cutover shared lane/global append-only logs. Those files are frozen historical evidence for the periods they cover.
@@ -105,12 +148,12 @@ Throughout the shift, branch/lane authority is re-read before repository-changin
 
 Before ending, every worker must:
 
-- perform the final continue-work check from the reconstruction shift execution model above;
+- perform the appropriate final continue-work check for its lane;
 - create exactly one new immutable shift record in `docs/ledge/work-log/` using the canonical filename/content schema from `docs/ledge/work-log/README.md`;
 - record exact work/evidence/validation, files/commits, state/contract revisions, pending local/hardware gates, blockers, self-pause state when applicable, and decisions in that shift record;
 - update only the current-state/ledger files owned by its lane when a point-in-time state advance is actually required;
 - identify incomplete work and one exact pickup point for the next worker, or explicitly record `NONE` when the work family is complete;
-- if the shift ended in under ten minutes, record the real stopping condition and enough evidence to show why no other safe authorized reconstruction work could be progressed in the remaining window;
+- if a sustained-work lane ends in under ten minutes, record the real stopping condition and enough evidence to show why no other safe authorized work could be progressed in the remaining window;
 - distinguish proven, inferred, provisional, and unproven claims;
 - bind repository-changing work to exact commit identity where possible;
 - re-read branch authority immediately before creating the final immutable log record.
@@ -126,7 +169,7 @@ The canonical project check validates work-log naming and required metadata thro
 Current-state snapshots and immutable work logs have different jobs:
 
 - current state is the baton that says what is authoritative now;
-- `docs/ledge/work-log/*.md` records how workers advanced, blocked, validated, or reconciled that baton;
+- `docs/ledge/work-log/*.md` records how workers advanced, blocked, validated, integrated, or reconciled that baton;
 - historical pre-cutover append-only logs remain true-at-time evidence but are no longer the write target for new shifts.
 
 A worker should not replay the entire project diary when current state plus the newest relevant immutable logs are sufficient. Conversely, a current-state summary must not erase historical evidence.
