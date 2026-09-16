@@ -30,16 +30,30 @@ echo
 echo '===== DOCUMENT INDEX ====='
 
 # docs/README.md is the curated documentation router. docs/INDEX.md has a
-# different job: it is the exhaustive inventory that makes every Markdown
-# document mechanically discoverable, including historical/reference material.
+# different job: it is the exhaustive inventory that makes maintained Markdown
+# authorities and reference documents mechanically discoverable.
 #
-# Report the complete missing set in one pass so the operator can repair the
-# index coherently instead of discovering missing entries one at a time.
+# Immutable ledge shift records are intentionally different. Their authoritative
+# discovery mechanism is the docs/ledge/work-log/ directory plus its README
+# contract; adding every append-only shift record to the shared docs/INDEX.md
+# would recreate the write-contention point that the immutable-log design was
+# introduced to remove. Index the work-log contract itself, but validate each
+# individual record through scripts/work-log-check.py instead.
+#
+# Report the complete missing maintained-document set in one pass so the
+# operator can repair the index coherently instead of discovering entries one at
+# a time.
 UNINDEXED_DOCUMENTS=()
 
 while IFS= read -r FILE
 do
     [ "$FILE" = 'docs/INDEX.md' ] && continue
+
+    case "$FILE" in
+        docs/ledge/work-log/*.md)
+            [ "$FILE" = 'docs/ledge/work-log/README.md' ] || continue
+            ;;
+    esac
 
     if ! grep -Fq "$FILE" docs/INDEX.md; then
         UNINDEXED_DOCUMENTS+=("$FILE")
@@ -61,9 +75,9 @@ if [ "${#UNINDEXED_DOCUMENTS[@]}" -ne 0 ]; then
     echo "ERROR=DOCUMENT_INDEX_INCOMPLETE"
     echo "MISSING_DOCUMENT_COUNT=${#UNINDEXED_DOCUMENTS[@]}"
     echo "INDEX=docs/INDEX.md"
-    echo "INDEX_ROLE=EXHAUSTIVE_DOCUMENT_INVENTORY"
+    echo "INDEX_ROLE=EXHAUSTIVE_MAINTAINED_DOCUMENT_INVENTORY"
     echo "REQUIRED_ACTION=Add each UNINDEXED_DOCUMENT to docs/INDEX.md in the appropriate section."
-    echo "NOTE=docs/README.md is the curated current-authority router; docs/INDEX.md is the exhaustive inventory."
+    echo "NOTE=Immutable docs/ledge/work-log shift records are validated by work-log-check.py and intentionally excluded from shared-index churn."
     exit 30
 fi
 
