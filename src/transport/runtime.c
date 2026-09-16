@@ -181,8 +181,12 @@ static int pstvnc_transport_runtime_publish_audio_activity_locked(
     int signal_waiter = 0;
 
     runtime->audio_activity_sequence++;
-    if (runtime->audio_activity_wait_armed) {
-        runtime->audio_activity_wait_armed = 0;
+    if (runtime->audio_activity_wait_armed == 1) {
+        /*
+         * Preserve the signaled state until the waiter has returned through the
+         * queue lock. This state is the release-time lifetime fence.
+         */
+        runtime->audio_activity_wait_armed = 2;
         signal_waiter = 1;
     }
 
@@ -989,7 +993,7 @@ int pstvnc_transport_runtime_audio_wait_activity(
         return 1;
     }
 
-    if (runtime->audio_activity_wait_armed) {
+    if (runtime->audio_activity_wait_armed != 0) {
         (void)SignalSema(runtime->audio_queue_semaphore_id);
         runtime->failed = 1;
         return 0;
@@ -1003,6 +1007,10 @@ int pstvnc_transport_runtime_audio_wait_activity(
 
     if (WaitSema(runtime->audio_activity_semaphore_id) < 0) {
         runtime->failed = 1;
+        if (WaitSema(runtime->audio_queue_semaphore_id) >= 0) {
+            runtime->audio_activity_wait_armed = 0;
+            (void)SignalSema(runtime->audio_queue_semaphore_id);
+        }
         return 0;
     }
 
@@ -1011,13 +1019,14 @@ int pstvnc_transport_runtime_audio_wait_activity(
         return 0;
     }
 
-    if (runtime->audio_activity_wait_armed) {
+    if (runtime->audio_activity_wait_armed != 2) {
         runtime->audio_activity_wait_armed = 0;
         (void)SignalSema(runtime->audio_queue_semaphore_id);
         runtime->failed = 1;
         return 0;
     }
 
+    runtime->audio_activity_wait_armed = 0;
     *activity_sequence = runtime->audio_activity_sequence;
     if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
         runtime->failed = 1;
@@ -1055,6 +1064,28 @@ int pstvnc_transport_runtime_release(
 
     if (runtime->receiver_thread_started && !runtime->receiver_done)
         return 0;
+
+    /*
+     * Once receiver_done is visible, a new AUDIO waiter returns terminally
+     * before arming. Therefore a nonzero protected wait state here can only be
+     * an already-existing waiter that still owns the rendezvous. Preserve all
+     * waiter-visible resources and let the caller retry release after it returns.
+     */
+    if (runtime->audio_enabled) {
+        int waiter_live;
+
+        if (WaitSema(runtime->audio_queue_semaphore_id) < 0)
+            return 0;
+
+        waiter_live = runtime->audio_activity_wait_armed != 0;
+        if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
+            runtime->failed = 1;
+            return 0;
+        }
+
+        if (waiter_live)
+            return 0;
+    }
 
     if (runtime->receiver_thread_started) {
         ee_thread_status_t status;
