@@ -18,6 +18,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/app.o \
 	$(BUILD_DIR)/config_profile.o \
 	$(BUILD_DIR)/config_text.o \
+	$(BUILD_DIR)/media_clock.o \
 	$(BUILD_DIR)/diagnostics.o \
 	$(BUILD_DIR)/diagnostics_identity.o \
 	$(BUILD_DIR)/rfb.o \
@@ -52,7 +53,7 @@ EE_OBJS = \
 
 EE_OBJS += $(EXTRA_EE_OBJS)
 
-EE_INCS = -Isrc -Isrc/config -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
+EE_INCS = -Isrc -Isrc/config -Isrc/media -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
 EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman -lpad $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
 
 .PHONY: all clean
@@ -79,6 +80,9 @@ $(BUILD_DIR)/config_profile.o: src/config/profile.c src/config/profile.h src/tra
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/config_text.o: src/config/text.c src/config/text.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/media_clock.o: src/media/clock.c src/media/clock.h src/config/profile.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/diagnostics.o: src/diagnostics/diagnostics.c src/diagnostics/diagnostics.h | $(BUILD_DIR)
