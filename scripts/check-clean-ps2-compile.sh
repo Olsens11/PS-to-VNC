@@ -51,6 +51,9 @@ COMMON_FLAGS=(
     -Wextra
     -Werror
     -I"$ROOT/src"
+    -I"$ROOT/src/audio"
+    -I"$ROOT/src/config"
+    -I"$ROOT/src/media"
     -I"$ROOT/src/input"
     -I"$ROOT/src/ui"
     -I"$ROOT/src/rfb"
@@ -67,6 +70,11 @@ COMMON_FLAGS=(
 SOURCES=(
     src/main.c
     src/app.c
+    src/audio/playback.c
+    src/audio/audsrv_service.c
+    src/config/profile.c
+    src/config/text.c
+    src/media/clock.c
     src/diagnostics/diagnostics.c
     src/diagnostics/identity.c
     src/rfb/rfb.c
@@ -87,6 +95,7 @@ SOURCES=(
     src/transport/protocol.c
     src/transport/physical_stream.c
     src/transport/rfb_channel.c
+    src/transport/audio_channel.c
     src/transport/runtime.c
     src/transport/quiesce.c
     src/transport/bridge.c
