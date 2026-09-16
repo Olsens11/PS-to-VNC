@@ -1,17 +1,19 @@
 /*
  * File synopsis:
  * Implements Transport's session-local sole receiver and synchronized logical
- * RFB/AUDIO runtime. One EE receiver thread is the only caller of the physical
- * receive primitive; complete channel-1 DATA feeds RFB and optional channel-2
- * DATA feeds an independent bounded AUDIO queue with its own credit/wakeup state.
+ * RFB/AUDIO/MPEG2 runtime. One EE receiver thread is the only caller of the
+ * physical receive primitive; complete DATA frames are dispatched into three
+ * independent bounded logical channels with independent credit/activity state.
  *
- * Parser-consumed RFB bytes, finite AUDIO producer completion, outbound logical
- * RFB fragmentation, and receiver completion all remain Transport-owned. RFB
- * parsing, PCM/AUDSRV playback, common-clock policy, and application recovery
- * remain outside this file.
+ * RFB parser consumption/quiesce, AUDIO's audited finite marker, MPEG's explicit
+ * producer-completion fact, outbound logical RFB fragmentation, and receiver
+ * completion remain Transport-owned. RFB parsing, PCM playback, MPEG decoding,
+ * common-clock/presentation policy, exact-generation orchestration, and product
+ * recovery remain outside this file.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
- * LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md.
+ * LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md; docs/ledge/
+ * LEDGE_AUDIT_A003_MPEG_GENERATION.md.
  */
 
 #include "runtime.h"
@@ -85,30 +87,57 @@ static int pstvnc_transport_runtime_config_valid(
     return 1;
 }
 
+static int pstvnc_transport_runtime_channel_config_valid(
+    const pstvnc_transport_runtime_config_t *config,
+    uint32_t queue_capacity,
+    uint32_t initial_credit_bytes,
+    uint32_t credit_batch_bytes,
+    int credit_flush_on_empty,
+    int credit_return_enabled)
+{
+    if (config == NULL || queue_capacity == 0u ||
+        config->max_data_payload > queue_capacity ||
+        initial_credit_bytes > queue_capacity ||
+        (credit_flush_on_empty != 0 && credit_flush_on_empty != 1) ||
+        (credit_return_enabled != 0 && credit_return_enabled != 1))
+        return 0;
+
+    if (credit_return_enabled &&
+        (credit_batch_bytes == 0u || credit_batch_bytes > queue_capacity))
+        return 0;
+
+    if (!credit_return_enabled && credit_batch_bytes != 0u)
+        return 0;
+
+    return 1;
+}
+
 static int pstvnc_transport_runtime_audio_config_valid(
     const pstvnc_transport_runtime_config_t *config,
     const pstvnc_transport_audio_channel_config_t *audio_config)
 {
-    if (config == NULL || audio_config == NULL ||
-        audio_config->queue_capacity == 0u ||
-        config->max_data_payload > audio_config->queue_capacity ||
-        audio_config->initial_credit_bytes > audio_config->queue_capacity ||
-        (audio_config->credit_flush_on_empty != 0 &&
-         audio_config->credit_flush_on_empty != 1) ||
-        (audio_config->credit_return_enabled != 0 &&
-         audio_config->credit_return_enabled != 1))
-        return 0;
+    return audio_config != NULL &&
+        pstvnc_transport_runtime_channel_config_valid(
+            config,
+            audio_config->queue_capacity,
+            audio_config->initial_credit_bytes,
+            audio_config->credit_batch_bytes,
+            audio_config->credit_flush_on_empty,
+            audio_config->credit_return_enabled);
+}
 
-    if (audio_config->credit_return_enabled &&
-        (audio_config->credit_batch_bytes == 0u ||
-         audio_config->credit_batch_bytes > audio_config->queue_capacity))
-        return 0;
-
-    if (!audio_config->credit_return_enabled &&
-        audio_config->credit_batch_bytes != 0u)
-        return 0;
-
-    return 1;
+static int pstvnc_transport_runtime_mpeg_config_valid(
+    const pstvnc_transport_runtime_config_t *config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    return mpeg_config != NULL &&
+        pstvnc_transport_runtime_channel_config_valid(
+            config,
+            mpeg_config->queue_capacity,
+            mpeg_config->initial_credit_bytes,
+            mpeg_config->credit_batch_bytes,
+            mpeg_config->credit_flush_on_empty,
+            mpeg_config->credit_return_enabled);
 }
 
 static void pstvnc_transport_runtime_reset_identifiers(
@@ -120,6 +149,8 @@ static void pstvnc_transport_runtime_reset_identifiers(
     runtime->rfb_activity_semaphore_id = -1;
     runtime->audio_queue_semaphore_id = -1;
     runtime->audio_activity_semaphore_id = -1;
+    runtime->mpeg_queue_semaphore_id = -1;
+    runtime->mpeg_activity_semaphore_id = -1;
     runtime->receiver_done_semaphore_id = -1;
     runtime->receiver_thread_id = -1;
 }
@@ -174,33 +205,31 @@ static int pstvnc_transport_runtime_signal_rfb_activity(
     return 1;
 }
 
-/* Caller holds audio_queue_semaphore_id. */
-static int pstvnc_transport_runtime_publish_audio_activity_locked(
-    pstvnc_transport_runtime_t *runtime)
+/* Caller holds the applicable media queue semaphore. */
+static int pstvnc_transport_runtime_publish_media_activity_locked(
+    uint32_t *activity_sequence,
+    int *activity_wait_armed)
 {
     int signal_waiter = 0;
 
-    runtime->audio_activity_sequence++;
-    if (runtime->audio_activity_wait_armed == 1) {
-        /*
-         * Preserve the signaled state until the waiter has returned through the
-         * queue lock. This state is the release-time lifetime fence.
-         */
-        runtime->audio_activity_wait_armed = 2;
+    (*activity_sequence)++;
+    if (*activity_wait_armed == 1) {
+        *activity_wait_armed = 2;
         signal_waiter = 1;
     }
 
     return signal_waiter;
 }
 
-static int pstvnc_transport_runtime_signal_audio_activity(
+static int pstvnc_transport_runtime_signal_media_activity(
     pstvnc_transport_runtime_t *runtime,
+    int activity_semaphore_id,
     int signal_waiter)
 {
     if (!signal_waiter)
         return 1;
 
-    if (SignalSema(runtime->audio_activity_semaphore_id) < 0) {
+    if (SignalSema(activity_semaphore_id) < 0) {
         runtime->failed = 1;
         return 0;
     }
@@ -208,26 +237,61 @@ static int pstvnc_transport_runtime_signal_audio_activity(
     return 1;
 }
 
-static int pstvnc_transport_runtime_publish_audio_terminal(
-    pstvnc_transport_runtime_t *runtime)
+static int pstvnc_transport_runtime_publish_media_terminal(
+    pstvnc_transport_runtime_t *runtime,
+    int enabled,
+    int queue_semaphore_id,
+    int activity_semaphore_id,
+    uint32_t *activity_sequence,
+    int *activity_wait_armed)
 {
     int signal_waiter;
 
-    if (!runtime->audio_enabled)
+    if (!enabled)
         return 1;
 
-    if (WaitSema(runtime->audio_queue_semaphore_id) < 0) {
+    if (WaitSema(queue_semaphore_id) < 0) {
         runtime->failed = 1;
         return 0;
     }
 
-    signal_waiter = pstvnc_transport_runtime_publish_audio_activity_locked(runtime);
-    if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
+    signal_waiter = pstvnc_transport_runtime_publish_media_activity_locked(
+        activity_sequence,
+        activity_wait_armed);
+
+    if (SignalSema(queue_semaphore_id) < 0) {
         runtime->failed = 1;
         return 0;
     }
 
-    return pstvnc_transport_runtime_signal_audio_activity(runtime, signal_waiter);
+    return pstvnc_transport_runtime_signal_media_activity(
+        runtime,
+        activity_semaphore_id,
+        signal_waiter);
+}
+
+static int pstvnc_transport_runtime_publish_audio_terminal(
+    pstvnc_transport_runtime_t *runtime)
+{
+    return pstvnc_transport_runtime_publish_media_terminal(
+        runtime,
+        runtime->audio_enabled,
+        runtime->audio_queue_semaphore_id,
+        runtime->audio_activity_semaphore_id,
+        &runtime->audio_activity_sequence,
+        &runtime->audio_activity_wait_armed);
+}
+
+static int pstvnc_transport_runtime_publish_mpeg_terminal(
+    pstvnc_transport_runtime_t *runtime)
+{
+    return pstvnc_transport_runtime_publish_media_terminal(
+        runtime,
+        runtime->mpeg_enabled,
+        runtime->mpeg_queue_semaphore_id,
+        runtime->mpeg_activity_semaphore_id,
+        &runtime->mpeg_activity_sequence,
+        &runtime->mpeg_activity_wait_armed);
 }
 
 static int pstvnc_transport_runtime_accept_quiesce_marker_locked(
@@ -314,7 +378,9 @@ static int pstvnc_transport_runtime_accept_audio_frame(
     }
 
     signal_waiter = accepted
-        ? pstvnc_transport_runtime_publish_audio_activity_locked(runtime)
+        ? pstvnc_transport_runtime_publish_media_activity_locked(
+            &runtime->audio_activity_sequence,
+            &runtime->audio_activity_wait_armed)
         : 0;
 
     if (SignalSema(runtime->audio_queue_semaphore_id) < 0)
@@ -323,7 +389,49 @@ static int pstvnc_transport_runtime_accept_audio_frame(
     if (!accepted)
         return 0;
 
-    return pstvnc_transport_runtime_signal_audio_activity(runtime, signal_waiter);
+    return pstvnc_transport_runtime_signal_media_activity(
+        runtime,
+        runtime->audio_activity_semaphore_id,
+        signal_waiter);
+}
+
+static int pstvnc_transport_runtime_accept_mpeg_frame(
+    pstvnc_transport_runtime_t *runtime,
+    const pstvnc_transport_header_t *header)
+{
+    int accepted;
+    int signal_waiter;
+
+    /* Current clean framing has no channel-4 zero-length EOF representation. */
+    if (!runtime->mpeg_enabled || header->flags != 0u ||
+        header->payload_length == 0u ||
+        header->payload_length > runtime->max_data_payload)
+        return 0;
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0)
+        return 0;
+
+    accepted = pstvnc_transport_mpeg_channel_commit_data(
+        &runtime->mpeg_channel,
+        runtime->receiver_payload,
+        header->payload_length) == 0;
+
+    signal_waiter = accepted
+        ? pstvnc_transport_runtime_publish_media_activity_locked(
+            &runtime->mpeg_activity_sequence,
+            &runtime->mpeg_activity_wait_armed)
+        : 0;
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0)
+        return 0;
+
+    if (!accepted)
+        return 0;
+
+    return pstvnc_transport_runtime_signal_media_activity(
+        runtime,
+        runtime->mpeg_activity_semaphore_id,
+        signal_waiter);
 }
 
 static void pstvnc_transport_runtime_receiver_thread(void *argument)
@@ -353,6 +461,8 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
                 accepted = pstvnc_transport_runtime_accept_rfb_frame(runtime, &header);
             else if (header.channel == PSTVNC_TRANSPORT_CHANNEL_AUDIO)
                 accepted = pstvnc_transport_runtime_accept_audio_frame(runtime, &header);
+            else if (header.channel == PSTVNC_TRANSPORT_CHANNEL_MPEG2)
+                accepted = pstvnc_transport_runtime_accept_mpeg_frame(runtime, &header);
         }
 
         if (!accepted) {
@@ -363,7 +473,7 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
 
     runtime->receiver_done = 1;
 
-    /* Wake the RFB owner so terminal receiver state is observed without polling. */
+    /* Wake each enabled logical owner so terminal state is event-visible. */
     if (runtime->rfb_queue_semaphore_id >= 0 &&
         WaitSema(runtime->rfb_queue_semaphore_id) >= 0) {
         int signal_waiter =
@@ -376,8 +486,8 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
             runtime->failed = 1;
     }
 
-    /* The same terminal point wakes the independent logical AUDIO waiter. */
     (void)pstvnc_transport_runtime_publish_audio_terminal(runtime);
+    (void)pstvnc_transport_runtime_publish_mpeg_terminal(runtime);
 
     if (runtime->receiver_done_semaphore_id >= 0 &&
         SignalSema(runtime->receiver_done_semaphore_id) < 0)
@@ -390,12 +500,15 @@ static int pstvnc_transport_runtime_initialize_internal(
     pstvnc_transport_runtime_t *runtime,
     int socket_fd,
     const pstvnc_transport_runtime_config_t *config,
-    const pstvnc_transport_audio_channel_config_t *audio_config)
+    const pstvnc_transport_audio_channel_config_t *audio_config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
 {
     if (runtime == NULL || socket_fd < 0 ||
         !pstvnc_transport_runtime_config_valid(config) ||
         (audio_config != NULL &&
-         !pstvnc_transport_runtime_audio_config_valid(config, audio_config)))
+         !pstvnc_transport_runtime_audio_config_valid(config, audio_config)) ||
+        (mpeg_config != NULL &&
+         !pstvnc_transport_runtime_mpeg_config_valid(config, mpeg_config)))
         return 0;
 
     memset(runtime, 0, sizeof(*runtime));
@@ -445,6 +558,29 @@ static int pstvnc_transport_runtime_initialize_internal(
             goto fail;
     }
 
+    if (mpeg_config != NULL) {
+        runtime->mpeg_queue_storage =
+            (uint8_t *)malloc((size_t)mpeg_config->queue_capacity);
+        if (runtime->mpeg_queue_storage == NULL)
+            goto fail;
+
+        if (pstvnc_transport_mpeg_channel_initialize(
+                &runtime->mpeg_channel,
+                runtime->mpeg_queue_storage,
+                (size_t)mpeg_config->queue_capacity) != 0)
+            goto fail;
+
+        runtime->mpeg_queue_semaphore_id =
+            pstvnc_transport_runtime_create_semaphore(1, 1);
+        if (runtime->mpeg_queue_semaphore_id < 0)
+            goto fail;
+
+        runtime->mpeg_activity_semaphore_id =
+            pstvnc_transport_runtime_create_semaphore(0, 1);
+        if (runtime->mpeg_activity_semaphore_id < 0)
+            goto fail;
+    }
+
     runtime->receiver_done_semaphore_id =
         pstvnc_transport_runtime_create_semaphore(0, 1);
     if (runtime->receiver_done_semaphore_id < 0)
@@ -474,6 +610,14 @@ static int pstvnc_transport_runtime_initialize_internal(
         runtime->audio_credit_return_enabled = audio_config->credit_return_enabled;
     }
 
+    if (mpeg_config != NULL) {
+        runtime->mpeg_enabled = 1;
+        runtime->mpeg_initial_credit_bytes = mpeg_config->initial_credit_bytes;
+        runtime->mpeg_credit_batch_bytes = mpeg_config->credit_batch_bytes;
+        runtime->mpeg_credit_flush_on_empty = mpeg_config->credit_flush_on_empty;
+        runtime->mpeg_credit_return_enabled = mpeg_config->credit_return_enabled;
+    }
+
     runtime->receiver_thread_stack_size = config->receiver_thread_stack_size;
     runtime->receiver_thread_priority = config->receiver_thread_priority;
     runtime->max_data_payload = config->max_data_payload;
@@ -483,6 +627,10 @@ static int pstvnc_transport_runtime_initialize_internal(
 fail:
     if (runtime->receiver_done_semaphore_id >= 0)
         (void)DeleteSema(runtime->receiver_done_semaphore_id);
+    if (runtime->mpeg_activity_semaphore_id >= 0)
+        (void)DeleteSema(runtime->mpeg_activity_semaphore_id);
+    if (runtime->mpeg_queue_semaphore_id >= 0)
+        (void)DeleteSema(runtime->mpeg_queue_semaphore_id);
     if (runtime->audio_activity_semaphore_id >= 0)
         (void)DeleteSema(runtime->audio_activity_semaphore_id);
     if (runtime->audio_queue_semaphore_id >= 0)
@@ -492,6 +640,7 @@ fail:
     if (runtime->rfb_queue_semaphore_id >= 0)
         (void)DeleteSema(runtime->rfb_queue_semaphore_id);
     free(runtime->receiver_stack_allocation);
+    free(runtime->mpeg_queue_storage);
     free(runtime->audio_queue_storage);
     free(runtime->rfb_queue_storage);
     memset(runtime, 0, sizeof(*runtime));
@@ -505,7 +654,7 @@ int pstvnc_transport_runtime_initialize(
     const pstvnc_transport_session_config_t *config)
 {
     return pstvnc_transport_runtime_initialize_internal(
-        runtime, socket_fd, config, NULL);
+        runtime, socket_fd, config, NULL, NULL);
 }
 
 int pstvnc_transport_runtime_initialize_with_audio(
@@ -518,7 +667,34 @@ int pstvnc_transport_runtime_initialize_with_audio(
         return 0;
 
     return pstvnc_transport_runtime_initialize_internal(
-        runtime, socket_fd, config, audio_config);
+        runtime, socket_fd, config, audio_config, NULL);
+}
+
+int pstvnc_transport_runtime_initialize_with_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    int socket_fd,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    if (mpeg_config == NULL)
+        return 0;
+
+    return pstvnc_transport_runtime_initialize_internal(
+        runtime, socket_fd, config, NULL, mpeg_config);
+}
+
+int pstvnc_transport_runtime_initialize_with_audio_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    int socket_fd,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    if (audio_config == NULL || mpeg_config == NULL)
+        return 0;
+
+    return pstvnc_transport_runtime_initialize_internal(
+        runtime, socket_fd, config, audio_config, mpeg_config);
 }
 
 int pstvnc_transport_runtime_start_receiver(
@@ -544,6 +720,15 @@ int pstvnc_transport_runtime_start_receiver(
             runtime,
             PSTVNC_TRANSPORT_CHANNEL_AUDIO,
             runtime->audio_initial_credit_bytes)) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    if (runtime->mpeg_enabled &&
+        !pstvnc_transport_runtime_send_credit(
+            runtime,
+            PSTVNC_TRANSPORT_CHANNEL_MPEG2,
+            runtime->mpeg_initial_credit_bytes)) {
         runtime->failed = 1;
         return 0;
     }
@@ -577,7 +762,8 @@ int pstvnc_transport_runtime_start_receiver(
 int pstvnc_transport_runtime_request_stop(
     pstvnc_transport_runtime_t *runtime)
 {
-    int wake_ok;
+    int audio_wake_ok;
+    int mpeg_wake_ok;
     int shutdown_ok;
 
     if (runtime == NULL || !runtime->initialized ||
@@ -588,10 +774,11 @@ int pstvnc_transport_runtime_request_stop(
         return 1;
 
     runtime->stop_requested = 1;
-    wake_ok = pstvnc_transport_runtime_publish_audio_terminal(runtime);
+    audio_wake_ok = pstvnc_transport_runtime_publish_audio_terminal(runtime);
+    mpeg_wake_ok = pstvnc_transport_runtime_publish_mpeg_terminal(runtime);
     shutdown_ok = pstvnc_transport_physical_stream_shutdown_io(
         &runtime->physical_stream);
-    return wake_ok && shutdown_ok;
+    return audio_wake_ok && mpeg_wake_ok && shutdown_ok;
 }
 
 int pstvnc_transport_runtime_rfb_activity_snapshot(
@@ -674,32 +861,35 @@ int pstvnc_transport_runtime_rfb_wait_activity(
     return 1;
 }
 
-static int pstvnc_transport_runtime_return_rfb_credit(
+static int pstvnc_transport_runtime_return_credit(
     pstvnc_transport_runtime_t *runtime,
+    uint8_t channel,
+    uint32_t *pending,
+    uint32_t batch_bytes,
+    int flush_on_empty,
+    int return_enabled,
     uint32_t consumed,
     int queue_empty)
 {
     uint32_t amount = 0u;
 
-    if (!runtime->rfb_credit_return_enabled)
+    if (!return_enabled)
         return 1;
 
-    if (runtime->rfb_credit_pending > UINT32_MAX - consumed) {
+    if (*pending > UINT32_MAX - consumed) {
         runtime->failed = 1;
         return 0;
     }
 
-    runtime->rfb_credit_pending += consumed;
-    if (runtime->rfb_credit_pending >= runtime->rfb_credit_batch_bytes ||
-        (runtime->rfb_credit_flush_on_empty && queue_empty &&
-         runtime->rfb_credit_pending != 0u)) {
-        amount = runtime->rfb_credit_pending;
-        runtime->rfb_credit_pending = 0u;
+    *pending += consumed;
+    if (*pending >= batch_bytes ||
+        (flush_on_empty && queue_empty && *pending != 0u)) {
+        amount = *pending;
+        *pending = 0u;
     }
 
     if (amount != 0u &&
-        !pstvnc_transport_runtime_send_credit(
-            runtime, PSTVNC_TRANSPORT_CHANNEL_RFB, amount)) {
+        !pstvnc_transport_runtime_send_credit(runtime, channel, amount)) {
         runtime->failed = 1;
         return 0;
     }
@@ -707,34 +897,58 @@ static int pstvnc_transport_runtime_return_rfb_credit(
     return 1;
 }
 
+static int pstvnc_transport_runtime_return_rfb_credit(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t consumed,
+    int queue_empty)
+{
+    return pstvnc_transport_runtime_return_credit(
+        runtime,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        &runtime->rfb_credit_pending,
+        runtime->rfb_credit_batch_bytes,
+        runtime->rfb_credit_flush_on_empty,
+        runtime->rfb_credit_return_enabled,
+        consumed,
+        queue_empty);
+}
+
 static int pstvnc_transport_runtime_return_audio_credit(
     pstvnc_transport_runtime_t *runtime,
     uint32_t consumed,
     int queue_empty)
 {
-    uint32_t amount = 0u;
-
-    if (!runtime->audio_credit_return_enabled)
-        return 1;
-
-    if (runtime->audio_credit_pending > UINT32_MAX - consumed) {
-        runtime->failed = 1;
+    if (!pstvnc_transport_runtime_return_credit(
+            runtime,
+            PSTVNC_TRANSPORT_CHANNEL_AUDIO,
+            &runtime->audio_credit_pending,
+            runtime->audio_credit_batch_bytes,
+            runtime->audio_credit_flush_on_empty,
+            runtime->audio_credit_return_enabled,
+            consumed,
+            queue_empty)) {
+        (void)pstvnc_transport_runtime_publish_audio_terminal(runtime);
         return 0;
     }
 
-    runtime->audio_credit_pending += consumed;
-    if (runtime->audio_credit_pending >= runtime->audio_credit_batch_bytes ||
-        (runtime->audio_credit_flush_on_empty && queue_empty &&
-         runtime->audio_credit_pending != 0u)) {
-        amount = runtime->audio_credit_pending;
-        runtime->audio_credit_pending = 0u;
-    }
+    return 1;
+}
 
-    if (amount != 0u &&
-        !pstvnc_transport_runtime_send_credit(
-            runtime, PSTVNC_TRANSPORT_CHANNEL_AUDIO, amount)) {
-        runtime->failed = 1;
-        (void)pstvnc_transport_runtime_publish_audio_terminal(runtime);
+static int pstvnc_transport_runtime_return_mpeg_credit(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t consumed,
+    int queue_empty)
+{
+    if (!pstvnc_transport_runtime_return_credit(
+            runtime,
+            PSTVNC_TRANSPORT_CHANNEL_MPEG2,
+            &runtime->mpeg_credit_pending,
+            runtime->mpeg_credit_batch_bytes,
+            runtime->mpeg_credit_flush_on_empty,
+            runtime->mpeg_credit_return_enabled,
+            consumed,
+            queue_empty)) {
+        (void)pstvnc_transport_runtime_publish_mpeg_terminal(runtime);
         return 0;
     }
 
@@ -951,20 +1165,22 @@ pstvnc_transport_result_t pstvnc_transport_runtime_audio_status(
     return PSTVNC_TRANSPORT_OK;
 }
 
-int pstvnc_transport_runtime_audio_activity_snapshot(
+static int pstvnc_transport_runtime_media_activity_snapshot(
     pstvnc_transport_runtime_t *runtime,
-    uint32_t *activity_sequence)
+    int enabled,
+    int queue_semaphore_id,
+    uint32_t activity_sequence,
+    uint32_t *snapshot)
 {
-    if (runtime == NULL || activity_sequence == NULL ||
-        !runtime->initialized || !runtime->audio_enabled)
+    if (runtime == NULL || snapshot == NULL || !runtime->initialized || !enabled)
         return 0;
 
-    if (WaitSema(runtime->audio_queue_semaphore_id) < 0)
+    if (WaitSema(queue_semaphore_id) < 0)
         return 0;
 
-    *activity_sequence = runtime->audio_activity_sequence;
+    *snapshot = activity_sequence;
 
-    if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
+    if (SignalSema(queue_semaphore_id) < 0) {
         runtime->failed = 1;
         return 0;
     }
@@ -972,68 +1188,248 @@ int pstvnc_transport_runtime_audio_activity_snapshot(
     return 1;
 }
 
-int pstvnc_transport_runtime_audio_wait_activity(
+static int pstvnc_transport_runtime_media_wait_activity(
     pstvnc_transport_runtime_t *runtime,
-    uint32_t *activity_sequence)
+    int enabled,
+    int queue_semaphore_id,
+    int activity_semaphore_id,
+    uint32_t *current_sequence,
+    int *activity_wait_armed,
+    uint32_t *observed_sequence)
 {
-    if (runtime == NULL || activity_sequence == NULL ||
-        !runtime->initialized || !runtime->audio_enabled)
+    if (runtime == NULL || observed_sequence == NULL || !runtime->initialized ||
+        !enabled)
         return 0;
 
-    if (WaitSema(runtime->audio_queue_semaphore_id) < 0)
+    if (WaitSema(queue_semaphore_id) < 0)
         return 0;
 
-    if (runtime->audio_activity_sequence != *activity_sequence ||
+    if (*current_sequence != *observed_sequence ||
         runtime->receiver_done || runtime->failed || runtime->stop_requested) {
-        *activity_sequence = runtime->audio_activity_sequence;
-        if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
+        *observed_sequence = *current_sequence;
+        if (SignalSema(queue_semaphore_id) < 0) {
             runtime->failed = 1;
             return 0;
         }
         return 1;
     }
 
-    if (runtime->audio_activity_wait_armed != 0) {
-        (void)SignalSema(runtime->audio_queue_semaphore_id);
+    if (*activity_wait_armed != 0) {
+        (void)SignalSema(queue_semaphore_id);
         runtime->failed = 1;
         return 0;
     }
 
-    runtime->audio_activity_wait_armed = 1;
-    if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
+    *activity_wait_armed = 1;
+    if (SignalSema(queue_semaphore_id) < 0) {
         runtime->failed = 1;
         return 0;
     }
 
-    if (WaitSema(runtime->audio_activity_semaphore_id) < 0) {
+    if (WaitSema(activity_semaphore_id) < 0) {
         runtime->failed = 1;
-        if (WaitSema(runtime->audio_queue_semaphore_id) >= 0) {
-            runtime->audio_activity_wait_armed = 0;
-            (void)SignalSema(runtime->audio_queue_semaphore_id);
+        if (WaitSema(queue_semaphore_id) >= 0) {
+            *activity_wait_armed = 0;
+            (void)SignalSema(queue_semaphore_id);
         }
         return 0;
     }
 
-    if (WaitSema(runtime->audio_queue_semaphore_id) < 0) {
+    if (WaitSema(queue_semaphore_id) < 0) {
         runtime->failed = 1;
         return 0;
     }
 
-    if (runtime->audio_activity_wait_armed != 2) {
-        runtime->audio_activity_wait_armed = 0;
-        (void)SignalSema(runtime->audio_queue_semaphore_id);
+    if (*activity_wait_armed != 2) {
+        *activity_wait_armed = 0;
+        (void)SignalSema(queue_semaphore_id);
         runtime->failed = 1;
         return 0;
     }
 
-    runtime->audio_activity_wait_armed = 0;
-    *activity_sequence = runtime->audio_activity_sequence;
-    if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
+    *activity_wait_armed = 0;
+    *observed_sequence = *current_sequence;
+    if (SignalSema(queue_semaphore_id) < 0) {
         runtime->failed = 1;
         return 0;
     }
 
     return 1;
+}
+
+int pstvnc_transport_runtime_audio_activity_snapshot(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t *activity_sequence)
+{
+    return pstvnc_transport_runtime_media_activity_snapshot(
+        runtime,
+        runtime != NULL ? runtime->audio_enabled : 0,
+        runtime != NULL ? runtime->audio_queue_semaphore_id : -1,
+        runtime != NULL ? runtime->audio_activity_sequence : 0u,
+        activity_sequence);
+}
+
+int pstvnc_transport_runtime_audio_wait_activity(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t *activity_sequence)
+{
+    return pstvnc_transport_runtime_media_wait_activity(
+        runtime,
+        runtime != NULL ? runtime->audio_enabled : 0,
+        runtime != NULL ? runtime->audio_queue_semaphore_id : -1,
+        runtime != NULL ? runtime->audio_activity_semaphore_id : -1,
+        runtime != NULL ? &runtime->audio_activity_sequence : NULL,
+        runtime != NULL ? &runtime->audio_activity_wait_armed : NULL,
+        activity_sequence);
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_read_available(
+    pstvnc_transport_runtime_t *runtime,
+    void *buffer,
+    size_t maximum_count,
+    size_t *read_count)
+{
+    size_t taken;
+    int queue_empty;
+    int producer_done;
+
+    if (runtime == NULL || buffer == NULL || maximum_count == 0u ||
+        read_count == NULL || maximum_count > UINT32_MAX ||
+        !runtime->initialized || !runtime->mpeg_enabled)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    *read_count = 0u;
+
+    if (runtime->stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    taken = pstvnc_transport_mpeg_channel_read_available(
+        &runtime->mpeg_channel,
+        (uint8_t *)buffer,
+        maximum_count);
+    queue_empty =
+        pstvnc_transport_mpeg_channel_available(&runtime->mpeg_channel) == 0u;
+    producer_done =
+        pstvnc_transport_mpeg_channel_producer_done(&runtime->mpeg_channel);
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (taken != 0u) {
+        *read_count = taken;
+        if (!runtime->failed &&
+            !pstvnc_transport_runtime_return_mpeg_credit(
+                runtime, (uint32_t)taken, queue_empty))
+            return PSTVNC_TRANSPORT_FAILED;
+        return PSTVNC_TRANSPORT_OK;
+    }
+
+    if (runtime->failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (runtime->stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+    if (producer_done)
+        return PSTVNC_TRANSPORT_EXHAUSTED;
+    if (runtime->receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    return PSTVNC_TRANSPORT_WOULD_BLOCK;
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_status(
+    pstvnc_transport_runtime_t *runtime,
+    size_t *available_count,
+    int *producer_done)
+{
+    if (runtime == NULL || available_count == NULL || producer_done == NULL ||
+        !runtime->initialized || !runtime->mpeg_enabled)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    *available_count =
+        pstvnc_transport_mpeg_channel_available(&runtime->mpeg_channel);
+    *producer_done =
+        pstvnc_transport_mpeg_channel_producer_done(&runtime->mpeg_channel);
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    return PSTVNC_TRANSPORT_OK;
+}
+
+int pstvnc_transport_runtime_mpeg_activity_snapshot(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t *activity_sequence)
+{
+    return pstvnc_transport_runtime_media_activity_snapshot(
+        runtime,
+        runtime != NULL ? runtime->mpeg_enabled : 0,
+        runtime != NULL ? runtime->mpeg_queue_semaphore_id : -1,
+        runtime != NULL ? runtime->mpeg_activity_sequence : 0u,
+        activity_sequence);
+}
+
+int pstvnc_transport_runtime_mpeg_wait_activity(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t *activity_sequence)
+{
+    return pstvnc_transport_runtime_media_wait_activity(
+        runtime,
+        runtime != NULL ? runtime->mpeg_enabled : 0,
+        runtime != NULL ? runtime->mpeg_queue_semaphore_id : -1,
+        runtime != NULL ? runtime->mpeg_activity_semaphore_id : -1,
+        runtime != NULL ? &runtime->mpeg_activity_sequence : NULL,
+        runtime != NULL ? &runtime->mpeg_activity_wait_armed : NULL,
+        activity_sequence);
+}
+
+int pstvnc_transport_runtime_mpeg_mark_producer_done(
+    pstvnc_transport_runtime_t *runtime)
+{
+    int accepted;
+    int signal_waiter;
+
+    if (runtime == NULL || !runtime->initialized || !runtime->mpeg_enabled ||
+        runtime->failed || runtime->stop_requested)
+        return 0;
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    accepted = pstvnc_transport_mpeg_channel_mark_producer_done(
+        &runtime->mpeg_channel) == 0;
+    signal_waiter = accepted
+        ? pstvnc_transport_runtime_publish_media_activity_locked(
+            &runtime->mpeg_activity_sequence,
+            &runtime->mpeg_activity_wait_armed)
+        : 0;
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    if (!accepted)
+        return 0;
+
+    return pstvnc_transport_runtime_signal_media_activity(
+        runtime,
+        runtime->mpeg_activity_semaphore_id,
+        signal_waiter);
 }
 
 int pstvnc_transport_runtime_wait_receiver_done(
@@ -1054,10 +1450,36 @@ int pstvnc_transport_runtime_wait_receiver_done(
     return runtime->receiver_done != 0;
 }
 
+static int pstvnc_transport_runtime_media_waiter_live(
+    pstvnc_transport_runtime_t *runtime,
+    int enabled,
+    int queue_semaphore_id,
+    int activity_wait_armed,
+    int *waiter_live)
+{
+    if (!enabled) {
+        *waiter_live = 0;
+        return 1;
+    }
+
+    if (WaitSema(queue_semaphore_id) < 0)
+        return 0;
+
+    *waiter_live = activity_wait_armed != 0;
+
+    if (SignalSema(queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    return 1;
+}
+
 int pstvnc_transport_runtime_release(
     pstvnc_transport_runtime_t *runtime)
 {
     int result = 1;
+    int waiter_live;
 
     if (runtime == NULL || !runtime->initialized)
         return 0;
@@ -1066,26 +1488,26 @@ int pstvnc_transport_runtime_release(
         return 0;
 
     /*
-     * Once receiver_done is visible, a new AUDIO waiter returns terminally
-     * before arming. Therefore a nonzero protected wait state here can only be
-     * an already-existing waiter that still owns the rendezvous. Preserve all
-     * waiter-visible resources and let the caller retry release after it returns.
+     * Once receiver_done is visible, new media waiters return terminally before
+     * arming. A nonzero protected wait state can therefore only belong to an
+     * already-existing waiter that still owns its rendezvous. Preserve all
+     * waiter-visible resources and let the caller retry after it returns.
      */
-    if (runtime->audio_enabled) {
-        int waiter_live;
+    if (!pstvnc_transport_runtime_media_waiter_live(
+            runtime,
+            runtime->audio_enabled,
+            runtime->audio_queue_semaphore_id,
+            runtime->audio_activity_wait_armed,
+            &waiter_live) || waiter_live)
+        return 0;
 
-        if (WaitSema(runtime->audio_queue_semaphore_id) < 0)
-            return 0;
-
-        waiter_live = runtime->audio_activity_wait_armed != 0;
-        if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
-            runtime->failed = 1;
-            return 0;
-        }
-
-        if (waiter_live)
-            return 0;
-    }
+    if (!pstvnc_transport_runtime_media_waiter_live(
+            runtime,
+            runtime->mpeg_enabled,
+            runtime->mpeg_queue_semaphore_id,
+            runtime->mpeg_activity_wait_armed,
+            &waiter_live) || waiter_live)
+        return 0;
 
     if (runtime->receiver_thread_started) {
         ee_thread_status_t status;
@@ -1117,6 +1539,12 @@ int pstvnc_transport_runtime_release(
     if (runtime->receiver_done_semaphore_id >= 0 &&
         DeleteSema(runtime->receiver_done_semaphore_id) < 0)
         result = 0;
+    if (runtime->mpeg_activity_semaphore_id >= 0 &&
+        DeleteSema(runtime->mpeg_activity_semaphore_id) < 0)
+        result = 0;
+    if (runtime->mpeg_queue_semaphore_id >= 0 &&
+        DeleteSema(runtime->mpeg_queue_semaphore_id) < 0)
+        result = 0;
     if (runtime->audio_activity_semaphore_id >= 0 &&
         DeleteSema(runtime->audio_activity_semaphore_id) < 0)
         result = 0;
@@ -1131,6 +1559,7 @@ int pstvnc_transport_runtime_release(
         result = 0;
 
     free(runtime->receiver_stack_allocation);
+    free(runtime->mpeg_queue_storage);
     free(runtime->audio_queue_storage);
     free(runtime->rfb_queue_storage);
     pstvnc_transport_physical_stream_release(&runtime->physical_stream);
