@@ -1,0 +1,275 @@
+name: A003 P1 repair dictionary semantics
+
+on:
+  push:
+    branches:
+      - evidence/a003-p1-host-20260916
+
+permissions:
+  contents: write
+
+jobs:
+  semantic-repair:
+    if: github.event.head_commit.message == 'test(a003) repair P1 dictionary semantics'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install definition discovery tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y universal-ctags shfmt
+      - name: Rewrite newly reconciled Transport rows with domain-correct semantics
+        run: |
+          set -eu
+          python3 - <<'PY'
+          from pathlib import Path
+
+          transport = Path('src/transport/SYMBOLS.md')
+          lines = transport.read_text(encoding='utf-8').splitlines()
+
+          fn = {
+              'pstvnc_transport_runtime_channel_config_valid': 'Validates bounded queue and credit authority shared by logical media channels.',
+              'pstvnc_transport_runtime_mpeg_config_valid': 'Validates optional MPEG queue and credit authority against the framed Transport payload limit.',
+              'pstvnc_transport_runtime_accept_mpeg_frame': 'Commits one validated channel-4 DATA payload into the bounded MPEG queue owned by the sole receiver.',
+              'pstvnc_transport_runtime_initialize_with_mpeg': 'Initializes the sole Transport runtime with explicit MPEG authority and no AUDIO channel.',
+              'pstvnc_transport_runtime_initialize_with_audio_mpeg': 'Initializes the sole Transport runtime with independent AUDIO and MPEG logical-channel authority.',
+              'pstvnc_transport_runtime_initialize_internal': 'Acquires one sole-receiver Transport runtime plus whichever logical AUDIO/MPEG channels the caller explicitly enables.',
+              'pstvnc_transport_runtime_publish_media_activity_locked': 'Advances a logical media activity generation under its queue lock and records whether an armed waiter needs a wake.',
+              'pstvnc_transport_runtime_signal_media_activity': 'Signals a logical media activity semaphore only when locked publication requires a wake.',
+              'pstvnc_transport_runtime_publish_media_terminal': 'Publishes terminal progress to one enabled logical media waiter using the queue-lock generation protocol.',
+              'pstvnc_transport_runtime_publish_mpeg_terminal': 'Publishes stop, close, or failure progress to the MPEG waiter without inventing producer exhaustion.',
+              'pstvnc_transport_runtime_media_activity_snapshot': 'Snapshots a logical media activity generation while holding the corresponding queue lock.',
+              'pstvnc_transport_runtime_media_wait_activity': 'Performs the three-state wake-before-sleep activity wait for one logical media queue.',
+              'pstvnc_transport_runtime_media_waiter_live': 'Reports whether a logical media waiter still owns its activity rendezvous while holding the queue lock.',
+              'pstvnc_transport_runtime_return_credit': 'Accumulates dequeue-earned credit and emits only the amount justified by bytes actually removed.',
+              'pstvnc_transport_runtime_return_mpeg_credit': 'Returns MPEG credit earned only by bytes actually removed from the bounded MPEG queue.',
+              'pstvnc_transport_runtime_mpeg_read_available': 'Removes available MPEG bytes while keeping starvation, real exhaustion, stop, close, and failure distinct.',
+              'pstvnc_transport_runtime_mpeg_status': 'Reports MPEG queue occupancy and the independent finite-producer completion fact.',
+              'pstvnc_transport_runtime_mpeg_activity_snapshot': 'Returns the MPEG activity generation used for event-driven consumer waits.',
+              'pstvnc_transport_runtime_mpeg_wait_activity': 'Waits for MPEG producer or terminal activity without timer-backed polling.',
+              'pstvnc_transport_runtime_mpeg_mark_producer_done': 'Records one-shot real MPEG producer completion and wakes a waiting consumer.',
+              'pstvnc_transport_session_open_internal': 'Centralizes one physical Transport-session open while attaching only explicitly requested logical AUDIO/MPEG channels.',
+              'pstvnc_transport_session_open_with_mpeg': 'Opens the single Transport session with explicit logical MPEG channel authority.',
+              'pstvnc_transport_session_open_with_audio_mpeg': 'Opens the single Transport session with independent AUDIO and MPEG logical-channel authority.',
+              'pstvnc_transport_mpeg_read_available': 'Exposes bounded MPEG dequeue through the public Transport bridge without exposing the physical socket.',
+              'pstvnc_transport_mpeg_status': 'Exposes MPEG occupancy and real producer completion through the public Transport bridge.',
+              'pstvnc_transport_mpeg_activity_snapshot': 'Exposes the MPEG activity generation used for wake-before-sleep consumer waiting.',
+              'pstvnc_transport_mpeg_wait_activity': 'Exposes event-driven MPEG activity waiting through the public Transport bridge.',
+              'pstvnc_transport_mpeg_mark_producer_done': 'Records explicit finite MPEG producer completion through the public Transport bridge.',
+              'pstvnc_transport_mpeg_channel_initialize': 'Binds caller storage as an empty bounded MPEG ring queue with producer completion clear.',
+              'pstvnc_transport_mpeg_channel_commit_data': 'Appends one nonempty MPEG DATA payload atomically when bounded capacity permits.',
+              'pstvnc_transport_mpeg_channel_mark_producer_done': 'Records finite MPEG producer completion separately from Transport terminal state.',
+              'pstvnc_transport_mpeg_channel_read_available': 'Removes currently queued MPEG bytes while preserving bounded ring-buffer order.',
+              'pstvnc_transport_mpeg_channel_available': 'Reports current MPEG payload-byte occupancy of the bounded queue.',
+              'pstvnc_transport_mpeg_channel_producer_done': 'Reports the independent one-shot finite MPEG producer completion fact.',
+          }
+
+          special = {
+              'pstvnc_transport_mpeg_channel_config': 'Groups explicit caller-owned MPEG queue and dequeue-credit authority; it contains no guessed production defaults.',
+              'pstvnc_transport_mpeg_channel_config_t': 'Names the explicit caller-owned MPEG queue and credit configuration contract.',
+              'pstvnc_transport_mpeg_channel': 'Owns bounded MPEG ring-buffer state plus its independent finite-producer completion fact.',
+              'pstvnc_transport_mpeg_channel_t': 'Names the Transport-owned bounded MPEG logical-channel state.',
+              'PSTVNC_TRANSPORT_MPEG_CHANNEL_H': 'Guards the bounded logical MPEG channel declarations.',
+              'PSTVNC_TRANSPORT_EXHAUSTED': 'Identifies normal logical-channel finite-producer exhaustion, distinct from stop, close, failure, and temporary starvation.',
+          }
+
+          # Every AUDIO function/type added by the earlier A002 seam has a direct MPEG
+          # analogue in this packet. Derive the wording from that analogue, preserving
+          # AUDIO ownership instead of mislabelling it as MPEG.
+          def mirrored_audio(name):
+              mirror = name.replace('_audio_', '_mpeg_')
+              if mirror in fn:
+                  return fn[mirror].replace('MPEG', 'AUDIO').replace('channel-4', 'channel-3')
+              if mirror in special:
+                  return special[mirror].replace('MPEG', 'AUDIO')
+              return None
+
+          explicit_audio = {
+              'pstvnc_transport_session_open_with_audio': 'Opens the single Transport session with explicit logical AUDIO channel authority.',
+              'pstvnc_transport_runtime_initialize_with_audio': 'Initializes the sole Transport runtime with explicit AUDIO authority and no MPEG channel.',
+          }
+
+          def domain_for(name, file_name, owner):
+              joined = f'{name} {file_name} {owner}'
+              if 'audio_mpeg' in joined:
+                  return 'shared'
+              if 'audio_channel' in file_name or '_audio_' in name or '_audio_' in owner or name.startswith('audio_'):
+                  return 'audio'
+              if 'mpeg_channel' in file_name or '_mpeg_' in name or '_mpeg_' in owner or name.startswith('mpeg_'):
+                  return 'mpeg'
+              return 'shared'
+
+          def context_for(domain):
+              if domain == 'audio':
+                  return 'A002 AUDIO Transport core'
+              if domain == 'mpeg':
+                  return 'A003 MPEG Transport core'
+              return 'A003 shared media Transport core'
+
+          def logical_word(domain):
+              if domain == 'audio':
+                  return 'AUDIO'
+              if domain == 'mpeg':
+                  return 'MPEG'
+              return 'selected media'
+
+          field_suffix = {
+              'enabled': 'whether this logical channel is configured and owns queue/wait state',
+              'channel': 'the bounded logical ring-queue state',
+              'queue_storage': 'the runtime-owned backing storage for the bounded logical queue',
+              'queue_semaphore_id': 'the semaphore that locks queue state and waiter ownership',
+              'activity_semaphore_id': 'the event semaphore that wakes the logical consumer',
+              'activity_sequence': 'the activity generation used by the wake-before-sleep protocol',
+              'activity_wait_armed': 'the three-state waiter ownership marker used for safe wake and reclaim',
+              'initial_credit_bytes': 'the caller-authorized initial producer credit',
+              'credit_batch_bytes': 'the caller-authorized threshold for batching dequeue-earned credit',
+              'credit_flush_on_empty': 'the caller-authorized policy for flushing earned credit when the queue empties',
+              'credit_pending': 'dequeue-earned bytes accumulated but not yet emitted as CREDIT',
+              'credit_return_enabled': 'whether bytes actually removed from this queue earn CREDIT returns',
+          }
+
+          base_semantics = {
+              'runtime': 'the sole-receiver Transport runtime instance',
+              'config': 'the explicit base Transport session configuration and bounds',
+              'audio_config': 'the explicit AUDIO queue and credit authority',
+              'mpeg_config': 'the explicit MPEG queue and credit authority',
+              'socket_fd': 'the already-owned physical PSTV socket descriptor',
+              'queue_capacity': 'the bounded logical queue capacity in bytes',
+              'initial_credit_bytes': 'the caller-authorized initial producer credit',
+              'credit_batch_bytes': 'the threshold for batching dequeue-earned credit',
+              'credit_flush_on_empty': 'whether earned credit flushes when the queue becomes empty',
+              'credit_return_enabled': 'whether bytes actually dequeued earn CREDIT returns',
+              'activity_sequence': 'the activity generation observed or advanced by the wake-before-sleep protocol',
+              'current_sequence': 'the activity generation read while holding the queue lock',
+              'observed_sequence': 'the activity generation previously observed by the consumer',
+              'activity_wait_armed': 'the three-state waiter ownership marker used to avoid lost wakeups and unsafe reclaim',
+              'waiter_live': 'whether the consumer still owns the activity rendezvous that release must preserve',
+              'queue_semaphore_id': 'the queue lock that serializes queue data and waiter-visible state',
+              'activity_semaphore_id': 'the event semaphore used for producer-driven consumer wakeups',
+              'enabled': 'whether the selected logical media channel exists and therefore has terminal state to publish',
+              'signal_waiter': 'whether the newly published activity generation must wake an armed consumer',
+              'accepted': 'whether the sole receiver accepted the current framed DATA payload on its one recognized logical owner',
+              'header': 'the already validated framed Transport header received by the sole physical receiver',
+              'payload': 'the real logical DATA payload bytes, excluding framing and any decoder padding',
+              'payload_length': 'the real logical DATA payload byte count',
+              'buffer': 'the caller destination buffer for dequeued logical payload bytes',
+              'destination': 'the caller destination buffer for dequeued logical payload bytes',
+              'maximum_count': 'the maximum number of queued payload bytes this dequeue may remove',
+              'read_count': 'the number of payload bytes actually removed from the logical queue',
+              'available_count': 'the current logical queue occupancy in real payload bytes',
+              'producer_done': 'the independent one-shot finite-producer completion fact',
+              'queue_empty': 'whether the logical queue is empty after the current dequeue',
+              'taken': 'the number of bytes actually removed and therefore eligible to earn CREDIT',
+              'consumed': 'the actual dequeued byte count eligible to earn CREDIT',
+              'pending': 'the accumulator of earned but not yet emitted CREDIT bytes',
+              'batch_bytes': 'the configured threshold for batching earned CREDIT',
+              'flush_on_empty': 'the configured policy for flushing earned CREDIT on queue-empty',
+              'return_enabled': 'whether dequeue-earned CREDIT emission is enabled for this logical channel',
+              'amount': 'the exact earned CREDIT amount selected for emission',
+              'storage': 'caller-provided backing storage for the bounded ring queue',
+              'capacity': 'the bounded byte capacity of the logical ring queue',
+              'read_offset': 'the ring offset of the next payload byte to remove',
+              'byte_count': 'the number of real payload bytes currently held in the ring queue',
+              'count': 'the actual number of queued payload bytes selected for removal',
+              'first_count': 'the first contiguous ring span handled before wraparound',
+              'write_offset': 'the ring offset where the next payload byte is appended',
+              'initialized': 'whether Transport runtime acquisition completed so rollback/release touches only owned state',
+              'audio_wake_ok': 'whether stop publication successfully made the AUDIO waiter terminal state event-visible',
+              'mpeg_wake_ok': 'whether stop publication successfully made the MPEG waiter terminal state event-visible',
+              'result': 'the Transport result propagated from the runtime without collapsing exhaustion, stop, close, or failure',
+          }
+
+          def semantic_for(name, kind, file_name, owner, domain):
+              if name in explicit_audio:
+                  base = explicit_audio[name]
+                  return ('Declares the interface that ' + base[0].lower() + base[1:]) if kind == 'function declaration' else base
+              audio = mirrored_audio(name)
+              if domain == 'audio' and audio is not None:
+                  return ('Declares the interface that ' + audio[0].lower() + audio[1:]) if kind == 'function declaration' else audio
+              if name in fn:
+                  base = fn[name]
+                  return ('Declares the interface that ' + base[0].lower() + base[1:]) if kind == 'function declaration' else base
+              if name in special:
+                  return special[name]
+
+              # AUDIO channel public types mirror the MPEG ownership contract.
+              if domain == 'audio' and name.startswith('pstvnc_transport_audio_channel'):
+                  mirror = name.replace('_audio_', '_mpeg_')
+                  if mirror in special:
+                      return special[mirror].replace('MPEG', 'AUDIO')
+
+              # Runtime state fields use a channel prefix plus a precise owned-state suffix.
+              for prefix, label in (('audio_', 'AUDIO'), ('mpeg_', 'MPEG')):
+                  if name.startswith(prefix) and name[len(prefix):] in field_suffix:
+                      suffix = name[len(prefix):]
+                      phrase = field_suffix[suffix]
+                      if kind == 'field':
+                          return f'Stores {label} {phrase} in the sole Transport runtime.'
+                      return f'Tracks {label} {phrase} while {owner} executes.'
+
+              if name == 'channel' and 'return_credit' in owner:
+                  semantic = 'the framed logical channel identifier whose actual dequeues earned this CREDIT'
+              else:
+                  semantic = base_semantics.get(name)
+
+              if semantic is None:
+                  raise ValueError(f'no semantic mapping for {name!r} kind={kind!r} file={file_name!r} owner={owner!r}')
+
+              label = logical_word(domain)
+              # Make generic queue terms explicit for channel-owned rows without lying about another channel.
+              if file_name.endswith('audio_channel.c') or file_name.endswith('audio_channel.h'):
+                  semantic = semantic.replace('logical ', 'AUDIO logical ').replace('payload bytes', 'AUDIO payload bytes')
+              elif file_name.endswith('mpeg_channel.c') or file_name.endswith('mpeg_channel.h'):
+                  semantic = semantic.replace('logical ', 'MPEG logical ').replace('payload bytes', 'MPEG payload bytes')
+
+              if kind in ('parameter', 'prototype parameter'):
+                  return f'Supplies {semantic} to {owner}.'
+              if kind == 'field':
+                  return f'Stores {semantic} as state owned by {owner}.'
+              if kind in ('variable', 'constant', 'array'):
+                  return f'Tracks {semantic} while {owner} executes.'
+              raise ValueError(f'unhandled mapped kind for {name!r}: {kind!r}')
+
+          out = []
+          repaired = 0
+          for line in lines:
+              if line.startswith('| ') and line.endswith(' |'):
+                  cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+                  if len(cells) == 7 and cells[6] == 'A003 MPEG Transport/decoder core':
+                      name, kind, file_name, owner, scope, _description, _context = cells
+                      domain = domain_for(name, file_name, owner)
+                      cells[5] = semantic_for(name, kind, file_name, owner, domain)
+                      cells[6] = context_for(domain)
+                      line = '| ' + ' | '.join(cells) + ' |'
+                      repaired += 1
+              out.append(line)
+          transport.write_text('\n'.join(out).rstrip() + '\n', encoding='utf-8')
+          print(f'TRANSPORT_ROWS_SEMANTICALLY_REPAIRED={repaired}')
+
+          mpeg = Path('src/mpeg/SYMBOLS.md')
+          text = mpeg.read_text(encoding='utf-8')
+          text = text.replace(
+              '| call_active | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_release | local | Tracks call active while pstvnc_mpeg_decoder_release executes. | A003 MPEG Transport/decoder core |',
+              '| call_active | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_release | local | Tracks whether a decoder picture call still owns decoder-visible resources and therefore forbids reclamation. | A003 MPEG Transport/decoder core |',
+          )
+          mpeg.write_text(text, encoding='utf-8')
+          PY
+
+          python3 scripts/source-dictionary.py check --long --require-complete --strict
+          git diff --check
+
+          if grep -E 'A003 MPEG Transport/decoder core.*(Represents pstvnc|Tracks (audio|mpeg|call) [a-z_ ]* while|Stores (audio|mpeg) [a-z_ ]* as state)' src/transport/SYMBOLS.md; then
+            echo 'semantic repair left tautological A003 rows' >&2
+            exit 1
+          fi
+      - name: Commit repaired source dictionaries
+        run: |
+          set -eu
+          git config user.name 'PS-to-VNC A003 reconstruction evidence'
+          git config user.email '39144541+Olsens11@users.noreply.github.com'
+          git add src/transport/SYMBOLS.md src/mpeg/SYMBOLS.md
+          git diff --cached --check
+          git commit -m 'docs(a003): repair source dictionary semantics'
+          git push origin HEAD:evidence/a003-p1-host-20260916
