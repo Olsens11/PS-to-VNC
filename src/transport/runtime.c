@@ -196,7 +196,7 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
     pstvnc_transport_runtime_t *runtime =
         (pstvnc_transport_runtime_t *)argument;
 
-    while (!runtime->failed) {
+    while (!runtime->failed && !runtime->stop_requested) {
         pstvnc_transport_header_t header;
 
         if (!pstvnc_transport_physical_stream_receive_frame(
@@ -204,9 +204,14 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
                 &header,
                 runtime->receiver_payload,
                 sizeof(runtime->receiver_payload))) {
-            runtime->failed = 1;
+            if (!runtime->stop_requested)
+                runtime->failed = 1;
             break;
         }
+
+        /* A fatal stop may race a frame that was already completing in recv(). */
+        if (runtime->stop_requested)
+            break;
 
         if (header.kind != PSTVNC_TRANSPORT_FRAME_DATA ||
             header.channel != PSTVNC_TRANSPORT_CHANNEL_RFB ||
@@ -328,7 +333,8 @@ int pstvnc_transport_runtime_start_receiver(
     ee_thread_t thread;
 
     if (runtime == NULL || !runtime->initialized ||
-        runtime->receiver_thread_started || runtime->failed)
+        runtime->receiver_thread_started || runtime->failed ||
+        runtime->stop_requested)
         return 0;
 
     if (!pstvnc_transport_runtime_send_credit(
@@ -361,6 +367,25 @@ int pstvnc_transport_runtime_start_receiver(
 
     runtime->receiver_thread_started = 1;
     return 1;
+}
+
+int pstvnc_transport_runtime_request_stop(
+    pstvnc_transport_runtime_t *runtime)
+{
+    if (runtime == NULL || !runtime->initialized ||
+        !runtime->receiver_thread_started)
+        return 0;
+
+    if (runtime->receiver_done)
+        return 1;
+
+    if (runtime->stop_requested)
+        return 1;
+
+    /* Publish intent before shutdown makes the blocked recv() return. */
+    runtime->stop_requested = 1;
+    return pstvnc_transport_physical_stream_shutdown_io(
+        &runtime->physical_stream);
 }
 
 int pstvnc_transport_runtime_rfb_activity_snapshot(
@@ -396,7 +421,7 @@ int pstvnc_transport_runtime_rfb_wait_activity(
         return 0;
 
     if (runtime->activity_sequence != *activity_sequence ||
-        runtime->receiver_done || runtime->failed) {
+        runtime->receiver_done || runtime->failed || runtime->stop_requested) {
         *activity_sequence = runtime->activity_sequence;
         if (SignalSema(runtime->rfb_queue_semaphore_id) < 0) {
             runtime->failed = 1;
@@ -499,7 +524,7 @@ int pstvnc_transport_runtime_rfb_read_exact(
         size_t taken;
         int queue_empty;
 
-        if (runtime->failed)
+        if (runtime->failed || runtime->stop_requested)
             return 0;
 
         if (WaitSema(runtime->rfb_queue_semaphore_id) < 0)
@@ -558,7 +583,7 @@ int pstvnc_transport_runtime_rfb_poll_receive(
 
     if (available != 0u)
         return 1;
-    if (runtime->failed || runtime->receiver_done)
+    if (runtime->failed || runtime->receiver_done || runtime->stop_requested)
         return -1;
     return 0;
 }
@@ -572,7 +597,7 @@ int pstvnc_transport_runtime_rfb_write_exact(
     size_t offset = 0u;
 
     if (runtime == NULL || (buffer == NULL && count != 0u) ||
-        !runtime->initialized || runtime->failed)
+        !runtime->initialized || runtime->failed || runtime->stop_requested)
         return 0;
 
     while (offset < count) {
