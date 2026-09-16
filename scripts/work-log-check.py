@@ -35,7 +35,7 @@ REQUIRED_KEYS = {
 }
 ALLOWED_STATUS = {"COMPLETED", "PARTIAL", "BLOCKED", "SELF_PAUSED", "NOOP"}
 
-# Work-log contract revision 0003 freezes these exact already-committed
+# Work-log contract revision 0004 freezes these exact already-committed
 # legacy/malformed paths rather than destructively renaming or rewriting
 # historical evidence. No pattern, role, or date-range exception is permitted.
 GRANDFATHERED_LOGS = {
@@ -80,6 +80,12 @@ GRANDFATHERED_LOGS = {
         "WORK_ITEM_KEY": "global-reconciliation",
         "WORKER_KEY": "continuity",
         "STARTED_AT": "2026-09-15T23:30:50-04:00",
+    },
+    "20260916T085615-0400__reconstruction__a002-audio-clock__interactive.md": {
+        "ROLE_KEY": "reconstruction",
+        "WORK_ITEM_KEY": "a002-audio-clock",
+        "WORKER_KEY": "interactive",
+        "STARTED_AT": "2026-09-16T08:33:00-04:00",
     },
 }
 LEGACY_REQUIRED_KEYS = {
