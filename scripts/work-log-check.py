@@ -35,9 +35,9 @@ REQUIRED_KEYS = {
 }
 ALLOWED_STATUS = {"COMPLETED", "PARTIAL", "BLOCKED", "SELF_PAUSED", "NOOP"}
 
-# Work-log contract revision 0002 freezes these exact already-committed
-# Validation paths rather than destructively renaming/replacing historical
-# evidence. No pattern, role, or date-range exception is permitted here.
+# Work-log contract revision 0003 freezes these exact already-committed
+# legacy/malformed paths rather than destructively renaming or rewriting
+# historical evidence. No pattern, role, or date-range exception is permitted.
 GRANDFATHERED_LOGS = {
     "2026-09-16T05-18-33-04-00__validation__v005-fatal-teardown__validation.md": {
         "ROLE_KEY": "validation",
@@ -50,6 +50,36 @@ GRANDFATHERED_LOGS = {
         "WORK_ITEM_KEY": "a001-sole-receiver",
         "WORKER_KEY": "validation",
         "STARTED_AT": "2026-09-16T06:20:13-04:00",
+    },
+    "2026-09-16T07-27-40-04-00__continuity__global-reconciliation__continuity.md": {
+        "ROLE_KEY": "continuity",
+        "WORK_ITEM_KEY": "global-reconciliation",
+        "WORKER_KEY": "continuity",
+        "STARTED_AT": "2026-09-16T07:27:40-04:00",
+    },
+    "20260915T211407-0400__architecture__reconstruction-shift-contract__interactive.md": {
+        "ROLE_KEY": "architecture",
+        "WORK_ITEM_KEY": "reconstruction-shift-contract",
+        "WORKER_KEY": "interactive",
+        "STARTED_AT": "2026-09-15T21:14:07-04:00",
+    },
+    "20260915T232009-0400__validation__a001-sole-receiver__validation.md": {
+        "ROLE_KEY": "validation",
+        "WORK_ITEM_KEY": "a001-sole-receiver",
+        "WORKER_KEY": "validation",
+        "STARTED_AT": "2026-09-15T23:20:09-04:00",
+    },
+    "20260915T232241-0400__reconstruction__a001-sole-receiver__interactive-b.md": {
+        "ROLE_KEY": "reconstruction",
+        "WORK_ITEM_KEY": "a001-sole-receiver",
+        "WORKER_KEY": "interactive-b",
+        "STARTED_AT": "2026-09-15T22:58:52-04:00",
+    },
+    "20260915T233050-0400__continuity__global-reconciliation__continuity.md": {
+        "ROLE_KEY": "continuity",
+        "WORK_ITEM_KEY": "global-reconciliation",
+        "WORKER_KEY": "continuity",
+        "STARTED_AT": "2026-09-15T23:30:50-04:00",
     },
 }
 LEGACY_REQUIRED_KEYS = {
