@@ -2,8 +2,8 @@
  * File synopsis:
  * Defines stable cross-component Transport values used to establish one ledge
  * PSTV session. Physical socket mechanics, sole receive ownership, logical RFB
- * and optional AUDIO storage, and lifecycle implementation remain private to
- * Transport.
+ * plus optional AUDIO/MPEG2 storage, and lifecycle implementation remain private
+ * to Transport.
  *
  * The caller supplies already validated values. This header deliberately does
  * not manufacture CONFIG/profile defaults or expose the adopted physical
@@ -11,7 +11,8 @@
  *
  * Context: docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md; docs/ledge/
  * LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
- * LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md.
+ * LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md; docs/ledge/
+ * LEDGE_AUDIT_A003_MPEG_GENERATION.md.
  */
 
 #ifndef PSTVNC_TRANSPORT_H
@@ -35,8 +36,8 @@ typedef enum pstvnc_transport_result {
  * logical-RFB runtime: no consumer reconstructs them from unrelated globals.
  *
  * RFB enable/disable remains a higher session-composition decision. Creating
- * this A001 RFB session means the logical RFB channel is enabled; a later media
- * composition may omit this resource family entirely when RFB is disabled.
+ * this A001 RFB session means the logical RFB channel is enabled; later media
+ * composition may add AUDIO/MPEG resources explicitly.
  */
 typedef struct pstvnc_transport_session_config {
     uint32_t rfb_queue_capacity;
@@ -62,5 +63,19 @@ typedef struct pstvnc_transport_audio_channel_config {
     int credit_flush_on_empty;
     int credit_return_enabled;
 } pstvnc_transport_audio_channel_config_t;
+
+/*
+ * Immutable A003 logical-MPEG2 resource/flow-control authority. These values
+ * govern only bounded channel-4 storage and credit return. Feed sizing,
+ * sequence geometry, DMA alignment, decoder resources, generation identity and
+ * presentation policy remain outside Transport and have no hidden defaults here.
+ */
+typedef struct pstvnc_transport_mpeg_channel_config {
+    uint32_t queue_capacity;
+    uint32_t initial_credit_bytes;
+    uint32_t credit_batch_bytes;
+    int credit_flush_on_empty;
+    int credit_return_enabled;
+} pstvnc_transport_mpeg_channel_config_t;
 
 #endif
