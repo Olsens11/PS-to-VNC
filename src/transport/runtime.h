@@ -59,6 +59,7 @@ typedef struct pstvnc_transport_runtime {
     /* AUDIO producer/terminal activity is protected by audio_queue_semaphore_id. */
     uint32_t audio_activity_sequence;
     int audio_activity_wait_armed;
+    int audio_activity_waiter_active;
 
     uint32_t rfb_credit_pending;
     uint32_t rfb_initial_credit_bytes;
