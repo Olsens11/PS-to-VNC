@@ -1,79 +1,74 @@
 # Ledge Reconstruction — Current Work State
 
 DOCUMENT=LEDGE_WORK_STATE
-STATE_REVISION=0014
-RECORDED_AT=2026-09-15T21:34:00-04:00
+STATE_REVISION=0015
+RECORDED_AT=2026-09-15T22:32:30-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_STATE_REVISION=0013
-SUPERSEDES_STATE_REVISION=0013
+BASED_ON_STATE_REVISION=0014
+SUPERSEDES_STATE_REVISION=0014
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-`SOURCE_COMMIT=SELF` means the Git commit containing this file supplies exact source authority. Revision 0013 remains historical evidence but was superseded immediately because concurrent Reconstruction A movement landed during its write window.
-
 ## Authority synthesized
 
-- Branch `ledge/h1-all-guns`; authority immediately before this corrective write: `6a5ccb6ec7fbea70ff2741eb778e6efc1d5b9628`.
-- Revision 0013's commit has parent `6c6359f3ef8ecf1d5ffb5ad024249247de0f7a6f`, so the concurrent `test: cover RFB ordered quiesce bridge` commit is in its ancestry even though revision 0013's pre-write authority line named the earlier `4f64bf10...` read. This revision makes that concurrency explicit rather than treating 0013's pre-write observation as timeless current truth.
-- Forensic H1 authority: `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`.
-- Governing reconstruction contract revision `0004`; immutable work-log format revision `0001`.
-- Audit state revision `0007`: seeded semantic audit complete; A001-A006 explicitly reconstruction-ready.
-- Reconstruction state revision `0007`: A001 public bridge source in progress.
-- Integration/Evidence state revision `0001`: non-behavioral integration/evidence lane active for A001 backlog.
-- Validation lane snapshot revision `0004` remains older historical state; newer immutable validation handoffs keep V003/V004 open and do not promote A001.
-- Integration lane activation commits `57644636195e18e048b3759f07aaa0cfe3403d89` and `a0c3f33a160fc6b47bd3dfa4edcdd1d7f1e9773e` are included.
-- Current Reconstruction A source movement includes `57c900703a355d9d1d501213572d375e4e859bef` (`rfb: expose logical transport quiesce boundary`), `4f64bf102a3f15763ba078c4c57056bac47b2209` (`rfb: coordinate ordered transport quiescence`), and `6c6359f3ef8ecf1d5ffb5ad024249247de0f7a6f` (`test: cover RFB ordered quiesce bridge`). No completed reconstruction handoff for this active shift existed at this snapshot.
+- Branch `ledge/h1-all-guns`; pre-write authority `e308b548ebb685bfdf1b73a79832f7a1d52b5628`.
+- Forensic H1 authority `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`.
+- Governing reconstruction contract revision 0005 and immutable work-log contract revision 0001.
+- Audit state revision 0007: seeded audit complete; A001-A006 explicitly reconstruction-ready.
+- Reconstruction state revision 0007 remains the behavior baton; A001 remains active.
+- Foreman state revision 0002 is current planning/integration authority and supersedes the standalone Integration/Evidence seat.
+- Validation state revision 0004 is an older snapshot; newer immutable validation evidence continues to keep V003/V004 open and A001 not VALIDATION_READY.
+- Reconstruction A's 22:30 shift record at commit `e308b548ebb685bfdf1b73a79832f7a1d52b5628` reports `FOREMAN_GOAL_RESULT=BLOCKED` against Foreman packet A1-A5, with no DUT mutation.
 
 Unknown external/Pi-local dirty work remains outside connector visibility and is neither overwritten nor declared absent.
 
 ## Current phase and pipeline
 
-`SEMANTIC_AUDIT_COMPLETE_A001_RECONSTRUCTION_AND_INTEGRATION_ACTIVE`
+`SEMANTIC_AUDIT_COMPLETE_A001_FOREMAN_DIRECTED_RECONSTRUCTION_ACTIVE`
 
 - `AUDIT`: none.
 - `RECONSTRUCTION_READY`: A002-A006 queued behind A001 dependency order.
 - `RECONSTRUCTING`: A001 behavior/source active.
-- `INTEGRATING/EVIDENCE`: A001 non-behavioral repository plumbing/evidence backlog active under Integration/Evidence state 0001; no completed Integration/Evidence shift handoff existed at this snapshot.
+- `FOREMAN_PLANNED/INTEGRATING`: Foreman state 0002 owns quantified A/B packets plus non-behavioral integration/evidence chores.
 - `VALIDATION_READY`: none.
-- `PASS`: audit readiness/discipline plus bounded static PASS/PROVISIONAL-PASS already recorded for implemented A001 responsibilities only.
-- `BLOCKED`: no global infrastructure block; A001 promotion remains prevented by incomplete live call-chain/config integration, executable/build/reproducibility evidence, V004, and unresolved lifecycle/historical-defect proof boundaries.
-- `HARDWARE_PENDING`: none for reconstructed tranches; no coherent machine-validated reconstructed DUT has reached the physical qualification gate.
+- `PASS`: audit readiness plus bounded static/provisional validation results only; no complete A001 PASS.
+- `BLOCKED`: Reconstruction A's 22:30 packet is execution-tool blocked on safe coherent whole-file mutation of the large RFB session migration; this is not a repository-design blocker. A001 promotion also remains gated by coherent live-path/config integration, V003/V004, executable/build/reproducibility evidence, and lifecycle/known-defect proof.
+- `HARDWARE_PENDING`: none promoted for reconstructed tranches; no coherent machine-validated reconstructed DUT has reached the physical gate.
 
-## Reconciled A001 status
+## Foreman goal and cadence health
 
-Reconstruction state 0007 established the validated Transport session-config value, Transport's single process-organized bridge, RFB's logical-stream bridge, explicit descriptor-ownership transfer, receiver-completion reclamation guard, and bridge host-test source. It records the incomplete live-path boundary: `rfb_session.*`, `ps2_network.c`, and `app.c` still require coherent migration away from the old socket-shaped RFB seam, while explicit typed CONFIG ownership must supply validated Transport values without invented defaults.
+Cadence authority in Foreman state 0002 is healthy and correctly staggered: B anchor 21:30 every 90 minutes, Foreman 22:00 every 90 minutes, A 22:30 every 90 minutes. Thus one crew seat begins every 30 minutes and each seat repeats every 90 minutes. The next planned B start is 23:00, Foreman 23:30, A 00:00.
 
-Contract revision 0004 splits routine non-behavioral integration/evidence work away from A/B behavior engineering. Integration state 0001 owns bridge-test registration, RFB/Transport symbol-dictionary completion, `src/transport` topology/checker/generated-portal adoption, executable repository-native evidence, and build/reproducibility proof plumbing. This is pipeline ownership, not a third behavior writer and not Validation.
+Goal-packet coverage is healthy for the immediate upcoming crew work: Foreman state 0002 assigned A's 22:30 A001 RFB-session migration packet and B's 23:00 conditional A001 lifecycle packet with explicit deliverables, acceptance criteria, invariants, blockers, and fallback/stretch work. A's completed log correctly reports `FOREMAN_GOAL_RESULT=BLOCKED` and criterion-level status. It did not substitute chores or self-selected microtasks.
 
-The active Reconstruction A shift has now added RFB-side ordered Transport quiescence coordination plus corresponding bridge-test coverage. Because no completed reconstruction handoff/state revision yet describes the full active shift, Continuity records these commits as current source movement only. It does not infer implementation completion, test execution PASS, validation disposition, or resolution of the inherited H1 receive-poison defect from commit titles or test source existence.
+A's blocker materially affects B's primary path: `rfb_session` remains socket-shaped. Under the already-published B packet, B must therefore use its authorized fallback—finish remaining A acceptance criteria where safe/non-colliding—or, if the same mutation-surface limitation prevents safe behavior work, report BLOCKED rather than create a competing half-live app path or substitute Foreman chores.
 
-## Continuity / architecture findings
+The Foreman should treat A's 75-second blocked shift as evidence about execution surface, not as evidence that the packet was oversized or semantically invalid. Before the next A/B packets, it should account for whether the available worker surface can safely patch/materialize large source files.
 
-- Audit -> Reconstruction dependency discipline: PASS. A001 is explicitly audit-ready; A002-A006 remain queued and unconsumed.
-- Reconstruction/Integration ownership split: coherent under contract 0004. A/B own behavior/source and behavior-specific test source; Integration/Evidence owns routine registration/metadata/topology/generated evidence plumbing.
-- The new `rfb_bridge_test.c` behavior-specific test-source change is within Reconstruction ownership; canonical test registration remains Integration/Evidence work.
-- No committed evidence observed that Integration/Evidence modified DUT behavior.
-- No committed evidence observed that Validation became an implementation lane.
-- One physical PSTV stream/raw-socket privacy remains governing authority.
-- Complete-RFB-message safe-boundary policy remains outside Transport.
-- Historical H1 post-session receiver/mailbox poison remains unresolved; new quiescence code/test source is not empirical proof of cure.
-- Findings represented: V001 RESOLVED, V002 PASS, V003 OPEN, V004 OPEN.
-- Reconstruction B's earlier impossible immutable-log completion chronology remains historical evidence and is not used for elapsed-time claims.
+## Architecture / ownership findings
+
+- Audit -> reconstruction dependency discipline remains coherent: only audit-ready A001 is being consumed; A002-A006 remain queued.
+- Foreman/A/B ownership discipline remains coherent in committed evidence: Foreman plans/integrates; A/B own behavior; Validation remains independent.
+- The superseded standalone Integration/Evidence state is historical evidence only under contract 0005; current non-behavioral chores belong to Foreman state.
+- One physical PSTV owner, RFB complete-message safe-boundary ownership, parser-consumption versus residual-discard distinction, receiver-completion-before-reclaim, and inherited receive-poison accounting remain governing A001 invariants.
 - No hardware qualification is inferred.
 
 ## Exact next safe actions
 
 ### Audit
-Remain idle unless reconstruction/validation exposes a genuinely unexplained H1 responsibility.
+Remain idle unless new evidence exposes an unexplained H1 responsibility.
 
-### Reconstruction A/B
-Continue A001 behavior under contract 0004. Finish the coherent live RFB/app/platform migration and explicit validated CONFIG ownership without raw-socket leakage or guessed defaults; preserve complete-message safe-boundary authority outside Transport, explicit receiver completion before reclamation, and the inherited receive-poison defect boundary. The sibling worker must consume the active A shift's eventual handoff before overlapping writes. Do not begin dependent A002 while A001 remains incoherent.
+### Foreman
+At next wake, consume A's BLOCKED result before issuing/revising packets. Preserve B's 23:00 fallback semantics, assess the mutation-surface limitation explicitly, and spend remaining capacity on Foreman-owned integration/evidence/preflight. Do not implement DUT behavior.
 
-### Integration/Evidence
-Consume reconstruction state 0007 plus the newest completed A/B handoff available at its shift start. Wire bridge tests into canonical host entry points, complete RFB/Transport dictionaries, adopt `src/transport` into topology/checker/generated portal authority, run/preserve executable repository-native checks, and prepare build/reproducibility evidence without modifying DUT semantics. Re-read HEAD and pivot around active A/B files.
+### Reconstruction B
+At 23:00 re-read A's BLOCKED handoff and current HEAD. Do not execute the conditional app lifecycle primary path while `rfb_session` remains socket-shaped. Attempt the packet's authorized fallback only if the worker surface can safely perform the coherent RFB-session migration; otherwise report criterion-level BLOCKED without substituting chores.
+
+### Reconstruction A
+At its next assigned packet, consume newer Foreman authority. Do not repeat the same unsafe whole-file replacement strategy unless tooling/surface capability has changed or a safe bounded mutation method is available.
 
 ### Validation
-Independently review the completed bridge/quiescence/live-path tranche once Reconstruction hands it off and Integration supplies canonical evidence. Keep V003/V004 open until their actual conditions are satisfied; require executable/build/reproducibility/identity evidence before `VALIDATION_READY`; keep hardware qualification separate.
+Continue independent review of completed committed increments only. Keep V003/V004 open until their actual gates are satisfied; do not interpret A's blocker as a validation defect or product PASS.
 
 ### Continuity
-Continue concurrency-aware reconciliation of all four active pipeline lanes. Treat source commits without a completed lane handoff as current movement, not implicit PASS/completion. Preserve immutable per-wake history and supersede immediately stale snapshots explicitly when concurrent commits land during governance writes.
+Continue Foreman-aware reconciliation, verify each upcoming A/B packet exists before wake, verify completed A/B logs carry `FOREMAN_GOAL_RESULT`, and preserve tool-surface blockers distinctly from repository/design blockers.
