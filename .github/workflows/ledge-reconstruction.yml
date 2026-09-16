@@ -119,6 +119,7 @@ jobs:
             src/SYMBOLS.md \
             src/config/SYMBOLS.md \
             src/input/SYMBOLS.md \
+            src/media/SYMBOLS.md \
             src/platform/SYMBOLS.md \
             src/rfb/SYMBOLS.md \
             docs/reference/SOURCE_SYMBOL_DICTIONARIES.md
