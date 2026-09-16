@@ -2,78 +2,433 @@
 
 DIRECTORY=src/transport
 GENERATION=CLEAN_RECONSTRUCTION
-COVERAGE=IN_PROGRESS
+COVERAGE=COMPLETE
 
-This directory owns the one physical PSTV stream, sole receive owner, transport
-framing/sequence state, logical RFB storage/flow control, explicit quiescence,
-and the single process-organized cross-component bridge authorized by the ledge
-all-guns architecture overlay. Coverage remains `IN_PROGRESS` until the strict
-definition-level inventory and generated portal are proven; this file must not
-be read as V004 closure.
+This directory owns the one physical PSTV stream, sole receive owner, framed sequence/serialized send, logical RFB storage and credit, explicit finite-session quiescence, and Transport-owned fatal-session convergence.
 
-Context: `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` and
-`docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md`.
+The inventory below covers clean-generation symbols defined directly in this directory.
 
 | Name | Kind | File | Owner | Scope | Description | Context |
 |---|---|---|---|---|---|---|
-| pstvnc_transport_result_t | enum type | src/transport/transport.h | transport public values | public | Names the common result vocabulary returned by cross-component Transport operations. | session/logical-stream bridge |
-| PSTVNC_TRANSPORT_OK | enum value | src/transport/transport.h | pstvnc_transport_result_t | public | Reports successful completion of the requested operation. | bridge result |
-| PSTVNC_TRANSPORT_WOULD_BLOCK | enum value | src/transport/transport.h | pstvnc_transport_result_t | public | Reports that no progress is currently available without asserting terminal failure. | bridge scheduling result |
-| PSTVNC_TRANSPORT_CLOSED | enum value | src/transport/transport.h | pstvnc_transport_result_t | public | Reports proven terminal receiver/session state. | bridge terminal result |
-| PSTVNC_TRANSPORT_INVALID | enum value | src/transport/transport.h | pstvnc_transport_result_t | public | Reports an argument or lifecycle-state contract violation. | bridge contract |
-| PSTVNC_TRANSPORT_FAILED | enum value | src/transport/transport.h | pstvnc_transport_result_t | public | Reports a non-benign Transport mechanism failure. | bridge failure |
-| pstvnc_transport_session_config_t | struct type | src/transport/transport.h | validated transport session value | public | Carries the already-validated H1-derived queue, credit, receiver-thread, and payload values needed by the A001 logical-RFB session without defaults. | application/config to Transport |
-| pstvnc_transport_runtime_config_t | type alias | src/transport/runtime.h | transport runtime | internal | Transitional internal spelling that aliases the stable session config exactly and creates no second value/default authority. | runtime migration |
-| pstvnc_transport_bridge_runtime | variable | src/transport/bridge.c | Transport bridge | file | Stores the one active product Transport runtime behind the cross-component bridge. | single-session bridge |
-| pstvnc_transport_bridge_session_active | variable | src/transport/bridge.c | Transport bridge | file | Records whether the bridge currently owns an active session runtime. | session lifecycle |
-| pstvnc_transport_bridge_terminal_result | function | src/transport/bridge.c | Transport bridge | file | Maps private runtime failed/completed state into the public result vocabulary without exposing runtime internals. | bridge error mapping |
-| pstvnc_transport_session_open | function | src/transport/bridge.c | application lifecycle process | public bridge | Adopts the caller socket only after successful runtime initialization, clears caller ownership, starts the sole receiver, and never invents CONFIG defaults. | application -> Transport |
-| pstvnc_transport_session_wait_receiver_done | function | src/transport/bridge.c | application lifecycle process | public bridge | Blocks on explicit receiver completion and proves only receiver termination, leaving product failure classification to the application. | shutdown lifecycle |
-| pstvnc_transport_session_close | function | src/transport/bridge.c | application lifecycle process | public bridge | Refuses live-receiver reclamation and releases the private runtime only after receiver completion. | shutdown lifecycle |
-| pstvnc_transport_rfb_read_exact | function | src/transport/bridge.c | logical RFB delivery process | public bridge | Reads exact protocol bytes from Transport-owned logical RFB state without exposing the physical socket. | RFB -> Transport logical stream |
-| pstvnc_transport_rfb_poll_receive | function | src/transport/bridge.c | logical RFB delivery process | public bridge | Reports logical RFB readiness/idle/terminal state without independently receiving from the physical socket. | RFB -> Transport logical stream |
-| pstvnc_transport_rfb_write_exact | function | src/transport/bridge.c | logical RFB delivery process | public bridge | Sends exact logical RFB bytes through Transport's fragmented serialized physical send path. | RFB -> Transport logical stream |
-| pstvnc_transport_rfb_quiesce_requested | function | src/transport/bridge.c | RFB quiesce process | public bridge | Reports whether ordered Pi REQUEST has arrived while leaving safe-boundary choice outside Transport. | finite RFB shutdown |
-| pstvnc_transport_rfb_send_quiesce_boundary | function | src/transport/bridge.c | RFB quiesce process | public bridge | Sends PS2 BOUNDARY only when the external application/RFB owner has selected the complete-message boundary. | finite RFB shutdown |
-| pstvnc_transport_rfb_wait_quiesce_commit | function | src/transport/bridge.c | RFB quiesce process | public bridge | Waits through Transport activity synchronization for the ordered Pi COMMIT marker. | finite RFB shutdown |
-| pstvnc_transport_rfb_snapshot_quiesce_residual | function | src/transport/bridge.c | RFB quiesce process | public bridge | Captures the post-COMMIT residual logical-RFB byte count for exact ownership checking. | finite RFB shutdown |
-| pstvnc_transport_rfb_discard_quiesce_residual | function | src/transport/bridge.c | RFB quiesce process | public bridge | Discards only the exact residual snapshot without awarding parser-consumption credit. | finite RFB shutdown |
-| pstvnc_transport_rfb_send_quiesce_complete | function | src/transport/bridge.c | RFB quiesce process | public bridge | Sends COMPLETE only after the Transport-owned ordered prerequisites and empty residual queue are proven. | finite RFB shutdown |
-| pstvnc_transport_frame_kind_t | enum type | src/transport/protocol.h | PSTV framing | shared wire value | Names the stable PSTV v1 frame-kind vocabulary. | physical framing |
-| pstvnc_transport_channel_t | enum type | src/transport/protocol.h | PSTV framing | shared wire value | Names stable logical channel identities carried by the shared physical PSTV stream. | logical-channel framing |
-| pstvnc_transport_header_t | struct type | src/transport/protocol.h | PSTV framing | internal | Represents one decoded fixed PSTV header. | physical framing |
-| pstvnc_transport_header_encode | function | src/transport/protocol.c | PSTV framing | internal | Validates and encodes one fixed PSTV v1 wire header. | physical framing |
-| pstvnc_transport_header_decode | function | src/transport/protocol.c | PSTV framing | internal | Validates magic/version/payload ceiling and decodes one PSTV v1 wire header. | physical framing |
-| pstvnc_transport_read_be32 | function | src/transport/protocol.c | PSTV framing | internal | Reads one big-endian 32-bit protocol value. | wire helper |
-| pstvnc_transport_write_be32 | function | src/transport/protocol.c | PSTV framing | internal | Writes one big-endian 32-bit protocol value. | wire helper |
-| pstvnc_transport_physical_stream_t | struct type | src/transport/physical_stream.h | physical PSTV stream | internal | Owns the adopted physical socket, send lock, and direction-local PSTV sequence state. | sole physical stream |
-| pstvnc_transport_physical_stream_adopt | function | src/transport/physical_stream.c | physical PSTV stream | internal | Creates serialized-send synchronization before accepting ownership of one physical socket and initializes both sequence directions. | socket adoption |
-| pstvnc_transport_physical_stream_send_frame | function | src/transport/physical_stream.c | physical PSTV stream | internal | Serializes one complete PSTV header/payload transaction and advances outbound sequence only after complete send. | serialized send |
-| pstvnc_transport_physical_stream_receive_frame | function | src/transport/physical_stream.c | physical PSTV stream | internal | Sole physical receive primitive that reads, validates, and sequence-commits one complete inbound frame. | sole receive |
-| pstvnc_transport_physical_stream_release | function | src/transport/physical_stream.c | physical PSTV stream | internal | Closes the adopted physical socket and releases send synchronization after higher-level lifetime rules permit reclamation. | physical lifecycle |
-| pstvnc_transport_physical_stream_send_exact | function | src/transport/physical_stream.c | physical PSTV stream | file | Repeats socket send until all requested bytes reach the socket API or an error occurs. | physical send helper |
-| pstvnc_transport_physical_stream_receive_exact | function | src/transport/physical_stream.c | physical PSTV stream | file | Repeats socket receive until all requested bytes are present or an error occurs. | physical receive helper |
-| pstvnc_transport_rfb_channel_t | struct type | src/transport/rfb_channel.h | logical RFB storage | internal | Owns committed logical RFB bytes, circular-buffer accounting, and producer activity generation. | logical channel 1 |
-| pstvnc_transport_rfb_channel_initialize | function | src/transport/rfb_channel.c | logical RFB storage | internal | Binds caller-owned session storage and initializes an empty logical RFB stream. | logical channel 1 |
-| pstvnc_transport_rfb_channel_commit | function | src/transport/rfb_channel.c | logical RFB storage | internal | Atomically commits one complete received channel-1 DATA payload when capacity is available. | inbound RFB DATA |
-| pstvnc_transport_rfb_channel_read_exact | function | src/transport/rfb_channel.c | logical RFB storage | internal | Consumes exactly the requested committed bytes or leaves channel state unchanged. | logical RFB consumption |
-| pstvnc_transport_rfb_channel_read_available | function | src/transport/rfb_channel.c | logical RFB storage | internal | Consumes up to the requested committed bytes so parser credit can return incrementally. | logical RFB consumption |
-| pstvnc_transport_rfb_channel_discard_residual | function | src/transport/rfb_channel.c | logical RFB storage | internal | Discards an exact terminal residual snapshot without classifying bytes as parser consumption/activity. | terminal RFB residual |
-| pstvnc_transport_rfb_channel_available | function | src/transport/rfb_channel.c | logical RFB storage | internal | Reports currently committed logical RFB bytes. | logical RFB storage |
-| pstvnc_transport_rfb_channel_activity_generation | function | src/transport/rfb_channel.c | logical RFB storage | internal | Reports the monotonically advancing producer generation used for activity evidence. | logical RFB activity |
-| pstvnc_transport_runtime_t | struct type | src/transport/runtime.h | Transport session runtime | internal | Owns one physical stream, sole receiver thread, synchronized RFB resources, flow control, activity rendezvous, and receiver completion. | A001 runtime |
-| pstvnc_transport_runtime_initialize | function | src/transport/runtime.c | Transport session runtime | internal | Validates supplied session values, allocates receiver-visible RFB resources/stack, and adopts the one physical socket as the final successful initialization step. | runtime lifecycle |
-| pstvnc_transport_runtime_start_receiver | function | src/transport/runtime.c | Transport session runtime | internal | Sends initial RFB credit and starts the sole receiver after all receiver-visible resources exist. | runtime lifecycle |
-| pstvnc_transport_runtime_rfb_activity_snapshot | function | src/transport/runtime.c | Transport session runtime | internal | Snapshots protected producer activity for race-free timerless consumer rendezvous. | activity rendezvous |
-| pstvnc_transport_runtime_rfb_wait_activity | function | src/transport/runtime.c | Transport session runtime | internal | Arms and waits for one producer event only when no newer protected activity is already visible. | activity rendezvous |
-| pstvnc_transport_runtime_rfb_read_exact | function | src/transport/runtime.c | Transport session runtime | internal | Completes an exact RFB read by incrementally consuming committed bytes, returning earned credit, and waiting only when empty. | parser consumption/credit |
-| pstvnc_transport_runtime_rfb_poll_receive | function | src/transport/runtime.c | Transport session runtime | internal | Reports logical RFB availability or terminal receiver state without touching the physical receive path. | logical RFB scheduling |
-| pstvnc_transport_runtime_rfb_write_exact | function | src/transport/runtime.c | Transport session runtime | internal | Fragments outbound RFB bytes at the configured DATA payload ceiling through the serialized physical send path. | outbound logical RFB |
-| pstvnc_transport_runtime_wait_receiver_done | function | src/transport/runtime.c | Transport session runtime | internal | Blocks on the explicit receiver completion event instead of diagnostic counters or timer polling. | receiver lifetime |
-| pstvnc_transport_runtime_release | function | src/transport/runtime.c | Transport session runtime | internal | Refuses receiver-visible reclamation while a started receiver is live, then retires Transport-owned resources. | receiver lifetime |
-| pstvnc_transport_runtime_rfb_quiesce_requested | function | src/transport/quiesce.c | Transport quiesce state | internal | Reports whether ordered Pi REQUEST has been accepted. | finite RFB shutdown |
-| pstvnc_transport_runtime_rfb_send_quiesce_boundary | function | src/transport/quiesce.c | Transport quiesce state | internal | Publishes/sends PS2 BOUNDARY after an external safe-boundary decision. | finite RFB shutdown |
-| pstvnc_transport_runtime_rfb_wait_quiesce_commit | function | src/transport/quiesce.c | Transport quiesce state | internal | Waits for ordered Pi COMMIT through the producer activity rendezvous. | finite RFB shutdown |
-| pstvnc_transport_runtime_rfb_snapshot_residual | function | src/transport/quiesce.c | Transport quiesce state | internal | Captures exact remaining logical RFB bytes after COMMIT. | terminal RFB residual |
-| pstvnc_transport_runtime_rfb_discard_quiesce_residual | function | src/transport/quiesce.c | Transport quiesce state | internal | Discards only the exact snapshotted terminal residual without false parser credit. | terminal RFB residual |
-| pstvnc_transport_runtime_rfb_send_quiesce_complete | function | src/transport/quiesce.c | Transport quiesce state | internal | Sends COMPLETE only after REQUEST, BOUNDARY, COMMIT, and an empty residual queue. | finite RFB shutdown |
+| buffer | parameter | src/transport/bridge.c | pstvnc_transport_rfb_read_exact | local | Supplies buffer to pstvnc_transport_rfb_read_exact. | A001 Transport |
+| buffer | parameter | src/transport/bridge.c | pstvnc_transport_rfb_write_exact | local | Supplies buffer to pstvnc_transport_rfb_write_exact. | A001 Transport |
+| config | parameter | src/transport/bridge.c | pstvnc_transport_session_open | local | Supplies config to pstvnc_transport_session_open. | A001 Transport |
+| count | parameter | src/transport/bridge.c | pstvnc_transport_rfb_read_exact | local | Supplies count to pstvnc_transport_rfb_read_exact. | A001 Transport |
+| count | parameter | src/transport/bridge.c | pstvnc_transport_rfb_write_exact | local | Supplies count to pstvnc_transport_rfb_write_exact. | A001 Transport |
+| discarded_count | parameter | src/transport/bridge.c | pstvnc_transport_rfb_discard_quiesce_residual | local | Supplies discarded_count to pstvnc_transport_rfb_discard_quiesce_residual. | A001 Transport |
+| expected_count | parameter | src/transport/bridge.c | pstvnc_transport_rfb_discard_quiesce_residual | local | Supplies expected_count to pstvnc_transport_rfb_discard_quiesce_residual. | A001 Transport |
+| pstvnc_transport_bridge_finish_release | function | src/transport/bridge.c | Transport | file | Defines pstvnc_transport_bridge_finish_release. | A001 Transport |
+| pstvnc_transport_bridge_runtime | variable | src/transport/bridge.c | Transport | file | Stores pstvnc_transport_bridge_runtime for Transport. | A001 Transport |
+| pstvnc_transport_bridge_session_active | variable | src/transport/bridge.c | Transport | file | Stores pstvnc_transport_bridge_session_active for Transport. | A001 Transport |
+| pstvnc_transport_bridge_terminal_result | function | src/transport/bridge.c | Transport | file | Defines pstvnc_transport_bridge_terminal_result. | A001 Transport |
+| pstvnc_transport_rfb_discard_quiesce_residual | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_discard_quiesce_residual. | A001 Transport |
+| pstvnc_transport_rfb_poll_receive | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_poll_receive. | A001 Transport |
+| pstvnc_transport_rfb_quiesce_requested | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_quiesce_requested. | A001 Transport |
+| pstvnc_transport_rfb_read_exact | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_read_exact. | A001 Transport |
+| pstvnc_transport_rfb_send_quiesce_boundary | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_send_quiesce_boundary. | A001 Transport |
+| pstvnc_transport_rfb_send_quiesce_complete | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_send_quiesce_complete. | A001 Transport |
+| pstvnc_transport_rfb_snapshot_quiesce_residual | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_snapshot_quiesce_residual. | A001 Transport |
+| pstvnc_transport_rfb_wait_quiesce_commit | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_wait_quiesce_commit. | A001 Transport |
+| pstvnc_transport_rfb_write_exact | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_rfb_write_exact. | A001 Transport |
+| pstvnc_transport_session_abort | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_session_abort. | A001 Transport |
+| pstvnc_transport_session_close | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_session_close. | A001 Transport |
+| pstvnc_transport_session_open | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_session_open. | A001 Transport |
+| pstvnc_transport_session_wait_receiver_done | function | src/transport/bridge.c | Transport | public | Defines pstvnc_transport_session_wait_receiver_done. | A001 Transport |
+| released | variable | src/transport/bridge.c | pstvnc_transport_bridge_finish_release | local | Stores released for pstvnc_transport_bridge_finish_release. | A001 Transport |
+| requested | variable | src/transport/bridge.c | pstvnc_transport_rfb_quiesce_requested | local | Stores requested for pstvnc_transport_rfb_quiesce_requested. | A001 Transport |
+| residual_count | parameter | src/transport/bridge.c | pstvnc_transport_rfb_snapshot_quiesce_residual | local | Supplies residual_count to pstvnc_transport_rfb_snapshot_quiesce_residual. | A001 Transport |
+| result | variable | src/transport/bridge.c | pstvnc_transport_rfb_poll_receive | local | Stores result for pstvnc_transport_rfb_poll_receive. | A001 Transport |
+| socket_fd | parameter | src/transport/bridge.c | pstvnc_transport_session_open | local | Supplies socket_fd to pstvnc_transport_session_open. | A001 Transport |
+| PSTVNC_TRANSPORT_BRIDGE_H | include guard | src/transport/bridge.h | Transport | file | Defines PSTVNC_TRANSPORT_BRIDGE_H type. | A001 Transport |
+| buffer | prototype parameter | src/transport/bridge.h | pstvnc_transport_rfb_read_exact | prototype | Supplies buffer to pstvnc_transport_rfb_read_exact. | A001 Transport |
+| buffer | prototype parameter | src/transport/bridge.h | pstvnc_transport_rfb_write_exact | prototype | Supplies buffer to pstvnc_transport_rfb_write_exact. | A001 Transport |
+| config | prototype parameter | src/transport/bridge.h | pstvnc_transport_session_open | prototype | Supplies config to pstvnc_transport_session_open. | A001 Transport |
+| count | prototype parameter | src/transport/bridge.h | pstvnc_transport_rfb_read_exact | prototype | Supplies count to pstvnc_transport_rfb_read_exact. | A001 Transport |
+| count | prototype parameter | src/transport/bridge.h | pstvnc_transport_rfb_write_exact | prototype | Supplies count to pstvnc_transport_rfb_write_exact. | A001 Transport |
+| discarded_count | prototype parameter | src/transport/bridge.h | pstvnc_transport_rfb_discard_quiesce_residual | prototype | Supplies discarded_count to pstvnc_transport_rfb_discard_quiesce_residual. | A001 Transport |
+| expected_count | prototype parameter | src/transport/bridge.h | pstvnc_transport_rfb_discard_quiesce_residual | prototype | Supplies expected_count to pstvnc_transport_rfb_discard_quiesce_residual. | A001 Transport |
+| pstvnc_transport_rfb_discard_quiesce_residual | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_rfb_discard_quiesce_residual. | A001 Transport |
+| pstvnc_transport_rfb_poll_receive | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_rfb_poll_receive. | A001 Transport |
+| pstvnc_transport_rfb_quiesce_requested | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_rfb_quiesce_requested. | A001 Transport |
+| pstvnc_transport_rfb_read_exact | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_rfb_read_exact. | A001 Transport |
+| pstvnc_transport_rfb_send_quiesce_boundary | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_rfb_send_quiesce_boundary. | A001 Transport |
+| pstvnc_transport_rfb_send_quiesce_complete | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_rfb_send_quiesce_complete. | A001 Transport |
+| pstvnc_transport_rfb_snapshot_quiesce_residual | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_rfb_snapshot_quiesce_residual. | A001 Transport |
+| pstvnc_transport_rfb_wait_quiesce_commit | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_rfb_wait_quiesce_commit. | A001 Transport |
+| pstvnc_transport_rfb_write_exact | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_rfb_write_exact. | A001 Transport |
+| pstvnc_transport_session_abort | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_session_abort. | A001 Transport |
+| pstvnc_transport_session_close | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_session_close. | A001 Transport |
+| pstvnc_transport_session_open | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_session_open. | A001 Transport |
+| pstvnc_transport_session_wait_receiver_done | function declaration | src/transport/bridge.h | Transport | public | Declares pstvnc_transport_session_wait_receiver_done. | A001 Transport |
+| residual_count | prototype parameter | src/transport/bridge.h | pstvnc_transport_rfb_snapshot_quiesce_residual | prototype | Supplies residual_count to pstvnc_transport_rfb_snapshot_quiesce_residual. | A001 Transport |
+| socket_fd | prototype parameter | src/transport/bridge.h | pstvnc_transport_session_open | prototype | Supplies socket_fd to pstvnc_transport_session_open. | A001 Transport |
+| byte_count | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_exact | local | Supplies byte_count to pstvnc_transport_physical_stream_receive_exact. | A001 Transport |
+| byte_count | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_exact | local | Supplies byte_count to pstvnc_transport_physical_stream_send_exact. | A001 Transport |
+| bytes | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_exact | local | Supplies bytes to pstvnc_transport_physical_stream_receive_exact. | A001 Transport |
+| bytes | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_exact | local | Supplies bytes to pstvnc_transport_physical_stream_send_exact. | A001 Transport |
+| channel | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_frame | local | Supplies channel to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| flags | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_frame | local | Supplies flags to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| header | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_frame | local | Supplies header to pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| header | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_frame | local | Stores header for pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| kind | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_frame | local | Supplies kind to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| payload | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_frame | local | Supplies payload to pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| payload | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_frame | local | Supplies payload to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| payload_capacity | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_frame | local | Supplies payload_capacity to pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| payload_length | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_frame | local | Supplies payload_length to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| pstvnc_transport_physical_stream_adopt | function | src/transport/physical_stream.c | Transport | public | Defines pstvnc_transport_physical_stream_adopt. | A001 Transport |
+| pstvnc_transport_physical_stream_receive_exact | function | src/transport/physical_stream.c | Transport | file | Defines pstvnc_transport_physical_stream_receive_exact. | A001 Transport |
+| pstvnc_transport_physical_stream_receive_frame | function | src/transport/physical_stream.c | Transport | public | Defines pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| pstvnc_transport_physical_stream_release | function | src/transport/physical_stream.c | Transport | public | Defines pstvnc_transport_physical_stream_release. | A001 Transport |
+| pstvnc_transport_physical_stream_send_exact | function | src/transport/physical_stream.c | Transport | file | Defines pstvnc_transport_physical_stream_send_exact. | A001 Transport |
+| pstvnc_transport_physical_stream_send_frame | function | src/transport/physical_stream.c | Transport | public | Defines pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| pstvnc_transport_physical_stream_shutdown_io | function | src/transport/physical_stream.c | Transport | public | Defines pstvnc_transport_physical_stream_shutdown_io. | A001 Transport |
+| received | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_exact | local | Stores received for pstvnc_transport_physical_stream_receive_exact. | A001 Transport |
+| received_total | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_exact | local | Stores received_total for pstvnc_transport_physical_stream_receive_exact. | A001 Transport |
+| send_mutex | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_adopt | local | Stores send_mutex for pstvnc_transport_physical_stream_adopt. | A001 Transport |
+| send_semaphore_id | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_adopt | local | Stores send_semaphore_id for pstvnc_transport_physical_stream_adopt. | A001 Transport |
+| send_succeeded | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_frame | local | Stores send_succeeded for pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| sent | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_exact | local | Stores sent for pstvnc_transport_physical_stream_send_exact. | A001 Transport |
+| sent_total | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_exact | local | Stores sent_total for pstvnc_transport_physical_stream_send_exact. | A001 Transport |
+| socket_fd | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_adopt | local | Supplies socket_fd to pstvnc_transport_physical_stream_adopt. | A001 Transport |
+| socket_fd | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_exact | local | Supplies socket_fd to pstvnc_transport_physical_stream_receive_exact. | A001 Transport |
+| socket_fd | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_exact | local | Supplies socket_fd to pstvnc_transport_physical_stream_send_exact. | A001 Transport |
+| stream | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_adopt | local | Supplies stream to pstvnc_transport_physical_stream_adopt. | A001 Transport |
+| stream | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_frame | local | Supplies stream to pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| stream | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_release | local | Supplies stream to pstvnc_transport_physical_stream_release. | A001 Transport |
+| stream | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_frame | local | Supplies stream to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| stream | parameter | src/transport/physical_stream.c | pstvnc_transport_physical_stream_shutdown_io | local | Supplies stream to pstvnc_transport_physical_stream_shutdown_io. | A001 Transport |
+| wire_header | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_receive_frame | local | Stores wire_header for pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| wire_header | variable | src/transport/physical_stream.c | pstvnc_transport_physical_stream_send_frame | local | Stores wire_header for pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| PSTVNC_TRANSPORT_PHYSICAL_STREAM_H | include guard | src/transport/physical_stream.h | Transport | file | Defines PSTVNC_TRANSPORT_PHYSICAL_STREAM_H type. | A001 Transport |
+| channel | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_send_frame | prototype | Supplies channel to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| expected_receive_sequence | field | src/transport/physical_stream.h | pstvnc_transport_physical_stream | public | Stores expected_receive_sequence in pstvnc_transport_physical_stream. | A001 Transport |
+| flags | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_send_frame | prototype | Supplies flags to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| header | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_receive_frame | prototype | Supplies header to pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| kind | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_send_frame | prototype | Supplies kind to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| next_send_sequence | field | src/transport/physical_stream.h | pstvnc_transport_physical_stream | public | Stores next_send_sequence in pstvnc_transport_physical_stream. | A001 Transport |
+| payload | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_receive_frame | prototype | Supplies payload to pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| payload | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_send_frame | prototype | Supplies payload to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| payload_capacity | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_receive_frame | prototype | Supplies payload_capacity to pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| payload_length | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_send_frame | prototype | Supplies payload_length to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| pstvnc_transport_physical_stream | structure | src/transport/physical_stream.h | Transport | public | Defines pstvnc_transport_physical_stream type. | A001 Transport |
+| pstvnc_transport_physical_stream_adopt | function declaration | src/transport/physical_stream.h | Transport | public | Declares pstvnc_transport_physical_stream_adopt. | A001 Transport |
+| pstvnc_transport_physical_stream_receive_frame | function declaration | src/transport/physical_stream.h | Transport | public | Declares pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| pstvnc_transport_physical_stream_release | function declaration | src/transport/physical_stream.h | Transport | public | Declares pstvnc_transport_physical_stream_release. | A001 Transport |
+| pstvnc_transport_physical_stream_send_frame | function declaration | src/transport/physical_stream.h | Transport | public | Declares pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| pstvnc_transport_physical_stream_shutdown_io | function declaration | src/transport/physical_stream.h | Transport | public | Declares pstvnc_transport_physical_stream_shutdown_io. | A001 Transport |
+| pstvnc_transport_physical_stream_t | type | src/transport/physical_stream.h | Transport | public | Defines pstvnc_transport_physical_stream_t type. | A001 Transport |
+| send_semaphore_id | field | src/transport/physical_stream.h | pstvnc_transport_physical_stream | public | Stores send_semaphore_id in pstvnc_transport_physical_stream. | A001 Transport |
+| socket_fd | field | src/transport/physical_stream.h | pstvnc_transport_physical_stream | public | Stores socket_fd in pstvnc_transport_physical_stream. | A001 Transport |
+| socket_fd | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_adopt | prototype | Supplies socket_fd to pstvnc_transport_physical_stream_adopt. | A001 Transport |
+| stream | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_adopt | prototype | Supplies stream to pstvnc_transport_physical_stream_adopt. | A001 Transport |
+| stream | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_receive_frame | prototype | Supplies stream to pstvnc_transport_physical_stream_receive_frame. | A001 Transport |
+| stream | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_release | prototype | Supplies stream to pstvnc_transport_physical_stream_release. | A001 Transport |
+| stream | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_send_frame | prototype | Supplies stream to pstvnc_transport_physical_stream_send_frame. | A001 Transport |
+| stream | prototype parameter | src/transport/physical_stream.h | pstvnc_transport_physical_stream_shutdown_io | prototype | Supplies stream to pstvnc_transport_physical_stream_shutdown_io. | A001 Transport |
+| header | parameter | src/transport/protocol.c | pstvnc_transport_header_decode | local | Supplies header to pstvnc_transport_header_decode. | A001 Transport |
+| header | parameter | src/transport/protocol.c | pstvnc_transport_header_encode | local | Supplies header to pstvnc_transport_header_encode. | A001 Transport |
+| input | parameter | src/transport/protocol.c | pstvnc_transport_header_decode | local | Supplies input to pstvnc_transport_header_decode. | A001 Transport |
+| input | parameter | src/transport/protocol.c | pstvnc_transport_read_be32 | local | Supplies input to pstvnc_transport_read_be32. | A001 Transport |
+| output | parameter | src/transport/protocol.c | pstvnc_transport_header_encode | local | Supplies output to pstvnc_transport_header_encode. | A001 Transport |
+| output | parameter | src/transport/protocol.c | pstvnc_transport_write_be32 | local | Supplies output to pstvnc_transport_write_be32. | A001 Transport |
+| pstvnc_transport_header_decode | function | src/transport/protocol.c | Transport | public | Defines pstvnc_transport_header_decode. | A001 Transport |
+| pstvnc_transport_header_encode | function | src/transport/protocol.c | Transport | public | Defines pstvnc_transport_header_encode. | A001 Transport |
+| pstvnc_transport_read_be32 | function | src/transport/protocol.c | Transport | public | Defines pstvnc_transport_read_be32. | A001 Transport |
+| pstvnc_transport_write_be32 | function | src/transport/protocol.c | Transport | public | Defines pstvnc_transport_write_be32. | A001 Transport |
+| value | parameter | src/transport/protocol.c | pstvnc_transport_write_be32 | local | Supplies value to pstvnc_transport_write_be32. | A001 Transport |
+| PSTVNC_TRANSPORT_CHANNEL_AUDIO | enum value | src/transport/protocol.h | pstvnc_transport_channel | public | Defines PSTVNC_TRANSPORT_CHANNEL_AUDIO value. | A001 Transport |
+| PSTVNC_TRANSPORT_CHANNEL_CONTROL | enum value | src/transport/protocol.h | pstvnc_transport_channel | public | Defines PSTVNC_TRANSPORT_CHANNEL_CONTROL value. | A001 Transport |
+| PSTVNC_TRANSPORT_CHANNEL_MPEG2 | enum value | src/transport/protocol.h | pstvnc_transport_channel | public | Defines PSTVNC_TRANSPORT_CHANNEL_MPEG2 value. | A001 Transport |
+| PSTVNC_TRANSPORT_CHANNEL_RFB | enum value | src/transport/protocol.h | pstvnc_transport_channel | public | Defines PSTVNC_TRANSPORT_CHANNEL_RFB value. | A001 Transport |
+| PSTVNC_TRANSPORT_CHANNEL_TELEMETRY | enum value | src/transport/protocol.h | pstvnc_transport_channel | public | Defines PSTVNC_TRANSPORT_CHANNEL_TELEMETRY value. | A001 Transport |
+| PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE | macro | src/transport/protocol.h | Transport | public | Defines PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE value. | A001 Transport |
+| PSTVNC_TRANSPORT_FRAME_CONFIG | enum value | src/transport/protocol.h | pstvnc_transport_frame_kind | public | Defines PSTVNC_TRANSPORT_FRAME_CONFIG value. | A001 Transport |
+| PSTVNC_TRANSPORT_FRAME_CREDIT | enum value | src/transport/protocol.h | pstvnc_transport_frame_kind | public | Defines PSTVNC_TRANSPORT_FRAME_CREDIT value. | A001 Transport |
+| PSTVNC_TRANSPORT_FRAME_DATA | enum value | src/transport/protocol.h | pstvnc_transport_frame_kind | public | Defines PSTVNC_TRANSPORT_FRAME_DATA value. | A001 Transport |
+| PSTVNC_TRANSPORT_FRAME_ERROR | enum value | src/transport/protocol.h | pstvnc_transport_frame_kind | public | Defines PSTVNC_TRANSPORT_FRAME_ERROR value. | A001 Transport |
+| PSTVNC_TRANSPORT_FRAME_HEARTBEAT | enum value | src/transport/protocol.h | pstvnc_transport_frame_kind | public | Defines PSTVNC_TRANSPORT_FRAME_HEARTBEAT value. | A001 Transport |
+| PSTVNC_TRANSPORT_FRAME_HELLO | enum value | src/transport/protocol.h | pstvnc_transport_frame_kind | public | Defines PSTVNC_TRANSPORT_FRAME_HELLO value. | A001 Transport |
+| PSTVNC_TRANSPORT_FRAME_TELEMETRY | enum value | src/transport/protocol.h | pstvnc_transport_frame_kind | public | Defines PSTVNC_TRANSPORT_FRAME_TELEMETRY value. | A001 Transport |
+| PSTVNC_TRANSPORT_HEADER_SIZE | macro | src/transport/protocol.h | Transport | public | Defines PSTVNC_TRANSPORT_HEADER_SIZE value. | A001 Transport |
+| PSTVNC_TRANSPORT_MAGIC | macro | src/transport/protocol.h | Transport | public | Defines PSTVNC_TRANSPORT_MAGIC value. | A001 Transport |
+| PSTVNC_TRANSPORT_MAX_PAYLOAD | macro | src/transport/protocol.h | Transport | public | Defines PSTVNC_TRANSPORT_MAX_PAYLOAD value. | A001 Transport |
+| PSTVNC_TRANSPORT_PROTOCOL_H | include guard | src/transport/protocol.h | Transport | file | Defines PSTVNC_TRANSPORT_PROTOCOL_H type. | A001 Transport |
+| PSTVNC_TRANSPORT_VERSION | macro | src/transport/protocol.h | Transport | public | Defines PSTVNC_TRANSPORT_VERSION value. | A001 Transport |
+| channel | field | src/transport/protocol.h | pstvnc_transport_header | public | Stores channel in pstvnc_transport_header. | A001 Transport |
+| flags | field | src/transport/protocol.h | pstvnc_transport_header | public | Stores flags in pstvnc_transport_header. | A001 Transport |
+| header | prototype parameter | src/transport/protocol.h | pstvnc_transport_header_decode | prototype | Supplies header to pstvnc_transport_header_decode. | A001 Transport |
+| header | prototype parameter | src/transport/protocol.h | pstvnc_transport_header_encode | prototype | Supplies header to pstvnc_transport_header_encode. | A001 Transport |
+| input | prototype parameter | src/transport/protocol.h | pstvnc_transport_header_decode | prototype | Supplies input to pstvnc_transport_header_decode. | A001 Transport |
+| input | prototype parameter | src/transport/protocol.h | pstvnc_transport_read_be32 | prototype | Supplies input to pstvnc_transport_read_be32. | A001 Transport |
+| kind | field | src/transport/protocol.h | pstvnc_transport_header | public | Stores kind in pstvnc_transport_header. | A001 Transport |
+| output | prototype parameter | src/transport/protocol.h | pstvnc_transport_header_encode | prototype | Supplies output to pstvnc_transport_header_encode. | A001 Transport |
+| output | prototype parameter | src/transport/protocol.h | pstvnc_transport_write_be32 | prototype | Supplies output to pstvnc_transport_write_be32. | A001 Transport |
+| payload_length | field | src/transport/protocol.h | pstvnc_transport_header | public | Stores payload_length in pstvnc_transport_header. | A001 Transport |
+| pstvnc_transport_channel | enum | src/transport/protocol.h | Transport | public | Defines pstvnc_transport_channel type. | A001 Transport |
+| pstvnc_transport_channel_t | type | src/transport/protocol.h | Transport | public | Defines pstvnc_transport_channel_t type. | A001 Transport |
+| pstvnc_transport_frame_kind | enum | src/transport/protocol.h | Transport | public | Defines pstvnc_transport_frame_kind type. | A001 Transport |
+| pstvnc_transport_frame_kind_t | type | src/transport/protocol.h | Transport | public | Defines pstvnc_transport_frame_kind_t type. | A001 Transport |
+| pstvnc_transport_header | structure | src/transport/protocol.h | Transport | public | Defines pstvnc_transport_header type. | A001 Transport |
+| pstvnc_transport_header_decode | function declaration | src/transport/protocol.h | Transport | public | Declares pstvnc_transport_header_decode. | A001 Transport |
+| pstvnc_transport_header_encode | function declaration | src/transport/protocol.h | Transport | public | Declares pstvnc_transport_header_encode. | A001 Transport |
+| pstvnc_transport_header_t | type | src/transport/protocol.h | Transport | public | Defines pstvnc_transport_header_t type. | A001 Transport |
+| pstvnc_transport_read_be32 | function declaration | src/transport/protocol.h | Transport | public | Declares pstvnc_transport_read_be32. | A001 Transport |
+| pstvnc_transport_write_be32 | function declaration | src/transport/protocol.h | Transport | public | Declares pstvnc_transport_write_be32. | A001 Transport |
+| sequence | field | src/transport/protocol.h | pstvnc_transport_header | public | Stores sequence in pstvnc_transport_header. | A001 Transport |
+| value | prototype parameter | src/transport/protocol.h | pstvnc_transport_write_be32 | prototype | Supplies value to pstvnc_transport_write_be32. | A001 Transport |
+| version | field | src/transport/protocol.h | pstvnc_transport_header | public | Stores version in pstvnc_transport_header. | A001 Transport |
+| activity_sequence | variable | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_wait_quiesce_commit | local | Stores activity_sequence for pstvnc_transport_runtime_rfb_wait_quiesce_commit. | A001 Transport |
+| committed | variable | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_wait_quiesce_commit | local | Stores committed for pstvnc_transport_runtime_rfb_wait_quiesce_commit. | A001 Transport |
+| discarded | variable | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_discard_quiesce_residual | local | Stores discarded for pstvnc_transport_runtime_rfb_discard_quiesce_residual. | A001 Transport |
+| discarded_count | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_discard_quiesce_residual | local | Supplies discarded_count to pstvnc_transport_runtime_rfb_discard_quiesce_residual. | A001 Transport |
+| expected_count | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_discard_quiesce_residual | local | Supplies expected_count to pstvnc_transport_runtime_rfb_discard_quiesce_residual. | A001 Transport |
+| pstvnc_transport_runtime_rfb_discard_quiesce_residual | function | src/transport/quiesce.c | Transport | public | Defines pstvnc_transport_runtime_rfb_discard_quiesce_residual. | A001 Transport |
+| pstvnc_transport_runtime_rfb_quiesce_requested | function | src/transport/quiesce.c | Transport | public | Defines pstvnc_transport_runtime_rfb_quiesce_requested. | A001 Transport |
+| pstvnc_transport_runtime_rfb_send_quiesce_boundary | function | src/transport/quiesce.c | Transport | public | Defines pstvnc_transport_runtime_rfb_send_quiesce_boundary. | A001 Transport |
+| pstvnc_transport_runtime_rfb_send_quiesce_complete | function | src/transport/quiesce.c | Transport | public | Defines pstvnc_transport_runtime_rfb_send_quiesce_complete. | A001 Transport |
+| pstvnc_transport_runtime_rfb_snapshot_residual | function | src/transport/quiesce.c | Transport | public | Defines pstvnc_transport_runtime_rfb_snapshot_residual. | A001 Transport |
+| pstvnc_transport_runtime_rfb_wait_quiesce_commit | function | src/transport/quiesce.c | Transport | public | Defines pstvnc_transport_runtime_rfb_wait_quiesce_commit. | A001 Transport |
+| pstvnc_transport_runtime_send_quiesce_marker | function | src/transport/quiesce.c | Transport | file | Defines pstvnc_transport_runtime_send_quiesce_marker. | A001 Transport |
+| requested | variable | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_quiesce_requested | local | Stores requested for pstvnc_transport_runtime_rfb_quiesce_requested. | A001 Transport |
+| residual_count | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_snapshot_residual | local | Supplies residual_count to pstvnc_transport_runtime_rfb_snapshot_residual. | A001 Transport |
+| runtime | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_discard_quiesce_residual | local | Supplies runtime to pstvnc_transport_runtime_rfb_discard_quiesce_residual. | A001 Transport |
+| runtime | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_quiesce_requested | local | Supplies runtime to pstvnc_transport_runtime_rfb_quiesce_requested. | A001 Transport |
+| runtime | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_send_quiesce_boundary | local | Supplies runtime to pstvnc_transport_runtime_rfb_send_quiesce_boundary. | A001 Transport |
+| runtime | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_send_quiesce_complete | local | Supplies runtime to pstvnc_transport_runtime_rfb_send_quiesce_complete. | A001 Transport |
+| runtime | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_snapshot_residual | local | Supplies runtime to pstvnc_transport_runtime_rfb_snapshot_residual. | A001 Transport |
+| runtime | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_wait_quiesce_commit | local | Supplies runtime to pstvnc_transport_runtime_rfb_wait_quiesce_commit. | A001 Transport |
+| runtime | parameter | src/transport/quiesce.c | pstvnc_transport_runtime_send_quiesce_marker | local | Supplies runtime to pstvnc_transport_runtime_send_quiesce_marker. | A001 Transport |
+| terminal | variable | src/transport/quiesce.c | pstvnc_transport_runtime_rfb_wait_quiesce_commit | local | Stores terminal for pstvnc_transport_runtime_rfb_wait_quiesce_commit. | A001 Transport |
+| buffer | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_read_available | local | Supplies buffer to pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| buffer | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_read_exact | local | Supplies buffer to pstvnc_transport_rfb_channel_read_exact. | A001 Transport |
+| capacity | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_initialize | local | Supplies capacity to pstvnc_transport_rfb_channel_initialize. | A001 Transport |
+| channel | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_activity_generation | local | Supplies channel to pstvnc_transport_rfb_channel_activity_generation. | A001 Transport |
+| channel | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_available | local | Supplies channel to pstvnc_transport_rfb_channel_available. | A001 Transport |
+| channel | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_commit | local | Supplies channel to pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| channel | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_discard_residual | local | Supplies channel to pstvnc_transport_rfb_channel_discard_residual. | A001 Transport |
+| channel | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_initialize | local | Supplies channel to pstvnc_transport_rfb_channel_initialize. | A001 Transport |
+| channel | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_read_available | local | Supplies channel to pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| channel | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_read_exact | local | Supplies channel to pstvnc_transport_rfb_channel_read_exact. | A001 Transport |
+| count | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_read_exact | local | Supplies count to pstvnc_transport_rfb_channel_read_exact. | A001 Transport |
+| count | variable | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_read_available | local | Stores count for pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| discarded_count | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_discard_residual | local | Supplies discarded_count to pstvnc_transport_rfb_channel_discard_residual. | A001 Transport |
+| expected_count | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_discard_residual | local | Supplies expected_count to pstvnc_transport_rfb_channel_discard_residual. | A001 Transport |
+| first_part | variable | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_commit | local | Stores first_part for pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| first_part | variable | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_read_available | local | Stores first_part for pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| maximum_count | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_read_available | local | Supplies maximum_count to pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| payload | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_commit | local | Supplies payload to pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| payload_length | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_commit | local | Supplies payload_length to pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| pstvnc_transport_rfb_channel_activity_generation | function | src/transport/rfb_channel.c | Transport | public | Defines pstvnc_transport_rfb_channel_activity_generation. | A001 Transport |
+| pstvnc_transport_rfb_channel_available | function | src/transport/rfb_channel.c | Transport | public | Defines pstvnc_transport_rfb_channel_available. | A001 Transport |
+| pstvnc_transport_rfb_channel_commit | function | src/transport/rfb_channel.c | Transport | public | Defines pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| pstvnc_transport_rfb_channel_discard_residual | function | src/transport/rfb_channel.c | Transport | public | Defines pstvnc_transport_rfb_channel_discard_residual. | A001 Transport |
+| pstvnc_transport_rfb_channel_initialize | function | src/transport/rfb_channel.c | Transport | public | Defines pstvnc_transport_rfb_channel_initialize. | A001 Transport |
+| pstvnc_transport_rfb_channel_read_available | function | src/transport/rfb_channel.c | Transport | public | Defines pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| pstvnc_transport_rfb_channel_read_exact | function | src/transport/rfb_channel.c | Transport | public | Defines pstvnc_transport_rfb_channel_read_exact. | A001 Transport |
+| storage | parameter | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_initialize | local | Supplies storage to pstvnc_transport_rfb_channel_initialize. | A001 Transport |
+| write_offset | variable | src/transport/rfb_channel.c | pstvnc_transport_rfb_channel_commit | local | Stores write_offset for pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| PSTVNC_TRANSPORT_RFB_CHANNEL_H | include guard | src/transport/rfb_channel.h | Transport | file | Defines PSTVNC_TRANSPORT_RFB_CHANNEL_H type. | A001 Transport |
+| activity_generation | field | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel | public | Stores activity_generation in pstvnc_transport_rfb_channel. | A001 Transport |
+| buffer | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_read_available | prototype | Supplies buffer to pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| buffer | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_read_exact | prototype | Supplies buffer to pstvnc_transport_rfb_channel_read_exact. | A001 Transport |
+| byte_count | field | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel | public | Stores byte_count in pstvnc_transport_rfb_channel. | A001 Transport |
+| capacity | field | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel | public | Stores capacity in pstvnc_transport_rfb_channel. | A001 Transport |
+| capacity | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_initialize | prototype | Supplies capacity to pstvnc_transport_rfb_channel_initialize. | A001 Transport |
+| channel | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_activity_generation | prototype | Supplies channel to pstvnc_transport_rfb_channel_activity_generation. | A001 Transport |
+| channel | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_available | prototype | Supplies channel to pstvnc_transport_rfb_channel_available. | A001 Transport |
+| channel | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_commit | prototype | Supplies channel to pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| channel | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_discard_residual | prototype | Supplies channel to pstvnc_transport_rfb_channel_discard_residual. | A001 Transport |
+| channel | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_initialize | prototype | Supplies channel to pstvnc_transport_rfb_channel_initialize. | A001 Transport |
+| channel | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_read_available | prototype | Supplies channel to pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| channel | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_read_exact | prototype | Supplies channel to pstvnc_transport_rfb_channel_read_exact. | A001 Transport |
+| count | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_read_exact | prototype | Supplies count to pstvnc_transport_rfb_channel_read_exact. | A001 Transport |
+| discarded_count | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_discard_residual | prototype | Supplies discarded_count to pstvnc_transport_rfb_channel_discard_residual. | A001 Transport |
+| expected_count | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_discard_residual | prototype | Supplies expected_count to pstvnc_transport_rfb_channel_discard_residual. | A001 Transport |
+| maximum_count | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_read_available | prototype | Supplies maximum_count to pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| payload | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_commit | prototype | Supplies payload to pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| payload_length | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_commit | prototype | Supplies payload_length to pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| pstvnc_transport_rfb_channel | structure | src/transport/rfb_channel.h | Transport | public | Defines pstvnc_transport_rfb_channel type. | A001 Transport |
+| pstvnc_transport_rfb_channel_activity_generation | function declaration | src/transport/rfb_channel.h | Transport | public | Declares pstvnc_transport_rfb_channel_activity_generation. | A001 Transport |
+| pstvnc_transport_rfb_channel_available | function declaration | src/transport/rfb_channel.h | Transport | public | Declares pstvnc_transport_rfb_channel_available. | A001 Transport |
+| pstvnc_transport_rfb_channel_commit | function declaration | src/transport/rfb_channel.h | Transport | public | Declares pstvnc_transport_rfb_channel_commit. | A001 Transport |
+| pstvnc_transport_rfb_channel_discard_residual | function declaration | src/transport/rfb_channel.h | Transport | public | Declares pstvnc_transport_rfb_channel_discard_residual. | A001 Transport |
+| pstvnc_transport_rfb_channel_initialize | function declaration | src/transport/rfb_channel.h | Transport | public | Declares pstvnc_transport_rfb_channel_initialize. | A001 Transport |
+| pstvnc_transport_rfb_channel_read_available | function declaration | src/transport/rfb_channel.h | Transport | public | Declares pstvnc_transport_rfb_channel_read_available. | A001 Transport |
+| pstvnc_transport_rfb_channel_read_exact | function declaration | src/transport/rfb_channel.h | Transport | public | Declares pstvnc_transport_rfb_channel_read_exact. | A001 Transport |
+| pstvnc_transport_rfb_channel_t | type | src/transport/rfb_channel.h | Transport | public | Defines pstvnc_transport_rfb_channel_t type. | A001 Transport |
+| read_offset | field | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel | public | Stores read_offset in pstvnc_transport_rfb_channel. | A001 Transport |
+| storage | field | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel | public | Stores storage in pstvnc_transport_rfb_channel. | A001 Transport |
+| storage | prototype parameter | src/transport/rfb_channel.h | pstvnc_transport_rfb_channel_initialize | prototype | Supplies storage to pstvnc_transport_rfb_channel_initialize. | A001 Transport |
+| accepted | variable | src/transport/runtime.c | pstvnc_transport_runtime_accept_rfb_frame | local | Stores accepted for pstvnc_transport_runtime_accept_rfb_frame. | A001 Transport |
+| activity_sequence | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_activity_snapshot | local | Supplies activity_sequence to pstvnc_transport_runtime_rfb_activity_snapshot. | A001 Transport |
+| activity_sequence | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_wait_activity | local | Supplies activity_sequence to pstvnc_transport_runtime_rfb_wait_activity. | A001 Transport |
+| activity_sequence | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_read_exact | local | Stores activity_sequence for pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| aligned_address | variable | src/transport/runtime.c | pstvnc_transport_runtime_allocate_aligned16 | local | Stores aligned_address for pstvnc_transport_runtime_allocate_aligned16. | A001 Transport |
+| allocation | parameter | src/transport/runtime.c | pstvnc_transport_runtime_allocate_aligned16 | local | Supplies allocation to pstvnc_transport_runtime_allocate_aligned16. | A001 Transport |
+| amount | parameter | src/transport/runtime.c | pstvnc_transport_runtime_send_credit | local | Supplies amount to pstvnc_transport_runtime_send_credit. | A001 Transport |
+| amount | variable | src/transport/runtime.c | pstvnc_transport_runtime_return_consumed_credit | local | Stores amount for pstvnc_transport_runtime_return_consumed_credit. | A001 Transport |
+| argument | parameter | src/transport/runtime.c | pstvnc_transport_runtime_receiver_thread | local | Supplies argument to pstvnc_transport_runtime_receiver_thread. | A001 Transport |
+| available | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_poll_receive | local | Stores available for pstvnc_transport_runtime_rfb_poll_receive. | A001 Transport |
+| buffer | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_read_exact | local | Supplies buffer to pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| buffer | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_write_exact | local | Supplies buffer to pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| byte_count | parameter | src/transport/runtime.c | pstvnc_transport_runtime_allocate_aligned16 | local | Supplies byte_count to pstvnc_transport_runtime_allocate_aligned16. | A001 Transport |
+| bytes | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_write_exact | local | Stores bytes for pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| config | parameter | src/transport/runtime.c | pstvnc_transport_runtime_config_valid | local | Supplies config to pstvnc_transport_runtime_config_valid. | A001 Transport |
+| config | parameter | src/transport/runtime.c | pstvnc_transport_runtime_initialize | local | Supplies config to pstvnc_transport_runtime_initialize. | A001 Transport |
+| consumed | parameter | src/transport/runtime.c | pstvnc_transport_runtime_return_consumed_credit | local | Supplies consumed to pstvnc_transport_runtime_return_consumed_credit. | A001 Transport |
+| count | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_read_exact | local | Supplies count to pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| count | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_write_exact | local | Supplies count to pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| destination | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_read_exact | local | Stores destination for pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| done | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_read_exact | local | Stores done for pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| fragment | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_write_exact | local | Stores fragment for pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| header | parameter | src/transport/runtime.c | pstvnc_transport_runtime_accept_rfb_frame | local | Supplies header to pstvnc_transport_runtime_accept_rfb_frame. | A001 Transport |
+| header | variable | src/transport/runtime.c | pstvnc_transport_runtime_receiver_thread | local | Stores header for pstvnc_transport_runtime_receiver_thread. | A001 Transport |
+| initial_count | parameter | src/transport/runtime.c | pstvnc_transport_runtime_create_semaphore | local | Supplies initial_count to pstvnc_transport_runtime_create_semaphore. | A001 Transport |
+| maximum_count | parameter | src/transport/runtime.c | pstvnc_transport_runtime_create_semaphore | local | Supplies maximum_count to pstvnc_transport_runtime_create_semaphore. | A001 Transport |
+| offset | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_write_exact | local | Stores offset for pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| payload | variable | src/transport/runtime.c | pstvnc_transport_runtime_send_credit | local | Stores payload for pstvnc_transport_runtime_send_credit. | A001 Transport |
+| pstvnc_transport_runtime_accept_quiesce_marker_locked | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_accept_quiesce_marker_locked. | A001 Transport |
+| pstvnc_transport_runtime_accept_rfb_frame | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_accept_rfb_frame. | A001 Transport |
+| pstvnc_transport_runtime_allocate_aligned16 | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_allocate_aligned16. | A001 Transport |
+| pstvnc_transport_runtime_config_valid | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_config_valid. | A001 Transport |
+| pstvnc_transport_runtime_create_semaphore | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_create_semaphore. | A001 Transport |
+| pstvnc_transport_runtime_initialize | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_initialize. | A001 Transport |
+| pstvnc_transport_runtime_publish_activity_locked | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_publish_activity_locked. | A001 Transport |
+| pstvnc_transport_runtime_receiver_thread | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_receiver_thread. | A001 Transport |
+| pstvnc_transport_runtime_release | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_release. | A001 Transport |
+| pstvnc_transport_runtime_request_stop | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_request_stop. | A001 Transport |
+| pstvnc_transport_runtime_return_consumed_credit | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_return_consumed_credit. | A001 Transport |
+| pstvnc_transport_runtime_rfb_activity_snapshot | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_rfb_activity_snapshot. | A001 Transport |
+| pstvnc_transport_runtime_rfb_poll_receive | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_rfb_poll_receive. | A001 Transport |
+| pstvnc_transport_runtime_rfb_read_exact | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| pstvnc_transport_runtime_rfb_wait_activity | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_rfb_wait_activity. | A001 Transport |
+| pstvnc_transport_runtime_rfb_write_exact | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| pstvnc_transport_runtime_send_credit | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_send_credit. | A001 Transport |
+| pstvnc_transport_runtime_signal_activity | function | src/transport/runtime.c | Transport | file | Defines pstvnc_transport_runtime_signal_activity. | A001 Transport |
+| pstvnc_transport_runtime_start_receiver | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_start_receiver. | A001 Transport |
+| pstvnc_transport_runtime_wait_receiver_done | function | src/transport/runtime.c | Transport | public | Defines pstvnc_transport_runtime_wait_receiver_done. | A001 Transport |
+| queue_empty | parameter | src/transport/runtime.c | pstvnc_transport_runtime_return_consumed_credit | local | Supplies queue_empty to pstvnc_transport_runtime_return_consumed_credit. | A001 Transport |
+| queue_empty | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_read_exact | local | Stores queue_empty for pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| raw | variable | src/transport/runtime.c | pstvnc_transport_runtime_allocate_aligned16 | local | Stores raw for pstvnc_transport_runtime_allocate_aligned16. | A001 Transport |
+| remaining | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_write_exact | local | Stores remaining for pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| result | variable | src/transport/runtime.c | pstvnc_transport_runtime_release | local | Stores result for pstvnc_transport_runtime_release. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_accept_quiesce_marker_locked | local | Supplies runtime to pstvnc_transport_runtime_accept_quiesce_marker_locked. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_accept_rfb_frame | local | Supplies runtime to pstvnc_transport_runtime_accept_rfb_frame. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_initialize | local | Supplies runtime to pstvnc_transport_runtime_initialize. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_publish_activity_locked | local | Supplies runtime to pstvnc_transport_runtime_publish_activity_locked. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_release | local | Supplies runtime to pstvnc_transport_runtime_release. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_request_stop | local | Supplies runtime to pstvnc_transport_runtime_request_stop. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_return_consumed_credit | local | Supplies runtime to pstvnc_transport_runtime_return_consumed_credit. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_activity_snapshot | local | Supplies runtime to pstvnc_transport_runtime_rfb_activity_snapshot. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_poll_receive | local | Supplies runtime to pstvnc_transport_runtime_rfb_poll_receive. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_read_exact | local | Supplies runtime to pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_wait_activity | local | Supplies runtime to pstvnc_transport_runtime_rfb_wait_activity. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_rfb_write_exact | local | Supplies runtime to pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_send_credit | local | Supplies runtime to pstvnc_transport_runtime_send_credit. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_signal_activity | local | Supplies runtime to pstvnc_transport_runtime_signal_activity. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_start_receiver | local | Supplies runtime to pstvnc_transport_runtime_start_receiver. | A001 Transport |
+| runtime | parameter | src/transport/runtime.c | pstvnc_transport_runtime_wait_receiver_done | local | Supplies runtime to pstvnc_transport_runtime_wait_receiver_done. | A001 Transport |
+| runtime | variable | src/transport/runtime.c | pstvnc_transport_runtime_receiver_thread | local | Stores runtime for pstvnc_transport_runtime_receiver_thread. | A001 Transport |
+| semaphore | variable | src/transport/runtime.c | pstvnc_transport_runtime_create_semaphore | local | Stores semaphore for pstvnc_transport_runtime_create_semaphore. | A001 Transport |
+| signal_waiter | parameter | src/transport/runtime.c | pstvnc_transport_runtime_signal_activity | local | Supplies signal_waiter to pstvnc_transport_runtime_signal_activity. | A001 Transport |
+| signal_waiter | variable | src/transport/runtime.c | pstvnc_transport_runtime_accept_rfb_frame | local | Stores signal_waiter for pstvnc_transport_runtime_accept_rfb_frame. | A001 Transport |
+| signal_waiter | variable | src/transport/runtime.c | pstvnc_transport_runtime_publish_activity_locked | local | Stores signal_waiter for pstvnc_transport_runtime_publish_activity_locked. | A001 Transport |
+| signal_waiter | variable | src/transport/runtime.c | pstvnc_transport_runtime_receiver_thread | local | Stores signal_waiter for pstvnc_transport_runtime_receiver_thread. | A001 Transport |
+| socket_fd | parameter | src/transport/runtime.c | pstvnc_transport_runtime_initialize | local | Supplies socket_fd to pstvnc_transport_runtime_initialize. | A001 Transport |
+| status | variable | src/transport/runtime.c | pstvnc_transport_runtime_release | local | Stores status for pstvnc_transport_runtime_release. | A001 Transport |
+| taken | variable | src/transport/runtime.c | pstvnc_transport_runtime_rfb_read_exact | local | Stores taken for pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| thread | variable | src/transport/runtime.c | pstvnc_transport_runtime_start_receiver | local | Stores thread for pstvnc_transport_runtime_start_receiver. | A001 Transport |
+| PSTVNC_TRANSPORT_RUNTIME_H | include guard | src/transport/runtime.h | Transport | file | Defines PSTVNC_TRANSPORT_RUNTIME_H type. | A001 Transport |
+| activity_sequence | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores activity_sequence in pstvnc_transport_runtime. | A001 Transport |
+| activity_sequence | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_activity_snapshot | prototype | Supplies activity_sequence to pstvnc_transport_runtime_rfb_activity_snapshot. | A001 Transport |
+| activity_sequence | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_wait_activity | prototype | Supplies activity_sequence to pstvnc_transport_runtime_rfb_wait_activity. | A001 Transport |
+| activity_wait_armed | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores activity_wait_armed in pstvnc_transport_runtime. | A001 Transport |
+| buffer | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_read_exact | prototype | Supplies buffer to pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| buffer | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_write_exact | prototype | Supplies buffer to pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| config | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_initialize | prototype | Supplies config to pstvnc_transport_runtime_initialize. | A001 Transport |
+| count | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_read_exact | prototype | Supplies count to pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| count | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_write_exact | prototype | Supplies count to pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| discarded_count | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_discard_quiesce_residual | prototype | Supplies discarded_count to pstvnc_transport_runtime_rfb_discard_quiesce_residual. | A001 Transport |
+| expected_count | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_discard_quiesce_residual | prototype | Supplies expected_count to pstvnc_transport_runtime_rfb_discard_quiesce_residual. | A001 Transport |
+| failed | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores failed in pstvnc_transport_runtime. | A001 Transport |
+| initialized | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores initialized in pstvnc_transport_runtime. | A001 Transport |
+| max_data_payload | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores max_data_payload in pstvnc_transport_runtime. | A001 Transport |
+| physical_stream | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores physical_stream in pstvnc_transport_runtime. | A001 Transport |
+| pstvnc_transport_runtime | structure | src/transport/runtime.h | Transport | public | Defines pstvnc_transport_runtime type. | A001 Transport |
+| pstvnc_transport_runtime_config_t | type | src/transport/runtime.h | Transport | public | Defines pstvnc_transport_runtime_config_t type. | A001 Transport |
+| pstvnc_transport_runtime_initialize | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_initialize. | A001 Transport |
+| pstvnc_transport_runtime_release | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_release. | A001 Transport |
+| pstvnc_transport_runtime_request_stop | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_request_stop. | A001 Transport |
+| pstvnc_transport_runtime_rfb_activity_snapshot | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_activity_snapshot. | A001 Transport |
+| pstvnc_transport_runtime_rfb_discard_quiesce_residual | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_discard_quiesce_residual. | A001 Transport |
+| pstvnc_transport_runtime_rfb_poll_receive | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_poll_receive. | A001 Transport |
+| pstvnc_transport_runtime_rfb_quiesce_requested | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_quiesce_requested. | A001 Transport |
+| pstvnc_transport_runtime_rfb_read_exact | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| pstvnc_transport_runtime_rfb_send_quiesce_boundary | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_send_quiesce_boundary. | A001 Transport |
+| pstvnc_transport_runtime_rfb_send_quiesce_complete | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_send_quiesce_complete. | A001 Transport |
+| pstvnc_transport_runtime_rfb_snapshot_residual | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_snapshot_residual. | A001 Transport |
+| pstvnc_transport_runtime_rfb_wait_activity | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_wait_activity. | A001 Transport |
+| pstvnc_transport_runtime_rfb_wait_quiesce_commit | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_wait_quiesce_commit. | A001 Transport |
+| pstvnc_transport_runtime_rfb_write_exact | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| pstvnc_transport_runtime_start_receiver | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_start_receiver. | A001 Transport |
+| pstvnc_transport_runtime_t | type | src/transport/runtime.h | Transport | public | Defines pstvnc_transport_runtime_t type. | A001 Transport |
+| pstvnc_transport_runtime_wait_receiver_done | function declaration | src/transport/runtime.h | Transport | public | Declares pstvnc_transport_runtime_wait_receiver_done. | A001 Transport |
+| receiver_done | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores receiver_done in pstvnc_transport_runtime. | A001 Transport |
+| receiver_done_semaphore_id | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores receiver_done_semaphore_id in pstvnc_transport_runtime. | A001 Transport |
+| receiver_payload | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores receiver_payload in pstvnc_transport_runtime. | A001 Transport |
+| receiver_stack | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores receiver_stack in pstvnc_transport_runtime. | A001 Transport |
+| receiver_stack_allocation | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores receiver_stack_allocation in pstvnc_transport_runtime. | A001 Transport |
+| receiver_thread_id | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores receiver_thread_id in pstvnc_transport_runtime. | A001 Transport |
+| receiver_thread_priority | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores receiver_thread_priority in pstvnc_transport_runtime. | A001 Transport |
+| receiver_thread_stack_size | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores receiver_thread_stack_size in pstvnc_transport_runtime. | A001 Transport |
+| receiver_thread_started | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores receiver_thread_started in pstvnc_transport_runtime. | A001 Transport |
+| residual_count | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_snapshot_residual | prototype | Supplies residual_count to pstvnc_transport_runtime_rfb_snapshot_residual. | A001 Transport |
+| rfb_activity_semaphore_id | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_activity_semaphore_id in pstvnc_transport_runtime. | A001 Transport |
+| rfb_channel | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_channel in pstvnc_transport_runtime. | A001 Transport |
+| rfb_credit_batch_bytes | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_credit_batch_bytes in pstvnc_transport_runtime. | A001 Transport |
+| rfb_credit_flush_on_empty | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_credit_flush_on_empty in pstvnc_transport_runtime. | A001 Transport |
+| rfb_credit_pending | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_credit_pending in pstvnc_transport_runtime. | A001 Transport |
+| rfb_credit_return_enabled | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_credit_return_enabled in pstvnc_transport_runtime. | A001 Transport |
+| rfb_initial_credit_bytes | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_initial_credit_bytes in pstvnc_transport_runtime. | A001 Transport |
+| rfb_queue_semaphore_id | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_queue_semaphore_id in pstvnc_transport_runtime. | A001 Transport |
+| rfb_queue_storage | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_queue_storage in pstvnc_transport_runtime. | A001 Transport |
+| rfb_quiesce_boundary_sent | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_quiesce_boundary_sent in pstvnc_transport_runtime. | A001 Transport |
+| rfb_quiesce_commit_received | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_quiesce_commit_received in pstvnc_transport_runtime. | A001 Transport |
+| rfb_quiesce_complete_sent | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_quiesce_complete_sent in pstvnc_transport_runtime. | A001 Transport |
+| rfb_quiesce_request_received | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores rfb_quiesce_request_received in pstvnc_transport_runtime. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_initialize | prototype | Supplies runtime to pstvnc_transport_runtime_initialize. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_release | prototype | Supplies runtime to pstvnc_transport_runtime_release. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_request_stop | prototype | Supplies runtime to pstvnc_transport_runtime_request_stop. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_activity_snapshot | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_activity_snapshot. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_discard_quiesce_residual | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_discard_quiesce_residual. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_poll_receive | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_poll_receive. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_quiesce_requested | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_quiesce_requested. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_read_exact | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_read_exact. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_send_quiesce_boundary | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_send_quiesce_boundary. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_send_quiesce_complete | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_send_quiesce_complete. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_snapshot_residual | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_snapshot_residual. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_wait_activity | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_wait_activity. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_wait_quiesce_commit | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_wait_quiesce_commit. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_rfb_write_exact | prototype | Supplies runtime to pstvnc_transport_runtime_rfb_write_exact. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_start_receiver | prototype | Supplies runtime to pstvnc_transport_runtime_start_receiver. | A001 Transport |
+| runtime | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_wait_receiver_done | prototype | Supplies runtime to pstvnc_transport_runtime_wait_receiver_done. | A001 Transport |
+| socket_fd | prototype parameter | src/transport/runtime.h | pstvnc_transport_runtime_initialize | prototype | Supplies socket_fd to pstvnc_transport_runtime_initialize. | A001 Transport |
+| stop_requested | field | src/transport/runtime.h | pstvnc_transport_runtime | public | Stores stop_requested in pstvnc_transport_runtime. | A001 Transport |
+| PSTVNC_TRANSPORT_CLOSED | enum value | src/transport/transport.h | pstvnc_transport_result | public | Defines PSTVNC_TRANSPORT_CLOSED value. | A001 Transport |
+| PSTVNC_TRANSPORT_FAILED | enum value | src/transport/transport.h | pstvnc_transport_result | public | Defines PSTVNC_TRANSPORT_FAILED value. | A001 Transport |
+| PSTVNC_TRANSPORT_H | include guard | src/transport/transport.h | Transport | file | Defines PSTVNC_TRANSPORT_H type. | A001 Transport |
+| PSTVNC_TRANSPORT_INVALID | enum value | src/transport/transport.h | pstvnc_transport_result | public | Defines PSTVNC_TRANSPORT_INVALID value. | A001 Transport |
+| PSTVNC_TRANSPORT_OK | enum value | src/transport/transport.h | pstvnc_transport_result | public | Defines PSTVNC_TRANSPORT_OK value. | A001 Transport |
+| PSTVNC_TRANSPORT_WOULD_BLOCK | enum value | src/transport/transport.h | pstvnc_transport_result | public | Defines PSTVNC_TRANSPORT_WOULD_BLOCK value. | A001 Transport |
+| max_data_payload | field | src/transport/transport.h | pstvnc_transport_session_config | public | Stores max_data_payload in pstvnc_transport_session_config. | A001 Transport |
+| pstvnc_transport_result | enum | src/transport/transport.h | Transport | public | Defines pstvnc_transport_result type. | A001 Transport |
+| pstvnc_transport_result_t | type | src/transport/transport.h | Transport | public | Defines pstvnc_transport_result_t type. | A001 Transport |
+| pstvnc_transport_session_config | structure | src/transport/transport.h | Transport | public | Defines pstvnc_transport_session_config type. | A001 Transport |
+| pstvnc_transport_session_config_t | type | src/transport/transport.h | Transport | public | Defines pstvnc_transport_session_config_t type. | A001 Transport |
+| receiver_thread_priority | field | src/transport/transport.h | pstvnc_transport_session_config | public | Stores receiver_thread_priority in pstvnc_transport_session_config. | A001 Transport |
+| receiver_thread_stack_size | field | src/transport/transport.h | pstvnc_transport_session_config | public | Stores receiver_thread_stack_size in pstvnc_transport_session_config. | A001 Transport |
+| rfb_credit_batch_bytes | field | src/transport/transport.h | pstvnc_transport_session_config | public | Stores rfb_credit_batch_bytes in pstvnc_transport_session_config. | A001 Transport |
+| rfb_credit_flush_on_empty | field | src/transport/transport.h | pstvnc_transport_session_config | public | Stores rfb_credit_flush_on_empty in pstvnc_transport_session_config. | A001 Transport |
+| rfb_credit_return_enabled | field | src/transport/transport.h | pstvnc_transport_session_config | public | Stores rfb_credit_return_enabled in pstvnc_transport_session_config. | A001 Transport |
+| rfb_initial_credit_bytes | field | src/transport/transport.h | pstvnc_transport_session_config | public | Stores rfb_initial_credit_bytes in pstvnc_transport_session_config. | A001 Transport |
+| rfb_queue_capacity | field | src/transport/transport.h | pstvnc_transport_session_config | public | Stores rfb_queue_capacity in pstvnc_transport_session_config. | A001 Transport |
