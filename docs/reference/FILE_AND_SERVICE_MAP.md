@@ -182,7 +182,8 @@ ELF are build products rather than source authority.
 
 The generated `working/b4a/PS2VNC.ELF` remains a build product.
 
-The committed frozen B4A ELF remains the durable executable byte authority because the M0D2 result proved the generated ELF byte-identical to it.
+The committed frozen B4A ELF remains the durable executable byte authority
+because the M0D2 result proved the generated ELF byte-identical to it.
 
 ## M0 hardware-validation resolution
 
@@ -190,9 +191,10 @@ The committed frozen B4A ELF remains the durable executable byte authority becau
 |---|---|
 | M0 hardware-validation decision | `docs/M0_HARDWARE_RESOLUTION.md` |
 | M0 reproduction result | `docs/M0_BUILD_RESULT.md` |
-| M0 machine reproduction authority | `runtime/M0_BUILD_AUTHORITY.env` |
+| Machine M0 reproduction authority | `runtime/M0_BUILD_AUTHORITY.env` |
 
-The M0 hardware decision inherits historical B4A evidence only because the reproduced final executable is byte-identical. It is not a new hardware PASS.
+The M0 hardware decision inherits historical B4A evidence only because the
+reproduced final executable is byte-identical. It is not a new hardware PASS.
 
 ## M1 extraction contract
 
@@ -203,7 +205,8 @@ The M0 hardware decision inherits historical B4A evidence only because the repro
 | M1 entry working source | `working/b4a/ps2ip.c` |
 | M0 completed build authority | `runtime/M0_BUILD_AUTHORITY.env` |
 
-The exact M1 module target is deliberately selected in M1A before source mutation.
+The exact M1 module target is deliberately selected in M1A before source
+mutation.
 
 ## M1A extraction boundary
 
@@ -240,7 +243,8 @@ The successor remote is distinct from legacy `Olsens11/PS2VNC`.
 | M1B result | `docs/M1B_EXTRACTION_RESULT.md` |
 | Machine M1 source authority | `runtime/M1_SOURCE_AUTHORITY.env` |
 
-The `working/b4a/` directory name remains transitional lineage naming. It no longer means every writable source file is byte-identical to B4A.
+The `working/b4a/` directory name remains transitional lineage naming. It no
+longer means every writable source file is byte-identical to B4A.
 
 ## M1C modular DUT authority
 
@@ -254,11 +258,13 @@ The `working/b4a/` directory name remains transitional lineage naming. It no lon
 | M1C2 characterization evidence | `evidence/m1/m1c2/` |
 | Current operational build product | `working/b4a/PS2VNC.ELF` |
 
-The operational ELF is generated/ignored. The committed evidence ELF is the durable binary authority.
+The operational ELF is generated/ignored. The committed evidence ELF is the
+durable binary authority.
 
 ## Pre-Issue40 minimum desktop candidate
 
-This layer is subsequent to and distinct from the completed Issue #5 RFB qualification.
+This layer is subsequent to and distinct from the completed Issue #5 RFB
+qualification.
 
 | Responsibility | Tracked location |
 |---|---|
@@ -279,6 +285,9 @@ The runtime-proven coexistence boundary is:
     + private DBus
     = Openbox + stock lxpanel-pi coexist with physical Wayland desktop
 
-The exact tracked supervisor reproduced this boundary on an isolated 704x462 RGB565 Xtigervnc display.
+The exact tracked supervisor reproduced this boundary on an isolated 704x462
+RGB565 Xtigervnc display.
 
-The candidate files are staged byte-exact in the live filesystem. The systemd manager has not been daemon-reloaded; the desktop service is not enabled or started and has not yet been hardware-qualified on real `:1`.
+The candidate files are staged byte-exact in the live filesystem. The systemd
+manager has not been daemon-reloaded; the desktop service is not enabled or
+started and has not yet been hardware-qualified on real `:1`.
