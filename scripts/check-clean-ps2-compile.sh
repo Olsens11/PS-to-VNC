@@ -71,6 +71,7 @@ SOURCES=(
     src/diagnostics/identity.c
     src/rfb/rfb.c
     src/framebuffer/framebuffer.c
+    src/rfb/bridge.c
     src/rfb/rfb_session.c
     src/display/display.c
     src/input/input.c
