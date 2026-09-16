@@ -1,15 +1,16 @@
 /*
  * File synopsis:
  * Defines Transport's single cross-component bridge. The bridge exposes the
- * application-requested session lifecycle and the logical RFB byte-stream /
- * quiesce processes while keeping the physical PSTV descriptor and receiver
- * runtime private to Transport.
+ * application-requested session lifecycle, logical RFB byte-stream/quiesce
+ * processes, and the optional logical AUDIO byte-consumer seam while keeping
+ * the physical PSTV descriptor and sole receiver runtime private to Transport.
  *
- * The bridge does not parse RFB, invent configuration defaults, decide the
- * application's complete-RFB-message safe boundary, or perform recovery policy.
+ * The bridge does not parse RFB, invent configuration defaults, play PCM, call
+ * AUDSRV, decide media timing/presentation, or perform application recovery.
  *
  * Context: docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md; docs/ledge/
- * LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
+ * LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
+ * LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md.
  */
 
 #ifndef PSTVNC_TRANSPORT_BRIDGE_H
@@ -18,37 +19,21 @@
 #include "transport.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
-/*
- * Application lifecycle process.
- *
- * On success, ownership of *socket_fd transfers permanently to Transport and
- * *socket_fd is set to -1. A failure before adoption leaves the caller's value
- * unchanged. A failure after adoption consumes/closes the descriptor and also
- * leaves *socket_fd at -1, preventing ambiguous double-close ownership.
- */
 pstvnc_transport_result_t pstvnc_transport_session_open(
     int *socket_fd,
     const pstvnc_transport_session_config_t *config);
 
-/*
- * Application-local fatal convergence. Transport first requests its sole
- * receiver to stop and interrupts its own blocking physical I/O, then waits for
- * receiver completion, and only then reclaims the session. This is deliberately
- * distinct from the server-driven finite-RFB quiesce process below.
- */
+pstvnc_transport_result_t pstvnc_transport_session_open_with_audio(
+    int *socket_fd,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config);
+
 pstvnc_transport_result_t pstvnc_transport_session_abort(void);
-
-/* Wait for explicit sole-receiver completion; this is not timer polling. */
 pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void);
-
-/*
- * Release Transport-owned session resources only after receiver completion.
- * WOULD_BLOCK means receiver-visible state is still live and nothing is freed.
- */
 pstvnc_transport_result_t pstvnc_transport_session_close(void);
 
-/* Logical RFB delivery process. No operation exposes the physical descriptor. */
 pstvnc_transport_result_t pstvnc_transport_rfb_read_exact(
     void *buffer,
     size_t count);
@@ -57,14 +42,18 @@ pstvnc_transport_result_t pstvnc_transport_rfb_write_exact(
     const void *buffer,
     size_t count);
 
-/*
- * Ordered finite-RFB quiesce process.
- *
- * REQUEST detection does not choose the safe boundary. The application/RFB
- * owner must call send_quiesce_boundary() only after reaching a complete RFB
- * message boundary. Residual discard is explicit and never becomes parser
- * consumption credit.
- */
+pstvnc_transport_result_t pstvnc_transport_audio_read_available(
+    void *buffer,
+    size_t maximum_count,
+    size_t *read_count);
+pstvnc_transport_result_t pstvnc_transport_audio_status(
+    size_t *available_count,
+    int *producer_done);
+pstvnc_transport_result_t pstvnc_transport_audio_activity_snapshot(
+    uint32_t *activity_sequence);
+pstvnc_transport_result_t pstvnc_transport_audio_wait_activity(
+    uint32_t *activity_sequence);
+
 pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(void);
 pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_boundary(void);
 pstvnc_transport_result_t pstvnc_transport_rfb_wait_quiesce_commit(void);
