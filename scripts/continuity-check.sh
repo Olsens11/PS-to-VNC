@@ -449,6 +449,7 @@ EXPECTED_DIRECTORIES = {
     "src/framebuffer",
     "src/input",
     "src/media",
+    "src/mpeg",
     "src/platform",
     "src/rfb",
     "src/transport",
