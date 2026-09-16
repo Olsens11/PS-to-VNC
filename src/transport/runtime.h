@@ -56,7 +56,13 @@ typedef struct pstvnc_transport_runtime {
     uint32_t activity_sequence;
     int activity_wait_armed;
 
-    /* AUDIO producer/terminal activity is protected by audio_queue_semaphore_id. */
+    /*
+     * AUDIO producer/terminal activity is protected by
+     * audio_queue_semaphore_id. audio_activity_wait_armed is a three-state
+     * lifetime fence: 0 means no waiter owns the rendezvous, 1 means a waiter is
+     * armed and not yet signaled, and 2 means it has been signaled but has not
+     * yet returned through the queue lock. Resource release is legal only at 0.
+     */
     uint32_t audio_activity_sequence;
     int audio_activity_wait_armed;
 
