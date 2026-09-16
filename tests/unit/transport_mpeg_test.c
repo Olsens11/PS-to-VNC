@@ -9,6 +9,7 @@
 
 #include "transport/runtime.h"
 
+#include <kernel.h>
 #include <pthread.h>
 #include <sched.h>
 #include <stdint.h>
