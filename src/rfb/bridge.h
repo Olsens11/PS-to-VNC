@@ -1,11 +1,11 @@
 /*
  * File synopsis:
  * Defines RFB's single cross-component byte-stream bridge to the ledge Transport
- * owner. It preserves RFB's simple exact-read / readiness / exact-write contract
- * while removing physical socket identity from the protocol-facing interface.
+ * owner. It preserves RFB's exact-read / readiness / exact-write contract and
+ * coordinates finite-session quiescence without exposing physical socket identity.
  *
  * This bridge does not parse RFB, own Transport lifecycle, choose application
- * recovery policy, or expose the physical PSTV descriptor.
+ * recovery policy, or decide when a complete RFB message boundary has occurred.
  *
  * Context: docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md, "RFB ownership under
  * shared transport"; docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
@@ -28,5 +28,17 @@ int pstvnc_rfb_bridge_poll_receive(void);
 int pstvnc_rfb_bridge_write_exact(
     const void *buffer,
     size_t count);
+
+/*
+ * Finite-session quiesce process.
+ *
+ * requested() reports Transport's REQUEST state without consuming RFB bytes.
+ * complete_quiesce_at_message_boundary() may be called only after the RFB
+ * parser has reached a complete server-message boundary. It then performs the
+ * required BOUNDARY -> COMMIT -> residual snapshot/discard -> COMPLETE ordering.
+ * Residual discard is Transport-owned cleanup and never becomes parser credit.
+ */
+int pstvnc_rfb_bridge_quiesce_requested(void);
+int pstvnc_rfb_bridge_complete_quiesce_at_message_boundary(void);
 
 #endif
