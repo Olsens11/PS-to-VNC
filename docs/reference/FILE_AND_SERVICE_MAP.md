@@ -42,6 +42,7 @@ Current responsibility locations are:
 |---|---|
 | Executable entry / application coordination | `src/main.c`, `src/app.c`, `src/app.h` |
 | Session CONFIG/profile decoding, validation, owner-specific immutable values, and config-text helpers | `src/config/` |
+| Synchronous PCM playback ownership and resident AUDSRV adapter boundary | `src/audio/` |
 | Session common-media epoch, signed/saturating deadlines, synchronization contract, and host-testable wait boundary | `src/media/` |
 | Controller/input/keyboard/mouse | `src/input/` |
 | Local foreground / OSK / local presentation | `src/ui/` |
@@ -65,6 +66,13 @@ versioned, side-effect-free production CONFIG value boundary; `text.{c,h}` is
 retained behavior-identically as clean local configuration utility code. This
 ownership does not include live CONFIG negotiation, PCM/AUDSRV runtime,
 media-clock wait/arming runtime, or MPEG/video behavior.
+
+`src/audio/` was deliberately adopted during the A002 PCM playback-core tranche
+on 2026-09-16. `playback.{c,h}` owns the synchronous, host-testable PCM consumer
+of the public Transport AUDIO seam, while `audsrv_service.{c,h}` owns the
+concrete resident AUDSRV adapter. This clean domain does not yet own the
+session playback worker, startup-reservoir policy, common-clock presentation
+gating, application orchestration, or MPEG/video behavior.
 
 `src/media/` was deliberately created during the A002 common-media-clock
 tranche on 2026-09-16. `clock.{c,h}` owns one reusable session timing boundary:
@@ -190,7 +198,7 @@ ELF are build products rather than source authority.
 
 The generated `working/b4a/PS2VNC.ELF` remains a build product.
 
-The committed frozen B4A ELF remains the durable executable byte authority
+The committed frozen B4A ELF remains the durable binary authority
 because the M0D2 result proved the generated ELF byte-identical to it.
 
 ## M0 hardware-validation resolution
