@@ -46,6 +46,11 @@ typedef struct pstvnc_media_clock_stop_observer {
     void *context;
 } pstvnc_media_clock_stop_observer_t;
 
+/*
+ * After successful init, profile/sync/ticks_per_second are immutable session
+ * authority. epoch_tick and armed are clock-private synchronized state;
+ * production consumers observe them only through the API below.
+ */
 typedef struct pstvnc_media_clock {
     pstvnc_config_media_clock_profile_t profile;
     pstvnc_media_clock_sync_t sync;
