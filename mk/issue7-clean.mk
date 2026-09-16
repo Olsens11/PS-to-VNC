@@ -39,6 +39,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/transport_protocol.o \
 	$(BUILD_DIR)/transport_physical_stream.o \
 	$(BUILD_DIR)/transport_rfb_channel.o \
+	$(BUILD_DIR)/transport_audio_channel.o \
 	$(BUILD_DIR)/transport_runtime.o \
 	$(BUILD_DIR)/transport_quiesce.o \
 	$(BUILD_DIR)/transport_bridge.o \
@@ -145,7 +146,10 @@ $(BUILD_DIR)/transport_physical_stream.o: src/transport/physical_stream.c src/tr
 $(BUILD_DIR)/transport_rfb_channel.o: src/transport/rfb_channel.c src/transport/rfb_channel.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/transport_runtime.o: src/transport/runtime.c src/transport/runtime.h src/transport/physical_stream.h src/transport/rfb_channel.h src/transport/transport.h | $(BUILD_DIR)
+$(BUILD_DIR)/transport_audio_channel.o: src/transport/audio_channel.c src/transport/audio_channel.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/transport_runtime.o: src/transport/runtime.c src/transport/runtime.h src/transport/physical_stream.h src/transport/rfb_channel.h src/transport/audio_channel.h src/transport/transport.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/transport_quiesce.o: src/transport/quiesce.c src/transport/runtime.h src/transport/protocol.h | $(BUILD_DIR)
