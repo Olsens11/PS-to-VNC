@@ -1,7 +1,7 @@
 CC ?= cc
 CFLAGS ?=
 
-COMMON_CFLAGS = -O2 -std=c99 -Wall -Wextra -Werror -pedantic -I../src -I../src/input -I../src/ui -I../src/rfb -I../src/framebuffer -I../src/display -I../src/diagnostics -I../src/platform
+COMMON_CFLAGS = -O2 -std=c99 -Wall -Wextra -Werror -pedantic -I../src -I../src/input -I../src/ui -I../src/rfb -I../src/framebuffer -I../src/display -I../src/diagnostics -I../src/platform -I../src/transport
 BUILD_DIR = .build
 
 .PHONY: unit clean
@@ -97,7 +97,7 @@ $(BUILD_DIR)/rfb_session_test: \
 	unit/rfb_session_test.c \
 	../src/rfb/rfb.c \
 	../src/rfb/rfb.h \
-	../src/rfb/rfb_io.h \
+	../src/rfb/bridge.h \
 	../src/rfb/rfb_session.c \
 	../src/rfb/rfb_session.h \
 	../src/framebuffer/framebuffer.c \
@@ -114,7 +114,7 @@ $(BUILD_DIR)/rfb_initial_frame_test: \
 	unit/rfb_initial_frame_test.c \
 	../src/rfb/rfb.c \
 	../src/rfb/rfb.h \
-	../src/rfb/rfb_io.h \
+	../src/rfb/bridge.h \
 	../src/rfb/rfb_session.c \
 	../src/rfb/rfb_session.h \
 	../src/framebuffer/framebuffer.c \
@@ -131,7 +131,7 @@ $(BUILD_DIR)/rfb_initial_coverage_test: \
 	unit/rfb_initial_coverage_test.c \
 	../src/rfb/rfb.c \
 	../src/rfb/rfb.h \
-	../src/rfb/rfb_io.h \
+	../src/rfb/bridge.h \
 	../src/rfb/rfb_session.c \
 	../src/rfb/rfb_session.h \
 	../src/framebuffer/framebuffer.c \
@@ -148,7 +148,7 @@ $(BUILD_DIR)/rfb_async_framing_test: \
 	unit/rfb_async_framing_test.c \
 	../src/rfb/rfb.c \
 	../src/rfb/rfb.h \
-	../src/rfb/rfb_io.h \
+	../src/rfb/bridge.h \
 	../src/rfb/rfb_session.c \
 	../src/rfb/rfb_session.h \
 	../src/framebuffer/framebuffer.c \
@@ -326,7 +326,8 @@ $(BUILD_DIR)/app_test: \
 	../src/platform/ps2_network.h \
 	../src/platform/ps2_system.h \
 	../src/rfb/rfb.h \
-	../src/rfb/rfb_session.h | $(BUILD_DIR)
+	../src/rfb/rfb_session.h \
+	../src/transport/transport.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-Isupport \
 		-I../src \
@@ -362,12 +363,23 @@ $(GEOMETRY_TEST): unit/video_geometry_test.c ../src/video/geometry.c ../src/vide
 		../src/video/mode.c \
 		-o $(GEOMETRY_TEST)
 
+TRANSPORT_PROTOCOL_TEST := .build/transport_protocol_test
 TRANSPORT_RFB_CHANNEL_TEST := .build/transport_rfb_channel_test
 TRANSPORT_BRIDGE_TEST := .build/transport_bridge_test
 RFB_BRIDGE_TEST := .build/rfb_bridge_test
 
-.PHONY: transport-rfb-channel-unit transport-bridge-unit rfb-bridge-unit
-unit: transport-rfb-channel-unit transport-bridge-unit rfb-bridge-unit
+.PHONY: transport-protocol-unit transport-rfb-channel-unit transport-bridge-unit rfb-bridge-unit
+unit: transport-protocol-unit transport-rfb-channel-unit transport-bridge-unit rfb-bridge-unit
+
+transport-protocol-unit: $(TRANSPORT_PROTOCOL_TEST)
+	./$(TRANSPORT_PROTOCOL_TEST)
+
+$(TRANSPORT_PROTOCOL_TEST): unit/transport_protocol_test.c ../src/transport/protocol.c ../src/transport/protocol.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/transport_protocol_test.c \
+		../src/transport/protocol.c \
+		-o $(TRANSPORT_PROTOCOL_TEST)
 
 transport-rfb-channel-unit: $(TRANSPORT_RFB_CHANNEL_TEST)
 	./$(TRANSPORT_RFB_CHANNEL_TEST)
