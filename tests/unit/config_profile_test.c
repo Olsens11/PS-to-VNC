@@ -250,6 +250,32 @@ static void test_each_transport_field_is_mandatory(void)
     }
 }
 
+static void test_unrepresentable_wire_values_rejected(void)
+{
+    uint8_t payload[TEST_PAYLOAD_BYTES];
+    pstvnc_config_session_profile_t profile;
+
+    make_valid_profile(payload);
+    set_field(payload, PSTVNC_CONFIG_FIELD_RFB_MODE, UINT32_MAX);
+    CHECK(pstvnc_config_profile_decode(&profile, payload, sizeof(payload)) == 0);
+
+    make_valid_profile(payload);
+    set_field(payload, PSTVNC_CONFIG_FIELD_AUDIO_MODE, UINT32_MAX);
+    CHECK(pstvnc_config_profile_decode(&profile, payload, sizeof(payload)) == 0);
+
+    make_valid_profile(payload);
+    set_field(payload, PSTVNC_CONFIG_FIELD_VIDEO_MODE, UINT32_MAX);
+    CHECK(pstvnc_config_profile_decode(&profile, payload, sizeof(payload)) == 0);
+
+    make_valid_profile(payload);
+    set_field(payload, PSTVNC_CONFIG_FIELD_RFB_CREDIT_FLUSH_ON_EMPTY, UINT32_MAX);
+    CHECK(pstvnc_config_profile_decode(&profile, payload, sizeof(payload)) == 0);
+
+    make_valid_profile(payload);
+    set_field(payload, PSTVNC_CONFIG_FIELD_RFB_CREDIT_RETURN_ENABLED, UINT32_MAX);
+    CHECK(pstvnc_config_profile_decode(&profile, payload, sizeof(payload)) == 0);
+}
+
 static void test_pcm_format_volume_and_activation_rejection(void)
 {
     uint8_t payload[TEST_PAYLOAD_BYTES];
@@ -328,6 +354,7 @@ int main(void)
     test_transport_relationship_rejection();
     test_no_default_transport_and_rfb_off_inert_policy();
     test_each_transport_field_is_mandatory();
+    test_unrepresentable_wire_values_rejected();
     test_pcm_format_volume_and_activation_rejection();
     test_video_activation_and_signed_offsets();
     test_failure_does_not_publish_partial_profile();
