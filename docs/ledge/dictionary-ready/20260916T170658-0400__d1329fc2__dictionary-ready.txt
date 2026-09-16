@@ -1,0 +1,121 @@
+DOCUMENT=LEDGE_DICTIONARY_READY
+GENERATED_AT=2026-09-16T17:09:00-04:00
+SOURCE_HEAD=d1329fc2eac89b1199f5703acef0aa3cde22c1d3
+FOREMAN_STATE_REVISION=0012
+ACTIVE_WORK_ITEM_KEY=a003-mpeg-generation
+STATUS=READY
+TARGET_DICTIONARY=src/rfb/SYMBOLS.md
+TARGET_SOURCE_FILES=src/rfb/rfb.c
+ROWS_REVIEWED=24
+ROWS_PREPARED=18
+ROWS_NEEDS_FOREMAN_REVIEW=0
+
+AUTHORITY_INSPECTED
+- branch HEAD d1329fc2eac89b1199f5703acef0aa3cde22c1d3
+- src/rfb/rfb.c blob bf1e969c2bad5d3360902a4f4184c004c6cc036b
+- current src/rfb/SYMBOLS.md at SOURCE_HEAD
+- docs/ledge/LEDGE_FOREMAN_STATE.md revision 0012
+- current clean architecture / naming-policy authority as inherited by Foreman state 0012
+
+BACKLOG_DIAGNOSIS
+The stable pure-wire RFB implementation already has strong semantic descriptions for most public wire operations, but several parameters and local immutable-message variables still use mechanically generated Supplies/Stores wording. This batch improves only those weak rows. It avoids active A003 MPEG source and changes no symbol metadata, count, ownership, or behavior.
+
+APPLY_SUMMARY
+src/rfb/SYMBOLS.md: replace 18 rows, add 0, remove 0; symbol count unchanged.
+Generated portal implication: description-only/count-neutral; regenerate portal only if canonical tooling requires content refresh.
+
+REPLACEMENTS — src/rfb/rfb.c / pure RFB wire layer
+
+SYMBOL=bytes OWNER=write_be32
+CURRENT_ROW=| bytes | parameter | src/rfb/rfb.c | write_be32 | local | Supplies bytes to write_be32. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| bytes | parameter | src/rfb/rfb.c | write_be32 | local | Points to the four output bytes that receive the encoded 32-bit value in big-endian RFB wire order. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=value OWNER=write_be32
+CURRENT_ROW=| value | parameter | src/rfb/rfb.c | write_be32 | local | Supplies value to write_be32. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| value | parameter | src/rfb/rfb.c | write_be32 | local | Supplies the host-order 32-bit value that write_be32 serializes into network byte order. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=out OWNER=pstvnc_rfb_build_key_event
+CURRENT_ROW=| out | parameter | src/rfb/rfb.c | pstvnc_rfb_build_key_event | local | Supplies out to pstvnc_rfb_build_key_event. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| out | parameter | src/rfb/rfb.c | pstvnc_rfb_build_key_event | local | Receives the exact eight-byte RFB KeyEvent serialized by the pure wire builder. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=down OWNER=pstvnc_rfb_build_key_event
+CURRENT_ROW=| down | parameter | src/rfb/rfb.c | pstvnc_rfb_build_key_event | local | Supplies down to pstvnc_rfb_build_key_event. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| down | parameter | src/rfb/rfb.c | pstvnc_rfb_build_key_event | local | Supplies the caller-resolved key transition, encoded as the RFB KeyEvent down/up flag without interpreting keyboard meaning. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=keysym OWNER=pstvnc_rfb_build_key_event
+CURRENT_ROW=| keysym | parameter | src/rfb/rfb.c | pstvnc_rfb_build_key_event | local | Supplies keysym to pstvnc_rfb_build_key_event. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| keysym | parameter | src/rfb/rfb.c | pstvnc_rfb_build_key_event | local | Supplies the already-resolved 32-bit X11 keysym that is serialized big-endian into the KeyEvent payload. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=banner OWNER=pstvnc_rfb_parse_protocol_version
+CURRENT_ROW=| banner | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_protocol_version | local | Supplies the exact server protocol banner bytes to validate. | RFB wire contract |
+PROPOSED_ROW=| banner | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_protocol_version | local | Points to the fixed 12-byte server banner whose prefix, separators, decimal digits, and newline are validated before version decoding. | RFB wire contract |
+
+SYMBOL=major OWNER=pstvnc_rfb_parse_protocol_version
+CURRENT_ROW=| major | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_protocol_version | local | Receives the parsed protocol major version. | RFB wire contract |
+PROPOSED_ROW=| major | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_protocol_version | local | Receives the validated three-digit server protocol major version only after the complete banner passes format checks. | RFB wire contract |
+
+SYMBOL=minor OWNER=pstvnc_rfb_parse_protocol_version
+CURRENT_ROW=| minor | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_protocol_version | local | Receives the parsed protocol minor version. | RFB wire contract |
+PROPOSED_ROW=| minor | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_protocol_version | local | Receives the validated three-digit server protocol minor version only after the complete banner passes format checks. | RFB wire contract |
+
+SYMBOL=out OWNER=pstvnc_rfb_build_client_version
+CURRENT_ROW=| out | parameter | src/rfb/rfb.c | pstvnc_rfb_build_client_version | local | Receives the exact fixed-length client protocol banner. | RFB wire contract |
+PROPOSED_ROW=| out | parameter | src/rfb/rfb.c | pstvnc_rfb_build_client_version | local | Receives the fixed 12-byte `RFB 003.008\n` client banner copied by the pure wire builder. | RFB wire contract |
+
+SYMBOL=version OWNER=pstvnc_rfb_build_client_version
+CURRENT_ROW=| version | variable | src/rfb/rfb.c | pstvnc_rfb_build_client_version | local | Stores the immutable RFB 3.8 client banner bytes. | RFB wire contract |
+PROPOSED_ROW=| version | variable | src/rfb/rfb.c | pstvnc_rfb_build_client_version | local | Holds the immutable 12-byte RFB 3.8 client banner used as the builder's sole wire-format source. | RFB wire contract |
+
+SYMBOL=types OWNER=pstvnc_rfb_choose_security_none
+CURRENT_ROW=| types | parameter | src/rfb/rfb.c | pstvnc_rfb_choose_security_none | local | Supplies the server-advertised security type list. | RFB wire contract |
+PROPOSED_ROW=| types | parameter | src/rfb/rfb.c | pstvnc_rfb_choose_security_none | local | Points to the server-advertised security-type bytes searched for the explicitly supported None type. | RFB wire contract |
+
+SYMBOL=count OWNER=pstvnc_rfb_choose_security_none
+CURRENT_ROW=| count | parameter | src/rfb/rfb.c | pstvnc_rfb_choose_security_none | local | Gives the exact number of advertised security type bytes. | RFB wire contract |
+PROPOSED_ROW=| count | parameter | src/rfb/rfb.c | pstvnc_rfb_choose_security_none | local | Bounds the advertised security-type array and the exact search performed for SecurityType None. | RFB wire contract |
+
+SYMBOL=choice OWNER=pstvnc_rfb_choose_security_none
+CURRENT_ROW=| choice | parameter | src/rfb/rfb.c | pstvnc_rfb_choose_security_none | local | Receives the selected None security type on success. | Issue #7 security baseline |
+PROPOSED_ROW=| choice | parameter | src/rfb/rfb.c | pstvnc_rfb_choose_security_none | local | Receives SecurityType None only when that exact type was present in the server-advertised list. | Issue #7 security baseline |
+
+SYMBOL=i OWNER=pstvnc_rfb_choose_security_none
+CURRENT_ROW=| i | variable | src/rfb/rfb.c | pstvnc_rfb_choose_security_none | local | Iterates across advertised security types. | RFB wire contract |
+PROPOSED_ROW=| i | variable | src/rfb/rfb.c | pstvnc_rfb_choose_security_none | local | Indexes the bounded server security-type list while searching for the sole supported None type. | RFB wire contract |
+
+SYMBOL=result OWNER=pstvnc_rfb_security_result_ok
+CURRENT_ROW=| result | parameter | src/rfb/rfb.c | pstvnc_rfb_security_result_ok | local | Supplies the four network-order SecurityResult bytes. | RFB wire contract |
+PROPOSED_ROW=| result | parameter | src/rfb/rfb.c | pstvnc_rfb_security_result_ok | local | Points to the four-byte network-order SecurityResult accepted only when its decoded status value is zero. | RFB wire contract |
+
+SYMBOL=bytes OWNER=pstvnc_rfb_parse_server_init
+CURRENT_ROW=| bytes | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_server_init | local | Supplies the fixed-size ServerInit header bytes. | RFB wire contract |
+PROPOSED_ROW=| bytes | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_server_init | local | Points to the fixed ServerInit header from which geometry, pixel-format fields, and desktop-name length are decoded. | RFB wire contract |
+
+SYMBOL=out OWNER=pstvnc_rfb_parse_server_init
+CURRENT_ROW=| out | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_server_init | local | Receives parsed server geometry and pixel-format metadata. | RFB wire contract |
+PROPOSED_ROW=| out | parameter | src/rfb/rfb.c | pstvnc_rfb_parse_server_init | local | Receives decoded ServerInit geometry, pixel-format metadata, and name length; success additionally requires nonzero width and height. | RFB wire contract |
+
+SYMBOL=message OWNER=pstvnc_rfb_build_set_pixel_format_gs555
+CURRENT_ROW=| message | variable | src/rfb/rfb.c | pstvnc_rfb_build_set_pixel_format_gs555 | local | Stores the immutable GS-friendly SetPixelFormat message bytes. | fixed GS-friendly pixel format |
+PROPOSED_ROW=| message | variable | src/rfb/rfb.c | pstvnc_rfb_build_set_pixel_format_gs555 | local | Holds the immutable SetPixelFormat bytes requesting little-endian 16-bpp/depth-15 B5:G5:R5 true color for direct GS-friendly presentation. | fixed GS-friendly pixel format |
+
+ORDERING
+Each replacement is in-place at the existing symbol row; no ordering movement is required.
+
+MECHANICAL_DELTA
+No add/remove/rename was identified in this bounded stable RFB wire batch. Symbol count remains unchanged.
+
+CANONICAL_POST_APPLY_CHECKS
+- run the repository's strict source-dictionary checker/reconciler in check mode
+- run the project source/topology checker
+- regenerate/check the generated source-dictionary portal if canonical tooling requires it after description changes
+- inspect the resulting src/rfb/SYMBOLS.md diff to confirm only Description cells changed
+
+NEEDS_FOREMAN_REVIEW
+None in this batch.
+
+ASSUMPTIONS_LIMITATIONS
+- This batch intentionally avoids src/mpeg because A003 is active and moving.
+- It does not claim the remaining src/rfb semantic backlog is exhausted.
+- Existing Context cells are preserved verbatim even where their historical issue label is broader than the immediate helper semantics; changing Context authority was outside this bounded description-only prep.
+
+CONSUMPTION_RULE=Foreman must revalidate SOURCE_HEAD/current source/current row before applying; stale artifacts are prep evidence, never authority.
