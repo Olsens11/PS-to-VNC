@@ -7,8 +7,8 @@ mechanically discovered definition, removes rows whose defining source/lexical
 owner no longer exists, and appends current definitions that the canonical
 source-dictionary validator reports as missing. It is scoped to the clean
 product dictionaries currently participating in deterministic ledge
-reconciliation, including the active audio lifecycle owner; it does not rewrite
-unrelated product domains or change product source.
+reconciliation; it does not rewrite unrelated product domains or change
+product source.
 
 Run only with Universal Ctags available. After reconciliation, regenerate the
 portal and run the canonical long/complete/strict source-dictionary check.
@@ -30,6 +30,7 @@ TARGET_DIRECTORIES = (
     Path("src/config"),
     Path("src/input"),
     Path("src/media"),
+    Path("src/mpeg"),
     Path("src/platform"),
     Path("src/rfb"),
     Path("src/transport"),
