@@ -22,6 +22,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/config_profile.o \
 	$(BUILD_DIR)/config_text.o \
 	$(BUILD_DIR)/media_clock.o \
+	$(BUILD_DIR)/mpeg_decoder.o \
 	$(BUILD_DIR)/diagnostics.o \
 	$(BUILD_DIR)/diagnostics_identity.o \
 	$(BUILD_DIR)/rfb.o \
@@ -43,6 +44,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/transport_physical_stream.o \
 	$(BUILD_DIR)/transport_rfb_channel.o \
 	$(BUILD_DIR)/transport_audio_channel.o \
+	$(BUILD_DIR)/transport_mpeg_channel.o \
 	$(BUILD_DIR)/transport_runtime.o \
 	$(BUILD_DIR)/transport_quiesce.o \
 	$(BUILD_DIR)/transport_bridge.o \
@@ -57,7 +59,7 @@ EE_OBJS = \
 
 EE_OBJS += $(EXTRA_EE_OBJS)
 
-EE_INCS = -Isrc -Isrc/audio -Isrc/config -Isrc/media -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
+EE_INCS = -Isrc -Isrc/audio -Isrc/config -Isrc/media -Isrc/mpeg -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
 EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman -lpad -laudsrv $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
 
 .PHONY: all clean
@@ -96,6 +98,9 @@ $(BUILD_DIR)/config_text.o: src/config/text.c src/config/text.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/media_clock.o: src/media/clock.c src/media/clock.h src/config/profile.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/mpeg_decoder.o: src/mpeg/decoder.c src/mpeg/decoder.h src/transport/bridge.h src/transport/transport.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/diagnostics.o: src/diagnostics/diagnostics.c src/diagnostics/diagnostics.h | $(BUILD_DIR)
@@ -161,7 +166,10 @@ $(BUILD_DIR)/transport_rfb_channel.o: src/transport/rfb_channel.c src/transport/
 $(BUILD_DIR)/transport_audio_channel.o: src/transport/audio_channel.c src/transport/audio_channel.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/transport_runtime.o: src/transport/runtime.c src/transport/runtime.h src/transport/physical_stream.h src/transport/rfb_channel.h src/transport/audio_channel.h src/transport/transport.h | $(BUILD_DIR)
+$(BUILD_DIR)/transport_mpeg_channel.o: src/transport/mpeg_channel.c src/transport/mpeg_channel.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/transport_runtime.o: src/transport/runtime.c src/transport/runtime.h src/transport/physical_stream.h src/transport/rfb_channel.h src/transport/audio_channel.h src/transport/mpeg_channel.h src/transport/transport.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/transport_quiesce.o: src/transport/quiesce.c src/transport/runtime.h src/transport/protocol.h | $(BUILD_DIR)
