@@ -3,10 +3,20 @@
  * Minimal host-only PS2 kernel declarations used by the direct A001 Transport
  * behavior fixtures. Implementations live in each fixture so failure and
  * synchronization behavior stays explicit and deterministic.
+ *
+ * PS2SDK's ee_thread_t stores its entry point in a void * field and product code
+ * therefore uses the SDK-required function-pointer/object-pointer conversion.
+ * ISO C diagnoses that representation under -pedantic even though it is the
+ * target ABI contract. Suppress only that host-language diagnostic in this
+ * test-only shim; -Wall/-Wextra and -Werror remain active for all other classes.
  */
 
 #ifndef PSTVNC_TEST_TRANSPORT_HOST_KERNEL_H
 #define PSTVNC_TEST_TRANSPORT_HOST_KERNEL_H
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 
 typedef struct ee_sema {
     int init_count;
