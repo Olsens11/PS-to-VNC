@@ -2,14 +2,16 @@
  * File synopsis:
  * Defines stable cross-component Transport values used to establish one ledge
  * PSTV session. Physical socket mechanics, sole receive ownership, logical RFB
- * storage, and lifecycle implementation remain private to Transport.
+ * and optional AUDIO storage, and lifecycle implementation remain private to
+ * Transport.
  *
  * The caller supplies already validated values. This header deliberately does
- * not manufacture CONFIG defaults or expose the adopted physical descriptor to
- * protocol components.
+ * not manufacture CONFIG/profile defaults or expose the adopted physical
+ * descriptor to protocol/media components.
  *
- * Context: docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md, "A001 transport ownership
- * reconciliation"; docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
+ * Context: docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md; docs/ledge/
+ * LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
+ * LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md.
  */
 
 #ifndef PSTVNC_TRANSPORT_H
@@ -20,6 +22,8 @@
 typedef enum pstvnc_transport_result {
     PSTVNC_TRANSPORT_OK = 0,
     PSTVNC_TRANSPORT_WOULD_BLOCK = 1,
+    PSTVNC_TRANSPORT_STOPPED = 2,
+    PSTVNC_TRANSPORT_EXHAUSTED = 3,
     PSTVNC_TRANSPORT_CLOSED = -1,
     PSTVNC_TRANSPORT_INVALID = -2,
     PSTVNC_TRANSPORT_FAILED = -3
@@ -44,5 +48,19 @@ typedef struct pstvnc_transport_session_config {
     int receiver_thread_priority;
     uint32_t max_data_payload;
 } pstvnc_transport_session_config_t;
+
+/*
+ * Immutable A002 logical-AUDIO resource/flow-control authority. These values are
+ * supplied explicitly by the caller/profile layer when AUDIO is enabled; the
+ * Transport runtime has no queue/credit defaults and does not infer playback
+ * chunk, reservoir, or AUDSRV policy from them.
+ */
+typedef struct pstvnc_transport_audio_channel_config {
+    uint32_t queue_capacity;
+    uint32_t initial_credit_bytes;
+    uint32_t credit_batch_bytes;
+    int credit_flush_on_empty;
+    int credit_return_enabled;
+} pstvnc_transport_audio_channel_config_t;
 
 #endif
