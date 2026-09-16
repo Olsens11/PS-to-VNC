@@ -1,0 +1,69 @@
+name: A003 P1 finalize source candidate v2
+
+on:
+  push:
+    branches:
+      - evidence/a003-p1-host-20260916
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Stop on completed candidate commit
+        id: guard
+        shell: bash
+        run: |
+          if [ "$(git log -1 --format=%s)" = "fix(a003): finalize P1 source-owned candidate" ]; then
+            echo 'done=yes' >> "$GITHUB_OUTPUT"
+          else
+            echo 'done=no' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install dictionary tools
+        if: steps.guard.outputs.done == 'no'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y universal-ctags shfmt
+      - name: Finalize source-owned candidate
+        if: steps.guard.outputs.done == 'no'
+        run: |
+          python3 .github/a003_finalize_source_candidate.py
+          python3 scripts/source-dictionary.py check --long --require-complete --strict
+          git diff --check
+          grep -Fq '| `src/mpeg/` |' docs/development/source-topology.md
+          grep -Fq '    "src/mpeg",' scripts/continuity-check.sh
+          test -s src/mpeg/SYMBOLS.md
+      - name: Run A003 and accepted regression tests
+        if: steps.guard.outputs.done == 'no'
+        shell: bash
+        run: |
+          set -eu
+          cd tests
+          mkdir -p .build
+          COMMON='-O2 -std=c99 -Wall -Wextra -Werror -pedantic -I../src -I../src/input -I../src/ui -I../src/rfb -I../src/framebuffer -I../src/display -I../src/diagnostics -I../src/platform -I../src/transport'
+          make transport-protocol-unit transport-rfb-channel-unit transport-bridge-unit rfb-bridge-unit transport-physical-stream-unit
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread unit/transport_runtime_test.c ../src/transport/runtime.c ../src/transport/quiesce.c ../src/transport/audio_channel.c ../src/transport/mpeg_channel.c ../src/transport/rfb_channel.c ../src/transport/protocol.c -o .build/transport_runtime_a003_test
+          ./.build/transport_runtime_a003_test
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread unit/transport_audio_test.c ../src/transport/runtime.c ../src/transport/quiesce.c ../src/transport/audio_channel.c ../src/transport/mpeg_channel.c ../src/transport/rfb_channel.c ../src/transport/protocol.c -o .build/transport_audio_a003_test
+          ./.build/transport_audio_a003_test
+          cc $COMMON -Iunit/transport_host_stubs -I../src -pthread unit/transport_mpeg_test.c ../src/transport/runtime.c ../src/transport/quiesce.c ../src/transport/audio_channel.c ../src/transport/mpeg_channel.c ../src/transport/rfb_channel.c ../src/transport/protocol.c -o .build/transport_mpeg_test
+          ./.build/transport_mpeg_test
+          cc $COMMON -I../src unit/mpeg_decoder_test.c ../src/mpeg/decoder.c -o .build/mpeg_decoder_test
+          ./.build/mpeg_decoder_test
+          make audio-playback-unit audio-audsrv-service-unit audio-session-unit media-clock-unit config-profile-unit
+      - name: Commit final source-owned candidate
+        if: steps.guard.outputs.done == 'no'
+        shell: bash
+        run: |
+          set -eu
+          git config user.name 'PS-to-VNC A003 reconstruction evidence'
+          git config user.email '39144541+Olsens11@users.noreply.github.com'
+          git add tests/unit/transport_mpeg_test.c src/transport/SYMBOLS.md src/mpeg/SYMBOLS.md docs/development/source-topology.md scripts/continuity-check.sh
+          git diff --cached --check
+          git commit -m 'fix(a003): finalize P1 source-owned candidate'
+          git push origin HEAD:evidence/a003-p1-host-20260916
