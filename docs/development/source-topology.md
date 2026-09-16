@@ -45,6 +45,7 @@ The current clean-generation directories are:
 | `src/framebuffer/` | authoritative CPU-side remote desktop image |
 | `src/input/` | controller facts, libpad-facing project use, semantic input, keyboard, mouse |
 | `src/media/` | session-scoped common media epoch, signed/saturating deadline math, synchronization contract, and host-testable wait boundary |
+| `src/mpeg/` | session-scoped MPEG decoder resource/call ownership, explicit feed and sequence bounds, safe-stop lifetime fencing, and payload-versus-transfer accounting |
 | `src/platform/` | genuinely PS2-specific system, network, and graphics mechanisms |
 | `src/rfb/` | RFB wire/session parsing, logical-stream adaptation, and complete-message safe-boundary policy |
 | `src/transport/` | sole physical PSTV stream/receiver, framing/sequence, logical-channel storage/flow control, and Transport-owned session lifecycle |
@@ -82,6 +83,18 @@ configuration ownership nor a PS2 platform mechanism. `clock.{c,h}` owns only
 reusable session timing state/math plus injected synchronization and time
 observer contracts. It does not own PCM/AUDSRV runtime, MPEG/video callsites,
 or concrete PS2 lock/timer bindings.
+
+`src/mpeg/` was deliberately created during A003 MPEG Transport/decoder-core
+reconstruction on 2026-09-16 because decoder-visible resource lifetime, sequence/feed
+bounds, and safe-stop semantics are neither Transport physical-stream ownership nor
+application/presentation policy. `decoder.{c,h}` owns known-state
+prepare/initialize/picture/destroy ordering, explicit caller-supplied sequence and feed
+bounds, truthful Transport data/exhaustion/failure consumption, decoder-call lifetime
+fencing, and separate real-payload versus padded-transfer accounting. It does not own
+the physical PSTV receiver, exact-generation START/retirement orchestration, Pi
+producer/capture control, presentation/compositor work, first-presentation clock arm,
+scheduler/drop policy, calibration, application orchestration, or hardware
+qualification.
 
 `src/audio/` was deliberately created during the A002 synchronous PCM playback
 core reconstruction on 2026-09-16. `playback.{c,h}` owns bounded logical AUDIO
