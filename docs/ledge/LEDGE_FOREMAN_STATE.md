@@ -1,113 +1,147 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0006
-RECORDED_AT=2026-09-16T07:42:25-04:00
+STATE_REVISION=0007
+RECORDED_AT=2026-09-16T08:19:46-04:00
 SOURCE_COMMIT=SELF
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0005
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0003
 BASED_ON_RECONSTRUCTION_STATE_REVISION=0007
 BASED_ON_GLOBAL_STATE_REVISION=0023
+BASED_ON_VALIDATION_STATE_REVISION=0006
+BASED_ON_VALIDATION_FINDINGS_REVISION=0005
+BASED_ON_A002_AUDIT_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-This interactive Foreman continuation supersedes revision 0005. It consumes the completed A001 C1-C8 Reconstruction packet, the reconciled current source dictionaries/portal, work-log policy revision 0003, and canonical machine evidence from the exact current-source CI authority `20b2e21b7718d987892bb71b498d609a5db0ec5d`.
+This interactive Foreman revision consumes the independent A001 machine/source Validation PASS recorded after Foreman revision 0006 and opens the first bounded A002 reconstruction packet. The live branch was re-read immediately before this state write at `3552e8790e63eb53866c87f97fad98cd9653ac13`.
 
-The branch was re-read immediately before this state write and remained exactly `20b2e21b7718d987892bb71b498d609a5db0ec5d`. No A002 product behavior was started.
+Global work state revision 0023 and Reconstruction state revision 0007 are older point-in-time snapshots and are stale relative to the accepted A001 source/machine tranche. They remain historical authority for what was known at their recorded times; they do not block this planning transition.
 
 ## Current foreman phase
 
-`A001_VALIDATION_READY_HANDOFF`
+`A002_CONFIG_PROFILE_PACKET_ISSUED`
 
-A001 has no remaining Foreman-owned integration or known Reconstruction-owned behavior obligation. Foreman therefore hands the coherent A001 tranche to independent Validation as `VALIDATION_READY`.
+A001 is independently accepted at machine/source level. Validation state revision 0006 records `VALIDATION_A001_MACHINE_SOURCE=PASS`, findings revision 0005 records V003/V004/V005 PASS, and `A002_PLANNING_BLOCKED_BY_VALIDATION=NO`.
 
-This is **not** a Validation PASS and is **not** physical PS2 qualification. Validation still owns formal V003/V004/V005 disposition. Hardware remains `HARDWARE_PENDING`.
+A001 physical PS2 qualification remains explicitly `HARDWARE_PENDING`. This packet does not convert machine evidence into physical qualification and does not remove that debt.
 
-## A001 behavior and ownership disposition
+## A002 planning conclusion
 
-The completed Reconstruction packet and current source/test topology cover the A001 audit behaviors without a newly identified DUT defect:
+A002 is not a task to fill eight numeric constants and is not authority to reproduce H1's complete 61-field laboratory CONFIG vocabulary as a production API.
 
-1. one physical PSTV connection owner and one sole receive owner in Transport;
-2. Transport-owned physical framing/sequence authority and logical-channel dispatch;
-3. RFB parser ownership above a logical byte-stream bridge rather than a physical socket;
-4. parser-consumed RFB credit distinguished from terminal residual discard;
-5. producer-driven RFB activity/wakeup rather than blind polling;
-6. finite REQUEST -> BOUNDARY -> COMMIT -> residual -> COMPLETE quiescence, distinct from application-local fatal abort;
-7. RFB/application service only at complete parser message boundaries;
-8. application/presentation flow policy above parser/framebuffer authority.
+The first dependency is the clean session/profile authority that A001 intentionally left absent:
 
-V005's reconstructed fatal-abort path remains the governing current source shape: Transport requests stop, interrupts its own blocking physical receive, waits for sole-receiver completion/dormancy, then reclaims receiver-visible resources and the descriptor. The application does not directly close an adopted descriptor. Independent Validation previously supported this source shape statically; the canonical machine evidence below now executes the registered lifecycle/runtime fixtures needed for independent final disposition.
+- `pstvnc_app_run()` remains fail-closed because no production producer exists for the validated Transport session subprofile;
+- the existing `pstvnc_transport_session_config_t` is the stable A001 value boundary and contains eight Pi-supplied per-session values;
+- current clean `src/config/` contains generic text helpers but no typed session/profile owner;
+- H1 proves that CONFIG is received before runtime resource allocation/start, is versioned, rejects malformed/unknown/duplicate/missing fields, and carries per-session values from the Pi;
+- A002 audit revision 0001 requires simplifying that laboratory mechanism into narrow owner-specific immutable values while preserving completeness and structural rejection behavior;
+- PCM runtime and shared-media-clock behavior are also A002-owned, but they should build on a coherent typed profile rather than force configuration ownership to emerge accidentally from the audio worker.
 
-## V004 integration disposition
+The first A002 packet therefore establishes the pure configuration/profile foundation only. Runtime CONFIG negotiation, PCM playback, AUDSRV lifecycle, and the media-clock runtime remain subsequent A002 work after this value/decoder boundary is proven.
 
-The prior V004 source/portal gap is complete at current source level and canonically machine-checked:
+## Fresh interactive Reconstruction packet
 
-- `src/rfb/SYMBOLS.md`: `COVERAGE=COMPLETE`, current logical bridge/session source represented, 345 entries;
-- `src/transport/SYMBOLS.md`: `COVERAGE=COMPLETE`, 422 entries;
-- generated `docs/reference/SOURCE_SYMBOL_DICTIONARIES.md` includes both RFB and Transport;
-- clean source topology/continuity owns `src/transport`;
-- canonical complete long/strict source-dictionary audit: PASS in run `35091578944` at source authority `20b2e21...`;
-- canonical project check, including portal/topology and work-log validation: PASS in the same run.
+WORK_ITEM_KEY=`a002-audio-clock`
+TARGET_WORKER=`interactive`
+ASSIGNING_HEAD=`3552e8790e63eb53866c87f97fad98cd9653ac13`
+ASSIGNING_AUDIT=`LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md:0001`
+ASSIGNING_VALIDATION_STATE=`0006`
 
-Work-log contract revision 0003 preserves seven exact already-frozen legacy/malformed records through explicit path-level compatibility rather than rewriting immutable history. The canonical checker now passes with those seven explicit grandfather records; this is a governance compatibility repair, not a reusable exception mechanism.
+### Objective
 
-## Canonical machine evidence
+Reconstruct A002's clean, bounded, versioned session CONFIG/profile owner and pure decoder/validator so the existing A001 Transport subprofile and the A002-owned PCM/common-clock session facts can come from one explicit immutable authority without guessed defaults or a 61-field production god object.
 
-Canonical workflow: `.github/workflows/ledge-reconstruction.yml`
+This packet is intentionally a value/decoding tranche. It must not begin the PCM worker, AUDSRV service lifecycle, shared-clock wait/arming runtime, or A003 MPEG/presentation behavior.
 
-Exact successful run:
+### Required deliverables
 
-- workflow run ID: `35091578944`;
-- exact checked-out source authority: `20b2e21b7718d987892bb71b498d609a5db0ec5d`;
-- `make -C tests unit`: PASS, including direct `transport_physical_stream_test` and `transport_runtime_test` plus the existing Transport/RFB/application suite;
-- `./scripts/check.sh`: PASS;
-- `python3 scripts/source-dictionary.py check --long --require-complete --strict`: PASS;
-- pinned PS2Dev clean compile check: PASS;
-- current linked clean build: PASS;
-- repeated build ELF byte comparison: PASS;
-- normalized PT_LOAD comparison: PASS;
-- preserved unqualified linked ELF artifact: PASS.
+1. **Clean configuration ownership.** Establish the smallest coherent typed session/profile values in `src/config/` needed by current A001/A002 responsibilities. Use narrow owner-specific subprofiles rather than one H1-shaped struct shared by every component.
 
-Exact linked-build identity from the run:
+2. **A001 Transport subprofile provenance.** The decoded profile must carry or produce the existing `pstvnc_transport_session_config_t` without changing that A001 boundary or manufacturing defaults. All eight values remain explicit session authority:
+   - RFB queue capacity;
+   - RFB initial credit;
+   - RFB credit batch;
+   - RFB flush-on-empty;
+   - RFB credit-return enable;
+   - receiver-thread stack size;
+   - receiver-thread priority;
+   - maximum DATA payload.
 
-- `ELF_PRISTINE_SHA256=3093b390b2f0e9cbd62786116151cd34dc991441e162ffe523ef5adae02aed26`;
-- `PT_LOAD_SEGMENTS=1`;
-- `PT_LOAD_SHA256=55ef86f7684b43f8c87b9e461a09d4155856691201711e3b3412fc6d7898e1cb`;
-- `PT_LOAD_BYTES=412680`;
-- `PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74`;
-- runtime identity blob present but intentionally unqualified/unstamped (`ELF_IDENTITY_TEST_ID=UNSTAMPED`);
-- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+3. **A002-owned product/session facts.** Represent the stable A002 semantics needed by later PCM/common-clock work, including at minimum session identity, audio activation OFF/PCM, PCM rate/channels/bits/volume, signed audio presentation offset, and the common-clock/profile inputs that current A002 audit genuinely owns. RFB activation may be represented as the composition fact required to select the A001 Transport subprofile. VIDEO activation/common-clock facts may be represented only to the extent the A002 audit establishes a stable neutral contract; do not import A003 decoder/presentation tuning.
 
-The preserved artifact is unqualified build evidence only. It is not a physical-hardware PASS.
+4. **Versioned bounded decode.** Define a clean production CONFIG payload/decoder appropriate to the current PSTV CONTROL/CONFIG framing. Exact clean wire encoding is an implementation decision, not a requirement to preserve H1's 61-field layout. The decoder must be side-effect free and reject:
+   - unsupported version;
+   - malformed length/entry shape;
+   - unknown field/tag identity;
+   - duplicate fields;
+   - missing required fields;
+   - structurally impossible combinations.
 
-## A001 CONFIG boundary
+5. **Owner-level validation.** Preserve real representation/API invariants without inventing speculative safe ceilings. At minimum, validation must cover:
+   - the existing Transport queue/credit/thread/payload relationships required by A001;
+   - receiver priority/stack representability and alignment;
+   - PCM format constraints (8/16-bit, mono/stereo), positive/representable rate, volume range, and frame-aligned byte policies when those values are part of the clean profile;
+   - activation/value contradictions;
+   - exact signed-offset interpretation rather than accidental unsigned policy.
 
-Unchanged and now explicitly non-blocking for A001: all eight `pstvnc_transport_session_config_t` values are Pi-supplied per-session CONFIG authority. A001 accepts a complete caller-supplied Transport subprofile and does not invent defaults. The production producer/decoder is A002-owned configuration/profile work. `pstvnc_app_run()` may therefore remain fail-closed until A002 supplies that producer.
+6. **Behavior-specific unit-test source.** Add deterministic host-test source for the new pure profile decoder/validation covering a complete valid profile plus wrong version, malformed input, unknown field, duplicate field, missing required field, invalid Transport relationships, invalid PCM format/volume, signed-offset preservation, and proof that absent A001 Transport fields are rejected rather than defaulted.
 
-## Validation disposition handed forward
+7. **Source-writing/topology discipline.** Before adding clean files, read and obey current `docs/development/source-naming-and-symbols.md` and `docs/development/source-topology.md`. Every maintained clean C/H file receives the required synopsis and readable naming/comments. If current topology policy requires `src/config/SYMBOLS.md` or deliberate directory adoption for the new definitions, make the reconstruction-owned source-side update that policy requires; routine canonical registration/generated-portal/checker work remains Foreman-owned.
 
-The append-only findings register still formally contains:
+### Acceptance criteria
 
-- V003 OPEN / `WAIT_FOR_COHERENT_TRANCHE`;
-- V004 OPEN;
-- V005 HIGH / OPEN.
+C1. One explicit config-owned immutable session/profile authority exists; no consumer must recover session values from unrelated globals and no H1 61-field god object is reproduced.
 
-Those statuses are intentionally not rewritten by Foreman. Their previously stated missing handoff evidence is now present at exact machine authority `20b2e21...`; independent Validation must revision-chain or otherwise formally disposition them.
+C2. All eight existing A001 Transport session values have an explicit decoded/profile provenance and no code path substitutes fixed application defaults for a missing CONFIG value.
 
-FOREMAN_A001_HANDOFF=VALIDATION_READY
-VALIDATION_PASS=UNCLAIMED
-HARDWARE_STATUS=HARDWARE_PENDING
+C3. The clean decoder is complete and deterministic: version, malformed length, unknown, duplicate, missing, and structural-invalid cases are rejected before runtime side effects.
 
-## Reconstruction assignment status
+C4. A002 PCM product semantics are represented and validated with signed offset preserved, while A003 MPEG/presentation details remain absent.
+
+C5. The resulting typed boundaries are narrow enough that Transport, the future audio owner, and the future media-clock owner can consume only their relevant immutable values instead of depending on the whole profile representation.
+
+C6. Deterministic behavior-specific host-test source covers the required positive/negative decoder and validator cases, including the no-default A001 boundary.
+
+C7. Current A001 runtime behavior remains unchanged in this packet: `pstvnc_app_run()` may remain fail-closed; no live CONFIG handshake, Transport receive ownership, RFB lifecycle, fatal-abort, or quiesce behavior is weakened or redesigned.
+
+C8. No PCM worker/AUDSRV runtime, no shared-clock wait/arming runtime, no MPEG/video reconstruction, and no physical-hardware claim is introduced.
+
+### Preserved invariants / non-goals
+
+- A001 machine/source PASS and its exact Transport/RFB ownership rules remain intact.
+- One physical PSTV connection and one Transport-owned sole receiver remain the architectural foundation.
+- Do not hardcode the eight Transport CONFIG values.
+- Do not reproduce H1's mandatory 61-field production interface merely for wire familiarity.
+- Do not make configuration a cross-domain mutable god object.
+- Do not begin A003 decoder/generation/presentation behavior.
+- Do not introduce `audsrv_quit()` or any per-session AUDSRV teardown policy in this packet.
+- Do not silently address the inherited H1 next-session receive-poison defect.
+- A001 hardware status remains `HARDWARE_PENDING`.
+
+### Blocker burden
+
+A design question about the exact clean CONFIG encoding is not by itself a blocker. First reconcile the A002 audit, H1 `h1_config.*` behavior, current PSTV CONFIG frame vocabulary, current clean config architecture, and source-writing/topology policy. Preserve required semantic behavior while deliberately simplifying the wire/profile shape.
+
+If a particular future-media field cannot be classified without A003/A004 authority, omit/defer that field rather than guessing. That does not block completing the A002-owned subset.
+
+### Fallback / stretch
+
+If C1-C8 are complete early, the permitted stretch is pure, side-effect-free common-clock value/deadline math and its tests **only if** it can be implemented entirely within A002's audited ownership without selecting the video arm callsite or introducing runtime waiting/polling. Otherwise stop at the completed CONFIG/profile boundary and hand the baton back to Foreman.
+
+## Assignment status
 
 RECONSTRUCTION_A_PACKET=NONE
 RECONSTRUCTION_B_PACKET=NONE
-INTERACTIVE_B_PACKET=NONE
-A002_PACKET=NONE
-REASON=A001_FOREMAN_INTEGRATION_COMPLETE;INDEPENDENT_VALIDATION_DISPOSITION_REQUIRED_BEFORE_A002
-
-Reconstruction workers must remain idle on A001 unless Validation exposes a concrete reconstruction-owned defect. They must not begin A002 until the A001 Validation handoff boundary is formally consumed and Foreman publishes a fresh A002 packet.
+INTERACTIVE_PACKET=A002_CONFIG_PROFILE_FOUNDATION
+A002_PACKET=ACTIVE
+A001_MACHINE_SOURCE_STATUS=PASS
+A001_HARDWARE_STATUS=HARDWARE_PENDING
+SCHEDULED_A_B_FOREMAN_STATUS=OPERATOR_PAUSED_UNCHANGED
 
 ## Exact next pickup
 
-Independent Validation should consume exact run `35091578944` at `20b2e21...`, independently review the canonical host/runtime/lifecycle evidence, the complete strict dictionary/project checks, and the exact linked/PT_LOAD identity, then disposition V003/V004/V005. If Validation finds no reconstruction-owned defect and accepts the A001 tranche, Foreman may then open A002 planning. Physical PS2 qualification remains a separate `HARDWARE_PENDING` obligation and must not be inferred from CI.
+The High-thinking interactive Reconstruction worker should consume this packet from current repository authority and execute C1-C8 as one sustained round, leaving exactly one canonical immutable `reconstruction/a002-audio-clock/interactive` work log before ending. It must reserve enough tool capacity for that handoff.
+
+After the worker returns, Foreman should independently inspect current HEAD/source/tests/log, register any new host fixtures canonically, run/preserve available machine evidence, and decide the next A002 packet. Independent Validation should judge a coherent A002 tranche later; A001 physical qualification remains separately pending.
