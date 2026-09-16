@@ -14,7 +14,8 @@ this dictionary records only the project-defined Make variables and targets in
 | COMMON_CFLAGS | variable | tests/Makefile | host unit build | build | Defines the strict common C99 warning, optimization, and error-policy flags used by the ordinary host unit-test binaries. | host unit compilation |
 | BUILD_DIR | variable | tests/Makefile | host unit build | build | Names the disposable `.build` directory that receives ordinary host unit-test executables. | host unit artifacts |
 | GEOMETRY_TEST | variable | tests/Makefile | geometry unit build | build | Names the host executable produced for the video geometry and mode integration test. | video geometry unit test |
-| unit | target | tests/Makefile | host unit build | build | Builds and runs the ordinary host unit-test executables and also requires the separate geometry-unit target. | aggregate host unit suite |
+| TRANSPORT_RFB_CHANNEL_TEST | variable | tests/Makefile | transport unit build | build | Names the host executable for backend-independent logical RFB channel storage tests. | A001 transport logical RFB storage |
+| unit | target | tests/Makefile | host unit build | build | Builds and runs the ordinary host unit-test executables and also requires the separate geometry and transport logical-RFB unit targets. | aggregate host unit suite |
 | $(BUILD_DIR) | target | tests/Makefile | host unit build | build | Creates the disposable directory that receives host unit-test binaries. | host unit artifacts |
 | $(BUILD_DIR)/config_text_test | target | tests/Makefile | host unit build | build | Compiles the configuration-text unit test with the clean configuration text implementation. | configuration text |
 | $(BUILD_DIR)/video_mode_test | target | tests/Makefile | host unit build | build | Compiles the video-mode unit test with the clean mode implementation and host gsKit compatibility header. | video modes |
@@ -29,3 +30,5 @@ this dictionary records only the project-defined Make variables and targets in
 | clean | target | tests/Makefile | host unit build | build | Removes the disposable host unit-test build directory and every test executable beneath it. | test build hygiene |
 | geometry-unit | target | tests/Makefile | geometry unit build | build | Builds and executes the dedicated video geometry test executable. | video geometry unit test |
 | $(GEOMETRY_TEST) | target | tests/Makefile | geometry unit build | build | Compiles the video geometry test with clean geometry and mode implementations using the host gsKit compatibility header. | video geometry |
+| transport-rfb-channel-unit | target | tests/Makefile | transport unit build | build | Builds and executes the backend-independent logical RFB channel regression test. | A001 transport logical RFB storage |
+| $(TRANSPORT_RFB_CHANNEL_TEST) | target | tests/Makefile | transport unit build | build | Compiles the logical RFB channel test directly with `src/transport/rfb_channel.c`. | A001 transport logical RFB storage |
