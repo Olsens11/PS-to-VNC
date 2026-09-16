@@ -1,76 +1,77 @@
 # Ledge Reconstruction — Current Work State
 
 DOCUMENT=LEDGE_WORK_STATE
-STATE_REVISION=0017
-RECORDED_AT=2026-09-16T00:33:00-04:00
+STATE_REVISION=0018
+RECORDED_AT=2026-09-16T01:29:43-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_STATE_REVISION=0016
-SUPERSEDES_STATE_REVISION=0016
+BASED_ON_STATE_REVISION=0017
+SUPERSEDES_STATE_REVISION=0017
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
 ## Authority synthesized
 
-- Branch `ledge/h1-all-guns`; pre-write authority `d21ccfe6f6e4015cdea1092ebd0ebd16b1dbd81a`.
+- Branch `ledge/h1-all-guns`; pre-write authority `dcba448a21c8e1db4aa30e1daaf9024cbc4328c8`.
 - Forensic H1 authority `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`.
 - Governing reconstruction contract revision 0005 and immutable work-log contract revision 0001.
 - Audit state revision 0007 remains complete with A001-A006 explicitly reconstruction-ready.
-- Reconstruction lane state revision 0007 is historical/stale relative to newer committed A001 source.
-- Foreman state revision 0002 is also stale: no newer committed Foreman packet was present at this reconciliation even though the cadence expected a Foreman turn before the midnight A turn.
-- Validation state revision 0005/findings revision 0004 remain the last committed validation authority previously reconciled: V003/V004/V005 remain OPEN until owning Validation revises them.
-- Current branch source has advanced beyond global revision 0016 through a substantial A001 sequence ending at `d21ccfe6f6e4015cdea1092ebd0ebd16b1dbd81a`.
+- Reconstruction state revision 0007 remains historical/stale relative to committed A001 source.
+- Foreman state revision 0002 remains stale planning authority.
+- Validation state revision 0005/findings revision 0004 remain formal finding authority; newest immutable Validation handoff at `dcba448a...` confirms V003/V004/V005 remain OPEN.
 
 Unknown external/Pi-local dirty work remains outside connector visibility and is neither overwritten nor declared absent.
 
 ## Current phase and pipeline
 
-`SEMANTIC_AUDIT_COMPLETE_A001_RECONSTRUCTION_ACTIVE_FOREMAN_PACKET_STALE`
+`SEMANTIC_AUDIT_COMPLETE_A001_RECONSTRUCTION_ACTIVE_FOREMAN_PACKET_STALE_VALIDATION_EVIDENCE_PENDING`
 
 - `AUDIT`: none.
 - `RECONSTRUCTION_READY`: A002-A006 queued behind A001.
-- `RECONSTRUCTING`: A001 active; committed source now includes fatal-abort convergence work, clean build/topology expansion, PSTV endpoint correction, RFB logical-bridge/live-path retirement work, framing coverage, and completed Transport symbol inventory.
-- `FOREMAN_PLANNED/INTEGRATING`: Foreman state 0002 is stale. Integration/evidence chores have nevertheless advanced in committed source/docs, including clean-build topology and Transport dictionary work. Continuity does not reinterpret those commits as a replacement Foreman packet.
+- `RECONSTRUCTING`: A001 active; no newer product-source commit appeared after the source authority reconciled by revision 0017.
+- `FOREMAN_PLANNED/INTEGRATING`: Foreman state 0002 remains stale. V004 integration/evidence chores remain Foreman-owned.
 - `VALIDATION_READY`: none.
 - `PASS`: bounded static/provisional findings only; no complete A001 PASS.
-- `BLOCKED`: formal V003/V004/V005 status remains OPEN under last Validation authority. Newer source appears to address material portions of V004/V005, but only Validation may close findings.
-- `HARDWARE_PENDING`: no reconstructed tranche has reached operator-backed hardware qualification.
+- `BLOCKED`: V003/V004/V005 remain formally OPEN. V005 source resolution is supported by static review but lacks independent executable confirmation; V004 remains incomplete.
+- `HARDWARE_PENDING`: no reconstructed tranche has operator-backed hardware qualification.
 
 ## Foreman goal and cadence health
 
-The intended 90-minute crew cadence remains B -> Foreman -> A with one seat beginning every 30 minutes. The committed Foreman planning baton, however, did not advance beyond revision 0002 before the midnight reconstruction movement visible in branch history. This is a governance gap: current source movement cannot be claimed to have consumed a newly committed bounded Foreman goal packet merely because it is directionally consistent with prior A001 obligations.
+The governing cadence remains Reconstruction B -> Foreman -> Reconstruction A, one seat every 30 minutes and each seat every 90 minutes. The latest committed Foreman state still contains only the 22:30 A and 23:00 B packets. No newer bounded packet is committed for subsequent A/B work. This remains a goal-governance discrepancy: A/B must not claim `FOREMAN_GOAL_RESULT` against an invented or stale packet.
 
-The next Foreman turn must reconcile the actual committed A001 movement before issuing further A/B goals. A/B must report `FOREMAN_GOAL_RESULT` only against an actual current packet; Continuity will not manufacture criterion dispositions from commit messages.
+## Validation/evidence reconciliation
 
-## Architecture / ownership reconciliation
+The newest Validation immutable handoff at `dcba448a...` adds current evidence without changing formal findings state:
 
-- Only audit-ready A001 is active; no A002 behavior is visible in current authority.
-- The current source sequence materially advances the one-physical-Transport-owner design: application/RFB direct socket seams are being retired in favor of Transport plus logical RFB bridging.
-- Fatal teardown work now includes an explicit Transport abort/convergence direction intended to interrupt physical receive, wait for sole-receiver completion, and reclaim only after dormancy. This is consistent with the V005 required shape but remains subject to Validation closure and executable evidence.
-- Clean build/topology integration was corrected to include live Transport/application/input/UI topology, and later commits wired framing/logical-RFB coverage and retired the direct RFB socket seam.
-- `src/transport/SYMBOLS.md` has now received a completion commit at current HEAD, materially advancing V004. Generated portal/topology/strict-check evidence must still be independently established; the existence of a dictionary commit is not itself V004 closure.
-- Concrete production authority for all eight Transport session-config values remains a tracked concern unless newer owning-lane evidence explicitly resolves the producer. No constants are inferred by Continuity.
-- No hardware qualification is inferred.
+- canonical `tests/Makefile` now registers Transport protocol, logical-RFB channel, Transport bridge, and RFB bridge fixtures;
+- `src/transport/SYMBOLS.md` is COMPLETE at definition level;
+- `src/rfb/SYMBOLS.md` is labeled COMPLETE but does not index new `pstvnc_rfb_bridge_*` definitions;
+- generated `docs/reference/SOURCE_SYMBOL_DICTIONARIES.md` still omits `src/transport`;
+- V004 therefore remains OPEN and Foreman-owned;
+- V005 remains OPEN pending independent executable fatal-abort/application-lifecycle confirmation despite source-level static support;
+- canonical host execution, `scripts/check.sh`, strict dictionary/topology checks, clean PS2DEV link, reproducibility and exact ELF/PT_LOAD evidence remain pending.
+
+No physical/hardware PASS is inferred.
 
 ## Contradictions / stale state
 
-1. Reconstruction state 0007 describes an earlier public-bridge phase and is stale relative to current source.
-2. Foreman state 0002 still carries 22:30/23:00 packets and did not publish the expected newer packet before the latest source sequence. This is recorded as goal-governance staleness, not silently repaired by Continuity.
-3. Validation findings remain formally OPEN even where newer source appears responsive; source movement does not supersede Validation ownership.
-4. Global revision 0016 correctly warned that a newer Foreman packet was required before the upcoming A behavior shift. Current repository history shows substantial later A001 work without a newer committed Foreman state, so that warning matured into a real governance discrepancy.
+1. Reconstruction state 0007 is stale relative to current A001 source and must not be read as current implementation truth.
+2. Foreman state 0002 remains stale relative to later reconstruction/validation movement and does not provide a current packet for the next A/B behavior shift.
+3. Validation state/findings remain formally OPEN even where newer static evidence supports V005 resolution; immutable validation evidence does not silently rewrite the finding register.
+4. The RFB dictionary's `COVERAGE=COMPLETE` claim conflicts with Validation's direct observation that new bridge definitions are absent. This is an explicit Foreman-owned V004 integration discrepancy, not silently resolved by Continuity.
 
 ## Exact next safe actions
 
 ### Audit
-Remain idle unless new evidence exposes an unexplained H1 responsibility.
+Remain idle unless genuinely unexplained H1 responsibility appears.
 
 ### Foreman
-Immediately consume current HEAD, the latest reconstruction work, and V003/V004/V005. Publish a fresh bounded A/B packet before further scheduled behavior work. Separate remaining behavior goals from integration/evidence chores; account explicitly for Transport dictionary/portal/topology/check evidence and unresolved CONFIG producer authority.
+Before further A/B behavior work, consume current HEAD/global 0018 and V003/V004/V005; publish fresh bounded A/B goal packets. Reconcile `src/rfb/SYMBOLS.md`, regenerate/verify the product dictionary portal including Transport, run strict topology/dictionary/canonical checks where executable, and preserve results without claiming Validation PASS.
 
 ### Reconstruction A/B
-Do not begin A002. Consume only a fresh Foreman packet for the next scheduled behavior tranche. Preserve the current one-owner/fatal-convergence/RFB-safe-boundary architecture and report criterion-level `FOREMAN_GOAL_RESULT` against that packet.
+Do not begin A002. Execute only a fresh Foreman packet. If V005 behavior regresses under executable evidence, correct it as A001 behavior work; otherwise do not substitute Foreman integration chores for a behavior goal. Report criterion-level `FOREMAN_GOAL_RESULT` only against the actual current packet.
 
 ### Validation
-Review the current fatal-abort/live-path/build/dictionary sequence independently. Close V004/V005 only if source plus executable evidence satisfy their exact requirements; keep V003 until coherent A001 promotion evidence exists. Do not infer hardware PASS.
+Independently execute/review fatal-abort/application lifecycle evidence when available and revision-chain V005 only when warranted. Review V004 after Foreman reconciles RFB dictionary/Transport portal/topology/strict checks. Keep V003 until coherent A001 promotion evidence exists. Do not infer hardware PASS.
 
 ### Continuity
-On next wake, require reconciliation of a newer Foreman packet and owning-lane reconstruction/validation handoffs. Continue treating current source commits as authority for what exists, but lane states/findings as authority for their owned dispositions.
+Require a newer Foreman packet and owning-lane handoffs on next wake; continue separating source existence, lane dispositions, machine evidence, and hardware qualification.
