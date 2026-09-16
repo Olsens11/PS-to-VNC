@@ -52,6 +52,14 @@ int pstvnc_transport_physical_stream_receive_frame(
     size_t payload_capacity);
 
 /*
+ * Interrupt current-session physical I/O without transferring or releasing
+ * descriptor ownership. Transport uses this only to make a blocked sole
+ * receiver converge after an application-local fatal-session request.
+ */
+int pstvnc_transport_physical_stream_shutdown_io(
+    pstvnc_transport_physical_stream_t *stream);
+
+/*
  * Releases the adopted socket and send lock. The higher transport runtime must
  * prove receiver/dispatch quiescence before calling this once receive exists.
  */
