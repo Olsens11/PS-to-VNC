@@ -100,6 +100,7 @@ index after every shift.
 - `docs/ledge/LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md` — A002 configuration/audio audit authority.
 - `docs/ledge/LEDGE_AUDIT_A003_MPEG_GENERATION.md` — A003 MPEG-generation audit authority.
 - `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` — A004 presentation/calibration audit authority.
+- `docs/ledge/LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md` — Foreman packetization invariant preserving DESKTOP CALIBRATION versus MPEG CALIBRATION authority and lineage.
 - `docs/ledge/LEDGE_AUDIT_A005_INTERACTION_INPUT.md` — A005 interaction/input audit authority.
 - `docs/ledge/LEDGE_AUDIT_A006_ORCHESTRATION_SHUTDOWN.md` — A006 orchestration/shutdown audit authority.
 - `docs/ledge/LEDGE_AUDIT_A007_DIAGNOSTIC_COMPLETENESS.md` — A007 diagnostics/completeness audit authority.
