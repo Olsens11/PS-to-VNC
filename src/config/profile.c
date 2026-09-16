@@ -50,14 +50,20 @@ static int pstvnc_config_set_field(
             profile->composition.session_id = raw_value;
             return 1;
         case PSTVNC_CONFIG_FIELD_RFB_MODE:
+            if (raw_value > (uint32_t)PSTVNC_CONFIG_RFB_ON)
+                return 0;
             profile->composition.rfb_mode =
                 (pstvnc_config_rfb_mode_t)raw_value;
             return 1;
         case PSTVNC_CONFIG_FIELD_AUDIO_MODE:
+            if (raw_value > (uint32_t)PSTVNC_CONFIG_AUDIO_PCM)
+                return 0;
             profile->composition.audio_mode =
                 (pstvnc_config_audio_mode_t)raw_value;
             return 1;
         case PSTVNC_CONFIG_FIELD_VIDEO_MODE:
+            if (raw_value > (uint32_t)PSTVNC_CONFIG_VIDEO_ACTIVE)
+                return 0;
             profile->composition.video_mode =
                 (pstvnc_config_video_mode_t)raw_value;
             return 1;
@@ -94,9 +100,13 @@ static int pstvnc_config_set_field(
             profile->transport.rfb_credit_batch_bytes = raw_value;
             return 1;
         case PSTVNC_CONFIG_FIELD_RFB_CREDIT_FLUSH_ON_EMPTY:
+            if (raw_value > 1u)
+                return 0;
             profile->transport.rfb_credit_flush_on_empty = (int)raw_value;
             return 1;
         case PSTVNC_CONFIG_FIELD_RFB_CREDIT_RETURN_ENABLED:
+            if (raw_value > 1u)
+                return 0;
             profile->transport.rfb_credit_return_enabled = (int)raw_value;
             return 1;
         case PSTVNC_CONFIG_FIELD_RECEIVER_THREAD_STACK_SIZE:
