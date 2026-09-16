@@ -678,7 +678,7 @@ int pstvnc_app_run_with_transport_config(
      * successfully adopts it. pstvnc_transport_session_open() sets socket_fd to
      * -1 on every post-adoption outcome, making the failure-path owner explicit.
      */
-    socket_fd = pstvnc_ps2_network_connect_vnc();
+    socket_fd = pstvnc_ps2_network_connect_pstv();
     if (socket_fd < 0)
         goto fail;
 
@@ -849,14 +849,12 @@ fail:
 
     /*
      * Once Transport adopted the physical descriptor, application never closes
-     * it directly. Resource reclamation is attempted only after explicit sole-
-     * receiver completion; if completion cannot be proven, the known H1 receive
-     * poison remains visible rather than being masked by a timeout/workaround.
+     * it directly. Fatal convergence is Transport-owned: interrupt its private
+     * physical receive, prove sole-receiver completion, then reclaim. The
+     * server-driven finite-RFB quiesce protocol remains a separate path.
      */
     if (transport_session_active) {
-        if (pstvnc_transport_session_wait_receiver_done() ==
-            PSTVNC_TRANSPORT_OK)
-            (void)pstvnc_transport_session_close();
+        (void)pstvnc_transport_session_abort();
     } else if (socket_fd >= 0) {
         /* Pre-adoption open failure leaves the connected descriptor caller-owned. */
         pstvnc_ps2_network_close(socket_fd);
