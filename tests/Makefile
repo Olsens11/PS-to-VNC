@@ -239,7 +239,7 @@ $(BUILD_DIR)/local_ui_presentation_test: \
 	../src/ui/osk.h \
 	../src/ui/osk_render.c \
 	../src/ui/osk_render.h \
-	../src/input/keyboard.h | $(BUILD_DIR)
+	../src/display/display.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/local_ui_presentation_test.c \
@@ -288,8 +288,8 @@ $(BUILD_DIR)/local_controller_test: \
 
 $(BUILD_DIR)/osk_direct_test: \
 	unit/osk_direct_test.c \
-	../src/ui/osk.c \
 	../src/ui/osk.h \
+	../src/ui/osk.c \
 	../src/input/keyboard.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
