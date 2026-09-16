@@ -530,3 +530,40 @@ $(MEDIA_CLOCK_TEST): \
 		unit/media_clock_test.c \
 		../src/media/clock.c \
 		-o $(MEDIA_CLOCK_TEST)
+
+AUDIO_PLAYBACK_TEST := .build/audio_playback_test
+AUDIO_AUDSRV_SERVICE_TEST := .build/audio_audsrv_service_test
+
+.PHONY: audio-playback-unit audio-audsrv-service-unit
+unit: audio-playback-unit audio-audsrv-service-unit
+
+audio-playback-unit: $(AUDIO_PLAYBACK_TEST)
+	./$(AUDIO_PLAYBACK_TEST)
+
+$(AUDIO_PLAYBACK_TEST): \
+	unit/audio_playback_test.c \
+	../src/audio/playback.c \
+	../src/audio/playback.h \
+	../src/config/profile.h \
+	../src/transport/bridge.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/audio_playback_test.c \
+		../src/audio/playback.c \
+		-o $(AUDIO_PLAYBACK_TEST)
+
+audio-audsrv-service-unit: $(AUDIO_AUDSRV_SERVICE_TEST)
+	./$(AUDIO_AUDSRV_SERVICE_TEST)
+
+$(AUDIO_AUDSRV_SERVICE_TEST): \
+	unit/audio_audsrv_service_test.c \
+	unit/audio_host_stubs/audsrv.h \
+	../src/audio/audsrv_service.c \
+	../src/audio/audsrv_service.h \
+	../src/audio/playback.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Iunit/audio_host_stubs \
+		-I../src \
+		unit/audio_audsrv_service_test.c \
+		../src/audio/audsrv_service.c \
+		-o $(AUDIO_AUDSRV_SERVICE_TEST)
