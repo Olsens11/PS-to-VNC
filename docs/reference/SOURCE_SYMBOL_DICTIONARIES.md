@@ -12,9 +12,10 @@ This portal is generated from participating product `SYMBOLS.md` files.
 | `src/framebuffer` | [`src/framebuffer/SYMBOLS.md`](../../src/framebuffer/SYMBOLS.md) | COMPLETE | 94 |
 | `src/input` | [`src/input/SYMBOLS.md`](../../src/input/SYMBOLS.md) | COMPLETE | 506 |
 | `src/media` | [`src/media/SYMBOLS.md`](../../src/media/SYMBOLS.md) | COMPLETE | 146 |
+| `src/mpeg` | [`src/mpeg/SYMBOLS.md`](../../src/mpeg/SYMBOLS.md) | COMPLETE | 163 |
 | `src/platform` | [`src/platform/SYMBOLS.md`](../../src/platform/SYMBOLS.md) | COMPLETE | 88 |
 | `src/rfb` | [`src/rfb/SYMBOLS.md`](../../src/rfb/SYMBOLS.md) | COMPLETE | 345 |
-| `src/transport` | [`src/transport/SYMBOLS.md`](../../src/transport/SYMBOLS.md) | COMPLETE | 603 |
+| `src/transport` | [`src/transport/SYMBOLS.md`](../../src/transport/SYMBOLS.md) | COMPLETE | 834 |
 | `src/ui` | [`src/ui/SYMBOLS.md`](../../src/ui/SYMBOLS.md) | COMPLETE | 351 |
 
 Generate the comprehensive view with:
