@@ -51,11 +51,21 @@ STATUS=OPEN
 AFFECTED_TRANCHE=A001
 AFFECTED_RECONSTRUCTION_STATE=0002
 
-Evidence at opening and current disposition remain as previously recorded: A001 requires a coherent implementation, integration, host checks/builds, and exact source/build identity before validation-ready handoff.
+Evidence:
+
+- `src/transport/transport.h` establishes the approved logical RFB stream and application-requested/transport-owned lifecycle boundary without exposing physical socket operations to RFB;
+- `src/transport/SYMBOLS.md` accounts for the currently introduced public transport symbols;
+- no transport implementation body, sole receiver, physical framing/sequence handling, logical RFB queue/credit/fragmentation implementation, serialized physical send, or explicit dispatch-quiescence mechanism exists in the tranche yet;
+- reconstruction state 0002 explicitly records that the new directory is not wired into the build and that topology/continuity/build/dictionary/test obligations remain incomplete;
+- reconstruction therefore correctly leaves A001 `IN_PROGRESS` and not `VALIDATION_READY`.
 
 Validation disposition:
 
-`WAIT_FOR_COHERENT_TRANCHE`.
+`WAIT_FOR_COHERENT_TRANCHE`. The interface shape is provisionally consistent with architecture overlay 0001 and the A001 audit boundary, and its current public symbols are locally documented. No behavioral, build, reproducibility, PT_LOAD, or hardware PASS is available yet.
+
+Required resolution:
+
+Reconstruction must finish the coherent A001 implementation and new-domain integration obligations, add the queued host tests, run canonical checks/builds, and hand the tranche to validation with exact source/build identity. Validation must then independently execute the A001 obligation set before changing this finding to PASS/HARDWARE_PENDING or opening defects.
 
 ## V004 — Transport symbol dictionary is not yet complete enough for a clean-source PASS
 
@@ -64,11 +74,21 @@ STATUS=OPEN
 AFFECTED_TRANCHE=A001
 AFFECTED_RECONSTRUCTION_STATE=0004
 
-Evidence at opening and current disposition remain as previously recorded: definition-level `src/transport/SYMBOLS.md` coverage plus topology/portal/build integration and strict gates are required before `VALIDATION_READY`.
+Evidence:
+
+- `docs/development/source-naming-and-symbols.md` requires every project-defined clean-generation symbol, including parameters, local variables, structure fields, macros/constants, and prototypes, to be represented in the owning directory's `SYMBOLS.md`;
+- current `src/transport/SYMBOLS.md` indexes the high-level transport, framing, and physical-stream symbols, but does not describe many project definitions already introduced in `physical_stream.h/.c`, including structure fields, function parameters, and local variables, and it lacks the standard `DIRECTORY`, `GENERATION`, and `COVERAGE` metadata used by complete clean dictionaries;
+- `docs/reference/SOURCE_SYMBOL_DICTIONARIES.md` still omits `src/transport`, so the generated product dictionary portal is not synchronized to the new clean domain;
+- complete clean dictionaries such as `src/rfb/SYMBOLS.md` demonstrate definition-level coverage rather than only public/high-level symbol indexing;
+- reconstruction state 0004 correctly leaves strict dictionary/topology checks `PENDING_LOCAL`, so A001 is not falsely marked complete; however reconstruction log R006's narrower claim that introduced-symbol accounting passed by repository inspection is not supported by the current dictionary under the governing completeness policy.
 
 Validation disposition:
 
-`REQUIRED_BEFORE_VALIDATION_READY`.
+`REQUIRED_BEFORE_VALIDATION_READY`. This is a documentation/completeness gate, not evidence that the physical-stream runtime behavior is incorrect.
+
+Required resolution:
+
+Reconstruction must complete `src/transport/SYMBOLS.md` definition coverage and metadata, finish the new-domain topology/portal/build integration, regenerate the product dictionary portal, and run the long/complete/strict dictionary/topology gates before A001 may become `VALIDATION_READY`.
 
 ## V005 — Application fatal teardown can wait for receiver completion without initiating convergence
 
