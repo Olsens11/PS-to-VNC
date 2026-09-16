@@ -1,12 +1,12 @@
 # Ledge Immutable Worker Log Contract
 
 DOCUMENT=LEDGE_WORK_LOG_CONTRACT
-DOCUMENT_REVISION=0004
-RECORDED_AT=2026-09-16T10:45:36-04:00
+DOCUMENT_REVISION=0005
+RECORDED_AT=2026-09-16T12:44:47-04:00
 TEMPORAL_CLASS=POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_POLICY_AT_RECORDED_TIME
 STATUS=OPERATIONAL
-SUPERSEDES_DOCUMENT_REVISION=0003
+SUPERSEDES_DOCUMENT_REVISION=0004
 
 ## Purpose
 
@@ -65,9 +65,11 @@ The role, work-item, and worker keys must be lowercase ASCII slugs containing on
 
 Revision 0002 first resolved the contradiction between strict canonical checking and two already-committed Validation records that could not be destructively renamed or rewritten under the immutability rule. The first canonical CI execution after that policy revision exposed five additional already-frozen records with legacy or malformed schema details, which revision 0003 recorded explicitly.
 
-A later canonical A002 integration run then exposed one additional already-committed Reconstruction record whose filename stamp does not match its recorded `STARTED_AT`. That immutable record was already part of repository history when the mismatch was discovered, so revision 0004 preserves it by exact path and frozen core metadata instead of renaming or rewriting historical evidence.
+A later canonical A002 integration run then exposed one additional already-committed Reconstruction record whose filename stamp does not match its recorded `STARTED_AT`. That immutable record was already part of repository history when the mismatch was discovered, so revision 0004 preserved it by exact path and frozen core metadata instead of renaming or rewriting historical evidence.
 
-The following **eight exact existing paths only** are grandfathered as immutable legacy/malformed shift records:
+After the CI / Regression Sentinel support seat was introduced, its first committed Diagnostics record used the correct canonical path/core identity but omitted revision-0001-only header fields and used a descriptive noncanonical `STATUS` value. The record had already become immutable history before canonical project-check exposed that mismatch. Revision 0005 therefore preserves that one exact Diagnostics record by path and frozen core metadata. The Sentinel automation has separately been hardened to emit the full canonical schema on future wakes; this compatibility entry does not relax the contract for later support-seat logs.
+
+The following **nine exact existing paths only** are grandfathered as immutable legacy/malformed shift records:
 
 - `2026-09-16T05-18-33-04-00__validation__v005-fatal-teardown__validation.md`
 - `2026-09-16T06-20-13-04-00__validation__a001-sole-receiver__validation.md`
@@ -77,10 +79,11 @@ The following **eight exact existing paths only** are grandfathered as immutable
 - `20260915T232241-0400__reconstruction__a001-sole-receiver__interactive-b.md`
 - `20260915T233050-0400__continuity__global-reconciliation__continuity.md`
 - `20260916T085615-0400__reconstruction__a002-audio-clock__interactive.md`
+- `20260916T122559-0400__diagnostics__global-ci-regression__ci-sentinel.md`
 
 The checker must still prove for each grandfathered record that its readable core metadata names the expected `ROLE_KEY`, `WORK_ITEM_KEY`, `WORKER_KEY`, exact ISO `STARTED_AT`, and a valid ISO `COMPLETED_AT`. It may not require revision-0001-only metadata fields, canonical filename timestamp equality, or the revision-0001 status vocabulary from those already-frozen records.
 
-The 07:27 Continuity record was created after revision 0002 by an older automation formatting path. The A002 Reconstruction record added by revision 0004 preserves `STARTED_AT=2026-09-16T08:33:00-04:00` while its already-frozen filename uses the `20260916T085615-0400` stamp. These inclusions are historical compatibility repairs, not permission for either formatting pattern to continue. All future workers and automations are governed by the canonical schema below.
+The 07:27 Continuity record was created after revision 0002 by an older automation formatting path. The A002 Reconstruction record added by revision 0004 preserves `STARTED_AT=2026-09-16T08:33:00-04:00` while its already-frozen filename uses the `20260916T085615-0400` stamp. The CI Sentinel record added by revision 0005 preserves its original descriptive status and missing revision-0001-only header fields as historical evidence. These inclusions are historical compatibility repairs, not permission for any of those formatting patterns to continue. All future workers and automations are governed by the canonical schema below.
 
 This is not a reusable escape hatch. No later path, malformed filename, or noncanonical metadata shape is accepted through pattern matching, date ranges, role-wide exceptions, or operator discretion. Any future deviation from the canonical schema is a check failure and must be corrected before that new record is committed whenever possible; if one is nevertheless committed, a new explicit policy revision is required rather than silently extending this grandfather set.
 
