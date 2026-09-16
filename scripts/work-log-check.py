@@ -35,6 +35,32 @@ REQUIRED_KEYS = {
 }
 ALLOWED_STATUS = {"COMPLETED", "PARTIAL", "BLOCKED", "SELF_PAUSED", "NOOP"}
 
+# Work-log contract revision 0002 freezes these exact already-committed
+# Validation paths rather than destructively renaming/replacing historical
+# evidence. No pattern, role, or date-range exception is permitted here.
+GRANDFATHERED_LOGS = {
+    "2026-09-16T05-18-33-04-00__validation__v005-fatal-teardown__validation.md": {
+        "ROLE_KEY": "validation",
+        "WORK_ITEM_KEY": "v005-fatal-teardown",
+        "WORKER_KEY": "validation",
+        "STARTED_AT": "2026-09-16T05:18:33-04:00",
+    },
+    "2026-09-16T06-20-13-04-00__validation__a001-sole-receiver__validation.md": {
+        "ROLE_KEY": "validation",
+        "WORK_ITEM_KEY": "a001-sole-receiver",
+        "WORKER_KEY": "validation",
+        "STARTED_AT": "2026-09-16T06:20:13-04:00",
+    },
+}
+LEGACY_REQUIRED_KEYS = {
+    "STARTED_AT",
+    "COMPLETED_AT",
+    "ROLE_KEY",
+    "WORK_ITEM_KEY",
+    "WORKER_KEY",
+    "STATUS",
+}
+
 
 def parse_metadata(text: str) -> dict[str, str]:
     metadata: dict[str, str] = {}
@@ -58,7 +84,41 @@ def safe_stamp(timestamp: str) -> str | None:
     )
 
 
+def check_grandfathered_log(path: Path) -> list[str]:
+    errors: list[str] = []
+    expected = GRANDFATHERED_LOGS[path.name]
+    metadata = parse_metadata(path.read_text(encoding="utf-8"))
+
+    missing = sorted(LEGACY_REQUIRED_KEYS - metadata.keys())
+    if missing:
+        return [
+            f"{path}: grandfathered record missing core metadata: "
+            f"{', '.join(missing)}"
+        ]
+
+    for key, expected_value in expected.items():
+        if metadata.get(key) != expected_value:
+            errors.append(
+                f"{path}: grandfathered {key}={metadata.get(key)} "
+                f"!= frozen authority {expected_value}"
+            )
+
+    if safe_stamp(metadata["STARTED_AT"]) is None:
+        errors.append(
+            f"{path}: grandfathered STARTED_AT must remain valid ISO-8601"
+        )
+    if safe_stamp(metadata["COMPLETED_AT"]) is None:
+        errors.append(
+            f"{path}: grandfathered COMPLETED_AT must remain valid ISO-8601"
+        )
+
+    return errors
+
+
 def check_log(path: Path) -> list[str]:
+    if path.name in GRANDFATHERED_LOGS:
+        return check_grandfathered_log(path)
+
     errors: list[str] = []
     match = FILENAME_RE.fullmatch(path.name)
     if match is None:
@@ -111,19 +171,28 @@ def main() -> int:
 
     errors: list[str] = []
     records = 0
+    grandfathered = 0
     for path in sorted(LOG_DIR.glob("*.md")):
         if path.name == "README.md":
             continue
         records += 1
+        if path.name in GRANDFATHERED_LOGS:
+            grandfathered += 1
         errors.extend(check_log(path))
 
     if errors:
         for error in errors:
             print(error)
-        print(f"WORK_LOG_CHECK=FAIL records={records} errors={len(errors)}")
+        print(
+            f"WORK_LOG_CHECK=FAIL records={records} "
+            f"grandfathered={grandfathered} errors={len(errors)}"
+        )
         return 1
 
-    print(f"WORK_LOG_CHECK=PASS records={records}")
+    print(
+        f"WORK_LOG_CHECK=PASS records={records} "
+        f"grandfathered={grandfathered}"
+    )
     return 0
 
 
