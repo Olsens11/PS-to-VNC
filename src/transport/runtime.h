@@ -7,7 +7,8 @@
  *
  * This is an internal Transport boundary. It does not parse RFB, decide product
  * recovery policy, expose the physical socket, or use diagnostic counters as
- * synchronization authority.
+ * synchronization authority. Cross-component session values arrive through the
+ * stable validated type in transport.h.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
  */
@@ -17,20 +18,10 @@
 
 #include "physical_stream.h"
 #include "rfb_channel.h"
+#include "transport.h"
 
 #include <stddef.h>
 #include <stdint.h>
-
-typedef struct pstvnc_transport_runtime_config {
-    uint32_t rfb_queue_capacity;
-    uint32_t rfb_initial_credit_bytes;
-    uint32_t rfb_credit_batch_bytes;
-    int rfb_credit_flush_on_empty;
-    int rfb_credit_return_enabled;
-    uint32_t receiver_thread_stack_size;
-    int receiver_thread_priority;
-    uint32_t max_data_payload;
-} pstvnc_transport_runtime_config_t;
 
 typedef struct pstvnc_transport_runtime {
     pstvnc_transport_physical_stream_t physical_stream;
@@ -82,13 +73,13 @@ typedef struct pstvnc_transport_runtime {
 } pstvnc_transport_runtime_t;
 
 /*
- * Adopt one physical socket and allocate the enabled logical-RFB/session
- * resources. The caller supplies already validated session configuration.
+ * Adopt one physical socket and allocate the logical-RFB/session resources.
+ * The caller supplies already validated cross-component session values.
  */
 int pstvnc_transport_runtime_initialize(
     pstvnc_transport_runtime_t *runtime,
     int socket_fd,
-    const pstvnc_transport_runtime_config_t *config);
+    const pstvnc_transport_session_config_t *config);
 
 /* Start the sole physical receiver after all receiver-visible resources exist. */
 int pstvnc_transport_runtime_start_receiver(
