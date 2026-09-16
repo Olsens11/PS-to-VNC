@@ -447,6 +447,7 @@ EXPECTED_DIRECTORIES = {
     "src/display",
     "src/framebuffer",
     "src/input",
+    "src/media",
     "src/platform",
     "src/rfb",
     "src/transport",
