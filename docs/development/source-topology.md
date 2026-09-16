@@ -38,6 +38,7 @@ The current clean-generation directories are:
 | Directory | Responsibility |
 |---|---|
 | `src/` | executable entry point and application coordinator only |
+| `src/audio/` | synchronous PCM consumption of Transport AUDIO plus the narrow resident AUDSRV stream-operation adapter |
 | `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values, and small config-text helpers |
 | `src/diagnostics/` | diagnostics transport and runtime identity |
 | `src/display/` | platform-neutral display/presentation conversion |
@@ -81,6 +82,16 @@ configuration ownership nor a PS2 platform mechanism. `clock.{c,h}` owns only
 reusable session timing state/math plus injected synchronization and time
 observer contracts. It does not own PCM/AUDSRV runtime, MPEG/video callsites,
 or concrete PS2 lock/timer bindings.
+
+`src/audio/` was deliberately created during the A002 synchronous PCM playback
+core reconstruction on 2026-09-16. `playback.{c,h}` owns bounded logical AUDIO
+consumption, exact immutable PCM profile application, wait-before-play ordering,
+truthful post-submit accounting, normal finite exhaustion, and deterministic
+stream retirement. `audsrv_service.{c,h}` binds that narrow operation contract
+to the resident PS2SDK AUDSRV service without exposing or calling per-session
+`audsrv_quit()`. This domain does not yet own a playback worker, startup
+reservoir/common-clock timing, application orchestration, MPEG/presentation, or
+hardware qualification.
 
 A future display-model or other reconstruction stage may adopt, replace, move,
 or delete remaining retained material deliberately. The moment a source file
