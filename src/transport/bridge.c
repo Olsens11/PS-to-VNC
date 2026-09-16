@@ -76,8 +76,6 @@ pstvnc_transport_result_t pstvnc_transport_session_open(
 
 pstvnc_transport_result_t pstvnc_transport_session_abort(void)
 {
-    int released;
-
     if (!pstvnc_transport_bridge_session_active)
         return PSTVNC_TRANSPORT_INVALID;
 
@@ -95,13 +93,17 @@ pstvnc_transport_result_t pstvnc_transport_session_abort(void)
             &pstvnc_transport_bridge_runtime))
         return PSTVNC_TRANSPORT_FAILED;
 
-    released = pstvnc_transport_runtime_release(
-        &pstvnc_transport_bridge_runtime);
-    pstvnc_transport_bridge_session_active = 0;
+    /*
+     * A release failure before reclaim keeps the bridge session active and
+     * retryable. Session authority is cleared only after Transport confirms the
+     * owned descriptor and receiver-touched resources are actually reclaimed.
+     */
+    if (!pstvnc_transport_runtime_release(
+            &pstvnc_transport_bridge_runtime))
+        return PSTVNC_TRANSPORT_FAILED;
 
-    return released
-        ? PSTVNC_TRANSPORT_OK
-        : PSTVNC_TRANSPORT_FAILED;
+    pstvnc_transport_bridge_session_active = 0;
+    return PSTVNC_TRANSPORT_OK;
 }
 
 pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void)
@@ -122,8 +124,6 @@ pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void)
 
 pstvnc_transport_result_t pstvnc_transport_session_close(void)
 {
-    int released;
-
     if (!pstvnc_transport_bridge_session_active)
         return PSTVNC_TRANSPORT_INVALID;
 
@@ -131,13 +131,12 @@ pstvnc_transport_result_t pstvnc_transport_session_close(void)
         !pstvnc_transport_bridge_runtime.receiver_done)
         return PSTVNC_TRANSPORT_WOULD_BLOCK;
 
-    released = pstvnc_transport_runtime_release(
-        &pstvnc_transport_bridge_runtime);
-    pstvnc_transport_bridge_session_active = 0;
+    if (!pstvnc_transport_runtime_release(
+            &pstvnc_transport_bridge_runtime))
+        return PSTVNC_TRANSPORT_FAILED;
 
-    return released
-        ? PSTVNC_TRANSPORT_OK
-        : PSTVNC_TRANSPORT_FAILED;
+    pstvnc_transport_bridge_session_active = 0;
+    return PSTVNC_TRANSPORT_OK;
 }
 
 /* ------------------------------------------------------------------------- */
