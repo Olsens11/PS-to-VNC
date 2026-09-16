@@ -1,0 +1,332 @@
+name: A003 P1 dictionary candidate
+
+on:
+  push:
+    branches:
+      - evidence/a003-p1-host-20260916
+
+permissions:
+  contents: write
+
+jobs:
+  dictionary-candidate:
+    if: github.event.head_commit.message == 'test(a003): seed dictionary candidate'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install definition discovery tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y universal-ctags shfmt
+      - name: Reconcile exact definitions and apply semantic A003 descriptions
+        run: |
+          set -eu
+          cat > src/mpeg/SYMBOLS.md <<'EOF'
+          # Clean symbols — `src/mpeg`
+
+          DIRECTORY=src/mpeg
+          GENERATION=CLEAN_RECONSTRUCTION
+          COVERAGE=COMPLETE
+
+          This directory owns the clean MPEG decoder lifecycle and safe-stop core. It consumes only the public logical MPEG Transport seam, owns explicit caller-supplied feed/sequence/resource bounds, known-state prepare/initialize/picture/destroy ordering, decoder-call lifetime fencing, and truthful payload-versus-padded-transfer accounting. It does not own the physical PSTV receiver, exact-generation START/retirement orchestration, Pi producer/capture control, presentation/compositor work, first-presentation clock arming, scheduling/drop policy, calibration, application orchestration, or hardware qualification.
+
+          The inventory below covers maintained clean-generation symbols defined directly in this directory.
+
+          | Name | Kind | File | Owner | Scope | Description | Context |
+          |---|---|---|---|---|---|---|
+          EOF
+
+          python3 scripts/reconcile-source-dictionaries.py
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+
+          root = Path.cwd()
+          spec = importlib.util.spec_from_file_location('reconcile', root / 'scripts/reconcile-source-dictionaries.py')
+          mod = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          validator = mod.load_validator()
+          before, removed, added = mod.reconcile_dictionary(validator, Path('src/mpeg'))
+          print(f'DICTIONARY_RECONCILED=src/mpeg before={before} removed={removed} added={added}')
+
+          exact = {
+              'pstvnc_transport_runtime_channel_config_valid': 'Validates bounded queue and credit authority shared by logical media channels.',
+              'pstvnc_transport_runtime_mpeg_config_valid': 'Validates optional MPEG queue and credit authority against the framed Transport payload limit.',
+              'pstvnc_transport_runtime_accept_mpeg_frame': 'Commits one validated channel-4 DATA payload into the bounded MPEG queue owned by the sole receiver.',
+              'pstvnc_transport_runtime_initialize_with_mpeg': 'Initializes the sole Transport runtime with explicit MPEG authority and no AUDIO channel.',
+              'pstvnc_transport_runtime_initialize_with_audio_mpeg': 'Initializes the sole Transport runtime with independent AUDIO and MPEG logical-channel authority.',
+              'pstvnc_transport_runtime_publish_media_activity_locked': 'Advances a logical media activity generation under its queue lock and records whether an armed waiter needs a wake.',
+              'pstvnc_transport_runtime_signal_media_activity': 'Signals a logical media activity semaphore only when the locked publication step armed a wake.',
+              'pstvnc_transport_runtime_publish_media_terminal': 'Publishes terminal progress to one logical media waiter using the queue-lock generation protocol.',
+              'pstvnc_transport_runtime_publish_mpeg_terminal': 'Publishes stop, close, or failure progress to the MPEG activity waiter without inventing exhaustion.',
+              'pstvnc_transport_runtime_media_activity_snapshot': 'Snapshots a logical media activity generation while holding the corresponding queue lock.',
+              'pstvnc_transport_runtime_media_wait_activity': 'Performs the three-state wake-before-sleep activity wait for one logical media queue.',
+              'pstvnc_transport_runtime_media_waiter_live': 'Reports whether a logical media waiter still owns its activity rendezvous while holding the queue lock.',
+              'pstvnc_transport_runtime_return_credit': 'Accumulates dequeue-earned credit and emits only the amount justified by bytes actually removed.',
+              'pstvnc_transport_runtime_return_mpeg_credit': 'Returns MPEG credit earned by bytes actually removed from the bounded MPEG queue.',
+              'pstvnc_transport_runtime_mpeg_read_available': 'Removes currently available MPEG bytes and distinguishes exhaustion, cancellation, close, failure, and temporary starvation.',
+              'pstvnc_transport_runtime_mpeg_status': 'Reports MPEG queue occupancy and the independent finite-producer completion fact.',
+              'pstvnc_transport_runtime_mpeg_activity_snapshot': 'Returns the current MPEG activity generation for event-driven consumer waits.',
+              'pstvnc_transport_runtime_mpeg_wait_activity': 'Waits for MPEG producer, receiver, or terminal activity without timer polling.',
+              'pstvnc_transport_runtime_mpeg_mark_producer_done': 'Records one-shot real MPEG producer completion and wakes a waiting consumer.',
+              'pstvnc_transport_session_open_with_mpeg': 'Opens the single Transport session with explicit logical MPEG channel authority.',
+              'pstvnc_transport_session_open_with_audio_mpeg': 'Opens the single Transport session with independent AUDIO and MPEG logical-channel authority.',
+              'pstvnc_transport_mpeg_read_available': 'Exposes bounded MPEG dequeue through the public Transport bridge without exposing the physical socket.',
+              'pstvnc_transport_mpeg_status': 'Exposes MPEG occupancy and real producer-completion state through the public bridge.',
+              'pstvnc_transport_mpeg_activity_snapshot': 'Exposes the MPEG activity generation used for wake-before-sleep consumer waiting.',
+              'pstvnc_transport_mpeg_wait_activity': 'Exposes event-driven MPEG activity waiting through the public bridge.',
+              'pstvnc_transport_mpeg_mark_producer_done': 'Records explicit real MPEG producer completion through the public bridge.',
+              'pstvnc_transport_mpeg_channel_initialize': 'Binds caller-owned storage as an empty bounded MPEG byte queue with producer completion clear.',
+              'pstvnc_transport_mpeg_channel_commit_data': 'Appends one nonempty MPEG DATA payload atomically when bounded queue capacity permits.',
+              'pstvnc_transport_mpeg_channel_mark_producer_done': 'Records one-shot finite MPEG producer completion separately from queue and Transport terminal state.',
+              'pstvnc_transport_mpeg_channel_read_available': 'Removes up to the requested currently queued MPEG bytes while preserving ring-buffer order.',
+              'pstvnc_transport_mpeg_channel_available': 'Reports the number of MPEG payload bytes currently held by the bounded queue.',
+              'pstvnc_transport_mpeg_channel_producer_done': 'Reports whether the real finite MPEG producer has completed.',
+              'pstvnc_mpeg_decoder_alignment_valid': 'Validates that an injected transfer or buffer alignment is a usable power-of-two authority.',
+              'pstvnc_mpeg_decoder_config_valid': 'Validates explicit caller-supplied sequence, feed, pixel-width, and alignment bounds without defaults.',
+              'pstvnc_mpeg_decoder_memory_ops_valid': 'Verifies the injected decoder memory allocator and releaser are complete.',
+              'pstvnc_mpeg_decoder_sync_ops_valid': 'Verifies the injected decoder-call lifetime lock and unlock operations are complete.',
+              'pstvnc_mpeg_decoder_platform_ops_valid': 'Verifies the injected known-state, decoder, picture, feed-transfer, and destruction operations are complete.',
+              'pstvnc_mpeg_decoder_align_up': 'Rounds a payload size to the injected transfer alignment while rejecting integer overflow.',
+              'pstvnc_mpeg_decoder_picture_capacity': 'Computes the macroblock-rounded picture surface capacity from explicit maximum dimensions and pixel width.',
+              'pstvnc_mpeg_decoder_free_buffers': 'Releases decoder feed and picture buffers after decoder-call ownership has returned.',
+              'pstvnc_mpeg_decoder_observe_stop': 'Reads owner stop state only at a completed decoder-call boundary under the injected state lock.',
+              'pstvnc_mpeg_decoder_set_call_active': 'Publishes acquisition or release of decoder-call ownership under the injected state lock.',
+              'pstvnc_mpeg_decoder_call_is_active': 'Reads decoder-call ownership under the injected state lock before resource reclamation.',
+              'pstvnc_mpeg_decoder_record_transport_failure': 'Records the first non-exhaustion Transport result observed by the decoder feed callback.',
+              'pstvnc_mpeg_decoder_feed': 'Feeds a decoder request from real Transport MPEG data, real exhaustion, or real failure without consulting local stop.',
+              'pstvnc_mpeg_decoder_sequence': 'Validates decoder-reported sequence dimensions against caller authority before exposing the picture surface.',
+              'pstvnc_mpeg_decoder_initialize': 'Allocates bounded resources, establishes known decoder state, and initializes the injected decoder in strict ownership order.',
+              'pstvnc_mpeg_decoder_request_stop': 'Records an owner stop request without converting it into decoder feed EOF.',
+              'pstvnc_mpeg_decoder_run': 'Owns one decoder picture call, classifies its truthful outcome, and honors pending stop only after the call returns.',
+              'pstvnc_mpeg_decoder_release': 'Destroys decoder state and reclaims buffers only when no decoder call still owns the resources.',
+          }
+
+          meaning = {
+              'runtime': 'the sole Transport runtime instance',
+              'config': 'explicit caller-owned configuration authority',
+              'mpeg_config': 'explicit MPEG queue and credit authority',
+              'audio_config': 'independent AUDIO queue and credit authority',
+              'socket_fd': 'the already-owned physical PSTV socket descriptor',
+              'queue_capacity': 'bounded logical queue capacity in bytes',
+              'initial_credit_bytes': 'initial producer credit authorized by the caller',
+              'credit_batch_bytes': 'the dequeue-credit batching threshold',
+              'credit_flush_on_empty': 'whether earned credit is flushed when the queue becomes empty',
+              'credit_return_enabled': 'whether this logical channel returns dequeue-earned credit',
+              'mpeg_enabled': 'whether the logical MPEG path is configured for this session',
+              'mpeg_queue_storage': 'caller-sized storage backing the bounded MPEG queue',
+              'mpeg_channel': 'the independent bounded MPEG queue state',
+              'mpeg_queue_semaphore_id': 'the lock protecting MPEG queue and waiter-visible state',
+              'mpeg_activity_semaphore_id': 'the event semaphore used to wake the MPEG consumer',
+              'mpeg_activity_sequence': 'the MPEG activity generation used for wake-before-sleep safety',
+              'mpeg_activity_wait_armed': 'the three-state MPEG waiter ownership marker',
+              'mpeg_credit_pending': 'dequeue-earned MPEG bytes not yet returned as credit',
+              'mpeg_initial_credit_bytes': 'initial MPEG credit authorized by the caller',
+              'mpeg_credit_batch_bytes': 'the MPEG credit return batching threshold',
+              'mpeg_credit_flush_on_empty': 'whether pending MPEG credit flushes when its queue empties',
+              'mpeg_credit_return_enabled': 'whether MPEG dequeue earns protocol credit returns',
+              'enabled': 'whether the selected logical media channel exists',
+              'queue_semaphore_id': 'the queue lock that serializes channel state and waiter ownership',
+              'activity_semaphore_id': 'the event semaphore used for producer-driven wakeups',
+              'activity_sequence': 'the current producer or terminal activity generation',
+              'current_sequence': 'the current activity generation read under the queue lock',
+              'observed_sequence': 'the activity generation previously observed by the consumer',
+              'activity_wait_armed': 'the three-state waiter ownership marker',
+              'waiter_live': 'whether a consumer still owns the activity rendezvous',
+              'accepted': 'whether the state transition was accepted without violating channel invariants',
+              'signal_waiter': 'whether the newly published generation must wake an armed consumer',
+              'header': 'the already validated framed Transport header',
+              'payload': 'the framed MPEG payload bytes',
+              'payload_length': 'the actual unpadded MPEG payload byte count',
+              'buffer': 'the caller destination buffer for logical MPEG bytes',
+              'maximum_count': 'the maximum number of bytes the caller permits this read to remove',
+              'read_count': 'the number of payload bytes actually removed from Transport',
+              'available_count': 'the current MPEG queue occupancy in payload bytes',
+              'producer_done': 'the independent one-shot finite-producer completion fact',
+              'queue_empty': 'whether the logical queue became empty after the current dequeue',
+              'taken': 'the number of bytes actually removed and therefore eligible to earn credit',
+              'consumed': 'the actual dequeue byte count eligible to earn credit',
+              'pending': 'the accumulator holding earned but not yet emitted credit',
+              'batch_bytes': 'the configured threshold for batching earned credit',
+              'flush_on_empty': 'the configured policy for flushing earned credit on queue empty',
+              'return_enabled': 'whether credit emission is enabled for the logical channel',
+              'amount': 'the exact earned credit amount selected for emission',
+              'channel': 'the bounded logical MPEG queue being inspected or mutated',
+              'storage': 'the caller-owned byte storage backing the MPEG ring queue',
+              'capacity': 'the bounded byte capacity of the MPEG ring queue',
+              'read_offset': 'the ring offset of the next MPEG byte to remove',
+              'byte_count': 'the number of MPEG payload bytes currently queued',
+              'destination': 'the caller buffer receiving queued MPEG payload bytes',
+              'count': 'the actual number of MPEG bytes selected for removal',
+              'first_count': 'the first contiguous ring-buffer span handled before wraparound',
+              'write_offset': 'the ring offset at which the next MPEG payload byte is appended',
+              'decoder': 'the decoder owner whose resources and call state are being controlled',
+              'active': 'the decoder-call ownership state being published or observed',
+              'observed': 'the synchronized state value returned to the caller',
+              'alignment': 'the explicit caller-supplied byte alignment',
+              'value': 'the unaligned byte count that must be rounded safely',
+              'aligned_value': 'the checked aligned byte count returned to the caller',
+              'mask': 'the power-of-two rounding mask derived from the supplied alignment',
+              'context': 'the callback context carrying the owning decoder instance',
+              'transfer_bytes': 'the padded aligned transfer size submitted to the platform decoder',
+              'transport_result': 'the truthful logical MPEG Transport outcome observed by the feed callback',
+              'memory_ops': 'the injected allocation and release boundary for decoder-owned buffers',
+              'sync_ops': 'the injected synchronization boundary protecting stop and decoder-call ownership state',
+              'platform_ops': 'the injected known-state and decoder platform boundary',
+              'feed_transfer_capacity': 'the padded transfer-buffer capacity derived from the caller payload bound and alignment',
+              'picture_capacity': 'the bounded macroblock-rounded picture surface capacity',
+              'stop_requested': 'the owner cancellation request observed only outside an active decoder call',
+              'bytes': 'the checked byte count required for the bounded picture surface',
+              'macroblock_width': 'the sequence width rounded to the decoder macroblock grid',
+              'macroblock_height': 'the sequence height rounded to the decoder macroblock grid',
+              'macroblocks': 'the checked macroblock count required by the maximum picture surface',
+              'result': 'the first truthful Transport failure classification retained by the decoder owner',
+              'report': 'the caller-visible decoder sequence, picture, feed, and byte-accounting report',
+              'picture_result': 'the injected decoder picture-call return code classified after call ownership returns',
+              'width': 'the decoder-reported sequence width to validate before surface use',
+              'height': 'the decoder-reported sequence height to validate before surface use',
+              'required': 'the checked picture bytes required by the reported sequence dimensions',
+              'sequence_seen': 'whether a valid decoder sequence callback has established picture dimensions',
+              'sequence_invalid': 'whether a decoder sequence callback violated the caller bounds',
+              'feed_exhausted': 'whether Transport reported real finite-producer exhaustion to the active decoder call',
+              'feed_failed': 'whether the decoder feed callback observed a non-exhaustion Transport failure',
+              'feed_transport_result': 'the exact Transport result retained when feed cannot continue',
+              'decoder_initialized': 'whether the injected decoder requires destruction during release',
+              'known_state_prepared': 'whether known decoder platform state has been acquired and must be released',
+              'decoder_call_active': 'whether an injected decoder picture call currently owns decoder-visible resources',
+              'initialized': 'whether the decoder owner completed resource and state acquisition',
+              'feed_buffer': 'the decoder-owned aligned feed staging buffer',
+              'picture_buffer': 'the decoder-owned bounded picture surface',
+              'feed_payload_capacity': 'the maximum real payload bytes one decoder feed callback may consume',
+              'transfer_alignment': 'the platform transfer alignment applied only after real payload accounting',
+              'buffer_alignment': 'the allocation alignment required for decoder-visible buffers',
+              'max_width': 'the caller-authorized maximum sequence width',
+              'max_height': 'the caller-authorized maximum sequence height',
+              'bytes_per_pixel': 'the caller-authorized decoded picture byte width per pixel',
+              'allocate': 'the injected aligned allocation operation for decoder-owned buffers',
+              'release': 'the injected operation that releases decoder-owned memory or platform state',
+              'lock': 'the injected lock operation protecting owner stop and call-lifetime state',
+              'unlock': 'the matching injected unlock operation',
+              'prepare_known_state': 'the platform operation that establishes known decoder/IPU-DMAC state before initialization',
+              'initialize': 'the platform operation that initializes the decoder with sequence and feed callbacks',
+              'picture': 'the platform decoder picture/decode call whose lifetime owns decoder-visible resources',
+              'submit_feed': 'the platform operation that receives one padded transfer while preserving real payload accounting',
+              'destroy': 'the platform operation that destroys an initialized decoder after call ownership returns',
+              'release_known_state': 'the platform operation that releases prepared decoder state after destruction',
+              'sequence_width': 'the validated decoder sequence width recorded for the caller',
+              'sequence_height': 'the validated decoder sequence height recorded for the caller',
+              'pictures_decoded': 'the number of successful decoder picture calls reported by the core',
+              'feed_callbacks': 'the number of decoder data-callback requests serviced',
+              'payload_bytes_consumed': 'the sum of real MPEG payload bytes removed from Transport',
+              'transfer_bytes_submitted': 'the sum of padded aligned bytes submitted to the platform decoder',
+          }
+
+          enum_meaning = {
+              'PSTVNC_MPEG_DECODER_COMPLETE': 'Reports real finite MPEG exhaustion after the decoder call returns normally.',
+              'PSTVNC_MPEG_DECODER_STOPPED': 'Reports owner-requested cancellation observed only outside an active decoder call.',
+              'PSTVNC_MPEG_DECODER_INVALID': 'Reports invalid decoder arguments, configuration, or owner state.',
+              'PSTVNC_MPEG_DECODER_ALLOCATION_FAILED': 'Reports failure to acquire one of the bounded decoder-owned buffers.',
+              'PSTVNC_MPEG_DECODER_PREPARE_FAILED': 'Reports failure to establish the required known decoder platform state.',
+              'PSTVNC_MPEG_DECODER_INITIALIZE_FAILED': 'Reports failure from the injected decoder initialization operation.',
+              'PSTVNC_MPEG_DECODER_SEQUENCE_INVALID': 'Reports decoder sequence dimensions that violate explicit caller bounds.',
+              'PSTVNC_MPEG_DECODER_TRANSPORT_FAILED': 'Reports a real non-exhaustion Transport result seen by the decoder feed callback.',
+              'PSTVNC_MPEG_DECODER_TRANSFER_FAILED': 'Reports failure while submitting the aligned feed transfer to the platform decoder.',
+              'PSTVNC_MPEG_DECODER_PICTURE_FAILED': 'Reports an explicit failure return from the decoder picture operation.',
+              'PSTVNC_MPEG_DECODER_UNEXPECTED_END': 'Reports a normal-looking decoder return that had neither real exhaustion nor owner stop.',
+              'PSTVNC_MPEG_DECODER_SYNC_FAILED': 'Reports failure of injected synchronization guarding stop or call ownership.',
+              'PSTVNC_MPEG_DECODER_CALL_ACTIVE': 'Refuses resource release while an active decoder call still owns decoder-visible state.',
+              'PSTVNC_MPEG_DECODER_DESTROY_FAILED': 'Reports failure while destroying an initialized decoder after call ownership returns.',
+              'PSTVNC_MPEG_DECODER_STATE_RELEASE_FAILED': 'Reports failure while releasing prepared known decoder platform state.',
+              'PSTVNC_MPEG_DECODER_ACCOUNTING_FAILED': 'Reports overflow or inconsistency in payload-versus-transfer byte accounting.',
+          }
+
+          special = {
+              'pstvnc_transport_mpeg_channel_config': 'Groups explicit caller-owned MPEG queue and credit authority; it contains no guessed production defaults.',
+              'pstvnc_transport_mpeg_channel_config_t': 'Names the immutable caller-owned MPEG queue and credit configuration contract.',
+              'pstvnc_transport_mpeg_channel': 'Owns bounded MPEG ring-buffer state plus the independent finite-producer completion fact.',
+              'pstvnc_transport_mpeg_channel_t': 'Names the Transport-owned bounded MPEG logical-channel state.',
+              'pstvnc_mpeg_decoder_config': 'Groups explicit caller-supplied sequence, pixel, feed-payload, and alignment bounds for one decoder owner.',
+              'pstvnc_mpeg_decoder_config_t': 'Names the caller-owned decoder resource and sequence-bound authority.',
+              'pstvnc_mpeg_decoder_memory_ops': 'Defines the injected aligned memory allocation boundary used by decoder-owned buffers.',
+              'pstvnc_mpeg_decoder_memory_ops_t': 'Names the injected decoder buffer allocation and release operation table.',
+              'pstvnc_mpeg_decoder_sync_ops': 'Defines the injected lock boundary protecting stop state and decoder-call ownership.',
+              'pstvnc_mpeg_decoder_sync_ops_t': 'Names the decoder owner synchronization operation table.',
+              'pstvnc_mpeg_decoder_platform_ops': 'Defines the injected known-state, decoder-call, feed-transfer, destruction, and state-release boundary.',
+              'pstvnc_mpeg_decoder_platform_ops_t': 'Names the injected decoder platform operation table.',
+              'pstvnc_mpeg_decoder_result': 'Enumerates truthful decoder completion, cancellation, Transport, platform, bounds, synchronization, and lifecycle outcomes.',
+              'pstvnc_mpeg_decoder_result_t': 'Names the decoder terminal-result classification.',
+              'pstvnc_mpeg_decoder_report': 'Collects validated sequence dimensions, picture/feed counts, payload-versus-transfer accounting, and the last Transport result.',
+              'pstvnc_mpeg_decoder_report_t': 'Names the decoder execution report returned to its caller.',
+              'pstvnc_mpeg_decoder': 'Owns decoder resources, injected boundaries, stop state, active-call lifetime, feed state, and the accumulated report.',
+              'pstvnc_mpeg_decoder_t': 'Names the session-scoped MPEG decoder owner state.',
+              'pstvnc_mpeg_feed_callback_t': 'Names the decoder data callback contract that supplies bytes or truthful EOF/error from Transport.',
+              'pstvnc_mpeg_sequence_callback_t': 'Names the decoder sequence callback contract that validates dimensions before surface use.',
+              'PSTVNC_MPEG_DECODER_H': 'Guards the clean MPEG decoder ownership interface declarations.',
+              'PSTVNC_TRANSPORT_MPEG_CHANNEL_H': 'Guards the bounded logical MPEG channel declarations.',
+          }
+
+          def sentence_from_base(base, kind):
+              if kind == 'function declaration':
+                  return 'Declares the public interface for: ' + base[0].lower() + base[1:]
+              return base
+
+          def description(name, kind, owner):
+              if name in enum_meaning:
+                  return enum_meaning[name]
+              if name in special:
+                  return special[name]
+              if name in exact:
+                  return sentence_from_base(exact[name], kind)
+              semantic = meaning.get(name)
+              if semantic is None:
+                  semantic = name.replace('_', ' ')
+              if kind in {'parameter', 'prototype parameter'}:
+                  return f'Supplies {semantic} to {owner}.'
+              if kind == 'field':
+                  return f'Stores {semantic} as state owned by {owner}.'
+              if kind in {'variable', 'constant', 'array'}:
+                  return f'Tracks {semantic} while {owner} executes.'
+              if kind in {'structure', 'type', 'enum'}:
+                  return f'Represents {semantic} in the A003 Transport/MPEG ownership contract.'
+              if kind == 'macro':
+                  return f'Names {semantic} required by the A003 Transport/MPEG interface.'
+              return f'Represents {semantic} within {owner} for the A003 Transport/MPEG core.'
+
+          def rewrite(path):
+              lines = path.read_text().splitlines()
+              out = []
+              for line in lines:
+                  if line.startswith('| ') and 'mechanically reconciled current clean source' in line:
+                      cells = [c.strip() for c in line.strip().strip('|').split('|')]
+                      if len(cells) != 7:
+                          raise SystemExit(f'bad dictionary row: {line}')
+                      name, kind, file_name, owner, scope, _desc, _ctx = cells
+                      cells[5] = description(name, kind, owner)
+                      cells[6] = 'A003 MPEG Transport/decoder core'
+                      line = '| ' + ' | '.join(cells) + ' |'
+                  out.append(line)
+              path.write_text('\n'.join(out).rstrip() + '\n')
+
+          rewrite(root / 'src/transport/SYMBOLS.md')
+          rewrite(root / 'src/mpeg/SYMBOLS.md')
+
+          transport = root / 'src/transport/SYMBOLS.md'
+          text = transport.read_text()
+          old = 'This directory owns the one physical PSTV stream, sole receive owner, framed sequence/serialized send, logical RFB storage and credit, explicit finite-session quiescence, and Transport-owned fatal-session convergence.'
+          new = 'This directory owns the one physical PSTV stream and sole receive owner; framed sequence and serialized send; independent bounded logical RFB, AUDIO, and MPEG storage/credit authority; producer-driven media activity wakeups; explicit finite-producer MPEG completion; finite-session quiescence; and Transport-owned terminal convergence. It does not own MPEG decoder resources, exact-generation START/retirement orchestration, presentation, or application policy.'
+          if old not in text:
+              raise SystemExit('transport dictionary preamble authority changed')
+          transport.write_text(text.replace(old, new, 1))
+          PY
+
+          python3 scripts/source-dictionary.py check --long --require-complete --strict
+          git diff --check
+      - name: Commit candidate source dictionaries only
+        run: |
+          git config user.name 'PS-to-VNC A003 reconstruction evidence'
+          git config user.email '39144541+Olsens11@users.noreply.github.com'
+          git add src/transport/SYMBOLS.md src/mpeg/SYMBOLS.md
+          git commit -m 'docs(a003): stage semantic source dictionaries'
+          git push origin HEAD:evidence/a003-p1-host-20260916
