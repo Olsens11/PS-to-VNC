@@ -16,6 +16,8 @@ EXTRA_EE_OBJS ?=
 EE_OBJS = \
 	$(BUILD_DIR)/main.o \
 	$(BUILD_DIR)/app.o \
+	$(BUILD_DIR)/config_profile.o \
+	$(BUILD_DIR)/config_text.o \
 	$(BUILD_DIR)/diagnostics.o \
 	$(BUILD_DIR)/diagnostics_identity.o \
 	$(BUILD_DIR)/rfb.o \
@@ -50,7 +52,7 @@ EE_OBJS = \
 
 EE_OBJS += $(EXTRA_EE_OBJS)
 
-EE_INCS = -Isrc -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
+EE_INCS = -Isrc -Isrc/config -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
 EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman -lpad $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
 
 .PHONY: all clean
@@ -71,6 +73,12 @@ $(BUILD_DIR)/main.o: src/main.c src/app.h src/platform/ps2_system.h | $(BUILD_DI
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics/diagnostics.h src/display/display.h src/framebuffer/framebuffer.h src/input/input.h src/input/input_runtime.h src/ui/local_ui_presentation.h src/ui/local_ui.h src/ui/osk.h src/ui/osk_render.h src/input/mouse.h src/input/pad.h src/rfb/rfb_session.h src/transport/bridge.h src/transport/transport.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h src/input/controller.h src/ui/local_controller.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/config_profile.o: src/config/profile.c src/config/profile.h src/transport/transport.h src/transport/protocol.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/config_text.o: src/config/text.c src/config/text.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/diagnostics.o: src/diagnostics/diagnostics.c src/diagnostics/diagnostics.h | $(BUILD_DIR)
