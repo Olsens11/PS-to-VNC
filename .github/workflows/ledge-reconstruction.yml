@@ -117,6 +117,7 @@ jobs:
           git config user.email '39144541+Olsens11@users.noreply.github.com'
           git add \
             src/SYMBOLS.md \
+            src/config/SYMBOLS.md \
             src/input/SYMBOLS.md \
             src/platform/SYMBOLS.md \
             src/rfb/SYMBOLS.md \
