@@ -1,247 +1,237 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0011
-RECORDED_AT=2026-09-16T13:13:45-04:00
+STATE_REVISION=0012
+RECORDED_AT=2026-09-16T14:18:56-04:00
 SOURCE_COMMIT=SELF
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0005
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0005
 BASED_ON_RECONSTRUCTION_STATE_REVISION=0007
-BASED_ON_GLOBAL_STATE_REVISION=0028
+BASED_ON_GLOBAL_STATE_REVISION=0029
 BASED_ON_VALIDATION_STATE_REVISION=0006
 BASED_ON_VALIDATION_FINDINGS_REVISION=0005
 BASED_ON_A002_AUDIT_REVISION=0001
+BASED_ON_A003_AUDIT_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-This interactive Foreman revision consumes the completed A002 synchronous PCM/AUDSRV playback-core Reconstruction handoff, directly inspects the product source/tests and the relevant current PS2SDK EE AUDSRV API behavior, performs only canonical integration/evidence work, consumes the generated dictionary child and concurrent support records without treating them as behavior authority, and issues the next bounded A002 lifecycle/startup-timing packet.
+This interactive Foreman revision consumes the completed A002 audio-worker/resource/reservoir/common-clock Reconstruction handoff, directly inspects the actual lifecycle source and deterministic fixture, performs only Foreman-owned canonical integration/evidence and governance synchronization, consumes the generated dictionary child without treating it as behavior authority, closes A002 Reconstruction source work as ready for independent Validation, and issues the first bounded A003 MPEG reconstruction packet.
 
-The live branch was re-read immediately before this state write at `ad1ee46731fd0413f2b3226cb53f7b528ac4a3ad`. Unknown external/Pi-local dirty work remains outside this GitHub-native surface and is neither overwritten nor declared absent.
+The live branch was re-read immediately before this state write at `0ed3ceea505271f730ef007249f7d26ebf45df83`. Unknown external/Pi-local dirty work remains outside this GitHub-native surface and is neither overwritten nor declared absent.
 
-A001 machine/source PASS remains independent Validation authority. A001 physical PS2 qualification remains `HARDWARE_PENDING`. No statement below promotes A002 to independent Validation PASS or physical qualification.
+A001 machine/source PASS remains independent Validation authority. A001 physical PS2 qualification remains `HARDWARE_PENDING`. A002 is now Foreman-integrated and Validation-ready, but no statement below promotes it to independent Validation PASS or physical qualification.
 
 ## Current Foreman phase
 
-`A002_AUDIO_WORKER_CLOCK_PACKET_ISSUED`
+`A003_MPEG_TRANSPORT_DECODER_CORE_PACKET_ISSUED`
 
-The A002 synchronous PCM/AUDSRV playback-core P1-P8 packet is Reconstruction-complete and Foreman-accepted as `MET` after direct source/test inspection. The clean tree now has a synchronous PCM owner that consumes only the public Transport AUDIO seam, applies exact immutable PCM values, preserves resident AUDSRV service lifetime, performs wait-before-play submission, and preserves truthful post-submit accounting/error cleanup.
+The A002 W1-W8 audio lifecycle packet is Reconstruction-complete and Foreman-accepted as `MET` after direct source/test inspection. Together with the previously accepted CONFIG, common-clock, Transport AUDIO, and synchronous PCM/AUDSRV packets, the clean A002 source tranche now has coherent component ownership and canonical machine integration. No further A002 product-behavior packet is required before independent Validation review.
 
-The next dependency-ordered responsibility is session-scoped playback-worker lifecycle plus startup-reservoir and common-clock presentation gating. This packet deliberately wraps the accepted synchronous core rather than rewriting it, and it stops before application orchestration or any A003 MPEG/video presentation behavior.
+The next dependency-ordered source responsibility is A003 MPEG decode/exact-generation work. The first A003 packet deliberately reconstructs the logical MPEG Transport consumer plus decoder ownership/safe-stop core. It stops before the high-level exact START/retirement orchestration, Pi producer/capture/suppression process, GS composition, or first-presentation media-clock arm.
 
 ## Reconstruction result consumed
 
 WORK_ITEM_KEY=`a002-audio-clock`
 WORKER=`interactive`
-WORKER_LOG_COMMIT=`2f1e71d9f277417fbe0292ed7aa52eb2c12abf32`
-WORKER_LOG=`docs/ledge/work-log/20260916T123335-0400__reconstruction__a002-audio-clock__interactive.md`
+WORKER_LOG_COMMIT=`da0a27e4258c9afc55d6446f74d181f6a6b56f9f`
+WORKER_LOG=`docs/ledge/work-log/20260916T133333-0400__reconstruction__a002-audio-clock__interactive.md`
 WORKER_RESULT=`FOREMAN_GOAL_RESULT=MET`
 
 Substantive worker commits inspected:
 
-- `103791438a4afae42edd67224466f0767a37b790` — define synchronous PCM playback core;
-- `e1d6a8f60e54cf933d2b326182e184605850cb5f` — implement playback core;
-- `ad36d3a88da9c3a0bc4520975ba6f8c6219afbf2` — declare resident AUDSRV adapter;
-- `c774fdda51acaa4b107793ee3b81e6eaf9c78b0c` — bind playback core to resident AUDSRV;
-- `2ce299ca6af66b0cb6c1accb69137a705949915d` — host AUDSRV stub;
-- `206a07162d8d14ea01e189c533ce73a02cf1a643` — deterministic playback semantics fixture;
-- `87af39599449a68849b69c45513e4d4dfcd95a42` — concrete AUDSRV adapter fixture;
-- `d21eb53ce41859ba1d04cfa94846c0d665709927` — clean `src/audio` dictionary;
-- `7d00270af88149ab7c0b61d771cf6f5ef7b65f72` — clean audio-domain topology adoption;
-- `2f1e71d9f277417fbe0292ed7aa52eb2c12abf32` — immutable Reconstruction handoff.
+- `5fce6b48287b26e0b40fe247e6bca20daa030ed6` — define the clean audio session lifecycle owner;
+- `b5e020bc7b93d9816a09196b58c1bcdd1c571f27` — implement explicit worker/resource/reservoir/common-clock lifecycle;
+- `4dca53b58db338d9ecfe600cd6ed751041e2af37` — deterministic audio-session lifecycle fixture;
+- `1824f25ff04d061d88e7a8bbcb664f2064e441d3` — extend clean audio source-domain topology;
+- `05d2b8a3a44ecf3807f4bd6cdadf09948696e254` — update audio source dictionary;
+- `da0a27e4258c9afc55d6446f74d181f6a6b56f9f` — immutable Reconstruction handoff.
 
-Files directly inspected included `src/audio/playback.{c,h}`, `src/audio/audsrv_service.{c,h}`, `src/audio/SYMBOLS.md`, `tests/unit/audio_playback_test.c`, `tests/unit/audio_audsrv_service_test.c`, `tests/unit/audio_host_stubs/audsrv.h`, current `src/config/profile.{c,h}`, `src/transport/bridge.h`, `src/media/clock.h`, the A002 audit, and current PS2SDK EE `audsrv` implementation authority.
+Concurrent Architecture scout commit `7b2ae6b13f16aeac7b3ac327cdd33a2e7af3f239` was consumed as non-authoritative planning support only. Its recommendation to proceed into A003 was independently checked against A002/A003 audit authority and current source.
 
-### P1-P8 Foreman disposition
+Directly inspected product files included `src/audio/session.{c,h}`, `tests/unit/audio_session_test.c`, accepted `src/audio/playback.{c,h}`, `src/media/clock.c`, the public Transport AUDIO bridge, A002 audit revision 0001, A003 audit revision 0001, and current Transport channel vocabulary.
 
-P1 `MET` — `src/audio` is a coherent narrow clean owner. The synchronous core consumes only immutable `pstvnc_config_pcm_profile_t`, the public Transport AUDIO bridge, and injected service operations; it does not reach into Transport queue/runtime internals.
+### W1-W8 Foreman disposition
 
-P2 `MET` — resident-service semantics are explicit. The concrete adapter exposes init/format/volume/wait/play/stop only; no session `audsrv_quit()` path is exposed. Current PS2SDK EE authority confirms repeated `audsrv_init()` is idempotent after RPC binding and that `audsrv_set_volume()` accepts the public 0-100 scale used by `volume_percent`.
+W1 `MET` — session lifecycle values are explicit caller authority: worker stack bytes/priority, playback buffer capacity, startup reservoir bytes, reservoir poll interval, and common-clock poll interval. No production defaults or H1 laboratory knob surface were invented.
 
-P3 `MET` — the playback loop uses only the accepted Transport AUDIO bridge, snapshots activity before reading, waits on Transport activity for temporary unavailability instead of busy-spinning, treats `EXHAUSTED` as normal completion, and keeps stop/closed/failure outcomes distinct.
+W2 `MET` — the session owner allocates buffer/stack, creates and starts one worker, records completion, joins before destruction, and refuses release while a started worker remains unjoined. Create/start/join failures preserve the worker/resource reclamation fence.
 
-P4 `MET` — every nonzero chunk executes service wait before play; successful byte/chunk accounting advances only after `play_audio()` reports exact full-byte success. Current PS2SDK EE authority confirms `audsrv_play_audio()` returns the total byte count actually sent, so exact-count acceptance is a valid fail-closed contract.
+W3 `MET` — startup reservoir readiness observes only public Transport AUDIO status/activity and does not dequeue PCM. The activity sequence is persistent across waits; unchanged activity does not cause repeated status polling. A finite producer with a nonempty short final reservoir may proceed, while producer-done plus empty is normal finite completion.
 
-P5 `MET` — setup, Transport, wait, play, and cleanup errors terminate deterministically. Playback does not continue after a terminal outcome, and cleanup failure does not overwrite an earlier meaningful failure.
+W4 `MET` — after reservoir readiness the worker calls the accepted common-clock audio waiter. The current real waiter was independently inspected and already handles the initially-unarmed state by bounded delay/recheck until another owner publishes the epoch, then waits to the audio deadline. Audio never calls `pstvnc_media_clock_arm()` and cannot move the epoch.
 
-P6 `MET` — deterministic host coverage proves exact setup/order, partial/multiple chunks, no zero-byte submission, activity rendezvous on temporary unavailability, normal finite exhaustion, stop/closed/failure distinction, wait failure, partial/negative play failure, truthful accounting, cleanup behavior, and absence of a quit operation.
+W5 `MET` — after the timing gate the worker delegates unchanged to the accepted synchronous PCM playback core and preserves its exact playback result/report rather than duplicating Transport/AUDSRV submission logic.
 
-P7 `MET` — the concrete AUDSRV adapter maps exact profile/service operations without creating a second lifetime owner; PS2-facing return semantics match the current EE wrapper behavior inspected by Foreman.
+W6 `MET` — local stop is honored during reservoir and clock waits; active-playback Transport convergence remains deliberately outside this component and must be driven later by top-level Transport stop/abort plus worker join. Audio does not seize Transport ownership or hide a second abort policy.
 
-P8 `MET` — the worker did not create the playback worker/thread/stack lifecycle, choose production resource/timing defaults, implement startup reservoir or common-clock presentation gating, add application orchestration, begin MPEG/presentation, repair inherited receive-poison behavior, or claim hardware qualification.
+W7 `MET` — deterministic tests cover explicit resource values, allocation/create/start/join/reclaim failures, activity-driven reservoir crossing, unchanged-activity anti-spin behavior, short finite producer, empty finite completion, externally armed epoch transition, no audio arm call, stop during both pre-play waits, media-clock sync/timer/delay failures, exact downstream playback result preservation, and invalid/missing lifecycle authority.
 
-No product-behavior correction packet is required from P1-P8.
+W8 `MET` — no application orchestration, MPEG/video behavior, presentation/epoch-arm ownership, production tuning defaults, receive-poison repair, or hardware qualification was introduced.
 
-## Foreman-owned integration and evidence
+No product-source correction packet is required.
 
-Foreman changed only canonical integration/evidence surfaces after the baton returned:
+## Foreman-owned canonical integration and governance
 
-- `b2e93dceac75d80d29351bad380cae96d5f206f6` — allowed deterministic reconciliation to stage `src/audio/SYMBOLS.md`;
-- `ba1ab97c1e8926d7ce05dc5505ce7e969601e945` — corrected the canonical strict clean-PS2 compile inventory so it actually compiles every currently adopted clean C translation unit, including earlier A002 CONFIG/media/Transport AUDIO source and the new audio source;
-- `4c3628d21b190783757dc77f48a59a56d7bf3b24` — linked `audio_playback.o` and `audio_audsrv_service.o`, added `src/audio` includes, and linked PS2SDK `-laudsrv` in the clean PS2 graph;
-- `1f4bb786a300b508e68b13472748b7a559d8562b` — registered `audio_playback_test` and `audio_audsrv_service_test` in canonical `make -C tests unit`;
-- `473b4b111f5dbdd2b5db830269e23fc4c8d89387` — admitted `src/audio` to the clean source-topology checker;
-- `37ae75801f7ab558c3b6b0cbb2e8a7879790421f` — adopted `src/audio` in deterministic dictionary reconciliation using the exact trigger commit message;
-- generated child `6d25e2c0cea036d1f7cd57b42b4bf55df8d05548` — regenerated the canonical source-dictionary portal; the worker-authored local `src/audio/SYMBOLS.md` already matched discovered authority and required no generated correction;
-- `edd0d7a78f315234119c9f81f9eee507d955bf24` — registered the new clean audio owner in the living file/service map.
+Foreman made only non-behavioral integration/evidence changes after the baton returned:
 
-The living-map replacement in `edd0d7a7...` also changed one old M0 sentence from “durable executable byte authority” to the semantically equivalent “durable binary authority.” This was incidental documentation drift, not a product/source behavior change. No historical evidence was rewritten and no behavior conclusion depends on that wording.
+- `6125033da8eb23edc46698164929863068868a3f` — synchronized `scripts/work-log-check.py` with governing work-log contract revision 0005 by adding the exact ninth already-frozen Diagnostics compatibility record. No immutable history was rewritten.
+- `6f76c685e09df51b90f0cda28ed88574a1e3c2ed` — added `src/audio/session.c` to the strict every-clean PS2 compile inventory.
+- `0027a73851130b5a8bc71684da17cc8a3b0694f0` — linked `audio_session.o` into the clean PS2 executable graph with explicit source/header dependencies.
+- `b4037585beea138fb67ba6377f89faecbac32ef2` — registered `audio_session_test` in canonical `make -C tests unit`.
+- `b0431db9bc9f769c137463066dfaca4500cfc06f` — registered the audio session lifecycle in the living file/service ownership map.
+- `685b15febb5e0ea5c0064c2e6bbd510c297af30d` — exact deterministic dictionary-reconciliation trigger.
+- generated child `0ed3ceea505271f730ef007249f7d26ebf45df83` — regenerated the source-dictionary portal. The generated diff changed only the `src/audio` portal count from `82` to `242`; the worker-authored audio dictionary itself required no generated repair.
 
-Concurrent dictionary-prep records `ea2df09c8247260e47eb03c224dbf9e87b0e1655` and `ad1ee46731fd0413f2b3226cb53f7b528ac4a3ad` are support evidence only. They correctly observe that the canonical dictionary/portal/living-map work is already settled and do not supersede Foreman behavior judgment.
+The worker noted an accidentally created auxiliary branch named `tmp-noop-do-not-use`. It was never used for product authority and does not affect `ledge/h1-all-guns`; it remains ordinary repository-cleanup debt rather than a product defect.
 
-## Canonical machine evidence
+## Canonical evidence
 
-Integration-trigger workflow run `35126397761` at `37ae75801f7ab558c3b6b0cbb2e8a7879790421f` reports:
+Integration workflow run `35133071733` at `b4037585beea138fb67ba6377f89faecbac32ef2` reported:
 
-- canonical host-unit `PASS`;
-- `audio_playback_test: PASS`;
-- `audio_audsrv_service_test: PASS`;
-- existing Transport/RFB/CONFIG/media-clock/application/input/UI fixtures remained passing;
-- strict long source-dictionary audit `PASS` before generated portal reconciliation;
-- corrected pinned PS2 compile `PASS`, including all adopted A002 CONFIG/media/Transport AUDIO and new `src/audio` translation units;
-- clean PS2 linked build `PASS`;
-- linked current-source reproducibility `PASS`;
-- deterministic dictionary reconciliation `PASS`, producing child `6d25e2c0...`.
+- canonical host-unit `PASS`, including `audio_session_test: PASS`;
+- strict dictionary `PASS`;
+- pinned PS2 compile `PASS`;
+- clean PS2 link and linked reproducibility `PASS`;
+- project-check red only because that pre-reconciliation tree's generated source-dictionary portal had not yet been regenerated.
 
-The clean linked build explicitly compiled:
+Exact project-check reason on that integration tree was `SOURCE_DICTIONARY_PORTAL_OUT_OF_DATE`, with the canonical required action to regenerate `docs/reference/SOURCE_SYMBOL_DICTIONARIES.md`. This was mechanical generated-evidence lag, not product behavior failure.
 
-- `src/audio/playback.c -> audio_playback.o`;
-- `src/audio/audsrv_service.c -> audio_audsrv_service.o`;
+Deterministic reconciliation workflow run `35133280175` at trigger authority `685b15febb5e0ea5c0064c2e6bbd510c297af30d` reported:
 
-and linked both objects with `-laudsrv`. Exact identity/evidence:
-
-- `ELF_PRISTINE_SHA256=001e22e49d3b9c945f3e4a6d13862617fca1d91696745bdca78b7c03e594ac41` on both builds;
+- canonical host-unit `PASS`, including `audio_playback_test: PASS`, `audio_audsrv_service_test: PASS`, `audio_session_test: PASS`, Transport AUDIO/runtime, CONFIG/profile, media-clock, RFB, application, input/UI, and other existing fixtures;
+- strict dictionary `PASS`;
+- pinned PS2 compile `PASS` with `src/audio/session.c` included;
+- clean PS2 linked-build `PASS` with `audio_session.o` included;
+- pristine linked ELF SHA256 `1681787dc50ce76ee67354b322ea980fca19a3fa12084835d54fcc2f9c82c6d6` on both builds;
 - `PT_LOAD_SEGMENTS=1`;
-- `PT_LOAD_SHA256=4ba33bd1097800e7a926895ca5ce88e7332e1e22ad256139c4ebc08cc74e05c7`;
-- `PT_LOAD_BYTES=423304`;
+- `PT_LOAD_SHA256=3eb899151389a721b57504a852fe516f7c52d565a9f8c72fadb435d490b62ac9`;
+- `PT_LOAD_BYTES=425864`;
 - `ISSUE7_LINKED_BUILD=PASS`;
 - `ISSUE7_RUNTIME_IDENTITY_LINKED=YES`;
 - `PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74`;
-- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`;
+- dictionary reconciliation `PASS`, producing generated child `0ed3ceea505271f730ef007249f7d26ebf45df83`.
 
-Generated portal authority now records `src/audio` COMPLETE with symbol count `82`.
+The trigger-tree project-check necessarily evaluated the pre-generated portal and therefore remained red for portal lag. This state write occurs after the generated child and intentionally triggers the settled-tree canonical recheck, including the newly synchronized nine-record work-log policy.
 
-Settled workflow run `35126537427` at `edd0d7a78f315234119c9f81f9eee507d955bf24` reports:
+PENDING_LOCAL=settled-tree workflow for Foreman state revision 0012; independent Validation disposition for the complete integrated A002 source tranche; later PS2 hardware qualification
+HARDWARE_PENDING=A001 physical PS2 qualification remains pending; A002 reconstructed audio/common-clock behavior also has no physical qualification claim
 
-- host-unit `PASS`;
-- strict long dictionary `PASS`;
-- pinned PS2 compile `PASS`;
-- PS2 linked build/reproducibility `PASS`;
-- dictionary reconciliation skipped as expected for the ordinary living-map commit;
-- documentation check `PASS`;
-- development continuity/topology check `PASS`, including `src/audio`, clean-file count `68`, local-file coverage `PASS`, portal sync `PASS`, and total dictionary count `2552`;
-- project-check overall `FAIL` only at the immutable work-log checker.
+## A002 handoff to Validation
 
-The remaining project-check error is governance/tooling mismatch, not A002 product behavior: work-log contract revision `0005` explicitly grandfathered `20260916T122559-0400__diagnostics__global-ci-regression__ci-sentinel.md` as the ninth exact exception, but current `scripts/work-log-check.py` still contains the revision-0004 eight-record grandfather set. The checker therefore reports that already-frozen Diagnostics record as missing `ENDING_BRANCH_COMMIT`, `LOG_FORMAT_REVISION`, and `SELF_PAUSED`. Foreman does not rewrite the immutable Diagnostics record or silently alter governance policy. The contract/checker synchronization debt belongs to governance/continuity tooling and does not block the next A002 product packet.
+A002 is now `VALIDATION_READY` at Foreman/source-integration level, not `PASS`.
 
-PENDING_LOCAL=independent Validation disposition for integrated A002 authority; governance synchronization of work-log contract revision 0005 into scripts/work-log-check.py; later concrete PS2 audio worker/thread/time binding and physical qualification
-HARDWARE_PENDING=A001 physical PS2 qualification remains pending; no A002 physical qualification is claimed
+Independent Validation should consume the complete integrated A002 authority rather than only the earlier synchronous PCM slice. It should specifically re-check:
 
-## Dependency conclusion for next Reconstruction packet
+- one Transport-owned AUDIO channel with independent queue/credit/finite producer semantics;
+- decoded immutable PCM/common-clock owner values and absence of hidden defaults;
+- one-shot common epoch and audio wait semantics;
+- strict AUDSRV wait-before-play and post-submit accounting;
+- resident-service session cleanup without per-session quit;
+- audio worker/reservoir/clock lifecycle and stop/join/reclaim fencing;
+- the settled canonical machine evidence after this state commit.
 
-The accepted synchronous core intentionally stops at the point where a caller supplies a buffer and runs playback synchronously. A002 still requires the session lifecycle that H1 previously combined with worker resources, startup fill, and the shared media timeline.
+Foreman does not pre-declare that independent result.
 
-Current clean authority already supplies the required pieces:
+## Fresh interactive Reconstruction packet — A003-P1
 
-- CONFIG owns immutable PCM and common-media-clock facts;
-- Transport owns AUDIO status/activity/read and finite producer completion;
-- `src/audio` owns synchronous PCM/AUDSRV correctness;
-- `src/media` owns one-shot common epoch and signed/saturating audio deadlines.
-
-The missing clean responsibility is a session-scoped audio worker that owns its execution resources, waits for a startup reservoir without consuming bytes, waits for the common clock to become armed and then for the audio presentation deadline, invokes the accepted synchronous playback core, and proves finite stop/join/reclaim ordering.
-
-A key current-source fact must be handled deliberately: `pstvnc_media_clock_wait_audio()` currently returns `PSTVNC_MEDIA_CLOCK_UNARMED` when called before the one-shot epoch is armed. A002 permits audio to prefill before the common epoch is published but forbids presentation before the audio deadline. Therefore the lifecycle packet must provide a finite, stop-aware, non-busy way to wait across the initially-unarmed -> armed publication transition without letting audio arm or move the clock. A minimal reusable media-clock wait extension is allowed if required; silently treating `UNARMED` as ready is prohibited.
-
-Final production values for worker stack size, thread priority, playback-buffer/chunk capacity, startup reservoir, and timing-poll cadence remain qualification/configuration choices. Their absence is not a blocker and must not be solved with hidden magic defaults. Keep unresolved values explicit in a narrow lifecycle owner/caller boundary and test with fixture values.
-
-## Fresh interactive Reconstruction packet
-
-WORK_ITEM_KEY=`a002-audio-clock`
+WORK_ITEM_KEY=`a003-mpeg-generation`
 TARGET_WORKER=`interactive`
-ASSIGNING_HEAD=`ad1ee46731fd0413f2b3226cb53f7b528ac4a3ad`
-ASSIGNING_AUDIT=`LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md:0001`
-ASSIGNING_FOREMAN_STATE=`0011`
+ASSIGNING_HEAD=`0ed3ceea505271f730ef007249f7d26ebf45df83`
+ASSIGNING_AUDIT=`LEDGE_AUDIT_A003_MPEG_GENERATION.md:0001`
+ASSIGNING_FOREMAN_STATE=`0012`
 
 ### Objective
 
-Reconstruct the A002 session-scoped audio-worker lifecycle around the accepted synchronous PCM playback core. Add explicit worker/resource authority, startup-reservoir readiness, publication-aware common-clock audio gating, finite stop/join/reclaim semantics, and deterministic host coverage without changing the already-accepted Transport AUDIO or playback submission semantics.
+Reconstruct the first coherent A003 unit: Transport-owned MPEG2 logical-channel ingestion plus a clean, host-testable MPEG decoder ownership/safe-stop core. Preserve the sole physical PSTV receiver, event-driven empty-queue wake behavior, real finite-producer exhaustion, decoder call ownership, known-state decoder acquisition/release, sequence/feed bounds, and the proven rule that a local stop request must never synthesize false EOF inside an active decoder data callback.
+
+This packet deliberately stops before high-level exact-generation START/retirement orchestration and before presentation/compositor/media-clock arm ownership.
 
 ### Required deliverables
 
-1. **Session worker owner with explicit resource authority.** Add the smallest coherent audio-session/worker owner. Worker stack size, thread priority, playback-buffer capacity (which may also bound synchronous playback chunk size), startup-reservoir threshold, and any clock polling cadence required by the implementation must be explicit caller/lifecycle authority. Do not invent production defaults and do not expand the production CONFIG wire profile merely to house laboratory tuning.
+1. **Explicit narrow MPEG Transport authority.** Add the smallest immutable caller-owned MPEG channel configuration needed for bounded queue/credit behavior. Preserve the existing RFB/AUDIO values and do not invent application defaults. Queue/credit/resource tuning that is not yet production-qualified remains explicit caller authority rather than guessed constants.
 
-2. **Owned resources and finite reclaim fence.** The session owner allocates/owns playback buffer and worker stack/resources, creates/starts exactly one playback worker, records completion/result, and never frees worker-visible memory before the worker is provably finished/dormant. Allocation/create/start/join failures must be explicit. Repeated cleanup must not double-free or reclaim a live worker.
+2. **Sole-receiver MPEG dispatch.** Extend the existing one Transport receive owner so valid channel-4 MPEG2 DATA enters a Transport-owned MPEG queue independently of RFB and AUDIO. Do not add another physical reader, socket, or receive thread. Existing invalid channel/kind and first-cause terminal behavior must remain fail-closed.
 
-3. **Reservoir readiness without byte consumption.** Before presentation starts, observe the public Transport AUDIO `status`/activity seam rather than dequeuing PCM. Reservoir-ready is distinct from presentation-ready. If available bytes reach the explicit threshold, reservoir is ready. If finite producer completion arrives with a smaller nonzero final reservoir, that finite set may become ready rather than deadlocking forever below the threshold. Producer-done with zero available bytes is normal empty exhaustion and must not start AUDSRV playback. Temporary shortage waits on Transport activity without busy spin or lost-wakeup behavior.
+3. **Independent MPEG queue/credit/event wake seam.** MPEG owns independent bounded storage, occupancy, dequeue-earned credit, batching/flush, activity/wakeup, finite-producer state, and terminal wake semantics. Expose only a narrow consumer bridge sufficient for bounded reads, status/activity/wait, normal exhaustion, stop, closed, and failure. Normal empty waiting must be receiver/producer-driven with wake-before-sleep safety; do not restore timer-backed hot-path polling.
 
-4. **Publication-aware common-clock audio gate.** After reservoir readiness and before the first playback submission, wait until the existing common media clock is armed and then until the audio deadline. Audio must never arm or move the common epoch. Because current `pstvnc_media_clock_wait_audio()` rejects an initially unarmed clock, add the narrowest reusable stop/failure-aware mechanism needed to span future one-shot publication if no existing clean seam suffices. The gate must use explicit nonzero delay/event cadence where polling is used, reject accidental busy-spin configuration, preserve synchronization/timer/delay failures, and remain host-testable.
+4. **Finite exhaustion distinct from cancellation.** Preserve a real finite-producer MPEG completion fact using the existing framing only if current protocol authority proves the representation. `producer_done && queue_empty` may produce real decoder EOF/exhaustion. Owner-requested stop/cancellation is a different state and must not be represented as producer EOF. Do not introduce per-packet generation tags as a shortcut for exact-generation lifecycle.
 
-5. **Wrap, do not rewrite, the accepted synchronous core.** Once reservoir and common-clock gates are satisfied, invoke the existing `pstvnc_audio_playback_run()`/equivalent accepted core with the session-owned buffer and exact immutable PCM profile/service authority. Preserve its wait-before-play, exact accounting, finite exhaustion, first-error, and resident-AUDSRV semantics rather than duplicating those rules in the worker.
+5. **Clean decoder owner and injected decoder/platform boundary.** Create the smallest coherent MPEG component (a clean `src/mpeg/` domain is appropriate if current topology rules are followed). It owns decoder acquisition, decoder-call ownership, feed policy/state, sequence/resource bounds, and release. Establish the required known IPU/DMAC decoder state before initialization through a narrow injected/concrete platform seam where current PS2 authority proves the mechanism. Do not expose H1's `VIDEO_IPU_RESET_EACH_SESSION` laboratory toggle as product configuration.
 
-6. **Finite cancellation and teardown.** Session stop must cancel reservoir waiting and common-clock waiting promptly. During active playback, teardown must cooperate with the existing Transport/session stop path so a worker blocked on Transport activity can retire; do not create a second Transport receive/close owner. The lifecycle must expose an ordering that allows application orchestration later to request stop/abort, wait/join worker completion, and only then reclaim stack/buffer/session resources. Preserve the first meaningful worker error through stop/join/cleanup.
+6. **Feed and sequence correctness.** Validate sequence dimensions against explicit caller/profile maximums before using the picture surface. Keep decoder feed payload bytes bounded; if the concrete PS2 path requires DMA alignment/padding, keep actual payload-byte accounting distinct from padded transfer bytes. Do not invent production feed-size/max-dimension defaults merely to make the component compile.
 
-7. **Deterministic behavior tests.** Prove at minimum:
-   - explicit resource/timing values are consumed without hidden defaults;
-   - allocation/create/start failure cleanup;
-   - below-threshold reservoir waits without consuming bytes;
-   - threshold crossing wakes readiness;
-   - producer-done with a short final nonzero reservoir proceeds;
-   - producer-done with empty queue completes normally without playback;
-   - initially unarmed clock does not permit playback and later arm publication releases the gate only at/after the audio deadline;
-   - audio never arms or moves the common epoch;
-   - stop during reservoir wait and stop during unarmed/deadline clock wait retire finitely;
-   - clock synchronization/timer/delay failure is surfaced;
-   - accepted playback-core success/failure is propagated without semantic rewriting;
-   - join/completion precedes buffer/stack reclamation and repeated cleanup cannot free live resources;
-   - resident AUDSRV semantics remain intact and no quit path appears.
+7. **Safe decoder stop and truthful result propagation.** A local stop request may be observed only at a completed decoder-picture/project-code boundary. If the decoder is currently inside a picture/decode call and asks its data callback for bytes, the callback must continue to report real Transport data/exhaustion/failure according to Transport state and must never synthesize EOF solely because owner stop is pending. After the decoder call returns, the owner may retire for stop. Unexpected decoder-worker/core exit without an owner stop request is failure even if a frame was previously produced. Decoder destruction/reclamation occurs only after decoder-call ownership has returned.
 
-8. **Boundary discipline.** Obey source synopsis/naming/dictionary/topology rules and update source-side dictionaries for genuinely new source. Leave generated portal/canonical test/build registration to Foreman. Do not add full application session orchestration, choose production tuning values, arm the media clock from audio, begin MPEG decode/video deadline/presentation/late-frame policy, repair inherited H1 receive-poison behavior, or claim hardware qualification.
+8. **Deterministic host tests and boundary discipline.** Cover at minimum:
+   - RFB/AUDIO regressions plus MPEG dispatch under the same sole receiver;
+   - MPEG bounded reads, pressure, independent credit earning/batching/flush;
+   - wake-before-sleep/event activity without timer polling;
+   - real finite producer completion/exhaustion versus owner stop/cancellation;
+   - Transport EOF/fatal error/stop waking MPEG correctly;
+   - invalid channel/kind fail-closed and no second receive owner;
+   - decoder prepare/init/call/destroy ownership ordering;
+   - sequence dimension rejection before picture-surface use;
+   - payload-byte versus padded-feed accounting where applicable;
+   - an active decoder call plus owner stop where the data callback still receives real data and never false EOF from the stop request;
+   - unexpected decoder return classified as failure absent requested stop;
+   - no first-presentation media-clock arm in MPEG decode merely for convenience.
+
+Perform Reconstruction-owned source-side dictionary/topology adoption for a new clean MPEG domain, but leave generated portal, canonical test/build registration, and CI evidence to Foreman.
 
 ### Acceptance criteria
 
-W1. One clean session-scoped audio worker owner exists with explicit resource/timing authority and no hidden production defaults.
+M1. MPEG2 is a third independent logical DATA path on the existing sole physical Transport receiver; there is no competing receive owner.
 
-W2. Worker buffer/stack/thread resources have a provable create/start/finish/join/reclaim lifecycle with no free-before-finished path.
+M2. MPEG queue/credit/activity/finite-producer state is bounded and independent from RFB/AUDIO; consumer credit is earned only for bytes actually removed.
 
-W3. Startup reservoir is observed without consuming PCM, uses activity-based waiting, handles short finite final reservoirs, and treats producer-done+empty as normal completion.
+M3. The public MPEG consumer seam provides event-driven availability and distinguishes normal finite exhaustion from stop/closed/failure without exposing Transport internals.
 
-W4. Playback cannot begin while the common clock is unarmed or before the audio deadline; future arm publication is waited safely, audio never arms the clock, and stop/failure behavior is finite/non-spinning.
+M4. A clean decoder owner establishes known decoder state, owns initialize/call/destroy ordering, validates sequence/feed bounds, and does not expose the H1 reset toggle as a product knob.
 
-W5. The worker calls the accepted synchronous playback core only after reservoir and presentation gates and does not reimplement its submission/accounting/AUDSRV semantics.
+M5. Local stop cannot synthesize EOF inside an active decoder data callback; stop is honored only after the decoder call returns, while true producer exhaustion remains real EOF/exhaustion.
 
-W6. Stop/Transport convergence and join ordering let later application orchestration retire the worker before resource reclamation without creating a second Transport owner or hiding first error.
+M6. Payload consumption and padded/aligned transfer accounting remain distinct where the platform path requires padding, and no unqualified resource/timing defaults are invented.
 
-W7. Deterministic host tests cover resource failures, reservoir transitions, unarmed->armed publication, deadline gating, cancellation, clock failures, playback result propagation, and reclaim fencing.
+M7. Unexpected decoder return without owner stop is a failure, decoder resources are not reclaimed while decoder call ownership is live, and deterministic tests prove the required interleavings/error paths.
 
-W8. No application orchestration, MPEG/video/presentation policy, audio-owned clock arm, guessed production tuning, receive-poison repair, or hardware qualification is introduced.
+M8. Existing A001/A002 behavior remains regression-stable; this packet does not implement exact START/generation retirement orchestration, Pi producer/capture/suppression, GS presentation/compositor, first-presentation epoch arming, scheduler/drop/calibration policy, application orchestration, or hardware qualification.
 
-### Preserved invariants / non-goals
+### Preserved invariants / explicit non-goals
 
-- The completed CONFIG/profile, common-clock one-shot epoch, Transport AUDIO channel, and synchronous PCM/AUDSRV core are regression authority, not rewrite targets.
-- One physical PSTV connection and sole Transport receive owner remain mandatory.
-- Reservoir-ready and presentation-deadline-ready are separate states.
-- A finite final AUDIO producer may legitimately end below the nominal startup threshold; do not turn that into an infinite wait.
-- Producer-done plus empty AUDIO is normal completion and must not initialize/start playback merely to observe emptiness.
-- Audio never selects, arms, or moves the common media epoch.
-- The existing media clock's `UNARMED` result is not success; if the worker may arrive before arm, bridge that publication interval explicitly and safely.
-- Session cleanup stops/mutes current audio but never calls `audsrv_quit()`.
-- Resource/timing values unresolved by qualification remain explicit caller authority; do not promote H1 experiment constants into hidden defaults.
-- Do not begin A003 MPEG/video behavior or late-frame policy.
-- A001 physical status remains `HARDWARE_PENDING`.
+- one physical PSTV connection and exactly one Transport receive owner;
+- RFB and AUDIO existing logical semantics remain unchanged;
+- A002 common-clock and audio ownership remain unchanged;
+- MPEG stop is not fake EOF;
+- no timer-backed MPEG empty hot-path polling;
+- no per-packet generation tagging substituted for A003's later ordered retirement fence;
+- no exact START/retire/reopen process yet;
+- no Pi-side producer/capture/suppression changes yet;
+- no presentation/compositor/GS behavior and no clock arm;
+- no arbitrary scheduler/drop/calibration choices;
+- no physical PASS claim.
 
-### Blocker burden
+### Blocker burden / fallback
 
-Physical PS2 hardware is not a blocker for the lifecycle/state-machine contract: resource/thread operations, Transport status/activity, clock publication/time, stop, and playback core can be represented through narrow injected seams and host-tested deterministically.
+Hardware is not a blocker for the logical queue/event-wake contract, pure decoder ownership state machine, safe-stop interleavings, bounds, and accounting tests.
 
-Missing production tuning values are not blockers. Use explicit fixture/caller values and leave final selection pending qualification.
+If the exact libmpeg/IPU/DMAC concrete signatures or required preparation mechanism cannot be proven from current repository/PS2SDK authority, isolate a narrow injected decoder/platform contract and return `PARTIAL` with the exact missing concrete binding proof rather than inventing a fake platform mechanism.
 
-If current media-clock or Transport public seams cannot support finite cancellation/publication waiting without adding a narrow reusable primitive, prove the exact limitation from source/tests and make the smallest owner-correct extension. Do not bypass ownership by reaching into private runtime state.
+If production MPEG queue/feed/max-dimension tuning remains unresolved, keep those values explicit caller authority. Missing tuning is not permission to guess defaults.
 
-### Stretch only if W1-W8 are complete
+If current Transport framing cannot represent a real finite MPEG producer marker without a shared protocol change, prove the limitation and return the narrowest protocol correction required; do not invent an unverified sentinel.
 
-A concrete PS2 thread/resource/time adapter may be added if it remains narrowly platform-owned, consumes only explicit lifecycle values, compiles cleanly with the pinned SDK, and does not force application orchestration or guessed tuning. Do not use stretch work to begin MPEG/video or hardware qualification.
+### Stretch target only after M1-M8 are complete
 
-## Exact next Foreman pickup
+Add a pure, side-effect-free exact-generation START value validator/state skeleton that can represent one prepared/active/retiring generation and reject stale/repeated generation identities, but do not wire application/Pi emission or retirement/reopen behavior. Foreman will otherwise issue that exact-generation lifecycle as A003-P2 after reviewing this packet.
 
-After Reconstruction returns, inspect the actual worker/resource/reservoir/common-clock behavior and criterion-by-criterion W1-W8 result. Perform only canonical registration/build/dictionary/evidence work. If coherent, decide from current audit/dependency authority whether A002 is ready for final application orchestration/Validation handoff or requires one final bounded A002 orchestration packet.
+## Foreman next pickup
 
-Validation remains independent. Foreman machine evidence is not Validation PASS, and A001 physical PS2 qualification remains `HARDWARE_PENDING`.
+When this worker returns:
+
+1. inspect actual Transport MPEG and decoder source/tests criterion-by-criterion;
+2. preserve A001/A002 and safe-stop invariants;
+3. perform only canonical test/build/dictionary/topology/living-map integration;
+4. consume independent A002 Validation if it has landed, without manufacturing it;
+5. if A003-P1 is coherent, issue A003-P2 for exact START/generation retirement/emission-fence/application process;
+6. preserve A001/A002/A003 hardware obligations separately from machine evidence.
