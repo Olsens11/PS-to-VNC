@@ -119,6 +119,7 @@ jobs:
             src/config/SYMBOLS.md \
             src/input/SYMBOLS.md \
             src/media/SYMBOLS.md \
+            src/mpeg/SYMBOLS.md \
             src/platform/SYMBOLS.md \
             src/rfb/SYMBOLS.md \
             src/transport/SYMBOLS.md \
