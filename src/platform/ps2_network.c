@@ -1,7 +1,7 @@
 /*
  * File synopsis:
  * Owns qualified PS2 Ethernet startup, fixed private-link configuration, and
- * creation/closure of caller-owned VNC TCP descriptors before Transport
+ * creation/closure of caller-owned PSTV TCP descriptors before Transport
  * adoption. Physical receive/send mechanics after adoption belong to Transport.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "PS2 system and
@@ -107,7 +107,7 @@ int pstvnc_ps2_network_wait_link(void)
     return 0;
 }
 
-int pstvnc_ps2_network_connect_vnc(void)
+int pstvnc_ps2_network_connect_pstv(void)
 {
     int socket_fd;
     struct sockaddr_in server;
@@ -119,8 +119,8 @@ int pstvnc_ps2_network_connect_vnc(void)
     memset(&server, 0, sizeof(server));
     server.sin_len = sizeof(server);
     server.sin_family = AF_INET;
-    server.sin_port = htons(PSTVNC_PS2_VNC_SERVER_PORT);
-    server.sin_addr.s_addr = inet_addr(PSTVNC_PS2_VNC_SERVER_IP);
+    server.sin_port = htons(PSTVNC_PS2_PSTV_SERVER_PORT);
+    server.sin_addr.s_addr = inet_addr(PSTVNC_PS2_PSTV_SERVER_IP);
 
     if (connect(
             socket_fd,
