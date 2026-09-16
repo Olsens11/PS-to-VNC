@@ -74,6 +74,36 @@ pstvnc_transport_result_t pstvnc_transport_session_open(
     return PSTVNC_TRANSPORT_OK;
 }
 
+pstvnc_transport_result_t pstvnc_transport_session_abort(void)
+{
+    int released;
+
+    if (!pstvnc_transport_bridge_session_active)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    /*
+     * The stop request remains inside Transport: it publishes receiver stop
+     * intent before shutdown() interrupts Transport's privately owned socket.
+     * No resource is reclaimed until the normal completion event proves the
+     * sole receiver can no longer touch session state.
+     */
+    if (!pstvnc_transport_runtime_request_stop(
+            &pstvnc_transport_bridge_runtime))
+        return PSTVNC_TRANSPORT_FAILED;
+
+    if (!pstvnc_transport_runtime_wait_receiver_done(
+            &pstvnc_transport_bridge_runtime))
+        return PSTVNC_TRANSPORT_FAILED;
+
+    released = pstvnc_transport_runtime_release(
+        &pstvnc_transport_bridge_runtime);
+    pstvnc_transport_bridge_session_active = 0;
+
+    return released
+        ? PSTVNC_TRANSPORT_OK
+        : PSTVNC_TRANSPORT_FAILED;
+}
+
 pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void)
 {
     if (!pstvnc_transport_bridge_session_active)
