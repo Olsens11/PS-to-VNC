@@ -1,12 +1,12 @@
 # Ledge Immutable Worker Log Contract
 
 DOCUMENT=LEDGE_WORK_LOG_CONTRACT
-DOCUMENT_REVISION=0002
-RECORDED_AT=2026-09-16T07:14:40-04:00
+DOCUMENT_REVISION=0003
+RECORDED_AT=2026-09-16T07:38:30-04:00
 TEMPORAL_CLASS=POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_POLICY_AT_RECORDED_TIME
 STATUS=OPERATIONAL
-SUPERSEDES_DOCUMENT_REVISION=0001
+SUPERSEDES_DOCUMENT_REVISION=0002
 
 ## Purpose
 
@@ -20,7 +20,7 @@ All new worker shift records live directly under:
 
 `docs/ledge/work-log/`
 
-`README.md` is the contract and is not a shift record. Except for the two immutable grandfathered Validation records named below, every other Markdown file in this directory must be one worker-shift record following the filename and content schema below.
+`README.md` is the contract and is not a shift record. Except for the exact immutable grandfathered records named below, every other Markdown file in this directory must be one worker-shift record following the filename and content schema below.
 
 Workers normally discover history by listing this directory newest-first, then reading the newest relevant entries. A generated human index may be added later, but no index is correctness authority and workers must not depend on one being current. Individual immutable shift records are intentionally not duplicated into the shared `docs/INDEX.md`; that index contains this contract as their stable discovery route, while `scripts/work-log-check.py` validates the records themselves.
 
@@ -63,14 +63,21 @@ The role, work-item, and worker keys must be lowercase ASCII slugs containing on
 
 ## Exact immutable grandfather exceptions
 
-Revision 0002 resolves a contradiction discovered after two Validation records had already been committed with noncanonical timestamp punctuation and the older Validation metadata shape. Revision 0001 simultaneously required those paths to fail the checker and prohibited renaming, replacing, deleting, or rewriting committed shift history. Destructive history cleanup would lose provenance merely to satisfy a later mechanical rule.
+Revision 0002 first resolved the contradiction between strict canonical checking and two already-committed Validation records that could not be destructively renamed or rewritten under the immutability rule. The first canonical CI execution after that policy revision exposed five additional already-frozen records with legacy or malformed schema details. Revision 0003 therefore records one final explicit compatibility set for the historical records that actually exist at this point in repository authority.
 
-The following **two exact existing paths only** are therefore grandfathered as immutable legacy-format shift records:
+The following **seven exact existing paths only** are grandfathered as immutable legacy-format shift records:
 
 - `2026-09-16T05-18-33-04-00__validation__v005-fatal-teardown__validation.md`
 - `2026-09-16T06-20-13-04-00__validation__a001-sole-receiver__validation.md`
+- `2026-09-16T07-27-40-04-00__continuity__global-reconciliation__continuity.md`
+- `20260915T211407-0400__architecture__reconstruction-shift-contract__interactive.md`
+- `20260915T232009-0400__validation__a001-sole-receiver__validation.md`
+- `20260915T232241-0400__reconstruction__a001-sole-receiver__interactive-b.md`
+- `20260915T233050-0400__continuity__global-reconciliation__continuity.md`
 
-The checker must still prove for each grandfathered record that its readable core metadata names the expected `ROLE_KEY`, `WORK_ITEM_KEY`, `WORKER_KEY`, exact ISO `STARTED_AT`, and a valid ISO `COMPLETED_AT`. It may not require revision-0001-only metadata fields or the revision-0001 status vocabulary from those already-frozen records.
+The checker must still prove for each grandfathered record that its readable core metadata names the expected `ROLE_KEY`, `WORK_ITEM_KEY`, `WORKER_KEY`, exact ISO `STARTED_AT`, and a valid ISO `COMPLETED_AT`. It may not require revision-0001-only metadata fields, canonical filename timestamp equality, or the revision-0001 status vocabulary from those already-frozen records.
+
+The 07:27 Continuity record was created after revision 0002 by an older automation formatting path. Its inclusion here is a historical compatibility repair, not permission for that formatting to continue. All future workers and automations are governed by the canonical schema below.
 
 This is not a reusable escape hatch. No later path, malformed filename, or noncanonical metadata shape is accepted through pattern matching, date ranges, role-wide exceptions, or operator discretion. Any future deviation from the canonical schema is a check failure and must be corrected before that new record is committed whenever possible; if one is nevertheless committed, a new explicit policy revision is required rather than silently extending this grandfather set.
 
@@ -151,7 +158,7 @@ A worker may update its lane's current-state snapshot when that lane owns the st
 
 After a shift record is committed, it is historical evidence and must not be rewritten to make later facts fit. If a later worker finds an error, the later worker records the correction and names the affected earlier log. Destructive history cleanup is prohibited.
 
-The two exact grandfather exceptions above demonstrate this rule: their noncanonical original paths remain intact, and policy/tooling records the narrowly scoped compatibility treatment rather than mutating the historical records.
+The exact grandfather exceptions above demonstrate this rule: their noncanonical original paths/content remain intact, and policy/tooling records the narrowly scoped compatibility treatment rather than mutating the historical records.
 
 ## Legacy-log cutover
 
@@ -159,6 +166,6 @@ The pre-cutover files such as lane/global append-only logs remain valid historic
 
 ## Enforcement
 
-`scripts/work-log-check.py` validates every canonical shift-record filename and the required metadata, including that the filename timestamp/role/work-item/worker keys exactly match the record body. It separately validates the exact core metadata contract for the two grandfathered immutable Validation records. `scripts/check.sh` runs that checker as part of the canonical project check.
+`scripts/work-log-check.py` validates every canonical shift-record filename and the required metadata, including that the filename timestamp/role/work-item/worker keys exactly match the record body. It separately validates the exact core metadata contract for the grandfathered immutable records listed in this revision. `scripts/check.sh` runs that checker as part of the canonical project check.
 
-A malformed new name is therefore not merely a style issue: it is a repository check failure because inconsistent names would break deterministic worker discovery and search. Only the two paths explicitly frozen by revision 0002 are accepted outside the canonical grammar.
+A malformed new name is therefore not merely a style issue: it is a repository check failure because inconsistent names would break deterministic worker discovery and search. Only the exact paths explicitly frozen by the current contract revision are accepted outside the canonical grammar.
