@@ -1,84 +1,74 @@
 # Ledge Reconstruction — Current Work State
 
 DOCUMENT=LEDGE_WORK_STATE
-STATE_REVISION=0023
-RECORDED_AT=2026-09-16T06:32:14-04:00
+STATE_REVISION=0024
+RECORDED_AT=2026-09-16T08:28:12-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_STATE_REVISION=0022
-SUPERSEDES_STATE_REVISION=0022
+BASED_ON_STATE_REVISION=0023
+SUPERSEDES_STATE_REVISION=0023
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
 ## Authority synthesized
 
-- Branch `ledge/h1-all-guns`; pre-write authority `2aa200b47aa69a0a68640ab39121e08fd100fcbd`.
+- Branch `ledge/h1-all-guns`; pre-write authority `17c294681ad76487f4e207965a7fbc648cc91b51`.
 - Forensic H1 authority `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`.
-- Governing reconstruction contract revision 0005 and immutable work-log contract revision 0001.
-- Audit state revision 0007 remains complete with A001-A006 explicitly reconstruction-ready.
-- Reconstruction state revision 0007 remains historical/stale relative to committed A001 source and tests.
-- Foreman state revision 0003 supersedes stale revision 0002 and is current planning/integration authority.
-- Validation state revision 0005/findings revision 0004 remain formal finding authority; newest immutable Validation handoff at 06:20 records evidence advancement without `VALIDATION_READY`.
-- Interactive Reconstruction B substitute immutable handoff at `2aa200b4...` reports `FOREMAN_GOAL_RESULT=MET` against Foreman 0003 C1-C8.
+- Governing reconstruction contract revision 0005 and immutable work-log contract revision 0003.
+- Audit state revision 0007 remains seeded-audit authority; A002 audit revision 0001 is the active audited tranche authority.
+- Reconstruction state revision 0007 is historical/stale relative to current committed source and accepted A001 evidence.
+- Validation state revision 0006 / findings revision 0005 independently accept A001 machine/source behavior: V003/V004/V005 PASS. A001 physical qualification remains `HARDWARE_PENDING`.
+- Foreman state revision 0007 is current planning authority and issues the first bounded A002 CONFIG/profile packet C1-C8 to the interactive Reconstruction worker.
 
 Unknown external/Pi-local dirty work remains outside connector visibility and is neither overwritten nor declared absent.
 
 ## Current phase and pipeline
 
-`SEMANTIC_AUDIT_COMPLETE_A001_BEHAVIOR_PACKET_MET_FOREMAN_INTEGRATION_AND_VALIDATION_PENDING`
+`A001_MACHINE_SOURCE_PASS_HARDWARE_PENDING_A002_FOREMAN_PLANNED`
 
-- `AUDIT`: none.
-- `RECONSTRUCTION_READY`: A002-A006 queued behind A001.
-- `RECONSTRUCTING`: A001 behavior packet C1-C8 is reported MET by the assigned interactive B substitute; no product-source defect was found or changed in that round. A001 remains in reconstruction pipeline until Foreman integration/evidence and independent Validation disposition complete.
-- `FOREMAN_PLANNED/INTEGRATING`: Foreman 0003 is current. It owns canonical registration of the two new direct Transport fixtures, V004 RFB dictionary reconciliation, generated dictionary portal synchronization, and canonical machine-evidence preparation.
-- `VALIDATION_READY`: none yet. Reconstruction's behavior-closure claim does not itself promote the tranche.
-- `PASS`: supplemental direct-fixture shadow execution reported PASS by Reconstruction; prior bounded static/provisional findings remain evidence only, not full A001 PASS.
-- `BLOCKED`: V003/V004/V005 remain formally OPEN. V004 awaits Foreman integration/evidence. V005 has stronger source/test evidence but still awaits independent canonical executable disposition. V003 awaits coherent tranche promotion evidence.
-- `HARDWARE_PENDING`: A001 and all later reconstructed tranches lack operator-backed reconstructed-DUT hardware qualification.
+- `AUDIT`: no active audit mutation; A002 audit 0001 supplies current reconstruction dispositions.
+- `RECONSTRUCTION_READY`: A003-A006 remain queued behind dependency order.
+- `RECONSTRUCTING`: A002 is now the active product-behavior tranche, with its first packet issued but not yet reported complete.
+- `FOREMAN_PLANNED/INTEGRATING`: Foreman 0007 has a current bounded A002 C1-C8 packet. No A002 result exists yet.
+- `VALIDATION_READY`: no A002 tranche yet. A001 machine/source has already passed independent Validation.
+- `PASS`: A001 machine/source PASS only.
+- `BLOCKED`: no current A001 reconstruction finding blocks A002 planning; do not infer absence of future A002 findings.
+- `HARDWARE_PENDING`: A001 physical PS2 qualification remains outstanding; later tranches have no physical qualification claim.
 
 ## Foreman goal and cadence health
 
-Foreman revision 0003 repaired the prior packet-freshness discrepancy. It assigned a bounded A001 C1-C8 behavior-closure packet with objective criteria to the interactive Reconstruction B substitute, explicitly because scheduled Reconstruction A/B and Foreman seats were operator-paused at that point. The worker's immutable record at `2aa200b4...` truthfully reports `FOREMAN_GOAL_RESULT=MET` criterion-by-criterion.
+Goal governance is healthy for the active interactive A002 packet. Foreman 0007 provides a bounded objective, required deliverables, C1-C8 objective acceptance criteria, non-goals, blocker burden, and a narrow stretch target. The upcoming interactive Reconstruction worker must report `FOREMAN_GOAL_RESULT=MET|PARTIAL|BLOCKED` criterion-by-criterion in its immutable handoff.
 
-The governing cadence invariant remains Reconstruction B -> Foreman -> Reconstruction A, one seat every 30 minutes and each seat every 90 minutes when scheduled seats are active. Foreman 0003 explicitly records those scheduled seats as operator-paused, so absence of scheduled 30-minute wakes during this interval is not treated as cadence drift. If scheduled seats resume, fresh packets must again precede each upcoming A/B shift; the completed interactive packet must not be reused as authority for unrelated later behavior work.
+The scheduled B -> Foreman -> A invariant remains one reconstruction-pipeline seat every 30 minutes and each scheduled seat every 90 minutes. Current Foreman authority explicitly keeps the scheduled A/B/Foreman crew `OPERATOR_PAUSED_UNCHANGED`; therefore absence of scheduled wakes during this interactive substitution is not cadence drift. If scheduled seats resume, each upcoming A/B shift requires a fresh worker-targeted Foreman packet before behavior work.
 
-Goal governance is healthy for the completed interactive B substitute packet. The next required Foreman action is integration/evidence and a fresh planning decision, not automatic A002 authorization.
+## Reconciliation since revision 0023
 
-## Reconstruction and validation reconciliation
-
-Current committed movement after global revision 0022 is material:
-
-1. Foreman state advanced to revision 0003, resolving the previously recorded stale-packet governance contradiction and explicitly assigning the remaining A001 behavior-evidence seam.
-2. Reconstruction added deterministic direct host fixture source for current Transport physical-stream/runtime behavior plus narrow host support. The final immutable B-substitute handoff reports C1-C8 MET and maps all eight A001 audit behaviors to committed source/test evidence. It reports no A001 product-source defect and no product-source change in the final round.
-3. Supplemental execution reported by Reconstruction includes physical-stream, runtime, and exact-logic RFB-channel shadow PASS results. These remain supplemental rather than canonical repository-suite PASS.
-4. Validation independently reviewed the new fixture source through `bce128b5...`, opened no new product defect, and recorded that lifecycle/fatal-stop/retry/reclaim evidence materially improved. It nevertheless kept V003/V004/V005 formally OPEN and A001 `NOT_VALIDATION_READY` because the two new direct fixtures are not yet canonically registered/executed on its surface.
-
-The new direct fixtures are `tests/unit/transport_physical_stream_test.c` and `tests/unit/transport_runtime_test.c`. Their canonical `tests/Makefile` registration is now an explicit Foreman integration chore. Reconstruction's final handoff states no remaining A001-owned product-behavior obligation was identified, but only Foreman/Validation may turn that into pipeline promotion after integration and independent evidence review.
-
-No physical/hardware PASS is inferred.
+1. Foreman integration/evidence advanced A001 through canonical fixture registration, dictionary/portal/topology reconciliation, canonical host/check/dictionary/PS2 build and reproducibility evidence.
+2. Independent Validation state 0006 accepted the coherent A001 machine/source tranche and revision-chained V003, V004, and V005 to PASS. This supersedes revision 0023's current-state statement that those findings remained OPEN.
+3. Validation explicitly did not convert machine evidence into physical qualification. A001 remains `HARDWARE_PENDING` until operator-backed evidence is bound to the exact qualified DUT/PT_LOAD identity.
+4. Foreman 0007 consumed the Validation PASS and opened A002 with a dependency-ordered CONFIG/profile foundation packet rather than a 61-field H1 port or hardcoded A001 Transport defaults.
+5. The packet requires one config-owned immutable session/profile authority, explicit provenance for all eight A001 Transport session values, A002 PCM/common-clock stable facts, a bounded versioned side-effect-free decoder/validator, and deterministic behavior-specific test source. It explicitly excludes live CONFIG negotiation, PCM/AUDSRV runtime, shared-clock waiting/arming runtime, A003 video behavior, and hardware claims.
 
 ## Contradictions / stale state
 
-1. Reconstruction state 0007 is substantially stale relative to current A001 live source and behavior fixtures; it remains historical point-in-time evidence only.
-2. Global 0022's statement that Foreman 0002 was stale is now superseded by Foreman 0003. The old discrepancy is preserved historically but is no longer current.
-3. Foreman 0003 records scheduled B/Foreman/A seats as operator-paused. Therefore cadence structure remains governing policy, but scheduled-wake absence during the pause is not evidence of scheduler failure.
-4. Reconstruction reports C1-C8 MET and no remaining A001-owned product-behavior obligation, while Validation still records A001 `NOT_VALIDATION_READY`. These are not contradictory authorities: Reconstruction owns goal execution; Validation owns readiness/finding disposition.
-5. V005 remains formally OPEN despite increasingly strong source, fixture, and supplemental execution support. Validation has not yet observed canonical executable integration evidence sufficient to revision-chain the finding.
-6. V004 remains OPEN because the new direct fixtures need canonical registration and the RFB dictionary/generated portal still require Foreman reconciliation.
-7. No source, machine, or supplemental host evidence qualifies reconstructed PS2 hardware behavior without exact DUT/PT_LOAD plus operator evidence.
+- Global revision 0023 and Reconstruction state 0007 are historical point-in-time evidence and must not be read as current A001 readiness truth.
+- Earlier immutable logs stating V003/V004/V005 OPEN remain true-at-time; Validation 0006/findings 0005 supersede them for current disposition.
+- A001 machine/source PASS and A001 `HARDWARE_PENDING` coexist intentionally; neither implies the other.
+- Foreman 0007's interactive packet is current authority for the interactive A002 worker only. It is not a reusable scheduled A/B packet.
+- No completed A002 worker log yet exists, so Continuity must not manufacture a `FOREMAN_GOAL_RESULT` or claim C1-C8 completion.
 
 ## Exact next safe actions
 
 ### Audit
-Remain idle unless genuinely unexplained H1 responsibility appears.
+Remain idle unless A002 reconstruction exposes genuinely unexplained H1 responsibility requiring audit ownership.
 
 ### Foreman
-Consume `2aa200b4...`, the completed C1-C8 handoff, and the 06:20 Validation review. First perform Foreman-owned integration/evidence: register `transport_physical_stream_test` and `transport_runtime_test` canonically; reconcile `src/rfb/SYMBOLS.md`; regenerate/verify the source-symbol dictionary portal including Transport; run canonical host/check/dictionary/topology/build evidence wherever actually executable and preserve exact results. Then decide whether A001 has any residual reconstruction-owned behavior. If none, prepare a coherent Validation handoff rather than assigning filler. Do not authorize A002 merely because the C1-C8 packet is MET; wait for the proper A001 handoff boundary.
+After the interactive A002 worker returns, inspect current HEAD/source/tests/log independently, perform only Foreman-owned canonical registration/integration/evidence chores, and issue the next dependency-ordered A002 packet. Do not implement product behavior or declare Validation PASS.
 
-### Reconstruction A/B
-Do not repeat the completed Foreman 0003 packet and do not begin A002 without fresh Foreman authority. Preserve the C1-C8 behavior unless canonical/independent evidence exposes a reconstruction-owned defect. Do not consume Foreman registration/dictionary/portal chores as behavior-shift filler. Any future completed packet must report criterion-level `FOREMAN_GOAL_RESULT=MET|PARTIAL|BLOCKED` against its actual current packet.
+### Reconstruction A/B / interactive Reconstruction
+Execute only the current Foreman 0007 A002 C1-C8 profile-foundation packet. Preserve A001 machine/source behavior and all eight Transport values as explicit CONFIG provenance; do not invent defaults, start PCM/AUDSRV/shared-clock runtime, or enter A003 behavior. Report `FOREMAN_GOAL_RESULT=MET|PARTIAL|BLOCKED` against C1-C8.
 
 ### Validation
-After Foreman canonical registration/evidence, independently execute/review the direct physical-stream/runtime fixtures and fatal-abort/application-lifecycle evidence. Revision-chain V005 only if canonical evidence warrants it; review V004 after dictionary/portal/strict evidence; close/promote V003 only at a coherent A001 tranche boundary. Do not infer hardware PASS.
+Independently judge a coherent A002 tranche when handed off. Preserve A001 machine/source PASS and the separate physical `HARDWARE_PENDING` debt; do not infer hardware success.
 
 ### Continuity
-On next wake, reconcile Foreman integration/evidence and Validation dispositions against this snapshot. Preserve the distinction between Reconstruction goal completion, Foreman integration completion, Validation readiness/PASS, and hardware qualification.
+Reconcile the next A002 Reconstruction handoff and subsequent Foreman/Validation movement against revision 0024. Preserve temporal precedence, lane ownership, current goal authority, and the distinction among machine/source PASS, tranche readiness, and physical qualification.
