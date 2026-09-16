@@ -38,7 +38,7 @@ The current clean-generation directories are:
 | Directory | Responsibility |
 |---|---|
 | `src/` | executable entry point and application coordinator only |
-| `src/audio/` | synchronous PCM consumption of Transport AUDIO plus the narrow resident AUDSRV stream-operation adapter |
+| `src/audio/` | session-scoped audio worker/resources, non-consuming startup reservoir and common-clock audio gating, synchronous PCM consumption, and resident AUDSRV stream operations |
 | `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values, and small config-text helpers |
 | `src/diagnostics/` | diagnostics transport and runtime identity |
 | `src/display/` | platform-neutral display/presentation conversion |
@@ -89,9 +89,13 @@ consumption, exact immutable PCM profile application, wait-before-play ordering,
 truthful post-submit accounting, normal finite exhaustion, and deterministic
 stream retirement. `audsrv_service.{c,h}` binds that narrow operation contract
 to the resident PS2SDK AUDSRV service without exposing or calling per-session
-`audsrv_quit()`. This domain does not yet own a playback worker, startup
-reservoir/common-clock timing, application orchestration, MPEG/presentation, or
-hardware qualification.
+`audsrv_quit()`. The later A002 worker-lifecycle tranche adds `session.{c,h}` as
+the owner of explicit caller-supplied worker/resource/timing authority,
+non-consuming startup-reservoir readiness, common-clock audio-deadline gating,
+and finish/join/reclaim fencing around the accepted synchronous playback core.
+Audio never arms or moves the common epoch and does not own Transport abort or
+close. Application orchestration, MPEG/video presentation, receive-poison
+repair, and hardware qualification remain outside this domain.
 
 A future display-model or other reconstruction stage may adopt, replace, move,
 or delete remaining retained material deliberately. The moment a source file
@@ -117,7 +121,7 @@ updating build paths.
 
 ## Creating a new clean domain directory
 
-A new clean domain directory is an architectural/topology change, not ordinary
+A new clean product directory is an architectural/topology change, not ordinary
 file creation.
 
 The same change must:
