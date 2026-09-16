@@ -88,6 +88,38 @@ documentation. The current curated documentation entry point is
   of the clean domain-directory/source-dictionary topology adoption during
   Issue #39 closeout.
 
+## Ledge reconstruction authority
+
+The ledge work-log directory is append-only operational history. Individual
+shift records are discovered through `docs/ledge/work-log/` and validated by
+the work-log checker rather than being appended to this shared compatibility
+index after every shift.
+
+- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` — ledge-specific architecture overlay.
+- `docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md` — A001 Transport/RFB audit authority.
+- `docs/ledge/LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md` — A002 configuration/audio audit authority.
+- `docs/ledge/LEDGE_AUDIT_A003_MPEG_GENERATION.md` — A003 MPEG-generation audit authority.
+- `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` — A004 presentation/calibration audit authority.
+- `docs/ledge/LEDGE_AUDIT_A005_INTERACTION_INPUT.md` — A005 interaction/input audit authority.
+- `docs/ledge/LEDGE_AUDIT_A006_ORCHESTRATION_SHUTDOWN.md` — A006 orchestration/shutdown audit authority.
+- `docs/ledge/LEDGE_AUDIT_A007_DIAGNOSTIC_COMPLETENESS.md` — A007 diagnostics/completeness audit authority.
+- `docs/ledge/LEDGE_AUDIT_LOG.md` — historical ledge audit log.
+- `docs/ledge/LEDGE_AUDIT_STATE.md` — current ledge audit state snapshot.
+- `docs/ledge/LEDGE_FOREMAN_STATE.md` — current Reconstruction Foreman planning/integration baton.
+- `docs/ledge/LEDGE_INTEGRATION_STATE.md` — ledge integration-state authority.
+- `docs/ledge/LEDGE_PARALLEL_DEVELOPMENT_MODEL.md` — ledge parallel-development model.
+- `docs/ledge/LEDGE_RECONSTRUCTION_CONTRACT.md` — Reconstruction crew contract.
+- `docs/ledge/LEDGE_RECONSTRUCTION_LOG.md` — historical Reconstruction log.
+- `docs/ledge/LEDGE_RECONSTRUCTION_STATE.md` — Reconstruction state snapshot authority.
+- `docs/ledge/LEDGE_SEMANTIC_AUDIT.md` — ledge semantic-audit synthesis.
+- `docs/ledge/LEDGE_SIMPLIFICATION_REGISTER.md` — simplification disposition register.
+- `docs/ledge/LEDGE_VALIDATION_FINDINGS.md` — Validation finding register.
+- `docs/ledge/LEDGE_VALIDATION_LOG.md` — historical Validation log.
+- `docs/ledge/LEDGE_VALIDATION_STATE.md` — Validation state snapshot authority.
+- `docs/ledge/LEDGE_WORK_LOG.md` — historical/global ledge work log.
+- `docs/ledge/LEDGE_WORK_STATE.md` — current global Continuity/reconstruction work state.
+- `docs/ledge/work-log/README.md` — immutable per-shift work-log contract and discovery rules.
+
 ## Documentation contract
 
 Historical evidence remains historical.
@@ -210,7 +242,9 @@ Checks:
 The canonical curated documentation router is `docs/README.md`.
 
 This section exists to preserve the migration-era invariant that every
-Markdown document remains mechanically discoverable from `docs/INDEX.md`.
+maintained Markdown authority/reference document remains mechanically
+discoverable from `docs/INDEX.md`. Immutable ledge shift records are discovered
+by their directory contract and are not duplicated here.
 Its presence does not make every listed document a current authority.
 
 - `docs/ARCHITECTURAL_NORMALIZATION.md`
