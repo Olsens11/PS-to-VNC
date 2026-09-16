@@ -43,6 +43,7 @@ The current clean-generation directories are:
 | `src/display/` | platform-neutral display/presentation conversion |
 | `src/framebuffer/` | authoritative CPU-side remote desktop image |
 | `src/input/` | controller facts, libpad-facing project use, semantic input, keyboard, mouse |
+| `src/media/` | session-scoped common media epoch, signed/saturating deadline math, synchronization contract, and host-testable wait boundary |
 | `src/platform/` | genuinely PS2-specific system, network, and graphics mechanisms |
 | `src/rfb/` | RFB wire/session parsing, logical-stream adaptation, and complete-message safe-boundary policy |
 | `src/transport/` | sole physical PSTV stream/receiver, framing/sequence, logical-channel storage/flow control, and Transport-owned session lifecycle |
@@ -73,6 +74,13 @@ owns the bounded production CONFIG value boundary; the existing `text.{c,h}`
 helpers were adopted behavior-identically as local configuration utilities.
 This adoption does not authorize live CONFIG negotiation, audio runtime,
 media-clock runtime, or video/MPEG behavior.
+
+`src/media/` was deliberately created during A002 common-media-clock
+reconstruction on 2026-09-16 because the shared session epoch is neither
+configuration ownership nor a PS2 platform mechanism. `clock.{c,h}` owns only
+reusable session timing state/math plus injected synchronization and time
+observer contracts. It does not own PCM/AUDSRV runtime, MPEG/video callsites,
+or concrete PS2 lock/timer bindings.
 
 A future display-model or other reconstruction stage may adopt, replace, move,
 or delete remaining retained material deliberately. The moment a source file
@@ -184,5 +192,6 @@ The change that established the domain topology is recorded at:
 
 That record contains the original before/after context, commit identities,
 dictionary snapshot, and qualification-transfer result. The A002 clean
-configuration-domain adoption is recorded by its immutable reconstruction work
-log and the living topology/map updates made with that source tranche.
+configuration and common-media-clock domain adoptions are recorded by their
+immutable reconstruction work logs and the living topology/map updates made
+with those source tranches.
