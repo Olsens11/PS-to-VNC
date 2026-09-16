@@ -1,11 +1,13 @@
 /*
  * File synopsis:
- * Exercises application-owned lifecycle, semantic pointer/keyboard-to-RFB
- * routing, successful-publication sequencing, responsive receive scheduling, and
- * cleanup ordering without linking PS2 platform implementations.
+ * Exercises application-owned lifecycle, Transport descriptor adoption/fatal
+ * convergence, semantic pointer/keyboard-to-RFB routing, successful-publication
+ * sequencing, responsive receive scheduling, and cleanup ordering without
+ * linking PS2 platform or Transport implementations.
  *
  * Context: docs/CLEAN_ARCHITECTURE.md application coordinator and
- * input/controller concurrency model; GitHub Issue #38.
+ * input/controller concurrency model; docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md;
+ * GitHub Issue #38.
  */
 
 #include <assert.h>
@@ -25,6 +27,7 @@
 #include "platform/ps2_system.h"
 #include "rfb.h"
 #include "rfb_session.h"
+#include "transport/bridge.h"
 
 static int failures;
 
@@ -50,7 +53,8 @@ typedef enum event_id {
     EV_FB_INIT,
     EV_FB_GEOMETRY,
     EV_GRAPHICS_INIT,
-    EV_CONNECT,
+    EV_CONNECT_PSTV,
+    EV_TRANSPORT_OPEN,
     EV_SESSION_INIT,
     EV_SESSION_START,
     EV_INITIAL_FRAME,
@@ -68,6 +72,7 @@ typedef enum event_id {
     EV_MOUSE_REBASE,
     EV_MOUSE_RESUME,
     EV_INPUT_SHUTDOWN,
+    EV_TRANSPORT_ABORT,
     EV_CLOSE,
     EV_GRAPHICS_SHUTDOWN,
     EV_DIAG_SHUTDOWN
@@ -100,6 +105,24 @@ static int session_start_result;
 static int initial_frame_result;
 static int display_prepare_result;
 static int present_result;
+
+static pstvnc_transport_result_t transport_open_result;
+static int transport_open_adopts;
+static pstvnc_transport_result_t transport_abort_result;
+static size_t transport_open_calls;
+static size_t transport_abort_calls;
+static pstvnc_transport_session_config_t observed_transport_config;
+
+static const pstvnc_transport_session_config_t test_transport_config = {
+    101u,
+    102u,
+    103u,
+    1,
+    1,
+    104u,
+    105,
+    106u
+};
 
 static int present_overlay_visible[32];
 static size_t present_event_positions[32];
@@ -182,6 +205,7 @@ static void reset_script(void)
     memset(pointer_calls, 0, sizeof(pointer_calls));
     memset(key_send_results, 0, sizeof(key_send_results));
     memset(key_calls, 0, sizeof(key_calls));
+    memset(&observed_transport_config, 0, sizeof(observed_transport_config));
     memset(
         present_overlay_visible,
         0,
@@ -200,6 +224,11 @@ static void reset_script(void)
     diagnostics_init_result = 0;
     graphics_init_result = 0;
     connect_result = 7;
+    transport_open_result = PSTVNC_TRANSPORT_OK;
+    transport_open_adopts = 1;
+    transport_abort_result = PSTVNC_TRANSPORT_OK;
+    transport_open_calls = 0u;
+    transport_abort_calls = 0u;
     session_start_result = 1;
     initial_frame_result = 1;
     display_prepare_result = 1;
@@ -247,6 +276,11 @@ static void reset_script(void)
     present_call_count = 0;
 
     closed_socket = -1;
+}
+
+static int run_configured_app(void)
+{
+    return pstvnc_app_run_with_transport_config(&test_transport_config);
 }
 
 static int event_index(event_id_t event)
@@ -318,9 +352,9 @@ int pstvnc_ps2_network_wait_link(void)
     return wait_link_result;
 }
 
-int pstvnc_ps2_network_connect_vnc(void)
+int pstvnc_ps2_network_connect_pstv(void)
 {
-    log_event(EV_CONNECT);
+    log_event(EV_CONNECT_PSTV);
     return connect_result;
 }
 
@@ -328,6 +362,33 @@ void pstvnc_ps2_network_close(int socket_fd)
 {
     log_event(EV_CLOSE);
     closed_socket = socket_fd;
+}
+
+pstvnc_transport_result_t pstvnc_transport_session_open(
+    int *socket_fd,
+    const pstvnc_transport_session_config_t *config)
+{
+    log_event(EV_TRANSPORT_OPEN);
+    transport_open_calls++;
+
+    CHECK(socket_fd != NULL);
+    CHECK(config != NULL);
+    if (config != NULL)
+        observed_transport_config = *config;
+
+    if (socket_fd != NULL &&
+        (transport_open_result == PSTVNC_TRANSPORT_OK ||
+         transport_open_adopts))
+        *socket_fd = -1;
+
+    return transport_open_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_session_abort(void)
+{
+    log_event(EV_TRANSPORT_ABORT);
+    transport_abort_calls++;
+    return transport_abort_result;
 }
 
 int pstvnc_diagnostics_init(void)
@@ -468,14 +529,12 @@ void pstvnc_rfb_session_init(
 
 int pstvnc_rfb_session_start(
     pstvnc_rfb_session_t *session,
-    int socket_fd,
     uint16_t expected_width,
     uint16_t expected_height)
 {
     log_event(EV_SESSION_START);
 
     if (session_start_result) {
-        session->socket_fd = socket_fd;
         session->state = PSTVNC_RFB_SESSION_READY;
         session->server_init.width = expected_width;
         session->server_init.height = expected_height;
@@ -794,16 +853,18 @@ int pstvnc_input_runtime_resume_mouse_interpretation(
     return 0;
 }
 
-static void check_core_owned_cleanup(void)
+static void check_post_adoption_cleanup(void)
 {
     CHECK(diagnostic_index("PSTVNC_STAGE FATAL") >= 0);
-    CHECK(closed_socket == 7);
-    CHECK(event_occurrences(EV_CLOSE) == 1);
+    CHECK(closed_socket == -1);
+    CHECK(event_occurrences(EV_CLOSE) == 0);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 1);
+    CHECK(transport_abort_calls == 1u);
     CHECK(event_occurrences(EV_GRAPHICS_SHUTDOWN) == 1);
     CHECK(event_occurrences(EV_DIAG_SHUTDOWN) == 1);
 
     CHECK(
-        event_index(EV_CLOSE) <
+        event_index(EV_TRANSPORT_ABORT) <
         event_index(EV_GRAPHICS_SHUTDOWN));
 
     CHECK(
@@ -811,13 +872,34 @@ static void check_core_owned_cleanup(void)
         event_index(EV_DIAG_SHUTDOWN));
 }
 
-static void check_input_cleanup_precedes_socket_close(void)
+static void check_input_cleanup_precedes_transport_abort(void)
 {
     CHECK(event_occurrences(EV_INPUT_SHUTDOWN) == 1);
 
     CHECK(
         event_index(EV_INPUT_SHUTDOWN) <
-        event_index(EV_CLOSE));
+        event_index(EV_TRANSPORT_ABORT));
+}
+
+static void check_config_was_forwarded(void)
+{
+    CHECK(transport_open_calls == 1u);
+    CHECK(observed_transport_config.rfb_queue_capacity == 101u);
+    CHECK(observed_transport_config.rfb_initial_credit_bytes == 102u);
+    CHECK(observed_transport_config.rfb_credit_batch_bytes == 103u);
+    CHECK(observed_transport_config.rfb_credit_flush_on_empty == 1);
+    CHECK(observed_transport_config.rfb_credit_return_enabled == 1);
+    CHECK(observed_transport_config.receiver_thread_stack_size == 104u);
+    CHECK(observed_transport_config.receiver_thread_priority == 105);
+    CHECK(observed_transport_config.max_data_payload == 106u);
+}
+
+static void test_no_argument_entry_fails_closed(void)
+{
+    reset_script();
+
+    CHECK(pstvnc_app_run() == -1);
+    CHECK(event_count == 0u);
 }
 
 static void test_iop_failure_owns_nothing(void)
@@ -825,7 +907,7 @@ static void test_iop_failure_owns_nothing(void)
     reset_script();
     prepare_iop_result = -1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
     CHECK(event_count == 1);
     CHECK(events[0] == EV_PREPARE_IOP);
     CHECK(diagnostic_count == 0);
@@ -836,7 +918,9 @@ static void test_connect_failure_cleans_only_acquired_resources(void)
     reset_script();
     connect_result = -1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
+    CHECK(event_occurrences(EV_TRANSPORT_OPEN) == 0);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 0);
     CHECK(event_occurrences(EV_CLOSE) == 0);
     CHECK(event_occurrences(EV_GRAPHICS_SHUTDOWN) == 0);
     CHECK(event_occurrences(EV_INPUT_SHUTDOWN) == 0);
@@ -849,22 +933,66 @@ static void test_connect_failure_cleans_only_acquired_resources(void)
             "PSTVNC_STAGE FATAL") == 0);
 }
 
+static void test_transport_pre_adoption_failure_closes_caller_fd(void)
+{
+    reset_script();
+    transport_open_result = PSTVNC_TRANSPORT_FAILED;
+    transport_open_adopts = 0;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(event_occurrences(EV_TRANSPORT_OPEN) == 1);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 0);
+    CHECK(event_occurrences(EV_CLOSE) == 1);
+    CHECK(closed_socket == 7);
+    CHECK(event_index(EV_TRANSPORT_OPEN) < event_index(EV_CLOSE));
+    check_config_was_forwarded();
+}
+
+static void test_transport_post_adoption_open_failure_has_no_double_close(void)
+{
+    reset_script();
+    transport_open_result = PSTVNC_TRANSPORT_FAILED;
+    transport_open_adopts = 1;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(event_occurrences(EV_TRANSPORT_OPEN) == 1);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 0);
+    CHECK(event_occurrences(EV_CLOSE) == 0);
+    CHECK(closed_socket == -1);
+    check_config_was_forwarded();
+}
+
 static void test_session_failure_cleanup_order(void)
 {
     reset_script();
     session_start_result = 0;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
-    check_core_owned_cleanup();
+    check_config_was_forwarded();
+    check_post_adoption_cleanup();
 
     CHECK(
         event_index(EV_SESSION_START) <
-        event_index(EV_CLOSE));
+        event_index(EV_TRANSPORT_ABORT));
 
     CHECK(event_occurrences(EV_INITIAL_FRAME) == 0);
     CHECK(event_occurrences(EV_PRESENT) == 0);
     CHECK(event_occurrences(EV_INPUT_INIT) == 0);
+}
+
+static void test_transport_abort_failure_never_direct_closes(void)
+{
+    reset_script();
+    session_start_result = 0;
+    transport_abort_result = PSTVNC_TRANSPORT_FAILED;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 1);
+    CHECK(event_occurrences(EV_CLOSE) == 0);
+    CHECK(closed_socket == -1);
+    CHECK(event_occurrences(EV_GRAPHICS_SHUTDOWN) == 1);
+    CHECK(event_occurrences(EV_DIAG_SHUTDOWN) == 1);
 }
 
 static void test_clean_update_does_not_represent(void)
@@ -882,7 +1010,7 @@ static void test_clean_update_does_not_represent(void)
     try_receive_dirty[0] = 0;
     try_receive_result_count = 1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(request_calls == 2);
     CHECK(try_receive_calls == 1);
@@ -909,8 +1037,8 @@ static void test_clean_update_does_not_represent(void)
 
     CHECK(diagnostic_count == 5);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_invalid_live_frame_fails_before_presentation(void)
@@ -927,15 +1055,15 @@ static void test_invalid_live_frame_fails_before_presentation(void)
     try_receive_dirty[0] = 1;
     try_receive_result_count = 1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(request_calls == 1);
     CHECK(try_receive_calls == 1);
     CHECK(event_occurrences(EV_PRESENT) == 1);
     CHECK(event_occurrences(EV_DISPLAY_PREPARE) == 1);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_diagnostics_are_best_effort(void)
@@ -945,11 +1073,12 @@ static void test_diagnostics_are_best_effort(void)
     diagnostics_init_result = -1;
     session_start_result = 0;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(diagnostic_count == 0);
     CHECK(event_occurrences(EV_DIAG_SHUTDOWN) == 0);
-    CHECK(event_occurrences(EV_CLOSE) == 1);
+    CHECK(event_occurrences(EV_CLOSE) == 0);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 1);
     CHECK(event_occurrences(EV_GRAPHICS_SHUTDOWN) == 1);
 }
 
@@ -999,7 +1128,7 @@ static void test_semantic_pointer_and_wheel_mapping(void)
     mouse_update->wheel_direction =
         PSTVNC_MOUSE_WHEEL_UP;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(pointer_call_count == 4);
 
@@ -1052,8 +1181,8 @@ static void test_semantic_pointer_and_wheel_mapping(void)
         event_index(EV_INPUT_START) <
         event_index(EV_REQUEST_UPDATE));
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_semantic_keyboard_tap_publication(void)
@@ -1081,13 +1210,9 @@ static void test_semantic_keyboard_tap_publication(void)
         PSTVNC_KEYBOARD_MODIFIER_CTRL |
         PSTVNC_KEYBOARD_MODIFIER_ALT;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
-    /*
-     * Initial pointer synchronization remains independent of keyboard traffic.
-     */
     CHECK(pointer_call_count == 1);
-
     CHECK(key_call_count == 8);
 
     CHECK(key_calls[0].down == 1);
@@ -1136,8 +1261,8 @@ static void test_semantic_keyboard_tap_publication(void)
         event_index(EV_KEY_SEND) <
         event_index(EV_TRY_RECEIVE));
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_keyboard_publication_failure_stops_before_receive(void)
@@ -1165,18 +1290,13 @@ static void test_keyboard_publication_failure_stops_before_receive(void)
     key_send_results[2] = 0;
     key_send_result_count = 3;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
-    /*
-     * Publication stops at the first failed exact KeyEvent. The real K1
-     * session boundary marks that synchronized session FAILED, so application
-     * must not continue the sequence or enter receive service.
-     */
     CHECK(key_call_count == 3);
     CHECK(try_receive_calls == 0);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_idle_receive_yields_without_busy_spin(void)
@@ -1194,7 +1314,7 @@ static void test_idle_receive_yields_without_busy_spin(void)
 
     try_receive_result_count = 2;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(try_receive_calls == 2);
     CHECK(idle_delay_calls == 1);
@@ -1204,8 +1324,8 @@ static void test_idle_receive_yields_without_busy_spin(void)
         event_index(EV_TRY_RECEIVE) <
         event_index(EV_IDLE_DELAY));
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_input_init_failure_does_not_claim_runtime(void)
@@ -1214,14 +1334,14 @@ static void test_input_init_failure_does_not_claim_runtime(void)
 
     input_init_result = -1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(event_occurrences(EV_INPUT_INIT) == 1);
     CHECK(event_occurrences(EV_POINTER_SEND) == 0);
     CHECK(event_occurrences(EV_INPUT_START) == 0);
     CHECK(event_occurrences(EV_INPUT_SHUTDOWN) == 0);
 
-    check_core_owned_cleanup();
+    check_post_adoption_cleanup();
 }
 
 static void test_initial_pointer_failure_shuts_initialized_runtime(void)
@@ -1231,14 +1351,14 @@ static void test_initial_pointer_failure_shuts_initialized_runtime(void)
     pointer_send_results[0] = 0;
     pointer_send_result_count = 1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(event_occurrences(EV_INPUT_INIT) == 1);
     CHECK(pointer_call_count == 1);
     CHECK(event_occurrences(EV_INPUT_START) == 0);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_input_start_failure_shuts_initialized_runtime(void)
@@ -1247,7 +1367,7 @@ static void test_input_start_failure_shuts_initialized_runtime(void)
 
     input_start_result = -1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(event_occurrences(EV_INPUT_INIT) == 1);
     CHECK(pointer_call_count == 1);
@@ -1257,8 +1377,8 @@ static void test_input_start_failure_shuts_initialized_runtime(void)
         diagnostic_index(
             "PSTVNC_STAGE INPUT_READY") < 0);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_worker_error_fails_before_receive_service(void)
@@ -1271,14 +1391,14 @@ static void test_worker_error_fails_before_receive_service(void)
     input_worker_error =
         PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_FULL;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(request_calls == 1);
     CHECK(event_occurrences(EV_INPUT_POP) == 0);
     CHECK(try_receive_calls == 0);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_wheel_release_failure_stops_before_receive(void)
@@ -1310,7 +1430,7 @@ static void test_wheel_release_failure_stops_before_receive(void)
     pointer_send_results[2] = 0;
     pointer_send_result_count = 3;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(pointer_call_count == 3);
 
@@ -1319,15 +1439,10 @@ static void test_wheel_release_failure_stops_before_receive(void)
         PSTVNC_RFB_POINTER_WHEEL_DOWN);
 
     CHECK(pointer_calls[2].button_mask == 0);
-
-    /*
-     * The failed release terminates application publication immediately. The
-     * server-receive path is never entered with an uncertain wheel pulse.
-     */
     CHECK(try_receive_calls == 0);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void set_controller_event(
@@ -1389,8 +1504,7 @@ static void set_mouse_event(
         PSTVNC_INPUT_EVENT_MOUSE_UPDATE;
 
     mouse_update =
-        &input_events[event_index_value].
-            payload.mouse_update;
+        &input_events[event_index_value].payload.mouse_update;
 
     mouse_update->pointer_changed = 1;
     mouse_update->cursor_x = cursor_x;
@@ -1437,11 +1551,6 @@ static void test_osk_foreground_freezes_pointer_and_resumes_after_release(void)
     request_results[0] = 1;
     request_result_count = 1;
 
-    /*
-     * One receive service pass follows each staged input batch. Keep the first
-     * nine loops alive, then terminate after the final resumed desktop mouse
-     * sample has been published.
-     */
     for (receive_index = 0;
          receive_index < 9;
          receive_index++) {
@@ -1457,10 +1566,6 @@ static void test_osk_foreground_freezes_pointer_and_resumes_after_release(void)
 
     input_event_count = 10;
 
-    /*
-     * Establish a non-center cursor with an ordinary left click remotely held
-     * before opening the OSK.
-     */
     set_mouse_event(
         0,
         100,
@@ -1524,12 +1629,8 @@ static void test_osk_foreground_freezes_pointer_and_resumes_after_release(void)
     script_one_input_event_per_loop(
         input_event_count);
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
-    /*
-     * Startup neutral, desktop held click, exact frozen neutralization, then
-     * one post-resume desktop movement. No pointer traffic occurs in between.
-     */
     CHECK(pointer_call_count == 4);
 
     CHECK(pointer_calls[0].button_mask == 0);
@@ -1557,28 +1658,17 @@ static void test_osk_foreground_freezes_pointer_and_resumes_after_release(void)
     CHECK(mouse_rebase_cursor_y == 50);
     CHECK(mouse_rebase_click_buttons == 0);
 
-    /*
-     * Initial desktop, OSK open, OSK selection move, then desktop/no-overlay
-     * close presentation.
-     */
     CHECK(present_call_count == 4);
     CHECK(present_overlay_visible[0] == 0);
     CHECK(present_overlay_visible[1] == 1);
     CHECK(present_overlay_visible[2] == 1);
     CHECK(present_overlay_visible[3] == 0);
 
-    /*
-     * Resume is later than the successful no-overlay presentation.
-     */
     CHECK(
         present_event_positions[3] <
         (size_t)event_index(
             EV_MOUSE_RESUME));
 
-    /*
-     * Start produces ordinary Enter down/up through the existing main-thread
-     * keyboard publisher while OSK owns foreground.
-     */
     CHECK(key_call_count == 2);
     CHECK(key_calls[0].down == 1);
     CHECK(
@@ -1593,8 +1683,8 @@ static void test_osk_foreground_freezes_pointer_and_resumes_after_release(void)
     CHECK(try_receive_calls == 10);
     CHECK(idle_delay_calls == 9);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_osk_suspend_failure_fails_before_foreground_change(void)
@@ -1614,7 +1704,7 @@ static void test_osk_suspend_failure_fails_before_foreground_change(void)
 
     mouse_suspend_result = -1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(mouse_suspend_calls == 1);
     CHECK(mouse_rebase_calls == 0);
@@ -1625,8 +1715,8 @@ static void test_osk_suspend_failure_fails_before_foreground_change(void)
     CHECK(present_overlay_visible[0] == 0);
     CHECK(try_receive_calls == 0);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_osk_neutral_pointer_failure_stops_before_rebase(void)
@@ -1655,7 +1745,7 @@ static void test_osk_neutral_pointer_failure_stops_before_rebase(void)
     pointer_send_results[2] = 0;
     pointer_send_result_count = 3;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(pointer_call_count == 3);
 
@@ -1670,8 +1760,8 @@ static void test_osk_neutral_pointer_failure_stops_before_rebase(void)
     CHECK(present_call_count == 1);
     CHECK(try_receive_calls == 0);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_osk_rebase_failure_stops_before_open(void)
@@ -1691,7 +1781,7 @@ static void test_osk_rebase_failure_stops_before_open(void)
 
     mouse_rebase_result = -1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(mouse_suspend_calls == 1);
     CHECK(mouse_rebase_calls == 1);
@@ -1701,8 +1791,8 @@ static void test_osk_rebase_failure_stops_before_open(void)
     CHECK(present_call_count == 1);
     CHECK(try_receive_calls == 0);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 static void test_osk_resume_failure_occurs_after_overlay_removal(void)
@@ -1755,7 +1845,7 @@ static void test_osk_resume_failure_occurs_after_overlay_removal(void)
 
     mouse_resume_result = -1;
 
-    CHECK(pstvnc_app_run() == -1);
+    CHECK(run_configured_app() == -1);
 
     CHECK(mouse_suspend_calls == 1);
     CHECK(mouse_rebase_calls == 1);
@@ -1771,20 +1861,21 @@ static void test_osk_resume_failure_occurs_after_overlay_removal(void)
         (size_t)event_index(
             EV_MOUSE_RESUME));
 
-    /*
-     * Resume failure terminates before another RFB receive can run.
-     */
     CHECK(try_receive_calls == 3);
 
-    check_input_cleanup_precedes_socket_close();
-    check_core_owned_cleanup();
+    check_input_cleanup_precedes_transport_abort();
+    check_post_adoption_cleanup();
 }
 
 int main(void)
 {
+    test_no_argument_entry_fails_closed();
     test_iop_failure_owns_nothing();
     test_connect_failure_cleans_only_acquired_resources();
+    test_transport_pre_adoption_failure_closes_caller_fd();
+    test_transport_post_adoption_open_failure_has_no_double_close();
     test_session_failure_cleanup_order();
+    test_transport_abort_failure_never_direct_closes();
     test_clean_update_does_not_represent();
     test_invalid_live_frame_fails_before_presentation();
     test_diagnostics_are_best_effort();
