@@ -1,0 +1,81 @@
+DOCUMENT=LEDGE_DICTIONARY_READY
+GENERATED_AT=2026-09-16T13:14:00-04:00
+SOURCE_HEAD=edd0d7a78f315234119c9f81f9eee507d955bf24
+FOREMAN_STATE_REVISION=0010
+ACTIVE_WORK_ITEM_KEY=a002-audio-clock
+STATUS=READY
+
+PURPOSE
+Foreman-ready mechanical integration staging for the completed A002 synchronous PCM/AUDSRV playback-core Reconstruction handoff. This artifact is support evidence/prep only and does not modify canonical dictionaries, generated portal, topology authority, tests/build registration, or product behavior.
+
+SOURCE_BOUNDARY
+Completed Reconstruction handoff: 2f1e71d9f277417fbe0292ed7aa52eb2c12abf32
+Substantive new clean domain/source inspected from that handoff:
+- src/audio/playback.c
+- src/audio/playback.h
+- src/audio/audsrv_service.c
+- src/audio/audsrv_service.h
+- src/audio/SYMBOLS.md
+- tests/unit/audio_playback_test.c
+- tests/unit/audio_audsrv_service_test.c
+- tests/unit/audio_host_stubs/audsrv.h
+- docs/development/source-topology.md
+Current support/integration movement observed through SOURCE_HEAD:
+- 473b4b111f5dbdd2b5db830269e23fc4c8d89387 tooling(a002): admit clean audio domain
+- 37ae75801f7ab558c3b6b0cbb2e8a7879790421 tooling(symbols): run deterministic dictionary reconciliation
+- 6d25e2c0cea036d1f7cd57b42b4bf55df8d05548 docs(symbols): reconcile current clean definitions
+- edd0d7a78f315234119c9f81f9eee507d955bf24 docs(a002): register clean audio owner
+
+DICTIONARY_PORTAL_AUTHORITY_INSPECTED
+- src/audio/SYMBOLS.md @ SOURCE_HEAD, blob a8be03b70aa2b84eeed9def5725a3aae70a40f3e, COVERAGE=COMPLETE
+- docs/reference/SOURCE_SYMBOL_DICTIONARIES.md @ SOURCE_HEAD, blob d97c7a2a7bcba6b54224b49c0ad4b1d7927afd41
+- current generated portal already contains src/audio with 82 symbols
+- docs/development/source-topology.md adoption is present in completed Reconstruction history
+- docs/reference/FILE_AND_SERVICE_MAP.md current owner registration is present at SOURCE_HEAD
+
+EXACT_DEFINITION_DELTA_BY_DIRECTORY
+src/audio:
+- new clean directory introduced by the completed Reconstruction round
+- deterministic reconciliation has already consumed the local dictionary and generated the portal
+- current canonical src/audio symbol count: 82
+- no additional add/remove/rename dictionary row delta remains for this support seat at SOURCE_HEAD
+Other participating source directories:
+- no source-definition delta attributable to the PCM playback-core handoff was identified
+
+PROPOSED_DICTIONARY_ROW_CHANGES
+NONE at SOURCE_HEAD. The previously pending generated-portal addition is already canonical:
+| `src/audio` | [`src/audio/SYMBOLS.md`](../../src/audio/SYMBOLS.md) | COMPLETE | 82 |
+Do not duplicate or hand-edit that generated row.
+
+MECHANICAL_INTEGRATION_STILL_RELEVANT_TO_FOREMAN
+The completed Reconstruction handoff explicitly left these canonical registrations pending. They are not dictionary edits and this seat does not apply them:
+1. tests/Makefile: add src/audio to include authority as needed; register/build/run audio_playback_test and audio_audsrv_service_test using the exact direct-fixture source/stub dependencies proven by Reconstruction.
+2. mk/issue7-clean.mk: add src/audio include path; add audio playback/AUDSRV adapter objects and explicit source prerequisites; link the PS2SDK AUDSRV library required by the concrete adapter. Exact library spelling/order must be confirmed from current PS2SDK/build authority rather than guessed.
+3. scripts/continuity-check.sh: current clean-domain expected set/tooling must admit src/audio where its domain-set check requires it. The worker reported the exact pre-integration project-check failure as expected-domain omission of src/audio.
+4. docs/reference/FILE_AND_SERVICE_MAP.md: already updated at SOURCE_HEAD; no further staging change proposed.
+5. docs/reference/SOURCE_SYMBOL_DICTIONARIES.md: already regenerated at SOURCE_HEAD; no further staging change proposed.
+
+CANONICAL_CHECKS_AFTER_FOREMAN_APPLIES_REMAINING_MECHANICAL_REGISTRATION
+- make -C tests unit
+- python3 scripts/source-dictionary.py check --long (or the repository's current strict canonical wrapper if authority has advanced)
+- python3 scripts/source-dictionary.py aggregate --check when supported by current tooling / verify generated portal remains unchanged
+- scripts/check.sh
+- scripts/check-clean-ps2-compile.sh
+- scripts/build-issue7-clean.sh / scripts/check-issue7-linked-reproducibility.sh according to current stage authority
+- inspect the resulting ledge-reconstruction workflow through settled-tree completion, including project-check, host units, pinned PS2 compile, linked build/reproducibility, and dictionary reconciliation behavior
+
+BEHAVIOR_JUDGMENT_EXCLUDED
+- whether PCM playback P1-P8 is behaviorally accepted
+- AUDSRV service ownership/lifetime semantics
+- worker/thread allocation, stack/priority/chunk policy
+- startup reservoir/common-clock gating
+- application orchestration
+- MPEG/presentation behavior
+- inherited receive-poison repair
+- hardware qualification
+These remain Foreman/Reconstruction/Validation authority as appropriate.
+
+CONCURRENCY_NOTE
+Branch advanced during this wake from starting authority 2f1e71d9f277417fbe0292ed7aa52eb2c12abf32 to SOURCE_HEAD edd0d7a78f315234119c9f81f9eee507d955bf24 through deterministic dictionary/domain/living-map integration. This artifact therefore does not propose stale dictionary edits that have already landed. Remaining items above are only the mechanically observable canonical registration debt from the completed worker handoff and must be revalidated against live HEAD before application.
+
+CONSUMPTION_RULE: Foreman must revalidate SOURCE_HEAD/current blobs before applying; stale artifacts are evidence/prep, never authority.
