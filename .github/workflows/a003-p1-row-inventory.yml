@@ -1,0 +1,36 @@
+name: A003 P1 dictionary row inventory
+
+on:
+  push:
+    branches:
+      - evidence/a003-p1-host-20260916
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inventory mechanically reconciled rows
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          rows = []
+          for line in Path('src/transport/SYMBOLS.md').read_text(encoding='utf-8').splitlines():
+              if not (line.startswith('| ') and line.endswith(' |')):
+                  continue
+              cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+              if len(cells) == 7 and cells[6] == 'A003 MPEG Transport/decoder core':
+                  rows.append(cells)
+          print(f'A003_ROW_COUNT={len(rows)}')
+          seen = set()
+          for name, kind, file_name, owner, scope, desc, context in rows:
+              key = (name, kind, file_name, owner)
+              if key in seen:
+                  continue
+              seen.add(key)
+              print('ROW|' + '|'.join(key) + '|' + desc)
+          PY
