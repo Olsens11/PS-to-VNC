@@ -413,9 +413,10 @@ $(RFB_BRIDGE_TEST): unit/rfb_bridge_test.c ../src/rfb/bridge.c ../src/rfb/bridge
 TRANSPORT_PHYSICAL_STREAM_TEST := .build/transport_physical_stream_test
 TRANSPORT_RUNTIME_TEST := .build/transport_runtime_test
 TRANSPORT_AUDIO_TEST := .build/transport_audio_test
+TRANSPORT_MPEG_TEST := .build/transport_mpeg_test
 
-.PHONY: transport-physical-stream-unit transport-runtime-unit transport-audio-unit
-unit: transport-physical-stream-unit transport-runtime-unit transport-audio-unit
+.PHONY: transport-physical-stream-unit transport-runtime-unit transport-audio-unit transport-mpeg-unit
+unit: transport-physical-stream-unit transport-runtime-unit transport-audio-unit transport-mpeg-unit
 
 transport-physical-stream-unit: $(TRANSPORT_PHYSICAL_STREAM_TEST)
 	./$(TRANSPORT_PHYSICAL_STREAM_TEST)
@@ -447,6 +448,8 @@ $(TRANSPORT_RUNTIME_TEST): \
 	../src/transport/quiesce.c \
 	../src/transport/audio_channel.c \
 	../src/transport/audio_channel.h \
+	../src/transport/mpeg_channel.c \
+	../src/transport/mpeg_channel.h \
 	../src/transport/rfb_channel.c \
 	../src/transport/rfb_channel.h \
 	../src/transport/protocol.c \
@@ -460,6 +463,7 @@ $(TRANSPORT_RUNTIME_TEST): \
 		../src/transport/runtime.c \
 		../src/transport/quiesce.c \
 		../src/transport/audio_channel.c \
+		../src/transport/mpeg_channel.c \
 		../src/transport/rfb_channel.c \
 		../src/transport/protocol.c \
 		-o $(TRANSPORT_RUNTIME_TEST)
@@ -475,6 +479,8 @@ $(TRANSPORT_AUDIO_TEST): \
 	../src/transport/quiesce.c \
 	../src/transport/audio_channel.c \
 	../src/transport/audio_channel.h \
+	../src/transport/mpeg_channel.c \
+	../src/transport/mpeg_channel.h \
 	../src/transport/rfb_channel.c \
 	../src/transport/rfb_channel.h \
 	../src/transport/protocol.c \
@@ -488,9 +494,41 @@ $(TRANSPORT_AUDIO_TEST): \
 		../src/transport/runtime.c \
 		../src/transport/quiesce.c \
 		../src/transport/audio_channel.c \
+		../src/transport/mpeg_channel.c \
 		../src/transport/rfb_channel.c \
 		../src/transport/protocol.c \
 		-o $(TRANSPORT_AUDIO_TEST)
+
+transport-mpeg-unit: $(TRANSPORT_MPEG_TEST)
+	./$(TRANSPORT_MPEG_TEST)
+
+$(TRANSPORT_MPEG_TEST): \
+	unit/transport_mpeg_test.c \
+	unit/transport_host_stubs/kernel.h \
+	../src/transport/runtime.c \
+	../src/transport/runtime.h \
+	../src/transport/quiesce.c \
+	../src/transport/audio_channel.c \
+	../src/transport/audio_channel.h \
+	../src/transport/mpeg_channel.c \
+	../src/transport/mpeg_channel.h \
+	../src/transport/rfb_channel.c \
+	../src/transport/rfb_channel.h \
+	../src/transport/protocol.c \
+	../src/transport/protocol.h \
+	../src/transport/physical_stream.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Iunit/transport_host_stubs \
+		-I../src \
+		-pthread \
+		unit/transport_mpeg_test.c \
+		../src/transport/runtime.c \
+		../src/transport/quiesce.c \
+		../src/transport/audio_channel.c \
+		../src/transport/mpeg_channel.c \
+		../src/transport/rfb_channel.c \
+		../src/transport/protocol.c \
+		-o $(TRANSPORT_MPEG_TEST)
 
 CONFIG_PROFILE_TEST := .build/config_profile_test
 
@@ -586,3 +624,23 @@ $(AUDIO_SESSION_TEST): \
 		unit/audio_session_test.c \
 		../src/audio/session.c \
 		-o $(AUDIO_SESSION_TEST)
+
+MPEG_DECODER_TEST := .build/mpeg_decoder_test
+
+.PHONY: mpeg-decoder-unit
+unit: mpeg-decoder-unit
+
+mpeg-decoder-unit: $(MPEG_DECODER_TEST)
+	./$(MPEG_DECODER_TEST)
+
+$(MPEG_DECODER_TEST): \
+	unit/mpeg_decoder_test.c \
+	../src/mpeg/decoder.c \
+	../src/mpeg/decoder.h \
+	../src/transport/bridge.h \
+	../src/transport/transport.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/mpeg_decoder_test.c \
+		../src/mpeg/decoder.c \
+		-o $(MPEG_DECODER_TEST)
