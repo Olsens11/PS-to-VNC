@@ -2,20 +2,23 @@
  * File synopsis:
  * Defines Transport's session-local runtime above the physical PSTV stream.
  * The runtime owns the sole receiver thread, synchronized logical RFB storage,
- * producer-driven activity rendezvous, RFB flow-control state, and the receiver
- * completion event needed before receiver-touched resources can be reclaimed.
+ * optional synchronized logical AUDIO storage, independent per-channel flow
+ * control/activity rendezvous, and the receiver completion event required before
+ * receiver-touched resources can be reclaimed.
  *
- * This is an internal Transport boundary. It does not parse RFB, decide product
- * recovery policy, expose the physical socket, or use diagnostic counters as
- * synchronization authority. Cross-component session values arrive through the
- * stable validated type in transport.h.
+ * This is an internal Transport boundary. It does not parse RFB, play PCM,
+ * decide product recovery policy, expose the physical socket, or use diagnostic
+ * counters as synchronization authority. Cross-component session values arrive
+ * through stable caller-supplied types in transport.h.
  *
- * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
+ * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
+ * LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md.
  */
 
 #ifndef PSTVNC_TRANSPORT_RUNTIME_H
 #define PSTVNC_TRANSPORT_RUNTIME_H
 
+#include "audio_channel.h"
 #include "physical_stream.h"
 #include "rfb_channel.h"
 #include "transport.h"
@@ -23,55 +26,60 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/*
- * Transitional internal spelling retained only so the already-written runtime
- * implementation and the promoted stable session value remain one C type while
- * the public bridge tranche is assembled. No second configuration structure or
- * independent defaults exist behind this alias.
- */
 typedef pstvnc_transport_session_config_t pstvnc_transport_runtime_config_t;
 
 typedef struct pstvnc_transport_runtime {
     pstvnc_transport_physical_stream_t physical_stream;
     pstvnc_transport_rfb_channel_t rfb_channel;
+    pstvnc_transport_audio_channel_t audio_channel;
 
     uint8_t *rfb_queue_storage;
+    uint8_t *audio_queue_storage;
     void *receiver_stack_allocation;
     unsigned char *receiver_stack;
 
     int rfb_queue_semaphore_id;
     int rfb_activity_semaphore_id;
+    int audio_queue_semaphore_id;
+    int audio_activity_semaphore_id;
     int receiver_done_semaphore_id;
     int receiver_thread_id;
 
     int initialized;
+    int audio_enabled;
     int receiver_thread_started;
     volatile int receiver_done;
     volatile int stop_requested;
     volatile int failed;
 
-    /*
-     * activity_sequence and activity_wait_armed are protected by the RFB queue
-     * semaphore. Producers advance the sequence after committed work becomes
-     * visible and signal the event only when one consumer wait is armed.
-     */
+    /* RFB producer activity is protected by rfb_queue_semaphore_id. */
     uint32_t activity_sequence;
     int activity_wait_armed;
+
+    /* AUDIO producer/terminal activity is protected by audio_queue_semaphore_id. */
+    uint32_t audio_activity_sequence;
+    int audio_activity_wait_armed;
 
     uint32_t rfb_credit_pending;
     uint32_t rfb_initial_credit_bytes;
     uint32_t rfb_credit_batch_bytes;
     int rfb_credit_flush_on_empty;
     int rfb_credit_return_enabled;
-    uint32_t max_data_payload;
 
+    uint32_t audio_credit_pending;
+    uint32_t audio_initial_credit_bytes;
+    uint32_t audio_credit_batch_bytes;
+    int audio_credit_flush_on_empty;
+    int audio_credit_return_enabled;
+
+    uint32_t max_data_payload;
     uint32_t receiver_thread_stack_size;
     int receiver_thread_priority;
 
     /*
      * Zero-length channel-1 DATA carries only the audited finite-session RFB
      * request/commit markers. These flags are product synchronization state,
-     * not diagnostics.
+     * not diagnostics. AUDIO finite completion is owned by audio_channel.
      */
     volatile uint32_t rfb_quiesce_request_received;
     volatile uint32_t rfb_quiesce_boundary_sent;
@@ -81,28 +89,24 @@ typedef struct pstvnc_transport_runtime {
     uint8_t receiver_payload[PSTVNC_TRANSPORT_MAX_PAYLOAD];
 } pstvnc_transport_runtime_t;
 
-/*
- * Adopt one physical socket and allocate the logical-RFB/session resources.
- * The caller supplies already validated cross-component session values.
- */
+/* Preserve the existing RFB-only initialization behavior. */
 int pstvnc_transport_runtime_initialize(
     pstvnc_transport_runtime_t *runtime,
     int socket_fd,
     const pstvnc_transport_session_config_t *config);
 
-/* Start the sole physical receiver after all receiver-visible resources exist. */
+/* Opt in to one logical AUDIO channel using explicit caller/profile values. */
+int pstvnc_transport_runtime_initialize_with_audio(
+    pstvnc_transport_runtime_t *runtime,
+    int socket_fd,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config);
+
 int pstvnc_transport_runtime_start_receiver(
     pstvnc_transport_runtime_t *runtime);
-
-/*
- * Request application-local fatal convergence. Transport marks the request
- * before interrupting its still-owned physical socket so a blocked sole recv()
- * returns and the receiver can publish the normal completion event.
- */
 int pstvnc_transport_runtime_request_stop(
     pstvnc_transport_runtime_t *runtime);
 
-/* Snapshot/wait pair for timer-free producer activity rendezvous. */
 int pstvnc_transport_runtime_rfb_activity_snapshot(
     pstvnc_transport_runtime_t *runtime,
     uint32_t *activity_sequence);
@@ -110,7 +114,6 @@ int pstvnc_transport_runtime_rfb_wait_activity(
     pstvnc_transport_runtime_t *runtime,
     uint32_t *activity_sequence);
 
-/* Logical RFB operations; no caller receives physical socket authority. */
 int pstvnc_transport_runtime_rfb_read_exact(
     pstvnc_transport_runtime_t *runtime,
     void *buffer,
@@ -123,10 +126,27 @@ int pstvnc_transport_runtime_rfb_write_exact(
     size_t count);
 
 /*
- * Ordered finite-RFB shutdown: Pi REQUEST -> PS2 BOUNDARY -> Pi COMMIT -> PS2
- * COMPLETE. Residual bytes after COMMIT are snapshotted/discarded explicitly and
- * never earn parser-consumption credit.
+ * Logical AUDIO consumer seam. read_available() is nonblocking and bounded:
+ * OK returns bytes, WOULD_BLOCK means live producer/no bytes, EXHAUSTED means
+ * the one-shot producer marker is visible and the queue is empty, STOPPED means
+ * session stop, and FAILED/CLOSED are terminal Transport outcomes.
  */
+pstvnc_transport_result_t pstvnc_transport_runtime_audio_read_available(
+    pstvnc_transport_runtime_t *runtime,
+    void *buffer,
+    size_t maximum_count,
+    size_t *read_count);
+pstvnc_transport_result_t pstvnc_transport_runtime_audio_status(
+    pstvnc_transport_runtime_t *runtime,
+    size_t *available_count,
+    int *producer_done);
+int pstvnc_transport_runtime_audio_activity_snapshot(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t *activity_sequence);
+int pstvnc_transport_runtime_audio_wait_activity(
+    pstvnc_transport_runtime_t *runtime,
+    uint32_t *activity_sequence);
+
 int pstvnc_transport_runtime_rfb_quiesce_requested(
     pstvnc_transport_runtime_t *runtime);
 int pstvnc_transport_runtime_rfb_send_quiesce_boundary(
@@ -143,10 +163,6 @@ int pstvnc_transport_runtime_rfb_discard_quiesce_residual(
 int pstvnc_transport_runtime_rfb_send_quiesce_complete(
     pstvnc_transport_runtime_t *runtime);
 
-/*
- * Receiver completion is an explicit event. Resource release is legal only
- * after this proves the receiver can no longer touch channel/session state.
- */
 int pstvnc_transport_runtime_wait_receiver_done(
     pstvnc_transport_runtime_t *runtime);
 int pstvnc_transport_runtime_release(
