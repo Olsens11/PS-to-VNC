@@ -1,0 +1,118 @@
+DOCUMENT=LEDGE_DICTIONARY_READY
+GENERATED_AT=2026-09-16T19:04:47-04:00
+SOURCE_HEAD=78af31b6d5154babe112d6b30b3e0d5ccbe65e9d
+FOREMAN_STATE_REVISION=0013
+ACTIVE_WORK_ITEM_KEY=a003-mpeg-generation
+STATUS=READY
+TARGET_DICTIONARY=src/config/SYMBOLS.md
+TARGET_SOURCE_FILES=src/config/profile.c
+ROWS_REVIEWED=27
+ROWS_PREPARED=18
+ROWS_NEEDS_FOREMAN_REVIEW=0
+
+AUTHORITY_INSPECTED
+- src/config/profile.c blob 1d66aca05bc89eeb69d25eae4f4deba45ac4f8d6 at SOURCE_HEAD.
+- src/config/SYMBOLS.md at SOURCE_HEAD.
+- docs/ledge/LEDGE_FOREMAN_STATE.md revision 0013, blob 51834724f513ea9a3ce68ec1cca37f6fce94d6ba.
+- docs/ledge/work-log/README.md revision 0005, blob e9da26e0f86398463050e86df1f69a8d53dd7b9c.
+- AGENTS.md blob 84fdacda35ab9153766770252d4420c4d4a74355.
+
+BACKLOG_QUALITY_DIAGNOSIS
+The stable A002 config/profile owner remains mechanically complete but contains terse parameter/local descriptions that identify only data flow (for example `Supplies candidate profile.`) rather than the validation or atomic-publication role the value serves. This batch improves the profile.c decode/validation cluster only. Active A003 MPEG source is intentionally not targeted, avoiding overlap with the newly issued P2 packet. No calibration symbols are touched; therefore the desktop-calibration/MPEG-calibration distinction is not implicated by this batch.
+
+APPLY_SUMMARY
+src/config/SYMBOLS.md: replace 18 rows, add 0, remove 0; symbol count unchanged.
+
+REPLACEMENTS — src/config/profile.c
+
+SYMBOL=input owner=pstvnc_config_read_be32
+CURRENT_ROW=| input | parameter | src/config/profile.c | pstvnc_config_read_be32 | local | Supplies encoded bytes. | A002 config/profile |
+PROPOSED_ROW=| input | parameter | src/config/profile.c | pstvnc_config_read_be32 | local | Points to the four CONFIG wire bytes decoded as one big-endian unsigned value. | A002 config/profile |
+
+SYMBOL=raw owner=pstvnc_config_signed_bits
+CURRENT_ROW=| raw | parameter | src/config/profile.c | pstvnc_config_signed_bits | local | Supplies raw signed-offset bits. | A002 config/profile |
+PROPOSED_ROW=| raw | parameter | src/config/profile.c | pstvnc_config_signed_bits | local | Carries the unsigned wire bit pattern that must be preserved exactly when interpreted as a signed presentation offset. | A002 config/profile |
+
+SYMBOL=value owner=pstvnc_config_signed_bits
+CURRENT_ROW=| value | variable | src/config/profile.c | pstvnc_config_signed_bits | local | Stores the bit-preserved signed value. | A002 config/profile |
+PROPOSED_ROW=| value | variable | src/config/profile.c | pstvnc_config_signed_bits | local | Receives the signed int32 representation by memcpy so conversion preserves the wire bits without implementation-defined unsigned-to-signed casting. | A002 config/profile |
+
+SYMBOL=profile owner=pstvnc_config_set_field
+CURRENT_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_set_field | local | Supplies candidate profile. | A002 config/profile |
+PROPOSED_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_set_field | local | Names the unpublished candidate session profile into whose narrow owner subprofile one validated CONFIG field is stored. | A002 config/profile |
+
+SYMBOL=field_id owner=pstvnc_config_set_field
+CURRENT_ROW=| field_id | parameter | src/config/profile.c | pstvnc_config_set_field | local | Supplies clean field identity. | A002 config/profile |
+PROPOSED_ROW=| field_id | parameter | src/config/profile.c | pstvnc_config_set_field | local | Selects which mandatory CONFIG field is being validated and mapped into the candidate profile. | A002 config/profile |
+
+SYMBOL=raw_value owner=pstvnc_config_set_field
+CURRENT_ROW=| raw_value | parameter | src/config/profile.c | pstvnc_config_set_field | local | Supplies raw wire value. | A002 config/profile |
+PROPOSED_ROW=| raw_value | parameter | src/config/profile.c | pstvnc_config_set_field | local | Carries the field's decoded 32-bit wire value before enum, boolean, signed-offset, or owner-specific interpretation. | A002 config/profile |
+
+SYMBOL=profile owner=pstvnc_config_transport_valid
+CURRENT_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_transport_valid | local | Supplies candidate profile. | A002 config/profile |
+PROPOSED_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_transport_valid | local | Supplies the complete unpublished candidate so Transport values can be checked against RFB activation and cross-field constraints. | A002 config/profile |
+
+SYMBOL=transport owner=pstvnc_config_transport_valid
+CURRENT_ROW=| transport | variable | src/config/profile.c | pstvnc_config_transport_valid | local | References the narrow Transport subprofile. | A002 config/profile |
+PROPOSED_ROW=| transport | variable | src/config/profile.c | pstvnc_config_transport_valid | local | Aliases the candidate's Transport subprofile while validating receiver bounds, DATA size, queue capacity, and credit relationships. | A002 config/profile |
+
+SYMBOL=profile owner=pstvnc_config_pcm_valid
+CURRENT_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_pcm_valid | local | Supplies candidate profile. | A002 config/profile |
+PROPOSED_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_pcm_valid | local | Supplies the unpublished candidate so PCM format values and audio presentation offset can be validated against audio activation. | A002 config/profile |
+
+SYMBOL=pcm owner=pstvnc_config_pcm_valid
+CURRENT_ROW=| pcm | variable | src/config/profile.c | pstvnc_config_pcm_valid | local | References the narrow PCM subprofile. | A002 config/profile |
+PROPOSED_ROW=| pcm | variable | src/config/profile.c | pstvnc_config_pcm_valid | local | Aliases the candidate PCM subprofile while checking sample rate, channel count, sample width, volume, and OFF-state zeroing. | A002 config/profile |
+
+SYMBOL=profile owner=pstvnc_config_profile_valid
+CURRENT_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_profile_valid | local | Supplies candidate profile. | A002 config/profile |
+PROPOSED_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_profile_valid | local | Supplies the fully decoded unpublished candidate for composition-mode checks and delegation to Transport and PCM validators before publication. | A002 config/profile |
+
+SYMBOL=profile owner=pstvnc_config_profile_decode
+CURRENT_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_profile_decode | local | Receives the validated immutable profile. | A002 config/profile |
+PROPOSED_ROW=| profile | parameter | src/config/profile.c | pstvnc_config_profile_decode | local | Receives the complete session profile only after every mandatory field and all cross-field constraints have validated successfully. | A002 config/profile |
+
+SYMBOL=payload owner=pstvnc_config_profile_decode
+CURRENT_ROW=| payload | parameter | src/config/profile.c | pstvnc_config_profile_decode | local | Supplies CONFIG wire bytes. | A002 config/profile |
+PROPOSED_ROW=| payload | parameter | src/config/profile.c | pstvnc_config_profile_decode | local | Supplies the complete version/count header and fixed-width CONFIG field/value entries to decode atomically. | A002 config/profile |
+
+SYMBOL=payload_length owner=pstvnc_config_profile_decode
+CURRENT_ROW=| payload_length | parameter | src/config/profile.c | pstvnc_config_profile_decode | local | Supplies CONFIG wire length. | A002 config/profile |
+PROPOSED_ROW=| payload_length | parameter | src/config/profile.c | pstvnc_config_profile_decode | local | Gives the received CONFIG byte count, which must exactly match the header-implied fixed-entry payload length. | A002 config/profile |
+
+SYMBOL=candidate owner=pstvnc_config_profile_decode
+CURRENT_ROW=| candidate | variable | src/config/profile.c | pstvnc_config_profile_decode | local | Holds unpublished decoded state. | A002 config/profile |
+PROPOSED_ROW=| candidate | variable | src/config/profile.c | pstvnc_config_profile_decode | local | Accumulates decoded subprofile state privately so malformed or incomplete CONFIG input cannot partially mutate the caller's published profile. | A002 config/profile |
+
+SYMBOL=seen owner=pstvnc_config_profile_decode
+CURRENT_ROW=| seen | variable | src/config/profile.c | pstvnc_config_profile_decode | local | Tracks unique mandatory fields. | A002 config/profile |
+PROPOSED_ROW=| seen | variable | src/config/profile.c | pstvnc_config_profile_decode | local | Bitmask of decoded field identities used to reject duplicates and prove every mandatory CONFIG field appeared exactly once. | A002 config/profile |
+
+SYMBOL=entry_count owner=pstvnc_config_profile_decode
+CURRENT_ROW=| entry_count | variable | src/config/profile.c | pstvnc_config_profile_decode | local | Stores wire entry count. | A002 config/profile |
+PROPOSED_ROW=| entry_count | variable | src/config/profile.c | pstvnc_config_profile_decode | local | Holds the header-declared number of fixed-width CONFIG entries before exact payload-length and mandatory-field validation. | A002 config/profile |
+
+SYMBOL=expected_length owner=pstvnc_config_profile_decode
+CURRENT_ROW=| expected_length | variable | src/config/profile.c | pstvnc_config_profile_decode | local | Stores exact payload length implied by the header. | A002 config/profile |
+PROPOSED_ROW=| expected_length | variable | src/config/profile.c | pstvnc_config_profile_decode | local | Computes the only valid payload byte length from the fixed header plus the declared number of fixed-width entries, rejecting truncation or trailing data. | A002 config/profile |
+
+PORTAL_TOPOLOGY_MECHANICAL_NOTES
+- Description-only replacements are count-neutral and do not add/remove/rename source definitions.
+- Generated source-dictionary portal content should be regenerated by the repository's canonical dictionary reconciliation tooling after Foreman applies the replacements; topology/domain allowlists should remain unchanged.
+- No test/build registration consequence follows from these description-only replacements.
+
+CANONICAL_CHECKS_AFTER_APPLY
+- Run the repository's deterministic source-dictionary reconciliation/generation command identified by current dictionary tooling.
+- Run the strict/long dictionary audit used by canonical CI.
+- Run scripts/check.sh; verify source topology, dictionary portal synchronization, and work-log checks independently from unrelated historical CI failures.
+
+NEEDS_FOREMAN_REVIEW
+NONE.
+
+ASSUMPTIONS_LIMITATIONS
+- This artifact intentionally covers only a coherent 18-row profile.c semantic cluster; remaining weak src/config rows stay backlog.
+- Active A003 P2 source was not inspected for semantic rewriting because Foreman state 0013 has just issued a moving exact-generation packet; this avoids competing with Reconstruction.
+- Repository authority may advance after this artifact is committed. Revalidate exact current rows and source semantics before application.
+
+CONSUMPTION_RULE=Foreman must revalidate SOURCE_HEAD/current source/current row before applying; stale artifacts are prep evidence, never authority.
