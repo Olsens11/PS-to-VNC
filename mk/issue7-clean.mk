@@ -18,6 +18,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/app.o \
 	$(BUILD_DIR)/audio_playback.o \
 	$(BUILD_DIR)/audio_audsrv_service.o \
+	$(BUILD_DIR)/audio_session.o \
 	$(BUILD_DIR)/config_profile.o \
 	$(BUILD_DIR)/config_text.o \
 	$(BUILD_DIR)/media_clock.o \
@@ -83,6 +84,9 @@ $(BUILD_DIR)/audio_playback.o: src/audio/playback.c src/audio/playback.h src/con
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/audio_audsrv_service.o: src/audio/audsrv_service.c src/audio/audsrv_service.h src/audio/playback.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/audio_session.o: src/audio/session.c src/audio/session.h src/audio/playback.h src/media/clock.h src/transport/bridge.h src/transport/transport.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/config_profile.o: src/config/profile.c src/config/profile.h src/transport/transport.h src/transport/protocol.h | $(BUILD_DIR)
