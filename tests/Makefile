@@ -533,9 +533,10 @@ $(MEDIA_CLOCK_TEST): \
 
 AUDIO_PLAYBACK_TEST := .build/audio_playback_test
 AUDIO_AUDSRV_SERVICE_TEST := .build/audio_audsrv_service_test
+AUDIO_SESSION_TEST := .build/audio_session_test
 
-.PHONY: audio-playback-unit audio-audsrv-service-unit
-unit: audio-playback-unit audio-audsrv-service-unit
+.PHONY: audio-playback-unit audio-audsrv-service-unit audio-session-unit
+unit: audio-playback-unit audio-audsrv-service-unit audio-session-unit
 
 audio-playback-unit: $(AUDIO_PLAYBACK_TEST)
 	./$(AUDIO_PLAYBACK_TEST)
@@ -567,3 +568,21 @@ $(AUDIO_AUDSRV_SERVICE_TEST): \
 		unit/audio_audsrv_service_test.c \
 		../src/audio/audsrv_service.c \
 		-o $(AUDIO_AUDSRV_SERVICE_TEST)
+
+audio-session-unit: $(AUDIO_SESSION_TEST)
+	./$(AUDIO_SESSION_TEST)
+
+$(AUDIO_SESSION_TEST): \
+	unit/audio_session_test.c \
+	../src/audio/session.c \
+	../src/audio/session.h \
+	../src/audio/playback.h \
+	../src/config/profile.h \
+	../src/media/clock.h \
+	../src/transport/bridge.h \
+	../src/transport/transport.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/audio_session_test.c \
+		../src/audio/session.c \
+		-o $(AUDIO_SESSION_TEST)
