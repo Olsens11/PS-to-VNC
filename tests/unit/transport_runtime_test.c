@@ -5,7 +5,7 @@
  * physical-stream primitives provide a blocking sole-receiver seam without
  * sleeps or timeouts. The fixture proves dispatch/fail-closed behavior,
  * producer activity, parser-credit accounting, fragmentation, finite quiesce,
- * fatal-stop completion ordering, and repeatable lifecycle ownership.
+ * fatal-stop completion ordering, retryable failure, and repeatable ownership.
  *
  * Context: LEDGE_FOREMAN_STATE revision 0003, packet C2-C7.
  */
@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "transport_host_stubs/kernel.h"
 #include "transport/protocol.h"
 #include "transport/rfb_channel.h"
 #include "transport/runtime.h"
@@ -87,13 +88,11 @@ typedef struct fake_semaphore {
 static fake_semaphore_t fake_semaphores[MAX_FAKE_SEMAS];
 static int create_sema_calls;
 static int create_sema_fail_on_call;
-static int delete_sema_calls;
 static int receiver_done_semaphore_id = -1;
 
 typedef struct fake_thread {
     int used;
     int started;
-    int joined;
     int status;
     ee_thread_t definition;
     void *argument;
@@ -104,10 +103,11 @@ static fake_thread_t fake_threads[MAX_FAKE_THREADS];
 static pthread_mutex_t thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int create_thread_calls;
 static int create_thread_fail;
-static int start_thread_calls;
 static int start_thread_fail;
 static int delete_thread_calls;
 static int terminate_thread_calls;
+static int fail_first_refer;
+static int failed_refer_consumed;
 static int force_first_refer_running;
 static int forced_refer_consumed;
 static __thread int current_fake_thread_id = -1;
@@ -162,7 +162,6 @@ int DeleteSema(int semaphore_id)
         return -1;
 
     semaphore = &fake_semaphores[semaphore_id];
-    delete_sema_calls++;
     pthread_mutex_destroy(&semaphore->mutex);
     pthread_cond_destroy(&semaphore->condition);
     memset(semaphore, 0, sizeof(*semaphore));
@@ -257,7 +256,6 @@ int StartThread(int thread_id, void *argument)
 {
     int *thread_id_copy;
 
-    start_thread_calls++;
     if (start_thread_fail || thread_id <= 0 ||
         thread_id >= MAX_FAKE_THREADS || !fake_threads[thread_id].used)
         return -1;
@@ -296,6 +294,11 @@ int ReferThreadStatus(int thread_id, ee_thread_status_t *status)
         return -1;
 
     record_event(EVENT_REFER_THREAD);
+    if (fail_first_refer && !failed_refer_consumed) {
+        failed_refer_consumed = 1;
+        return -1;
+    }
+
     pthread_mutex_lock(&thread_mutex);
     if (force_first_refer_running && !forced_refer_consumed) {
         status->status = THS_RUNNING;
@@ -390,7 +393,6 @@ static int physical_adopt_fail;
 static int physical_release_calls;
 static int physical_shutdown_calls;
 static int physical_shutdown_result = 1;
-static pstvnc_transport_runtime_t *active_runtime;
 
 static void reset_fake_physical(void)
 {
@@ -418,7 +420,6 @@ static void reset_fake_physical(void)
     physical_release_calls = 0;
     physical_shutdown_calls = 0;
     physical_shutdown_result = 1;
-    active_runtime = NULL;
 }
 
 static void reset_fixture(void)
@@ -426,14 +427,14 @@ static void reset_fixture(void)
     destroy_unused_host_state();
     create_sema_calls = 0;
     create_sema_fail_on_call = 0;
-    delete_sema_calls = 0;
     receiver_done_semaphore_id = -1;
     create_thread_calls = 0;
     create_thread_fail = 0;
-    start_thread_calls = 0;
     start_thread_fail = 0;
     delete_thread_calls = 0;
     terminate_thread_calls = 0;
+    fail_first_refer = 0;
+    failed_refer_consumed = 0;
     force_first_refer_running = 0;
     forced_refer_consumed = 0;
 
@@ -639,7 +640,8 @@ static void clear_send_records(void)
 static uint32_t credit_record_amount(size_t index)
 {
     CHECK(index < send_record_count);
-    CHECK(send_records[index].payload_length == PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE);
+    CHECK(send_records[index].payload_length ==
+        PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE);
     return pstvnc_transport_read_be32(send_records[index].payload);
 }
 
@@ -649,7 +651,6 @@ static void initialize_runtime(
 {
     memset(runtime, 0xa5, sizeof(*runtime));
     CHECK(pstvnc_transport_runtime_initialize(runtime, 91, config) == 1);
-    active_runtime = runtime;
     receiver_done_semaphore_id = runtime->receiver_done_semaphore_id;
     CHECK(runtime->initialized == 1);
 }
@@ -690,7 +691,6 @@ static void test_initialize_and_start_failure_ownership(void)
     CHECK(runtime.receiver_stack_allocation == NULL);
 
     reset_fixture();
-    config = make_config();
     physical_adopt_fail = 1;
     CHECK(pstvnc_transport_runtime_initialize(&runtime, 91, &config) == 0);
     CHECK(physical_adopt_calls == 1);
@@ -698,7 +698,6 @@ static void test_initialize_and_start_failure_ownership(void)
     CHECK(runtime.initialized == 0);
 
     reset_fixture();
-    config = make_config();
     initialize_runtime(&runtime, &config);
     send_fail_on_call = 1;
     CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 0);
@@ -951,7 +950,7 @@ static void test_finite_quiesce_order_is_distinct_from_fatal_abort(void)
         sizeof(residual));
     wait_for_receive_calls(3);
 
-    /* Pi COMMIT: the next zero-length RFB DATA is accepted only after BOUNDARY. */
+    /* Pi COMMIT: next zero-length RFB DATA is accepted only after BOUNDARY. */
     push_rx_frame(
         PSTVNC_TRANSPORT_FRAME_DATA,
         PSTVNC_TRANSPORT_CHANNEL_RFB,
@@ -1009,13 +1008,32 @@ static void test_fatal_stop_completion_precedes_reclaim_and_fresh_session(void)
     CHECK(runtime.receiver_stack_allocation == stack_before);
     CHECK(physical_release_calls == 0);
 
-    CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 1);
+    /* A failed interrupt publishes stop intent but cannot authorize reclaim. */
+    physical_shutdown_result = 0;
+    CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 0);
     CHECK(runtime.stop_requested == 1);
+    CHECK(runtime.receiver_done == 0);
     CHECK(physical_shutdown_calls == 1);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 0);
+    CHECK(physical_release_calls == 0);
+
+    /* Retry reissues the owned interrupt; stop_requested alone is insufficient. */
+    physical_shutdown_result = 1;
+    CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 1);
+    CHECK(physical_shutdown_calls == 2);
     CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
     CHECK(runtime.receiver_done == 1);
     CHECK(runtime.failed == 0);
 
+    /* A pre-reclaim kernel-status failure leaves Transport ownership retryable. */
+    fail_first_refer = 1;
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 0);
+    CHECK(runtime.initialized == 1);
+    CHECK(runtime.rfb_queue_storage == queue_before);
+    CHECK(runtime.receiver_stack_allocation == stack_before);
+    CHECK(physical_release_calls == 0);
+
+    fail_first_refer = 0;
     force_first_refer_running = 1;
     CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
     CHECK(terminate_thread_calls == 1);
