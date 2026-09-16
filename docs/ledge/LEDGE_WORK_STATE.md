@@ -1,24 +1,24 @@
 # Ledge Reconstruction — Current Work State
 
 DOCUMENT=LEDGE_WORK_STATE
-STATE_REVISION=0015
-RECORDED_AT=2026-09-15T22:32:30-04:00
+STATE_REVISION=0016
+RECORDED_AT=2026-09-15T23:31:40-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_STATE_REVISION=0014
-SUPERSEDES_STATE_REVISION=0014
+BASED_ON_STATE_REVISION=0015
+SUPERSEDES_STATE_REVISION=0015
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
 ## Authority synthesized
 
-- Branch `ledge/h1-all-guns`; pre-write authority `e308b548ebb685bfdf1b73a79832f7a1d52b5628`.
+- Branch `ledge/h1-all-guns`; pre-write authority `801d8c89800b4de3ae2812d33157aa96a31a8c1b`.
 - Forensic H1 authority `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`.
 - Governing reconstruction contract revision 0005 and immutable work-log contract revision 0001.
 - Audit state revision 0007: seeded audit complete; A001-A006 explicitly reconstruction-ready.
-- Reconstruction state revision 0007 remains the behavior baton; A001 remains active.
-- Foreman state revision 0002 is current planning/integration authority and supersedes the standalone Integration/Evidence seat.
-- Validation state revision 0004 is an older snapshot; newer immutable validation evidence continues to keep V003/V004 open and A001 not VALIDATION_READY.
-- Reconstruction A's 22:30 shift record at commit `e308b548ebb685bfdf1b73a79832f7a1d52b5628` reports `FOREMAN_GOAL_RESULT=BLOCKED` against Foreman packet A1-A5, with no DUT mutation.
+- Reconstruction state revision 0007 is stale relative to newer committed A001 source/log evidence but remains the last reconstruction lane snapshot.
+- Foreman state revision 0002 remains the last committed planning/integration snapshot; its 23:00 B packet has now been consumed and materially advanced.
+- Validation state revision 0005 and findings revision 0004 are current validation authority at this snapshot: V003/V004 remain OPEN and V005 HIGH/OPEN blocks VALIDATION_READY.
+- Interactive Reconstruction B immutable handoff ending at `801d8c89800b4de3ae2812d33157aa96a31a8c1b` reports `FOREMAN_GOAL_RESULT=PARTIAL`: A1-A5 source/test-source criteria were completed; B1 and B6 met; B2-B5 remain partial for explicit lifecycle/config/test reasons.
 
 Unknown external/Pi-local dirty work remains outside connector visibility and is neither overwritten nor declared absent.
 
@@ -29,28 +29,30 @@ Unknown external/Pi-local dirty work remains outside connector visibility and is
 - `AUDIT`: none.
 - `RECONSTRUCTION_READY`: A002-A006 queued behind A001 dependency order.
 - `RECONSTRUCTING`: A001 behavior/source active.
-- `FOREMAN_PLANNED/INTEGRATING`: Foreman state 0002 owns quantified A/B packets plus non-behavioral integration/evidence chores.
+- `FOREMAN_PLANNED/INTEGRATING`: Foreman state 0002 is now stale in packet outcome: its B packet was consumed successfully enough to complete the previously blocked A seam and begin B lifecycle work. The next Foreman state must consume B's PARTIAL result plus V005 before issuing the next A/B goals.
 - `VALIDATION_READY`: none.
 - `PASS`: audit readiness plus bounded static/provisional validation results only; no complete A001 PASS.
-- `BLOCKED`: Reconstruction A's 22:30 packet is execution-tool blocked on safe coherent whole-file mutation of the large RFB session migration; this is not a repository-design blocker. A001 promotion also remains gated by coherent live-path/config integration, V003/V004, executable/build/reproducibility evidence, and lifecycle/known-defect proof.
-- `HARDWARE_PENDING`: none promoted for reconstructed tranches; no coherent machine-validated reconstructed DUT has reached the physical gate.
+- `BLOCKED`: V005 HIGH/OPEN is the current product-behavior blocker to A001 promotion: application-local post-adoption failure can wait for receiver completion without first causing a healthy receiver blocked in physical receive to terminate. V004 remains an integration/evidence blocker and V003 remains open.
+- `HARDWARE_PENDING`: no reconstructed tranche has reached physical qualification; historical H1 hardware evidence remains forensic only.
 
 ## Foreman goal and cadence health
 
-Cadence authority in Foreman state 0002 is healthy and correctly staggered: B anchor 21:30 every 90 minutes, Foreman 22:00 every 90 minutes, A 22:30 every 90 minutes. Thus one crew seat begins every 30 minutes and each seat repeats every 90 minutes. The next planned B start is 23:00, Foreman 23:30, A 00:00.
+Cadence remains correctly staggered under contract revision 0005: B 23:00, Foreman 23:30, A 00:00, with each seat repeating every 90 minutes and one crew seat beginning every 30 minutes.
 
-Goal-packet coverage is healthy for the immediate upcoming crew work: Foreman state 0002 assigned A's 22:30 A001 RFB-session migration packet and B's 23:00 conditional A001 lifecycle packet with explicit deliverables, acceptance criteria, invariants, blockers, and fallback/stretch work. A's completed log correctly reports `FOREMAN_GOAL_RESULT=BLOCKED` and criterion-level status. It did not substitute chores or self-selected microtasks.
+Goal governance for the completed 23:00 B work is healthy: Foreman state 0002 supplied explicit B1-B6 criteria and fallback semantics, and the completed interactive B handoff reports `FOREMAN_GOAL_RESULT=PARTIAL` with criterion-level dispositions rather than substituting Foreman chores. B used the authorized fallback to finish A1-A5 after A's execution-surface blocker, then safely advanced the application lifecycle portion.
 
-A's blocker materially affects B's primary path: `rfb_session` remains socket-shaped. Under the already-published B packet, B must therefore use its authorized fallback—finish remaining A acceptance criteria where safe/non-colliding—or, if the same mutation-surface limitation prevents safe behavior work, report BLOCKED rather than create a competing half-live app path or substitute Foreman chores.
+The prior A tooling blocker is disproven as a repository-wide blocker: B obtained the exact full `rfb_session.c` blob safely and completed the coherent migration. It remains truthful historical evidence about A's worker surface at 22:30, not current A001 design authority.
 
-The Foreman should treat A's 75-second blocked shift as evidence about execution surface, not as evidence that the packet was oversized or semantically invalid. Before the next A/B packets, it should account for whether the available worker surface can safely patch/materialize large source files.
+The 23:30 Foreman packet is not yet committed at this snapshot. This is not itself a cadence violation because the Foreman seat is contemporaneously due; however A's upcoming 00:00 shift must not begin behavior work without a newer bounded packet that consumes B's PARTIAL result and V005.
 
 ## Architecture / ownership findings
 
-- Audit -> reconstruction dependency discipline remains coherent: only audit-ready A001 is being consumed; A002-A006 remain queued.
-- Foreman/A/B ownership discipline remains coherent in committed evidence: Foreman plans/integrates; A/B own behavior; Validation remains independent.
-- The superseded standalone Integration/Evidence state is historical evidence only under contract 0005; current non-behavioral chores belong to Foreman state.
-- One physical PSTV owner, RFB complete-message safe-boundary ownership, parser-consumption versus residual-discard distinction, receiver-completion-before-reclaim, and inherited receive-poison accounting remain governing A001 invariants.
+- Audit -> reconstruction dependency discipline remains coherent: only audit-ready A001 is active; A002-A006 remain queued.
+- RFB session migration materially advances the one-physical-owner architecture: `rfb_session` no longer owns/requires a physical descriptor and protocol I/O is through the logical RFB bridge.
+- Application descriptor adoption into Transport is now present, but deterministic fatal convergence is incomplete. V005 correctly distinguishes receiver-completion-before-reclaim from the separate requirement to cause a blocked receiver to terminate after an application-local fatal failure.
+- Server-driven finite RFB quiescence remains distinct from application-local fatal abort; the next behavior fix must preserve that distinction and must not add a guessed timeout, second receiver, unsafe close-before-completion, or hidden receive-poison workaround.
+- Concrete production authority for all eight Transport session-config values remains unresolved; H1 evidence establishes per-session Pi-supplied CONFIG semantics rather than authority for fixed defaults.
+- V004 dictionary/topology/portal/canonical integration remains Foreman-owned non-behavioral work.
 - No hardware qualification is inferred.
 
 ## Exact next safe actions
@@ -59,16 +61,16 @@ The Foreman should treat A's 75-second blocked shift as evidence about execution
 Remain idle unless new evidence exposes an unexplained H1 responsibility.
 
 ### Foreman
-At next wake, consume A's BLOCKED result before issuing/revising packets. Preserve B's 23:00 fallback semantics, assess the mutation-surface limitation explicitly, and spend remaining capacity on Foreman-owned integration/evidence/preflight. Do not implement DUT behavior.
-
-### Reconstruction B
-At 23:00 re-read A's BLOCKED handoff and current HEAD. Do not execute the conditional app lifecycle primary path while `rfb_session` remains socket-shaped. Attempt the packet's authorized fallback only if the worker surface can safely perform the coherent RFB-session migration; otherwise report criterion-level BLOCKED without substituting chores.
+Consume B's PARTIAL result and Validation V005 immediately. Publish the next bounded A/B packet before A's 00:00 wake, making deterministic Transport-owned fatal convergence the highest-priority behavior objective. Preserve V004 and canonical integration/evidence as Foreman chores, and explicitly account for the unresolved per-session CONFIG producer without inventing values.
 
 ### Reconstruction A
-At its next assigned packet, consume newer Foreman authority. Do not repeat the same unsafe whole-file replacement strategy unless tooling/surface capability has changed or a safe bounded mutation method is available.
+At 00:00 consume the newer Foreman packet. Treat V005 as the highest-priority A001 behavior defect: reconstruct an explicit Transport-owned application-requested fatal convergence operation that causes the privately owned physical receive to unblock/terminate, proves receiver completion, then permits reclamation. Migrate/strengthen application lifecycle tests as assigned. Do not begin A002.
+
+### Reconstruction B
+At its next wake consume newer Foreman authority and continue only the assigned A001 behavior goal. Do not reinterpret the old A tooling blocker as current authority; B already disproved it for the repository surface.
 
 ### Validation
-Continue independent review of completed committed increments only. Keep V003/V004 open until their actual gates are satisfied; do not interpret A's blocker as a validation defect or product PASS.
+Independently review the next V005 disposition first. Keep V003/V004/V005 open until evidence actually closes them; require behavior-specific proof of deterministic post-adoption fatal convergence and executable lifecycle evidence before VALIDATION_READY.
 
 ### Continuity
-Continue Foreman-aware reconciliation, verify each upcoming A/B packet exists before wake, verify completed A/B logs carry `FOREMAN_GOAL_RESULT`, and preserve tool-surface blockers distinctly from repository/design blockers.
+Reconcile the imminent Foreman 23:30 packet and A 00:00 result on the next wake. Verify the packet explicitly consumes `FOREMAN_GOAL_RESULT=PARTIAL`, V005, config-authority gap, and V004 ownership; preserve all historical snapshots as true-at-time evidence.
