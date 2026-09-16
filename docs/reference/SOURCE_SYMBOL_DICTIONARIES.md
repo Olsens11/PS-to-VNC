@@ -10,6 +10,7 @@ This portal is generated from participating product `SYMBOLS.md` files.
 | `src/display` | [`src/display/SYMBOLS.md`](../../src/display/SYMBOLS.md) | COMPLETE | 17 |
 | `src/framebuffer` | [`src/framebuffer/SYMBOLS.md`](../../src/framebuffer/SYMBOLS.md) | COMPLETE | 94 |
 | `src/input` | [`src/input/SYMBOLS.md`](../../src/input/SYMBOLS.md) | COMPLETE | 506 |
+| `src/media` | [`src/media/SYMBOLS.md`](../../src/media/SYMBOLS.md) | COMPLETE | 146 |
 | `src/platform` | [`src/platform/SYMBOLS.md`](../../src/platform/SYMBOLS.md) | COMPLETE | 88 |
 | `src/rfb` | [`src/rfb/SYMBOLS.md`](../../src/rfb/SYMBOLS.md) | COMPLETE | 345 |
 | `src/transport` | [`src/transport/SYMBOLS.md`](../../src/transport/SYMBOLS.md) | COMPLETE | 422 |
