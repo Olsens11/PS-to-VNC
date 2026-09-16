@@ -66,13 +66,15 @@ jobs:
           ./scripts/build-issue7-clean.sh | tee /tmp/ledge-build-1.txt
           cp build/reconstruction/issue7/PS-to-VNC-Issue7.ELF /tmp/ledge-first.elf
           sha256sum /tmp/ledge-first.elf | tee /tmp/ledge-first.sha256
-          ./scripts/testkit/pt-load-fingerprint.sh /tmp/ledge-first.elf > /tmp/ledge-first.ptload
+          ./scripts/testkit/pt-load-fingerprint.sh /tmp/ledge-first.elf | tee /tmp/ledge-first.ptload.full
+          grep -E '^(PT_LOAD_SEGMENTS|PT_LOAD_SHA256|PT_LOAD_BYTES)=' /tmp/ledge-first.ptload.full > /tmp/ledge-first.ptload
       - name: Rebuild and prove current-source reproducibility
         run: |
           ./scripts/build-issue7-clean.sh | tee /tmp/ledge-build-2.txt
           cmp /tmp/ledge-first.elf build/reconstruction/issue7/PS-to-VNC-Issue7.ELF
           sha256sum build/reconstruction/issue7/PS-to-VNC-Issue7.ELF | tee /tmp/ledge-second.sha256
-          ./scripts/testkit/pt-load-fingerprint.sh build/reconstruction/issue7/PS-to-VNC-Issue7.ELF > /tmp/ledge-second.ptload
+          ./scripts/testkit/pt-load-fingerprint.sh build/reconstruction/issue7/PS-to-VNC-Issue7.ELF | tee /tmp/ledge-second.ptload.full
+          grep -E '^(PT_LOAD_SEGMENTS|PT_LOAD_SHA256|PT_LOAD_BYTES)=' /tmp/ledge-second.ptload.full > /tmp/ledge-second.ptload
           cmp /tmp/ledge-first.ptload /tmp/ledge-second.ptload
           echo 'LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS'
       - name: Preserve unqualified identity-ready linked ELF
