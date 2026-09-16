@@ -43,7 +43,8 @@ The current clean-generation directories are:
 | `src/framebuffer/` | authoritative CPU-side remote desktop image |
 | `src/input/` | controller facts, libpad-facing project use, semantic input, keyboard, mouse |
 | `src/platform/` | genuinely PS2-specific system, network, and graphics mechanisms |
-| `src/rfb/` | RFB wire/session/framing and socket-facing protocol seams |
+| `src/rfb/` | RFB wire/session parsing, logical-stream adaptation, and complete-message safe-boundary policy |
+| `src/transport/` | sole physical PSTV stream/receiver, framing/sequence, logical-channel storage/flow control, and Transport-owned session lifecycle |
 | `src/ui/` | local foreground, controller-to-local routing, OSK model/rendering/presentation |
 
 Current clean C/H files directly in `src/` are restricted to:
