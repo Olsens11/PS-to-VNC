@@ -38,6 +38,7 @@ The current clean-generation directories are:
 | Directory | Responsibility |
 |---|---|
 | `src/` | executable entry point and application coordinator only |
+| `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values, and small config-text helpers |
 | `src/diagnostics/` | diagnostics transport and runtime identity |
 | `src/display/` | platform-neutral display/presentation conversion |
 | `src/framebuffer/` | authoritative CPU-side remote desktop image |
@@ -63,13 +64,20 @@ Each clean subdirectory owns its own sibling:
 
 ## Retained pre-refresh source
 
-`src/config/` and `src/video/` currently contain retained pre-refresh source.
-Their physical presence is not clean-generation adoption.
+`src/video/` currently contains retained pre-refresh source. Its physical
+presence is not clean-generation adoption.
 
-A future configuration, display-model, or other reconstruction stage may adopt,
-replace, move, or delete that retained material deliberately. The moment a
-source file becomes current clean product source, it must satisfy this policy,
-the clean-source synopsis policy, and directory-owned dictionary completeness.
+`src/config/` was deliberately adopted into the clean generation during A002
+configuration/profile reconstruction on 2026-09-16. The new `profile.{c,h}`
+owns the bounded production CONFIG value boundary; the existing `text.{c,h}`
+helpers were adopted behavior-identically as local configuration utilities.
+This adoption does not authorize live CONFIG negotiation, audio runtime,
+media-clock runtime, or video/MPEG behavior.
+
+A future display-model or other reconstruction stage may adopt, replace, move,
+or delete remaining retained material deliberately. The moment a source file
+becomes current clean product source, it must satisfy this policy, the
+clean-source synopsis policy, and directory-owned dictionary completeness.
 
 Retained pre-refresh files may also coexist with clean files inside an active
 directory. Their presence does not expand clean-generation coverage implicitly.
@@ -170,9 +178,11 @@ completed stage requires the long/complete/strict gate.
 
 ## Historical adoption record
 
-The change that established this topology is recorded at:
+The change that established the domain topology is recorded at:
 
     docs/reconstruction/2026-09-05_SOURCE_TOPOLOGY_ADOPTION.md
 
-That record contains the before/after context, commit identities, dictionary
-snapshot, and qualification-transfer result.
+That record contains the original before/after context, commit identities,
+dictionary snapshot, and qualification-transfer result. The A002 clean
+configuration-domain adoption is recorded by its immutable reconstruction work
+log and the living topology/map updates made with that source tranche.
