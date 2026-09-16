@@ -123,3 +123,26 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | published_pointer | variable | src/app.c | pstvnc_app_run | local | Tracks the remote pointer coordinates and ordinary clicks last proven published successfully to the VNC server. | Issue #38 published-state authority |
 | input_runtime_ready | variable | src/app.c | pstvnc_app_run | local | Tracks whether the controller/input runtime was started and therefore requires cooperative shutdown during cleanup. | Issue #38 lifecycle |
 | receive_result | variable | src/app.c | pstvnc_app_run | local | Stores the responsive RFB receive-service result used to distinguish idle polling, a completed update, and session failure. | Issue #38 responsive RFB scheduling |
+| pstvnc_app_run_with_transport_config | function | src/app.c | app | file | Defines pstvnc_app_run_with_transport_config as a current clean-source function. | mechanically reconciled current clean source |
+| transport_config | parameter | src/app.c | pstvnc_app_run_with_transport_config | local | Defines transport_config as a current clean-source parameter. | mechanically reconciled current clean source |
+| desktop_ready | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines desktop_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| diagnostics_ready | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines diagnostics_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| fatal | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines fatal as a current clean-source variable. | mechanically reconciled current clean source |
+| framebuffer | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines framebuffer as a current clean-source variable. | mechanically reconciled current clean source |
+| graphics_ready | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines graphics_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| gs_ready | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines gs_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| input_ready | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines input_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| input_runtime | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines input_runtime as a current clean-source variable. | mechanically reconciled current clean source |
+| input_runtime_ready | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines input_runtime_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| local_controller | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines local_controller as a current clean-source variable. | mechanically reconciled current clean source |
+| local_ui | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines local_ui as a current clean-source variable. | mechanically reconciled current clean source |
+| mouse_interpretation_suspended | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines mouse_interpretation_suspended as a current clean-source variable. | mechanically reconciled current clean source |
+| net_ready | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines net_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| osk | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines osk as a current clean-source variable. | mechanically reconciled current clean source |
+| published_pointer | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines published_pointer as a current clean-source variable. | mechanically reconciled current clean source |
+| receive_result | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines receive_result as a current clean-source variable. | mechanically reconciled current clean source |
+| session | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines session as a current clean-source variable. | mechanically reconciled current clean source |
+| socket_fd | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines socket_fd as a current clean-source variable. | mechanically reconciled current clean source |
+| transport_session_active | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines transport_session_active as a current clean-source variable. | mechanically reconciled current clean source |
+| pstvnc_app_run_with_transport_config | function declaration | src/app.h | app interface | public | Defines pstvnc_app_run_with_transport_config as a current clean-source function declaration. | mechanically reconciled current clean source |
+| transport_config | prototype parameter | src/app.h | pstvnc_app_run_with_transport_config | local | Defines transport_config as a current clean-source prototype parameter. | mechanically reconciled current clean source |

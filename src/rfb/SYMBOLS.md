@@ -140,17 +140,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | button_mask | prototype parameter | src/rfb/rfb.h | pstvnc_rfb_build_pointer_event | public | Declares the already-mapped native RFB button mask accepted by the wire helper. | Issue #38 pointer publication |
 | x | prototype parameter | src/rfb/rfb.h | pstvnc_rfb_build_pointer_event | public | Declares the logical remote pointer X coordinate. | Issue #38 pointer publication |
 | y | prototype parameter | src/rfb/rfb.h | pstvnc_rfb_build_pointer_event | public | Declares the logical remote pointer Y coordinate. | Issue #38 pointer publication |
-| PSTVNC_RFB_IO_H | include guard | src/rfb/rfb_io.h | RFB transport interface | file | Prevents repeated inclusion of exact I/O seam declarations. | clean source interface |
-| pstvnc_rfb_io_read_exact | function declaration | src/rfb/rfb_io.h | RFB transport seam | platform | Requires the transport to deliver an exact protocol byte count or fail. | RFB framing across TCP |
-| socket_fd | parameter | src/rfb/rfb_io.h | pstvnc_rfb_io_read_exact | platform | Identifies the connected socket from which exact bytes are required. | RFB framing across TCP |
-| buffer | parameter | src/rfb/rfb_io.h | pstvnc_rfb_io_read_exact | platform | Receives exactly the requested number of protocol bytes. | RFB framing across TCP |
-| count | parameter | src/rfb/rfb_io.h | pstvnc_rfb_io_read_exact | platform | Gives the exact byte count whose transfer defines success. | RFB framing across TCP |
-| pstvnc_rfb_io_write_exact | function declaration | src/rfb/rfb_io.h | RFB transport seam | platform | Requires the transport to send an exact protocol byte count or fail. | RFB framing across TCP |
-| socket_fd | parameter | src/rfb/rfb_io.h | pstvnc_rfb_io_write_exact | platform | Identifies the connected socket to which exact bytes are written. | RFB framing across TCP |
-| buffer | parameter | src/rfb/rfb_io.h | pstvnc_rfb_io_write_exact | platform | Supplies exactly the protocol bytes that must be written. | RFB framing across TCP |
-| count | parameter | src/rfb/rfb_io.h | pstvnc_rfb_io_write_exact | platform | Gives the exact byte count whose transfer defines success. | RFB framing across TCP |
-| pstvnc_rfb_io_poll_receive | function declaration | src/rfb/rfb_io.h | RFB transport seam | platform | Declares a nonblocking receive-prefetch check that reports whether at least one server byte is ready without advancing protocol parsing. | Issue #38 responsive RFB scheduling |
-| socket_fd | prototype parameter | src/rfb/rfb_io.h | pstvnc_rfb_io_poll_receive | platform | Declares the synchronized RFB socket whose receive readiness is checked without blocking. | RFB exact I/O seam |
 | PSTVNC_RFB_INITIAL_COVERAGE_BYTES | macro | src/rfb/rfb_session.c | RFB session | file | Sizes the bitmap used to prove unique initial-frame pixel coverage. | initial authoritative Raw frame proof |
 | initial_frame_coverage | variable | src/rfb/rfb_session.c | RFB session | file | Stores temporary per-pixel initial-frame coverage bits for the single owned session. | initial authoritative Raw frame proof |
 | read_be32 | function | src/rfb/rfb_session.c | RFB session parser | file | Decodes one four-byte big-endian field used by streamed server messages. | RFB server-message framing |
@@ -158,15 +147,12 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | read_be16 | function | src/rfb/rfb_session.c | RFB session parser | file | Decodes one two-byte big-endian field used by streamed server messages. | RFB server-message framing |
 | bytes | parameter | src/rfb/rfb_session.c | read_be16 | local | Supplies two network-order bytes to decode. | RFB server-message framing |
 | read_exact | function | src/rfb/rfb_session.c | RFB session parser | file | Converts the platform exact-read convention into a boolean session helper. | RFB framing across TCP |
-| socket_fd | parameter | src/rfb/rfb_session.c | read_exact | local | Identifies the synchronized session socket to read. | RFB framing across TCP |
 | buffer | parameter | src/rfb/rfb_session.c | read_exact | local | Receives the exact requested bytes. | RFB framing across TCP |
 | count | parameter | src/rfb/rfb_session.c | read_exact | local | Gives the exact protocol byte count required. | RFB framing across TCP |
 | write_exact | function | src/rfb/rfb_session.c | RFB session parser | file | Converts the platform exact-write convention into a boolean session helper. | RFB framing across TCP |
-| socket_fd | parameter | src/rfb/rfb_session.c | write_exact | local | Identifies the synchronized session socket to write. | RFB framing across TCP |
 | buffer | parameter | src/rfb/rfb_session.c | write_exact | local | Supplies the exact protocol bytes to write. | RFB framing across TCP |
 | count | parameter | src/rfb/rfb_session.c | write_exact | local | Gives the exact protocol byte count required. | RFB framing across TCP |
 | read_bounded_text | function | src/rfb/rfb_session.c | RFB session parser | file | Retains bounded diagnostic text while consuming the server field to its exact boundary. | RFB server-message framing |
-| socket_fd | parameter | src/rfb/rfb_session.c | read_bounded_text | local | Identifies the socket carrying the declared text field. | RFB server-message framing |
 | length | parameter | src/rfb/rfb_session.c | read_bounded_text | local | Gives the complete server-declared field length that must be consumed. | RFB server-message framing |
 | out | parameter | src/rfb/rfb_session.c | read_bounded_text | local | Receives the bounded retained prefix plus terminator. | RFB server-message framing |
 | discard | variable | src/rfb/rfb_session.c | read_bounded_text | local | Provides bounded scratch for consuming text beyond retained storage. | RFB server-message framing |
@@ -174,7 +160,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | remaining | variable | src/rfb/rfb_session.c | read_bounded_text | local | Tracks declared text bytes still requiring stream consumption. | RFB server-message framing |
 | chunk | variable | src/rfb/rfb_session.c | read_bounded_text | local | Bounds each discard read to scratch capacity. | RFB server-message framing |
 | discard_exact | function | src/rfb/rfb_session.c | RFB session parser | file | Consumes exactly a declared server payload length without retaining its bytes. | RFB server-message framing |
-| socket_fd | parameter | src/rfb/rfb_session.c | discard_exact | local | Identifies the synchronized session socket to consume. | RFB server-message framing |
 | count | parameter | src/rfb/rfb_session.c | discard_exact | local | Tracks the exact number of bytes still requiring discard. | RFB server-message framing |
 | discard | variable | src/rfb/rfb_session.c | discard_exact | local | Provides fixed scratch for bounded exact payload consumption. | RFB server-message framing |
 | chunk | variable | src/rfb/rfb_session.c | discard_exact | local | Bounds each discard operation to scratch capacity. | RFB server-message framing |
@@ -242,7 +227,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | session | parameter | src/rfb/rfb_session.c | pstvnc_rfb_session_init | local | Supplies the session object to reset to NEW state. | RFB session lifecycle |
 | pstvnc_rfb_session_start | function | src/rfb/rfb_session.c | RFB session | public | Performs exact RFB 3.8/None handshake, validates geometry, configures Raw, and requests the first full desktop. | ISSUE7_MINIMAL_CORE: RFB connection and wire contract |
 | session | parameter | src/rfb/rfb_session.c | pstvnc_rfb_session_start | local | Supplies session storage that becomes owner of synchronized protocol state. | RFB session lifecycle |
-| socket_fd | parameter | src/rfb/rfb_session.c | pstvnc_rfb_session_start | local | Supplies the already-connected VNC socket descriptor. | RFB session lifecycle |
 | expected_width | parameter | src/rfb/rfb_session.c | pstvnc_rfb_session_start | local | Gives the only acceptable server framebuffer width for this milestone. | fixed 704x462 baseline |
 | expected_height | parameter | src/rfb/rfb_session.c | pstvnc_rfb_session_start | local | Gives the only acceptable server framebuffer height for this milestone. | fixed 704x462 baseline |
 | banner | variable | src/rfb/rfb_session.c | pstvnc_rfb_session_start | local | Buffers the exact server and client protocol version banner. | RFB handshake |
@@ -310,7 +294,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | PSTVNC_RFB_SESSION_ERROR_ROW_WIDTH | enum value | src/rfb/rfb_session.h | pstvnc_rfb_session_error | public | Classifies framebuffer width that exceeds bounded Raw row scratch. | bounded RFB session storage |
 | pstvnc_rfb_session_error_t | type | src/rfb/rfb_session.h | RFB session interface | public | Names the precise synchronized-session error enum. | failure classification |
 | pstvnc_rfb_session | structure | src/rfb/rfb_session.h | RFB session interface | public | Defines owned handshake state, errors, parsed server data, and bounded scratch. | CLEAN_ARCHITECTURE: RFB client/session |
-| socket_fd | field | src/rfb/rfb_session.h | pstvnc_rfb_session | public | Stores the connected socket descriptor owned by the synchronized session. | RFB session ownership |
 | state | field | src/rfb/rfb_session.h | pstvnc_rfb_session | public | Stores current synchronized lifecycle state. | RFB session lifecycle |
 | error | field | src/rfb/rfb_session.h | pstvnc_rfb_session | public | Stores the current precise failure classification. | failure classification |
 | server_major | field | src/rfb/rfb_session.h | pstvnc_rfb_session | public | Stores parsed server protocol major version. | RFB handshake |
@@ -335,7 +318,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | expected_height | prototype parameter | src/rfb/rfb_session.h | pstvnc_rfb_session_start | prototype | Gives the only acceptable server framebuffer height for this milestone. | fixed 704x462 baseline |
 | expected_width | prototype parameter | src/rfb/rfb_session.h | pstvnc_rfb_session_start | prototype | Gives the only acceptable server framebuffer width for this milestone. | fixed 704x462 baseline |
 | session | prototype parameter | src/rfb/rfb_session.h | pstvnc_rfb_session_start | prototype | Supplies session storage that becomes owner of synchronized protocol state. | RFB session lifecycle |
-| socket_fd | prototype parameter | src/rfb/rfb_session.h | pstvnc_rfb_session_start | prototype | Supplies the already-connected VNC socket descriptor. | RFB session lifecycle |
 | pstvnc_rfb_session_send_pointer_event | function declaration | src/rfb/rfb_session.h | RFB session interface | public | Declares READY-session transmission of one already-mapped native RFB PointerEvent. | Issue #38 main-thread RFB pointer publication |
 | session | prototype parameter | src/rfb/rfb_session.h | pstvnc_rfb_session_send_pointer_event | public | Declares the synchronized READY session that owns PointerEvent transmission. | Issue #38 main-thread RFB pointer publication |
 | button_mask | prototype parameter | src/rfb/rfb_session.h | pstvnc_rfb_session_send_pointer_event | public | Declares the already-mapped native RFB button mask supplied by application routing. | Issue #38 main-thread RFB pointer publication |
@@ -349,3 +331,27 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | pstvnc_rfb_session_try_receive_update | function declaration | src/rfb/rfb_session.h | RFB session interface | public | Declares nonblocking-at-idle live receive service with server-message-boundary yield semantics. | Issue #38 responsive RFB scheduling |
 | session | prototype parameter | src/rfb/rfb_session.h | pstvnc_rfb_session_try_receive_update | public | Declares the READY synchronized RFB session to service. | Issue #38 responsive RFB scheduling |
 | framebuffer | prototype parameter | src/rfb/rfb_session.h | pstvnc_rfb_session_try_receive_update | public | Declares authoritative framebuffer storage for a completed server update. | Issue #38 responsive RFB scheduling |
+| pstvnc_rfb_bridge_complete_quiesce_at_message_boundary | function | src/rfb/bridge.c | bridge | file | Defines pstvnc_rfb_bridge_complete_quiesce_at_message_boundary as a current clean-source function. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_poll_receive | function | src/rfb/bridge.c | bridge | file | Defines pstvnc_rfb_bridge_poll_receive as a current clean-source function. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_quiesce_requested | function | src/rfb/bridge.c | bridge | file | Defines pstvnc_rfb_bridge_quiesce_requested as a current clean-source function. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_read_exact | function | src/rfb/bridge.c | bridge | file | Defines pstvnc_rfb_bridge_read_exact as a current clean-source function. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_write_exact | function | src/rfb/bridge.c | bridge | file | Defines pstvnc_rfb_bridge_write_exact as a current clean-source function. | mechanically reconciled current clean source |
+| discarded_count | variable | src/rfb/bridge.c | pstvnc_rfb_bridge_complete_quiesce_at_message_boundary | local | Defines discarded_count as a current clean-source variable. | mechanically reconciled current clean source |
+| residual_count | variable | src/rfb/bridge.c | pstvnc_rfb_bridge_complete_quiesce_at_message_boundary | local | Defines residual_count as a current clean-source variable. | mechanically reconciled current clean source |
+| result | variable | src/rfb/bridge.c | pstvnc_rfb_bridge_poll_receive | local | Defines result as a current clean-source variable. | mechanically reconciled current clean source |
+| result | variable | src/rfb/bridge.c | pstvnc_rfb_bridge_quiesce_requested | local | Defines result as a current clean-source variable. | mechanically reconciled current clean source |
+| buffer | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_read_exact | local | Defines buffer as a current clean-source parameter. | mechanically reconciled current clean source |
+| count | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_read_exact | local | Defines count as a current clean-source parameter. | mechanically reconciled current clean source |
+| buffer | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_write_exact | local | Defines buffer as a current clean-source parameter. | mechanically reconciled current clean source |
+| count | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_write_exact | local | Defines count as a current clean-source parameter. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_complete_quiesce_at_message_boundary | function declaration | src/rfb/bridge.h | bridge interface | public | Defines pstvnc_rfb_bridge_complete_quiesce_at_message_boundary as a current clean-source function declaration. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_poll_receive | function declaration | src/rfb/bridge.h | bridge interface | public | Defines pstvnc_rfb_bridge_poll_receive as a current clean-source function declaration. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_quiesce_requested | function declaration | src/rfb/bridge.h | bridge interface | public | Defines pstvnc_rfb_bridge_quiesce_requested as a current clean-source function declaration. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_read_exact | function declaration | src/rfb/bridge.h | bridge interface | public | Defines pstvnc_rfb_bridge_read_exact as a current clean-source function declaration. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_write_exact | function declaration | src/rfb/bridge.h | bridge interface | public | Defines pstvnc_rfb_bridge_write_exact as a current clean-source function declaration. | mechanically reconciled current clean source |
+| PSTVNC_RFB_BRIDGE_H | macro | src/rfb/bridge.h | bridge interface | public | Defines PSTVNC_RFB_BRIDGE_H as a current clean-source macro. | mechanically reconciled current clean source |
+| buffer | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_read_exact | local | Defines buffer as a current clean-source prototype parameter. | mechanically reconciled current clean source |
+| count | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_read_exact | local | Defines count as a current clean-source prototype parameter. | mechanically reconciled current clean source |
+| buffer | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_write_exact | local | Defines buffer as a current clean-source prototype parameter. | mechanically reconciled current clean source |
+| count | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_write_exact | local | Defines count as a current clean-source prototype parameter. | mechanically reconciled current clean source |
+| quiesce_requested | variable | src/rfb/rfb_session.c | receive_framebuffer_update | local | Defines quiesce_requested as a current clean-source variable. | mechanically reconciled current clean source |
