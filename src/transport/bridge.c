@@ -1,22 +1,22 @@
 /*
  * File synopsis:
  * Implements Transport's one cross-component bridge body. It coordinates the
- * application-owned session lifecycle and adapts RFB's logical byte-stream /
- * finite-quiesce process to the private Transport runtime without exposing the
- * physical PSTV descriptor or moving protocol policy into Transport.
+ * application-owned session lifecycle and adapts logical RFB plus optional
+ * logical AUDIO delivery to the private Transport runtime without exposing the
+ * physical PSTV descriptor or moving protocol/media policy into Transport.
  *
- * The single-session storage matches the product's one active PSTV connection.
- * Complete-RFB-message safe-boundary choice remains with application/RFB; this
- * bridge only executes the ordered Transport operations once asked.
+ * One active bridge still means one physical connection and one sole receiver.
+ * RFB safe-boundary choice, PCM/AUDSRV playback, media-clock use, and MPEG/video
+ * presentation remain outside this bridge.
  *
  * Context: docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md; docs/ledge/
- * LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
+ * LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
+ * LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md.
  */
 
 #include "bridge.h"
 #include "runtime.h"
 
-/* One product PSTV session is active at a time. */
 static pstvnc_transport_runtime_t pstvnc_transport_bridge_runtime;
 static int pstvnc_transport_bridge_session_active;
 
@@ -34,13 +34,6 @@ static pstvnc_transport_result_t pstvnc_transport_bridge_terminal_result(void)
     return PSTVNC_TRANSPORT_FAILED;
 }
 
-/*
- * Interpret runtime release by ownership state rather than by diagnostics alone.
- * A false result with initialized still set means receiver/session resources are
- * still Transport-owned and must remain retryable. A false result after runtime
- * reset means reclaim did complete but one cleanup primitive reported failure;
- * bridge authority is still retired so a second close cannot target stale state.
- */
 static pstvnc_transport_result_t pstvnc_transport_bridge_finish_release(void)
 {
     int released = pstvnc_transport_runtime_release(
@@ -50,42 +43,40 @@ static pstvnc_transport_result_t pstvnc_transport_bridge_finish_release(void)
         return PSTVNC_TRANSPORT_FAILED;
 
     pstvnc_transport_bridge_session_active = 0;
-    return released
-        ? PSTVNC_TRANSPORT_OK
-        : PSTVNC_TRANSPORT_FAILED;
+    return released ? PSTVNC_TRANSPORT_OK : PSTVNC_TRANSPORT_FAILED;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Application session lifecycle process.                                    */
-/* ------------------------------------------------------------------------- */
-
-pstvnc_transport_result_t pstvnc_transport_session_open(
+static pstvnc_transport_result_t pstvnc_transport_session_open_internal(
     int *socket_fd,
-    const pstvnc_transport_session_config_t *config)
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config)
 {
+    int initialized;
+
     if (socket_fd == NULL || *socket_fd < 0 || config == NULL ||
         pstvnc_transport_bridge_session_active)
         return PSTVNC_TRANSPORT_INVALID;
 
-    /*
-     * runtime_initialize() adopts the descriptor only as its final successful
-     * initialization step. Therefore a false result leaves caller ownership
-     * unambiguous and *socket_fd untouched.
-     */
-    if (!pstvnc_transport_runtime_initialize(
+    if (audio_config == NULL) {
+        initialized = pstvnc_transport_runtime_initialize(
             &pstvnc_transport_bridge_runtime,
             *socket_fd,
-            config))
+            config);
+    } else {
+        initialized = pstvnc_transport_runtime_initialize_with_audio(
+            &pstvnc_transport_bridge_runtime,
+            *socket_fd,
+            config,
+            audio_config);
+    }
+
+    if (!initialized)
         return PSTVNC_TRANSPORT_FAILED;
 
-    /* From this point onward the caller must never close this descriptor. */
     *socket_fd = -1;
 
     if (!pstvnc_transport_runtime_start_receiver(
             &pstvnc_transport_bridge_runtime)) {
-        /* No receiver thread is live after a failed start; retire the adopted
-         * descriptor/resources here so failed open has one owner and one close.
-         */
         (void)pstvnc_transport_runtime_release(
             &pstvnc_transport_bridge_runtime);
         return PSTVNC_TRANSPORT_FAILED;
@@ -95,17 +86,30 @@ pstvnc_transport_result_t pstvnc_transport_session_open(
     return PSTVNC_TRANSPORT_OK;
 }
 
+pstvnc_transport_result_t pstvnc_transport_session_open(
+    int *socket_fd,
+    const pstvnc_transport_session_config_t *config)
+{
+    return pstvnc_transport_session_open_internal(socket_fd, config, NULL);
+}
+
+pstvnc_transport_result_t pstvnc_transport_session_open_with_audio(
+    int *socket_fd,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config)
+{
+    if (audio_config == NULL)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    return pstvnc_transport_session_open_internal(
+        socket_fd, config, audio_config);
+}
+
 pstvnc_transport_result_t pstvnc_transport_session_abort(void)
 {
     if (!pstvnc_transport_bridge_session_active)
         return PSTVNC_TRANSPORT_INVALID;
 
-    /*
-     * The stop request remains inside Transport: it publishes receiver stop
-     * intent before shutdown() interrupts Transport's privately owned socket.
-     * No resource is reclaimed until the normal completion event proves the
-     * sole receiver can no longer touch session state.
-     */
     if (!pstvnc_transport_runtime_request_stop(
             &pstvnc_transport_bridge_runtime))
         return PSTVNC_TRANSPORT_FAILED;
@@ -122,10 +126,6 @@ pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void)
     if (!pstvnc_transport_bridge_session_active)
         return PSTVNC_TRANSPORT_INVALID;
 
-    /*
-     * Success means only that receiver completion is proven. The session may
-     * still have failed; callers retain product-level failure classification.
-     */
     if (!pstvnc_transport_runtime_wait_receiver_done(
             &pstvnc_transport_bridge_runtime))
         return PSTVNC_TRANSPORT_FAILED;
@@ -144,10 +144,6 @@ pstvnc_transport_result_t pstvnc_transport_session_close(void)
 
     return pstvnc_transport_bridge_finish_release();
 }
-
-/* ------------------------------------------------------------------------- */
-/* Logical RFB byte-stream delivery process.                                 */
-/* ------------------------------------------------------------------------- */
 
 pstvnc_transport_result_t pstvnc_transport_rfb_read_exact(
     void *buffer,
@@ -199,9 +195,61 @@ pstvnc_transport_result_t pstvnc_transport_rfb_write_exact(
     return pstvnc_transport_bridge_terminal_result();
 }
 
-/* ------------------------------------------------------------------------- */
-/* Ordered logical-RFB finite-session quiesce process.                       */
-/* ------------------------------------------------------------------------- */
+pstvnc_transport_result_t pstvnc_transport_audio_read_available(
+    void *buffer,
+    size_t maximum_count,
+    size_t *read_count)
+{
+    if (!pstvnc_transport_bridge_session_active)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    return pstvnc_transport_runtime_audio_read_available(
+        &pstvnc_transport_bridge_runtime,
+        buffer,
+        maximum_count,
+        read_count);
+}
+
+pstvnc_transport_result_t pstvnc_transport_audio_status(
+    size_t *available_count,
+    int *producer_done)
+{
+    if (!pstvnc_transport_bridge_session_active)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    return pstvnc_transport_runtime_audio_status(
+        &pstvnc_transport_bridge_runtime,
+        available_count,
+        producer_done);
+}
+
+pstvnc_transport_result_t pstvnc_transport_audio_activity_snapshot(
+    uint32_t *activity_sequence)
+{
+    if (!pstvnc_transport_bridge_session_active || activity_sequence == NULL)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    if (pstvnc_transport_runtime_audio_activity_snapshot(
+            &pstvnc_transport_bridge_runtime,
+            activity_sequence))
+        return PSTVNC_TRANSPORT_OK;
+
+    return pstvnc_transport_bridge_terminal_result();
+}
+
+pstvnc_transport_result_t pstvnc_transport_audio_wait_activity(
+    uint32_t *activity_sequence)
+{
+    if (!pstvnc_transport_bridge_session_active || activity_sequence == NULL)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    if (pstvnc_transport_runtime_audio_wait_activity(
+            &pstvnc_transport_bridge_runtime,
+            activity_sequence))
+        return PSTVNC_TRANSPORT_OK;
+
+    return pstvnc_transport_bridge_terminal_result();
+}
 
 pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(void)
 {
