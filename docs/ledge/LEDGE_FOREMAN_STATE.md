@@ -1,135 +1,125 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0002
-RECORDED_AT=2026-09-15T22:04:00-04:00
+STATE_REVISION=0003
+RECORDED_AT=2026-09-16T05:55:54-04:00
 SOURCE_COMMIT=SELF
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0005
 BASED_ON_RECONSTRUCTION_STATE_REVISION=0007
-BASED_ON_GLOBAL_STATE_REVISION=0011
+BASED_ON_GLOBAL_STATE_REVISION=0022
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-This state is the current planning baton for the Reconstruction Foreman. It owns quantified A/B shift goals plus the non-behavioral integration/evidence chore queue. It does not supersede reconstruction product-source authority, audit dispositions, validation findings, or global continuity authority.
+This is an interactive Foreman pass requested by the operator. It supersedes the stale revision 0002 planning baton while preserving committed product-source, audit, Validation, and Continuity authority. Scheduled Reconstruction A/B and scheduled Foreman seats are currently operator-paused; this state therefore assigns the next substantive A001 packet to the High-thinking interactive Reconstruction B substitute rather than asserting an automated wake.
 
 ## Current foreman phase
 
-`A001_GOAL_DIRECTED_LIVE_PATH_MIGRATION`
+`A001_BEHAVIOR_CLOSURE_AND_VALIDATION_PREP`
 
-The first Foreman goal epoch is based on branch HEAD `39d9cfac52e232a1e158eb83dc17a11acc788ce1`, reconstruction state revision 0007, and the transition Reconstruction B shift that ended after approximately 2 minutes 8 seconds. That B shift added RFB-side quiesce bridge operations and behavior tests but explicitly left the coherent `rfb_session.*` live-path migration undone. The Foreman therefore sizes the next goals around whole behavioral seams rather than another bridge micro-edit.
+Current branch authority before this Foreman write was `4cd9678a17dd11e3f3d377d922665ea2ed881c08`, global state revision 0022. The long interactive reconstruction continuation has already completed the RFB logical-stream migration, application/Transport descriptor adoption, deterministic V005 fatal convergence, pinned PSTV endpoint correction, live build/topology integration, direct-RFB socket-seam retirement, framing coverage, and a definition-level Transport dictionary. Validation independently records the V005 source shape as supported by static review, with canonical executable confirmation still pending.
 
-## Crew cadence
+The remaining A001 work is now split deliberately:
 
-- Reconstruction B anchor: `2026-09-15T21:30:00-04:00`, every 90 minutes;
-- Foreman anchor: `2026-09-15T22:00:00-04:00`, every 90 minutes;
-- Reconstruction A anchor: `2026-09-15T22:30:00-04:00`, every 90 minutes.
+- Reconstruction owns remaining product-behavior proof/test-source and any source defects those tests expose.
+- Foreman owns V004 dictionary/portal/topology/test-registration/build-evidence chores.
+- Validation owns V003/V004/V005 disposition and independent execution.
+- Physical qualification remains operator/hardware evidence.
 
-## Goal packet — Reconstruction A
+## Configuration authority disposition
 
-TARGET_START=2026-09-15T22:30:00-04:00
-WORKER=recon-a
+The previously tracked eight-field `pstvnc_transport_session_config_t` production-producer gap is **not an A001 reconstruction blocker**.
+
+A001 owns the Transport/RFB consumer boundary and therefore correctly accepts a complete, already-validated Transport session value without manufacturing defaults. `docs/ledge/LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md` assigns CONFIG decode/completeness/structural validation and production profile ownership to A002. That audit explicitly classifies the relevant RFB queue/credit, receiver-thread, and physical DATA-payload values as qualified-profile/tuning values supplied through the later configuration/profile mechanism.
+
+Therefore:
+
+- A001 must retain the explicit typed caller-supplied Transport subprofile and fail closed when no production CONFIG/profile producer exists.
+- A001 must not invent fixed numeric defaults merely to make no-argument startup live.
+- A002 will adopt/reconstruct the production configuration/profile producer and supply narrow owner-specific immutable values, including the Transport subset.
+- The absence of that A002 producer does not prevent A001 source/host validation of the parameterized Transport/RFB lifecycle.
+
+This disposition narrows, rather than erases, the evidence boundary: A001 can become `VALIDATION_READY` as a parameterized coherent tranche, while full production startup through negotiated CONFIG remains future A002 work.
+
+## Goal packet — Interactive Reconstruction B substitute
+
+TARGET_START=NEXT_INTERACTIVE_PICKUP
+WORKER=interactive-b
+SUBSTITUTES_FOR=recon-b
 WORK_ITEM_KEY=a001-sole-receiver
 GOAL_STATUS=ASSIGNED
-ASSIGNING_HEAD=39d9cfac52e232a1e158eb83dc17a11acc788ce1
+ASSIGNING_HEAD=4cd9678a17dd11e3f3d377d922665ea2ed881c08
 ASSIGNING_RECONSTRUCTION_STATE_REVISION=0007
+ASSIGNING_GLOBAL_STATE_REVISION=0022
 
 ### Objective
 
-Convert the complete clean RFB session protocol path from the pre-ledge socket-shaped `rfb_io` seam to the logical `src/rfb/bridge.*` stream, including parser-safe finite-session quiesce at complete server-message boundaries, without changing RFB protocol semantics or inventing Transport configuration.
+Close the remaining A001 **product-behavior evidence seam** by adding deterministic host behavior fixtures around the actual Transport physical-stream/runtime implementation—not merely bridge stubs—and correct only reconstruction-owned defects those fixtures expose. Finish with a criterion-by-criterion A001 behavior map suitable for Foreman/Validation handoff. Do not begin A002 and do not perform Foreman-owned dictionary/portal/Makefile chores as substitute work.
+
+This packet is intentionally larger than a microtask. Work through the coherent runtime proof seam in one interactive round as far as tool capacity safely permits, reserving enough capacity to create the required immutable round log.
 
 ### REQUIRED_DELIVERABLES
 
-1. Migrate `src/rfb/rfb_session.h/.c` so session protocol mechanics no longer own/accept a physical socket descriptor or `pstvnc_rfb_io_t`; exact reads, readiness polling, and exact writes use the RFB bridge.
-2. Preserve the existing handshake, ServerInit/name handling, Raw framebuffer parser, update-request behavior, pointer/key serialization, initial-frame/coverage behavior, and fail-closed result semantics while changing only the stream seam.
-3. Integrate the already reconstructed quiesce bridge into session servicing: observe quiesce requests only at parser-safe service points and execute complete quiescence only after a complete server message with no partially consumed next message.
-4. Update/add behavior-specific RFB session tests necessary to prove the new logical-stream seam and safe-boundary behavior; test-source work is Reconstruction ownership even though canonical Makefile registration remains Foreman ownership.
+1. **Physical PSTV stream behavior fixture.** Add deterministic host test source for `src/transport/physical_stream.*` with PS2/socket/synchronization dependencies stubbed at the narrow mechanism boundary. Exercise complete header+payload send/receive behavior, direction-local sequence progression, short/exact-I/O failure, sequence/protocol rejection, serialized-send ownership, and Transport-owned I/O interruption used by fatal abort.
+2. **Transport runtime behavior fixture.** Add deterministic host test source for `src/transport/runtime.*` sufficient to exercise the real runtime state machine with controlled physical-stream/kernel primitives. Cover sole-receiver dispatch to logical RFB, invalid/unexpected frame failure, producer-driven activity wake semantics, parser-consumption credit return, outbound logical-RFB fragmentation, quiesce REQUEST/BOUNDARY/COMMIT/residual/COMPLETE ordering, and stop/receiver-completion lifetime ordering.
+3. **Credit/residual proof.** Explicitly demonstrate that parser-consumed RFB bytes may earn return credit while terminal residual discard does not. Include batch/flush-on-empty behavior and failure propagation where practical.
+4. **Lifecycle/failure proof.** Cover representative initialization/start/stop/release failures and prove no receiver-visible allocation is reclaimed before completion/dormancy. Repeated clean initialize/release of the fixture must not inherit stale session authority. Do not reinterpret this as authority to fix the separately inherited H1 next-session receive-poison defect.
+5. **Behavior correction if required.** If a deterministic fixture exposes a reconstruction-owned A001 defect, fix it coherently in product source and add the regression assertion in the same round. Do not weaken tests or add timeouts to make a failure disappear.
+6. **A001 behavior closure map.** Before ending, re-read all eight required behaviors in `LEDGE_AUDIT_A001_TRANSPORT_RFB.md` and map each to current committed source plus behavior-specific tests. Identify any actual product-behavior obligation still unmet after this packet.
 
 ### ACCEPTANCE_CRITERIA
 
-A1. No public or private `rfb_session` runtime contract requires `socket_fd` or `pstvnc_rfb_io_t` for RFB protocol I/O; the session implementation reaches transport bytes only through `pstvnc_rfb_bridge_*`.
-A2. Existing RFB handshake/parser/update/input behavior remains represented in source and relevant tests rather than being deleted or bypassed during migration.
-A3. Quiesce completion is reachable only from an explicit complete-message/idle-safe boundary; no quiesce operation can consume a partial next server message.
-A4. Behavior-specific tests cover at least logical exact-I/O failure propagation and quiesce request/completion at a safe session boundary, in addition to preserving existing framing/initial-frame tests.
-A5. No Transport CONFIG defaults, physical receive ownership, generic timeout, or inherited receive-poison workaround is introduced.
+C1. Host-test source directly exercises the current physical-stream implementation sufficiently to prove PSTV framing/sequence/exact-I/O ownership and fail-closed progression; bridge-only stubs are not counted as this proof.
+C2. Host-test source directly exercises the current Transport runtime sufficiently to prove there is one physical receive owner/dispatch path and that invalid frame/order/error conditions converge fail closed.
+C3. Logical RFB queue/credit behavior proves parser-consumed versus residual-discard accounting, producer-driven activity, and outbound fragmentation without introducing RFB framing into Transport.
+C4. Deterministic quiesce/lifetime tests prove REQUEST -> externally selected complete-message BOUNDARY -> COMMIT -> exact residual handling -> COMPLETE remains distinct from application-local fatal abort, and receiver completion/dormancy precedes reclamation.
+C5. Representative initialization/start/stop/release failure paths and a fresh subsequent fixture session show unambiguous resource/session ownership. No guessed timeout, second receiver, unsafe close, or diagnostic counter is used as correctness authority.
+C6. The eight-field Transport session value remains explicit/caller-supplied. The missing production CONFIG producer is recorded as A002-owned profile/configuration work, not “solved” with constants and not treated as an A001 blocker.
+C7. No A002 audio/config implementation, A003+, or silent repair of the inherited H1 receive-poison defect is introduced.
+C8. The immutable round log records exact tests actually executed versus `PENDING_LOCAL`; no canonical PASS is inferred from shadow fixtures.
 
 ### INVARIANTS / NON_GOALS
 
-- One physical PSTV socket owner remains Transport.
-- RFB owns complete-server-message parser boundary policy; Transport does not learn RFB framing.
-- Parser-consumed bytes and quiesce residual discard remain distinct credit facts.
-- Do not migrate `app.c`/platform Transport lifecycle in this packet unless required only to keep a behavior-specific host fixture compiling; that coherent ownership transfer is reserved for the following B packet.
+- One physical PSTV owner and sole receiver remain Transport.
+- RFB owns RFB parsing and complete-server-message safe-boundary selection.
+- Transport owns byte/framing/sequence/logical-channel mechanics, not RFB protocol semantics.
+- Parser consumption and terminal residual discard remain different accounting events.
+- V005 fatal abort remains distinct from finite server-driven RFB quiescence.
+- `pstvnc_app_run()` may remain fail-closed until A002 supplies production profile authority; do not make A001 depend on invented live startup values.
+- Do not update `SYMBOLS.md`, generated dictionary portals, source-topology allowlists, or canonical Makefile registrations merely as filler; those are Foreman chores unless a product-source change requires a minimal same-change dependency correction.
 - Do not begin A002.
 
 ### EXPECTED_EVIDENCE
 
-Source/test evidence for the migrated RFB session seam. Executable host/PS2DEV results are welcome if genuinely available, but absent tool execution is PENDING_LOCAL rather than a reason to weaken the source acceptance criteria.
+Behavior-specific host fixture source and, where executable on the interactive surface, exact compile/run commands and output. Supplemental shadow-host execution is useful but must be labeled supplemental. Canonical `make -C tests unit`, `scripts/check.sh`, source-dictionary strict/long checks, PS2DEV build, reproducibility/PT_LOAD, and hardware evidence remain separate unless genuinely executed.
 
 ### BLOCKER_CONDITIONS
 
-Stop/pivot only for contradictory newer authority, an actual collision on the same RFB session source, or discovery that the existing parser contract cannot identify a complete-message boundary without a separately authorized behavioral redesign. A missing Transport CONFIG authority is not a blocker for this RFB-only packet.
+`BLOCKED` requires the higher burden already established for Reconstruction workers: exhaust materially different repository/tool routes, current audit/H1/source authority, and independent acceptance criteria, then reevaluate. Missing Universal Ctags, Foreman-owned V004 chores, or missing A002 production CONFIG producer are **not blockers for this behavior packet**.
+
+A genuine blocker is limited to contradictory newer authority, an actual same-source collision, inability to construct a deterministic behavior seam without exposing/restructuring a separately owned component boundary, or evidence that an A001 audit invariant itself requires redesign beyond this packet.
 
 ### FALLBACK_OR_STRETCH
 
-If A1-A5 are met early, trace and remove any now-dead socket-shaped RFB platform adapter declarations/callers that are purely consequences of the completed session migration and do not yet require choosing Transport session configuration. Otherwise leave exact dead-call-chain evidence for the Foreman/B packet.
+If C1-C8 are met early, perform a final product-source dead-seam/call-chain census for A001 only and remove behaviorally dead Transport/RFB adapter code only when current call/reference evidence proves it unreachable and removal does not cross into A002. Otherwise leave exact residual behavior evidence for the next Foreman/Validation pickup.
 
-## Goal packet — Reconstruction B
+## Foreman chore queue / current status
 
-TARGET_START=2026-09-15T23:00:00-04:00
-WORKER=recon-b
-WORK_ITEM_KEY=a001-sole-receiver
-GOAL_STATUS=ASSIGNED_CONDITIONAL_ON_A
-ASSIGNING_HEAD=39d9cfac52e232a1e158eb83dc17a11acc788ce1
-ASSIGNING_RECONSTRUCTION_STATE_REVISION=0007
+1. **V004 Transport dictionary:** materially complete in `d21ccfe6f6e4015cdea1092ebd0ebd16b1dbd81a`; canonical Universal-Ctags strict/long proof remains pending.
+2. **V004 RFB dictionary:** OPEN. `src/rfb/SYMBOLS.md` still describes the deleted `rfb_io.h` socket seam and pre-migration socket-bearing RFB session vocabulary and does not fully inventory `src/rfb/bridge.*`; it must be reconciled to current source.
+3. **Generated dictionary portal:** OPEN. `docs/reference/SOURCE_SYMBOL_DICTIONARIES.md` omits `src/transport`; regenerate after RFB dictionary reconciliation so counts/status are exact.
+4. **Topology/domain adoption:** source-topology policy and continuity checker already include `src/transport`; no duplicate adoption work is needed.
+5. **Canonical test registration:** existing `tests/Makefile` registers `transport_protocol_test`, `transport_rfb_channel_test`, `transport_bridge_test`, and `rfb_bridge_test`; register the new physical/runtime behavior fixtures after Reconstruction creates them.
+6. **Build topology:** clean linked and strict PS2 compile manifests already include live Transport/RFB bridge topology; retain as current evidence, executable build still PENDING_LOCAL.
+7. **CONFIG preflight:** resolved for tranche ownership as above: production configuration/profile producer is A002-owned; A001 keeps only the explicit validated Transport subprofile consumer boundary.
+8. **Canonical machine evidence:** `make -C tests unit`, `scripts/check.sh`, long/complete/strict dictionary/topology checks, PS2DEV link, reproducibility/exact ELF/PT_LOAD remain PENDING_LOCAL until actually executable.
 
-### Objective
+## Validation disposition carried forward
 
-Assuming Reconstruction A completes the RFB logical-stream conversion, migrate application/session ownership onto the reconstructed Transport lifecycle so the accepted physical socket is transferred exactly once to Transport and the application drives RFB through the logical session path, using explicit validated configuration authority rather than guessed defaults.
-
-### REQUIRED_DELIVERABLES
-
-1. Re-read A's result and current HEAD. If A is MET, migrate the coherent `src/app.c` / relevant platform/session call chain so application hands the accepted physical descriptor to `pstvnc_transport_session_open()` and does not later double-close a successfully adopted descriptor.
-2. Establish the concrete source of `pstvnc_transport_session_config_t` from existing explicit validated/qualified authority. If no such authority exists in current clean source, do not invent values: implement only the ownership/lifecycle portion that can remain configuration-parametric and record the exact missing authority as a blocker to live startup.
-3. Route application RFB startup/service/shutdown through the newly logical RFB session plus Transport lifecycle, preserving explicit receiver completion before Transport reclamation and first-failure/fail-closed semantics.
-4. Add/update behavior-specific application/lifecycle tests for descriptor transfer, failed-open ownership, no double-close, and teardown ordering as appropriate to the implemented seam.
-
-### ACCEPTANCE_CRITERIA
-
-B1. On the coherent live path, application no longer gives RFB a physical VNC/PSTV socket for protocol I/O; a successfully adopted descriptor is Transport-owned and caller state prevents double close.
-B2. Transport session open precedes logical RFB use; Transport close/reclamation does not occur until receiver completion is established by the reconstructed lifecycle.
-B3. The source of every populated Transport session-config field is explicit and reviewable. No numeric queue/credit/thread/payload value is fabricated merely to make the path compile.
-B4. Failure paths preserve unambiguous ownership: failed pre-adoption leaves caller ownership; failed post-adoption does not cause application/platform to close the same descriptor again.
-B5. Behavior-specific tests exercise the ownership/teardown edge cases introduced by this migration, or the log identifies a genuine executable-fixture boundary with exact source evidence.
-B6. A001 remains the only active tranche; no A002 behavior is started.
-
-### INVARIANTS / NON_GOALS
-
-- Preserve one physical owner, RFB safe-boundary ownership, parser-consumption credit semantics, receiver-completion-before-reclaim, and the unresolved inherited receive-poison boundary.
-- Do not choose new tuning/default policy in application code.
-- Do not perform Foreman-owned dictionary/topology/Makefile chores as substitute work.
-
-### BLOCKER_CONDITIONS
-
-If A is PARTIAL/BLOCKED such that `rfb_session` still has socket-shaped protocol authority, do not create a competing half-live application path. Instead execute the fallback below. If validated Transport configuration authority is genuinely absent, complete all safe parametric ownership/lifecycle work, record the exact configuration gap, then use fallback rather than guessing defaults.
-
-### FALLBACK_OR_STRETCH
-
-If A has not completed the RFB seam, finish the remaining A packet acceptance criteria where safe and non-colliding. If configuration authority blocks live app startup after A is complete, perform the next safe A001 behavior tranche: consolidate/clarify the application-facing session lifecycle API so configuration remains an explicit caller-supplied value and add ownership/failure tests, without assigning numeric defaults. If B1-B6 are met early, trace obsolete direct RFB socket/platform adapters and remove only those proven unreachable from the clean live path.
-
-## Foreman chore queue
-
-Highest priority after publishing these packets:
-
-1. wire `transport_bridge_test` and `rfb_bridge_test` into canonical `tests/Makefile` without changing DUT behavior;
-2. reconcile `src/rfb/SYMBOLS.md` with new bridge definitions and complete the current `src/transport` definition inventory;
-3. deliberately adopt `src/transport` into source topology/checker/domain allowlists and regenerate the source-dictionary portal through canonical tooling where executable;
-4. preserve repository-native host/static evidence actually executable from this worker surface;
-5. prepare build/linkage/reproducibility evidence plumbing as A001 becomes coherent;
-6. preflight the exact validated Transport configuration owner/source for later B/live-path work without inventing policy.
-
-## Current evidence boundary
-
-A001 remains not `VALIDATION_READY`. No host test/build/PS2DEV/ELF/PT_LOAD/reproducibility/hardware PASS is implied by these assignments. PENDING_LOCAL and HARDWARE_PENDING remain distinct from source completion.
+- V003 remains formally OPEN / `WAIT_FOR_COHERENT_TRANCHE`; current source is far beyond the original interface-only evidence but Validation owns revision/closure.
+- V004 remains formally OPEN pending RFB dictionary/portal/canonical strict evidence.
+- V005 remains formally OPEN pending independent canonical executable lifecycle evidence, although independent Validation static review records `RESOLUTION_SUPPORTED_BY_STATIC_REVIEW` / provisional source-shape PASS.
+- No A001 `VALIDATION_READY`, full PASS, PT_LOAD qualification, or hardware PASS is claimed by this Foreman state.
 
 ## Exact next Foreman pickup
 
-Inspect A's 22:30 result, B's 23:00 result if available at next wake, and criterion-level `FOREMAN_GOAL_RESULT`. Recalibrate packet size from MET/PARTIAL/BLOCKED evidence. Continue A001 until the live Transport/RFB/application path is coherent; do not schedule A002 merely because metadata chores are complete.
+Consume the interactive worker's criterion-level C1-C8 result. Register any new physical/runtime behavior fixtures canonically, finish RFB dictionary + generated portal, obtain whatever canonical machine evidence is available, and then determine whether any reconstruction-owned behavior remains before promoting the tranche for independent Validation. Do not schedule or authorize A002 until A001 reaches the appropriate handoff boundary.
