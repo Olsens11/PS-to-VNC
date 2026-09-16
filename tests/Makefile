@@ -288,8 +288,8 @@ $(BUILD_DIR)/local_controller_test: \
 
 $(BUILD_DIR)/osk_direct_test: \
 	unit/osk_direct_test.c \
-	../src/ui/osk.h \
 	../src/ui/osk.c \
+	../src/ui/osk.h \
 	../src/input/keyboard.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
