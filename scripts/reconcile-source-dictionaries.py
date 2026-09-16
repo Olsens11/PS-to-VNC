@@ -2,12 +2,12 @@
 """File synopsis:
 Reconcile selected clean-source dictionaries against exact current C definitions.
 
-This maintenance helper preserves still-valid human dictionary rows, removes
-rows whose source/identifier no longer exists, and appends mechanically
-recovered definitions that the canonical source-dictionary validator reports as
-missing. It is intentionally scoped to the four dictionaries changed by the
-A001 live-path reconstruction; it does not rewrite unrelated product domains or
-change product source.
+This maintenance helper preserves dictionary rows that still map to a current
+mechanically discovered definition, removes rows whose defining source/lexical
+owner no longer exists, and appends current definitions that the canonical
+source-dictionary validator reports as missing. It is intentionally scoped to
+the four dictionaries changed by the A001 live-path reconstruction; it does not
+rewrite unrelated product domains or change product source.
 
 Run only with Universal Ctags available. After reconciliation, regenerate the
 portal and run the canonical long/complete/strict source-dictionary check.
@@ -16,7 +16,6 @@ portal and run the canonical long/complete/strict source-dictionary check.
 from __future__ import annotations
 
 import importlib.util
-import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -71,14 +70,12 @@ def entry_from_existing(entry) -> RenderedEntry:
     )
 
 
-def identifier_still_present(entry) -> bool:
-    source = ROOT / entry.file
-    if not source.is_file():
-        return False
-
-    source_text = source.read_text(encoding="utf-8", errors="strict")
-    pattern = rf"(?<![A-Za-z0-9_]){re.escape(entry.name)}(?![A-Za-z0-9_])"
-    return re.search(pattern, source_text) is not None
+def entry_maps_to_current_definition(validator, entry, definitions) -> bool:
+    """Require an actual current definition, including lexical-owner identity."""
+    return any(
+        validator.definition_is_documented(definition, [entry])
+        for definition in definitions
+    )
 
 
 def generated_entry(definition) -> RenderedEntry:
@@ -191,15 +188,15 @@ def reconcile_dictionary(validator, directory: Path) -> tuple[int, int, int]:
             f"{dictionary}: expected COVERAGE=COMPLETE before reconciliation"
         )
 
+    definitions = discover_directory_definitions(validator, directory)
     kept_parsed = [
         entry
         for entry in parsed_entries
-        if identifier_still_present(entry)
+        if entry_maps_to_current_definition(validator, entry, definitions)
     ]
     removed = len(parsed_entries) - len(kept_parsed)
     rendered = [entry_from_existing(entry) for entry in kept_parsed]
 
-    definitions = discover_directory_definitions(validator, directory)
     added = 0
     for definition in definitions:
         if validator.definition_is_documented(definition, kept_parsed):
@@ -225,8 +222,8 @@ def reconcile_dictionary(validator, directory: Path) -> tuple[int, int, int]:
         )
         added += 1
 
-    # Existing rows retain their established semantic order. Newly discovered
-    # rows arrive in the validator's deterministic Definition ordering.
+    # Existing current rows retain their semantic wording/order. Newly
+    # discovered rows arrive in deterministic Definition ordering.
     replace_table(dictionary, rendered)
     return len(parsed_entries), removed, added
 
