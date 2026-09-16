@@ -28,6 +28,7 @@ TARGET_DIRECTORIES = (
     Path("src"),
     Path("src/config"),
     Path("src/input"),
+    Path("src/media"),
     Path("src/platform"),
     Path("src/rfb"),
 )
