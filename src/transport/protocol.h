@@ -1,10 +1,12 @@
 /*
  * File synopsis:
- * Defines the shared PSTV transport wire-header representation and stable
- * logical-channel identities. This file owns framing vocabulary only; it does
- * not own sockets, dispatch, queues, RFB parsing, media policy, or threading.
+ * Defines the shared PSTV transport wire-header representation, stable logical
+ * channel identities, and exact MPEG generation-control wire codecs. This file
+ * owns framing vocabulary only; it does not own sockets, dispatch, queues,
+ * exact-generation lifecycle state, media policy, or threading.
  *
- * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
+ * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
+ * LEDGE_AUDIT_A003_MPEG_GENERATION.md.
  */
 
 #ifndef PSTVNC_TRANSPORT_PROTOCOL_H
@@ -19,6 +21,10 @@
 #define PSTVNC_TRANSPORT_MAX_PAYLOAD 8192u
 #define PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE 4u
 
+#define PSTVNC_MPEG_GENERATION_CONTROL_VERSION 1u
+#define PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE 12u
+#define PSTVNC_MPEG_START_PAYLOAD_SIZE 44u
+
 typedef enum pstvnc_transport_frame_kind {
     PSTVNC_TRANSPORT_FRAME_HELLO = 1,
     PSTVNC_TRANSPORT_FRAME_CONFIG = 2,
@@ -26,7 +32,9 @@ typedef enum pstvnc_transport_frame_kind {
     PSTVNC_TRANSPORT_FRAME_CREDIT = 4,
     PSTVNC_TRANSPORT_FRAME_TELEMETRY = 5,
     PSTVNC_TRANSPORT_FRAME_HEARTBEAT = 6,
-    PSTVNC_TRANSPORT_FRAME_ERROR = 7
+    PSTVNC_TRANSPORT_FRAME_ERROR = 7,
+    PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE = 10,
+    PSTVNC_TRANSPORT_FRAME_MPEG_START = 11
 } pstvnc_transport_frame_kind_t;
 
 typedef enum pstvnc_transport_channel {
@@ -46,6 +54,26 @@ typedef struct pstvnc_transport_header {
     uint32_t payload_length;
 } pstvnc_transport_header_t;
 
+typedef struct pstvnc_mpeg_retire_payload {
+    uint32_t version;
+    uint32_t session_id;
+    uint32_t generation;
+} pstvnc_mpeg_retire_payload_t;
+
+typedef struct pstvnc_mpeg_start_payload {
+    uint32_t version;
+    uint32_t session_id;
+    uint32_t generation;
+    uint32_t base_x;
+    uint32_t base_y;
+    uint32_t base_width;
+    uint32_t base_height;
+    uint32_t suppression_x;
+    uint32_t suppression_y;
+    uint32_t suppression_width;
+    uint32_t suppression_height;
+} pstvnc_mpeg_start_payload_t;
+
 int pstvnc_transport_header_encode(
     uint8_t output[PSTVNC_TRANSPORT_HEADER_SIZE],
     const pstvnc_transport_header_t *header);
@@ -54,5 +82,27 @@ int pstvnc_transport_header_decode(
     const uint8_t input[PSTVNC_TRANSPORT_HEADER_SIZE]);
 uint32_t pstvnc_transport_read_be32(const uint8_t input[4]);
 void pstvnc_transport_write_be32(uint8_t output[4], uint32_t value);
+
+int pstvnc_mpeg_retire_payload_encode(
+    uint8_t output[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE],
+    const pstvnc_mpeg_retire_payload_t *payload);
+int pstvnc_mpeg_retire_payload_decode(
+    pstvnc_mpeg_retire_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size);
+int pstvnc_mpeg_start_payload_encode(
+    uint8_t output[PSTVNC_MPEG_START_PAYLOAD_SIZE],
+    const pstvnc_mpeg_start_payload_t *payload);
+int pstvnc_mpeg_start_payload_decode(
+    pstvnc_mpeg_start_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size);
+
+int pstvnc_transport_header_is_mpeg_data(
+    const pstvnc_transport_header_t *header);
+int pstvnc_transport_header_is_mpeg_retire(
+    const pstvnc_transport_header_t *header);
+int pstvnc_transport_header_is_mpeg_start(
+    const pstvnc_transport_header_t *header);
 
 #endif
