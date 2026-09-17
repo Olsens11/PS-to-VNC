@@ -99,6 +99,7 @@ index after every shift.
 - `docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md` — A001 Transport/RFB audit authority.
 - `docs/ledge/LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md` — A002 configuration/audio audit authority.
 - `docs/ledge/LEDGE_AUDIT_A003_MPEG_GENERATION.md` — A003 MPEG-generation audit authority.
+- `docs/ledge/LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION.md` — durable deferred manual completion authority for the unresolved real A003 Transport/Pi exact-generation implementation and proof sequence.
 - `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` — A004 presentation/calibration audit authority.
 - `docs/ledge/LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md` — Foreman packetization invariant preserving DESKTOP CALIBRATION versus MPEG CALIBRATION authority and lineage.
 - `docs/ledge/LEDGE_AUDIT_A005_INTERACTION_INPUT.md` — A005 interaction/input audit authority.
@@ -180,7 +181,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 
 ## M1C first modular DUT
 
-- `docs/M1C_DUT_CHARACTERIZATION.md` — build, reproducibility, linkage, host parity, and ELF characterization for the first modular PS-to-VNC executable.
+- `docs/M1C_DUT_CHARACTERIZATION.md` — reproducible M1 DUT build, linkage, parser parity and validation authority.
 
 ## M1D hardware regression
 
