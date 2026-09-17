@@ -1,8 +1,8 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0016
-RECORDED_AT=2026-09-17T07:18:00-04:00
+STATE_REVISION=0017
+RECORDED_AT=2026-09-17T16:09:34-04:00
 SOURCE_COMMIT=SELF
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0005
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
@@ -14,64 +14,45 @@ BASED_ON_A003_AUDIT_REVISION=0001
 BASED_ON_A004_AUDIT_REVISION=0001
 BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0003
 BASED_ON_A003_MANUAL_COMPLETION_REVISION=0001
+SUPERSEDES_FOREMAN_STATE_REVISION=0016
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-This Foreman revision changes reconstruction execution strategy without declaring A003 complete. It preserves coherent accepted A003 source, supersedes the autonomous A003-P2A Pi/Transport completion packet from state revision 0015, moves the unresolved real Transport/Pi exact-generation mechanics into a durable manual completion item, freezes dependency-facing owner contracts, and releases downstream owner-local reconstruction that can be proved without a fake production Transport.
+This revision is a Foreman recovery/role-boundary revision. It does not declare
+A003 complete and it does not accept A004 product implementation. It preserves
+the A003 manual Transport/Pi deferral, settles the owner boundary for the first
+A004 MPEG CALIBRATION core packet, records the failed replacement-worker wake as
+forensic information only, makes the worker/Foreman baton rule explicit, and
+reissues exactly one bounded A004 Reconstruction packet with an execution
+admission preflight.
 
-The live branch was re-read immediately before this state write at `099dec22c71544c0980dae1769d19b650bb71973`.
+The live branch was re-read immediately before this state write at
+`9151ba9895d53aeecb17b996a9bf92aa42f69c24`.
 
-Independent Validation remains a separate authority. Cross-machine Pi/PS2 validation and physical qualification remain pending.
+Independent Validation remains separate authority. Cross-machine Pi/PS2
+validation and physical qualification remain pending.
 
 ## Current Foreman phase
 
-`A003_TRANSPORT_PI_MANUAL_DEFERRED__A004_MPEG_CALIBRATION_CORE_PACKET_ISSUED`
+`A003_TRANSPORT_PI_MANUAL_DEFERRED__A004_MPEG_CALIBRATION_CORE_REISSUED_WITH_PREFLIGHT`
 
-## Execution-strategy supersession
+## A003 remains deliberately deferred
 
-State revision 0015 correctly resolved the conceptual owner split between a Pi PSTV session/mechanism owner and a Pi exact-generation business-state owner. That ownership decision remains useful.
-
-However, its active autonomous `A003-P2A-COMPLETION` implementation packet is now **SUPERSEDED**.
-
-Reconstruction is no longer authorized by Foreman state to:
-
-- create/adopt a production `pi/pstv/` runtime merely because revision 0015 named that namespace;
-- solve real Pi service/socket/thread/session ownership autonomously;
-- complete P2A-2/P2A-5/P2A-6 by inventing substitute production behavior;
-- advance P2B/P2C/P2D to make the exact-generation lifecycle look complete;
-- infer real endpoint success from host-side contract fakes.
-
-The real implementation/proof sequence is now governed by:
+The real Transport/Pi exact-generation implementation and proof work remains
+governed by:
 
 `docs/ledge/LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION.md`
 
-revision `0001`, commit `8fc78235061e9e0d7a95b82531c0324bf05a140a`, status:
+revision `0001`, status:
 
 `A003_TRANSPORT_PI_MANUAL_COMPLETION_DEFERRED`
 
-The governing ledge architecture is now `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision `0003`, commit `099dec22c71544c0980dae1769d19b650bb71973`.
+The autonomous A003-P2A production Pi/Transport completion route remains
+superseded. Reconstruction must not create substitute production Transport/Pi
+mechanics merely to make downstream work appear complete.
 
-## A003 accepted work preserved
-
-A003-P1 remains Foreman-accepted `MET` from the prior accepted reconstruction/integration evidence.
-
-The coherent P2A partial source at `b609aec92f8f54d7d57ea81b38936bc45cd7d6d9` remains preserved. No rollback is assigned.
-
-Accepted behavior includes:
-
-- START explicit control identity: kind `11`, control channel `0`, flags `0`;
-- exact 44-byte START v1 representation;
-- RETIRE explicit control identity: kind `10`, control channel `0`, flags `0`;
-- exact 12-byte big-endian RETIRE `(version, session_id, generation)` representation;
-- explicit START / RETIRE / MPEG-DATA frame classification;
-- MPEG media remains opaque `DATA/channel 4`;
-- START-shaped exactly-44-byte MPEG DATA remains MPEG media;
-- no magic-length payload sniffing;
-- no per-MPEG-packet generation tags;
-- accepted PS2 outbound START uses the existing ordered physical Transport send path;
-- no prepared-generation or Pi producer business state was moved into PS2 Transport or MPEG decoder ownership.
-
-### P2A criterion disposition under the deferral
+Accepted A003 source/evidence remains preserved. The current criterion
+disposition remains:
 
 - `P2A-1 START_CONTROL_IDENTITY = MET`
 - `P2A-2 START_SEMANTICS = PARTIAL / PENDING_MANUAL_TRANSPORT_PI`
@@ -82,248 +63,428 @@ Accepted behavior includes:
 - `P2A-7 NO_GENERATION_TAGGING = MET`
 - `P2A-8 BOUNDED_SCOPE = MET`
 
-The three partial criteria are not failed local source; they are exact real-owner implementation/proof gaps intentionally deferred. A003 as a whole is **not complete**.
+A003 as a whole is **not complete**.
 
-## Binding source/component invariant
+## Binding component / directory / bridge invariant
 
-Architecture overlay revision 0003 makes the following rule binding for A004-A006 and the later A003 manual session:
+Architecture overlay revision `0003` remains binding:
 
-> Inside one genuine component/local-cooperation directory, internal implementation files may cooperate directly. Across a real component boundary, communication must pass through the owning component's defined bridge or public process seam.
+> Inside one genuine component/local-cooperation directory, internal
+> implementation files may cooperate directly. Across a real component
+> boundary, communication must pass through the owning component's defined
+> bridge or public process seam.
 
-Therefore:
+Consequences remain:
 
 - directory membership follows coherent ownership, not call-site convenience;
 - unrelated responsibilities may not be co-located merely to avoid a bridge;
 - no bridge-per-caller or bridge-per-destination proliferation;
 - Application coordinates owners only through public owner bridges;
-- tests fake the same public owner boundary that production callers consume;
-- private sockets, receiver threads, queues, parser state, decoder-worker state, compositor state, and input state remain private to their owner.
+- tests fake the same public owner boundary production callers consume;
+- private owner internals remain private.
 
-## Frozen dependency-facing contracts
+## Failed A004 replacement-worker wake — administrative accounting
 
-The architecture overlay and deferred-manual item are the detailed authority. This state records the dependency facts downstream work may consume.
+After Foreman state revision `0016`, a replacement interactive Reconstruction
+worker attempted the A004 MPEG CALIBRATION core packet and returned a
+user-visible `BLOCKED` report.
 
-### Transport
+Repository authority proves:
 
-Mechanism owner only: session lifecycle, one physical stream/sole receive path when real, framing/order, logical channels/control delivery, flow control, quiescence/dormancy, mechanism failure, and narrow public logical/control operations actually required by consumers.
+- no A004 product/source/test commit landed from that attempt;
+- no branch update resulted from that attempt;
+- no canonical Reconstruction work log landed;
+- the worker's exact `STARTED_AT` is unavailable and must not be fabricated;
+- no A004 acceptance criterion is accepted `MET` from that attempt;
+- scratch reasoning/code from that attempt is not product evidence.
 
-Transport may eventually expose exact START send, RETIRE request/send, inbound exact-control publication, immutable mechanism-owned session/config facts, and terminal/quiescence/failure facts.
+The report is retained only as forensic handoff information. This Foreman shift
+independently re-checked its useful mechanical claims against the frozen H1
+MPEG-calibration lineage before relying on them.
 
-Transport does **not** own generation preparation/retirement proof, decode/presentation state, RFB restoration policy, or input/UI semantics.
+The missing worker timestamp is an administrative defect in that failed wake,
+not a reason to weaken `docs/ledge/work-log/README.md`. No retroactive worker
+log is authorized.
 
-### Exact generation
+## A004 MPEG CALIBRATION owner decision
 
-Owns exact active session/generation rules, immutable prepared generation state, START semantic validation, stale/repeated/conflicting rejection, and real `RETIREMENT_PROVEN` publication after the exact owner fence succeeds.
+The first A004 slice is the pure MPEG CALIBRATION geometry and
+draft/default/committed-state owner.
 
-### MPEG
+The clean owner boundary is settled as:
 
-Owns decoder/worker behavior and decode/upload readiness. `FIRST_MPEG_FRAME_DECODED` is not physical presentation.
+`src/mpeg_calibration/`
 
-### RFB
+This is a genuine owner boundary, not a convenience directory.
 
-Owns RFB protocol/framebuffer truth, safe complete-message/request freeze/quiescence, request mechanics, and fresh-full-update obligation.
+Rationale:
 
-### Presentation
+- `src/mpeg/` owns MPEG decoder/resource/feed/sequence lifetime and does not own
+  calibration geometry or accepted presentation-region state;
+- `src/display/` owns display/presentation conversion and does not own the
+  MPEG-calibration draft/default/committed business state;
+- DESKTOP CALIBRATION is a separate historical system and is not an authority
+  for MPEG CALIBRATION mechanics;
+- later Presentation, RFB, Input/UI, and Application consumers cross a real
+  owner boundary and therefore must consume the MPEG CALIBRATION public seam
+  rather than its internals.
 
-Owns one physical GS/composition path, draw/matte/suppression geometry consumption, physical presentation, `FIRST_PHYSICAL_MPEG_FRAME`, visual ownership promotion, common-media-clock arm callsite, and presentation timing/drop policy.
+The component may contain owner-local geometry/state implementation files that
+cooperate directly. Cross-component consumers receive only the narrow public
+MPEG CALIBRATION seam. Precise private file decomposition remains a
+Reconstruction implementation choice so long as this ownership is preserved.
 
-### Input / UI
+## Verified A004 pure-mechanics authority
 
-Owns physical observation, semantic foreground ownership, pointer/buttons/wheel, keyboard/modifier interpretation/publication, OSK/local foreground, release quarantine, and cooperative dormancy/teardown.
+The Foreman independently checked frozen H1 authority at:
 
-### Application
+`3426f28b93de9519ca93e5f0e0aaf8b67cfca845`
 
-Owns cross-owner ordering/policy only. It may coordinate public facts such as `TRANSPORT_SESSION_READY`, `TRANSPORT_RECEIVER_DORMANT`, `GENERATION_PREPARED`, `RETIREMENT_PROVEN`, `RFB_QUIESCED`, `INPUT_DORMANT`, and `FIRST_PHYSICAL_MPEG_FRAME`, but obtains every fact from its real owner bridge.
+under:
 
-## Contract-test evidence discipline
+`experiments/media-harness-h1/mpeg_presentation_calibration/`
 
-Downstream deterministic fakes are permitted only at public owner boundaries.
+The pure MPEG CALIBRATION meanings remain:
 
-A downstream component may become:
+- base rectangle = exact MPEG capture/presentation region;
+- inner matte = PS2-local presentation-only inset;
+- outer matte = MPEG visual-ownership / RFB-suppression expansion;
+- default = centered half-canvas with 16-pixel size alignment;
+- base width/height minimum = 16 pixels;
+- resize = 16-pixel size steps with recovered center-preserving behavior;
+- movement = pixel precise with canvas clamp;
+- inner matte = bounded independently of capture geometry;
+- outer suppression = expanded from the authoritative base and clipped to the
+  canvas;
+- state = explicit default/draft/committed authority;
+- cancel = committed geometry when present, otherwise defaults;
+- commit = one accepted immutable geometry authority.
 
-- `SOURCE_COMPLETE`;
-- `CONTRACT_COMPLETE`;
-- `CONTRACT_TESTED`;
-- `HOST_TESTED`;
-- `PS2_COMPILE_PASS`;
-- `PS2_LINK_PASS`;
+The deterministic historical 704x462 vector is:
 
-while retaining exact dependency gaps.
+- default base: `(176,119,352,224)`
+- horizontal `+16` resize: `x=168 width=368`
+- then `+1,+1` move: `x=169 y=120`
+- inner matte: `1,1`
+- outer matte: `1,1`
+- derived suppression: `(168,119,370,226)`
 
-Those labels never imply:
+These are reconstruction mechanics evidence only; they do not constitute a
+landed A004 implementation.
 
-- `REAL_TRANSPORT_IMPLEMENTED`;
-- `CROSS_MACHINE_VALIDATED`;
-- `HARDWARE_QUALIFIED`.
+## Exact Foreman-owned blocker and required baton sequence
 
-Pending labels must state the precise unproven owner fact rather than hide local incompleteness behind a generic dependency label.
+The blocker was not missing product semantics.
 
-## A004-A006 replan
+Creating `src/mpeg_calibration/` is a new clean-domain topology change. Current
+`docs/development/source-topology.md` requires the same logical adoption to
+reconcile the topology policy, living file/service map, local dictionary,
+`scripts/continuity-check.sh`, build/include/test/tool paths, architecture
+navigation, chronological record, strict dictionary discovery, and generated
+dictionary portal.
 
-### A004 — Presentation / MPEG CALIBRATION
+State revision `0016` already reserved canonical topology, generated portal,
+canonical test registration, and build integration to Foreman/Integration rather
+than Reconstruction.
 
-A004 is released for owner-local reconstruction against contracts. This includes MPEG CALIBRATION edit/commit semantics, base/inner/outer geometry, foreground semantics, RFB freeze/full-refresh policy, accept-to-first-frame protection, one Presentation/GS owner, compositor ordering, first physical frame promotion, common-clock arm callsite, absolute scheduler/drop policy, overlays, and restoration conditioned on abstract `RETIREMENT_PROVEN`.
+The current continuity checker also compares the exact clean directory set,
+directory-dictionary set, and generated-portal directory set. Therefore a
+Foreman-created empty `src/mpeg_calibration/` scaffold would not be a truthful
+or passing prerequisite: Git does not preserve an empty directory, and adding
+global expected-directory state before real clean source/local dictionary
+exists would deliberately make the canonical topology check fail.
 
-The Pi mechanism producing `RETIREMENT_PROVEN` remains deferred.
+The required sequence is therefore **A**:
 
-**DESKTOP CALIBRATION** and **MPEG CALIBRATION** remain separate authorities under `LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md` revision 0001.
+1. Reconstruction, in a normal development worktree, lands a coherent
+   owner-local `src/mpeg_calibration/` behavior source/API, its local
+   `SYMBOLS.md`, and focused deterministic host test source.
+2. Reconstruction runs the focused host test directly using the established
+   host toolchain if no canonical aggregate registration exists yet.
+3. Reconstruction commits coherent worker-owned work and returns the baton
+   immediately when canonical topology/build/test/generated-dictionary
+   integration is required.
+4. Foreman/Integration then performs the canonical new-domain admission:
+   topology/map/continuity registration, generated portal reconciliation,
+   canonical build/test/tool registration actually required by the landed
+   files, and project checks.
+5. Only if that integration exposes a behavior-owned defect does Foreman issue
+   a smaller Reconstruction continuation.
 
-### A005 — Interaction / Input
+This sequencing follows the already-used A003 MPEG-domain pattern: behavior
+source can land first; canonical owner/topology closure follows as its own
+role-owned integration action. It does not authorize a long-lived broken
+integration state; it defines the controlled baton boundary between the two
+roles.
 
-A005 may proceed with its owner-local physical polling/continuity, mouse/pointer/button/wheel interpretation, keyboard/modifier serialization, OSK/local foreground, release quarantine, suspend -> neutralize -> rebase -> release -> resume, calibration foreground handoff, parser-safe publication boundary, and cooperative teardown. Cross-owner interactions use the owning bridge.
+## Binding role-baton rule
 
-### A006 — Application orchestration
+For every Reconstruction packet from this revision forward:
 
-A006 may reconstruct resident startup/session admission, CONFIG/profile consumption, component dependency ordering, steady-state coordination, failure convergence, terminal-result aggregation, reverse teardown, and repeated-session structure against owner bridges and deterministic contract fakes.
+If progress requires an action owned by Foreman, Validation, Integration, or
+another role, Reconstruction must:
 
-Application correctness is not evidence that a deferred producer of an owner fact is implemented.
+1. preserve/commit coherent worker-owned work already completed when possible;
+2. identify the exact blocking action;
+3. identify the role that owns it;
+4. disposition completed criteria truthfully;
+5. write the required canonical worker log when exact log metadata was captured;
+6. return the baton immediately.
 
-## Exact A003 obligations remaining deferred
+Reconstruction must **not**:
 
-The manual completion item must eventually prove at minimum:
+- find a workaround for the role boundary;
+- emulate the Foreman/Validation/Integration action;
+- use a lower-level route to manufacture the same integration result;
+- broaden its own authority;
+- manipulate generated/global integration state indirectly;
+- use raw Git-object mutation as a replacement development workflow.
 
-1. actual Pi PSTV runtime/service owner adoption;
-2. one real Pi PSTV session owner and sole receive path;
-3. explicit START receive through that owner;
-4. real START semantic validation and immutable prepared generation;
-5. producer preparation and MPEG emission;
-6. retirement admission close with an intentionally exercised in-flight emission lease;
-7. exact producer cleanup before RETIRE completion emission;
-8. PS2 exact completion reception through the sole receiver/public seam;
-9. decoder stop/join before reclaiming worker-visible resources;
-10. residual MPEG queue drain with corresponding Transport credit restoration;
-11. proof generation N cannot contaminate N+1;
-12. repeated-generation finite EOF/cancel/error/retirement behavior;
-13. cross-machine integration of reconstructed downstream owners;
-14. physical PS2/Pi qualification and all-guns endurance.
+When Foreman receives such a handoff, Foreman must classify the blocker, perform
+Foreman-owned work when it is genuinely Foreman-owned, and issue only the
+smallest required continuation. A correct role stop is not a reason to redesign
+the product or send the worker back to perform Foreman chores.
 
-A003 cannot be declared complete until these owner facts are proven.
+## Reconstruction execution-environment admission rule
 
-## Fresh bounded Reconstruction packet — A004-MPEG-CALIBRATION-CORE
+Every newly issued Reconstruction packet must begin with an execution preflight
+**before archaeology or implementation**.
+
+The worker must:
+
+1. capture exact `STARTED_AT` immediately;
+2. refresh remote branch authority and record actual local `HEAD`;
+3. inspect and report staged, unstaged, and untracked state;
+4. identify local-only commits, if any, before changing anything;
+5. prove normal worktree read/write ability without altering tracked product
+   content;
+6. run one existing applicable host command/test successfully;
+7. prove normal Git staging/commit capability without creating a bogus commit.
+
+If the normal development route is unavailable, the worker must return
+`BLOCKED` immediately. It must not spend the shift doing product archaeology,
+attempt raw Git-object substitutes, or use a lower-level route to bypass the
+missing worktree.
+
+## Active bounded Reconstruction packet — A004-MPEG-CALIBRATION-CORE-R1
 
 WORK_ITEM_KEY=`a004-presentation-calibration`
 TARGET_WORKER=`interactive`
-ASSIGNING_HEAD=`099dec22c71544c0980dae1769d19b650bb71973`
+ASSIGNING_HEAD=`9151ba9895d53aeecb17b996a9bf92aa42f69c24`
 ASSIGNING_AUDIT=`LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md:0001`
 ASSIGNING_CALIBRATION_INVARIANT=`LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md:0001`
 ASSIGNING_ARCHITECTURE_OVERLAY=`LEDGE_ARCHITECTURE_OVERLAY.md:0003`
-ASSIGNING_FOREMAN_STATE=`0016`
+ASSIGNING_FOREMAN_STATE=`0017`
 H1_FORENSIC_SOURCE=`3426f28b93de9519ca93e5f0e0aaf8b67cfca845`
+OWNER_DIRECTORY=`src/mpeg_calibration/`
+BATON_SEQUENCE=`RECONSTRUCTION_SOURCE_TEST_LOCAL_DICTIONARY__THEN_FOREMAN_CANONICAL_INTEGRATION`
 
 ### Objective
 
-Reconstruct only the pure owner-local **MPEG CALIBRATION geometry and committed-state core** from frozen H1 evidence into clean production source with deterministic host tests and a narrow calibration-owner public seam. This packet must not depend on the deferred real Pi/Transport implementation.
+Reconstruct only the pure owner-local **MPEG CALIBRATION geometry and
+draft/default/committed-state core** into `src/mpeg_calibration/`, with a narrow
+public owner seam and deterministic host tests.
 
-### Required evidence to trace before editing
+This packet is independent of the deferred real Pi/Transport implementation.
+
+### Mandatory execution preflight — do this first
+
+Before archaeology or editing:
+
+1. capture exact `STARTED_AT`;
+2. fetch/refresh `ledge/h1-all-guns` and record remote branch authority;
+3. record local `HEAD`;
+4. report `git status` with staged/unstaged/untracked state explicitly;
+5. identify local-only commits relative to refreshed branch authority;
+6. prove normal read/write worktree access using a disposable untracked
+   temporary file that is created and removed before implementation;
+7. run one existing applicable host command/test from current repository
+   authority, preferring `./scripts/check.sh` when the local environment can run
+   it; if a narrower known-good host command is used, record exactly why;
+8. prove normal Git staging/commit capability using a non-mutating/dry-run route
+   or equivalent that does not create a bogus commit and does not disturb the
+   index.
+
+If any of these cannot be performed through the normal development worktree,
+return `BLOCKED` immediately with no product archaeology or implementation.
+
+Do not substitute GitHub object plumbing, raw tree/blob creation, or another
+role's integration machinery.
+
+### Required authority after preflight
 
 Read at minimum:
 
-- `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md`;
-- `docs/ledge/LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md`;
-- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision 0003;
-- frozen H1 `experiments/media-harness-h1/mpeg_presentation_calibration/mpeg_presentation_calibration.h`;
-- frozen H1 `mpeg_presentation_calibration_geometry.c`;
-- frozen H1 `mpeg_presentation_calibration_state.c` and the focused pure calibration tests;
-- any later H1 evidence that proves a correction to those pure geometry/commit semantics.
+- `AGENTS.md`
+- `CONTRIBUTING.md`
+- `docs/CLEAN_ARCHITECTURE.md`
+- `docs/ledge/LEDGE_RECONSTRUCTION_CONTRACT.md`
+- `docs/ledge/work-log/README.md`
+- this Foreman state revision
+- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md`
+- `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md`
+- `docs/ledge/LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md`
+- current `docs/development/source-topology.md`
+- current source naming/symbol policy
+- frozen H1:
+  `experiments/media-harness-h1/mpeg_presentation_calibration/mpeg_presentation_calibration.h`
+- frozen H1:
+  `experiments/media-harness-h1/mpeg_presentation_calibration/mpeg_presentation_calibration_geometry.c`
+- frozen H1:
+  `experiments/media-harness-h1/mpeg_presentation_calibration/mpeg_presentation_calibration_state.c`
+- focused frozen H1 MPEG-calibration tests and any later H1 evidence that proves
+  a correction to the pure geometry/commit semantics.
 
-Do not copy the experimental directory wholesale.
+Do not use DESKTOP CALIBRATION source as MPEG-calibration mechanics authority.
 
-### CALIBRATION SEPARATION INVARIANT
+### Authorized worker-owned changes
 
-**DESKTOP CALIBRATION and MPEG CALIBRATION are separate historical systems with separate state, geometry authority, ownership, and evidence. Do not derive MPEG-calibration behavior from the older desktop-calibration implementation merely because both manipulate screen rectangles or use similar UI mechanics. For MPEG calibration, trace `experiments/media-harness-h1/mpeg_presentation_calibration/` and A004 audit authority. If any relationship is unclear, preserve the separation and flag the ambiguity rather than merging the systems.**
+Reconstruction is authorized to:
 
-### Required deliverables
+- create the behavior-owned clean source/API under `src/mpeg_calibration/`;
+- create/update `src/mpeg_calibration/SYMBOLS.md`;
+- add the focused deterministic host test source under current test conventions;
+- update the directly corresponding local test dictionary when current
+  conventions require it;
+- use direct focused host compile/run commands needed to prove this isolated
+  pure core before canonical aggregate registration exists.
 
-1. Establish the smallest genuine production **MPEG CALIBRATION owner/local-cooperation boundary** consistent with current clean source conventions. If a new directory is warranted, its membership must be justified by coherent calibration ownership, not convenience. Do not place Presentation, Input, RFB, Transport, or Application internals inside it.
+Reconstruction is **not** authorized to update:
 
-2. Reconstruct the pure MPEG CALIBRATION geometry meanings:
-   - **base rectangle** = exact MPEG capture/presentation region;
-   - **inner matte** = PS2-local presentation-only inset state;
-   - **outer/suppression footprint** = expanded MPEG visual-ownership/RFB-suppression perimeter.
-   Keep the three meanings distinct.
+- `docs/development/source-topology.md`;
+- the living file/service map;
+- the expected-domain set in `scripts/continuity-check.sh`;
+- the generated product dictionary portal;
+- canonical/global build registration;
+- canonical/global test registration;
+- other generated/global integration metadata.
 
-3. Preserve the audited geometry invariants from frozen H1 evidence:
-   - base width/height remain MPEG-compatible with a 16-pixel minimum and 16-pixel size alignment;
-   - base position remains pixel-precise and clamped to the local canvas;
-   - resizing preserves the recovered center behavior where H1 authority requires it;
-   - inner matte remains bounded by the base region and does not alter capture geometry;
-   - outer matte/suppression expansion remains local bounded state and produces a suppression rectangle clamped to the canvas;
-   - no arithmetic path may create invalid negative width/height or out-of-canvas committed geometry.
+Those are the baton point. Commit coherent worker-owned work if possible, log
+truthfully, identify the exact Foreman-owned follow-up, and stop.
 
-4. Reconstruct a single owner-local draft/default/committed model sufficient for later UI/Application consumers to edit and obtain one accepted immutable MPEG CALIBRATION geometry. Do not create a second accepted geometry store merely to cross a component boundary.
+### Required behavior
 
-5. Expose only a narrow calibration-owner public seam sufficient for later consumers to:
-   - initialize/query owner state;
-   - apply owner-local geometry edits through semantic operations supported by H1 evidence;
-   - inspect the current reviewable geometry;
-   - commit one immutable accepted geometry value;
-   - cancel/revert draft edits to the proper prior/default value;
-   - derive/query the outer suppression rectangle from the same authoritative value.
+1. Keep base, inner matte, and outer/suppression geometry semantically distinct.
+2. Preserve 16-pixel base size minimum/alignment.
+3. Preserve center-aware 16-pixel resize behavior proved by frozen H1 evidence.
+4. Preserve pixel-precise movement with canvas clamping.
+5. Keep inner matte bounded and presentation-only; it must not alter base
+   capture geometry.
+6. Derive outer suppression from the same authoritative geometry and clip it to
+   the canvas.
+7. Maintain one owner-local default/draft/committed model.
+8. Commit produces one accepted immutable MPEG CALIBRATION geometry authority.
+9. Later draft edits cannot mutate the previously accepted committed value.
+10. Cancel restores committed geometry when present, otherwise defaults, without
+    fabricating a committed acceptance.
+11. Expose only the narrow owner seam needed by later consumers.
+12. Do not emit Presentation/GS, RFB, Input, Application, Transport, Pi,
+    exact-generation, or DESKTOP CALIBRATION behavior.
 
-   The public seam must not expose Presentation/GS state, RFB parser/request internals, Transport, Pi exact-generation state, or Input hardware state.
+### Required host-test evidence
 
-6. Preserve **acceptance vs first physical presentation** separation. A committed MPEG CALIBRATION geometry is only accepted geometry. This packet must not produce `GENERATION_PREPARED`, `FIRST_PHYSICAL_MPEG_FRAME`, visual ownership promotion, common-clock arm, or `RETIREMENT_PROVEN`.
+Focused deterministic tests must cover at minimum:
 
-7. Add deterministic host tests covering at minimum:
-   - default geometry is valid and aligned;
-   - base resize/move clamping and center-preserving resize behavior from H1;
-   - exact 16-pixel size stepping/minimum;
-   - independent inner-matte behavior without changing base capture geometry;
-   - independent outer-matte behavior and suppression-rectangle clipping;
-   - commit produces exactly one immutable accepted value exposed through the owner seam;
-   - later draft edits do not mutate the previously returned/accepted committed value;
-   - cancel/revert restores the proper committed/default draft without fabricating acceptance;
-   - base/inner/outer meanings remain distinct;
-   - no DESKTOP CALIBRATION source/state is used as MPEG authority.
+- valid aligned default geometry;
+- 16-pixel size minimum/step;
+- center-preserving resize;
+- pixel move/clamp behavior;
+- independent inner matte behavior;
+- independent outer matte and clipped suppression behavior;
+- default/draft/committed transitions;
+- commit immutability;
+- cancel-to-committed and cancel-to-default behavior;
+- base/inner/outer semantic separation;
+- the historical 704x462 deterministic vector:
+  default `(176,119,352,224)`, resize to `x=168 width=368`, move to
+  `x=169 y=120`, inner `1,1`, outer `1,1`, suppression
+  `(168,119,370,226)`.
 
-8. Follow source synopsis/naming/dictionary/topology conventions for new clean source. Reconstruction may make behavior-owned source/test changes and local source dictionary changes. Foreman retains canonical generated portal/topology/test/build integration chores after handoff when appropriate.
+Record exact focused compile/run command and output. A direct focused host test
+is valid worker evidence for this packet; aggregate/canonical registration is a
+later Foreman integration action.
 
 ### Explicitly out of scope
 
-Do **not** implement in this packet:
+Do not implement:
 
-- controller acquisition, foreground ownership, held-X review acceptance, or release quarantine;
+- controller acquisition or calibration foreground input;
+- held-X review acceptance or release quarantine;
 - A005 input routing;
 - RFB safe freeze/full-refresh scheduling;
 - accept-to-first-frame orchestration;
-- START/RETIRE sends or any real Pi/Transport mechanics;
+- START/RETIRE sends or real Pi/Transport mechanics;
 - exact-generation preparation/retirement;
-- MPEG decode/worker changes;
-- Presentation/GS compositor, raster/overlay rendering, first physical frame, common-clock arm, scheduler/drop policy;
+- MPEG decoder/worker changes;
+- Presentation/GS compositor/raster/overlay work;
+- first physical frame promotion;
+- common-media-clock arm;
+- presentation scheduler/drop policy;
 - DESKTOP CALIBRATION changes;
 - hardware qualification.
 
 ### Acceptance criteria
 
-`A004-C1 MPEG_CALIBRATION_OWNER_BOUNDARY` — pure geometry/commit source is owned by one coherent MPEG CALIBRATION component/local-cooperation boundary with a narrow owner bridge; no cross-owner internals are imported for convenience.
+`A004-C1 MPEG_CALIBRATION_OWNER_BOUNDARY` — source is owned by coherent
+`src/mpeg_calibration/` with a narrow public owner seam and no imported
+cross-owner internals.
 
-`A004-C2 GEOMETRY_MEANINGS` — base, inner matte, and outer/suppression footprint retain distinct audited meanings and tested invariants.
+`A004-C2 GEOMETRY_MEANINGS` — base, inner matte, and outer/suppression retain
+their distinct audited meanings and deterministic invariants.
 
-`A004-C3 SINGLE_COMMITTED_AUTHORITY` — one accepted immutable MPEG CALIBRATION geometry is the only committed authority; draft edits/cancel cannot mutate an already accepted value.
+`A004-C3 SINGLE_COMMITTED_AUTHORITY` — one accepted immutable MPEG CALIBRATION
+geometry is the sole committed authority; later draft edits/cancel cannot mutate
+it.
 
-`A004-C4 DESKTOP_SEPARATION` — DESKTOP CALIBRATION remains untouched and is not used as MPEG behavior authority.
+`A004-C4 DESKTOP_SEPARATION` — DESKTOP CALIBRATION remains untouched and is not
+used as MPEG behavior authority.
 
-`A004-C5 CONTRACT_HOST_TESTED` — deterministic host tests prove the local owner behavior. This may support `CONTRACT_TESTED` / `HOST_TESTED`; it does not imply real Transport, cross-machine, Presentation, or hardware completion.
+`A004-C5 CONTRACT_HOST_TESTED` — deterministic focused host tests prove the
+owner-local contract. Direct focused execution is sufficient worker evidence;
+canonical aggregate registration remains a Foreman integration chore.
 
-`A004-C6 BOUNDED_SCOPE` — no RFB/Input/Transport/Pi/Presentation lifecycle behavior is reconstructed in this packet.
+`A004-C6 BOUNDED_SCOPE` — no RFB/Input/Transport/Pi/Presentation/Application
+lifecycle behavior is reconstructed.
+
+No criterion is currently accepted `MET` from the failed prior attempt. The next
+worker must disposition all six from its own landed source/evidence.
 
 ### Worker handoff
 
-Return:
+Return and record:
 
-- exact starting and ending commit;
+- exact `STARTED_AT`;
+- starting branch authority and actual starting local `HEAD`;
+- preflight result including dirty/local-only state;
 - substantive source commit(s);
-- files changed and owner-boundary rationale;
+- exact files changed and owner-boundary rationale;
 - criterion disposition A004-C1 through A004-C6;
-- host-test command/output;
-- any precise dependency labels still pending;
-- exactly one immutable Reconstruction work log under `docs/ledge/work-log/` following current contract.
+- exact focused host-test command/output;
+- exact Foreman-owned canonical integration action now required;
+- any precise remaining evidence labels;
+- exactly one canonical immutable Reconstruction work log if the worker reaches
+  shift end and has the exact required log metadata.
 
-Do not advance to another A004 slice. Stop at handoff.
+Do not perform the Foreman-owned integration. Do not advance to another A004
+slice. Stop and return the baton.
 
 ## Foreman next pickup
 
-Consume only the A004 MPEG CALIBRATION core handoff. Reinspect A004-C1 through A004-C6 against live authority, preserve the deferred A003 item, and do not reopen autonomous Pi/Transport work. Select the next downstream owner-local packet only after the core is accepted.
+Consume only the A004 MPEG CALIBRATION core handoff. If coherent worker source,
+tests, local dictionaries, and focused host evidence have landed, perform the
+canonical new-domain integration required by current topology policy:
+
+- topology policy;
+- living file/service map;
+- continuity expected-domain registration;
+- generated dictionary portal;
+- canonical test/build/tool registration actually required by the landed files;
+- strict/project checks.
+
+Then disposition A004-C1 through A004-C6 from repository evidence and issue at
+most the smallest necessary continuation/next A004 slice.
+
+Do not reopen autonomous A003 Transport/Pi work.
 
 PENDING_MANUAL_TRANSPORT=A003 real Pi PSTV owner; exact START semantic/prepared-generation implementation; producer/emission/retirement fence; PS2 exact completion/decoder join/drain-credit; repeated-generation same-stream proof
 PENDING_CROSS_MACHINE=A003 real PS2/Pi generation transaction; downstream all-guns owner integration
