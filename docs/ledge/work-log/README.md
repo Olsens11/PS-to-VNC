@@ -1,12 +1,12 @@
 # Ledge Immutable Worker Log Contract
 
 DOCUMENT=LEDGE_WORK_LOG_CONTRACT
-DOCUMENT_REVISION=0005
-RECORDED_AT=2026-09-16T12:44:47-04:00
+DOCUMENT_REVISION=0006
+RECORDED_AT=2026-09-17T06:40:18-04:00
 TEMPORAL_CLASS=POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_POLICY_AT_RECORDED_TIME
 STATUS=OPERATIONAL
-SUPERSEDES_DOCUMENT_REVISION=0004
+SUPERSEDES_DOCUMENT_REVISION=0005
 
 ## Purpose
 
@@ -20,7 +20,7 @@ All new worker shift records live directly under:
 
 `docs/ledge/work-log/`
 
-`README.md` is the contract and is not a shift record. Except for the exact immutable grandfathered records named below, every other Markdown file in this directory must be one worker-shift record following the filename and content schema below.
+`README.md` is the contract and is not a shift record. Except for the exact immutable compatibility records named below, every other Markdown file in this directory must be one worker-shift record following the filename and content schema below.
 
 Workers normally discover history by listing this directory newest-first, then reading the newest relevant entries. A generated human index may be added later, but no index is correctness authority and workers must not depend on one being current. Individual immutable shift records are intentionally not duplicated into the shared `docs/INDEX.md`; that index contains this contract as their stable discovery route, while `scripts/work-log-check.py` validates the records themselves.
 
@@ -67,7 +67,7 @@ Revision 0002 first resolved the contradiction between strict canonical checking
 
 A later canonical A002 integration run then exposed one additional already-committed Reconstruction record whose filename stamp does not match its recorded `STARTED_AT`. That immutable record was already part of repository history when the mismatch was discovered, so revision 0004 preserved it by exact path and frozen core metadata instead of renaming or rewriting historical evidence.
 
-After the CI / Regression Sentinel support seat was introduced, its first committed Diagnostics record used the correct canonical path/core identity but omitted revision-0001-only header fields and used a descriptive noncanonical `STATUS` value. The record had already become immutable history before canonical project-check exposed that mismatch. Revision 0005 therefore preserves that one exact Diagnostics record by path and frozen core metadata. The Sentinel automation has separately been hardened to emit the full canonical schema on future wakes; this compatibility entry does not relax the contract for later support-seat logs.
+After the CI / Regression Sentinel support seat was introduced, its first committed Diagnostics record used the correct canonical path/core identity but omitted revision-0001-only header fields and used a descriptive noncanonical `STATUS` value. The record had already become immutable history before canonical project-check exposed that mismatch. Revision 0005 therefore preserved that one exact Diagnostics record by path and frozen core metadata. The Sentinel automation has separately been hardened to emit the full canonical schema on future wakes; this compatibility entry does not relax the contract for later support-seat logs.
 
 The following **nine exact existing paths only** are grandfathered as immutable legacy/malformed shift records:
 
@@ -85,7 +85,18 @@ The checker must still prove for each grandfathered record that its readable cor
 
 The 07:27 Continuity record was created after revision 0002 by an older automation formatting path. The A002 Reconstruction record added by revision 0004 preserves `STARTED_AT=2026-09-16T08:33:00-04:00` while its already-frozen filename uses the `20260916T085615-0400` stamp. The CI Sentinel record added by revision 0005 preserves its original descriptive status and missing revision-0001-only header fields as historical evidence. These inclusions are historical compatibility repairs, not permission for any of those formatting patterns to continue. All future workers and automations are governed by the canonical schema below.
 
-This is not a reusable escape hatch. No later path, malformed filename, or noncanonical metadata shape is accepted through pattern matching, date ranges, role-wide exceptions, or operator discretion. Any future deviation from the canonical schema is a check failure and must be corrected before that new record is committed whenever possible; if one is nevertheless committed, a new explicit policy revision is required rather than silently extending this grandfather set.
+## Exact immutable format-revision exceptions
+
+Revision 0006 records a narrower compatibility case exposed by canonical project-check after the records were already immutable. The following two records have canonical filenames, complete revision-0001-style metadata, canonical status values, matching role/work/worker keys, and valid matching timestamps, but they incorrectly wrote the governing **contract revision** (`0005`) into `LOG_FORMAT_REVISION` instead of the canonical log-format value (`0001`):
+
+- `20260916T160445-0400__integration__global-dictionary-prep__dictionary.md`
+- `20260916T162043-0400__validation__a003-mpeg-generation__validation.md`
+
+Those two exact paths only preserve their frozen `LOG_FORMAT_REVISION=0005`. They are **not** added to the broad legacy grandfather set above. The checker must continue applying the complete canonical filename grammar and every other canonical metadata/status/time/key check to them; only the exact `LOG_FORMAT_REVISION` comparison is path-specifically compatible with the already-frozen value `0005`.
+
+This does not establish log format revision 0005 as a valid format. New records still use `LOG_FORMAT_REVISION=0001`. No pattern, role, date range, or generalized alternate-revision acceptance is permitted.
+
+This is not a reusable escape hatch. No later path, malformed filename, noncanonical metadata shape, or incorrect log-format value is accepted through pattern matching, date ranges, role-wide exceptions, or operator discretion. Any future deviation from the canonical schema is a check failure and must be corrected before that new record is committed whenever possible; if one is nevertheless committed, a new explicit policy revision is required rather than silently extending either compatibility set.
 
 ## Stable search keys
 
@@ -164,7 +175,7 @@ A worker may update its lane's current-state snapshot when that lane owns the st
 
 After a shift record is committed, it is historical evidence and must not be rewritten to make later facts fit. If a later worker finds an error, the later worker records the correction and names the affected earlier log. Destructive history cleanup is prohibited.
 
-The exact grandfather exceptions above demonstrate this rule: their noncanonical original paths/content remain intact, and policy/tooling records the narrowly scoped compatibility treatment rather than mutating the historical records.
+The exact compatibility exceptions above demonstrate this rule: their original paths/content remain intact, and policy/tooling records the narrowly scoped compatibility treatment rather than mutating historical records.
 
 ## Legacy-log cutover
 
@@ -172,6 +183,6 @@ The pre-cutover files such as lane/global append-only logs remain valid historic
 
 ## Enforcement
 
-`scripts/work-log-check.py` validates every canonical shift-record filename and the required metadata, including that the filename timestamp/role/work-item/worker keys exactly match the record body. It separately validates the exact core metadata contract for the grandfathered immutable records listed in this revision. `scripts/check.sh` runs that checker as part of the canonical project check.
+`scripts/work-log-check.py` validates every canonical shift-record filename and the required metadata, including that the filename timestamp/role/work-item/worker keys exactly match the record body. It separately validates the exact core metadata contract for the nine broad grandfathered records and the exact path-specific log-format compatibility for the two revision-0006 records. `scripts/check.sh` runs that checker as part of the canonical project check.
 
-A malformed new name is therefore not merely a style issue: it is a repository check failure because inconsistent names would break deterministic worker discovery and search. Only the exact paths explicitly frozen by the current contract revision are accepted outside the canonical grammar.
+A malformed new name is therefore not merely a style issue: it is a repository check failure because inconsistent names would break deterministic worker discovery and search. Only the exact paths explicitly frozen by the current contract revision are accepted outside the canonical grammar/value rules.
