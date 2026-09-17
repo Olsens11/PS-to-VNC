@@ -1,8 +1,8 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0015
-RECORDED_AT=2026-09-17T06:42:41-04:00
+STATE_REVISION=0016
+RECORDED_AT=2026-09-17T07:18:00-04:00
 SOURCE_COMMIT=SELF
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0005
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
@@ -11,305 +11,320 @@ BASED_ON_GLOBAL_STATE_REVISION=0035
 BASED_ON_VALIDATION_STATE_REVISION=0006
 BASED_ON_VALIDATION_FINDINGS_REVISION=0005
 BASED_ON_A003_AUDIT_REVISION=0001
-BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0002
+BASED_ON_A004_AUDIT_REVISION=0001
+BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0003
+BASED_ON_A003_MANUAL_COMPLETION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-This interactive Foreman revision consumes the partial A003-P2A Reconstruction handoff, independently reviews the committed wire/control work, resolves the missing clean Pi production endpoint ownership, repairs the separate immutable-work-log governance incompatibility without rewriting history, and issues only the bounded P2A-completion packet. It does not implement P2A product behavior itself.
+This Foreman revision changes reconstruction execution strategy without declaring A003 complete. It preserves coherent accepted A003 source, supersedes the autonomous A003-P2A Pi/Transport completion packet from state revision 0015, moves the unresolved real Transport/Pi exact-generation mechanics into a durable manual completion item, freezes dependency-facing owner contracts, and releases downstream owner-local reconstruction that can be proved without a fake production Transport.
 
-The live branch was re-read immediately before this state write at `f78cb9868107e5fe6f07e6e20358ffce442437a9`.
+The live branch was re-read immediately before this state write at `099dec22c71544c0980dae1769d19b650bb71973`.
 
-A003-P1 remains Foreman-accepted `MET`. A003-P2A remains incomplete. P2B/P2C/P2D and A004 remain unauthorized. Independent Validation and all physical qualification remain separate authorities.
+Independent Validation remains a separate authority. Cross-machine Pi/PS2 validation and physical qualification remain pending.
 
 ## Current Foreman phase
 
-`A003_P2A_PI_OWNER_COMPLETION_PACKET_ISSUED`
+`A003_TRANSPORT_PI_MANUAL_DEFERRED__A004_MPEG_CALIBRATION_CORE_PACKET_ISSUED`
 
-## P2A partial Reconstruction handoff consumed
+## Execution-strategy supersession
 
-WORK_ITEM_KEY=`a003-mpeg-generation`
-WORKER=`interactive`
-WORKER_LOG_COMMIT=`6ccd4339d709b0626a6ea237ba99d4c7fc6d03e7`
-SUBSTANTIVE_SOURCE_COMMIT=`b609aec92f8f54d7d57ea81b38936bc45cd7d6d9`
-WORKER_RESULT=`FOREMAN_GOAL_RESULT=PARTIAL`
+State revision 0015 correctly resolved the conceptual owner split between a Pi PSTV session/mechanism owner and a Pi exact-generation business-state owner. That ownership decision remains useful.
 
-Generated dictionary reconciliation following the substantive source commit:
+However, its active autonomous `A003-P2A-COMPLETION` implementation packet is now **SUPERSEDED**.
 
-- `46befa0157f8537c39251bf55b8f151470b583cf` — deterministic reconciliation trigger;
-- `bcea2522997a1c00bee5ceafd616d8d0202aa5e1` — generated clean-definition reconciliation.
+Reconstruction is no longer authorized by Foreman state to:
 
-No product rollback is required. The partial handoff contains coherent bounded P2A source rather than a half-completed lifecycle implementation, and no P2B/P2C/P2D behavior is present.
+- create/adopt a production `pi/pstv/` runtime merely because revision 0015 named that namespace;
+- solve real Pi service/socket/thread/session ownership autonomously;
+- complete P2A-2/P2A-5/P2A-6 by inventing substitute production behavior;
+- advance P2B/P2C/P2D to make the exact-generation lifecycle look complete;
+- infer real endpoint success from host-side contract fakes.
 
-## Foreman criterion-by-criterion P2A disposition
+The real implementation/proof sequence is now governed by:
 
-### P2A-1 `START_CONTROL_IDENTITY` — MET
+`docs/ledge/LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION.md`
 
-Accepted from `b609aec...`.
+revision `0001`, commit `8fc78235061e9e0d7a95b82531c0324bf05a140a`, status:
 
-- START is explicit kind `11`, control channel `0`, flags `0`.
-- START is not represented as DATA/channel 4.
-- classification uses frame identity rather than MPEG payload shape/length.
+`A003_TRANSPORT_PI_MANUAL_COMPLETION_DEFERRED`
 
-No correction is assigned for the accepted wire identity.
+The governing ledge architecture is now `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision `0003`, commit `099dec22c71544c0980dae1769d19b650bb71973`.
 
-### P2A-2 `START_SEMANTICS` — PARTIAL
+## A003 accepted work preserved
 
-Accepted portion:
+A003-P1 remains Foreman-accepted `MET` from the prior accepted reconstruction/integration evidence.
 
-- exact 44-byte v1 wire payload remains eleven big-endian 32-bit words in the audited field order;
-- codec enforces exact payload size and v1 representation.
+The coherent P2A partial source at `b609aec92f8f54d7d57ea81b38936bc45cd7d6d9` remains preserved. No rollback is assigned.
 
-Missing portion:
+Accepted behavior includes:
 
-- exact active-session validation;
-- nonzero generation;
-- signed-int-range conversion for geometry;
-- base width/height minimum and 16-pixel alignment;
-- positive suppression dimensions;
-- suppression containment of exact base rectangle;
-- base and suppression bounds against active Pi desktop geometry;
-- one immutable prepared generation;
-- stale/repeated/conflicting START rejection without mutation.
+- START explicit control identity: kind `11`, control channel `0`, flags `0`;
+- exact 44-byte START v1 representation;
+- RETIRE explicit control identity: kind `10`, control channel `0`, flags `0`;
+- exact 12-byte big-endian RETIRE `(version, session_id, generation)` representation;
+- explicit START / RETIRE / MPEG-DATA frame classification;
+- MPEG media remains opaque `DATA/channel 4`;
+- START-shaped exactly-44-byte MPEG DATA remains MPEG media;
+- no magic-length payload sniffing;
+- no per-MPEG-packet generation tags;
+- accepted PS2 outbound START uses the existing ordered physical Transport send path;
+- no prepared-generation or Pi producer business state was moved into PS2 Transport or MPEG decoder ownership.
 
-These are Pi exact-generation/application semantics and do not belong in PS2 Transport or MPEG decoder ownership.
+### P2A criterion disposition under the deferral
 
-### P2A-3 `RETIRE_WIRE_IDENTITY` — MET
+- `P2A-1 START_CONTROL_IDENTITY = MET`
+- `P2A-2 START_SEMANTICS = PARTIAL / PENDING_MANUAL_TRANSPORT_PI`
+- `P2A-3 RETIRE_WIRE_IDENTITY = MET`
+- `P2A-4 PURE_MPEG_DATA = MET`
+- `P2A-5 SOLE_TRANSPORT_OWNER = PARTIAL / PENDING_MANUAL_TRANSPORT_PI`
+- `P2A-6 OWNERSHIP = PARTIAL / PENDING_MANUAL_TRANSPORT_PI`
+- `P2A-7 NO_GENERATION_TAGGING = MET`
+- `P2A-8 BOUNDED_SCOPE = MET`
 
-Accepted from `b609aec...` as a **wire/control** criterion only.
+The three partial criteria are not failed local source; they are exact real-owner implementation/proof gaps intentionally deferred. A003 as a whole is **not complete**.
 
-- RETIRE is explicit kind `10`, control channel `0`, flags `0`;
-- exact payload size is 12 bytes;
-- the codec preserves big-endian `(version, session_id, generation)` representation and v1 identity;
-- no cleanup, acknowledgment, decoder retirement, or successor-generation lifecycle is claimed.
+## Binding source/component invariant
 
-P2A-completion may add owner-correct RETIRE publication/semantic-request validation, but it must not reinterpret this wire criterion as P2C lifecycle authorization.
+Architecture overlay revision 0003 makes the following rule binding for A004-A006 and the later A003 manual session:
 
-### P2A-4 `PURE_MPEG_DATA` — MET
+> Inside one genuine component/local-cooperation directory, internal implementation files may cooperate directly. Across a real component boundary, communication must pass through the owning component's defined bridge or public process seam.
 
-Accepted from `b609aec...`.
+Therefore:
 
-The deterministic regression constructs START-shaped bytes in an exactly 44-byte `DATA/channel 4` frame and proves that frame remains MPEG media while START/RETIRE classifiers remain false. No correction is assigned.
+- directory membership follows coherent ownership, not call-site convenience;
+- unrelated responsibilities may not be co-located merely to avoid a bridge;
+- no bridge-per-caller or bridge-per-destination proliferation;
+- Application coordinates owners only through public owner bridges;
+- tests fake the same public owner boundary that production callers consume;
+- private sockets, receiver threads, queues, parser state, decoder-worker state, compositor state, and input state remain private to their owner.
 
-### P2A-5 `SOLE_TRANSPORT_OWNER` — PARTIAL
+## Frozen dependency-facing contracts
 
-Accepted portion:
+The architecture overlay and deferred-manual item are the detailed authority. This state records the dependency facts downstream work may consume.
 
-- no new PS2 socket, receiver thread, or competing reader was introduced;
-- PS2 outbound START uses the existing ordered physical Transport send path;
-- PS2 receive ownership remains unchanged.
+### Transport
 
-Missing portion:
+Mechanism owner only: session lifecycle, one physical stream/sole receive path when real, framing/order, logical channels/control delivery, flow control, quiescence/dormancy, mechanism failure, and narrow public logical/control operations actually required by consumers.
 
-- clean production Pi endpoint ownership and sole receive dispatch were previously undesignated;
-- PS2 sole receiver still has no narrow inbound RETIRE-control publication seam and currently fails non-DATA frames rather than publishing exact-generation control upward.
+Transport may eventually expose exact START send, RETIRE request/send, inbound exact-control publication, immutable mechanism-owned session/config facts, and terminal/quiescence/failure facts.
 
-Architecture overlay revision 0002 now resolves the Pi ownership ambiguity; the completion worker may implement the named seams but may not add another physical reader on either endpoint.
+Transport does **not** own generation preparation/retirement proof, decode/presentation state, RFB restoration policy, or input/UI semantics.
 
-### P2A-6 `OWNERSHIP` — PARTIAL
+### Exact generation
 
-Accepted portion:
+Owns exact active session/generation rules, immutable prepared generation state, START semantic validation, stale/repeated/conflicting rejection, and real `RETIREMENT_PROVEN` publication after the exact owner fence succeeds.
 
-- Transport wire code contains no prepared-generation or producer lifecycle state;
-- MPEG decoder ownership is unchanged;
-- Pi semantics were correctly not forced into PS2 `src/transport/runtime.c`.
+### MPEG
 
-Missing portion:
+Owns decoder/worker behavior and decode/upload readiness. `FIRST_MPEG_FRAME_DECODED` is not physical presentation.
 
-- production Pi PSTV Session and Pi Exact-Generation Coordinator behavior are not yet implemented;
-- the PS2 application-facing START/RETIRE control seam is not yet complete: current START send is transport-internal and inbound RETIRE publication is absent.
+### RFB
 
-Architecture overlay revision 0002 now gives these responsibilities named clean owners.
+Owns RFB protocol/framebuffer truth, safe complete-message/request freeze/quiescence, request mechanics, and fresh-full-update obligation.
 
-### P2A-7 `NO_GENERATION_TAGGING` — MET
+### Presentation
 
-Accepted from `b609aec...`. No generation field was added to MPEG DATA and no magic 44-byte media discriminator exists.
+Owns one physical GS/composition path, draw/matte/suppression geometry consumption, physical presentation, `FIRST_PHYSICAL_MPEG_FRAME`, visual ownership promotion, common-media-clock arm callsite, and presentation timing/drop policy.
 
-### P2A-8 `BOUNDED_SCOPE` — MET
+### Input / UI
 
-Accepted from `b609aec...`. No Pi producer emission fence, PS2 decoder retirement/join/drain/credit fence, successor-generation reopen, presentation/deadline policy, A004 reconstruction, DESKTOP CALIBRATION change, or hardware claim was introduced.
+Owns physical observation, semantic foreground ownership, pointer/buttons/wheel, keyboard/modifier interpretation/publication, OSK/local foreground, release quarantine, and cooperative dormancy/teardown.
 
-## Clean production Pi ownership decision
+### Application
 
-Architecture authority is now `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision 0002, commit `66a0c95a1b00e7183ce0c8bb57dc6456bfff2224`.
+Owns cross-owner ordering/policy only. It may coordinate public facts such as `TRANSPORT_SESSION_READY`, `TRANSPORT_RECEIVER_DORMANT`, `GENERATION_PREPARED`, `RETIREMENT_PROVEN`, `RFB_QUIESCED`, `INPUT_DORMANT`, and `FIRST_PHYSICAL_MPEG_FRAME`, but obtains every fact from its real owner bridge.
 
-### Pi PSTV Session
+## Contract-test evidence discipline
 
-The production Pi counterpart of historical H1 `H1Session.reader()` is the **Pi PSTV Session** component in the newly designated clean runtime namespace:
+Downstream deterministic fakes are permitted only at public owner boundaries.
 
-`pi/pstv/`
+A downstream component may become:
 
-It owns:
+- `SOURCE_COMPLETE`;
+- `CONTRACT_COMPLETE`;
+- `CONTRACT_TESTED`;
+- `HOST_TESTED`;
+- `PS2_COMPILE_PASS`;
+- `PS2_LINK_PASS`;
 
-- one accepted PS2-facing PSTV socket/session;
-- the Pi endpoint's sole PSTV receive chain and receive sequence;
-- framing/version/length and explicit frame-kind/channel/flags dispatch;
-- ordered physical sends and send sequence;
-- Transport-level publication of explicit control messages;
-- mechanism-level connection/session teardown.
+while retaining exact dependency gaps.
 
-It does not own exact-generation business state, MPEG producer lifecycle, presentation/calibration policy, or DESKTOP CALIBRATION.
+Those labels never imply:
 
-### Pi Exact-Generation Coordinator
+- `REAL_TRANSPORT_IMPLEMENTED`;
+- `CROSS_MACHINE_VALIDATED`;
+- `HARDWARE_QUALIFIED`.
 
-A separate internal owner inside `pi/pstv/` owns:
+Pending labels must state the precise unproven owner fact rather than hide local incompleteness behind a generic dependency label.
 
-- active session identity;
-- highest accepted generation / stale-generation authority;
-- the optional one-and-only immutable prepared START value;
-- START semantic decode/validation after envelope classification;
-- wrong-session/zero/stale/repeated/conflicting rejection;
-- accepted MPEG CALIBRATION / MPEG presentation base and suppression geometry as immutable generation inputs;
-- publication of an accepted prepared generation to later lifecycle work.
+## A004-A006 replan
 
-The Pi PSTV Session publishes a typed control identity (`START` or `RETIRE`) plus exact payload and immutable session context to this coordinator. Transport must not infer generation semantics from MPEG media bytes.
+### A004 — Presentation / MPEG CALIBRATION
 
-### Active Pi desktop geometry authority
+A004 is released for owner-local reconstruction against contracts. This includes MPEG CALIBRATION edit/commit semantics, base/inner/outer geometry, foreground semantics, RFB freeze/full-refresh policy, accept-to-first-frame protection, one Presentation/GS owner, compositor ordering, first physical frame promotion, common-clock arm callsite, absolute scheduler/drop policy, overlays, and restoration conditioned on abstract `RETIREMENT_PROVEN`.
 
-The coordinator receives immutable active desktop bounds at PSTV-session/coordinator creation from the Pi companion's active **PS2-facing desktop/session owner** — the runtime/configuration authority that creates or adopts the active Xtigervnc desktop.
+The Pi mechanism producing `RETIREMENT_PROVEN` remains deferred.
 
-Historical H1 `desktop_width` / `desktop_height` are evidence of this Pi-local session-metadata ownership. `704x462` is only the current qualified/candidate desktop value, not a permanent product constant. START does not define its own bounds authority.
+**DESKTOP CALIBRATION** and **MPEG CALIBRATION** remain separate authorities under `LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md` revision 0001.
 
-This value is not PS2 DESKTOP CALIBRATION. START's base rectangle and suppression footprint are MPEG CALIBRATION / MPEG presentation geometry consumed here only as already-qualified generation-preparation inputs. P2A does not begin A004 MPEG calibration reconstruction.
+### A005 — Interaction / Input
 
-### Pi MPEG producer
+A005 may proceed with its owner-local physical polling/continuity, mouse/pointer/button/wheel interpretation, keyboard/modifier serialization, OSK/local foreground, release quarantine, suspend -> neutralize -> rebase -> release -> resume, calibration foreground handoff, parser-safe publication boundary, and cooperative teardown. Cross-owner interactions use the owning bridge.
 
-The Pi MPEG producer remains a later P2B responsibility. P2A completion must not launch it, mutate capture/suppression state, open emission admission, or implement retirement cleanup.
+### A006 — Application orchestration
 
-## PS2 control-seam decision
+A006 may reconstruct resident startup/session admission, CONFIG/profile consumption, component dependency ordering, steady-state coordination, failure convergence, terminal-result aggregation, reverse teardown, and repeated-session structure against owner bridges and deterministic contract fakes.
 
-The accepted `b609aec...` START wire/send helper may be preserved. P2A completion must make it available through the normal Transport bridge/session API so application/exact-generation coordination does not reach into `physical_stream` internals.
+Application correctness is not evidence that a deferred producer of an owner fact is implemented.
 
-Because RETIRE completion will later arrive Pi -> PS2 on the same PSTV connection, P2A completion must also add only the narrow Transport-owned inbound control-publication seam required to accept/classify kind-10 control on the existing sole receiver and publish its decoded wire identity upward.
+## Exact A003 obligations remaining deferred
 
-Transport must not decide whether that RETIRE actually retires a generation. No decoder stop/join, residual drain, credit restoration, cleanup acknowledgment, or successor reopen belongs in this packet.
+The manual completion item must eventually prove at minimum:
 
-## Separate governance repair — settled
+1. actual Pi PSTV runtime/service owner adoption;
+2. one real Pi PSTV session owner and sole receive path;
+3. explicit START receive through that owner;
+4. real START semantic validation and immutable prepared generation;
+5. producer preparation and MPEG emission;
+6. retirement admission close with an intentionally exercised in-flight emission lease;
+7. exact producer cleanup before RETIRE completion emission;
+8. PS2 exact completion reception through the sole receiver/public seam;
+9. decoder stop/join before reclaiming worker-visible resources;
+10. residual MPEG queue drain with corresponding Transport credit restoration;
+11. proof generation N cannot contaminate N+1;
+12. repeated-generation finite EOF/cancel/error/retirement behavior;
+13. cross-machine integration of reconstructed downstream owners;
+14. physical PS2/Pi qualification and all-guns endurance.
 
-The prior canonical red was not a P2A defect. Two already-frozen otherwise-canonical records wrote `LOG_FORMAT_REVISION=0005`:
+A003 cannot be declared complete until these owner facts are proven.
 
-- `docs/ledge/work-log/20260916T160445-0400__integration__global-dictionary-prep__dictionary.md`;
-- `docs/ledge/work-log/20260916T162043-0400__validation__a003-mpeg-generation__validation.md`.
+## Fresh bounded Reconstruction packet — A004-MPEG-CALIBRATION-CORE
 
-Neither immutable record was edited.
-
-Work-log contract revision 0006, commit `d1afc0f9c32b7c53c49d9a72c08b256b3c7b3ca1`, adds only two exact path-specific format-revision compatibility entries. They are not broad legacy grandfather exceptions; every other canonical filename/metadata/status/time check still applies.
-
-Checker commit `f78cb9868107e5fe6f07e6e20358ffce442437a9` implements the same exact-path-only rule.
-
-Canonical workflow run `35211799038` on `f78cb986...` is settled green:
-
-- `host-unit=SUCCESS`;
-- `ps2-compile=SUCCESS`;
-- `ps2-link=SUCCESS`, including current-source reproducibility;
-- `dictionary-long=SUCCESS`;
-- `project-check=SUCCESS`;
-- project-check reports `WORK_LOG_CHECK=PASS records=118 grandfathered=9 format_compat=2` and `PS_TO_VNC_PROJECT_CHECK=PASS`.
-
-This closes the known governance/checker red only. It is not independent Validation PASS and is not hardware evidence.
-
-## Fresh bounded Reconstruction packet — A003-P2A-COMPLETION
-
-WORK_ITEM_KEY=`a003-mpeg-generation`
+WORK_ITEM_KEY=`a004-presentation-calibration`
 TARGET_WORKER=`interactive`
-ASSIGNING_HEAD=`f78cb9868107e5fe6f07e6e20358ffce442437a9`
-ASSIGNING_AUDIT=`LEDGE_AUDIT_A003_MPEG_GENERATION.md:0001`
-ASSIGNING_ARCHITECTURE_OVERLAY=`LEDGE_ARCHITECTURE_OVERLAY.md:0002`
-ASSIGNING_FOREMAN_STATE=`0015`
+ASSIGNING_HEAD=`099dec22c71544c0980dae1769d19b650bb71973`
+ASSIGNING_AUDIT=`LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md:0001`
+ASSIGNING_CALIBRATION_INVARIANT=`LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md:0001`
+ASSIGNING_ARCHITECTURE_OVERLAY=`LEDGE_ARCHITECTURE_OVERLAY.md:0003`
+ASSIGNING_FOREMAN_STATE=`0016`
+H1_FORENSIC_SOURCE=`3426f28b93de9519ca93e5f0e0aaf8b67cfca845`
 
 ### Objective
 
-Complete only the missing owner-correct P2A semantics and dispatch around the accepted `b609aec...` wire/control implementation. Establish the clean Pi PSTV Session plus Pi Exact-Generation Coordinator under `pi/pstv/`, finish the narrow PS2 application-facing START/RETIRE Transport seams, and make P2A-2/P2A-5/P2A-6 independently reviewable as `MET` without crossing into producer or decoder-retirement lifecycle.
+Reconstruct only the pure owner-local **MPEG CALIBRATION geometry and committed-state core** from frozen H1 evidence into clean production source with deterministic host tests and a narrow calibration-owner public seam. This packet must not depend on the deferred real Pi/Transport implementation.
 
-### Preserve without rework unless a concrete defect is found
+### Required evidence to trace before editing
 
-Preserve the accepted `b609aec...` behavior:
+Read at minimum:
 
-- START kind 11 / control channel 0 / flags 0;
-- exact 44-byte START v1 wire codec;
-- RETIRE kind 10 / control channel 0 / flags 0;
-- exact 12-byte RETIRE wire codec;
-- explicit START/RETIRE/MPEG-DATA classifiers;
-- ordinary 44-byte DATA/channel-4 payload remains pure MPEG media;
-- no generation tags or payload sniffing;
-- one existing PS2 physical stream and sole receive owner.
+- `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md`;
+- `docs/ledge/LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md`;
+- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision 0003;
+- frozen H1 `experiments/media-harness-h1/mpeg_presentation_calibration/mpeg_presentation_calibration.h`;
+- frozen H1 `mpeg_presentation_calibration_geometry.c`;
+- frozen H1 `mpeg_presentation_calibration_state.c` and the focused pure calibration tests;
+- any later H1 evidence that proves a correction to those pure geometry/commit semantics.
+
+Do not copy the experimental directory wholesale.
+
+### CALIBRATION SEPARATION INVARIANT
+
+**DESKTOP CALIBRATION and MPEG CALIBRATION are separate historical systems with separate state, geometry authority, ownership, and evidence. Do not derive MPEG-calibration behavior from the older desktop-calibration implementation merely because both manipulate screen rectangles or use similar UI mechanics. For MPEG calibration, trace `experiments/media-harness-h1/mpeg_presentation_calibration/` and A004 audit authority. If any relationship is unclear, preserve the separation and flag the ambiguity rather than merging the systems.**
 
 ### Required deliverables
 
-1. **Clean Pi runtime component.** Create the behavior-bearing production Pi PSTV component under `pi/pstv/` as authorized by architecture overlay rev0002. Keep one Pi PSTV Session owner for the one accepted socket/session, framing/sequence, ordered receive/send, and explicit envelope dispatch. Do not copy the H1 experiment into production wholesale.
+1. Establish the smallest genuine production **MPEG CALIBRATION owner/local-cooperation boundary** consistent with current clean source conventions. If a new directory is warranted, its membership must be justified by coherent calibration ownership, not convenience. Do not place Presentation, Input, RFB, Transport, or Application internals inside it.
 
-2. **Typed Pi control publication seam.** The Pi PSTV Session must classify explicit START/RETIRE envelopes and publish a typed control identity plus exact payload/session context to the Pi Exact-Generation Coordinator. It must not sniff DATA/channel-4 payloads and must not own prepared-generation business state.
+2. Reconstruct the pure MPEG CALIBRATION geometry meanings:
+   - **base rectangle** = exact MPEG capture/presentation region;
+   - **inner matte** = PS2-local presentation-only inset state;
+   - **outer/suppression footprint** = expanded MPEG visual-ownership/RFB-suppression perimeter.
+   Keep the three meanings distinct.
 
-3. **Pi exact-generation START semantics.** The coordinator must validate START v1 against:
-   - exact active session id;
-   - nonzero generation;
-   - every geometry word fitting the implementation's signed-int range before signed use;
-   - base width and height each at least 16 and 16-pixel aligned;
-   - positive suppression width/height;
-   - suppression rectangle fully containing the exact base rectangle;
-   - exact base rectangle inside immutable active Pi desktop bounds;
-   - suppression rectangle inside immutable active Pi desktop bounds;
-   - overflow-safe right/bottom arithmetic.
+3. Preserve the audited geometry invariants from frozen H1 evidence:
+   - base width/height remain MPEG-compatible with a 16-pixel minimum and 16-pixel size alignment;
+   - base position remains pixel-precise and clamped to the local canvas;
+   - resizing preserves the recovered center behavior where H1 authority requires it;
+   - inner matte remains bounded by the base region and does not alter capture geometry;
+   - outer matte/suppression expansion remains local bounded state and produces a suppression rectangle clamped to the canvas;
+   - no arithmetic path may create invalid negative width/height or out-of-canvas committed geometry.
 
-4. **Immutable prepared-generation state.** Successful START stores exactly one immutable prepared value containing session id, generation, base rectangle, and suppression rectangle. While one value is prepared, repeated, stale, newer-conflicting, wrong-session, malformed, or invalid START must fail without mutating it. Preserve monotonic stale-generation authority so an accepted generation cannot later be replaced by itself or an older generation. Do not activate a producer.
+4. Reconstruct a single owner-local draft/default/committed model sufficient for later UI/Application consumers to edit and obtain one accepted immutable MPEG CALIBRATION geometry. Do not create a second accepted geometry store merely to cross a component boundary.
 
-5. **Active Pi desktop bounds injection.** Supply desktop width/height to the coordinator as immutable session construction/context from the PS2-facing Pi desktop/session owner. Do not hardcode 704x462 as an architectural maximum, derive bounds from START, or involve PS2 DESKTOP CALIBRATION. Tests may inject deterministic bounds.
+5. Expose only a narrow calibration-owner public seam sufficient for later consumers to:
+   - initialize/query owner state;
+   - apply owner-local geometry edits through semantic operations supported by H1 evidence;
+   - inspect the current reviewable geometry;
+   - commit one immutable accepted geometry value;
+   - cancel/revert draft edits to the proper prior/default value;
+   - derive/query the outer suppression rectangle from the same authoritative value.
 
-6. **Pi RETIRE publication only.** Route exact RETIRE control through the Pi sole session owner to the coordinator and validate its wire/session/generation request identity sufficiently to publish a typed valid request. Do not stop/clean a producer, send completion ACK, clear/reopen a generation, or implement the P2B/P2D fence.
+   The public seam must not expose Presentation/GS state, RFB parser/request internals, Transport, Pi exact-generation state, or Input hardware state.
 
-7. **PS2 public START seam.** Preserve the accepted physical-stream START send path but expose it through the normal Transport bridge/session boundary so application/exact-generation coordination never reaches into private `physical_stream` ownership.
+6. Preserve **acceptance vs first physical presentation** separation. A committed MPEG CALIBRATION geometry is only accepted geometry. This packet must not produce `GENERATION_PREPARED`, `FIRST_PHYSICAL_MPEG_FRAME`, visual ownership promotion, common-clock arm, or `RETIREMENT_PROVEN`.
 
-8. **PS2 inbound RETIRE publication seam.** Extend only the existing sole PS2 Transport receiver/control bridge as needed to accept exact RETIRE control envelope/wire identity and publish it upward through a narrow application-facing seam. Do not perform decoder stop/join, queue drain, credit restoration, generation retirement, or successor reopen.
+7. Add deterministic host tests covering at minimum:
+   - default geometry is valid and aligned;
+   - base resize/move clamping and center-preserving resize behavior from H1;
+   - exact 16-pixel size stepping/minimum;
+   - independent inner-matte behavior without changing base capture geometry;
+   - independent outer-matte behavior and suppression-rectangle clipping;
+   - commit produces exactly one immutable accepted value exposed through the owner seam;
+   - later draft edits do not mutate the previously returned/accepted committed value;
+   - cancel/revert restores the proper committed/default draft without fabricating acceptance;
+   - base/inner/outer meanings remain distinct;
+   - no DESKTOP CALIBRATION source/state is used as MPEG authority.
 
-9. **Deterministic host tests.** Cover at minimum:
-   - exact valid START preparing one immutable Pi generation;
-   - wrong session, zero generation, signed-range failure, base minimum/alignment failure, suppression-size/containment failure, desktop-bounds failure, and overflow-safe boundary cases;
-   - repeated/stale/conflicting START leaves accepted prepared state byte/value-identical;
-   - Pi session dispatch recognizes START/RETIRE only from explicit control identity;
-   - START-shaped exactly-44-byte DATA/channel-4 remains ordinary MPEG media;
-   - Pi RETIRE malformed/version/session/generation mismatch rejection at the semantic request boundary without lifecycle effects;
-   - one Pi receive owner / no second socket or reader introduced;
-   - PS2 START uses the public Transport seam while retaining the existing ordered physical sender;
-   - PS2 RETIRE is published by the sole existing receiver without P2C behavior;
-   - accepted P1 MPEG Transport/decoder tests continue to pass.
+8. Follow source synopsis/naming/dictionary/topology conventions for new clean source. Reconstruction may make behavior-owned source/test changes and local source dictionary changes. Foreman retains canonical generated portal/topology/test/build integration chores after handoff when appropriate.
 
-10. **Source/topology discipline.** Treat `pi/pstv/` as the architecture-authorized new clean Pi runtime component. Add behavior-specific source/tests and clear local documentation/synopses appropriate to the language. Foreman retains canonical topology/file-map/checker/test-registration/generated-portal integration after the worker handoff where those are non-behavioral chores.
+### Explicitly out of scope
+
+Do **not** implement in this packet:
+
+- controller acquisition, foreground ownership, held-X review acceptance, or release quarantine;
+- A005 input routing;
+- RFB safe freeze/full-refresh scheduling;
+- accept-to-first-frame orchestration;
+- START/RETIRE sends or any real Pi/Transport mechanics;
+- exact-generation preparation/retirement;
+- MPEG decode/worker changes;
+- Presentation/GS compositor, raster/overlay rendering, first physical frame, common-clock arm, scheduler/drop policy;
+- DESKTOP CALIBRATION changes;
+- hardware qualification.
 
 ### Acceptance criteria
 
-P2A-C1 `START_SEMANTICS_MET` — P2A-2 becomes `MET`: valid START produces the exact immutable prepared generation; every audited invalid/stale/repeated/conflicting case fails without mutation.
+`A004-C1 MPEG_CALIBRATION_OWNER_BOUNDARY` — pure geometry/commit source is owned by one coherent MPEG CALIBRATION component/local-cooperation boundary with a narrow owner bridge; no cross-owner internals are imported for convenience.
 
-P2A-C2 `PI_SOLE_SESSION_OWNER` — one production Pi PSTV Session owns one socket/session/receive sequence and all START/RETIRE receive dispatch; no second reader/socket appears.
+`A004-C2 GEOMETRY_MEANINGS` — base, inner matte, and outer/suppression footprint retain distinct audited meanings and tested invariants.
 
-P2A-C3 `PI_OWNERSHIP_SPLIT` — Transport/session owns framing/dispatch only; Pi Exact-Generation Coordinator owns semantic validation/prepared state; Pi MPEG producer remains absent/deferred.
+`A004-C3 SINGLE_COMMITTED_AUTHORITY` — one accepted immutable MPEG CALIBRATION geometry is the only committed authority; draft edits/cancel cannot mutate an already accepted value.
 
-P2A-C4 `ACTIVE_DESKTOP_AUTHORITY` — bounds come from injected immutable Pi active desktop/session context, not START, DESKTOP CALIBRATION, or a hardcoded permanent 704x462 limit.
+`A004-C4 DESKTOP_SEPARATION` — DESKTOP CALIBRATION remains untouched and is not used as MPEG behavior authority.
 
-P2A-C5 `PS2_CONTROL_SEAMS` — application-facing START send and inbound RETIRE publication both preserve existing sole Transport physical ownership without adding P2C lifecycle.
+`A004-C5 CONTRACT_HOST_TESTED` — deterministic host tests prove the local owner behavior. This may support `CONTRACT_TESTED` / `HOST_TESTED`; it does not imply real Transport, cross-machine, Presentation, or hardware completion.
 
-P2A-C6 `PRESERVE_ACCEPTED_WIRE_WORK` — P2A-1/P2A-3/P2A-4/P2A-7 remain `MET`, including the 44-byte MPEG-media regression and no generation tagging/sniffing.
+`A004-C6 BOUNDED_SCOPE` — no RFB/Input/Transport/Pi/Presentation lifecycle behavior is reconstructed in this packet.
 
-P2A-C7 `BOUNDED_SCOPE` — P2A-8 remains `MET`: no Pi producer preparation/emission/retirement fence, PS2 decoder stop/join/drain/credit fence, successor-generation transaction, presentation/common-clock arm, A004 reconstruction, DESKTOP CALIBRATION change, or hardware claim.
+### Worker handoff
 
-P2A-C8 `HANDOFF` — emit exactly one canonical immutable Reconstruction work log with criterion-by-criterion evidence and `FOREMAN_GOAL_RESULT=MET|PARTIAL|BLOCKED` for the P2A-completion packet.
+Return:
 
-### Blocker / fallback rule
+- exact starting and ending commit;
+- substantive source commit(s);
+- files changed and owner-boundary rationale;
+- criterion disposition A004-C1 through A004-C6;
+- host-test command/output;
+- any precise dependency labels still pending;
+- exactly one immutable Reconstruction work log under `docs/ledge/work-log/` following current contract.
 
-The Pi production owner/path is no longer an architectural blocker: overlay rev0002 designates `pi/pstv/`, the Pi PSTV Session, and Pi Exact-Generation Coordinator.
+Do not advance to another A004 slice. Stop at handoff.
 
-If implementation uncovers a concrete contradiction between that boundary and newer repository authority, stop at the exact contradiction and report `PARTIAL`/`BLOCKED`; do not invent another Pi production owner. If a narrow reusable Transport publication primitive is required on PS2, implement only that mechanism and keep exact-generation policy above Transport.
+## Foreman next pickup
 
-There is no P2B stretch target. Finishing P2A early means stop with a complete handoff.
+Consume only the A004 MPEG CALIBRATION core handoff. Reinspect A004-C1 through A004-C6 against live authority, preserve the deferred A003 item, and do not reopen autonomous Pi/Transport work. Select the next downstream owner-local packet only after the core is accepted.
 
-## Deferred successor packets — not authorized
-
-- P2B: Pi producer preparation/emission-admission/lease/cleanup fence.
-- P2C: PS2 exact retirement completion, decoder stop/join, residual discard and credit restoration.
-- P2D: complete ordered `N -> RETIRE(N) -> N+1` transaction.
-- A004: presentation/compositor/MPEG CALIBRATION lifecycle beyond the already-accepted geometry contract.
-
-## Next Foreman pickup
-
-Consume only the P2A-completion handoff. Reinspect P2A-1 through P2A-8 on the integrated tree, with special attention to the Pi single-reader boundary, immutable prepared-generation state, active desktop bounds authority, public PS2 control seams, and absence of P2B/P2C behavior. Perform canonical Pi topology/test/file-map integration as Foreman-owned chores only after behavior source is coherent.
-
-PENDING_LOCAL=A003-P2A-completion worker handoff and Foreman integration; independent Validation after coherent P2A acceptance
-HARDWARE_PENDING=A001 physical PS2 qualification; A002 physical audio/common-clock qualification; A003 physical MPEG/video qualification
+PENDING_MANUAL_TRANSPORT=A003 real Pi PSTV owner; exact START semantic/prepared-generation implementation; producer/emission/retirement fence; PS2 exact completion/decoder join/drain-credit; repeated-generation same-stream proof
+PENDING_CROSS_MACHINE=A003 real PS2/Pi generation transaction; downstream all-guns owner integration
+HARDWARE_PENDING=A001 physical PS2 qualification; A002 physical audio/common-clock qualification; A003 physical MPEG/video qualification; A004-A006 later physical/all-guns qualification
