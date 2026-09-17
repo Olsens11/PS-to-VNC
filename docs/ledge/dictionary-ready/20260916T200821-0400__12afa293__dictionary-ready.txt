@@ -1,0 +1,119 @@
+DOCUMENT=LEDGE_DICTIONARY_READY
+GENERATED_AT=2026-09-16T20:08:21-04:00
+SOURCE_HEAD=12afa2938438108b105eb611c36773933582438b
+FOREMAN_STATE_REVISION=0013
+ACTIVE_WORK_ITEM_KEY=a003-mpeg-generation
+STATUS=READY
+TARGET_DICTIONARY=src/SYMBOLS.md
+TARGET_SOURCE_FILES=src/app.c
+ROWS_REVIEWED=44
+ROWS_PREPARED=18
+ROWS_NEEDS_FOREMAN_REVIEW=0
+
+AUTHORITY_INSPECTED
+- src/app.c blob 0b2738c594ad1039bff3c475d0482b48bda323b7 at SOURCE_HEAD.
+- src/SYMBOLS.md blob 7ac64c0b1caa78601cbfd6768087b2efabfde4a0 at SOURCE_HEAD.
+- docs/development/source-naming-and-symbols.md blob c004c3b894e6f48698975bcaa36434eba89219b5.
+- docs/ledge/LEDGE_FOREMAN_STATE.md revision 0013.
+- AGENTS.md and CONTRIBUTING.md current at SOURCE_HEAD.
+
+BACKLOG_QUALITY_DIAGNOSIS
+The application coordinator already has strong semantic definitions for its public helpers and high-level local-foreground transitions, but many parameters and locals in the Issue #39 OSK/local-foreground cluster still use generated tautologies such as `Supplies X to Y` and `Stores X while Y runs`. The current source makes the authority/lifecycle role of the selected 18 rows explicit enough to improve them without behavior judgment. This batch deliberately avoids the actively reconstructed A003 MPEG domain and contains no calibration symbols; therefore DESKTOP_CALIBRATION versus MPEG_CALIBRATION ownership is not implicated.
+
+APPLY_SUMMARY
+src/SYMBOLS.md: replace 18 rows, add 0, remove 0; symbol count unchanged.
+
+CANONICAL_REPLACEMENTS
+Preserve the existing row positions/order. Replace only the Description column through the exact full-row substitutions below.
+
+SYMBOL=session owner=publish_semantic_keyboard_tap
+CURRENT_ROW=| session | parameter | src/app.c | publish_semantic_keyboard_tap | local | Supplies session to publish_semantic_keyboard_tap. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| session | parameter | src/app.c | publish_semantic_keyboard_tap | local | Supplies the main-thread-owned RFB session through which every native key event in the resolved tap sequence must be published. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=keyboard_tap owner=publish_semantic_keyboard_tap
+CURRENT_ROW=| keyboard_tap | parameter | src/app.c | publish_semantic_keyboard_tap | local | Supplies keyboard tap to publish_semantic_keyboard_tap. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| keyboard_tap | parameter | src/app.c | publish_semantic_keyboard_tap | local | Supplies the resolved semantic keysym and modifier set that will be expanded into one balanced native key-event sequence. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=sequence owner=publish_semantic_keyboard_tap
+CURRENT_ROW=| sequence | variable | src/app.c | publish_semantic_keyboard_tap | local | Stores sequence while publish_semantic_keyboard_tap runs. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| sequence | variable | src/app.c | publish_semantic_keyboard_tap | local | Holds the bounded native down/up event sequence produced from the semantic keyboard tap before publication. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=event_index owner=publish_semantic_keyboard_tap
+CURRENT_ROW=| event_index | variable | src/app.c | publish_semantic_keyboard_tap | local | Stores event index while publish_semantic_keyboard_tap runs. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| event_index | variable | src/app.c | publish_semantic_keyboard_tap | local | Walks the validated native keyboard sequence in publication order so any failed RFB send stops the tap immediately. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=framebuffer owner=present_current_application_frame
+CURRENT_ROW=| framebuffer | parameter | src/app.c | present_current_application_frame | local | Supplies framebuffer to present_current_application_frame. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| framebuffer | parameter | src/app.c | present_current_application_frame | local | Supplies the valid authoritative remote framebuffer whose pixels may be converted into the disposable GS presentation surface. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=remote_frame_changed owner=present_current_application_frame
+CURRENT_ROW=| remote_frame_changed | parameter | src/app.c | present_current_application_frame | local | Supplies remote frame changed to present_current_application_frame. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| remote_frame_changed | parameter | src/app.c | present_current_application_frame | local | States whether remote framebuffer authority changed and therefore requires rebuilding the GS-ready desktop pixels before presentation. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=local_ui owner=present_current_application_frame
+CURRENT_ROW=| local_ui | parameter | src/app.c | present_current_application_frame | local | Supplies local ui to present_current_application_frame. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| local_ui | parameter | src/app.c | present_current_application_frame | local | Supplies application-owned local-foreground generation state used to prepare and, after successful platform presentation, acknowledge the exact local presentation. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=osk owner=present_current_application_frame
+CURRENT_ROW=| osk | parameter | src/app.c | present_current_application_frame | local | Supplies osk to present_current_application_frame. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| osk | parameter | src/app.c | present_current_application_frame | local | Supplies current OSK state from which local UI presentation prepares the optional PS2-local overlay surface. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=local_presentation owner=present_current_application_frame
+CURRENT_ROW=| local_presentation | variable | src/app.c | present_current_application_frame | local | Stores local presentation while present_current_application_frame runs. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| local_presentation | variable | src/app.c | present_current_application_frame | local | Holds the prepared local-overlay visibility, geometry, pixels, and generation that must correspond to the frame being presented. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=platform_overlay owner=present_current_application_frame
+CURRENT_ROW=| platform_overlay | variable | src/app.c | present_current_application_frame | local | Stores platform overlay while present_current_application_frame runs. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| platform_overlay | variable | src/app.c | present_current_application_frame | local | Adapts a visible local UI presentation into the narrow pixel-count and geometry record consumed by the PS2 graphics presenter. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=platform_overlay_ptr owner=present_current_application_frame
+CURRENT_ROW=| platform_overlay_ptr | variable | src/app.c | present_current_application_frame | local | Stores platform overlay ptr while present_current_application_frame runs. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| platform_overlay_ptr | variable | src/app.c | present_current_application_frame | local | Selects either the prepared PS2-local overlay record or NULL so the graphics presenter receives explicit overlay visibility. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=session owner=neutralize_published_pointer_for_local_foreground
+CURRENT_ROW=| session | parameter | src/app.c | neutralize_published_pointer_for_local_foreground | local | Supplies session to neutralize_published_pointer_for_local_foreground. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| session | parameter | src/app.c | neutralize_published_pointer_for_local_foreground | local | Supplies the synchronized RFB session used to publish the neutral button mask before local foreground takes pointer ownership. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=published_pointer owner=neutralize_published_pointer_for_local_foreground
+CURRENT_ROW=| published_pointer | parameter | src/app.c | neutralize_published_pointer_for_local_foreground | local | Supplies published pointer to neutralize_published_pointer_for_local_foreground. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| published_pointer | parameter | src/app.c | neutralize_published_pointer_for_local_foreground | local | Supplies mutable authority for the last successfully published remote pointer state and is cleared only after the neutral release event succeeds. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=session owner=apply_osk_activation_result
+CURRENT_ROW=| session | parameter | src/app.c | apply_osk_activation_result | local | Supplies session to apply_osk_activation_result. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| session | parameter | src/app.c | apply_osk_activation_result | local | Supplies the main-thread-owned RFB session used only when the OSK activation produced a semantic keyboard tap for remote publication. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=local_ui owner=apply_osk_activation_result
+CURRENT_ROW=| local_ui | parameter | src/app.c | apply_osk_activation_result | local | Supplies local ui to apply_osk_activation_result. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| local_ui | parameter | src/app.c | apply_osk_activation_result | local | Supplies local-generation authority that is marked dirty when the OSK activation changed PS2-local foreground state. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=activation owner=apply_osk_activation_result
+CURRENT_ROW=| activation | parameter | src/app.c | apply_osk_activation_result | local | Supplies activation to apply_osk_activation_result. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| activation | parameter | src/app.c | apply_osk_activation_result | local | Supplies the OSK result flags plus optional semantic keyboard tap that determine local-generation dirtiness and remote key publication. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=input_runtime owner=open_osk_foreground
+CURRENT_ROW=| input_runtime | parameter | src/app.c | open_osk_foreground | local | Supplies input runtime to open_osk_foreground. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| input_runtime | parameter | src/app.c | open_osk_foreground | local | Supplies the input runtime whose desktop mouse interpretation is suspended and rebased before OSK foreground ownership is established. | Issue #39: keyboard, OSK and local UI foreground model |
+
+SYMBOL=mouse_interpretation_suspended owner=open_osk_foreground
+CURRENT_ROW=| mouse_interpretation_suspended | parameter | src/app.c | open_osk_foreground | local | Supplies mouse interpretation suspended to open_osk_foreground. | Issue #39: keyboard, OSK and local UI foreground model |
+PROPOSED_ROW=| mouse_interpretation_suspended | parameter | src/app.c | open_osk_foreground | local | Supplies application-owned suspension state, preventing duplicate transition and recording successful mouse-interpreter suspension before pointer neutralization/rebase. | Issue #39: keyboard, OSK and local UI foreground model |
+
+GENERATED_PORTAL_IMPLICATION
+Description-only replacements are symbol-count neutral. After Foreman applies the rows, regenerate/reconcile docs/reference/SOURCE_SYMBOL_DICTIONARIES.md only if the canonical generator records description-derived content; do not hand-edit generated output.
+
+MECHANICAL_DELTA_SUPPORT
+No new, removed, or renamed definitions were identified in this bounded semantic pass. No topology, test registration, or build registration consequence follows from these description-only replacements.
+
+CANONICAL_CHECKS_AFTER_APPLY
+- python3 scripts/source-dictionary.py check --strict --require-complete
+- python3 scripts/source-dictionary.py check --long --strict --require-complete
+- scripts/check.sh
+Use the repository's canonical generator/reconciliation command if the portal reports drift.
+
+NEEDS_FOREMAN_REVIEW
+NONE
+
+ASSUMPTIONS_LIMITATIONS
+This support pass inspected a stable application-coordinator source cluster and did not judge active A003 MPEG behavior or future A004 presentation/calibration behavior. GitHub-native access cannot establish Pi-local/uncommitted dirty state. Foreman must compare current source and dictionary rows before applying.
+
+CONSUMPTION_RULE=Foreman must revalidate SOURCE_HEAD/current source/current row before applying; stale artifacts are prep evidence, never authority.
