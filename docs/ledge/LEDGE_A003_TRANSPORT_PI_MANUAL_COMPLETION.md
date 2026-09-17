@@ -1,197 +1,213 @@
-# Ledge A003 — Deferred Manual Transport / Pi Completion
+# Ledge A003 — Manual Transport / Pi Completion
 
 DOCUMENT=LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION
-DOCUMENT_REVISION=0001
-RECORDED_AT=2026-09-17T07:09:43-04:00
+DOCUMENT_REVISION=0002
+RECORDED_AT=2026-09-17T16:59:51-04:00
 SOURCE_COMMIT=SELF
+BASED_ON_DOCUMENT_REVISION=0001
 BASED_ON_A003_AUDIT_REVISION=0001
-BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0002
-BASED_ON_FOREMAN_STATE_REVISION=0015
-TEMPORAL_CLASS=DEFERRED_WORK_ITEM
+BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0003
+BASED_ON_FOREMAN_STATE_REVISION=0018
+TEMPORAL_CLASS=MANUAL_WORK_ITEM
 TEMPORAL_SEMANTICS=GOVERNING_UNTIL_SUPERSEDED
-STATUS=A003_TRANSPORT_PI_MANUAL_COMPLETION_DEFERRED
+STATUS=A003_TRANSPORT_PI_MANUAL_COMPLETION_ACTIVE
+ACTIVE_PACKET=A003-P2A-MANUAL-START-PREPARED-R1
+WORK_ITEM_KEY=a003-mpeg-generation
+ROLE_KEY=reconstruction
+WORKER_KEY=interactive
+EXECUTION_MODE=USER_ASSISTED_MANUAL
+EXECUTION_SEAT=/home/ps2/src/PS-to-VNC-ledge-manual
+NORMAL_COMMAND_PATH=ps2run-interactive
 
-This document makes the unresolved A003 Transport/Pi exact-generation implementation a deliberate final manual software item rather than an autonomous-Reconstruction blocker for otherwise independent A004-A006 work.
+Revision 0002 activates only the first bounded user-assisted A003 manual engineering slice. It supersedes revision 0001 only with respect to timing/status of that first slice. It does **not** declare A003 complete, does not authorize later producer/retirement work, and does not change the accepted A003 wire/control behavior or architecture ownership rules.
 
-It does **not** declare A003 complete. It preserves already-accepted A003 behavior, freezes the dependency-facing facts that downstream owners may rely on, and records exactly what remains unproven until a later interactive engineering session with the user present at the real Pi, PS2, network, services, worktree, and runtime.
+The manual session's execution-seat gate has been satisfied at branch authority `b7c9e3575987876672bb28d74d31053177b5f71b`: a fresh standalone checkout exists at `/home/ps2/src/PS-to-VNC-ledge-manual`; the older `/home/ps2/src/PS-to-VNC` checkout was left untouched; branch identity and clean state were confirmed; ordinary filesystem and Git-index operations passed; `scripts/resume-state.sh` passed; `scripts/check.sh` passed; post-check state was clean; and `git push --dry-run origin HEAD:refs/heads/ledge/h1-all-guns` passed. This evidence opens the manual execution route. It does not itself satisfy any A003 product criterion.
 
 ## Accepted A003 behavior preserved
 
-The following accepted source behavior remains authoritative and must not be rolled back merely because the remaining lifecycle is deferred:
+The following accepted behavior remains binding and must not be reworked absent a concrete defect:
 
-- A003-P1 Transport MPEG logical-channel and decoder-owner core previously accepted by Foreman;
-- explicit START control identity: kind `11`, control channel `0`, flags `0`;
-- exact 44-byte START v1 wire representation;
-- explicit RETIRE control identity: kind `10`, control channel `0`, flags `0`;
-- exact 12-byte big-endian RETIRE `(version, session_id, generation)` representation;
+- A003-P1 Transport MPEG logical-channel and decoder-owner core remains accepted;
+- START is explicit kind `11`, control channel `0`, flags `0`;
+- START v1 has the exact accepted 44-byte representation;
+- RETIRE is explicit kind `10`, control channel `0`, flags `0`;
+- RETIRE has the exact accepted 12-byte big-endian `(version, session_id, generation)` representation;
 - MPEG media remains opaque `DATA/channel 4`;
-- no magic-44-byte payload classification;
-- no per-MPEG-packet generation tags;
-- deterministic regression proving START-shaped, exactly 44-byte `DATA/channel 4` remains ordinary MPEG media;
-- accepted PS2 outbound START framing through the existing ordered physical Transport send path;
-- no generation business state moved into Transport or the MPEG decoder merely to complete P2A.
+- no payload-length sniffing may classify START;
+- no per-MPEG-packet generation tags may be introduced;
+- START-shaped exactly-44-byte `DATA/channel 4` remains ordinary MPEG media;
+- the accepted PS2 outbound START framing remains on the existing ordered physical Transport send path;
+- generation business state must not be moved into Transport or the MPEG decoder.
 
-The Foreman P2A disposition remains:
+Current Foreman P2A disposition remains:
 
 - `P2A-1 START_CONTROL_IDENTITY = MET`;
-- `P2A-2 START_SEMANTICS = PARTIAL / PENDING_MANUAL_TRANSPORT_PI`;
+- `P2A-2 START_SEMANTICS = PARTIAL / ACTIVE_MANUAL_SLICE`;
 - `P2A-3 RETIRE_WIRE_IDENTITY = MET`;
 - `P2A-4 PURE_MPEG_DATA = MET`;
-- `P2A-5 SOLE_TRANSPORT_OWNER = PARTIAL / PENDING_MANUAL_TRANSPORT_PI`;
-- `P2A-6 OWNERSHIP = PARTIAL / PENDING_MANUAL_TRANSPORT_PI`;
+- `P2A-5 SOLE_TRANSPORT_OWNER = PARTIAL / ACTIVE_MANUAL_SLICE`;
+- `P2A-6 OWNERSHIP = PARTIAL / ACTIVE_MANUAL_SLICE`;
 - `P2A-7 NO_GENERATION_TAGGING = MET`;
 - `P2A-8 BOUNDED_SCOPE = MET`.
 
-No autonomous worker is authorized by this document to convert the three partial criteria to `MET` by inventing a substitute Pi runtime.
+A003 as a whole remains incomplete.
 
-## Why this item is deferred
+## Binding architecture rule
 
-The historical H1 implementation proves the required transaction semantics, but the final production adoption of the Pi-side PSTV runtime/service owner must be reconciled against the actual Pi, networking, service topology, launch behavior, and cross-machine runtime. Those mechanics are a local unresolved implementation problem, not a reason to prevent other components from reconstructing behavior that depends only on stable owner facts.
-
-The previously named `pi/pstv/` boundary remains useful architectural vocabulary for the Pi PSTV-session responsibility, but architecture revision 0003 supersedes any interpretation that its immediate creation is an autonomous Reconstruction assignment. The manual session must first inspect/adopt the actual production Pi runtime/service ownership and then place code according to genuine ownership rather than a preselected path.
-
-## Binding component / directory / bridge invariant
-
-The following rule governs all downstream reconstruction and this later manual completion:
+Architecture overlay revision `0003` remains binding:
 
 > Within one genuine component/local-cooperation directory, internal implementation files may cooperate directly. Across a real component boundary, communication must pass through the owning component's defined bridge or public process seam.
 
-Consequences:
+Transport owns mechanism: one physical PSTV session/receive chain per endpoint, framing, ordered receive/send, dispatch, flow control, quiescence, mechanism failure, and narrow publication of explicit control identity.
 
-- directory membership reflects real ownership and local cooperation, not caller convenience;
-- unrelated responsibilities may not be moved into one directory merely to avoid a bridge;
-- a component exposes one coherent process-organized bridge rather than destination-specific bridge sprawl;
-- application may coordinate several owners, but it consumes each owner's public bridge and never reaches into private implementation;
-- test doubles implement the same public owner boundary used by production callers;
-- private socket, thread, queue, parser, decoder-worker, compositor, or input state may not be exported merely to make orchestration easier.
+Transport does **not** own exact-generation business state. The exact-generation owner owns active-session validation, nonzero/monotonic generation rules, one immutable prepared START value, rejection of stale/repeated/conflicting START without mutation, and the `GENERATION_PREPARED` fact.
 
-## Frozen dependency-facing owner contracts
+The historical `pi/pstv/` name is architectural vocabulary, not a preselected production path. The active manual session must first inspect the real present-day Pi runtime/service ownership and then place/adopt code according to genuine ownership.
 
-These contracts define facts another component may rely on. They do **not** assert that every underlying real implementation currently exists or has been cross-machine qualified.
+## Active bounded packet — A003-P2A-MANUAL-START-PREPARED-R1
 
-### Transport owner contract
+PACKET_STATUS=ACTIVE
+ASSIGNING_BASE_HEAD=b7c9e3575987876672bb28d74d31053177b5f71b
+ASSIGNING_AUDIT=LEDGE_AUDIT_A003_MPEG_GENERATION.md:0001
+ASSIGNING_ARCHITECTURE_OVERLAY=LEDGE_ARCHITECTURE_OVERLAY.md:0003
+ASSIGNING_MANUAL_AUTHORITY=LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION.md:0002
 
-Transport owns mechanism:
+### Objective
 
-- session open/abort/receiver-completion-or-dormancy/close;
-- one physical PSTV stream and sole receive ownership per endpoint when the real endpoint is active;
-- physical framing, ordered receive/send, logical-channel dispatch, flow control, quiescence, and mechanism failure;
-- logical RFB reads/service/writes and quiesce/freeze boundary operations;
-- AUDIO logical reads, producer status, activity snapshot/wait;
-- MPEG logical reads, producer status, activity snapshot/wait, and real finite producer-completion publication;
-- exact START send and RETIRE request/send when those operations are implemented behind the bridge;
-- inbound exact control identity publication through the sole receiver when implemented;
-- immutable validated Transport/session/config facts that are genuinely mechanism-owned;
-- explicit terminal/quiescence/failure facts.
+Complete only the first owner-correct real-Pi portion of A003 P2A: establish the actual present-day Pi PSTV ownership from evidence, agree the production placement with the user, make exactly one real Pi PSTV session/receive owner, route the already-accepted exact START control through that sole receiver to the exact-generation semantic owner, and implement one immutable prepared-generation START state with exact rejection/no-mutation behavior.
 
-Existing result vocabulary (`OK`, `WOULD_BLOCK`, `STOPPED`, `EXHAUSTED`, `CLOSED`, `INVALID`, `FAILED`) remains the starting authority. Add only narrow operations required by an actual consumer.
+### Phase M1A — read-only real-Pi ownership archaeology
 
-Transport does **not** expose or delegate raw sockets, receiver threads, queue internals, physical sequence implementation, Pi service implementation, send-lease internals, parser internals, generic callback/event-bus machinery, or guessed future operations.
+This phase is authorized immediately.
 
-Transport also does **not** own generation, presentation, RFB, or input business facts merely because their messages pass over PSTV.
+Inspect the **actual running Pi** and repository/runtime/service environment needed to determine present-day ownership, including as relevant:
 
-### Exact-generation owner contract
+- running PSTV/VNC/network-related processes and parent/launch relationships;
+- listening/established sockets and which process owns the PS2-facing PSTV path;
+- systemd system/user units, service definitions, enablement, dependencies, and launch scripts;
+- active VNC/Xvnc/TigerVNC/Openbox/session ownership and configuration that supplies the PS2-facing desktop/session;
+- NetworkManager/network/service topology that materially affects the PSTV process boundary;
+- existing production Pi companion code, scripts, service/config files, and retained H1 evidence needed to map responsibility;
+- current checkout/runtime paths actually used by the running system.
 
-The exact-generation owner is the authority for:
+M1A is **read-only** with respect to product source and production runtime/service state. Do not restart, replace, enable/disable, edit, install, or migrate the running owner merely to discover it.
 
-- exact active session identity used for generation validation;
-- nonzero/monotonic generation rules;
-- one immutable prepared START geometry/state;
-- stale/repeated/conflicting START rejection without mutation;
-- exact-generation preparation result `GENERATION_PREPARED`;
-- retirement request coordination;
-- exact retirement proof `RETIREMENT_PROVEN` only after the real owner-specific fence has succeeded.
+### Mandatory user discussion gate
 
-`GENERATION_PREPARED` and `RETIREMENT_PROVEN` are **not** Transport facts. A downstream contract fake may emit them for consumer tests, but that does not prove the real Pi implementation.
+Before choosing the production owner/path or making behavior-bearing production/runtime writes, present the ownership evidence to the user and discuss the viable owner boundary. The production placement decision must be evidence-led and user-assisted.
 
-### MPEG owner contract
+Do not treat an old proposed `pi/pstv/` directory name, historical H1 shape, or caller convenience as the decision by itself.
 
-MPEG owns decoder/worker behavior and upload/decode readiness. It may expose owner facts such as decoder/worker readiness and first decoded/upload-ready state where required by a consumer. It does not own PSTV framing, exact-generation retirement proof, physical presentation, or common-clock arm.
+### Phase M1B — authorized implementation after the discussion gate
 
-`FIRST_MPEG_FRAME_DECODED` is MPEG-local evidence and is not equivalent to `FIRST_PHYSICAL_MPEG_FRAME`.
+After the ownership evidence has been discussed with the user and the production owner/path is explicitly settled, the interactive Reconstruction worker may:
 
-### RFB owner contract
+1. adopt or implement **one real Pi PSTV session owner** for the one accepted PS2-facing physical PSTV stream;
+2. establish and prove that this owner is the **sole Pi physical receive owner** for that session;
+3. receive/classify START only by the accepted explicit control identity: kind `11`, control channel `0`, flags `0`, exact START-v1 representation;
+4. publish START from the Transport/session mechanism owner through the narrow owner seam to the exact-generation semantic owner;
+5. keep generation business state outside Transport;
+6. implement exact START semantic validation against immutable current session/desktop facts;
+7. create exactly one immutable prepared-generation value on valid START;
+8. reject invalid/wrong-session/zero/stale/repeated/conflicting START without mutating already accepted prepared state;
+9. add behavior-specific tests and owner-local documentation/synopses needed to prove this slice;
+10. make only the smallest production service/config/source changes actually required by the adopted owner.
 
-RFB owns protocol/framebuffer truth, synchronized parser/session state, safe freeze/quiesce behavior, request mechanics, and the one fresh nonincremental/full-update obligation required after restoration.
+If a genuine new clean component/local-cooperation directory is established, the worker may create its behavior-bearing files, local documentation, and local `SYMBOLS.md`. Canonical/global topology registration, generated dictionary portal reconciliation, generic build/test registration, and other non-behavioral integration chores remain the next Foreman baton unless a current repository rule makes a particular local registration inseparable from creating a valid owner.
 
-RFB may publish facts such as `RFB_QUIESCED` and its fresh-full-update obligation through its bridge. It does not inspect MPEG, exact-generation, Presentation, or Transport private state to decide those facts.
+### Exact START semantic obligations in this slice
 
-### Presentation owner contract
+The exact-generation semantic owner must validate at least:
 
-Presentation owns the one physical composition/GS path, resolved draw/matte/suppression geometry, physical presentation state, and presentation timing policy.
+- START v1 exact representation/version;
+- exact active session id;
+- nonzero generation;
+- monotonic/stale-generation authority;
+- every geometry word fitting the implementation's signed-use range before signed conversion/use;
+- base width and height each at least 16 pixels and 16-pixel aligned;
+- positive suppression width and height;
+- suppression rectangle fully containing the exact base rectangle;
+- base and suppression rectangles inside immutable active Pi desktop/session bounds;
+- overflow-safe right/bottom arithmetic.
 
-Presentation alone publishes `FIRST_PHYSICAL_MPEG_FRAME` and `VISUAL_OWNERSHIP_PROMOTED` from the real physical-presentation boundary. The common media clock arm callsite belongs at that physical boundary; `COMMON_MEDIA_EPOCH_ARMED` is not a Transport or decode fact.
+Successful START stores one immutable prepared value containing the accepted session id, generation, exact base rectangle, and suppression rectangle. Once prepared, malformed, wrong-session, zero, stale, repeated, or conflicting START must fail without changing that value. No producer is activated by preparation in this packet.
 
-Presentation may consume abstract exact-generation retirement proof for restoration decisions, but it does not manufacture that proof.
+Active desktop bounds must come from the actual Pi desktop/session owner as immutable session context. They must not be hardcoded from the current qualified 704x462 value, derived from START, or confused with PS2 DESKTOP CALIBRATION.
 
-### Input / UI owner contract
+### Acceptance criteria for this packet
 
-Input/UI owns physical observation, semantic foreground ownership, pointer/button/wheel and keyboard/modifier interpretation/publication, local UI/OSK foreground behavior, release quarantine, and cooperative dormancy/teardown.
+- `M1-C1 ACTUAL_PI_OWNERSHIP_EVIDENCE`: running Pi PSTV/VNC/network/service ownership is inspected and the production ownership evidence is discussed with the user before the path decision.
+- `M1-C2 PI_SOLE_SESSION_OWNER`: one real Pi PSTV session owner owns the one accepted socket/session and sole physical receive chain; no competing reader/socket is introduced.
+- `M1-C3 EXPLICIT_START_RECEIVE`: accepted exact START control is received/classified through that sole owner without DATA/channel-4 sniffing.
+- `M1-C4 OWNER_SPLIT`: Transport/session mechanism publishes START through its narrow seam; exact-generation semantic state lives with the exact-generation owner, not Transport and not MPEG.
+- `M1-C5 IMMUTABLE_PREPARED_GENERATION`: one valid START produces exactly one immutable prepared generation after the required semantic validation.
+- `M1-C6 REJECTION_NO_MUTATION`: malformed, wrong-session, zero, stale, repeated, and conflicting START are rejected without mutating accepted prepared state.
+- `M1-C7 BOUNDED_SCOPE`: no producer activation/emission, retirement fence/completion, PS2 decoder finalization, successor-generation lifecycle, A004-A006 work, or hardware-completion claim is introduced.
 
-It publishes only its own facts, such as `INPUT_DORMANT` or foreground handoff state, through its bridge. It does not perform RFB or Transport socket operations.
+The worker must return exact source/runtime files changed, commands/tests/evidence, the user-discussed owner decision, criterion disposition, and the next exact blocker/baton point.
 
-### Application owner contract
+## Explicit non-goals — still unauthorized
 
-Application owns cross-owner ordering and policy only. It may coordinate abstract facts such as:
+This active packet does **not** authorize:
 
-- `TRANSPORT_SESSION_READY`;
-- `TRANSPORT_RECEIVER_DORMANT`;
-- `GENERATION_PREPARED`;
-- `RETIREMENT_PROVEN`;
-- `RFB_QUIESCED`;
-- `INPUT_DORMANT`;
-- `FIRST_PHYSICAL_MPEG_FRAME`.
+- MPEG producer activation or MPEG emission;
+- exact-generation producer preparation beyond the immutable START state needed by this slice;
+- emission admission/open-close behavior;
+- retirement send-lease or in-flight emission fencing;
+- RETIRE completion/acknowledgment lifecycle;
+- PS2 RETIRE completion handling beyond already accepted wire facts;
+- PS2 decoder stop/join or worker-resource finalization;
+- residual MPEG queue discard or Transport credit return;
+- generation `N -> RETIRE(N) -> N+1` completion;
+- repeated-generation lifecycle completion;
+- A004, A005, or A006 product work;
+- declaration that A003 is complete;
+- independent Validation PASS;
+- cross-machine or hardware qualification claims beyond evidence actually obtained.
 
-It must obtain each fact through the actual owner's bridge. Correct application behavior against a test double is not evidence that the deferred owner has implemented the fact correctly.
+RETIRE kind `10` / channel `0` / flags `0` and its exact 12-byte wire identity remain preserved facts, but this slice does not implement retirement semantics.
 
-## Contract-test evidence discipline
+## Required authority before M1A/M1B work
 
-Deterministic fakes are authorized only at public owner boundaries so downstream consumer behavior can be reconstructed now.
+At the start/resume of the manual Reconstruction shift, read/re-read at minimum:
 
-Valid evidence labels include:
+- `AGENTS.md`;
+- `CONTRIBUTING.md`;
+- `docs/status.md`;
+- `docs/README.md`;
+- `docs/PROJECT_INTENT.md`;
+- `docs/CLEAN_ARCHITECTURE.md`;
+- `docs/development/README.md`;
+- `docs/development/source-naming-and-symbols.md` before product source changes;
+- `docs/development/source-topology.md` before creating/moving product directories/files;
+- `docs/ledge/LEDGE_RECONSTRUCTION_CONTRACT.md` revision `0005`;
+- `docs/ledge/work-log/README.md` revision `0006`;
+- current `docs/ledge/LEDGE_FOREMAN_STATE.md`;
+- this document revision `0002`;
+- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision `0003`;
+- `docs/ledge/LEDGE_AUDIT_A003_MPEG_GENERATION.md` revision `0001`;
+- newest relevant `a003-mpeg-generation` work logs, especially the partial Reconstruction handoff and the Foreman deferral/activation history.
 
-- `SOURCE_COMPLETE`;
-- `CONTRACT_COMPLETE`;
-- `CONTRACT_TESTED`;
-- `HOST_TESTED`;
-- `PS2_COMPILE_PASS`;
-- `PS2_LINK_PASS`.
+Refresh `ledge/h1-all-guns`, inspect the actual local checkout state, and rerun/confirm the normal development-seat preflight before behavior-bearing writes. Preserve any newly discovered local work; do not reset/clean/discard it.
 
-They do not imply:
+## Stable shift/log identity
 
-- `REAL_TRANSPORT_IMPLEMENTED`;
-- `CROSS_MACHINE_VALIDATED`;
-- `HARDWARE_QUALIFIED`.
+This is a continuation of the existing A003 engineering task. The manual interactive session uses:
 
-Pending labels must name the precise unproven owner fact. Do not use a generic `Transport unfinished` label when, for example, the actual dependency is `PENDING_MANUAL_TRANSPORT: exact Pi RETIRE cleanup-before-completion proof`.
+- `ROLE_KEY=reconstruction`;
+- `WORK_ITEM_KEY=a003-mpeg-generation`;
+- `WORKER_KEY=interactive`.
 
-## Downstream work released from the Transport/Pi blocker
+Capture a fresh truthful exact `STARTED_AT` for the manual Reconstruction shift. Its eventual immutable log path is therefore:
 
-### A004 — Presentation / MPEG CALIBRATION
+`docs/ledge/work-log/<started-at-safe>__reconstruction__a003-mpeg-generation__interactive.md`
 
-Owner-local A004 behavior may proceed against the frozen contracts, including MPEG CALIBRATION edit/commit behavior, base/inner/outer geometry, accepted immutable geometry, foreground semantics, RFB freeze/full-refresh policy, accept-to-first-frame protection, single physical presentation ownership, compositor ordering, first-physical-frame promotion, common-clock arm callsite, scheduler/drop policy, overlays, and restoration conditioned on abstract `RETIREMENT_PROVEN`.
+Do not reuse a historical timestamp.
 
-The Pi mechanism that produces `RETIREMENT_PROVEN` remains deferred. **DESKTOP CALIBRATION** and **MPEG CALIBRATION** remain distinct systems.
+## Remaining manual completion sequence after this packet
 
-### A005 — Interaction / Input
+Only sequence steps 1-5 are activated by `A003-P2A-MANUAL-START-PREPARED-R1`. The later sequence remains deferred until a subsequent Foreman packet:
 
-Owner-local A005 behavior may proceed broadly: physical input polling/continuity, mouse interpretation, pointer/buttons/wheel, keyboard/modifier serialization, OSK/local foreground, release quarantine, suspend -> neutralize -> rebase -> release -> resume, calibration foreground handoff, parser-safe publication, and cooperative teardown. Cross-component interactions use the owning component bridge.
-
-### A006 — Application orchestration
-
-A006 may reconstruct resident startup structure, session admission, CONFIG/profile consumption, component dependency ordering, steady-state coordination, failure convergence, terminal result aggregation, reverse teardown, and repeated-session structure against public owner contracts and deterministic fakes.
-
-Application correctness does not erase any deferred real-owner gap.
-
-## Deferred manual completion sequence
-
-The later interactive user-assisted session must complete and prove, in order:
-
-1. inspect and adopt the actual Pi PSTV runtime/service ownership;
-2. make one Pi PSTV session owner real;
-3. prove sole Pi receive ownership;
-4. prove explicit START receive through that owner;
-5. prove START semantic validation and immutable prepared generation;
 6. prove exact-generation producer preparation;
 7. prove MPEG emission;
 8. prove emission admission closes at retirement;
@@ -202,24 +218,9 @@ The later interactive user-assisted session must complete and prove, in order:
 13. prove residual MPEG queue discard and corresponding Transport credit return;
 14. prove generation N cannot contaminate generation N+1 across the ordered same-stream fence;
 15. prove repeated generations and finite cancel/error/EOF/retirement behavior;
-16. integrate the already-reconstructed A004-A006 owners through their public bridges;
-17. proceed directly into real PS2/Pi cross-machine and hardware qualification.
-
-## Exact obligations that remain deferred
-
-At minimum, the following remain explicitly unproven until the manual session:
-
-- `P2A-2`: real Pi exact START semantic validation/prepared-generation implementation;
-- `P2A-5`: real production Pi sole PSTV session/receive ownership and corresponding PS2 inbound exact-control publication completion;
-- `P2A-6`: real endpoint owner split wired through production bridges rather than contract fakes;
-- P2B real Pi producer preparation/emission/admission behavior;
-- P2C/P2D real retirement request/completion, decoder stop/join, residual drain/credit, successor fence, and repeated-generation lifecycle;
-- real `RETIREMENT_PROVEN` production path;
-- cross-machine behavior and failure convergence;
-- physical PS2/Pi qualification and all-guns endurance.
-
-These pending obligations do not block a downstream criterion whose own owner-local behavior can be fully reconstructed and tested against the frozen contract.
+16. integrate later reconstructed A004-A006 owners through their public bridges;
+17. proceed into real PS2/Pi cross-machine and hardware qualification under separate evidence authority.
 
 ## Completion gate
 
-This deferred item must be completed before A003 can be declared complete, before all-guns integration can claim the real exact-generation transaction, and before hardware qualification can close. Downstream source/contract/host/build completion may precede it, but must retain exact dependency labels until the real owner facts are proven.
+This manual item must still close before A003 can be declared complete, before all-guns integration can claim the real exact-generation transaction, and before hardware qualification can close. Completion of this first packet may advance only the exact P2A portions directly proven by its evidence; every later owner/lifecycle fact remains explicitly pending.
