@@ -35,9 +35,9 @@ REQUIRED_KEYS = {
 }
 ALLOWED_STATUS = {"COMPLETED", "PARTIAL", "BLOCKED", "SELF_PAUSED", "NOOP"}
 
-# Work-log contract revision 0005 freezes these exact already-committed
-# legacy/malformed paths rather than destructively renaming or rewriting
-# historical evidence. No pattern, role, or date-range exception is permitted.
+# Work-log contract revision 0006 retains the nine broad legacy/malformed
+# exceptions inherited from revision 0005. No pattern, role, or date-range
+# exception is permitted.
 GRANDFATHERED_LOGS = {
     "2026-09-16T05-18-33-04-00__validation__v005-fatal-teardown__validation.md": {
         "ROLE_KEY": "validation",
@@ -94,6 +94,17 @@ GRANDFATHERED_LOGS = {
         "STARTED_AT": "2026-09-16T12:25:59-04:00",
     },
 }
+
+# Contract revision 0006 adds two much narrower compatibility records. These
+# files remain subject to every canonical filename/metadata/status/time check;
+# only their already-frozen LOG_FORMAT_REVISION value differs from canonical
+# revision 0001. Exact path matching prevents this from becoming an alternate
+# accepted log format.
+FORMAT_REVISION_EXCEPTIONS = {
+    "20260916T160445-0400__integration__global-dictionary-prep__dictionary.md": "0005",
+    "20260916T162043-0400__validation__a003-mpeg-generation__validation.md": "0005",
+}
+
 LEGACY_REQUIRED_KEYS = {
     "STARTED_AT",
     "COMPLETED_AT",
@@ -174,8 +185,19 @@ def check_log(path: Path) -> list[str]:
 
     if metadata["DOCUMENT"] != "LEDGE_WORK_LOG_ENTRY":
         errors.append(f"{path}: DOCUMENT must be LEDGE_WORK_LOG_ENTRY")
-    if metadata["LOG_FORMAT_REVISION"] != "0001":
-        errors.append(f"{path}: unsupported LOG_FORMAT_REVISION={metadata['LOG_FORMAT_REVISION']}")
+
+    expected_log_format = FORMAT_REVISION_EXCEPTIONS.get(path.name, "0001")
+    if metadata["LOG_FORMAT_REVISION"] != expected_log_format:
+        if path.name in FORMAT_REVISION_EXCEPTIONS:
+            errors.append(
+                f"{path}: frozen LOG_FORMAT_REVISION={metadata['LOG_FORMAT_REVISION']} "
+                f"!= exact compatibility authority {expected_log_format}"
+            )
+        else:
+            errors.append(
+                f"{path}: unsupported LOG_FORMAT_REVISION={metadata['LOG_FORMAT_REVISION']}"
+            )
+
     if metadata["STATUS"] not in ALLOWED_STATUS:
         errors.append(f"{path}: invalid STATUS={metadata['STATUS']}")
     if metadata["SELF_PAUSED"] not in {"YES", "NO"}:
@@ -214,12 +236,15 @@ def main() -> int:
     errors: list[str] = []
     records = 0
     grandfathered = 0
+    format_compat = 0
     for path in sorted(LOG_DIR.glob("*.md")):
         if path.name == "README.md":
             continue
         records += 1
         if path.name in GRANDFATHERED_LOGS:
             grandfathered += 1
+        if path.name in FORMAT_REVISION_EXCEPTIONS:
+            format_compat += 1
         errors.extend(check_log(path))
 
     if errors:
@@ -227,13 +252,15 @@ def main() -> int:
             print(error)
         print(
             f"WORK_LOG_CHECK=FAIL records={records} "
-            f"grandfathered={grandfathered} errors={len(errors)}"
+            f"grandfathered={grandfathered} "
+            f"format_compat={format_compat} errors={len(errors)}"
         )
         return 1
 
     print(
         f"WORK_LOG_CHECK=PASS records={records} "
-        f"grandfathered={grandfathered}"
+        f"grandfathered={grandfathered} "
+        f"format_compat={format_compat}"
     )
     return 0
 
