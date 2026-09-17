@@ -181,7 +181,7 @@ A fresh conversation begins with `START_HERE.md`, not conversational memory.
 
 ## M1C first modular DUT
 
-- `docs/M1C_DUT_CHARACTERIZATION.md` — reproducible M1 DUT build, linkage, parser parity and validation authority.
+- `docs/M1C_DUT_CHARACTERIZATION.md` — build, reproducibility, linkage, host parity, and ELF characterization for the first modular PS-to-VNC executable.
 
 ## M1D hardware regression
 
