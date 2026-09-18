@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0005
+DOCUMENT_REVISION=0006
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=e2badb6422960206479cf62d116e2eb745aa2f5b
+BASED_ON_BRANCH_COMMIT=87f02445c236aa7458c3cd01d898715252407fbd
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -920,6 +920,153 @@ Any later decision to remove, repurpose, or renumber fields is a separate
 wire-format decision and must be made explicitly rather than inferred from this
 semantic simplification.
 
+
+## Q7 — MPEG retirement and overlapped RFB restoration
+
+STATUS=ANSWERED
+
+### User-facing meaning
+
+Stopping MPEG means ending the current active MPEG run and returning the
+affected desktop area to ordinary RFB presentation.
+
+Stopping the run does **not** erase a confirmed manual MPEG calibration.
+Confirmed calibration geometry may remain persisted in the Pi configuration
+system described by Q5/Q6 and may be reused by a later manual MPEG activation.
+
+Runtime MPEG state is disposable; accepted calibration configuration is
+persistent state.
+
+### Retirement begins by closing new MPEG production
+
+When Application requests MPEG stop, the current MPEG run enters a retiring
+state.
+
+The first lifecycle obligation is to stop admitting/producing new MPEG content
+for that run.
+
+Already accepted/buffered MPEG data may continue to drain while the decoder and
+presentation path remain alive long enough to consume it safely.
+
+Conceptually:
+
+```text
+ACTIVE MPEG
+    ↓ stop requested
+RETIRING
+    ├── no new MPEG production/admission
+    └── already accepted MPEG data may drain
+```
+
+### RFB restoration overlaps MPEG retirement
+
+RFB restoration does not need to wait for complete MPEG teardown.
+
+As soon as retirement has closed the old run to new MPEG production, the RFB
+suppression region may be released so RFB can resume requesting, receiving, and
+updating the underlying desktop region while the visible MPEG presentation is
+still winding down.
+
+Therefore:
+
+```text
+RETIRING
+    ├── MPEG:
+    │   ├── drain accepted MPEG data
+    │   ├── continue valid remaining presentation
+    │   └── approach the safe decoder-stop boundary
+    │
+    └── RFB:
+        ├── suppression released
+        ├── fresh updates requested/accepted
+        └── underlying desktop region rebuilt
+```
+
+Releasing RFB suppression does not itself require that RFB become immediately
+visible. It permits the underlying RFB desktop state to become current again.
+
+MPEG presentation and mattes may remain visually on top until their safe
+retirement/finalization point.
+
+### Safe finalization boundary
+
+Teardown may begin while MPEG data drains, but resources that are still needed
+by the decoder/worker must not be destroyed early.
+
+Destructive finalization occurs only after the decoder/runtime reaches its safe
+stop boundary.
+
+The historical safe-stop lesson remains binding: an owner-requested stop must
+not be implemented by making an active MPEG data callback synthesize EOF while
+`MPEG_Picture()` is still waiting for input.
+
+At finalization the implementation may:
+
+- finish/close the decoder worker at its safe boundary;
+- release decoder/session resources no longer visible to the worker;
+- account for or discard old-run residual transport data as required;
+- remove the active MPEG presentation;
+- remove the internal/external mattes associated with that run.
+
+### Visible handoff
+
+The intended visual sequence is:
+
+```text
+MPEG visible
+    ↓
+MPEG retirement drains while RFB refreshes underneath
+    ↓
+MPEG presentation + mattes removed
+    ↓
+already-refreshing RFB desktop revealed
+```
+
+This deliberately avoids making the user wait for RFB recovery only after MPEG
+has disappeared, and reduces the chance of exposing a stale frozen RFB region
+during the transition.
+
+### Old-run / new-run isolation
+
+No MPEG bytes, decoder completion, retirement completion, or other run-private
+state from the retiring run may contaminate a later MPEG activation.
+
+A lightweight run/generation identity may be retained wherever needed to prove
+that isolation, consistent with Q6.
+
+This fencing is an implementation-safety responsibility. It does not make the
+run/generation identity the product-level meaning of MPEG start/stop.
+
+### Persistent calibration survives retirement
+
+Confirmed manual MPEG calibration is not part of the disposable runtime
+teardown set.
+
+If persisted, it remains in Pi configuration after the MPEG run ends.
+
+A later manual activation may therefore reuse the previous accepted region
+definition rather than requiring the user to rediscover the same geometry.
+
+Future automatic-detection or application-pinned region sources may supply a
+different active MPEG region without destroying the stored manual fallback.
+
+### Ownership summary
+
+Application owns the product-level stop/retirement transaction and coordinates
+owners through their public seams.
+
+The owners retain their own responsibilities:
+
+- Pi MPEG capture/producer owner closes new production and retires capture;
+- Wire Transport enforces the channel/fencing mechanics needed to prevent
+  old-run leakage;
+- MPEG decoder owner drains and stops only at its safe lifecycle boundary;
+- RFB owner resumes the formerly suppressed region;
+- Presentation owner keeps MPEG/mattes visible until retirement reaches the
+  safe visible handoff, then reveals the already-refreshing RFB state;
+- configuration ownership remains independent and preserves accepted manual
+  MPEG calibration when configured to do so.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -936,7 +1083,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1, Q2, Q3, Q4, Q5, and Q6 are closed.
+Q1, Q2, Q3, Q4, Q5, Q6, and Q7 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
