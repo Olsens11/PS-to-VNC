@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0004
+DOCUMENT_REVISION=0005
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=3d2337bf19d292f7840956fd4f3227355e9b3f3d
+BASED_ON_BRANCH_COMMIT=e2badb6422960206479cf62d116e2eb745aa2f5b
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -729,6 +729,197 @@ are intentionally **not required by Q5 or the active A003 packet**. Q5 requires
 only that the persistent configuration and active-session authority be shaped so
 those policies can be added later without changing who owns geometry.
 
+
+## Q6 — MPEG activation, region definition, calibration, and suppression semantics
+
+STATUS=ANSWERED
+
+### Product behavior, not historical coordinator vocabulary
+
+MPEG START is not a separate user-facing product operation. It is one internal
+step in activating MPEG presentation.
+
+The current/bootstrap interaction is conceptually:
+
+```text
+START+SELECT
+    ↓
+MPEG active?
+    ├── yes -> end the current MPEG run
+    └── no  -> enter MPEG-region calibration
+                  ↓
+               confirm
+                  ↓
+               suppress the corresponding RFB region
+               start Pi MPEG capture
+               start PS2 MPEG decode/presentation
+               apply the configured matte geometry
+```
+
+`START+SELECT` is an initial trigger, not a permanent product requirement.
+
+Likewise, the manual calibration sequence is an initial way to provide the
+MPEG presentation region. It must not become the architectural definition of
+how MPEG regions are selected.
+
+### MPEG region definition
+
+The durable concept is an **MPEG region definition** consumed by MPEG
+capture/presentation and the cooperating RFB/presentation owners.
+
+The proven manual calibration machinery is worth preserving because it encodes
+real media/presentation constraints rather than temporary experiment
+scaffolding.
+
+The region definition includes the MPEG-compatible base/capture/presentation
+area and the associated matte/suppression geometry.
+
+The base MPEG dimensions remain aligned to the MPEG macroblock grid:
+
+```text
+width  = multiple of 16 pixels
+height = multiple of 16 pixels
+```
+
+The grid itself is not globally locked to 16-pixel desktop coordinates. Its
+X/Y placement may move at **one-pixel precision** so the MPEG region can be
+visually aligned precisely while retaining 16x16-compatible dimensions.
+
+Conceptually:
+
+```text
+x = pixel precision
+y = pixel precision
+width  = 16 * N
+height = 16 * M
+```
+
+### Matte and RFB-suppression relationship
+
+The existing internal/external matte relationship is preserved as product
+behavior.
+
+The **outer boundary of the external matte defines the RFB suppression area**.
+
+Therefore RFB suppression geometry is not an unrelated Transport rule. It is a
+consequence of the accepted MPEG region/presentation definition.
+
+Conceptually:
+
+```text
+MPEG region definition
+├── MPEG base/capture/presentation rectangle
+├── internal matte geometry
+├── external matte geometry
+└── RFB suppression rectangle
+    └── derived from the external matte's outer boundary
+```
+
+The exact matte implementation and rendering details remain owned by the
+appropriate Presentation/calibration code, not by Wire Transport.
+
+### Ownership of activation
+
+Application owns the product-level MPEG activation/deactivation transaction.
+
+Application coordinates the required owners through their public seams. It does
+not absorb their internals.
+
+The cooperating responsibilities are conceptually:
+
+```text
+Input/UI trigger or future region source
+                 ↓
+             Application
+                 ↓
+       activate / deactivate MPEG
+          ├── region/calibration authority
+          ├── RFB suppression request/state
+          ├── Pi MPEG capture
+          ├── PS2 MPEG receive/decode
+          └── Presentation/matte state
+```
+
+Wire Transport carries the required control and MPEG media. It does not own the
+meaning of the selected MPEG region, the matte geometry, or the user's
+activation policy.
+
+### Manual calibration is one region source
+
+For the first implementation, manual calibration is an acceptable source of the
+MPEG region definition.
+
+The previously accepted manual MPEG calibration may be persisted in the Pi
+configuration system described by Q5 so the user's last setting is not lost.
+
+That persistent value is configuration state, not a rule that all future MPEG
+activation must always enter the manual calibration UI.
+
+A future menu item may allow the user to manually set or correct the MPEG region
+without changing the underlying MPEG activation architecture.
+
+### Future region sources
+
+The architecture must deliberately leave room for additional MPEG-region
+sources without redesigning MPEG, Wire Transport, or Presentation.
+
+Expected future possibilities include:
+
+- automatic detection of desktop regions that can reasonably be inferred to
+  contain video;
+- application-specific contracts for VNC or other application environments;
+- region definitions pinned to an application/window so the MPEG presentation
+  area can move with the corresponding video window;
+- manual region selection as a fallback or correction path.
+
+These mechanisms are future work. Q6 does not design their detection algorithms,
+window-tracking protocol, application contracts, or UI.
+
+They are listed here because the initial manual calibration flow must not be
+implemented in a way that prevents them.
+
+### Run/generation identity is fencing, not product semantics
+
+A single MPEG activation may still carry a lightweight internal run/generation
+identity where useful to prevent late bytes, stale completion, or retirement
+from one MPEG run contaminating a later run.
+
+Likewise, existing Wire-session identity may remain available to Transport or
+protocol code where it provides useful stale-message fencing.
+
+Those identities do not define whether the user has requested MPEG, do not own
+the MPEG region, and do not turn MPEG activation into a separate
+generation-management product subsystem.
+
+The mature product meaning is simply one MPEG run operating on one accepted
+MPEG region definition.
+
+### Relationship to the active A003 exact-generation packet
+
+This decision intentionally narrows the product semantics previously attached
+to the phrase **exact generation**.
+
+Existing A003 material that treats session identity, generation numbering, or
+geometry validation as an independent product-level generation coordinator must
+be reconciled against Q6 before behavior-bearing implementation continues.
+
+Preserve the mechanisms that still serve a concrete purpose:
+
+- exact control framing;
+- old-run/new-run fencing where required;
+- safe producer/decoder retirement;
+- residual-byte isolation;
+- representability and memory-safety validation;
+- the proven MPEG-region calibration and matte/suppression relationships.
+
+Do not preserve redundant business validation merely because historical H1 or
+the current A003 packet described it in generation-centric language.
+
+Q6 does **not by itself change the accepted START/RETIRE wire representation**.
+Any later decision to remove, repurpose, or renumber fields is a separate
+wire-format decision and must be made explicitly rather than inferred from this
+semantic simplification.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -745,7 +936,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1, Q2, Q3, Q4, and Q5 are closed.
+Q1, Q2, Q3, Q4, Q5, and Q6 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
