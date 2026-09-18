@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0007
+DOCUMENT_REVISION=0008
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=1cabeb32f6de9a021cea1599179244f5f4571e05
+BASED_ON_BRANCH_COMMIT=4b09a261fd62c61d2709b914a8eb770fa98081eb
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -1201,6 +1201,159 @@ This aligns with the project's layered freeze-debugging philosophy: identify
 the lowest layer still making provable progress and avoid destroying healthy
 layers merely because a higher-level symptom is visible.
 
+
+## Q9 — Wire loss, non-resumable sessions, and service restoration
+
+STATUS=ANSWERED
+
+### Wire Session identity is disposable runtime state
+
+Loss of the physical Wire connection permanently ends the Wire Session that
+belonged to that connection.
+
+A dead Wire Session is never resumed.
+
+Every successful reconnect follows the normal establishment path again:
+
+```text
+physical connection lost
+        ↓
+old Wire Session ends permanently
+        ↓
+reconnect attempt
+        ↓
+new provisional Wire connection
+        ↓
+normal establishment
+        ↓
+new authoritative Wire Session identity
+```
+
+The new connection therefore receives a new session identity rather than
+attempting to continue the old one.
+
+### Runtime state dies with the old session
+
+Distributed runtime state tied to the lost Wire Session is not silently carried
+forward into the replacement session.
+
+Examples include:
+
+- old Wire Channel/Relay runtime state and queues;
+- the old RFB stream/session;
+- the currently active MPEG run;
+- current PCM/audio stream runtime state;
+- old session-scoped flow-control/bookkeeping state;
+- any other rider-private runtime state that depended on the dead connection.
+
+The old session identity remains useful only as stale-state evidence/fencing; it
+is not a reconnect target.
+
+### Local application lifetime remains independent
+
+Wire loss does not by itself terminate the PS2 ELF.
+
+Genuinely local facilities remain alive where their own invariants permit,
+including local UI, input handling, configuration, diagnostics, and other
+PS2-local behavior.
+
+The Application may present a disconnected/reconnecting state while Wire
+Transport attempts to establish a replacement connection according to current
+recovery policy.
+
+### Restoration is Application policy, not Wire behavior
+
+Once a new Wire Session has been established, Wire Transport has restored
+connectivity only.
+
+It does not decide which higher-level services or user activities should be
+recreated.
+
+Application owns the restoration policy.
+
+Ordinary baseline services such as RFB may be restored automatically.
+
+Other interrupted activities may use different policy. In particular, an MPEG
+run that was active when Wire was lost is dead with the old session and is not
+silently resumed as though the interruption never occurred.
+
+A future restored-connection UI may instead report that connectivity has
+returned and offer to restore a previously active MPEG presentation using
+available persistent configuration.
+
+The exact UI and policy are future work.
+
+### Confirmed MPEG calibration is persisted at confirmation time
+
+Q6/Q7 established that accepted manual MPEG calibration may persist in Pi
+configuration.
+
+Q9 makes the persistence boundary explicit:
+
+**A manual MPEG calibration becomes durable when the user confirms the
+calibration, not when the MPEG run later retires.**
+
+Conceptually:
+
+```text
+manual MPEG calibration
+        ↓
+user confirms
+        ↓
+accepted MPEG region definition
+        ↓
+persist to Pi configuration
+        ↓
+activate MPEG run
+```
+
+Retirement therefore has no authority over whether an already accepted
+calibration survives.
+
+An unexpected Wire loss shortly after MPEG activation cannot erase the accepted
+manual calibration merely because normal MPEG retirement did not occur.
+
+### Durable state versus session state
+
+The architecture distinguishes durable configuration from session-scoped
+runtime state.
+
+Examples of state that may survive Wire Session loss:
+
+- display configuration;
+- confirmed desktop calibration;
+- confirmed manual MPEG calibration;
+- user settings and other persistent configuration.
+
+Examples of state that dies with the old Wire Session:
+
+- old session identity;
+- current Wire queues/channel state;
+- active RFB stream state;
+- active MPEG run state;
+- active PCM/audio stream state.
+
+A replacement Wire Session reconstructs runtime behavior from current durable
+configuration and Application policy rather than inheriting opaque live state
+from the dead session.
+
+### Future MPEG restoration
+
+A future reconnect/restoration flow may use the persistent manual MPEG region to
+offer a restart of interrupted MPEG activity.
+
+For example, Application may eventually know:
+
+- that MPEG had been active before connection loss;
+- that a valid saved manual MPEG region exists;
+- that a new Wire Session and baseline RFB service are healthy.
+
+It may then offer the user a choice such as restoring MPEG or remaining with
+ordinary RFB.
+
+This is intentionally Application/UI policy. Wire Transport neither remembers
+nor automatically recreates MPEG activity.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -1217,7 +1370,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1, Q2, Q3, Q4, Q5, Q6, Q7, and Q8 are closed.
+Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, and Q9 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
