@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0006
+DOCUMENT_REVISION=0007
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=87f02445c236aa7458c3cd01d898715252407fbd
+BASED_ON_BRANCH_COMMIT=1cabeb32f6de9a021cea1599179244f5f4571e05
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -1067,6 +1067,140 @@ The owners retain their own responsibilities:
 - configuration ownership remains independent and preserves accepted manual
   MPEG calibration when configured to do so.
 
+
+## Q8 — Hierarchical fault containment and minimum-scope recovery
+
+STATUS=ANSWERED
+
+### General system rule
+
+Unexpected failure is contained to the smallest ownership boundary that can
+still be brought to a known-safe state.
+
+Recovery begins at the component that failed.
+
+If that component can prove that it has stopped its work, released or
+reinitialized the resources it owns, restored its required invariants, and
+reported a clean bounded failure upward, only that component is shut down or
+reset.
+
+If it cannot prove a safe local shutdown, recovery escalates to the next
+containing ownership scope.
+
+This repeats recursively until a scope is reached that can restore known-good
+invariants.
+
+Conceptually:
+
+```text
+unexpected failure
+      ↓
+can failing component restore its own invariants?
+      ├── yes -> close/reset only that component
+      │         recover locally
+      │
+      └── no  -> escalate to containing owner
+                    ↓
+              can that scope recover safely?
+                    ├── yes -> close/reset that scope
+                    └── no  -> escalate again
+```
+
+Whole-Wire, whole-application, or whole-system shutdown is therefore the final
+escalation, not the default response.
+
+### "Smallest possible" means smallest provably safe failure domain
+
+The smallest recovery scope is not simply the smallest function, thread, or
+source file that can be named.
+
+It is the smallest **ownership/failure domain** whose safe state can actually be
+proven.
+
+For example, if a worker has failed while still owning DMA, decoder, socket, or
+other shared resources, pretending to stop only one narrow function is not
+sufficient. Recovery must escalate until an owner can definitively quiesce,
+release, replace, or reinitialize the affected resources.
+
+The architecture must therefore make component ownership and shutdown
+invariants explicit enough that this escalation can be reasoned about rather
+than guessed.
+
+### Sibling independence
+
+A failure in one component must not automatically terminate healthy siblings or
+unrelated facilities.
+
+Examples include:
+
+- an MPEG decoder/run failure should normally retire MPEG and fall back to RFB
+  without terminating the Wire Session;
+- a PCM/audio failure should normally stop/recover PCM while RFB, MPEG, and Wire
+  remain available;
+- an RFB parser/session failure should normally replace/recover the RFB session
+  without unnecessarily terminating unrelated riders;
+- a Wire Channel Relay/channel-local failure should remain channel-local when
+  Wire Transport invariants are still intact;
+- a Wire Session failure may terminate/recover that session while PS2-local UI,
+  configuration, diagnostics, input, and other genuinely local capabilities
+  remain alive where their own invariants permit.
+
+Escalation across those boundaries occurs only when the narrower owner cannot
+restore a safe state or when the failure has demonstrably compromised the
+parent's invariants.
+
+### Component contract requirement
+
+Every genuine runtime component should define:
+
+- the resources and state it owns;
+- the invariants that mean it is healthy;
+- its bounded stop/reset/retire path;
+- what evidence proves that shutdown completed safely;
+- what failure result it reports upward;
+- what conditions mean local recovery is no longer trustworthy and escalation
+  is required.
+
+This allows Application and other containing owners to make recovery decisions
+without reaching into component-private implementation state.
+
+### MPEG application of the rule
+
+Q7 describes the normal MPEG retirement path.
+
+On unexpected MPEG failure, the same minimum-scope rule applies:
+
+1. stop or fence further MPEG production/admission where still possible;
+2. release RFB suppression so RFB can begin restoration;
+3. drain only MPEG state that can still be proven safe to drain;
+4. retire the decoder/run at a valid safe boundary;
+5. if the MPEG run cannot be safely contained, escalate to the MPEG subsystem
+   owner;
+6. if MPEG subsystem invariants cannot be restored without affecting shared
+   state, escalate to the containing Application transaction;
+7. escalate to Wire Session recovery only if Wire/Transport invariants are
+   actually compromised;
+8. terminate the whole ELF only when no smaller containing scope can restore a
+   trustworthy state.
+
+A failed MPEG run does not erase persisted manual MPEG calibration, consistent
+with Q6/Q7.
+
+### Relationship to diagnostics and debugging
+
+Fault containment must not hide which layer actually failed.
+
+The project should preserve enough diagnostic evidence to identify:
+
+- the component where failure was first observed;
+- the lowest ownership boundary that could still prove safe shutdown;
+- each escalation step taken;
+- the final recovery scope that restored known-good invariants.
+
+This aligns with the project's layered freeze-debugging philosophy: identify
+the lowest layer still making provable progress and avoid destroying healthy
+layers merely because a higher-level symptom is visible.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -1083,7 +1217,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1, Q2, Q3, Q4, Q5, Q6, and Q7 are closed.
+Q1, Q2, Q3, Q4, Q5, Q6, Q7, and Q8 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
