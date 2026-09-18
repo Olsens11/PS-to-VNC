@@ -1,12 +1,13 @@
 # Ledge A003 — Manual Transport / Pi Completion
 
 DOCUMENT=LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION
-DOCUMENT_REVISION=0002
+DOCUMENT_REVISION=0003
 RECORDED_AT=2026-09-17T16:59:51-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_DOCUMENT_REVISION=0001
+BASED_ON_DOCUMENT_REVISION=0002
 BASED_ON_A003_AUDIT_REVISION=0001
 BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0003
+BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0001
 BASED_ON_FOREMAN_STATE_REVISION=0018
 TEMPORAL_CLASS=MANUAL_WORK_ITEM
 TEMPORAL_SEMANTICS=GOVERNING_UNTIL_SUPERSEDED
@@ -19,7 +20,7 @@ EXECUTION_MODE=USER_ASSISTED_MANUAL
 EXECUTION_SEAT=/home/ps2/src/PS-to-VNC-ledge-manual
 NORMAL_COMMAND_PATH=ps2run-interactive
 
-Revision 0002 activates only the first bounded user-assisted A003 manual engineering slice. It supersedes revision 0001 only with respect to timing/status of that first slice. It does **not** declare A003 complete, does not authorize later producer/retirement work, and does not change the accepted A003 wire/control behavior or architecture ownership rules.
+Revision 0003 preserves the active bounded A003 manual engineering slice and incorporates the user-assisted Wire runtime decisions recorded in `docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` revision `0001`. It supersedes revision 0002 only by making those runtime ownership/lifetime decisions explicit authority for the active packet. It does **not** declare A003 complete, does not authorize later producer/retirement work, and does not change the accepted A003 wire/control representation.
 
 The manual session's execution-seat gate has been satisfied at branch authority `b7c9e3575987876672bb28d74d31053177b5f71b`: a fresh standalone checkout exists at `/home/ps2/src/PS-to-VNC-ledge-manual`; the older `/home/ps2/src/PS-to-VNC` checkout was left untouched; branch identity and clean state were confirmed; ordinary filesystem and Git-index operations passed; `scripts/resume-state.sh` passed; `scripts/check.sh` passed; post-check state was clean; and `git push --dry-run origin HEAD:refs/heads/ledge/h1-all-guns` passed. This evidence opens the manual execution route. It does not itself satisfy any A003 product criterion.
 
@@ -63,6 +64,44 @@ Transport owns mechanism: one physical PSTV session/receive chain per endpoint, 
 Transport does **not** own exact-generation business state. The exact-generation owner owns active-session validation, nonzero/monotonic generation rules, one immutable prepared START value, rejection of stale/repeated/conflicting START without mutation, and the `GENERATION_PREPARED` fact.
 
 The historical `pi/pstv/` name is architectural vocabulary, not a preselected production path. The active manual session must first inspect the real present-day Pi runtime/service ownership and then place/adopt code according to genuine ownership.
+
+
+### Settled Wire runtime decisions from the user-assisted discussion
+
+`docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` revision `0001` is now binding for
+the runtime owner/lifetime portion of this packet.
+
+The evidence/discussion has settled these facts:
+
+- the mature Pi endpoint is a dedicated, continuously running **Wire server**
+  installed as part of the Pi-side product bundle;
+- systemd starts/supervises that server, while the server itself owns its
+  listener, accepted physical connection, Wire Session, sole receive path,
+  Wire framing/multiplexing, ordered send, Transport flow-control mechanism,
+  and Transport-level connection state;
+- every PS-to-VNC application byte on the physical PS2↔Pi TCP connection is a
+  Wire Protocol frame for the entire connection lifetime; no rider may bypass
+  the mux or temporarily become the physical protocol;
+- RFB is a provider-neutral logical rider through a local RFB adapter and does
+  not own Wire lifetime;
+- an established Wire Session is valid while idle; no RFB, PCM/audio, MPEG,
+  heartbeat, or other rider traffic is required merely to keep the healthy
+  session open;
+- the Wire Session is prerequisite infrastructure for PS2↔Pi cooperative
+  functions, while no individual cooperative rider is a prerequisite for the
+  Wire Session;
+- local-only PS2 ELF behavior remains outside this dependency and must not be
+  artificially disabled merely because Wire is unavailable.
+
+The historical/current direct-RFB/audio service topology and H1 coordinator
+shape remain evidence, not automatic production structure.
+
+This discussion settles the **runtime owner and lifetime model**. It does not by
+itself settle the final clean source-directory/file placement. Before
+behavior-bearing production source/runtime writes, the active manual session
+must still inspect the clean source topology and deliberately choose the
+smallest owner-correct production placement rather than transplanting H1
+scaffolding.
 
 ## Active bounded packet — A003-P2A-MANUAL-START-PREPARED-R1
 
@@ -185,6 +224,7 @@ At the start/resume of the manual Reconstruction shift, read/re-read at minimum:
 - current `docs/ledge/LEDGE_FOREMAN_STATE.md`;
 - this document revision `0002`;
 - `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision `0003`;
+- `docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` revision `0001`;
 - `docs/ledge/LEDGE_AUDIT_A003_MPEG_GENERATION.md` revision `0001`;
 - newest relevant `a003-mpeg-generation` work logs, especially the partial Reconstruction handoff and the Foreman deferral/activation history.
 
