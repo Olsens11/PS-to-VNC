@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0008
+DOCUMENT_REVISION=0009
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=4b09a261fd62c61d2709b914a8eb770fa98081eb
+BASED_ON_BRANCH_COMMIT=1fb8987e258541cbc90bfbfb1e6ef4b62979e9f3
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -1354,6 +1354,129 @@ ordinary RFB.
 This is intentionally Application/UI policy. Wire Transport neither remembers
 nor automatically recreates MPEG activity.
 
+
+## Q10 — Authoritative Wire Session availability publication
+
+STATUS=ANSWERED
+
+### Minimal public lifecycle fact
+
+Wire Transport owns one authoritative public fact describing whether a usable
+Wire Session currently exists.
+
+Conceptually:
+
+```text
+WireSessionState
+├── INACTIVE
+└── ACTIVE(session_id)
+```
+
+When no established Wire Session exists, the published state is `INACTIVE`.
+
+When establishment succeeds, the published state becomes
+`ACTIVE(session_id)`, where `session_id` is the authoritative identity of
+that currently active Wire Session.
+
+When that session is lost or closed, the published state returns to
+`INACTIVE`.
+
+The former session ID is no longer current once the session has ended.
+
+A later successful establishment publishes a new session ID, consistent with
+Q9's non-resumable-session rule.
+
+### No rider or configuration prerequisite
+
+A Wire Session requires no rider activity, configuration synchronization,
+desktop session, RFB provider, MPEG subsystem, PCM/audio subsystem, telemetry
+provider, or other product module in order to remain established.
+
+The Wire server may have a valid active Wire Session while no ordinary rider is
+doing any useful work.
+
+This preserves the dependency direction established in Q2:
+
+```text
+Wire Session exists
+        ↓
+modules may use it
+```
+
+Never:
+
+```text
+modules/configuration must be initialized
+        ↓
+therefore Wire Session may exist
+```
+
+### Common prerequisite for cross-Wire module activity
+
+For any module that needs to begin work across the Wire, an active Wire Session
+is the common Transport prerequisite.
+
+In plain terms:
+
+```text
+WireSessionState != INACTIVE
+```
+
+means that a valid current Wire Session exists and the module is permitted to
+begin whatever Wire-dependent establishment or operation belongs to that
+module.
+
+This fact does **not** imply that the module's own remote counterpart is already
+ready, that the module has completed its own establishment, or that its
+domain-specific prerequisites have been satisfied.
+
+Each module remains responsible for its own readiness and lifecycle.
+
+For example:
+
+```text
+ACTIVE(session_id)
+      ↓
+RFB may establish its own stream/session
+PCM may establish its own runtime
+MPEG may begin its own activation flow
+control/telemetry may begin their own exchanges
+future modules may begin their own Wire-dependent work
+```
+
+Wire Transport does not decide which of those actions actually occur.
+
+### Publication, not orchestration
+
+Wire owns connection/session state and publishes that state through its public
+seam.
+
+It does not:
+
+- start RFB, MPEG, PCM/audio, configuration, UI, or other business modules;
+- require those modules to be running;
+- maintain business-level service startup policy;
+- interpret a consumer's domain-specific readiness;
+- directly orchestrate rider lifecycle merely because the Wire Session changed.
+
+Application and individual modules may observe or consume the authoritative
+session state and react according to their own responsibilities and policy.
+
+### State representation
+
+`INACTIVE` is the architectural/public semantic state.
+
+The implementation need not encode inactivity as a magic numeric session ID.
+A tagged state, optional value, explicit enum plus ID, or equivalent
+representation is preferable if it prevents an inactive sentinel from being
+confused with a legitimate session identity.
+
+The architectural invariant is simply:
+
+- no session -> `INACTIVE`;
+- current session -> `ACTIVE(session_id)`;
+- old session IDs are never published as current after their session ends.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -1370,7 +1493,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, and Q9 are closed.
+Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, Q9, and Q10 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
