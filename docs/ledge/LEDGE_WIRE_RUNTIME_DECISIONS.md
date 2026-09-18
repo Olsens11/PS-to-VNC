@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0001
+DOCUMENT_REVISION=0002
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=6c416293435203ea77a7afb95db218f3b5a977fe
+BASED_ON_BRANCH_COMMIT=f9ee4720c248748c327ff20a6fcdcdedc4e8479e
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -238,6 +238,172 @@ Transport owns mechanism only. RFB, MPEG, PCM/audio, Presentation, Input/UI,
 generation coordination, and future domains retain their own semantics and
 lifecycle policy.
 
+
+## Q3 — Minimum contract between Wire Transport and riders
+
+STATUS=ANSWERED
+
+### Intent recovered from the user-assisted design discussion
+
+A rider should be able to appear, use its logical Wire Channel, disappear, stall,
+restart, or be replaced without becoming part of the Wire server's own lifetime.
+
+The useful mental model is a persistent transport system with stable logical
+destinations: the Wire Channel exists because Wire Protocol defines it, not
+because a particular rider is presently running. The transport system must not
+reach into a rider's private buffers or interpret the rider's domain payload in
+order to perform delivery.
+
+The design must also tolerate a rider that stops making progress without
+allowing that rider to consume unbounded memory or force unrelated channels or
+the Wire Session to fail merely because its own consumer is absent or stalled.
+
+### Mature decision — Wire Channel Relay
+
+Each logical Wire Channel connects to its owning domain through a
+Transport-owned **Wire Channel Relay**.
+
+A Wire Channel Relay is the last-mile courier between one logical Wire Channel
+and the public boundary of the module that owns the channel's domain behavior.
+
+Canonical relationship:
+
+```text
+owning module
+     ↑↓
+module public boundary
+     ↑↓
+Wire Channel Relay
+     ↑↓
+Wire Channel
+     ↑↓
+Wire Transport
+     ↑↓
+Wire Session
+```
+
+The Relay exists on the Transport side of the component boundary. Its ownership
+name is deliberate: it is part of Wire Transport, not part of MPEG, RFB,
+PCM/audio, or another rider domain.
+
+### Payload-opacity invariant
+
+The Wire Channel Relay transfers channel payload without interpreting,
+translating, parsing, or transforming the payload's domain semantics.
+
+For example, an MPEG Wire Channel Relay may move payload bytes between the
+MPEG Wire Channel and MPEG's public boundary, but it does not understand MPEG
+frame structure, decoding, generation semantics, MPEG-owned queue semantics, or
+how MPEG will use those bytes.
+
+Likewise, Wire Transport knows that payload belongs to a particular Wire
+Channel and knows the Transport mechanics required to move it safely; it does
+not need to know what the payload means to the receiving domain.
+
+The receiving module owns all domain interpretation and processing after the
+handoff. The sending module owns creation of domain payload before the handoff.
+
+### Transport-bookkeeping invariant
+
+Payload opacity does not make the Relay ignorant of Transport mechanics.
+
+A Wire Channel Relay may participate in Transport-owned bookkeeping required
+for safe handoff, including:
+
+- bounded logical-channel capacity;
+- channel consumption/release accounting;
+- credits or equivalent Transport flow-control state;
+- Transport-side readiness needed to determine whether more channel payload
+  may safely be admitted;
+- channel-local mechanism failure/reporting.
+
+Those are Wire Transport semantics, not rider-domain semantics.
+
+A domain module should not need to construct or interpret Wire credit protocol
+messages merely to consume its payload. When a module drains accepted channel
+data through its public boundary, the Transport side may use that consumption
+to free capacity and update/send the corresponding Transport flow-control
+state.
+
+### Buffer and ownership boundary
+
+Wire Transport and its Relay must not reach into another component's private
+buffers, parser state, decoder queues, framebuffer state, or other domain
+internals.
+
+The domain owner decides how accepted payload is buffered, parsed, queued,
+decoded, rendered, played, or otherwise processed after it crosses the public
+handoff.
+
+The architectural requirement is the explicit ownership boundary. It does not
+require an artificial standalone process, class, or source file for every
+Relay if the same responsibility can be expressed clearly inside the genuine
+Wire Transport component without weakening the boundary.
+
+### Stalled or absent rider behavior
+
+A rider's absence or stall is not by itself a Wire Session failure.
+
+If a receiving domain stops draining its channel, the corresponding bounded
+Transport capacity may become exhausted. Further payload for that channel must
+then be limited by the applicable Transport flow-control/backpressure
+mechanism rather than accumulated without bound or pushed directly into the
+domain's private memory.
+
+The failure/stall of one rider must not inherently terminate unrelated Wire
+Channels or the Wire Session.
+
+This preserves distinct progress facts:
+
+```text
+Wire received payload
+        ↓
+payload is available through the logical channel / Relay
+        ↓
+domain accepted payload across its public boundary
+        ↓
+domain processed payload
+```
+
+Those are separate facts and must not be collapsed into one success state.
+
+### Rider contract
+
+A rider/domain may rely on the Wire Channel Relay as the Transport-owned
+handoff for its logical channel.
+
+The rider/domain owns:
+
+- payload meaning;
+- domain parsing/decoding/encoding;
+- domain-private buffering and queues;
+- domain lifecycle and semantic admission rules;
+- what happens to payload after it accepts it;
+- what domain payload it produces before handing it to Transport.
+
+The rider/domain may not:
+
+- read or write the physical Wire socket;
+- bypass Wire framing/multiplexing;
+- require Wire Transport to understand its private payload format;
+- expose private domain buffers for Wire Transport to mutate directly;
+- make its own continued activity a prerequisite for Wire Session health.
+
+### Naming rationale
+
+**Wire Channel Relay** is the canonical architecture term.
+
+"Relay" is preferred over "adapter" because this boundary does not translate
+domain representation; it relays payload across an ownership boundary.
+
+"Relay" is preferred over "bridge" because the repository already uses
+"bridge/public seam" for a component's own externally visible boundary. The
+Wire Channel Relay connects Wire Transport to that owning module's public
+boundary rather than replacing the module's bridge.
+
+Plain-language explanation: the Wire Channel Relay is the channel's
+**last-mile courier**.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -254,7 +420,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1 and Q2 are closed.
+Q1, Q2, and Q3 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
