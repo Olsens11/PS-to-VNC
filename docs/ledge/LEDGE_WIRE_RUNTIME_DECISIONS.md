@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0009
+DOCUMENT_REVISION=0010
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=1fb8987e258541cbc90bfbfb1e6ef4b62979e9f3
+BASED_ON_BRANCH_COMMIT=20ae068b4a786ec6a2ccbf97311e68200d1ba2bb
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -1477,6 +1477,116 @@ The architectural invariant is simply:
 - current session -> `ACTIVE(session_id)`;
 - old session IDs are never published as current after their session ends.
 
+
+## Q11 — Independent module readiness and failure domains
+
+STATUS=ANSWERED
+
+### Wire availability is not rider readiness
+
+An active Wire Session means only that the common cross-machine Transport is
+available.
+
+It does not mean that RFB, MPEG, PCM/audio, telemetry, input/control, or any
+future distributed module is already established or usable.
+
+Each distributed module independently owns whatever additional establishment,
+readiness, runtime, and shutdown state its own function genuinely requires.
+
+Conceptually:
+
+```text
+WireSession = ACTIVE(session_id)
+        ↓
+shared Transport prerequisite satisfied
+        ↓
+each module independently decides whether/how to establish
+```
+
+### No universal rider-readiness state machine
+
+Wire Transport does not impose a single business-level state machine on all
+riders.
+
+A module may use states such as inactive, starting, usable, stopping, failed, or
+something simpler/different if that better matches the domain.
+
+The architecture requires clear ownership of readiness, not identical enum
+shapes across unrelated domains.
+
+Likewise, a cross-Wire HELLO/READY exchange is not mandatory merely because a
+module uses Wire.
+
+A module-specific handshake or readiness protocol should exist only when that
+module's actual protocol/lifecycle requires it.
+
+### Module failure does not imply Wire failure
+
+A rider becoming unavailable or failing does not make the Wire Session
+unavailable.
+
+For example, this is a valid system state:
+
+```text
+Wire = ACTIVE
+MPEG = FAILED
+RFB  = ACTIVE
+PCM  = ACTIVE
+```
+
+MPEG may contain and recover its own failure while Wire and healthy siblings
+continue operating.
+
+The same principle applies to RFB, PCM/audio, control/telemetry, and future
+modules.
+
+A module failure escalates beyond that module only when the module cannot
+restore its own invariants or the failure has actually compromised a containing
+owner's invariants, as defined by Q8.
+
+### Readiness and failure ownership
+
+Each distributed module owns:
+
+- its own domain-specific establishment, if one is required;
+- the evidence that its remote counterpart is usable;
+- its own readiness state;
+- its own runtime state;
+- its own normal stop/retirement path;
+- its own bounded failure handling;
+- the conditions under which recovery must escalate under Q8.
+
+Wire Transport owns none of those business-level meanings.
+
+Wire only provides the common active session and channel/relay mechanisms
+through which the module may communicate.
+
+### Fault-containment consequence
+
+Keeping module readiness below the Wire ownership boundary is deliberate fault
+containment.
+
+If Wire were responsible for declaring every rider globally ready, an
+individual rider failure could incorrectly become a Wire-level failure.
+
+Instead:
+
+```text
+module failure
+    ↓
+module contains / recovers failure if possible
+    ↓
+Wire remains ACTIVE
+    ↓
+healthy sibling modules continue
+```
+
+Only evidence that the shared Transport or another containing ownership scope
+is itself no longer trustworthy justifies upward escalation.
+
+This directly reinforces Q8's minimum-scope recovery rule and Q10's minimal
+Wire Session availability contract.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -1493,7 +1603,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, Q9, and Q10 are closed.
+Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, Q9, Q10, and Q11 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
