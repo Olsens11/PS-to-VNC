@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0002
+DOCUMENT_REVISION=0003
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=f9ee4720c248748c327ff20a6fcdcdedc4e8479e
+BASED_ON_BRANCH_COMMIT=d67b7c4de53f5eb6342fc075fdaf3f9cfbfb2f50
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -404,6 +404,207 @@ boundary rather than replacing the module's bridge.
 Plain-language explanation: the Wire Channel Relay is the channel's
 **last-mile courier**.
 
+
+## Q4 — Wire Session establishment and provisional peer handling
+
+STATUS=ANSWERED
+
+### Intent recovered from the user-assisted design discussion
+
+A successful TCP connection is not, by itself, sufficient evidence that the
+peer is the intended PS-to-VNC PS2-side software. The Pi must have a small,
+replaceable establishment step before ordinary Wire Channels become active.
+
+The purpose of this first mechanism is practical accidental-peer protection and
+compatibility checking, not strong security authentication. The design should
+solve the present problem simply while preserving a clear seam where stronger
+authentication, update, or recovery behavior can later be inserted without
+reshaping Wire Transport, Wire Channel Relays, or rider domains.
+
+### Provisional connection state
+
+When the PS2 ELF opens the physical TCP connection and the Pi Wire server
+accepts it, the connection initially enters a **provisional Wire connection**
+state.
+
+The connection speaks Wire Protocol from its first PS-to-VNC application byte.
+There is no temporary raw RFB, raw media, or separate pre-Wire application
+protocol.
+
+Ordinary rider traffic is not enabled while the connection is provisional.
+
+### Minimal PS2 establishment message
+
+The PS2-side ELF initiates establishment by sending a small Wire-framed
+handshake containing only the minimum current compatibility identity:
+
+- the Wire Protocol version;
+- the PS2 ELF/product version.
+
+A recognizable valid pair of those version values is sufficient for the
+current implementation to infer the intended software relationship and reject
+accidental unrelated peers.
+
+Separate product-name and endpoint-role strings are not required merely to
+repeat information already implied by a valid establishment exchange on this
+specific Wire server.
+
+The concrete on-wire representation should be deterministic fields, not a
+free-form concatenated text string whose field boundaries are ambiguous.
+
+### Identification is not strong authentication
+
+The initial version-pair mechanism is deliberately modest.
+
+It answers the present question:
+
+> Is this provisional peer intentionally behaving like a compatible PS-to-VNC
+> PS2 client rather than an unrelated device or process that happened to connect?
+
+It does not claim to prevent a knowledgeable party from deliberately imitating
+the establishment exchange.
+
+The rest of the system must depend on the **establishment result**, not on the
+specific representation or proof mechanism used to obtain that result. This
+keeps the provisional-to-active boundary replaceable so a future
+challenge/response, shared-secret, signed-identity, certificate, or other
+authentication design can occupy the same seam if a real requirement later
+justifies it.
+
+### Pi acceptance and Wire Session creation
+
+If the Pi recognizes and accepts the establishment values, the Pi Wire server:
+
+1. reports acceptance to the PS2;
+2. establishes the authoritative Wire Session identity;
+3. promotes the provisional connection to an **active Wire Session**.
+
+Conceptually:
+
+```text
+PS2 ELF                           Pi Wire server
+   |                                   |
+   |------ TCP connect --------------->|
+   |                                   |
+   |                       provisional Wire connection
+   |                                   |
+   |------ version tuple ------------->|
+   |       Wire version                |
+   |       ELF version                 |
+   |                                   |
+   |                       validate / accept
+   |                       establish session identity
+   |                                   |
+   |<----- ACCEPT + session_id --------|
+   |                                   |
+   |========= ACTIVE WIRE SESSION =====|
+```
+
+The Pi Wire server is authoritative for the session identity created by
+successful establishment.
+
+### Active-session independence from rider traffic
+
+Successful establishment itself creates the active Wire Session.
+
+RFB, PCM/audio, input/control, MPEG, telemetry, or any future rider traffic may
+begin afterward, and in ordinary operation some of those riders will likely
+become active immediately.
+
+None of that rider traffic establishes or sustains the Wire Session.
+
+An active Wire Session remains valid if completely idle, consistent with Q2.
+
+### Establishment rejection
+
+If the Pi cannot accept the presented establishment values, no ordinary Wire
+Session is created and no normal rider traffic becomes active.
+
+Wire Transport reports a clean establishment failure result upward rather than
+embedding the application response inside Transport.
+
+The current architecture requires at least a result equivalent to:
+
+```text
+ESTABLISHED
+NOT_ACCEPTED
+```
+
+Exact enum/API spelling may be chosen during implementation.
+
+### PS2 Wire Establishment Policy
+
+The PS2 application owns a distinct **Wire Establishment Policy** boundary that
+decides what the application does with the establishment result.
+
+The initial implementation is intentionally minimal:
+
+```text
+ESTABLISHED  -> continue with the active Wire Session
+NOT_ACCEPTED -> shutdown
+```
+
+The current `NOT_ACCEPTED -> shutdown` behavior is **initial application
+policy**, not a Wire Transport invariant.
+
+That distinction must be documented directly in the eventual source and local
+component contract so the extension point is not forgotten merely because the
+first implementation has only one rejection action.
+
+The policy boundary is intentionally suitable for later evolution into choices
+such as:
+
+- retry establishment;
+- request or perform an update;
+- continue in local-only mode;
+- close/shutdown.
+
+Those future behaviors are not required for the present reconstruction.
+
+### Future update path reserved, not designed
+
+The version exchange creates a natural future opportunity for the Pi to
+recognize that the PS2 ELF is outdated while still understanding enough Wire
+Protocol to communicate safely.
+
+A later implementation may use the provisional establishment/recovery space to
+offer or deliver an updated PS2-side version, including eventual direct delivery
+to suitable PS2 storage.
+
+That update mechanism is **not designed or required by Q4**. The present
+architecture only preserves a clean place for it.
+
+If future software is so Wire-incompatible that safe in-band update traffic
+cannot be exchanged, another recovery/bootstrap mechanism may be required. Q4
+does not pretend that every future incompatibility can be repaired over the same
+connection.
+
+### Bounded implementation rule
+
+The initial implementation should build only the smallest establishment
+mechanism required now:
+
+```text
+TCP connect
+    ->
+provisional Wire connection
+    ->
+PS2 version tuple
+    ->
+Pi ACCEPT + session_id
+        or
+Pi NOT_ACCEPTED
+```
+
+Do not prematurely implement cryptographic authentication, capability
+negotiation, update transfer, retry UI, bootstrap recovery, or a richer
+connection-recovery state machine merely because the establishment seam now
+exists.
+
+The architectural obligation is to preserve that seam so those features can be
+added later without coupling them into Wire Transport's ordinary session and
+channel machinery.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -420,7 +621,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1, Q2, and Q3 are closed.
+Q1, Q2, Q3, and Q4 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
