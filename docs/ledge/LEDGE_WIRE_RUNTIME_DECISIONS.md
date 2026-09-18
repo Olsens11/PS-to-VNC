@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0010
+DOCUMENT_REVISION=0011
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=20ae068b4a786ec6a2ccbf97311e68200d1ba2bb
+BASED_ON_BRANCH_COMMIT=0e72d0ee26f8055c56d64b0a051239a6d87c8763
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -1587,6 +1587,136 @@ is itself no longer trustworthy justifies upward escalation.
 This directly reinforces Q8's minimum-scope recovery rule and Q10's minimal
 Wire Session availability contract.
 
+
+## Q12 — Session binding of cross-Wire module runtime instances
+
+STATUS=ANSWERED
+
+### One runtime instance belongs to one Wire Session
+
+Any module runtime instance that performs cross-Wire work is created against
+exactly one active Wire Session identity.
+
+That session identity is captured as part of the runtime instance's lifecycle
+context and remains the identity to which that instance belongs for its entire
+lifetime.
+
+A runtime instance does not migrate from one Wire Session to another.
+
+Conceptually:
+
+```text
+Wire = ACTIVE(session 52)
+
+RFB runtime A  -> session 52
+PCM runtime A  -> session 52
+MPEG runtime A -> session 52
+```
+
+If session 52 ends, those runtimes remain instances of session 52 while they
+retire or unwind. They do not become runtimes of whatever Wire Session may be
+established later.
+
+### Session loss makes bound runtimes obsolete
+
+When the Wire Session to which a module runtime is bound ends, that runtime
+becomes obsolete for future cross-Wire work.
+
+The module must retire, close, or otherwise contain that runtime within its own
+lifecycle/failure domain according to Q8/Q11.
+
+A later Wire Session may permit creation of a new module runtime:
+
+```text
+session 52 ends
+      ↓
+runtime A becomes obsolete / retires
+
+session 53 establishes
+      ↓
+runtime B may be created for session 53
+```
+
+Runtime A and runtime B are distinct lifecycle objects even when they belong to
+the same functional module.
+
+### Late work is fenced by the captured session identity
+
+Asynchronous work from an old runtime must not affect a new runtime merely
+because Wire has become active again.
+
+This includes, where applicable:
+
+- delayed worker completion;
+- queued callbacks;
+- decoder completion;
+- late Pi capture/encoder completion;
+- delayed PCM buffers;
+- old RFB parser/receive work;
+- channel-local work queued before session loss;
+- retirement completion from an earlier runtime.
+
+The relevant stale-work test is conceptually:
+
+```text
+runtime.bound_session_id == current_active_session_id
+```
+
+If the identities do not match, the result belongs to an obsolete runtime and
+must not be applied to the new session's live state.
+
+The exact implementation may use explicit IDs, ownership tokens, generation
+objects, scoped handles, or another equivalent mechanism. The architectural
+requirement is strict session binding, not a particular comparison primitive.
+
+### No migration across reconnect
+
+Q9 establishes that a dead Wire Session is never resumed.
+
+Q12 applies that rule to rider/runtime ownership:
+
+- a runtime created for an old session is never rebound to a new session;
+- an old runtime may finish safe local teardown after the new session already
+  exists;
+- that teardown may not disturb the replacement session/runtime;
+- a replacement session creates replacement runtimes where Application/module
+  policy calls for them.
+
+This prevents reconnect from becoming an implicit migration of live rider
+state.
+
+### Ownership split
+
+Wire Transport:
+
+- publishes `INACTIVE` or `ACTIVE(session_id)` as defined by Q10;
+- owns current Wire Session identity and Transport/session mechanisms;
+- does not adopt or retarget rider runtimes when the session changes.
+
+Each cross-Wire module:
+
+- captures the active session identity when creating a Wire-dependent runtime;
+- owns the lifetime and teardown of that runtime;
+- prevents stale work from an obsolete runtime from affecting a newer one;
+- creates a new runtime for a new Wire Session when its own policy/lifecycle
+  requires it.
+
+Application:
+
+- may decide which module runtimes should be recreated after reconnect;
+- does not make an old runtime itself continue across session identity changes.
+
+### Fault-containment consequence
+
+Session binding keeps stale asynchronous work inside the old module runtime's
+failure/lifecycle domain.
+
+An obsolete MPEG, RFB, PCM/audio, or future-module runtime may finish cleanup
+without requiring the replacement Wire Session or sibling modules to shut down.
+
+This directly supports Q8 minimum-scope recovery and Q11 independent module
+failure domains.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -1603,7 +1733,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, Q9, Q10, and Q11 are closed.
+Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, Q9, Q10, Q11, and Q12 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
