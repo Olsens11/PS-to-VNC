@@ -1,10 +1,10 @@
 # Ledge Wire Runtime Decisions
 
 DOCUMENT=LEDGE_WIRE_RUNTIME_DECISIONS
-DOCUMENT_REVISION=0003
+DOCUMENT_REVISION=0004
 BRANCH_SCOPE=ledge/h1-all-guns
 DECISION_STATUS=GOVERNING_FOR_ACTIVE_A003_MANUAL_RECONSTRUCTION
-BASED_ON_BRANCH_COMMIT=d67b7c4de53f5eb6342fc075fdaf3f9cfbfb2f50
+BASED_ON_BRANCH_COMMIT=3d2337bf19d292f7840956fd4f3227355e9b3f3d
 
 This document records architecture decisions made during the user-assisted A003
 manual reconstruction so later engineering work does not depend on conversational
@@ -605,6 +605,130 @@ The architectural obligation is to preserve that seam so those features can be
 added later without coupling them into Wire Transport's ordinary session and
 channel machinery.
 
+
+## Q5 — Authoritative Pi desktop/session geometry
+
+STATUS=ANSWERED
+
+### Persistent configuration authority
+
+The installed Pi product configuration is the persistent source of truth for
+display modes and their calibrated desktop geometry.
+
+The configuration is intended to support multiple PS2-compatible display modes.
+For each mode it may retain facts such as:
+
+- output/display resolution;
+- calibrated safe-desktop width and height;
+- calibrated safe-desktop X/Y offsets;
+- whether a usable calibration exists for that mode.
+
+The installation also provides a safe default display configuration. The
+current design intent is a stable 480p default with a full-resolution/default
+safe area suitable for first use before user-specific calibration.
+
+The exact future config schema is not fixed by Q5; the ownership is.
+
+### Active desktop/session authority
+
+When the Pi desktop/session owner creates the active shared desktop, it resolves
+the selected display mode and calibrated geometry from persistent
+configuration and establishes an **immutable active-geometry snapshot** for that
+desktop session.
+
+Conceptually:
+
+```text
+Pi display configuration
+        ↓
+selected display-mode record
+        ↓
+Pi desktop/session owner
+        ↓
+immutable active desktop geometry
+  - active resolution
+  - safe X/Y offsets
+  - safe width/height
+        ↓
+public session/config fact for consumers
+```
+
+The Pi desktop/session owner is authoritative for which configured geometry is
+active at runtime.
+
+The configuration file owns the persistent calibrated values; the runtime
+desktop/session owner owns the resolved active snapshot.
+
+### Exact-generation validation contract
+
+The exact-generation owner consumes the already-established active geometry
+through the owning public seam when validating START.
+
+It must not derive the desktop bounds from:
+
+- START itself;
+- an RFB provider's current framebuffer report;
+- a hardcoded qualified value such as `704x462`;
+- PS2-side DESKTOP CALIBRATION state.
+
+RFB may expose the desktop, but it does not define the project's configured
+safe desktop geometry.
+
+A003 START validation may rely on the active geometry as an established
+session fact rather than becoming responsible for desktop configuration or
+calibration policy.
+
+### Runtime consistency
+
+The desktop/session owner should establish that the actual desktop it created
+is compatible with the selected/configured display geometry before publishing
+that geometry as active.
+
+A stale or contradictory persistent configuration must not silently become a
+trusted active-session fact merely because it exists in the config file.
+
+The exact verification mechanism belongs to the desktop/session implementation
+and does not need to be designed as part of A003.
+
+### Geometry-change rule
+
+The active geometry used by consumers is immutable for the lifetime of that
+desktop-session state.
+
+A confirmed display-mode or calibration change establishes new active desktop
+geometry/session state rather than silently mutating the bounds underneath an
+already-prepared exact generation.
+
+### Future display-mode and calibration policy — reserved, not required now
+
+The intended future user experience includes several calibrated PS2-compatible
+display modes.
+
+The design space intentionally preserves these behaviors:
+
+- the user can choose another PS2-compatible display mode;
+- selecting the already-current display mode can enter safe-desktop calibration
+  rather than redundantly reselecting the same mode;
+- calibration adjusts the safe desktop rectangle for that display mode;
+- confirming calibration replaces that mode's persistent calibrated
+  X/Y/width/height values;
+- abandoning or failing to confirm a display-mode/calibration change restores
+  the previously accepted mode/state rather than leaving an unconfirmed mode
+  active;
+- the configuration may retain the state necessary to distinguish current,
+  candidate, and previous/restorable display-mode state.
+
+Startup calibration is also a future policy point. Prior project behavior used
+an optional startup calibration entry after connection establishment when the
+user held a controller chord such as `L1+R1`; a future implementation may
+restore a similar explicit entry point or prompt for calibration on first boot
+or first use of an uncalibrated mode.
+
+Those menu, controller-chord, first-boot, rollback, and calibration UI mechanics
+are intentionally **not required by Q5 or the active A003 packet**. Q5 requires
+only that the persistent configuration and active-session authority be shaped so
+those policies can be added later without changing who owns geometry.
+
 ## Historical/current state versus target state
 
 Do not silently rewrite history to make the old implementation appear to have
@@ -621,7 +745,7 @@ product sockets in the mature design.
 
 ## Next unresolved question
 
-Q1, Q2, Q3, and Q4 are closed.
+Q1, Q2, Q3, Q4, and Q5 are closed.
 
 The next architecture question is intentionally not answered by this revision.
 It should be decided from repository/runtime evidence and the mature design
