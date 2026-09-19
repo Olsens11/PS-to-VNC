@@ -19,8 +19,8 @@
 static int pstvnc_transport_runtime_send_quiesce_marker(
     pstvnc_transport_runtime_t *runtime)
 {
-    return pstvnc_transport_physical_stream_send_frame(
-        &runtime->physical_stream,
+    return pstvnc_transport_runtime_submit_frame(
+        runtime,
         PSTVNC_TRANSPORT_FRAME_DATA,
         PSTVNC_TRANSPORT_CHANNEL_RFB,
         0u,

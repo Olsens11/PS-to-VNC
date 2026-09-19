@@ -15,7 +15,7 @@ This portal is generated from participating product `SYMBOLS.md` files.
 | `src/mpeg` | [`src/mpeg/SYMBOLS.md`](../../src/mpeg/SYMBOLS.md) | COMPLETE | 163 |
 | `src/platform` | [`src/platform/SYMBOLS.md`](../../src/platform/SYMBOLS.md) | COMPLETE | 88 |
 | `src/rfb` | [`src/rfb/SYMBOLS.md`](../../src/rfb/SYMBOLS.md) | COMPLETE | 345 |
-| `src/transport` | [`src/transport/SYMBOLS.md`](../../src/transport/SYMBOLS.md) | COMPLETE | 901 |
+| `src/transport` | [`src/transport/SYMBOLS.md`](../../src/transport/SYMBOLS.md) | COMPLETE | 947 |
 | `src/ui` | [`src/ui/SYMBOLS.md`](../../src/ui/SYMBOLS.md) | COMPLETE | 351 |
 
 Generate the comprehensive view with:

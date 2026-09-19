@@ -543,6 +543,25 @@ int pstvnc_transport_physical_stream_receive_frame(
     return 1;
 }
 
+
+int pstvnc_transport_physical_stream_wait_readable(
+    pstvnc_transport_physical_stream_t *stream,
+    uint32_t timeout_us)
+{
+    int readable;
+
+    (void)timeout_us;
+    CHECK(stream != NULL);
+
+    pthread_mutex_lock(&rx_mutex);
+    readable =
+        rx_frame_index < rx_frame_count ||
+        receive_shutdown;
+    pthread_mutex_unlock(&rx_mutex);
+
+    return readable ? 1 : 0;
+}
+
 int pstvnc_transport_physical_stream_shutdown_io(
     pstvnc_transport_physical_stream_t *stream)
 {
@@ -873,6 +892,7 @@ static void test_parser_credit_batch_flush_and_residual_distinction(void)
     stop_and_release_runtime(&runtime);
 }
 
+
 static void test_outbound_fragmentation_and_failure_propagation(void)
 {
     static const uint8_t payload[] = {
@@ -883,6 +903,7 @@ static void test_outbound_fragmentation_and_failure_propagation(void)
 
     reset_fixture();
     initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
     clear_send_records();
 
     CHECK(pstvnc_transport_runtime_rfb_write_exact(
@@ -896,18 +917,21 @@ static void test_outbound_fragmentation_and_failure_propagation(void)
     CHECK(memcmp(send_records[0].payload, payload, 4u) == 0);
     CHECK(memcmp(send_records[1].payload, payload + 4u, 4u) == 0);
     CHECK(memcmp(send_records[2].payload, payload + 8u, 2u) == 0);
-    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+    stop_and_release_runtime(&runtime);
 
     reset_fixture();
     initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
     clear_send_records();
-    send_fail_on_call = 2;
+
+    send_fail_on_call = send_calls + 2;
     CHECK(pstvnc_transport_runtime_rfb_write_exact(
         &runtime, payload, sizeof(payload)) == 0);
     CHECK(runtime.failed == 1);
     CHECK(send_record_count == 1u);
-    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+    stop_and_release_runtime(&runtime);
 }
+
 
 static void test_finite_quiesce_order_is_distinct_from_fatal_abort(void)
 {

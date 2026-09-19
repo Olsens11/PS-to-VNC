@@ -13,7 +13,9 @@
 #include <kernel.h>
 #include <ps2ip.h>
 
+#include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <stddef.h>
@@ -135,6 +137,38 @@ int pstvnc_transport_physical_stream_send_frame(
         return 0;
 
     return send_succeeded;
+}
+
+int pstvnc_transport_physical_stream_wait_readable(
+    pstvnc_transport_physical_stream_t *stream,
+    uint32_t timeout_us)
+{
+    fd_set read_set;
+    struct timeval timeout;
+    int result;
+
+    if (stream == NULL || stream->socket_fd < 0)
+        return -1;
+
+    FD_ZERO(&read_set);
+    FD_SET(stream->socket_fd, &read_set);
+
+    timeout.tv_sec = (long)(timeout_us / UINT32_C(1000000));
+    timeout.tv_usec = (long)(timeout_us % UINT32_C(1000000));
+
+    result = select(
+        stream->socket_fd + 1,
+        &read_set,
+        NULL,
+        NULL,
+        &timeout);
+
+    if (result < 0)
+        return -1;
+    if (result == 0)
+        return 0;
+
+    return FD_ISSET(stream->socket_fd, &read_set) ? 1 : -1;
 }
 
 int pstvnc_transport_physical_stream_receive_frame(

@@ -1,8 +1,9 @@
 /*
  * File synopsis:
- * Implements Transport's session-local sole receiver and synchronized logical
- * RFB/AUDIO/MPEG2 runtime. One EE receiver thread is the only caller of the
- * physical receive primitive; complete DATA frames are dispatched into three
+ * Implements Transport's session-local single physical-I/O owner and synchronized logical
+ * RFB/AUDIO/MPEG2 runtime. One EE Transport I/O thread is the only caller of
+ * physical framed send and receive primitives; complete DATA frames are
+ * dispatched into three
  * independent bounded logical channels with independent credit/activity state.
  *
  * RFB parser consumption/quiesce, AUDIO's audited finite marker, MPEG's explicit
@@ -24,6 +25,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define PSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US 1000u
 
 static int pstvnc_transport_runtime_create_semaphore(
     int initial_count,
@@ -152,7 +155,90 @@ static void pstvnc_transport_runtime_reset_identifiers(
     runtime->mpeg_queue_semaphore_id = -1;
     runtime->mpeg_activity_semaphore_id = -1;
     runtime->receiver_done_semaphore_id = -1;
+    runtime->outbound_slot_semaphore_id = -1;
+    runtime->outbound_ready_semaphore_id = -1;
+    runtime->outbound_done_semaphore_id = -1;
     runtime->receiver_thread_id = -1;
+}
+
+int pstvnc_transport_runtime_submit_frame(
+    pstvnc_transport_runtime_t *runtime,
+    uint8_t kind,
+    uint8_t channel,
+    uint8_t flags,
+    const void *payload,
+    size_t payload_length)
+{
+    int result;
+
+    if (runtime == NULL ||
+        (payload_length != 0u && payload == NULL) ||
+        payload_length > PSTVNC_TRANSPORT_MAX_PAYLOAD ||
+        !runtime->initialized ||
+        !runtime->receiver_thread_started ||
+        runtime->receiver_done ||
+        runtime->failed ||
+        runtime->stop_requested)
+        return 0;
+
+    if (WaitSema(runtime->outbound_slot_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    if (runtime->receiver_done ||
+        runtime->failed ||
+        runtime->stop_requested) {
+        (void)SignalSema(runtime->outbound_slot_semaphore_id);
+        return 0;
+    }
+
+    memset(&runtime->outbound_work, 0, sizeof(runtime->outbound_work));
+    runtime->outbound_work.kind = kind;
+    runtime->outbound_work.channel = channel;
+    runtime->outbound_work.flags = flags;
+    runtime->outbound_work.payload_length = payload_length;
+
+    if (payload_length != 0u)
+        memcpy(runtime->outbound_work.payload, payload, payload_length);
+
+    runtime->outbound_work.result = 0;
+    runtime->outbound_pending = 1;
+
+    /*
+     * receiver_done is published before terminal I/O-owner cleanup. Recheck
+     * after publishing the pending item so a submission racing thread exit
+     * cannot sleep forever waiting for a dead owner.
+     */
+    if (runtime->receiver_done ||
+        runtime->failed ||
+        runtime->stop_requested) {
+        runtime->outbound_pending = 0;
+        (void)SignalSema(runtime->outbound_slot_semaphore_id);
+        return 0;
+    }
+
+    if (SignalSema(runtime->outbound_ready_semaphore_id) < 0) {
+        runtime->outbound_pending = 0;
+        runtime->failed = 1;
+        (void)SignalSema(runtime->outbound_slot_semaphore_id);
+        return 0;
+    }
+
+    if (WaitSema(runtime->outbound_done_semaphore_id) < 0) {
+        runtime->failed = 1;
+        (void)SignalSema(runtime->outbound_slot_semaphore_id);
+        return 0;
+    }
+
+    result = runtime->outbound_work.result;
+
+    if (SignalSema(runtime->outbound_slot_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    return result;
 }
 
 static int pstvnc_transport_runtime_send_credit(
@@ -166,14 +252,15 @@ static int pstvnc_transport_runtime_send_credit(
         return 1;
 
     pstvnc_transport_write_be32(payload, amount);
-    return pstvnc_transport_physical_stream_send_frame(
-        &runtime->physical_stream,
+    return pstvnc_transport_runtime_submit_frame(
+        runtime,
         PSTVNC_TRANSPORT_FRAME_CREDIT,
         channel,
         0u,
         payload,
         sizeof(payload));
 }
+
 
 /* Caller holds rfb_queue_semaphore_id. */
 static int pstvnc_transport_runtime_publish_rfb_activity_locked(
@@ -434,6 +521,70 @@ static int pstvnc_transport_runtime_accept_mpeg_frame(
         signal_waiter);
 }
 
+static int pstvnc_transport_runtime_take_outbound_ready(
+    pstvnc_transport_runtime_t *runtime)
+{
+#if defined(_EE)
+    return PollSema(runtime->outbound_ready_semaphore_id) >= 0;
+#else
+    /*
+     * Host fixtures do not emulate PollSema. outbound_pending provides the
+     * nonblocking observation; WaitSema then consumes the already-present token.
+     */
+    if (!runtime->outbound_pending)
+        return 0;
+
+    return WaitSema(runtime->outbound_ready_semaphore_id) >= 0;
+#endif
+}
+
+static int pstvnc_transport_runtime_process_outbound(
+    pstvnc_transport_runtime_t *runtime)
+{
+    int result;
+
+    if (!runtime->outbound_pending) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    result = pstvnc_transport_physical_stream_send_frame(
+        &runtime->physical_stream,
+        runtime->outbound_work.kind,
+        runtime->outbound_work.channel,
+        runtime->outbound_work.flags,
+        runtime->outbound_work.payload_length != 0u
+            ? runtime->outbound_work.payload
+            : NULL,
+        runtime->outbound_work.payload_length);
+
+    runtime->outbound_work.result = result ? 1 : 0;
+    runtime->outbound_pending = 0;
+
+    if (!result)
+        runtime->failed = 1;
+
+    if (SignalSema(runtime->outbound_done_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    return result;
+}
+
+static void pstvnc_transport_runtime_fail_pending_outbound(
+    pstvnc_transport_runtime_t *runtime)
+{
+    if (!runtime->outbound_pending)
+        return;
+
+    runtime->outbound_work.result = 0;
+    runtime->outbound_pending = 0;
+
+    if (SignalSema(runtime->outbound_done_semaphore_id) < 0)
+        runtime->failed = 1;
+}
+
 static void pstvnc_transport_runtime_receiver_thread(void *argument)
 {
     pstvnc_transport_runtime_t *runtime =
@@ -442,6 +593,31 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
     while (!runtime->failed && !runtime->stop_requested) {
         pstvnc_transport_header_t header;
         int accepted = 0;
+        int readable;
+
+        /*
+         * Outbound work is always serviced before entering the bounded socket
+         * readiness wait. The one-item synchronous queue provides explicit
+         * backpressure to domain owners.
+         */
+        if (pstvnc_transport_runtime_take_outbound_ready(runtime)) {
+            if (!pstvnc_transport_runtime_process_outbound(runtime))
+                break;
+            continue;
+        }
+
+        readable = pstvnc_transport_physical_stream_wait_readable(
+            &runtime->physical_stream,
+            PSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US);
+
+        if (readable < 0) {
+            if (!runtime->stop_requested)
+                runtime->failed = 1;
+            break;
+        }
+
+        if (readable == 0)
+            continue;
 
         if (!pstvnc_transport_physical_stream_receive_frame(
                 &runtime->physical_stream,
@@ -458,11 +634,14 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
 
         if (header.kind == PSTVNC_TRANSPORT_FRAME_DATA) {
             if (header.channel == PSTVNC_TRANSPORT_CHANNEL_RFB)
-                accepted = pstvnc_transport_runtime_accept_rfb_frame(runtime, &header);
+                accepted = pstvnc_transport_runtime_accept_rfb_frame(
+                    runtime, &header);
             else if (header.channel == PSTVNC_TRANSPORT_CHANNEL_AUDIO)
-                accepted = pstvnc_transport_runtime_accept_audio_frame(runtime, &header);
+                accepted = pstvnc_transport_runtime_accept_audio_frame(
+                    runtime, &header);
             else if (header.channel == PSTVNC_TRANSPORT_CHANNEL_MPEG2)
-                accepted = pstvnc_transport_runtime_accept_mpeg_frame(runtime, &header);
+                accepted = pstvnc_transport_runtime_accept_mpeg_frame(
+                    runtime, &header);
         }
 
         if (!accepted) {
@@ -471,7 +650,12 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
         }
     }
 
+    /*
+     * Publish terminality before resolving a possibly racing outbound submitter.
+     * submit_frame() rechecks this field after publishing outbound_pending.
+     */
     runtime->receiver_done = 1;
+    pstvnc_transport_runtime_fail_pending_outbound(runtime);
 
     /* Wake each enabled logical owner so terminal state is event-visible. */
     if (runtime->rfb_queue_semaphore_id >= 0 &&
@@ -495,6 +679,7 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
 
     ExitThread();
 }
+
 
 static int pstvnc_transport_runtime_initialize_internal(
     pstvnc_transport_runtime_t *runtime,
@@ -586,6 +771,21 @@ static int pstvnc_transport_runtime_initialize_internal(
     if (runtime->receiver_done_semaphore_id < 0)
         goto fail;
 
+    runtime->outbound_slot_semaphore_id =
+        pstvnc_transport_runtime_create_semaphore(1, 1);
+    if (runtime->outbound_slot_semaphore_id < 0)
+        goto fail;
+
+    runtime->outbound_ready_semaphore_id =
+        pstvnc_transport_runtime_create_semaphore(0, 1);
+    if (runtime->outbound_ready_semaphore_id < 0)
+        goto fail;
+
+    runtime->outbound_done_semaphore_id =
+        pstvnc_transport_runtime_create_semaphore(0, 1);
+    if (runtime->outbound_done_semaphore_id < 0)
+        goto fail;
+
     runtime->receiver_stack =
         (unsigned char *)pstvnc_transport_runtime_allocate_aligned16(
             (size_t)config->receiver_thread_stack_size,
@@ -625,6 +825,12 @@ static int pstvnc_transport_runtime_initialize_internal(
     return 1;
 
 fail:
+    if (runtime->outbound_done_semaphore_id >= 0)
+        (void)DeleteSema(runtime->outbound_done_semaphore_id);
+    if (runtime->outbound_ready_semaphore_id >= 0)
+        (void)DeleteSema(runtime->outbound_ready_semaphore_id);
+    if (runtime->outbound_slot_semaphore_id >= 0)
+        (void)DeleteSema(runtime->outbound_slot_semaphore_id);
     if (runtime->receiver_done_semaphore_id >= 0)
         (void)DeleteSema(runtime->receiver_done_semaphore_id);
     if (runtime->mpeg_activity_semaphore_id >= 0)
@@ -697,6 +903,7 @@ int pstvnc_transport_runtime_initialize_with_audio_mpeg(
         runtime, socket_fd, config, audio_config, mpeg_config);
 }
 
+
 int pstvnc_transport_runtime_start_receiver(
     pstvnc_transport_runtime_t *runtime)
 {
@@ -706,32 +913,6 @@ int pstvnc_transport_runtime_start_receiver(
         runtime->receiver_thread_started || runtime->failed ||
         runtime->stop_requested)
         return 0;
-
-    if (!pstvnc_transport_runtime_send_credit(
-            runtime,
-            PSTVNC_TRANSPORT_CHANNEL_RFB,
-            runtime->rfb_initial_credit_bytes)) {
-        runtime->failed = 1;
-        return 0;
-    }
-
-    if (runtime->audio_enabled &&
-        !pstvnc_transport_runtime_send_credit(
-            runtime,
-            PSTVNC_TRANSPORT_CHANNEL_AUDIO,
-            runtime->audio_initial_credit_bytes)) {
-        runtime->failed = 1;
-        return 0;
-    }
-
-    if (runtime->mpeg_enabled &&
-        !pstvnc_transport_runtime_send_credit(
-            runtime,
-            PSTVNC_TRANSPORT_CHANNEL_MPEG2,
-            runtime->mpeg_initial_credit_bytes)) {
-        runtime->failed = 1;
-        return 0;
-    }
 
     memset(&thread, 0, sizeof(thread));
     thread.func = (void *)pstvnc_transport_runtime_receiver_thread;
@@ -755,9 +936,47 @@ int pstvnc_transport_runtime_start_receiver(
         return 0;
     }
 
+    /*
+     * The compatibility name remains "receiver", but this thread is now the
+     * sole physical-I/O owner. Publish liveness before submitting startup
+     * credits so those frames are executed by that owner.
+     */
     runtime->receiver_thread_started = 1;
+
+    if (!pstvnc_transport_runtime_send_credit(
+            runtime,
+            PSTVNC_TRANSPORT_CHANNEL_RFB,
+            runtime->rfb_initial_credit_bytes) ||
+        (runtime->audio_enabled &&
+         !pstvnc_transport_runtime_send_credit(
+             runtime,
+             PSTVNC_TRANSPORT_CHANNEL_AUDIO,
+             runtime->audio_initial_credit_bytes)) ||
+        (runtime->mpeg_enabled &&
+         !pstvnc_transport_runtime_send_credit(
+             runtime,
+             PSTVNC_TRANSPORT_CHANNEL_MPEG2,
+             runtime->mpeg_initial_credit_bytes))) {
+        runtime->failed = 1;
+
+        /*
+         * A startup send failure is terminal. If the owner has not yet
+         * published completion, interrupt any readiness/receive wait and wait
+         * for that owner before returning failure.
+         */
+        if (!runtime->receiver_done) {
+            runtime->stop_requested = 1;
+            (void)pstvnc_transport_physical_stream_shutdown_io(
+                &runtime->physical_stream);
+            (void)pstvnc_transport_runtime_wait_receiver_done(runtime);
+        }
+
+        return 0;
+    }
+
     return 1;
 }
+
 
 int pstvnc_transport_runtime_request_stop(
     pstvnc_transport_runtime_t *runtime)
@@ -1043,6 +1262,7 @@ int pstvnc_transport_runtime_rfb_poll_receive(
     return 0;
 }
 
+
 int pstvnc_transport_runtime_rfb_write_exact(
     pstvnc_transport_runtime_t *runtime,
     const void *buffer,
@@ -1062,8 +1282,8 @@ int pstvnc_transport_runtime_rfb_write_exact(
         if (fragment > (size_t)runtime->max_data_payload)
             fragment = (size_t)runtime->max_data_payload;
 
-        if (!pstvnc_transport_physical_stream_send_frame(
-                &runtime->physical_stream,
+        if (!pstvnc_transport_runtime_submit_frame(
+                runtime,
                 PSTVNC_TRANSPORT_FRAME_DATA,
                 PSTVNC_TRANSPORT_CHANNEL_RFB,
                 0u,
@@ -1078,6 +1298,7 @@ int pstvnc_transport_runtime_rfb_write_exact(
 
     return 1;
 }
+
 
 pstvnc_transport_result_t pstvnc_transport_runtime_audio_read_available(
     pstvnc_transport_runtime_t *runtime,
@@ -1540,6 +1761,15 @@ int pstvnc_transport_runtime_release(
         runtime->receiver_thread_started = 0;
     }
 
+    if (runtime->outbound_done_semaphore_id >= 0 &&
+        DeleteSema(runtime->outbound_done_semaphore_id) < 0)
+        result = 0;
+    if (runtime->outbound_ready_semaphore_id >= 0 &&
+        DeleteSema(runtime->outbound_ready_semaphore_id) < 0)
+        result = 0;
+    if (runtime->outbound_slot_semaphore_id >= 0 &&
+        DeleteSema(runtime->outbound_slot_semaphore_id) < 0)
+        result = 0;
     if (runtime->receiver_done_semaphore_id >= 0 &&
         DeleteSema(runtime->receiver_done_semaphore_id) < 0)
         result = 0;

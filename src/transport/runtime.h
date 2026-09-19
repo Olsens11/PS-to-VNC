@@ -31,6 +31,15 @@
 
 typedef pstvnc_transport_session_config_t pstvnc_transport_runtime_config_t;
 
+typedef struct pstvnc_transport_outbound_work {
+    uint8_t kind;
+    uint8_t channel;
+    uint8_t flags;
+    size_t payload_length;
+    uint8_t payload[PSTVNC_TRANSPORT_MAX_PAYLOAD];
+    int result;
+} pstvnc_transport_outbound_work_t;
+
 typedef struct pstvnc_transport_runtime {
     pstvnc_transport_physical_stream_t physical_stream;
     pstvnc_transport_rfb_channel_t rfb_channel;
@@ -50,6 +59,16 @@ typedef struct pstvnc_transport_runtime {
     int mpeg_queue_semaphore_id;
     int mpeg_activity_semaphore_id;
     int receiver_done_semaphore_id;
+
+    /*
+     * One bounded synchronous outbound slot. Domain owners submit complete
+     * logical frames here; only the Transport I/O thread calls the physical
+     * framed-send primitive.
+     */
+    int outbound_slot_semaphore_id;
+    int outbound_ready_semaphore_id;
+    int outbound_done_semaphore_id;
+
     int receiver_thread_id;
 
     int initialized;
@@ -59,6 +78,7 @@ typedef struct pstvnc_transport_runtime {
     volatile int receiver_done;
     volatile int stop_requested;
     volatile int failed;
+    volatile int outbound_pending;
 
     /* RFB producer activity is protected by rfb_queue_semaphore_id. */
     uint32_t activity_sequence;
@@ -110,6 +130,7 @@ typedef struct pstvnc_transport_runtime {
     volatile uint32_t rfb_quiesce_commit_received;
     volatile uint32_t rfb_quiesce_complete_sent;
 
+    pstvnc_transport_outbound_work_t outbound_work;
     uint8_t receiver_payload[PSTVNC_TRANSPORT_MAX_PAYLOAD];
 } pstvnc_transport_runtime_t;
 
@@ -141,6 +162,19 @@ int pstvnc_transport_runtime_start_receiver(
     pstvnc_transport_runtime_t *runtime);
 int pstvnc_transport_runtime_request_stop(
     pstvnc_transport_runtime_t *runtime);
+
+/*
+ * Internal Transport outbound rendezvous. Logical/domain owners may request a
+ * framed send, but the physical send itself is executed only by the Transport
+ * I/O thread.
+ */
+int pstvnc_transport_runtime_submit_frame(
+    pstvnc_transport_runtime_t *runtime,
+    uint8_t kind,
+    uint8_t channel,
+    uint8_t flags,
+    const void *payload,
+    size_t payload_length);
 
 int pstvnc_transport_runtime_rfb_activity_snapshot(
     pstvnc_transport_runtime_t *runtime,

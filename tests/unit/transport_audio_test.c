@@ -378,6 +378,26 @@ int pstvnc_transport_physical_stream_receive_frame(
     return 1;
 }
 
+
+int pstvnc_transport_physical_stream_wait_readable(
+    pstvnc_transport_physical_stream_t *stream,
+    uint32_t timeout_us)
+{
+    int readable;
+
+    (void)timeout_us;
+    CHECK(stream != NULL);
+
+    pthread_mutex_lock(&receive_mutex);
+    readable =
+        frame_index < frame_count ||
+        receive_shutdown ||
+        receive_eof;
+    pthread_mutex_unlock(&receive_mutex);
+
+    return readable ? 1 : 0;
+}
+
 int pstvnc_transport_physical_stream_shutdown_io(
     pstvnc_transport_physical_stream_t *stream)
 {
