@@ -1,0 +1,23 @@
+{
+  "deployed_at_utc": "2026-09-19T03:17:34.707984+00:00",
+  "deployment_result": "PASS",
+  "elf_bytes": 2301824,
+  "elf_path": "/home/ps2/src/PS-to-VNC-wire-q1-q12-hardware-proof/build/experiments/wire-q1-q12-proof/hardware/PS2VNC-Wire-Q1Q12-Proof2-Reconnect-HW1.ELF",
+  "elf_sha256": "97abb713ddecba2678d56b42f8f47bb4a1b8b58706ebb18890ea47b14fb5ff6b",
+  "ftp_host": "192.168.50.2",
+  "ftp_port": 21,
+  "ftp_readback": "PASS",
+  "hardware_run": false,
+  "repository_branch": "wire/q1-q12-hardware-proof",
+  "repository_context": "/home/ps2/src/PS-to-VNC-wire-q1-q12-hardware-proof",
+  "repository_context_source": "EXPLICIT",
+  "repository_head": "f9820f6d8a8233a097a1d19cc138ea244a800b03",
+  "rolling_readback_bytes": 2301824,
+  "rolling_readback_sha256": "97abb713ddecba2678d56b42f8f47bb4a1b8b58706ebb18890ea47b14fb5ff6b",
+  "rolling_remote": "/mass/0/PS2VNC.ELF",
+  "test_id": "WIRE-Q1Q12-P2-HW1",
+  "unique_readback_bytes": 2301824,
+  "unique_readback_sha256": "97abb713ddecba2678d56b42f8f47bb4a1b8b58706ebb18890ea47b14fb5ff6b",
+  "unique_remote": "/mass/0/PS2VNC-WIRE-Q1Q12-P2-HW1-97abb713.ELF",
+  "version": 1
+}
