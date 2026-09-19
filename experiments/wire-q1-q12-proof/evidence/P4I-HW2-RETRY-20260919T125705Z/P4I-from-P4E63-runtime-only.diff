@@ -1,0 +1,46 @@
+--- /tmp/tmp.zfDOLXvNHW	2026-09-19 08:33:40.360926253 -0400
++++ src/transport/runtime.c	2026-09-19 08:33:40.445894920 -0400
+@@ -19,6 +19,10 @@
+ 
+ #include "runtime.h"
+ 
++#ifdef _EE
++#include "platform/ps2_system.h"
++#endif
++
+ #include <kernel.h>
+ 
+ #include <limits.h>
+@@ -678,8 +682,31 @@
+             break;
+         }
+ 
+-        if (readable == 0)
++        if (readable == 0) {
++            /*
++             * P4I DEVELOPMENT APPARATUS ONLY.
++             *
++             * P4H hardware proved that parking this physical-I/O owner after
++             * successful sends allows queued Wire bytes to progress onto
++             * Ethernet, while the tight product PollSema/select loop suppresses
++             * that progress.
++             *
++             * Yield the EE only on an idle socket-readiness timeout. Outbound
++             * work still runs immediately before select(), and immediately
++             * readable Wire input is still consumed without this delay.
++             *
++             * This tests scheduler fairness as the minimum mechanism; it does
++             * not yet commit this platform dependency or 1000-us interval to
++             * the final clean Transport architecture.
++             */
++#ifdef _EE
++            if (pstvnc_ps2_system_delay_us(1000u) < 0) {
++                runtime->failed = 1;
++                break;
++            }
++#endif
+             continue;
++        }
+ 
+         if (!pstvnc_transport_physical_stream_receive_frame(
+                 &runtime->physical_stream,

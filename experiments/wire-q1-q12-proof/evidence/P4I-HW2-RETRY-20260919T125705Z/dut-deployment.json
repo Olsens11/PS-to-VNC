@@ -1,0 +1,12 @@
+{
+  "elf_bytes": 2436128,
+  "elf_identity_sha256": "72fba47665590c07c0153a3b51a2a0a44b9f4462f3e852d3b12d6f6b3e855d49",
+  "elf_sha256": "d8775e025886699935c42fab90e526ef53cabcb537efe85d0e6612dafe12172f",
+  "pt_load_sha256": "aa49d91d08d50557561501df1a0b4308dbac3ffff73a040f9e42c8984d77a68e",
+  "result": "PASS",
+  "rolling_remote": "/mass/0/PS2VNC.ELF",
+  "run_id": "P4I-HW1-20260919T123629Z",
+  "source_head": "325cf8332212042bc78170fc8d5776a442985006",
+  "test_id": "WIRE-Q1Q12-P4I-HW1",
+  "unique_remote": "/mass/0/PS2VNC-WIRE-Q1Q12-P4I-HW1-d8775e02.ELF"
+}

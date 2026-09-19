@@ -1,0 +1,273 @@
+diff --git a/experiments/wire-q1-q12-proof/proof4_rider_isolation_ps2.c b/experiments/wire-q1-q12-proof/proof4_rider_isolation_ps2.c
+index 2d213813..c179ca38 100644
+--- a/experiments/wire-q1-q12-proof/proof4_rider_isolation_ps2.c
++++ b/experiments/wire-q1-q12-proof/proof4_rider_isolation_ps2.c
+@@ -359,77 +359,6 @@ static int proof_audio_stop_audio(void *context)
+     return 0;
+ }
+ 
+-static int establish_wire(uint32_t *session_id)
+-{
+-    uint8_t hello_payload[PSTVNC_WIRE_PROOF_HELLO_BYTES];
+-    uint8_t result_payload[PSTVNC_WIRE_PROOF_ACCEPT_BYTES];
+-    pstvnc_wire_proof_hello_t hello;
+-    pstvnc_wire_proof_accept_t acceptance;
+-    pstvnc_wire_proof_not_accepted_t rejection;
+-    pstvnc_transport_header_t header;
+-
+-    if (session_id == NULL)
+-        return 0;
+-
+-    *session_id = 0u;
+-
+-    hello.wire_version = PSTVNC_WIRE_PROOF_WIRE_VERSION;
+-    hello.product_version = PSTVNC_WIRE_PROOF_PRODUCT_VERSION;
+-
+-    if (!pstvnc_wire_proof_hello_encode(hello_payload, &hello))
+-        return 0;
+-
+-    /*
+-     * The real Transport runtime already owns the physical stream at this
+-     * point, but its receiver thread is not started. HELLO therefore uses its
+-     * real send sequence 1.
+-     */
+-    if (!pstvnc_transport_physical_stream_send_frame(
+-            &proof_runtime.physical_stream,
+-            PSTVNC_TRANSPORT_FRAME_HELLO,
+-            PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+-            0u,
+-            hello_payload,
+-            sizeof(hello_payload)))
+-        return 0;
+-
+-    if (!pstvnc_transport_physical_stream_receive_frame(
+-            &proof_runtime.physical_stream,
+-            &header,
+-            result_payload,
+-            sizeof(result_payload)))
+-        return 0;
+-
+-    if (header.channel != PSTVNC_TRANSPORT_CHANNEL_CONTROL ||
+-        header.flags != 0u ||
+-        header.payload_length != sizeof(result_payload))
+-        return 0;
+-
+-    if (header.kind == PSTVNC_WIRE_PROOF_FRAME_ACCEPT) {
+-        if (!pstvnc_wire_proof_accept_decode(
+-                &acceptance,
+-                result_payload,
+-                sizeof(result_payload)) ||
+-            acceptance.session_id == 0u)
+-            return 0;
+-
+-        *session_id = acceptance.session_id;
+-        return 1;
+-    }
+-
+-    if (header.kind == PSTVNC_WIRE_PROOF_FRAME_NOT_ACCEPTED) {
+-        if (!pstvnc_wire_proof_not_accepted_decode(
+-                &rejection,
+-                result_payload,
+-                sizeof(result_payload)))
+-            return 0;
+-
+-        return -(int)rejection.reason;
+-    }
+-
+-    return 0;
+-}
+-
+ static int proof_send_failure_marker(void)
+ {
+     /*
+@@ -439,8 +368,8 @@ static int proof_send_failure_marker(void)
+      *
+      * The real Transport physical stream still owns sequence and serialization.
+      */
+-    return pstvnc_transport_physical_stream_send_frame(
+-        &proof_runtime.physical_stream,
++    return pstvnc_transport_runtime_submit_frame(
++        &proof_runtime,
+         PSTVNC_TRANSPORT_FRAME_HEARTBEAT,
+         PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+         0u,
+@@ -499,8 +428,6 @@ static void proof_shutdown_runtime(void)
+ int main(int argc, char **argv)
+ {
+     int socket_fd = -1;
+-    int establish_result;
+-    uint32_t session_id = 0u;
+     pstvnc_transport_session_config_t transport_config;
+     pstvnc_transport_audio_channel_config_t audio_config;
+     pstvnc_config_pcm_profile_t pcm_profile;
+@@ -558,7 +485,7 @@ int main(int argc, char **argv)
+     transport_config.rfb_credit_flush_on_empty = 1;
+     transport_config.rfb_credit_return_enabled = 1;
+     transport_config.receiver_thread_stack_size = 16384u;
+-    transport_config.receiver_thread_priority = 64;
++    transport_config.receiver_thread_priority = 63;
+     transport_config.max_data_payload = PROOF4_MAX_DATA_PAYLOAD;
+ 
+     audio_config.queue_capacity = PROOF4_AUDIO_CAPACITY;
+@@ -586,31 +513,13 @@ int main(int argc, char **argv)
+     socket_fd = -1;
+ 
+     proof_print("state=PROVISIONAL");
+-
+-    establish_result = establish_wire(&session_id);
+-    if (establish_result <= 0) {
+-        snprintf(
+-            line,
+-            sizeof(line),
+-            "FAIL establishment result=%d",
+-            establish_result);
+-        proof_print(line);
+-        proof_shutdown_runtime();
+-        SleepThread();
+-        return 14;
+-    }
+-
+-    snprintf(
+-        line,
+-        sizeof(line),
+-        "WIRE ACTIVE id=%u",
+-        (unsigned int)session_id);
+-    proof_print(line);
++    proof_print("ESTABLISHMENT_OWNER=TRANSPORT_IO_THREAD");
+ 
+     /*
+-     * Sequence state already advanced through HELLO/ACCEPT. Starting the real
+-     * receiver therefore sends its RFB/AUDIO initial credits as outbound
+-     * sequences 2 and 3 and receives ordinary rider DATA from inbound sequence 2.
++     * P4E development apparatus:
++     * the temporary runtime derivative performs proof-local HELLO/ACCEPT
++     * inside the actual product Transport I/O-owner thread before that same
++     * execution context enters the normal product owner loop.
+      */
+     if (!pstvnc_transport_runtime_start_receiver(&proof_runtime)) {
+         proof_print("FAIL receiver_start");
+@@ -619,6 +528,7 @@ int main(int argc, char **argv)
+         return 15;
+     }
+ 
++    proof_print("OWNER_ESTABLISHMENT_AND_INITIAL_CREDITS=PASS");
+     proof_print("RFB_CREDIT=32 AUDIO_CREDIT=16");
+     proof_print("state=RFB_STALLED_FULL");
+ 
+diff --git a/src/transport/runtime.c b/src/transport/runtime.c
+index 57c74c16..fb103c01 100644
+--- a/src/transport/runtime.c
++++ b/src/transport/runtime.c
+@@ -19,6 +19,10 @@
+ 
+ #include "runtime.h"
+ 
++#ifdef _EE
++#include "platform/ps2_system.h"
++#endif
++
+ #include <kernel.h>
+ 
+ #include <limits.h>
+@@ -590,6 +594,68 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
+     pstvnc_transport_runtime_t *runtime =
+         (pstvnc_transport_runtime_t *)argument;
+ 
++    /*
++     * P4E DEVELOPMENT APPARATUS ONLY.
++     *
++     * Hardware qualification requires the same EE execution context to own
++     * every Wire byte beginning with HELLO. The final product representation
++     * of ACCEPT / NOT_ACCEPTED is intentionally still undecided, so this
++     * derivative injects only the already-proven proof-local establishment
++     * representation and does not promote it into the product ABI.
++     *
++     * Proof-local representation:
++     *   HELLO          kind 1,  CONTROL channel 0, payload wire=1/product=1
++     *   ACCEPT         kind 12, CONTROL channel 0, 4-byte nonzero session ID
++     *
++     * The existing product owner loop below remains unchanged after this
++     * bootstrap and therefore owns initial CREDIT, ordinary receive, returned
++     * CREDIT, heartbeat, and RFB outbound traffic in the same EE context.
++     */
++    {
++        uint8_t proof_hello_payload[8];
++        pstvnc_transport_header_t proof_result_header;
++        uint32_t proof_session_id = 0u;
++
++        pstvnc_transport_write_be32(&proof_hello_payload[0], 1u);
++        pstvnc_transport_write_be32(&proof_hello_payload[4], 1u);
++
++        if (!pstvnc_transport_physical_stream_send_frame(
++                &runtime->physical_stream,
++                PSTVNC_TRANSPORT_FRAME_HELLO,
++                PSTVNC_TRANSPORT_CHANNEL_CONTROL,
++                0u,
++                proof_hello_payload,
++                sizeof(proof_hello_payload))) {
++            runtime->failed = 1;
++        }
++
++        if (!runtime->failed &&
++            !pstvnc_transport_physical_stream_receive_frame(
++                &runtime->physical_stream,
++                &proof_result_header,
++                runtime->receiver_payload,
++                sizeof(runtime->receiver_payload))) {
++            runtime->failed = 1;
++        }
++
++        if (!runtime->failed) {
++            if (proof_result_header.kind != 12u ||
++                proof_result_header.channel !=
++                    PSTVNC_TRANSPORT_CHANNEL_CONTROL ||
++                proof_result_header.flags != 0u ||
++                proof_result_header.payload_length != 4u) {
++                runtime->failed = 1;
++            } else {
++                proof_session_id =
++                    pstvnc_transport_read_be32(
++                        &runtime->receiver_payload[0]);
++
++                if (proof_session_id == 0u)
++                    runtime->failed = 1;
++            }
++        }
++    }
++
+     while (!runtime->failed && !runtime->stop_requested) {
+         pstvnc_transport_header_t header;
+         int accepted = 0;
+@@ -616,8 +682,31 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
+             break;
+         }
+ 
+-        if (readable == 0)
++        if (readable == 0) {
++            /*
++             * P4I DEVELOPMENT APPARATUS ONLY.
++             *
++             * P4H hardware proved that parking this physical-I/O owner after
++             * successful sends allows queued Wire bytes to progress onto
++             * Ethernet, while the tight product PollSema/select loop suppresses
++             * that progress.
++             *
++             * Yield the EE only on an idle socket-readiness timeout. Outbound
++             * work still runs immediately before select(), and immediately
++             * readable Wire input is still consumed without this delay.
++             *
++             * This tests scheduler fairness as the minimum mechanism; it does
++             * not yet commit this platform dependency or 1000-us interval to
++             * the final clean Transport architecture.
++             */
++#ifdef _EE
++            if (pstvnc_ps2_system_delay_us(1000u) < 0) {
++                runtime->failed = 1;
++                break;
++            }
++#endif
+             continue;
++        }
+ 
+         if (!pstvnc_transport_physical_stream_receive_frame(
+                 &runtime->physical_stream,

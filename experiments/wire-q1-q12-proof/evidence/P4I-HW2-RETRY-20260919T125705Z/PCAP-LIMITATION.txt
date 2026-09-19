@@ -1,0 +1,23 @@
+P4I HW2 independent packet-capture limitation
+==============================================
+
+RUN_ID=P4I-HW2-RETRY-20260919T125705Z
+
+The qualification server completed the full real TCP/Wire transaction and emitted
+WIRE_PROOF4_RIDER_ISOLATION=PASS.
+
+The independent tcpdump apparatus did not preserve packet records for this run:
+
+PCAP_BYTES=24
+PCAP_SHA256=704e5e5b3234433c01fcfd1b20a306e77e985038120492dc53965c3edd38a4ea
+INDEPENDENT_PCAP_EVIDENCE=UNAVAILABLE
+PCAP_REASON=CAPTURE_APPARATUS_RECORDED_GLOBAL_HEADER_ONLY
+
+The exact 24-byte PCAP is preserved rather than omitted or represented as packet
+evidence.
+
+The P4I hardware classification relies on the real Pi proof server's decoded Wire
+transaction together with the operator-observed PS2 completion screen.
+
+A prior P4H diagnostic independently captured post-send Wire traffic, but that
+separate run is not substituted for packet evidence from P4I HW2.

@@ -1,0 +1,212 @@
+--- experiments/wire-q1-q12-proof/proof4_rider_isolation_server.py	2026-09-19 00:12:57.381405588 -0400
++++ build/experiments/wire-q1-q12-proof/p4i-cumulative-credit-validator/proof4_rider_isolation_server_cumulative_credit.py	2026-09-19 08:45:54.791997497 -0400
+@@ -142,6 +142,62 @@
+         )
+ 
+ 
++
++def expect_credit_total(
++    connection: socket.socket,
++    sequence: int,
++    channel: int,
++    total_amount: int,
++) -> tuple[int, list[int], list[int]]:
++    if total_amount <= 0:
++        raise ProofError(
++            f"invalid cumulative credit target {total_amount}"
++        )
++
++    sequences: list[int] = []
++    amounts: list[int] = []
++    accumulated = 0
++
++    while accumulated < total_amount:
++        kind, got_channel, flags, payload = recv_frame(
++            connection,
++            sequence,
++        )
++
++        if (
++            kind != FRAME_CREDIT
++            or got_channel != channel
++            or flags != 0
++        ):
++            raise ProofError(
++                "expected cumulative CREDIT "
++                f"seq={sequence} channel={channel}; "
++                f"got kind={kind} channel={got_channel} "
++                f"flags={flags}"
++            )
++
++        amount = decode_credit(payload)
++
++        if amount <= 0:
++            raise ProofError(
++                f"zero cumulative credit at seq={sequence}"
++            )
++
++        if accumulated + amount > total_amount:
++            raise ProofError(
++                "cumulative credit exceeded target "
++                f"seq={sequence} amount={amount} "
++                f"accumulated={accumulated} "
++                f"target={total_amount}"
++            )
++
++        sequences.append(sequence)
++        amounts.append(amount)
++        accumulated += amount
++        sequence += 1
++
++    return sequence, sequences, amounts
++
+ def expect_heartbeat(
+     connection: socket.socket,
+     sequence: int,
+@@ -204,6 +260,64 @@
+         len(RFB_OUTBOUND[32:]),
+     ] == [16, 16, 5]
+ 
++    left, right = socket.socketpair()
++
++    try:
++        send_frame(
++            left,
++            41,
++            FRAME_CREDIT,
++            CHANNEL_RFB,
++            struct.pack("!I", 32),
++        )
++
++        next_sequence, sequences, amounts = expect_credit_total(
++            right,
++            41,
++            CHANNEL_RFB,
++            32,
++        )
++
++        assert next_sequence == 42
++        assert sequences == [41]
++        assert amounts == [32]
++    finally:
++        left.close()
++        right.close()
++
++    left, right = socket.socketpair()
++
++    try:
++        send_frame(
++            left,
++            51,
++            FRAME_CREDIT,
++            CHANNEL_RFB,
++            struct.pack("!I", 16),
++        )
++        send_frame(
++            left,
++            52,
++            FRAME_CREDIT,
++            CHANNEL_RFB,
++            struct.pack("!I", 16),
++        )
++
++        next_sequence, sequences, amounts = expect_credit_total(
++            right,
++            51,
++            CHANNEL_RFB,
++            32,
++        )
++
++        assert next_sequence == 53
++        assert sequences == [51, 52]
++        assert amounts == [16, 16]
++    finally:
++        left.close()
++        right.close()
++
++    print("WIRE_PROOF4_CUMULATIVE_CREDIT_SELF_TEST=PASS")
+     print("WIRE_PROOF4_SERVER_SELF_TEST=PASS")
+     return 0
+ 
+@@ -361,7 +475,11 @@
+         )
+ 
+         # Initial stalled RFB bytes may now cross the RFB domain boundary.
+-        expect_credit(
++        (
++            ps2_sequence,
++            first_rfb_credit_sequences,
++            first_rfb_credit_amounts,
++        ) = expect_credit_total(
+             connection,
+             6,
+             CHANNEL_RFB,
+@@ -370,7 +488,11 @@
+ 
+         print(
+             "RFB_FIRST_DRAIN_AFTER_AUDIO_FAILURE=PASS "
+-            "credit=32 ps2_sequence=6",
++            "credit=32 "
++            "ps2_sequences="
++            + ",".join(str(value) for value in first_rfb_credit_sequences)
++            + " credit_amounts="
++            + "+".join(str(value) for value in first_rfb_credit_amounts),
+             flush=True,
+         )
+ 
+@@ -390,27 +512,37 @@
+             RFB_SECOND[16:],
+         )
+ 
+-        expect_credit(
++        (
++            ps2_sequence,
++            second_rfb_credit_sequences,
++            second_rfb_credit_amounts,
++        ) = expect_credit_total(
+             connection,
+-            7,
++            ps2_sequence,
+             CHANNEL_RFB,
+             RFB_CAPACITY,
+         )
+ 
+         print(
+             "RFB_PROGRESS_WHILE_AUDIO_FAILED_AND_FULL=PASS "
+-            "bytes=32 pi_sequences=6,7 ps2_credit_sequence=7",
++            "bytes=32 pi_sequences=6,7 "
++            "ps2_credit_sequences="
++            + ",".join(str(value) for value in second_rfb_credit_sequences)
++            + " credit_amounts="
++            + "+".join(str(value) for value in second_rfb_credit_amounts),
+             flush=True,
+         )
+ 
+         # Outbound RFB must still work on the same healthy Transport.
+         outbound_parts: list[bytes] = []
+ 
+-        for expected_sequence, expected_length in (
+-            (8, 16),
+-            (9, 16),
+-            (10, 5),
+-        ):
++        outbound_sequences: list[int] = []
++
++        for expected_length in (16, 16, 5):
++            expected_sequence = ps2_sequence
++            ps2_sequence += 1
++            outbound_sequences.append(expected_sequence)
++
+             kind, channel, flags, payload = recv_frame(
+                 connection,
+                 expected_sequence,
+@@ -436,7 +568,8 @@
+ 
+         print(
+             "RFB_OUTBOUND_AFTER_AUDIO_FAILURE=PASS "
+-            "bytes=37 fragments=16+16+5 ps2_sequences=8,9,10",
++            "bytes=37 fragments=16+16+5 ps2_sequences="
++            + ",".join(str(value) for value in outbound_sequences),
+             flush=True,
+         )
+ 
