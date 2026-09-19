@@ -119,10 +119,29 @@ def nonzero_session_id() -> int:
             return value
 
 
+def compatibility_rejection_reason(
+    wire_version: int,
+    product_version: int,
+    accepted_wire_version: int,
+    accepted_product_version: int,
+) -> int:
+    """Return zero when compatible, otherwise the exact rejection reason."""
+
+    if wire_version != accepted_wire_version:
+        return REJECT_WIRE_VERSION
+
+    if product_version != accepted_product_version:
+        return REJECT_PRODUCT_VERSION
+
+    return 0
+
+
 def run_session(
     connection: socket.socket,
     peer: tuple[str, int],
     minimum_idle_seconds: float,
+    accepted_wire_version: int,
+    accepted_product_version: int,
 ) -> int:
     connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
@@ -152,23 +171,38 @@ def run_session(
         flush=True,
     )
 
-    if wire_version != WIRE_VERSION:
-        send_result(
-            connection,
-            FRAME_NOT_ACCEPTED,
-            REJECT_WIRE_VERSION,
-        )
-        print("WIRE_PROOF_NOT_ACCEPTED reason=WIRE_VERSION", flush=True)
-        return 3
+    rejection_reason = compatibility_rejection_reason(
+        wire_version,
+        product_version,
+        accepted_wire_version,
+        accepted_product_version,
+    )
 
-    if product_version != PRODUCT_VERSION:
+    if rejection_reason != 0:
         send_result(
             connection,
             FRAME_NOT_ACCEPTED,
-            REJECT_PRODUCT_VERSION,
+            rejection_reason,
         )
-        print("WIRE_PROOF_NOT_ACCEPTED reason=PRODUCT_VERSION", flush=True)
-        return 4
+
+        if rejection_reason == REJECT_WIRE_VERSION:
+            reason_name = "WIRE_VERSION"
+        elif rejection_reason == REJECT_PRODUCT_VERSION:
+            reason_name = "PRODUCT_VERSION"
+        else:
+            reason_name = "UNKNOWN"
+
+        print(
+            "WIRE_PROOF_NOT_ACCEPTED "
+            f"reason={reason_name} "
+            f"received_wire_version={wire_version} "
+            f"received_product_version={product_version} "
+            f"accepted_wire_version={accepted_wire_version} "
+            f"accepted_product_version={accepted_product_version}",
+            flush=True,
+        )
+        print("WIRE_SESSION=INACTIVE session_id=NONE", flush=True)
+        return 0
 
     session_id = nonzero_session_id()
     send_result(connection, FRAME_ACCEPT, session_id)
@@ -254,6 +288,27 @@ def self_test() -> int:
         PRODUCT_VERSION,
     )
 
+    assert compatibility_rejection_reason(
+        WIRE_VERSION,
+        PRODUCT_VERSION,
+        WIRE_VERSION,
+        PRODUCT_VERSION,
+    ) == 0
+
+    assert compatibility_rejection_reason(
+        WIRE_VERSION + 1,
+        PRODUCT_VERSION,
+        WIRE_VERSION,
+        PRODUCT_VERSION,
+    ) == REJECT_WIRE_VERSION
+
+    assert compatibility_rejection_reason(
+        WIRE_VERSION,
+        PRODUCT_VERSION + 1,
+        WIRE_VERSION,
+        PRODUCT_VERSION,
+    ) == REJECT_PRODUCT_VERSION
+
     accept = encode_frame(
         FRAME_ACCEPT,
         1,
@@ -270,6 +325,16 @@ def main() -> int:
     parser.add_argument("--listen", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=5902)
     parser.add_argument("--minimum-idle-seconds", type=float, default=9.0)
+    parser.add_argument(
+        "--accepted-wire-version",
+        type=int,
+        default=WIRE_VERSION,
+    )
+    parser.add_argument(
+        "--accepted-product-version",
+        type=int,
+        default=PRODUCT_VERSION,
+    )
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
@@ -279,6 +344,13 @@ def main() -> int:
     if args.minimum_idle_seconds <= 0:
         raise SystemExit("--minimum-idle-seconds must be positive")
 
+    for name, value in (
+        ("--accepted-wire-version", args.accepted_wire_version),
+        ("--accepted-product-version", args.accepted_product_version),
+    ):
+        if value < 0 or value > 0xFFFFFFFF:
+            raise SystemExit(f"{name} must fit an unsigned 32-bit field")
+
     listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     listener.bind((args.listen, args.port))
@@ -286,6 +358,12 @@ def main() -> int:
 
     print(
         f"WIRE_PROOF_LISTENING={args.listen}:{args.port}",
+        flush=True,
+    )
+    print(
+        "WIRE_PROOF_ACCEPT_POLICY "
+        f"wire_version={args.accepted_wire_version} "
+        f"product_version={args.accepted_product_version}",
         flush=True,
     )
 
@@ -297,6 +375,8 @@ def main() -> int:
             connection,
             peer,
             args.minimum_idle_seconds,
+            args.accepted_wire_version,
+            args.accepted_product_version,
         )
     finally:
         try:
