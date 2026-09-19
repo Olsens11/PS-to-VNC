@@ -194,13 +194,15 @@ static int wait_for_wire_loss(int socket_fd)
 }
 
 static int establish_session(
+    const char *provisional_state,
     int *socket_fd,
     uint32_t *session_id,
     uint32_t *rejection_reason)
 {
     int result;
 
-    if (socket_fd == NULL ||
+    if (provisional_state == NULL ||
+        socket_fd == NULL ||
         session_id == NULL ||
         rejection_reason == NULL)
         return 0;
@@ -208,6 +210,8 @@ static int establish_session(
     *socket_fd = pstvnc_ps2_network_connect_pstv();
     if (*socket_fd < 0)
         return 0;
+
+    proof_print(provisional_state);
 
     if (!send_establishment_hello(*socket_fd)) {
         pstvnc_ps2_network_close(*socket_fd);
@@ -268,9 +272,9 @@ int main(int argc, char **argv)
     }
 
     proof_print("state=SESSION_A_TCP_CONNECT");
-    proof_print("state=SESSION_A_PROVISIONAL");
 
     result = establish_session(
+        "state=SESSION_A_PROVISIONAL",
         &socket_a,
         &session_a,
         &rejection_reason);
@@ -328,11 +332,11 @@ int main(int argc, char **argv)
     }
 
     proof_print("state=SESSION_B_TCP_CONNECT");
-    proof_print("state=SESSION_B_PROVISIONAL");
 
     rejection_reason = 0u;
 
     result = establish_session(
+        "state=SESSION_B_PROVISIONAL",
         &socket_b,
         &session_b,
         &rejection_reason);
