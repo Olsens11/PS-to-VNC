@@ -1,0 +1,23 @@
+{
+  "deployed_at_utc": "2026-09-19T22:11:34.012512+00:00",
+  "deployment_result": "PASS",
+  "elf_bytes": 2436136,
+  "elf_path": "/home/ps2/src/PS-to-VNC-wire-q1-q12-hardware-proof/build/experiments/wire-q1-q12-proof/runs/P4I-PROD-REQUAL-HW1-20260919T220651Z/PS2VNC-Wire-Q1Q12-P4I-PROD-REQUAL-HW1.ELF",
+  "elf_sha256": "3eee608ef7b7956b703c6a049276aeacfc2cc34ec13f9e9391c139884fd01b8c",
+  "ftp_host": "192.168.50.2",
+  "ftp_port": 21,
+  "ftp_readback": "PASS",
+  "hardware_run": false,
+  "repository_branch": "wire/q1-q12-hardware-proof",
+  "repository_context": "/home/ps2/src/PS-to-VNC-wire-q1-q12-hardware-proof",
+  "repository_context_source": "EXPLICIT",
+  "repository_head": "d226b59ba54ef2e3f114906564289dada132b361",
+  "rolling_readback_bytes": 2436136,
+  "rolling_readback_sha256": "3eee608ef7b7956b703c6a049276aeacfc2cc34ec13f9e9391c139884fd01b8c",
+  "rolling_remote": "/mass/0/PS2VNC.ELF",
+  "test_id": "WIRE-Q1Q12-P4I-PROD-REQUAL-HW1",
+  "unique_readback_bytes": 2436136,
+  "unique_readback_sha256": "3eee608ef7b7956b703c6a049276aeacfc2cc34ec13f9e9391c139884fd01b8c",
+  "unique_remote": "/mass/0/PS2VNC-WIRE-Q1Q12-P4I-PROD-REQUAL-HW1-3eee608e.ELF",
+  "version": 1
+}

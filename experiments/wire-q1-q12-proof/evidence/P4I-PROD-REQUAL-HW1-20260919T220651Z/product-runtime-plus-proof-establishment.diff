@@ -1,0 +1,71 @@
+--- /tmp/p4i-productized-requal.Yql0DH/product-runtime.c	2026-09-19 18:03:10.517946575 -0400
++++ /tmp/p4i-productized-requal.Yql0DH/candidate/src/transport/runtime.c	2026-09-19 18:03:10.724937043 -0400
+@@ -600,6 +600,68 @@
+     pstvnc_transport_runtime_t *runtime =
+         (pstvnc_transport_runtime_t *)argument;
+ 
++    /*
++     * P4E DEVELOPMENT APPARATUS ONLY.
++     *
++     * Hardware qualification requires the same EE execution context to own
++     * every Wire byte beginning with HELLO. The final product representation
++     * of ACCEPT / NOT_ACCEPTED is intentionally still undecided, so this
++     * derivative injects only the already-proven proof-local establishment
++     * representation and does not promote it into the product ABI.
++     *
++     * Proof-local representation:
++     *   HELLO          kind 1,  CONTROL channel 0, payload wire=1/product=1
++     *   ACCEPT         kind 12, CONTROL channel 0, 4-byte nonzero session ID
++     *
++     * The existing product owner loop below remains unchanged after this
++     * bootstrap and therefore owns initial CREDIT, ordinary receive, returned
++     * CREDIT, heartbeat, and RFB outbound traffic in the same EE context.
++     */
++    {
++        uint8_t proof_hello_payload[8];
++        pstvnc_transport_header_t proof_result_header;
++        uint32_t proof_session_id = 0u;
++
++        pstvnc_transport_write_be32(&proof_hello_payload[0], 1u);
++        pstvnc_transport_write_be32(&proof_hello_payload[4], 1u);
++
++        if (!pstvnc_transport_physical_stream_send_frame(
++                &runtime->physical_stream,
++                PSTVNC_TRANSPORT_FRAME_HELLO,
++                PSTVNC_TRANSPORT_CHANNEL_CONTROL,
++                0u,
++                proof_hello_payload,
++                sizeof(proof_hello_payload))) {
++            runtime->failed = 1;
++        }
++
++        if (!runtime->failed &&
++            !pstvnc_transport_physical_stream_receive_frame(
++                &runtime->physical_stream,
++                &proof_result_header,
++                runtime->receiver_payload,
++                sizeof(runtime->receiver_payload))) {
++            runtime->failed = 1;
++        }
++
++        if (!runtime->failed) {
++            if (proof_result_header.kind != 12u ||
++                proof_result_header.channel !=
++                    PSTVNC_TRANSPORT_CHANNEL_CONTROL ||
++                proof_result_header.flags != 0u ||
++                proof_result_header.payload_length != 4u) {
++                runtime->failed = 1;
++            } else {
++                proof_session_id =
++                    pstvnc_transport_read_be32(
++                        &runtime->receiver_payload[0]);
++
++                if (proof_session_id == 0u)
++                    runtime->failed = 1;
++            }
++        }
++    }
++
+     while (!runtime->failed && !runtime->stop_requested) {
+         pstvnc_transport_header_t header;
+         int accepted = 0;
