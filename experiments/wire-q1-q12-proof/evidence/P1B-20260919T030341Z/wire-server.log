@@ -1,0 +1,6 @@
+WIRE_PROOF_LISTENING=0.0.0.0:5902
+WIRE_PROOF_ACCEPT_POLICY wire_version=1 product_version=2
+WIRE_PROOF_PROVISIONAL peer=192.168.50.2:52432
+WIRE_PROOF_HELLO wire_version=1 product_version=1
+WIRE_PROOF_NOT_ACCEPTED reason=PRODUCT_VERSION received_wire_version=1 received_product_version=1 accepted_wire_version=1 accepted_product_version=2
+WIRE_SESSION=INACTIVE session_id=NONE
