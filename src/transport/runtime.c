@@ -5,6 +5,8 @@
  * physical framed send and receive primitives; complete DATA frames are
  * dispatched into three
  * independent bounded logical channels with independent credit/activity state.
+ * On PS2, an idle physical-socket readiness timeout cooperatively yields the EE
+ * so queued network-stack work can progress without delaying active I/O paths.
  *
  * RFB parser consumption/quiesce, AUDIO's audited finite marker, MPEG's explicit
  * producer-completion fact, outbound logical RFB fragmentation, and receiver
@@ -19,6 +21,10 @@
 
 #include "runtime.h"
 
+#if defined(_EE)
+#include "platform/ps2_system.h"
+#endif
+
 #include <kernel.h>
 
 #include <limits.h>
@@ -27,6 +33,10 @@
 #include <string.h>
 
 #define PSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US 1000u
+
+#if defined(_EE)
+#define PSTVNC_TRANSPORT_IO_IDLE_YIELD_US 1000u
+#endif
 
 static int pstvnc_transport_runtime_create_semaphore(
     int initial_count,
@@ -616,8 +626,29 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
             break;
         }
 
-        if (readable == 0)
+        if (readable == 0) {
+#if defined(_EE)
+            /*
+             * Proof 4I hardware established that this sole physical-I/O owner
+             * must relinquish EE execution during an otherwise idle polling
+             * cycle so queued PS2IP/network-stack work can make progress.
+             *
+             * Keep the scheduling opportunity strictly on the idle path:
+             * outbound work was already checked before the readiness wait,
+             * and immediately readable inbound Wire data bypasses this delay.
+             *
+             * 1000 us is the hardware-tested implementation baseline. It is
+             * not part of the Wire ABI and is not asserted to be the final or
+             * globally optimal scheduling value.
+             */
+            if (pstvnc_ps2_system_delay_us(
+                    PSTVNC_TRANSPORT_IO_IDLE_YIELD_US) < 0) {
+                runtime->failed = 1;
+                break;
+            }
+#endif
             continue;
+        }
 
         if (!pstvnc_transport_physical_stream_receive_frame(
                 &runtime->physical_stream,
