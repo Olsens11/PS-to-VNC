@@ -120,6 +120,8 @@ index after every shift.
 - `docs/ledge/LEDGE_VALIDATION_STATE.md` — Validation state snapshot authority.
 - `docs/ledge/LEDGE_WORK_LOG.md` — historical/global ledge work log.
 - `docs/ledge/LEDGE_WORK_STATE.md` — current global Continuity/reconstruction work state.
+- `docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` — Q1-Q12 Wire runtime architecture decision authority.
+- `docs/ledge/LEDGE_WIRE_TERMINOLOGY.md` — canonical architecture-neutral Wire terminology policy.
 - `docs/ledge/work-log/README.md` — immutable per-shift work-log contract and discovery rules.
 
 ## Documentation contract
