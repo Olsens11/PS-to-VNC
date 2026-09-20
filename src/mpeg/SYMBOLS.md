@@ -173,3 +173,5 @@ The inventory below covers maintained clean-generation symbols defined directly 
 | context | field | src/mpeg/decoder.h | pstvnc_mpeg_decoder_sync_ops | local | Stores callback context carrying the owning decoder instance as state owned by pstvnc_mpeg_decoder_sync_ops. | A003 MPEG Transport/decoder core |
 | lock | field | src/mpeg/decoder.h | pstvnc_mpeg_decoder_sync_ops | local | Stores the injected lock operation protecting owner state as state owned by pstvnc_mpeg_decoder_sync_ops. | A003 MPEG Transport/decoder core |
 | unlock | field | src/mpeg/decoder.h | pstvnc_mpeg_decoder_sync_ops | local | Stores the matching injected owner-state unlock operation as state owned by pstvnc_mpeg_decoder_sync_ops. | A003 MPEG Transport/decoder core |
+| transport_result | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_initialize | local | Stores the Transport result produced while acquiring or using session-scoped access. | Q12 MPEG module-lifecycle integration |
+| transport_access | field | src/mpeg/decoder.h | pstvnc_mpeg_decoder | public | Stores this running module instance's opaque Transport access ticket. | Q12 MPEG module-lifecycle integration |

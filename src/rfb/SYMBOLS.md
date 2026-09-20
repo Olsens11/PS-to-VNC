@@ -146,23 +146,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | bytes | parameter | src/rfb/rfb_session.c | read_be32 | local | Supplies four network-order bytes to decode. | RFB server-message framing |
 | read_be16 | function | src/rfb/rfb_session.c | RFB session parser | file | Decodes one two-byte big-endian field used by streamed server messages. | RFB server-message framing |
 | bytes | parameter | src/rfb/rfb_session.c | read_be16 | local | Supplies two network-order bytes to decode. | RFB server-message framing |
-| read_exact | function | src/rfb/rfb_session.c | RFB session parser | file | Converts the platform exact-read convention into a boolean session helper. | RFB framing across TCP |
-| buffer | parameter | src/rfb/rfb_session.c | read_exact | local | Receives the exact requested bytes. | RFB framing across TCP |
-| count | parameter | src/rfb/rfb_session.c | read_exact | local | Gives the exact protocol byte count required. | RFB framing across TCP |
-| write_exact | function | src/rfb/rfb_session.c | RFB session parser | file | Converts the platform exact-write convention into a boolean session helper. | RFB framing across TCP |
-| buffer | parameter | src/rfb/rfb_session.c | write_exact | local | Supplies the exact protocol bytes to write. | RFB framing across TCP |
-| count | parameter | src/rfb/rfb_session.c | write_exact | local | Gives the exact protocol byte count required. | RFB framing across TCP |
-| read_bounded_text | function | src/rfb/rfb_session.c | RFB session parser | file | Retains bounded diagnostic text while consuming the server field to its exact boundary. | RFB server-message framing |
-| length | parameter | src/rfb/rfb_session.c | read_bounded_text | local | Gives the complete server-declared field length that must be consumed. | RFB server-message framing |
-| out | parameter | src/rfb/rfb_session.c | read_bounded_text | local | Receives the bounded retained prefix plus terminator. | RFB server-message framing |
-| discard | variable | src/rfb/rfb_session.c | read_bounded_text | local | Provides bounded scratch for consuming text beyond retained storage. | RFB server-message framing |
-| take | variable | src/rfb/rfb_session.c | read_bounded_text | local | Stores the number of declared text bytes retained locally. | RFB server-message framing |
-| remaining | variable | src/rfb/rfb_session.c | read_bounded_text | local | Tracks declared text bytes still requiring stream consumption. | RFB server-message framing |
-| chunk | variable | src/rfb/rfb_session.c | read_bounded_text | local | Bounds each discard read to scratch capacity. | RFB server-message framing |
-| discard_exact | function | src/rfb/rfb_session.c | RFB session parser | file | Consumes exactly a declared server payload length without retaining its bytes. | RFB server-message framing |
-| count | parameter | src/rfb/rfb_session.c | discard_exact | local | Tracks the exact number of bytes still requiring discard. | RFB server-message framing |
-| discard | variable | src/rfb/rfb_session.c | discard_exact | local | Provides fixed scratch for bounded exact payload consumption. | RFB server-message framing |
-| chunk | variable | src/rfb/rfb_session.c | discard_exact | local | Bounds each discard operation to scratch capacity. | RFB server-message framing |
 | fail | function | src/rfb/rfb_session.c | RFB session failure policy | file | Publishes terminal session failure and its precise classification. | fail-closed session semantics |
 | session | parameter | src/rfb/rfb_session.c | fail | local | Supplies the session whose terminal state is published. | fail-closed session semantics |
 | error | parameter | src/rfb/rfb_session.c | fail | local | Supplies the precise terminal error classification. | fail-closed session semantics |
@@ -355,3 +338,39 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | buffer | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_write_exact | local | Defines buffer as a current clean-source prototype parameter. | mechanically reconciled current clean source |
 | count | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_write_exact | local | Defines count as a current clean-source prototype parameter. | mechanically reconciled current clean source |
 | quiesce_requested | variable | src/rfb/rfb_session.c | receive_framebuffer_update | local | Defines quiesce_requested as a current clean-source variable. | mechanically reconciled current clean source |
+| pstvnc_rfb_bridge_acquire | function | src/rfb/bridge.c | RFB bridge | file | Acquires opaque Transport access for one ordinary RFB session start. | Q12 RFB module-lifecycle integration |
+| transport_access | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_acquire | local | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_complete_quiesce_at_message_boundary | local | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_poll_receive | local | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_quiesce_requested | local | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_read_exact | local | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | parameter | src/rfb/bridge.c | pstvnc_rfb_bridge_write_exact | local | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| pstvnc_rfb_bridge_acquire | function declaration | src/rfb/bridge.h | RFB bridge interface | public | Declares RFB acquisition of opaque Transport access for one ordinary session start. | Q12 RFB module-lifecycle integration |
+| transport_access | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_acquire | prototype | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_complete_quiesce_at_message_boundary | prototype | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_poll_receive | prototype | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_quiesce_requested | prototype | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_read_exact | prototype | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| transport_access | prototype parameter | src/rfb/bridge.h | pstvnc_rfb_bridge_write_exact | prototype | Carries the running instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
+| discard_exact_for_session | function | src/rfb/rfb_session.c | RFB session | file | Discards exact RFB bytes through the running session's opaque Transport access. | Q12 RFB module-lifecycle integration |
+| read_bounded_text_for_session | function | src/rfb/rfb_session.c | RFB session | file | Reads bounded RFB text through the running session's opaque Transport access. | Q12 RFB module-lifecycle integration |
+| read_exact_for_session | function | src/rfb/rfb_session.c | RFB session | file | Reads exact RFB bytes through the running session's opaque Transport access. | Q12 RFB module-lifecycle integration |
+| write_exact_for_session | function | src/rfb/rfb_session.c | RFB session | file | Writes exact RFB bytes through the running session's opaque Transport access. | Q12 RFB module-lifecycle integration |
+| count | parameter | src/rfb/rfb_session.c | discard_exact_for_session | local | Supplies discard_exact_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| session | parameter | src/rfb/rfb_session.c | discard_exact_for_session | local | Supplies discard_exact_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| chunk | variable | src/rfb/rfb_session.c | discard_exact_for_session | local | Supports discard_exact_for_session's bounded session-aware RFB byte processing. | Q12 RFB module-lifecycle integration |
+| discard | variable | src/rfb/rfb_session.c | discard_exact_for_session | local | Supports discard_exact_for_session's bounded session-aware RFB byte processing. | Q12 RFB module-lifecycle integration |
+| length | parameter | src/rfb/rfb_session.c | read_bounded_text_for_session | local | Supplies read_bounded_text_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| out | parameter | src/rfb/rfb_session.c | read_bounded_text_for_session | local | Supplies read_bounded_text_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| session | parameter | src/rfb/rfb_session.c | read_bounded_text_for_session | local | Supplies read_bounded_text_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| chunk | variable | src/rfb/rfb_session.c | read_bounded_text_for_session | local | Supports read_bounded_text_for_session's bounded session-aware RFB byte processing. | Q12 RFB module-lifecycle integration |
+| discard | variable | src/rfb/rfb_session.c | read_bounded_text_for_session | local | Supports read_bounded_text_for_session's bounded session-aware RFB byte processing. | Q12 RFB module-lifecycle integration |
+| remaining | variable | src/rfb/rfb_session.c | read_bounded_text_for_session | local | Supports read_bounded_text_for_session's bounded session-aware RFB byte processing. | Q12 RFB module-lifecycle integration |
+| take | variable | src/rfb/rfb_session.c | read_bounded_text_for_session | local | Supports read_bounded_text_for_session's bounded session-aware RFB byte processing. | Q12 RFB module-lifecycle integration |
+| buffer | parameter | src/rfb/rfb_session.c | read_exact_for_session | local | Supplies read_exact_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| count | parameter | src/rfb/rfb_session.c | read_exact_for_session | local | Supplies read_exact_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| session | parameter | src/rfb/rfb_session.c | read_exact_for_session | local | Supplies read_exact_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| buffer | parameter | src/rfb/rfb_session.c | write_exact_for_session | local | Supplies write_exact_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| count | parameter | src/rfb/rfb_session.c | write_exact_for_session | local | Supplies write_exact_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| session | parameter | src/rfb/rfb_session.c | write_exact_for_session | local | Supplies write_exact_for_session with its session-aware RFB operation input. | Q12 RFB module-lifecycle integration |
+| transport_access | field | src/rfb/rfb_session.h | pstvnc_rfb_session | public | Stores this running module instance's opaque Transport access ticket. | Q12 RFB module-lifecycle integration |
