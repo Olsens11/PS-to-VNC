@@ -33,6 +33,9 @@ static uint32_t pstvnc_transport_bridge_last_ticket;
 static uint32_t pstvnc_transport_bridge_active_ticket;
 static uint32_t pstvnc_transport_bridge_admitted_calls;
 
+static pstvnc_transport_result_t pstvnc_transport_bridge_access_result(
+    const pstvnc_transport_access_t *transport_access);
+
 #if defined(_EE)
 static int pstvnc_transport_bridge_gate_semaphore_id = -1;
 #endif
@@ -164,7 +167,7 @@ static pstvnc_transport_result_t pstvnc_transport_bridge_access_result(
 pstvnc_transport_result_t pstvnc_transport_access_acquire(
     pstvnc_transport_access_t *transport_access)
 {
-    pstvnc_transport_result_t result;
+    pstvnc_transport_result_t result = PSTVNC_TRANSPORT_OK;
 
     if (transport_access == NULL)
         return PSTVNC_TRANSPORT_INVALID;
@@ -175,14 +178,19 @@ pstvnc_transport_result_t pstvnc_transport_access_acquire(
         !pstvnc_transport_bridge_gate_lock())
         return PSTVNC_TRANSPORT_FAILED;
 
-    result = pstvnc_transport_bridge_access_result(
-        &(pstvnc_transport_access_t){
-            pstvnc_transport_bridge_active_ticket
-        });
-
-    if (result == PSTVNC_TRANSPORT_OK)
+    if (!pstvnc_transport_bridge_session_active ||
+        pstvnc_transport_bridge_active_ticket == 0u) {
+        result = PSTVNC_TRANSPORT_CLOSED;
+    } else if (pstvnc_transport_bridge_runtime.failed) {
+        result = PSTVNC_TRANSPORT_FAILED;
+    } else if (pstvnc_transport_bridge_runtime.receiver_done) {
+        result = PSTVNC_TRANSPORT_CLOSED;
+    } else if (pstvnc_transport_bridge_runtime.stop_requested) {
+        result = PSTVNC_TRANSPORT_STOPPED;
+    } else {
         transport_access->opaque_ticket =
             pstvnc_transport_bridge_active_ticket;
+    }
 
     if (!pstvnc_transport_bridge_gate_unlock()) {
         transport_access->opaque_ticket = 0u;
