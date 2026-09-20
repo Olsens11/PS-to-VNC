@@ -5,8 +5,9 @@ GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
 This directory owns genuinely PS2-specific system, controller-service
-bootstrap, Ethernet, and GS mechanisms, including desktop-plus-local-overlay
-presentation.
+bootstrap, Ethernet, and the single GS/dmaKit presentation mechanism, including
+desktop, suppression, reusable MPEG video, inner matte, local-overlay layering,
+synchronized flip completion, and post-sync timer observation.
 The clean Issue #7 platform surface is limited to the six `ps2_*.[ch]` files
 listed below; no retained historical platform module is silently included.
 
