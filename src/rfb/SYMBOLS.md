@@ -146,19 +146,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | bytes | parameter | src/rfb/rfb_session.c | read_be32 | local | Supplies four network-order bytes to decode. | RFB server-message framing |
 | read_be16 | function | src/rfb/rfb_session.c | RFB session parser | file | Decodes one two-byte big-endian field used by streamed server messages. | RFB server-message framing |
 | bytes | parameter | src/rfb/rfb_session.c | read_be16 | local | Supplies two network-order bytes to decode. | RFB server-message framing |
-| buffer | parameter | src/rfb/rfb_session.c | read_exact | local | Receives the exact requested bytes. | RFB framing across TCP |
-| count | parameter | src/rfb/rfb_session.c | read_exact | local | Gives the exact protocol byte count required. | RFB framing across TCP |
-| buffer | parameter | src/rfb/rfb_session.c | write_exact | local | Supplies the exact protocol bytes to write. | RFB framing across TCP |
-| count | parameter | src/rfb/rfb_session.c | write_exact | local | Gives the exact protocol byte count required. | RFB framing across TCP |
-| length | parameter | src/rfb/rfb_session.c | read_bounded_text | local | Gives the complete server-declared field length that must be consumed. | RFB server-message framing |
-| out | parameter | src/rfb/rfb_session.c | read_bounded_text | local | Receives the bounded retained prefix plus terminator. | RFB server-message framing |
-| discard | variable | src/rfb/rfb_session.c | read_bounded_text | local | Provides bounded scratch for consuming text beyond retained storage. | RFB server-message framing |
-| take | variable | src/rfb/rfb_session.c | read_bounded_text | local | Stores the number of declared text bytes retained locally. | RFB server-message framing |
-| remaining | variable | src/rfb/rfb_session.c | read_bounded_text | local | Tracks declared text bytes still requiring stream consumption. | RFB server-message framing |
-| chunk | variable | src/rfb/rfb_session.c | read_bounded_text | local | Bounds each discard read to scratch capacity. | RFB server-message framing |
-| count | parameter | src/rfb/rfb_session.c | discard_exact | local | Tracks the exact number of bytes still requiring discard. | RFB server-message framing |
-| discard | variable | src/rfb/rfb_session.c | discard_exact | local | Provides fixed scratch for bounded exact payload consumption. | RFB server-message framing |
-| chunk | variable | src/rfb/rfb_session.c | discard_exact | local | Bounds each discard operation to scratch capacity. | RFB server-message framing |
 | fail | function | src/rfb/rfb_session.c | RFB session failure policy | file | Publishes terminal session failure and its precise classification. | fail-closed session semantics |
 | session | parameter | src/rfb/rfb_session.c | fail | local | Supplies the session whose terminal state is published. | fail-closed session semantics |
 | error | parameter | src/rfb/rfb_session.c | fail | local | Supplies the precise terminal error classification. | fail-closed session semantics |
