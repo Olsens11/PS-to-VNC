@@ -4,9 +4,10 @@
 # Read-only inspection of the effective PS-to-VNC RFB provider definition.
 #
 # This exists because systemd drop-ins can materially change a unit even when
-# the tracked fragment itself still matches qualified source. Before the staged
-# minimum desktop is attached to the real provider lifecycle, expose the merged
-# manager view and every local drop-in byte-for-byte.
+# the tracked fragment itself still matches qualified source. The current
+# target is the already logged-in Raspberry Pi desktop, not a separate
+# Openbox/lxpanel desktop. Expose the effective provider and its relationship to
+# that native graphical session before any lifecycle mutation.
 #
 # This script performs no mutation.
 
@@ -44,7 +45,7 @@ if [ "${EUID}" -ne 0 ]; then
     exit 2
 fi
 
-for tool in     cat find git pgrep ps readlink sed sha256sum stat systemctl systemd-delta     tr xprop
+for tool in     awk cat find git loginctl pgrep ps readlink sed sha256sum stat systemctl systemd-delta     tr xprop
 do
     command -v "$tool" >/dev/null 2>&1 || {
         echo "ERROR: required tool missing: $tool" >&2
@@ -87,9 +88,16 @@ section 'TRACKED PROVIDER FRAGMENT'
 run sha256sum "$REPO_ROOT/systemd/pi/$PROVIDER"
 cat "$REPO_ROOT/systemd/pi/$PROVIDER"
 
-section 'SOCKET AND DESKTOP RELATION'
+section 'SOCKET AND STAGED-DESKTOP NON-AUTHORITY'
 run systemctl show     "$SOCKET"     -p FragmentPath     -p DropInPaths     -p LoadState     -p UnitFileState     -p ActiveState     -p SubState     -p Triggers
 run systemctl show     "$DESKTOP"     -p FragmentPath     -p DropInPaths     -p LoadState     -p UnitFileState     -p ActiveState     -p SubState     -p Requisite     -p BindsTo     -p Wants     -p After
+
+section 'NATIVE GRAPHICAL SESSION WITNESS'
+run loginctl list-sessions --no-legend
+for session in $(loginctl list-sessions --no-legend 2>/dev/null | awk '$4 == "seat0" { print $1 }'); do
+    echo "--- SEAT0_SESSION=$session ---"
+    run loginctl show-session "$session"         -p Name         -p User         -p Seat         -p Type         -p Class         -p State         -p Display         -p Remote         -p Leader
+done
 
 section 'DISPLAY OWNERSHIP WITNESS'
 for display in :0 :1; do
@@ -98,8 +106,8 @@ for display in :0 :1; do
     run xprop -display "$display" -root _NET_CLIENT_LIST
 done
 
-section 'GRAPHICAL PROCESS WITNESS'
-for name in Xtigervnc Xorg Xwayland x0vncserver w0vncserver openbox lxpanel-pi; do
+section 'RFB / DISPLAY-SERVER PROCESS WITNESS'
+for name in Xtigervnc Xorg Xwayland x0vncserver w0vncserver lightdm; do
     echo "--- PROCESS_NAME=$name ---"
     run pgrep -a "$name"
 done
@@ -127,5 +135,5 @@ echo 'UNIT_ENABLE_CHANGE=NO'
 echo 'UNIT_START_STOP_CHANGE=NO'
 echo 'RFB_PROVIDER_STATE_CHANGED=NO'
 echo 'DISPLAY_STATE_CHANGED=NO'
-echo 'NEXT=CLASSIFY_EFFECTIVE_PROVIDER_BEFORE_REAL_DISPLAY1_ACTIVATION'
+echo 'NEXT=CLASSIFY_EFFECTIVE_PROVIDER_ATTACHMENT_TO_NATIVE_PI_DESKTOP'
 echo 'RFB_EFFECTIVE_PROVIDER_INSPECTION=COMPLETE'

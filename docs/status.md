@@ -16,7 +16,7 @@ preserved evidence, and Git.
     SEMANTIC_AUDIT=COMPLETE
     CLEAN_ARCHITECTURE=REBUILD_READY
     CLEAN_PS2_RECONSTRUCTION=ISSUE39_STAGE2_COMPLETE
-    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_MINIMUM_DESKTOP_RUNTIME_PROVEN_CANDIDATE
+    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_NATIVE_PI_DESKTOP_RFB_PATH_UNDER_QUALIFICATION
 
 The reconstruction principle remains:
 
@@ -231,7 +231,7 @@ Current indicators:
     REFERENCE_PRESERVATION=100_PERCENT
     SEMANTIC_AUDIT=100_PERCENT
     CLEAN_PS2_RECONSTRUCTION=ISSUE39_STAGE2_COMPLETE
-    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_MINIMUM_DESKTOP_RUNTIME_PROVEN_CANDIDATE
+    PI_REPRODUCIBILITY_PACKAGE=PRE_ISSUE40_NATIVE_PI_DESKTOP_RFB_PATH_UNDER_QUALIFICATION
     GITHUB_RECONCILIATION=100_PERCENT
 
 The previous `OVERALL_ARCHITECTURAL_NORMALIZATION` percentage remains historical
@@ -264,23 +264,43 @@ particular filesystem location.
 
 ## Next action
 
-    NEXT_ACTION=DESIGN_CONTROLLED_REAL_DISPLAY1_SYSTEMD_ACTIVATION_TRANSACTION
+    NEXT_ACTION=VERIFY_EFFECTIVE_NATIVE_PI_DESKTOP_RFB_PROVIDER
     BLOCKED_BY=NONE
-    ISSUE40_BLOCKED_BY=MINIMUM_REPRODUCIBLE_PI_DESKTOP_NOT_YET_REAL_DISPLAY1_QUALIFIED
+    ISSUE40_BLOCKED_BY=NATIVE_PI_DESKTOP_RFB_PATH_NOT_YET_REPRODUCIBLY_QUALIFIED
 
-This prerequisite is intentionally smaller than the later companion-desktop
-maturation work. Minimum success is a known reproducible VNC session with known
-session/window-manager ownership, a visible launchable terminal, and a
-deterministic PS2-only route to that terminal.
+The current target is the **existing Raspberry Pi desktop session**, not a
+second PS2-specific Openbox/lxpanel desktop on `:1`.
+
+The 2026-09-19 read-only live preflight established that no `:1` X display
+currently exists, while the logged-in LightDM graphical session owns `:0`.
+The RFB provider also has a live local drop-in named
+`90-native-x0vnc.conf`; its effective directives must be inspected before any
+lifecycle mutation so the repository can describe the already-configured native
+desktop path accurately.
+
+The previously staged dedicated Openbox/lxpanel candidate remains useful
+historical/evaluation evidence, but it is **not** the current desktop target and
+must not be daemon-reloaded, enabled, or activated merely because those staged
+files exist.
+
+Minimum success before Issue #40 is therefore a reproducible PS2-facing RFB
+route to the normal Pi desktop, with endpoint/provider ownership and recovery
+explicitly documented and qualified.
 
 Issue #40 remains deliberately unopened as the active implementation step until
-that target exists.
+that native-desktop route is established as repository authority.
 
 Current machine-readable authority is `runtime/PROJECT_STATE.env`.
 
 ## Pre-Issue40 Pi desktop prerequisite — 2026-09-05
 
-    PI_MINIMUM_DESKTOP_ARCHITECTURE=OPENBOX_LXPANEL_PI
+> **Current-target correction — 2026-09-19:** the dedicated Openbox/lxpanel
+> `:1` candidate below is preserved as historical evaluation evidence. The
+> current product target is the already logged-in Raspberry Pi desktop itself.
+> Do not interpret this older candidate record as authority to replace the
+> native desktop with a separate session.
+
+    PI_MINIMUM_DESKTOP_ARCHITECTURE=HISTORICAL_OPENBOX_LXPANEL_PI_CANDIDATE
     PI_MINIMUM_DESKTOP_SESSION_ISOLATION=PRIVATE_RUNTIME_PRIVATE_DBUS
     PI_MINIMUM_DESKTOP_TEMP_RGB565_PROOF=PASS
     PI_MINIMUM_DESKTOP_TRACKED_SUPERVISOR_PROOF=PASS
