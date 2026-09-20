@@ -137,6 +137,7 @@ static int pstvnc_audio_session_wait_reservoir(
     pstvnc_transport_result_t transport_result;
 
     transport_result = pstvnc_transport_audio_activity_snapshot(
+        &session->transport_access,
         &activity_sequence);
     if (transport_result != PSTVNC_TRANSPORT_OK) {
         pstvnc_audio_session_set_transport_outcome(
@@ -163,6 +164,7 @@ static int pstvnc_audio_session_wait_reservoir(
         }
 
         transport_result = pstvnc_transport_audio_status(
+            &session->transport_access,
             &available_count,
             &producer_done);
         if (transport_result != PSTVNC_TRANSPORT_OK) {
@@ -219,6 +221,7 @@ static int pstvnc_audio_session_wait_reservoir(
             }
 
             transport_result = pstvnc_transport_audio_activity_snapshot(
+                &session->transport_access,
                 &observed_sequence);
             if (transport_result != PSTVNC_TRANSPORT_OK) {
                 pstvnc_audio_session_set_transport_outcome(
@@ -297,6 +300,7 @@ static void pstvnc_audio_session_worker(void *argument)
         PSTVNC_AUDIO_SESSION_OUTCOME_PLAYBACK;
     session->outcome.playback_result =
         pstvnc_audio_playback_run(
+            &session->transport_access,
             &session->pcm_profile,
             session->playback_buffer,
             session->values.playback_buffer_capacity,
@@ -318,6 +322,7 @@ pstvnc_audio_session_result_t pstvnc_audio_session_start(
     const pstvnc_audio_session_thread_ops_t *thread_ops,
     const pstvnc_audio_session_sync_t *sync)
 {
+    pstvnc_transport_result_t transport_result;
     int create_result;
     int start_result;
 
@@ -333,6 +338,12 @@ pstvnc_audio_session_result_t pstvnc_audio_session_start(
         return PSTVNC_AUDIO_SESSION_INVALID;
 
     memset(session, 0, sizeof(*session));
+
+    transport_result =
+        pstvnc_transport_access_acquire(&session->transport_access);
+    if (transport_result != PSTVNC_TRANSPORT_OK)
+        return PSTVNC_AUDIO_SESSION_TRANSPORT_UNAVAILABLE;
+
     session->values = *values;
     session->pcm_profile = *pcm_profile;
     session->service = *service;

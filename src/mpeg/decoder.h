@@ -100,6 +100,7 @@ typedef struct pstvnc_mpeg_decoder_report {
 } pstvnc_mpeg_decoder_report_t;
 
 typedef struct pstvnc_mpeg_decoder {
+    pstvnc_transport_access_t transport_access;
     pstvnc_mpeg_decoder_config_t config;
     pstvnc_mpeg_decoder_memory_ops_t memory_ops;
     pstvnc_mpeg_decoder_sync_ops_t sync_ops;

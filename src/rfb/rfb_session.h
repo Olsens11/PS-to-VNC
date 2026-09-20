@@ -17,6 +17,7 @@
 
 #include "framebuffer.h"
 #include "rfb.h"
+#include "transport/transport.h"
 
 #define PSTVNC_RFB_SESSION_TEXT_MAX 127u
 #define PSTVNC_RFB_SESSION_MAX_ROW_PIXELS 1920u
@@ -63,6 +64,7 @@ typedef enum pstvnc_rfb_session_error {
 } pstvnc_rfb_session_error_t;
 
 typedef struct pstvnc_rfb_session {
+    pstvnc_transport_access_t transport_access;
     pstvnc_rfb_session_state_t state;
     pstvnc_rfb_session_error_t error;
     unsigned int server_major;

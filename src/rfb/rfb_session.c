@@ -50,17 +50,26 @@ static uint16_t read_be16(const uint8_t bytes[2])
     return (uint16_t)(((uint16_t)bytes[0] << 8) | bytes[1]);
 }
 
-static int read_exact(void *buffer, size_t count)
+static int read_exact_for_session(
+    pstvnc_rfb_session_t *session,
+    void *buffer,
+    size_t count)
 {
-    return pstvnc_rfb_bridge_read_exact(buffer, count) == 0;
+    return pstvnc_rfb_bridge_read_exact(
+        &session->transport_access, buffer, count) == 0;
 }
 
-static int write_exact(const void *buffer, size_t count)
+static int write_exact_for_session(
+    pstvnc_rfb_session_t *session,
+    const void *buffer,
+    size_t count)
 {
-    return pstvnc_rfb_bridge_write_exact(buffer, count) == 0;
+    return pstvnc_rfb_bridge_write_exact(
+        &session->transport_access, buffer, count) == 0;
 }
 
-static int read_bounded_text(
+static int read_bounded_text_for_session(
+    pstvnc_rfb_session_t *session,
     uint32_t length,
     char out[PSTVNC_RFB_SESSION_TEXT_MAX + 1u])
 {
@@ -76,7 +85,7 @@ static int read_bounded_text(
     if (take > PSTVNC_RFB_SESSION_TEXT_MAX)
         take = PSTVNC_RFB_SESSION_TEXT_MAX;
 
-    if (take > 0 && !read_exact(out, take))
+    if (take > 0 && !read_exact_for_session(session, out, take))
         return 0;
 
     out[take] = '\0';
@@ -88,7 +97,7 @@ static int read_bounded_text(
         if (chunk > sizeof(discard))
             chunk = sizeof(discard);
 
-        if (!read_exact(discard, chunk))
+        if (!read_exact_for_session(session, discard, chunk))
             return 0;
 
         remaining -= (uint32_t)chunk;
@@ -97,7 +106,9 @@ static int read_bounded_text(
     return 1;
 }
 
-static int discard_exact(uint32_t count)
+static int discard_exact_for_session(
+    pstvnc_rfb_session_t *session,
+    uint32_t count)
 {
     uint8_t discard[64];
 
@@ -107,7 +118,7 @@ static int discard_exact(uint32_t count)
         if (chunk > sizeof(discard))
             chunk = sizeof(discard);
 
-        if (!read_exact(discard, chunk))
+        if (!read_exact_for_session(session, discard, chunk))
             return 0;
 
         count -= (uint32_t)chunk;
@@ -205,7 +216,7 @@ static int read_raw_row(
     uint16_t column;
     size_t byte_count = (size_t)width * 2u;
 
-    if (!read_exact(bytes, byte_count))
+    if (!read_exact_for_session(session, bytes, byte_count))
         return 0;
 
     for (column = 0; column < width; column++) {
@@ -246,7 +257,8 @@ receive_framebuffer_update(
          */
         if (allow_idle) {
             int quiesce_requested =
-                pstvnc_rfb_bridge_quiesce_requested();
+                pstvnc_rfb_bridge_quiesce_requested(
+                    &session->transport_access);
             int receive_ready;
 
             if (quiesce_requested < 0)
@@ -256,7 +268,8 @@ receive_framebuffer_update(
                     PSTVNC_RFB_SESSION_ERROR_IO);
 
             if (quiesce_requested > 0) {
-                if (pstvnc_rfb_bridge_complete_quiesce_at_message_boundary() !=
+                if (pstvnc_rfb_bridge_complete_quiesce_at_message_boundary(
+                        &session->transport_access) !=
                     0)
                     return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
@@ -267,7 +280,8 @@ receive_framebuffer_update(
                 return PSTVNC_RFB_RECEIVE_UPDATE_IDLE;
             }
 
-            receive_ready = pstvnc_rfb_bridge_poll_receive();
+            receive_ready = pstvnc_rfb_bridge_poll_receive(
+                &session->transport_access);
 
             if (receive_ready < 0)
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
@@ -281,7 +295,7 @@ receive_framebuffer_update(
             }
         }
 
-        if (!read_exact(&message_type, 1))
+        if (!read_exact_for_session(session, &message_type, 1))
             return (pstvnc_rfb_receive_update_result_t)fail_frame(
                 session,
                 framebuffer,
@@ -294,14 +308,14 @@ receive_framebuffer_update(
             uint8_t cut_header[7];
             uint32_t text_length;
 
-            if (!read_exact(cut_header, sizeof(cut_header)))
+            if (!read_exact_for_session(session, cut_header, sizeof(cut_header)))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
                     PSTVNC_RFB_SESSION_ERROR_IO);
 
             text_length = read_be32(&cut_header[3]);
-            if (!discard_exact(text_length))
+            if (!discard_exact_for_session(session, text_length))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
@@ -315,7 +329,7 @@ receive_framebuffer_update(
             uint16_t color_count;
             uint32_t payload_length;
 
-            if (!read_exact(color_header, sizeof(color_header)))
+            if (!read_exact_for_session(session, color_header, sizeof(color_header)))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
@@ -324,7 +338,7 @@ receive_framebuffer_update(
             color_count = read_be16(&color_header[3]);
             payload_length = (uint32_t)color_count * 6u;
 
-            if (!discard_exact(payload_length))
+            if (!discard_exact_for_session(session, payload_length))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
@@ -357,7 +371,7 @@ receive_framebuffer_update(
                 memset(initial_frame_coverage, 0, coverage_bytes);
             }
 
-            if (!read_exact(update_header, sizeof(update_header)))
+            if (!read_exact_for_session(session, update_header, sizeof(update_header)))
                 return (pstvnc_rfb_receive_update_result_t)fail_frame(
                     session,
                     framebuffer,
@@ -383,7 +397,7 @@ receive_framebuffer_update(
                 uint32_t encoding;
                 uint16_t row;
 
-                if (!read_exact(rectangle_header, sizeof(rectangle_header)))
+                if (!read_exact_for_session(session, rectangle_header, sizeof(rectangle_header)))
                     return (pstvnc_rfb_receive_update_result_t)fail_frame(
                         session,
                         framebuffer,
@@ -517,7 +531,11 @@ int pstvnc_rfb_session_start(
 
     pstvnc_rfb_session_init(session);
 
-    if (!read_exact(banner, sizeof(banner)))
+    if (pstvnc_rfb_bridge_acquire(
+            &session->transport_access) != 0)
+        return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
+
+    if (!read_exact_for_session(session, banner, sizeof(banner)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (!pstvnc_rfb_parse_protocol_version(
@@ -526,24 +544,24 @@ int pstvnc_rfb_session_start(
         return fail(session, PSTVNC_RFB_SESSION_ERROR_PROTOCOL_VERSION);
 
     pstvnc_rfb_build_client_version(banner);
-    if (!write_exact(banner, sizeof(banner)))
+    if (!write_exact_for_session(session, banner, sizeof(banner)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
-    if (!read_exact(&security_count, 1))
+    if (!read_exact_for_session(session, &security_count, 1))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (security_count == 0) {
-        if (!read_exact(reason_length_bytes, 4))
+        if (!read_exact_for_session(session, reason_length_bytes, 4))
             return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
         reason_length = read_be32(reason_length_bytes);
-        if (!read_bounded_text(reason_length, session->server_rejection))
+        if (!read_bounded_text_for_session(session, reason_length, session->server_rejection))
             return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
         return fail(session, PSTVNC_RFB_SESSION_ERROR_SERVER_REJECTED);
     }
 
-    if (!read_exact(security_types, security_count))
+    if (!read_exact_for_session(session, security_types, security_count))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (!pstvnc_rfb_choose_security_none(
@@ -552,20 +570,20 @@ int pstvnc_rfb_session_start(
             session,
             PSTVNC_RFB_SESSION_ERROR_SECURITY_NONE_UNAVAILABLE);
 
-    if (!write_exact(&security_choice, 1))
+    if (!write_exact_for_session(session, &security_choice, 1))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
-    if (!read_exact(security_result, sizeof(security_result)))
+    if (!read_exact_for_session(session, security_result, sizeof(security_result)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (!pstvnc_rfb_security_result_ok(security_result))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_SECURITY_RESULT);
 
     shared_flag = pstvnc_rfb_client_init_shared();
-    if (!write_exact(&shared_flag, 1))
+    if (!write_exact_for_session(session, &shared_flag, 1))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
-    if (!read_exact(server_init_bytes, sizeof(server_init_bytes)))
+    if (!read_exact_for_session(session, server_init_bytes, sizeof(server_init_bytes)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     if (!pstvnc_rfb_parse_server_init(
@@ -576,17 +594,17 @@ int pstvnc_rfb_session_start(
         session->server_init.height != expected_height)
         return fail(session, PSTVNC_RFB_SESSION_ERROR_GEOMETRY);
 
-    if (!read_bounded_text(
+    if (!read_bounded_text_for_session(session,
             session->server_init.name_length,
             session->desktop_name))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     pstvnc_rfb_build_set_pixel_format_gs555(message);
-    if (!write_exact(message, PSTVNC_RFB_SET_PIXEL_FORMAT_SIZE))
+    if (!write_exact_for_session(session, message, PSTVNC_RFB_SET_PIXEL_FORMAT_SIZE))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     pstvnc_rfb_build_set_encodings_raw(message);
-    if (!write_exact(message, PSTVNC_RFB_SET_ENCODINGS_RAW_SIZE))
+    if (!write_exact_for_session(session, message, PSTVNC_RFB_SET_ENCODINGS_RAW_SIZE))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     /*
@@ -596,7 +614,7 @@ int pstvnc_rfb_session_start(
      */
     pstvnc_rfb_build_framebuffer_update_request(
         message, 0, 0, 0, expected_width, expected_height);
-    if (!write_exact(message, PSTVNC_RFB_FRAMEBUFFER_REQUEST_SIZE))
+    if (!write_exact_for_session(session, message, PSTVNC_RFB_FRAMEBUFFER_REQUEST_SIZE))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     session->state = PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME;
@@ -624,7 +642,7 @@ int pstvnc_rfb_session_request_update(
         session->server_init.width,
         session->server_init.height);
 
-    if (!write_exact(message, sizeof(message)))
+    if (!write_exact_for_session(session, message, sizeof(message)))
         return fail(session, PSTVNC_RFB_SESSION_ERROR_IO);
 
     session->error = PSTVNC_RFB_SESSION_ERROR_NONE;
@@ -651,7 +669,7 @@ int pstvnc_rfb_session_send_key_event(
 
     pstvnc_rfb_build_key_event(message, down, keysym);
 
-    if (!write_exact(message, sizeof(message)))
+    if (!write_exact_for_session(session, message, sizeof(message)))
         return fail(
             session,
             PSTVNC_RFB_SESSION_ERROR_IO);
@@ -687,7 +705,7 @@ int pstvnc_rfb_session_send_pointer_event(
 
     pstvnc_rfb_build_pointer_event(message, button_mask, x, y);
 
-    if (!write_exact(message, sizeof(message)))
+    if (!write_exact_for_session(session, message, sizeof(message)))
         return fail(
             session,
             PSTVNC_RFB_SESSION_ERROR_IO);

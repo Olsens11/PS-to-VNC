@@ -80,6 +80,7 @@ typedef struct fake_platform {
 } fake_platform_t;
 
 typedef struct fake_transport {
+    pstvnc_transport_result_t acquire_result;
     pstvnc_transport_result_t forced_result;
     uint8_t payload[64];
     size_t payload_length;
@@ -172,9 +173,23 @@ static int fake_unlock(void *context)
     return sync->fail_unlock ? -1 : 0;
 }
 
+pstvnc_transport_result_t pstvnc_transport_access_acquire(
+    pstvnc_transport_access_t *transport_access)
+{
+    if (transport_access == NULL)
+        return PSTVNC_TRANSPORT_INVALID;
+    if (g_transport.acquire_result != PSTVNC_TRANSPORT_OK)
+        return g_transport.acquire_result;
+
+    transport_access->opaque_ticket = 1u;
+    return PSTVNC_TRANSPORT_OK;
+}
+
 pstvnc_transport_result_t pstvnc_transport_mpeg_activity_snapshot(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence)
 {
+    (void)transport_access;
     if (activity_sequence == NULL)
         return PSTVNC_TRANSPORT_INVALID;
     *activity_sequence = g_transport.activity_sequence;
@@ -182,8 +197,10 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_activity_snapshot(
 }
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_wait_activity(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence)
 {
+    (void)transport_access;
     if (activity_sequence == NULL)
         return PSTVNC_TRANSPORT_INVALID;
     g_transport.wait_calls += 1;
@@ -193,10 +210,12 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_wait_activity(
 }
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_read_available(
+    const pstvnc_transport_access_t *transport_access,
     void *buffer,
     size_t maximum_count,
     size_t *read_count)
 {
+    (void)transport_access;
     g_transport.read_calls += 1;
     if (read_count == NULL || buffer == NULL || maximum_count == 0u)
         return PSTVNC_TRANSPORT_INVALID;

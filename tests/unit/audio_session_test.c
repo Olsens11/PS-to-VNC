@@ -68,6 +68,7 @@ typedef struct fake_sync {
 } fake_sync_t;
 
 typedef struct fake_transport {
+    pstvnc_transport_result_t acquire_result;
     uint32_t activity_sequence;
     size_t available_count;
     int producer_done;
@@ -120,6 +121,7 @@ static void reset_globals(void)
     memset(&g_transport, 0, sizeof(g_transport));
     memset(&g_time, 0, sizeof(g_time));
     memset(&g_playback, 0, sizeof(g_playback));
+    g_transport.acquire_result = PSTVNC_TRANSPORT_OK;
     g_transport.snapshot_result = PSTVNC_TRANSPORT_OK;
     g_transport.status_result = PSTVNC_TRANSPORT_OK;
     g_playback.result = PSTVNC_AUDIO_PLAYBACK_COMPLETE;
@@ -272,9 +274,23 @@ static int fake_sync_unlock(void *context)
     return sync->fail_unlock ? -1 : 0;
 }
 
+pstvnc_transport_result_t pstvnc_transport_access_acquire(
+    pstvnc_transport_access_t *transport_access)
+{
+    if (transport_access == NULL)
+        return PSTVNC_TRANSPORT_INVALID;
+    if (g_transport.acquire_result != PSTVNC_TRANSPORT_OK)
+        return g_transport.acquire_result;
+
+    transport_access->opaque_ticket = 1u;
+    return PSTVNC_TRANSPORT_OK;
+}
+
 pstvnc_transport_result_t pstvnc_transport_audio_activity_snapshot(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence)
 {
+    (void)transport_access;
     g_transport.snapshot_calls += 1;
     if (g_transport.snapshot_result != PSTVNC_TRANSPORT_OK)
         return g_transport.snapshot_result;
@@ -283,9 +299,11 @@ pstvnc_transport_result_t pstvnc_transport_audio_activity_snapshot(
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_status(
+    const pstvnc_transport_access_t *transport_access,
     size_t *available_count,
     int *producer_done)
 {
+    (void)transport_access;
     g_transport.status_calls += 1;
     if (g_transport.status_result != PSTVNC_TRANSPORT_OK)
         return g_transport.status_result;
@@ -419,12 +437,14 @@ int pstvnc_media_clock_arm(
 }
 
 pstvnc_audio_playback_result_t pstvnc_audio_playback_run(
+    const pstvnc_transport_access_t *transport_access,
     const pstvnc_config_pcm_profile_t *profile,
     uint8_t *buffer,
     size_t buffer_capacity,
     const pstvnc_audio_service_ops_t *service,
     pstvnc_audio_playback_report_t *report)
 {
+    (void)transport_access;
     g_playback.calls += 1;
     g_playback.observed_profile = *profile;
     g_playback.observed_buffer = buffer;

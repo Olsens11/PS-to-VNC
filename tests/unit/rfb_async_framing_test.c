@@ -59,8 +59,21 @@ static void append_input(const void *bytes, size_t count)
     input_size += count;
 }
 
-int pstvnc_rfb_bridge_read_exact(void *buffer, size_t count)
+int pstvnc_rfb_bridge_acquire(
+    pstvnc_transport_access_t *transport_access)
 {
+    if (transport_access == NULL)
+        return -1;
+    transport_access->opaque_ticket = 1u;
+    return 0;
+}
+
+int pstvnc_rfb_bridge_read_exact(
+    const pstvnc_transport_access_t *transport_access,
+    void *buffer,
+    size_t count)
+{
+    (void)transport_access;
     if (input_pos + count > input_size)
         return -1;
 
@@ -69,8 +82,10 @@ int pstvnc_rfb_bridge_read_exact(void *buffer, size_t count)
     return 0;
 }
 
-int pstvnc_rfb_bridge_poll_receive(void)
+int pstvnc_rfb_bridge_poll_receive(
+    const pstvnc_transport_access_t *transport_access)
 {
+    (void)transport_access;
     if (force_poll_failure)
         return -1;
 
@@ -78,16 +93,20 @@ int pstvnc_rfb_bridge_poll_receive(void)
 }
 
 int pstvnc_rfb_bridge_write_exact(
+    const pstvnc_transport_access_t *transport_access,
     const void *buffer,
     size_t count)
 {
+    (void)transport_access;
     (void)buffer;
     (void)count;
     return 0;
 }
 
-int pstvnc_rfb_bridge_quiesce_requested(void)
+int pstvnc_rfb_bridge_quiesce_requested(
+    const pstvnc_transport_access_t *transport_access)
 {
+    (void)transport_access;
     if (force_quiesce_request_failure)
         return -1;
 
@@ -98,8 +117,10 @@ int pstvnc_rfb_bridge_quiesce_requested(void)
     return 0;
 }
 
-int pstvnc_rfb_bridge_complete_quiesce_at_message_boundary(void)
+int pstvnc_rfb_bridge_complete_quiesce_at_message_boundary(
+    const pstvnc_transport_access_t *transport_access)
 {
+    (void)transport_access;
     quiesce_complete_calls++;
 
     if (force_quiesce_complete_failure)

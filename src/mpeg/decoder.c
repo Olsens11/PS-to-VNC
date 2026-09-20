@@ -227,6 +227,7 @@ static int pstvnc_mpeg_decoder_feed(void *context)
         return -1;
 
     transport_result = pstvnc_transport_mpeg_activity_snapshot(
+        &decoder->transport_access,
         &activity_sequence);
     if (transport_result != PSTVNC_TRANSPORT_OK) {
         pstvnc_mpeg_decoder_record_transport_failure(decoder, transport_result);
@@ -237,6 +238,7 @@ static int pstvnc_mpeg_decoder_feed(void *context)
         size_t read_count = 0u;
 
         transport_result = pstvnc_transport_mpeg_read_available(
+            &decoder->transport_access,
             decoder->feed_buffer,
             decoder->config.feed_payload_capacity,
             &read_count);
@@ -291,6 +293,7 @@ static int pstvnc_mpeg_decoder_feed(void *context)
 
         if (transport_result == PSTVNC_TRANSPORT_WOULD_BLOCK) {
             transport_result = pstvnc_transport_mpeg_wait_activity(
+                &decoder->transport_access,
                 &activity_sequence);
             if (transport_result != PSTVNC_TRANSPORT_OK) {
                 pstvnc_mpeg_decoder_record_transport_failure(
@@ -371,6 +374,7 @@ pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_initialize(
     const pstvnc_mpeg_decoder_sync_ops_t *sync_ops,
     const pstvnc_mpeg_decoder_platform_ops_t *platform_ops)
 {
+    pstvnc_transport_result_t transport_result;
     size_t picture_capacity;
     size_t feed_transfer_capacity;
 
@@ -391,6 +395,15 @@ pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_initialize(
     decoder->memory_ops = *memory_ops;
     decoder->sync_ops = *sync_ops;
     decoder->platform_ops = *platform_ops;
+
+    transport_result =
+        pstvnc_transport_access_acquire(&decoder->transport_access);
+    if (transport_result != PSTVNC_TRANSPORT_OK) {
+        decoder->report.transport_result = transport_result;
+        decoder->feed_transport_result = transport_result;
+        return PSTVNC_MPEG_DECODER_TRANSPORT_FAILED;
+    }
+
     decoder->picture_capacity = picture_capacity;
     decoder->feed_transfer_capacity = feed_transfer_capacity;
     decoder->report.transport_result = PSTVNC_TRANSPORT_WOULD_BLOCK;

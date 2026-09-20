@@ -68,6 +68,7 @@ typedef struct test_service_state {
 
 static int test_failures;
 static test_transport_state_t test_transport;
+static pstvnc_transport_access_t test_access;
 
 #define TEST_CHECK(condition) \
     do { \
@@ -103,10 +104,12 @@ static void test_transport_add(
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_read_available(
+    const pstvnc_transport_access_t *transport_access,
     void *buffer,
     size_t maximum_count,
     size_t *read_count)
 {
+    (void)transport_access;
     test_transport_step_t *step;
 
     if (read_count == NULL || buffer == NULL || maximum_count == 0u)
@@ -127,17 +130,21 @@ pstvnc_transport_result_t pstvnc_transport_audio_read_available(
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_status(
+    const pstvnc_transport_access_t *transport_access,
     size_t *available_count,
     int *producer_done)
 {
+    (void)transport_access;
     (void)available_count;
     (void)producer_done;
     return PSTVNC_TRANSPORT_INVALID;
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_activity_snapshot(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence)
 {
+    (void)transport_access;
     test_transport.snapshot_calls += 1;
     if (activity_sequence == NULL)
         return PSTVNC_TRANSPORT_INVALID;
@@ -147,8 +154,10 @@ pstvnc_transport_result_t pstvnc_transport_audio_activity_snapshot(
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_wait_activity(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence)
 {
+    (void)transport_access;
     test_transport.wait_calls += 1;
     if (activity_sequence == NULL)
         return PSTVNC_TRANSPORT_INVALID;
@@ -285,6 +294,7 @@ static void test_exact_setup_chunk_order_and_finite_completion(void)
     service = test_service_ops(&state);
 
     result = pstvnc_audio_playback_run(
+            &test_access,
         &profile, buffer, sizeof(buffer), &service, &report);
 
     TEST_CHECK(result == PSTVNC_AUDIO_PLAYBACK_COMPLETE);
@@ -333,6 +343,7 @@ static void test_temporary_unavailability_waits_for_activity(void)
 
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_COMPLETE);
     TEST_CHECK(test_transport.wait_calls == 1);
@@ -356,6 +367,7 @@ static pstvnc_audio_playback_result_t test_run_terminal(
     test_transport_add(terminal, NULL, 0u);
     service = test_service_ops(&state);
     result = pstvnc_audio_playback_run(
+            &test_access,
         &profile, buffer, sizeof(buffer), &service, &report);
     TEST_CHECK(state.stop_calls == 1);
     TEST_CHECK(state.play_count == 0u);
@@ -392,6 +404,7 @@ static void test_wait_failure_prevents_play_and_accounting(void)
 
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_SERVICE_WAIT_FAILED);
     TEST_CHECK(state.wait_count == 1u);
@@ -418,6 +431,7 @@ static void test_play_failure_does_not_advance_accounting(void)
 
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_SERVICE_PLAY_FAILED);
     TEST_CHECK(state.wait_count == 1u);
@@ -441,6 +455,7 @@ static void test_setup_failures_and_cleanup_scope(void)
     service = test_service_ops(&state);
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_SERVICE_INIT_FAILED);
     TEST_CHECK(state.stop_calls == 0);
@@ -452,6 +467,7 @@ static void test_setup_failures_and_cleanup_scope(void)
     service = test_service_ops(&state);
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_SERVICE_FORMAT_FAILED);
     TEST_CHECK(state.stop_calls == 1);
@@ -462,6 +478,7 @@ static void test_setup_failures_and_cleanup_scope(void)
     service = test_service_ops(&state);
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_SERVICE_VOLUME_FAILED);
     TEST_CHECK(state.stop_calls == 1);
@@ -483,6 +500,7 @@ static void test_cleanup_failure_preserves_primary_error(void)
     service = test_service_ops(&state);
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_SERVICE_STOP_FAILED);
     TEST_CHECK(report.cleanup_failed == 1);
@@ -495,6 +513,7 @@ static void test_cleanup_failure_preserves_primary_error(void)
     service = test_service_ops(&state);
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_SERVICE_PLAY_FAILED);
     TEST_CHECK(report.cleanup_failed == 1);
@@ -514,6 +533,7 @@ static void test_invalid_authority_fails_before_service_use(void)
     profile.channels = 3u;
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_INVALID);
     TEST_CHECK(state.event_count == 0u);
@@ -521,6 +541,7 @@ static void test_invalid_authority_fails_before_service_use(void)
     profile = test_profile();
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, 0u, &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_INVALID);
     TEST_CHECK(state.event_count == 0u);
@@ -528,6 +549,7 @@ static void test_invalid_authority_fails_before_service_use(void)
     service.play_audio = NULL;
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_INVALID);
     TEST_CHECK(state.event_count == 0u);
@@ -548,6 +570,7 @@ static void test_activity_wait_terminal_is_not_reclassified(void)
     service = test_service_ops(&state);
     TEST_CHECK(
         pstvnc_audio_playback_run(
+            &test_access,
             &profile, buffer, sizeof(buffer), &service, &report) ==
         PSTVNC_AUDIO_PLAYBACK_STOPPED);
     TEST_CHECK(test_transport.wait_calls == 1);
