@@ -58,6 +58,8 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | digest | field | src/diagnostics/identity.c | ps2vnc_identity_blob_v1 | structure | Stores exactly 64 hexadecimal digest characters plus terminating NUL in the stampable blob. | ISSUE7_DUT_MANIFEST |
 | ps2vnc_identity_blob | variable | src/diagnostics/identity.c | stampable identity blob | file static | Instantiates the retained stampable ELF identity record with explicit unstamped defaults. | ISSUE7_DUT_MANIFEST |
 | ps2vnc_identity_sent | variable | src/diagnostics/identity.c | sendto identity wrapper | file static | Records whether the runtime identity datagram has already been emitted for this process. | deterministic runtime identity |
+| __real_sendto | function alias declaration | src/diagnostics/identity.c | sendto identity wrapper | linker seam | Names the linker-provided alias for the underlying PS2SDK sendto implementation. | deterministic runtime identity |
+| __wrap_sendto | function alias declaration | src/diagnostics/identity.c | sendto identity wrapper | linker seam | Declares the linker wrapper that injects identity before the first qualifying diagnostics datagram. | deterministic runtime identity |
 | __wrap_sendto | function | src/diagnostics/identity.c | sendto identity wrapper | linker seam | Emits one identity datagram before the first UDP diagnostics send to port 5999, then forwards the caller payload. | deterministic runtime identity |
 | sock | parameter | src/diagnostics/identity.c | __wrap_sendto | function | Carries the caller socket descriptor through both identity and original datagram sends. | deterministic runtime identity |
 | data | parameter | src/diagnostics/identity.c | __wrap_sendto | function | Points at the original caller datagram that must still be forwarded unchanged. | deterministic runtime identity |
@@ -65,7 +67,7 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | flags | parameter | src/diagnostics/identity.c | __wrap_sendto | function | Preserves the caller's send flags for identity emission and original-datagram forwarding. | deterministic runtime identity |
 | to | parameter | src/diagnostics/identity.c | __wrap_sendto | function | Points at the caller destination used to determine whether this is the diagnostics endpoint. | deterministic runtime identity |
 | tolen | parameter | src/diagnostics/identity.c | __wrap_sendto | function | Gives the destination-address length used for safe IPv4 endpoint inspection and forwarding. | deterministic runtime identity |
-| in | variable | src/diagnostics/identity.c | __wrap_sendto | local | Views a validated IPv4 destination as sockaddr_in so its UDP port can be inspected. | deterministic runtime identity |
+| in | variable | src/diagnostics/identity.c | __wrap_sendto | local | Views a validated IPv4 destination as `sockaddr_in` so its UDP port can be inspected. | deterministic runtime identity |
 | message | variable | src/diagnostics/identity.c | __wrap_sendto | local | Provides bounded stack storage for the deterministic runtime identity datagram. | deterministic runtime identity |
 | message_length | variable | src/diagnostics/identity.c | __wrap_sendto | local | Stores the exact formatted identity payload length before the injected send. | deterministic runtime identity |
 | rc | variable | src/diagnostics/identity.c | __wrap_sendto | local | Captures the injected identity send result before marking identity as emitted. | deterministic runtime identity |

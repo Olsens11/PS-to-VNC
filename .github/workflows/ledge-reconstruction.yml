@@ -117,16 +117,13 @@ jobs:
             src/SYMBOLS.md \
             src/audio/SYMBOLS.md \
             src/config/SYMBOLS.md \
-            src/diagnostics/SYMBOLS.md \
             src/display/SYMBOLS.md \
-            src/framebuffer/SYMBOLS.md \
             src/input/SYMBOLS.md \
             src/media/SYMBOLS.md \
             src/mpeg/SYMBOLS.md \
             src/platform/SYMBOLS.md \
             src/rfb/SYMBOLS.md \
             src/transport/SYMBOLS.md \
-            src/ui/SYMBOLS.md \
             docs/reference/SOURCE_SYMBOL_DICTIONARIES.md
           if git diff --cached --quiet; then
             echo 'DICTIONARY_RECONCILIATION=NO_CHANGES'
