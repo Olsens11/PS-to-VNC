@@ -644,3 +644,21 @@ $(MPEG_DECODER_TEST): \
 		unit/mpeg_decoder_test.c \
 		../src/mpeg/decoder.c \
 		-o $(MPEG_DECODER_TEST)
+
+MPEG_CALIBRATION_TEST := .build/mpeg_calibration_test
+
+.PHONY: mpeg-calibration-unit
+unit: mpeg-calibration-unit
+
+mpeg-calibration-unit: $(MPEG_CALIBRATION_TEST)
+	./$(MPEG_CALIBRATION_TEST)
+
+$(MPEG_CALIBRATION_TEST): \
+	unit/mpeg_calibration_test.c \
+	../src/ui/mpeg_calibration.c \
+	../src/ui/mpeg_calibration.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/mpeg_calibration_test.c \
+		../src/ui/mpeg_calibration.c \
+		-o $(MPEG_CALIBRATION_TEST)
