@@ -14,6 +14,7 @@
 #define PSTVNC_AUDIO_PLAYBACK_H
 
 #include "config/profile.h"
+#include "transport/transport.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -59,6 +60,7 @@ typedef struct pstvnc_audio_playback_report {
 } pstvnc_audio_playback_report_t;
 
 pstvnc_audio_playback_result_t pstvnc_audio_playback_run(
+    const pstvnc_transport_access_t *transport_access,
     const pstvnc_config_pcm_profile_t *profile,
     uint8_t *buffer,
     size_t buffer_capacity,

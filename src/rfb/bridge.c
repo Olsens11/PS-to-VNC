@@ -1,96 +1,88 @@
 /*
  * File synopsis:
- * Implements RFB's one cross-component bridge to Transport's logical channel-1
- * byte stream. It translates Transport's richer result vocabulary into RFB's
- * exact I/O vocabulary and coordinates the ordered finite-session quiesce
- * sequence once the RFB parser has selected a complete-message boundary.
+ * Implements RFB's logical byte-stream bridge over one opaque Transport access
+ * ticket. RFB keeps exact I/O and quiesce vocabulary while Transport alone owns
+ * Wire-session validity and stale-ticket rejection.
  *
- * No physical socket identity crosses this file. Transport lifecycle remains
- * Transport-owned and complete-RFB-message boundary choice remains RFB-owned.
- *
- * Context: docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md, "RFB ownership under
- * shared transport"; docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
+ * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md;
+ * docs/development/module-lifecycle.md.
  */
 
 #include "bridge.h"
-
 #include "../transport/bridge.h"
 
-int pstvnc_rfb_bridge_read_exact(
-    void *buffer,
-    size_t count)
+int pstvnc_rfb_bridge_acquire(
+    pstvnc_transport_access_t *transport_access)
 {
-    return pstvnc_transport_rfb_read_exact(buffer, count) ==
+    return pstvnc_transport_access_acquire(transport_access) ==
         PSTVNC_TRANSPORT_OK ? 0 : -1;
 }
 
-int pstvnc_rfb_bridge_poll_receive(void)
+int pstvnc_rfb_bridge_read_exact(
+    const pstvnc_transport_access_t *transport_access,
+    void *buffer,
+    size_t count)
+{
+    return pstvnc_transport_rfb_read_exact(
+        transport_access, buffer, count) == PSTVNC_TRANSPORT_OK ? 0 : -1;
+}
+
+int pstvnc_rfb_bridge_poll_receive(
+    const pstvnc_transport_access_t *transport_access)
 {
     pstvnc_transport_result_t result =
-        pstvnc_transport_rfb_poll_receive();
-
+        pstvnc_transport_rfb_poll_receive(transport_access);
     if (result == PSTVNC_TRANSPORT_OK)
         return 1;
     if (result == PSTVNC_TRANSPORT_WOULD_BLOCK)
         return 0;
-
     return -1;
 }
 
 int pstvnc_rfb_bridge_write_exact(
+    const pstvnc_transport_access_t *transport_access,
     const void *buffer,
     size_t count)
 {
-    return pstvnc_transport_rfb_write_exact(buffer, count) ==
-        PSTVNC_TRANSPORT_OK ? 0 : -1;
+    return pstvnc_transport_rfb_write_exact(
+        transport_access, buffer, count) == PSTVNC_TRANSPORT_OK ? 0 : -1;
 }
 
-int pstvnc_rfb_bridge_quiesce_requested(void)
+int pstvnc_rfb_bridge_quiesce_requested(
+    const pstvnc_transport_access_t *transport_access)
 {
     pstvnc_transport_result_t result =
-        pstvnc_transport_rfb_quiesce_requested();
-
+        pstvnc_transport_rfb_quiesce_requested(transport_access);
     if (result == PSTVNC_TRANSPORT_OK)
         return 1;
     if (result == PSTVNC_TRANSPORT_WOULD_BLOCK)
         return 0;
-
     return -1;
 }
 
-int pstvnc_rfb_bridge_complete_quiesce_at_message_boundary(void)
+int pstvnc_rfb_bridge_complete_quiesce_at_message_boundary(
+    const pstvnc_transport_access_t *transport_access)
 {
-    size_t residual_count = 0;
-    size_t discarded_count = 0;
+    size_t residual_count = 0u;
+    size_t discarded_count = 0u;
 
-    /*
-     * The caller is the RFB parser and therefore owns proof that no partial
-     * server message has been consumed. From that proven boundary onward the
-     * bridge owns only cross-component ordering, not protocol interpretation.
-     */
-    if (pstvnc_transport_rfb_send_quiesce_boundary() !=
-        PSTVNC_TRANSPORT_OK)
+    if (pstvnc_transport_rfb_send_quiesce_boundary(
+            transport_access) != PSTVNC_TRANSPORT_OK)
         return -1;
-
-    if (pstvnc_transport_rfb_wait_quiesce_commit() !=
-        PSTVNC_TRANSPORT_OK)
+    if (pstvnc_transport_rfb_wait_quiesce_commit(
+            transport_access) != PSTVNC_TRANSPORT_OK)
         return -1;
-
     if (pstvnc_transport_rfb_snapshot_quiesce_residual(
-            &residual_count) != PSTVNC_TRANSPORT_OK)
+            transport_access, &residual_count) != PSTVNC_TRANSPORT_OK)
         return -1;
-
     if (pstvnc_transport_rfb_discard_quiesce_residual(
-            residual_count,
-            &discarded_count) != PSTVNC_TRANSPORT_OK)
+            transport_access, residual_count, &discarded_count) !=
+            PSTVNC_TRANSPORT_OK)
         return -1;
-
     if (discarded_count != residual_count)
         return -1;
-
-    if (pstvnc_transport_rfb_send_quiesce_complete() !=
-        PSTVNC_TRANSPORT_OK)
+    if (pstvnc_transport_rfb_send_quiesce_complete(
+            transport_access) != PSTVNC_TRANSPORT_OK)
         return -1;
-
     return 0;
 }

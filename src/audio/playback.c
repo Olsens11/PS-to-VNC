@@ -76,6 +76,7 @@ static pstvnc_audio_playback_result_t pstvnc_audio_playback_finish(
 }
 
 pstvnc_audio_playback_result_t pstvnc_audio_playback_run(
+    const pstvnc_transport_access_t *transport_access,
     const pstvnc_config_pcm_profile_t *profile,
     uint8_t *buffer,
     size_t buffer_capacity,
@@ -87,7 +88,8 @@ pstvnc_audio_playback_result_t pstvnc_audio_playback_run(
     if (report != NULL)
         memset(report, 0, sizeof(*report));
 
-    if (!pstvnc_audio_playback_profile_valid(profile) ||
+    if (transport_access == NULL ||
+        !pstvnc_audio_playback_profile_valid(profile) ||
         buffer == NULL || buffer_capacity == 0u ||
         buffer_capacity > (size_t)INT_MAX ||
         !pstvnc_audio_playback_service_valid(service) || report == NULL)
@@ -117,6 +119,7 @@ pstvnc_audio_playback_result_t pstvnc_audio_playback_run(
         pstvnc_transport_result_t transport_result;
 
         transport_result = pstvnc_transport_audio_activity_snapshot(
+            transport_access,
             &activity_sequence);
         if (transport_result != PSTVNC_TRANSPORT_OK) {
             result = pstvnc_audio_playback_transport_result(transport_result);
@@ -124,6 +127,7 @@ pstvnc_audio_playback_result_t pstvnc_audio_playback_run(
         }
 
         transport_result = pstvnc_transport_audio_read_available(
+            transport_access,
             buffer, buffer_capacity, &read_count);
 
         if (transport_result == PSTVNC_TRANSPORT_EXHAUSTED) {
@@ -133,6 +137,7 @@ pstvnc_audio_playback_result_t pstvnc_audio_playback_run(
 
         if (transport_result == PSTVNC_TRANSPORT_WOULD_BLOCK) {
             transport_result = pstvnc_transport_audio_wait_activity(
+                transport_access,
                 &activity_sequence);
             if (transport_result != PSTVNC_TRANSPORT_OK) {
                 result = pstvnc_audio_playback_transport_result(transport_result);

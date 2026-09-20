@@ -47,52 +47,73 @@ pstvnc_transport_result_t pstvnc_transport_session_abort(void);
 pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void);
 pstvnc_transport_result_t pstvnc_transport_session_close(void);
 
+pstvnc_transport_result_t pstvnc_transport_access_acquire(
+    pstvnc_transport_access_t *transport_access);
+
 pstvnc_transport_result_t pstvnc_transport_rfb_read_exact(
+    const pstvnc_transport_access_t *transport_access,
     void *buffer,
     size_t count);
-pstvnc_transport_result_t pstvnc_transport_rfb_poll_receive(void);
+pstvnc_transport_result_t pstvnc_transport_rfb_poll_receive(
+    const pstvnc_transport_access_t *transport_access);
 pstvnc_transport_result_t pstvnc_transport_rfb_write_exact(
+    const pstvnc_transport_access_t *transport_access,
     const void *buffer,
     size_t count);
 
 pstvnc_transport_result_t pstvnc_transport_audio_read_available(
+    const pstvnc_transport_access_t *transport_access,
     void *buffer,
     size_t maximum_count,
     size_t *read_count);
 pstvnc_transport_result_t pstvnc_transport_audio_status(
+    const pstvnc_transport_access_t *transport_access,
     size_t *available_count,
     int *producer_done);
 pstvnc_transport_result_t pstvnc_transport_audio_activity_snapshot(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence);
 pstvnc_transport_result_t pstvnc_transport_audio_wait_activity(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence);
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_read_available(
+    const pstvnc_transport_access_t *transport_access,
     void *buffer,
     size_t maximum_count,
     size_t *read_count);
 pstvnc_transport_result_t pstvnc_transport_mpeg_status(
+    const pstvnc_transport_access_t *transport_access,
     size_t *available_count,
     int *producer_done);
 pstvnc_transport_result_t pstvnc_transport_mpeg_activity_snapshot(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence);
 pstvnc_transport_result_t pstvnc_transport_mpeg_wait_activity(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence);
 /*
  * Publish real finite MPEG producer completion after a higher owner has proven
  * the ordered producer fence. This is not decoder cancellation and does not
  * invent a channel-4 wire marker.
  */
-pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(void);
+pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(
+    const pstvnc_transport_access_t *transport_access);
 
-pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(void);
-pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_boundary(void);
-pstvnc_transport_result_t pstvnc_transport_rfb_wait_quiesce_commit(void);
+pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(
+    const pstvnc_transport_access_t *transport_access);
+pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_boundary(
+    const pstvnc_transport_access_t *transport_access);
+pstvnc_transport_result_t pstvnc_transport_rfb_wait_quiesce_commit(
+    const pstvnc_transport_access_t *transport_access);
 pstvnc_transport_result_t pstvnc_transport_rfb_snapshot_quiesce_residual(
+    const pstvnc_transport_access_t *transport_access,
     size_t *residual_count);
 pstvnc_transport_result_t pstvnc_transport_rfb_discard_quiesce_residual(
+    const pstvnc_transport_access_t *transport_access,
     size_t expected_count,
     size_t *discarded_count);
-pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_complete(void);
+pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_complete(
+    const pstvnc_transport_access_t *transport_access);
 
 #endif

@@ -31,6 +31,19 @@ typedef enum pstvnc_transport_result {
 } pstvnc_transport_result_t;
 
 /*
+ * Opaque module-facing authority for cross-Wire Transport work.
+ *
+ * A module acquires this value during its ordinary startup and only passes it
+ * back to Transport. Consumers must not inspect, compare, increment, or assign
+ * semantic meaning to opaque_ticket. Transport binds the ticket to the Wire
+ * Session active when access is acquired and permanently rejects it after that
+ * session ends.
+ */
+typedef struct pstvnc_transport_access {
+    uint32_t opaque_ticket;
+} pstvnc_transport_access_t;
+
+/*
  * Validated A001 session values crossing from product/config ownership into
  * Transport. These are the clean subset of H1 CONFIG v4 required by the
  * logical-RFB runtime: no consumer reconstructs them from unrelated globals.

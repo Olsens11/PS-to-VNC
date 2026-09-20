@@ -20,19 +20,66 @@
 
 static pstvnc_transport_runtime_t pstvnc_transport_bridge_runtime;
 static int pstvnc_transport_bridge_session_active;
+static uint32_t pstvnc_transport_bridge_last_ticket;
+static uint32_t pstvnc_transport_bridge_active_ticket;
 
 static pstvnc_transport_result_t pstvnc_transport_bridge_terminal_result(void)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
-
     if (pstvnc_transport_bridge_runtime.failed)
         return PSTVNC_TRANSPORT_FAILED;
 
     if (pstvnc_transport_bridge_runtime.receiver_done)
         return PSTVNC_TRANSPORT_CLOSED;
 
+    if (pstvnc_transport_bridge_runtime.stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+
     return PSTVNC_TRANSPORT_FAILED;
+}
+
+static pstvnc_transport_result_t pstvnc_transport_bridge_access_result(
+    const pstvnc_transport_access_t *transport_access)
+{
+    if (transport_access == NULL || transport_access->opaque_ticket == 0u)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    if (!pstvnc_transport_bridge_session_active ||
+        transport_access->opaque_ticket !=
+            pstvnc_transport_bridge_active_ticket)
+        return PSTVNC_TRANSPORT_CLOSED;
+
+    if (pstvnc_transport_bridge_runtime.failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (pstvnc_transport_bridge_runtime.receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    if (pstvnc_transport_bridge_runtime.stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+
+    return PSTVNC_TRANSPORT_OK;
+}
+
+pstvnc_transport_result_t pstvnc_transport_access_acquire(
+    pstvnc_transport_access_t *transport_access)
+{
+    if (transport_access == NULL)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    transport_access->opaque_ticket = 0u;
+
+    if (!pstvnc_transport_bridge_session_active)
+        return PSTVNC_TRANSPORT_CLOSED;
+    if (pstvnc_transport_bridge_runtime.failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (pstvnc_transport_bridge_runtime.receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    if (pstvnc_transport_bridge_runtime.stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+    if (pstvnc_transport_bridge_active_ticket == 0u)
+        return PSTVNC_TRANSPORT_FAILED;
+
+    transport_access->opaque_ticket =
+        pstvnc_transport_bridge_active_ticket;
+    return PSTVNC_TRANSPORT_OK;
 }
 
 static pstvnc_transport_result_t pstvnc_transport_bridge_finish_release(void)
@@ -43,6 +90,7 @@ static pstvnc_transport_result_t pstvnc_transport_bridge_finish_release(void)
     if (!released && pstvnc_transport_bridge_runtime.initialized)
         return PSTVNC_TRANSPORT_FAILED;
 
+    pstvnc_transport_bridge_active_ticket = 0u;
     pstvnc_transport_bridge_session_active = 0;
     return released ? PSTVNC_TRANSPORT_OK : PSTVNC_TRANSPORT_FAILED;
 }
@@ -53,11 +101,17 @@ static pstvnc_transport_result_t pstvnc_transport_session_open_internal(
     const pstvnc_transport_audio_channel_config_t *audio_config,
     const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
 {
+    uint32_t candidate_ticket;
     int initialized;
 
     if (socket_fd == NULL || *socket_fd < 0 || config == NULL ||
         pstvnc_transport_bridge_session_active)
         return PSTVNC_TRANSPORT_INVALID;
+
+    if (pstvnc_transport_bridge_last_ticket == UINT32_MAX)
+        return PSTVNC_TRANSPORT_FAILED;
+
+    candidate_ticket = pstvnc_transport_bridge_last_ticket + 1u;
 
     if (audio_config != NULL && mpeg_config != NULL) {
         initialized = pstvnc_transport_runtime_initialize_with_audio_mpeg(
@@ -97,6 +151,8 @@ static pstvnc_transport_result_t pstvnc_transport_session_open_internal(
         return PSTVNC_TRANSPORT_FAILED;
     }
 
+    pstvnc_transport_bridge_last_ticket = candidate_ticket;
+    pstvnc_transport_bridge_active_ticket = candidate_ticket;
     pstvnc_transport_bridge_session_active = 1;
     return PSTVNC_TRANSPORT_OK;
 }
@@ -187,11 +243,15 @@ pstvnc_transport_result_t pstvnc_transport_session_close(void)
 }
 
 pstvnc_transport_result_t pstvnc_transport_rfb_read_exact(
+    const pstvnc_transport_access_t *transport_access,
     void *buffer,
     size_t count)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     if (pstvnc_transport_runtime_rfb_read_exact(
             &pstvnc_transport_bridge_runtime,
@@ -202,12 +262,16 @@ pstvnc_transport_result_t pstvnc_transport_rfb_read_exact(
     return pstvnc_transport_bridge_terminal_result();
 }
 
-pstvnc_transport_result_t pstvnc_transport_rfb_poll_receive(void)
+pstvnc_transport_result_t pstvnc_transport_rfb_poll_receive(
+    const pstvnc_transport_access_t *transport_access)
 {
-    int result;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
 
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    int result;
 
     result = pstvnc_transport_runtime_rfb_poll_receive(
         &pstvnc_transport_bridge_runtime);
@@ -221,11 +285,15 @@ pstvnc_transport_result_t pstvnc_transport_rfb_poll_receive(void)
 }
 
 pstvnc_transport_result_t pstvnc_transport_rfb_write_exact(
+    const pstvnc_transport_access_t *transport_access,
     const void *buffer,
     size_t count)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     if (pstvnc_transport_runtime_rfb_write_exact(
             &pstvnc_transport_bridge_runtime,
@@ -237,12 +305,16 @@ pstvnc_transport_result_t pstvnc_transport_rfb_write_exact(
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_read_available(
+    const pstvnc_transport_access_t *transport_access,
     void *buffer,
     size_t maximum_count,
     size_t *read_count)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     return pstvnc_transport_runtime_audio_read_available(
         &pstvnc_transport_bridge_runtime,
@@ -252,11 +324,15 @@ pstvnc_transport_result_t pstvnc_transport_audio_read_available(
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_status(
+    const pstvnc_transport_access_t *transport_access,
     size_t *available_count,
     int *producer_done)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     return pstvnc_transport_runtime_audio_status(
         &pstvnc_transport_bridge_runtime,
@@ -265,9 +341,16 @@ pstvnc_transport_result_t pstvnc_transport_audio_status(
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_activity_snapshot(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence)
 {
-    if (!pstvnc_transport_bridge_session_active || activity_sequence == NULL)
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    if (activity_sequence == NULL)
         return PSTVNC_TRANSPORT_INVALID;
 
     if (pstvnc_transport_runtime_audio_activity_snapshot(
@@ -279,9 +362,16 @@ pstvnc_transport_result_t pstvnc_transport_audio_activity_snapshot(
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_wait_activity(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence)
 {
-    if (!pstvnc_transport_bridge_session_active || activity_sequence == NULL)
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    if (activity_sequence == NULL)
         return PSTVNC_TRANSPORT_INVALID;
 
     if (pstvnc_transport_runtime_audio_wait_activity(
@@ -293,12 +383,16 @@ pstvnc_transport_result_t pstvnc_transport_audio_wait_activity(
 }
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_read_available(
+    const pstvnc_transport_access_t *transport_access,
     void *buffer,
     size_t maximum_count,
     size_t *read_count)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     return pstvnc_transport_runtime_mpeg_read_available(
         &pstvnc_transport_bridge_runtime,
@@ -308,11 +402,15 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_read_available(
 }
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_status(
+    const pstvnc_transport_access_t *transport_access,
     size_t *available_count,
     int *producer_done)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     return pstvnc_transport_runtime_mpeg_status(
         &pstvnc_transport_bridge_runtime,
@@ -321,9 +419,16 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_status(
 }
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_activity_snapshot(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence)
 {
-    if (!pstvnc_transport_bridge_session_active || activity_sequence == NULL)
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    if (activity_sequence == NULL)
         return PSTVNC_TRANSPORT_INVALID;
 
     if (pstvnc_transport_runtime_mpeg_activity_snapshot(
@@ -335,9 +440,16 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_activity_snapshot(
 }
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_wait_activity(
+    const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence)
 {
-    if (!pstvnc_transport_bridge_session_active || activity_sequence == NULL)
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    if (activity_sequence == NULL)
         return PSTVNC_TRANSPORT_INVALID;
 
     if (pstvnc_transport_runtime_mpeg_wait_activity(
@@ -348,10 +460,14 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_wait_activity(
     return pstvnc_transport_bridge_terminal_result();
 }
 
-pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(void)
+pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(
+    const pstvnc_transport_access_t *transport_access)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     if (pstvnc_transport_runtime_mpeg_mark_producer_done(
             &pstvnc_transport_bridge_runtime))
@@ -360,12 +476,16 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(void)
     return pstvnc_transport_bridge_terminal_result();
 }
 
-pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(void)
+pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(
+    const pstvnc_transport_access_t *transport_access)
 {
-    int requested;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
 
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    int requested;
 
     requested = pstvnc_transport_runtime_rfb_quiesce_requested(
         &pstvnc_transport_bridge_runtime);
@@ -378,10 +498,14 @@ pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(void)
     return pstvnc_transport_bridge_terminal_result();
 }
 
-pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_boundary(void)
+pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_boundary(
+    const pstvnc_transport_access_t *transport_access)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     if (pstvnc_transport_runtime_rfb_send_quiesce_boundary(
             &pstvnc_transport_bridge_runtime))
@@ -390,10 +514,14 @@ pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_boundary(void)
     return pstvnc_transport_bridge_terminal_result();
 }
 
-pstvnc_transport_result_t pstvnc_transport_rfb_wait_quiesce_commit(void)
+pstvnc_transport_result_t pstvnc_transport_rfb_wait_quiesce_commit(
+    const pstvnc_transport_access_t *transport_access)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     if (pstvnc_transport_runtime_rfb_wait_quiesce_commit(
             &pstvnc_transport_bridge_runtime))
@@ -403,9 +531,16 @@ pstvnc_transport_result_t pstvnc_transport_rfb_wait_quiesce_commit(void)
 }
 
 pstvnc_transport_result_t pstvnc_transport_rfb_snapshot_quiesce_residual(
+    const pstvnc_transport_access_t *transport_access,
     size_t *residual_count)
 {
-    if (!pstvnc_transport_bridge_session_active || residual_count == NULL)
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    if (residual_count == NULL)
         return PSTVNC_TRANSPORT_INVALID;
 
     if (pstvnc_transport_runtime_rfb_snapshot_residual(
@@ -417,11 +552,15 @@ pstvnc_transport_result_t pstvnc_transport_rfb_snapshot_quiesce_residual(
 }
 
 pstvnc_transport_result_t pstvnc_transport_rfb_discard_quiesce_residual(
+    const pstvnc_transport_access_t *transport_access,
     size_t expected_count,
     size_t *discarded_count)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     if (pstvnc_transport_runtime_rfb_discard_quiesce_residual(
             &pstvnc_transport_bridge_runtime,
@@ -432,10 +571,14 @@ pstvnc_transport_result_t pstvnc_transport_rfb_discard_quiesce_residual(
     return pstvnc_transport_bridge_terminal_result();
 }
 
-pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_complete(void)
+pstvnc_transport_result_t pstvnc_transport_rfb_send_quiesce_complete(
+    const pstvnc_transport_access_t *transport_access)
 {
-    if (!pstvnc_transport_bridge_session_active)
-        return PSTVNC_TRANSPORT_INVALID;
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
 
     if (pstvnc_transport_runtime_rfb_send_quiesce_complete(
             &pstvnc_transport_bridge_runtime))

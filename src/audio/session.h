@@ -86,7 +86,8 @@ typedef enum pstvnc_audio_session_result {
     PSTVNC_AUDIO_SESSION_THREAD_DESTROY_FAILED = -7,
     PSTVNC_AUDIO_SESSION_WORKER_LIVE = -8,
     PSTVNC_AUDIO_SESSION_SYNC_FAILED = -9,
-    PSTVNC_AUDIO_SESSION_NOT_FINISHED = -10
+    PSTVNC_AUDIO_SESSION_NOT_FINISHED = -10,
+    PSTVNC_AUDIO_SESSION_TRANSPORT_UNAVAILABLE = -11
 } pstvnc_audio_session_result_t;
 
 typedef enum pstvnc_audio_session_outcome_kind {
@@ -116,6 +117,7 @@ typedef struct pstvnc_audio_session_outcome {
  * finished and its writes are visible to the owner thread.
  */
 typedef struct pstvnc_audio_session {
+    pstvnc_transport_access_t transport_access;
     pstvnc_audio_session_values_t values;
     pstvnc_config_pcm_profile_t pcm_profile;
     pstvnc_audio_service_ops_t service;
