@@ -30,6 +30,9 @@ EE_OBJS = \
 	$(BUILD_DIR)/rfb_bridge.o \
 	$(BUILD_DIR)/rfb_session.o \
 	$(BUILD_DIR)/display.o \
+	$(BUILD_DIR)/mpeg_frame.o \
+	$(BUILD_DIR)/mpeg_presentation.o \
+	$(BUILD_DIR)/mpeg_compositor.o \
 	$(BUILD_DIR)/input.o \
 	$(BUILD_DIR)/mouse.o \
 	$(BUILD_DIR)/input_runtime.o \
@@ -124,6 +127,15 @@ $(BUILD_DIR)/rfb_session.o: src/rfb/rfb_session.c src/rfb/rfb_session.h src/rfb/
 $(BUILD_DIR)/display.o: src/display/display.c src/display/display.h src/framebuffer/framebuffer.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
+$(BUILD_DIR)/mpeg_frame.o: src/display/mpeg_frame.c src/display/mpeg_frame.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/mpeg_presentation.o: src/display/mpeg_presentation.c src/display/mpeg_presentation.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/mpeg_compositor.o: src/display/mpeg_compositor.c src/display/mpeg_compositor.h src/display/mpeg_frame.h src/display/mpeg_presentation.h src/media/clock.h src/platform/ps2_graphics.h src/display/display.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
 $(BUILD_DIR)/input.o: src/input/input.c src/input/input.h src/input/mouse.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
@@ -184,7 +196,7 @@ $(BUILD_DIR)/ps2_system.o: src/platform/ps2_system.c src/platform/ps2_system.h |
 $(BUILD_DIR)/ps2_network.o: src/platform/ps2_network.c src/platform/ps2_network.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/ps2_graphics.o: src/platform/ps2_graphics.c src/platform/ps2_graphics.h src/display/display.h | $(BUILD_DIR)
+$(BUILD_DIR)/ps2_graphics.o: src/platform/ps2_graphics.c src/platform/ps2_graphics.h src/display/display.h src/display/mpeg_frame.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(GEN_DIR)/SIO2MAN_irx.c: $(PS2SDK)/iop/irx/freesio2.irx | $(GEN_DIR)

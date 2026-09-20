@@ -85,6 +85,9 @@ SOURCES=(
     src/rfb/bridge.c
     src/rfb/rfb_session.c
     src/display/display.c
+    src/display/mpeg_frame.c
+    src/display/mpeg_presentation.c
+    src/display/mpeg_compositor.c
     src/input/input.c
     src/input/mouse.c
     src/input/input_runtime.c

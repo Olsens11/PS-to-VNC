@@ -709,3 +709,31 @@ $(MPEG_PRESENTATION_TEST): \
 		../src/display/mpeg_presentation.c \
 		-o $(MPEG_PRESENTATION_TEST)
 
+MPEG_COMPOSITOR_TEST := .build/mpeg_compositor_test
+
+.PHONY: mpeg-compositor-unit
+unit: mpeg-compositor-unit
+
+mpeg-compositor-unit: $(MPEG_COMPOSITOR_TEST)
+	./$(MPEG_COMPOSITOR_TEST)
+
+$(MPEG_COMPOSITOR_TEST): \
+	unit/mpeg_compositor_test.c \
+	../src/display/mpeg_frame.c \
+	../src/display/mpeg_frame.h \
+	../src/display/mpeg_presentation.c \
+	../src/display/mpeg_presentation.h \
+	../src/display/mpeg_compositor.c \
+	../src/display/mpeg_compositor.h \
+	../src/media/clock.c \
+	../src/media/clock.h \
+	../src/platform/ps2_graphics.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/mpeg_compositor_test.c \
+		../src/display/mpeg_frame.c \
+		../src/display/mpeg_presentation.c \
+		../src/display/mpeg_compositor.c \
+		../src/media/clock.c \
+		-o $(MPEG_COMPOSITOR_TEST)
+
