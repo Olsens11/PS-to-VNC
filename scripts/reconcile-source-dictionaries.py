@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """File synopsis:
-Reconcile selected clean-source dictionaries against exact current C definitions.
+Reconcile all current clean-product dictionaries against exact C definitions.
 
 This maintenance helper preserves dictionary rows that still map to a current
 mechanically discovered definition, removes rows whose defining source/lexical
 owner no longer exists, and appends current definitions that the canonical
-source-dictionary validator reports as missing. It is scoped to the clean
-product dictionaries currently participating in deterministic ledge
-reconciliation, including the current A003 MPEG owner; it does not rewrite
-unrelated product domains or change product source.
+source-dictionary validator reports as missing. Its target set mirrors the
+already-adopted clean-product domain topology; it changes dictionary metadata
+only and never rewrites product source.
 
 Run only with Universal Ctags available. After reconciliation, regenerate the
 portal and run the canonical long/complete/strict source-dictionary check.
@@ -28,12 +27,16 @@ TARGET_DIRECTORIES = (
     Path("src"),
     Path("src/audio"),
     Path("src/config"),
+    Path("src/diagnostics"),
+    Path("src/display"),
+    Path("src/framebuffer"),
     Path("src/input"),
     Path("src/media"),
     Path("src/mpeg"),
     Path("src/platform"),
     Path("src/rfb"),
     Path("src/transport"),
+    Path("src/ui"),
 )
 TABLE_HEADER = "| Name | Kind | File | Owner | Scope | Description | Context |"
 TABLE_SEPARATOR = "|---|---|---|---|---|---|---|"
