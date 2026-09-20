@@ -1361,30 +1361,25 @@ STATUS=ANSWERED
 
 ### Minimal public lifecycle fact
 
-Wire Transport owns one authoritative public fact describing whether a usable
-Wire Session currently exists.
+Wire Transport owns one authoritative module-facing fact describing whether a
+usable Wire Session currently exists:
 
-Conceptually:
+    WireSessionState
+    - INACTIVE
+    - ACTIVE
 
-```text
-WireSessionState
-├── INACTIVE
-└── ACTIVE(session_id)
-```
+When no established Wire Session exists, the published state is INACTIVE.
 
-When no established Wire Session exists, the published state is `INACTIVE`.
+When establishment succeeds, the published state becomes ACTIVE.
 
-When establishment succeeds, the published state becomes
-`ACTIVE(session_id)`, where `session_id` is the authoritative identity of
-that currently active Wire Session.
+When that session is lost or closed, the published state returns to INACTIVE.
 
-When that session is lost or closed, the published state returns to
-`INACTIVE`.
+A later successful establishment publishes ACTIVE again for the new session.
 
-The former session ID is no longer current once the session has ended.
-
-A later successful establishment publishes a new session ID, consistent with
-Q9's non-resumable-session rule.
+Wire may retain an authoritative session identity internally for protocol,
+Transport bookkeeping, evidence, diagnostics, or other Transport-owned needs.
+Cross-Wire modules do not need that identity merely to decide whether Wire work
+is currently possible.
 
 ### No rider or configuration prerequisite
 
@@ -1393,90 +1388,70 @@ desktop session, RFB provider, MPEG subsystem, PCM/audio subsystem, telemetry
 provider, or other product module in order to remain established.
 
 The Wire server may have a valid active Wire Session while no ordinary rider is
-doing any useful work.
+doing useful work.
 
 This preserves the dependency direction established in Q2:
 
-```text
-Wire Session exists
-        ↓
-modules may use it
-```
+    Wire Session exists
+        |
+        v
+    modules may use it
 
 Never:
 
-```text
-modules/configuration must be initialized
-        ↓
-therefore Wire Session may exist
-```
+    modules/configuration initialized
+        |
+        v
+    therefore Wire Session may exist
 
 ### Common prerequisite for cross-Wire module activity
 
-For any module that needs to begin work across the Wire, an active Wire Session
-is the common Transport prerequisite.
+For a module that needs to perform work across Wire, ACTIVE is the common
+Transport prerequisite.
 
-In plain terms:
+ACTIVE means only that valid cross-Wire Transport is presently available.
 
-```text
-WireSessionState != INACTIVE
-```
-
-means that a valid current Wire Session exists and the module is permitted to
-begin whatever Wire-dependent establishment or operation belongs to that
-module.
-
-This fact does **not** imply that the module's own remote counterpart is already
-ready, that the module has completed its own establishment, or that its
-domain-specific prerequisites have been satisfied.
+It does not imply that a module's remote counterpart is ready, that the module
+has completed its own establishment, or that its domain-specific prerequisites
+have been satisfied.
 
 Each module remains responsible for its own readiness and lifecycle.
 
-For example:
+Examples:
 
-```text
-ACTIVE(session_id)
-      ↓
-RFB may establish its own stream/session
-PCM may establish its own runtime
-MPEG may begin its own activation flow
-control/telemetry may begin their own exchanges
-future modules may begin their own Wire-dependent work
-```
-
-Wire Transport does not decide which of those actions actually occur.
+    Wire ACTIVE
+        |
+        +-- RFB may run its ordinary startup path
+        +-- PCM/audio may run its ordinary startup path
+        +-- remote input forwarding may become available
+        +-- MPEG may start only when its own trigger is also satisfied
+        +-- future modules apply their own start policy
 
 ### Publication, not orchestration
 
-Wire owns connection/session state and publishes that state through its public
+Wire owns connection/session state and publishes availability through its public
 seam.
 
-It does not:
+It does not start business modules, require those modules to be running,
+maintain business-level startup policy, interpret domain-specific readiness, or
+orchestrate rider lifecycle merely because Wire changed state.
 
-- start RFB, MPEG, PCM/audio, configuration, UI, or other business modules;
-- require those modules to be running;
-- maintain business-level service startup policy;
-- interpret a consumer's domain-specific readiness;
-- directly orchestrate rider lifecycle merely because the Wire Session changed.
+Application and individual modules consume availability according to their own
+responsibilities.
 
-Application and individual modules may observe or consume the authoritative
-session state and react according to their own responsibilities and policy.
+### Identity remains Transport-owned
 
-### State representation
+The architecture does not require a module-facing session ID.
 
-`INACTIVE` is the architectural/public semantic state.
+A concrete Wire Session identity may still exist where Transport itself needs
+one. That identity does not need to be copied into every rider merely to enforce
+reconnect safety.
 
-The implementation need not encode inactivity as a magic numeric session ID.
-A tagged state, optional value, explicit enum plus ID, or equivalent
-representation is preferable if it prevents an inactive sentinel from being
-confused with a legitimate session identity.
+The public lifecycle invariant is:
 
-The architectural invariant is simply:
-
-- no session -> `INACTIVE`;
-- current session -> `ACTIVE(session_id)`;
-- old session IDs are never published as current after their session ends.
-
+- no usable session -> INACTIVE;
+- usable current session -> ACTIVE;
+- an ended session never becomes current again.
 
 ## Q11 — Independent module readiness and failure domains
 
@@ -1495,13 +1470,13 @@ readiness, runtime, and shutdown state its own function genuinely requires.
 
 Conceptually:
 
-```text
-WireSession = ACTIVE(session_id)
-        ↓
-shared Transport prerequisite satisfied
-        ↓
-each module independently decides whether/how to establish
-```
+    WireSession = ACTIVE
+        |
+        v
+    shared Transport prerequisite satisfied
+        |
+        v
+    each module independently decides whether and how to establish
 
 ### No universal rider-readiness state machine
 
@@ -1509,30 +1484,25 @@ Wire Transport does not impose a single business-level state machine on all
 riders.
 
 A module may use states such as inactive, starting, usable, stopping, failed, or
-something simpler/different if that better matches the domain.
+something simpler if that better matches the domain.
 
 The architecture requires clear ownership of readiness, not identical enum
 shapes across unrelated domains.
 
-Likewise, a cross-Wire HELLO/READY exchange is not mandatory merely because a
-module uses Wire.
-
-A module-specific handshake or readiness protocol should exist only when that
-module's actual protocol/lifecycle requires it.
+A module-specific handshake or readiness protocol exists only when that module's
+actual protocol or lifecycle requires it.
 
 ### Module failure does not imply Wire failure
 
 A rider becoming unavailable or failing does not make the Wire Session
 unavailable.
 
-For example, this is a valid system state:
+For example, this is valid:
 
-```text
-Wire = ACTIVE
-MPEG = FAILED
-RFB  = ACTIVE
-PCM  = ACTIVE
-```
+    Wire = ACTIVE
+    MPEG = FAILED
+    RFB  = ACTIVE
+    PCM  = ACTIVE
 
 MPEG may contain and recover its own failure while Wire and healthy siblings
 continue operating.
@@ -1548,7 +1518,7 @@ owner's invariants, as defined by Q8.
 
 Each distributed module owns:
 
-- its own domain-specific establishment, if one is required;
+- its own domain-specific establishment, if required;
 - the evidence that its remote counterpart is usable;
 - its own readiness state;
 - its own runtime state;
@@ -1558,164 +1528,246 @@ Each distributed module owns:
 
 Wire Transport owns none of those business-level meanings.
 
-Wire only provides the common active session and channel/relay mechanisms
-through which the module may communicate.
+Wire provides the common active Transport through which the module may
+communicate.
 
 ### Fault-containment consequence
 
 Keeping module readiness below the Wire ownership boundary is deliberate fault
 containment.
 
-If Wire were responsible for declaring every rider globally ready, an
-individual rider failure could incorrectly become a Wire-level failure.
+A module failure is normally contained and recovered by that module while Wire
+remains ACTIVE and healthy siblings continue.
 
-Instead:
+Only evidence that shared Transport or another containing ownership scope is no
+longer trustworthy justifies upward escalation.
 
-```text
-module failure
-    ↓
-module contains / recovers failure if possible
-    ↓
-Wire remains ACTIVE
-    ↓
-healthy sibling modules continue
-```
+This directly reinforces Q8 minimum-scope recovery and Q10's minimal Wire
+availability contract.
 
-Only evidence that the shared Transport or another containing ownership scope
-is itself no longer trustworthy justifies upward escalation.
-
-This directly reinforces Q8's minimum-scope recovery rule and Q10's minimal
-Wire Session availability contract.
-
-
-## Q12 — Session binding of cross-Wire module runtime instances
+## Q12 — Transport-owned session validity and module lifecycle containment
 
 STATUS=ANSWERED
 
-### One runtime instance belongs to one Wire Session
+### Wire contains the cross-Wire communication lifetime
 
-Any module runtime instance that performs cross-Wire work is created against
-exactly one active Wire Session identity.
+A running module may perform cross-Wire work only while an active Wire Session
+exists.
 
-That session identity is captured as part of the runtime instance's lifecycle
-context and remains the identity to which that instance belongs for its entire
-lifetime.
+The module does not need to know the Wire Session identity.
 
-A runtime instance does not migrate from one Wire Session to another.
+Wire loss makes the current running instance terminal for future cross-Wire
+work. A dead instance is never resumed, migrated, rebound, or adopted by a
+replacement Wire Session.
 
-Conceptually:
+### Module generation is conceptual by default
 
-```text
-Wire = ACTIVE(session 52)
+A module generation normally means one uninterrupted running instance.
 
-RFB runtime A  -> session 52
-PCM runtime A  -> session 52
-MPEG runtime A -> session 52
-```
+The architecture does not require a numeric generation ID.
 
-If session 52 ends, those runtimes remain instances of session 52 while they
-retire or unwind. They do not become runtimes of whatever Wire Session may be
-established later.
+For the ordinary module:
 
-### Session loss makes bound runtimes obsolete
+    STOPPED -> RUNNING -> STOPPED
 
-When the Wire Session to which a module runtime is bound ends, that runtime
-becomes obsolete for future cross-Wire work.
+with STARTING or STOPPING phases added where the module needs them.
 
-The module must retire, close, or otherwise contain that runtime within its own
-lifecycle/failure domain according to Q8/Q11.
+A later start is conceptually a new generation because the old running instance
+ended, not because a counter was incremented.
 
-A later Wire Session may permit creation of a new module runtime:
+### Stop completely before restart
 
-```text
-session 52 ends
-      ↓
-runtime A becomes obsolete / retires
+The normal module lifecycle contract is:
 
-session 53 establishes
-      ↓
-runtime B may be created for session 53
-```
+> **A module completely stops its current running instance before starting its
+> next running instance.**
 
-Runtime A and runtime B are distinct lifecycle objects even when they belong to
-the same functional module.
+Complete stop means previous-instance work can no longer mutate, publish into,
+or otherwise interfere with the next instance.
 
-### Late work is fenced by the captured session identity
+Once complete retirement is established, ordinary module runtime storage may be
+reused without a project-wide generation counter.
 
-Asynchronous work from an old runtime must not affect a new runtime merely
-because Wire has become active again.
+If a future module cannot establish complete retirement because some
+asynchronous facility genuinely overlaps old and new work, that module may earn
+additional module-specific fencing.
 
-This includes, where applicable:
+### Wire availability and module policy remain separate
 
-- delayed worker completion;
-- queued callbacks;
-- decoder completion;
-- late Pi capture/encoder completion;
-- delayed PCM buffers;
-- old RFB parser/receive work;
-- channel-local work queued before session loss;
-- retirement completion from an earlier runtime.
+An active Wire Session makes cross-Wire communication possible.
 
-The relevant stale-work test is conceptually:
+It does not universally start every module.
 
-```text
-runtime.bound_session_id == current_active_session_id
-```
+Each module owns its own start condition.
 
-If the identities do not match, the result belongs to an obsolete runtime and
-must not be applied to the new session's live state.
+RFB, PCM/audio, and remote input forwarding may include new-session availability
+in their normal startup conditions.
 
-The exact implementation may use explicit IDs, ownership tokens, generation
-objects, scoped handles, or another equivalent mechanism. The architectural
-requirement is strict session binding, not a particular comparison primitive.
+MPEG is deliberately different. MPEG requires Wire before cross-Wire MPEG work
+can occur, but Wire Session establishment is not itself the MPEG start trigger.
+Current MPEG startup is user/calibration driven. A future autonomous
+implementation may use an MPEG-owned detection condition.
 
-### No migration across reconnect
+The rule is:
 
-Q9 establishes that a dead Wire Session is never resumed.
+    Wire availability
+        +
+    module-owned start condition
+        =
+    module may start
 
-Q12 applies that rule to rider/runtime ownership:
+Wire Transport does not own the second term.
 
-- a runtime created for an old session is never rebound to a new session;
-- an old runtime may finish safe local teardown after the new session already
-  exists;
-- that teardown may not disturb the replacement session/runtime;
-- a replacement session creates replacement runtimes where Application/module
-  policy calls for them.
+### Transport owns the validity of every Wire transaction
 
-This prevents reconnect from becoming an implicit migration of live rider
-state.
+Modules do not compare Wire Session IDs to decide whether old traffic belongs
+to a replacement session.
 
-### Ownership split
+Transport owns that correctness boundary.
 
-Wire Transport:
+When Transport grants a running module access to cross-Wire work, that access is
+valid only for the Wire Session in which Transport issued it. Every operation
+admitted through that access belongs permanently to the same Transport validity
+domain.
 
-- publishes `INACTIVE` or `ACTIVE(session_id)` as defined by Q10;
-- owns current Wire Session identity and Transport/session mechanisms;
-- does not adopt or retarget rider runtimes when the session changes.
+A useful mental model is a round-trip ticket:
 
-Each cross-Wire module:
+    Wire Session A
+        |
+    Transport admits operation
+        |
+    operation receives A-only validity
 
-- captures the active session identity when creating a Wire-dependent runtime;
-- owns the lifetime and teardown of that runtime;
-- prevents stale work from an obsolete runtime from affecting a newer one;
-- creates a new runtime for a new Wire Session when its own policy/lifecycle
-  requires it.
+The exact implementation may use an opaque access object, capability, runtime
+identity, epoch, pointer identity, or another Transport-private mechanism.
 
-Application:
+The module need not know the concrete identity.
 
-- may decide which module runtimes should be recreated after reconnect;
-- does not make an old runtime itself continue across session identity changes.
+### Session termination invalidates old Transport authority
 
-### Fault-containment consequence
+If Wire Session A ends, Transport access issued under A becomes terminal and
+outstanding A work can no longer make a valid round trip.
 
-Session binding keeps stale asynchronous work inside the old module runtime's
-failure/lifecycle domain.
+That remains true even after Wire Session B is active.
 
-An obsolete MPEG, RFB, PCM/audio, or future-module runtime may finish cleanup
-without requiring the replacement Wire Session or sibling modules to shut down.
+Old A work may not be sent through B, completed through B, retried automatically
+through B, rebound to B, interpreted as B work, or allowed to mutate B-owned
+runtime state.
 
-This directly supports Q8 minimum-scope recovery and Q11 independent module
-failure domains.
+An operation admitted under one Wire Session can never make a valid round trip
+through another Wire Session.
+
+### Transport is the final stale-work fence
+
+Normal module behavior stops promptly when Wire becomes unavailable.
+
+Transport nevertheless remains safe if module shutdown races with reconnect.
+
+For example:
+
+    old module instance is still unwinding
+        |
+    old Wire Session is gone
+        |
+    replacement Wire Session is already active
+        |
+    old work reaches Transport
+
+The old work still uses only its old Transport authority and therefore becomes
+terminal.
+
+It cannot be retargeted merely because a replacement Wire Session is now
+current.
+
+This is the final correctness fence if something from the old module instance
+"bolts out the gate" before normal shutdown catches it.
+
+The same rule applies on the return path: a late response or completion from the
+old validity domain cannot be accepted as replacement-session work.
+
+### Reconnect uses ordinary module startup
+
+A replacement Wire Session does not cause an old module instance to continue.
+
+Instead:
+
+    Wire A active
+        |
+    module ordinary startup if its own condition is true
+        |
+    module running
+        |
+    Wire A ends
+        |
+    module ordinary stop
+        |
+    module fully stopped
+        |
+    Wire B active
+        |
+    module ordinary startup if its own condition is true
+
+The first connection and the hundredth reconnect use the same module lifecycle
+mechanisms.
+
+Application/module policy chooses which modules should start; it does not
+migrate old runtime objects.
+
+### Mixed local and cross-Wire modules
+
+A module family may contain both local and cross-Wire responsibilities.
+
+Wire loss ends only behavior whose validity depends on Wire.
+
+For example, local controller/input acquisition may remain alive while remote
+mouse/key forwarding stops.
+
+The module boundary makes that distinction explicit instead of treating all
+local behavior as disposable merely because remote forwarding is unavailable.
+
+### Durable state may survive; live runtime does not
+
+Configuration, confirmed calibration, user preferences, and other explicitly
+durable state may survive Wire loss.
+
+A later module instance may reconstruct itself from durable state.
+
+Live runtime state belonging to the dead instance does not silently survive into
+the replacement instance.
+
+### IDs are earned, not assumed
+
+Wire Session IDs remain Transport-owned authority where Transport itself needs
+them.
+
+Module generation IDs, epochs, or other identifiers may be introduced when a
+module has an independent demonstrated requirement for them.
+
+Reconnect by itself is not sufficient justification.
+
+The default is lifecycle ownership rather than copied identity.
+
+### Developer contract
+
+The reusable implementation and review rules for cross-Wire modules are
+documented in:
+
+    docs/development/module-lifecycle.md
+
+Before implementing or materially changing a distributed module, its start
+condition, stop condition, Wire-loss behavior, complete-retirement condition,
+durable state, and Transport-validity boundary must be understood.
+
+### Implementation status
+
+This Q12 section defines the architectural target.
+
+At this checkpoint, the current product Transport bridge still requires source
+work to guarantee that old Transport access cannot be retargeted through a
+replacement Wire Session.
+
+No source-level or hardware Q12 proof is claimed by this documentation change.
+
 
 ## Historical/current state versus target state
 

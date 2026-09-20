@@ -103,6 +103,11 @@ is:
 
 Before designing or reviewing clean source, preserve these working rules:
 
+- before designing, changing, or reviewing a module that performs cross-Wire
+  work, read docs/development/module-lifecycle.md; preserve the module-owned
+  start/stop contract, complete-retirement invariant, and Transport-owned
+  communication-validity boundary rather than inventing Wire Session or module
+  generation identity by default;
 - names communicate the thing or role represented, including distinctions that
   matter to correctness, authority, lifecycle, or representation;
 - an index or symbol dictionary never excuses an unclear source name;
