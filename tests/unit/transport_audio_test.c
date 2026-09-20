@@ -378,6 +378,26 @@ int pstvnc_transport_physical_stream_receive_frame(
     return 1;
 }
 
+
+int pstvnc_transport_physical_stream_wait_readable(
+    pstvnc_transport_physical_stream_t *stream,
+    uint32_t timeout_us)
+{
+    int readable;
+
+    (void)timeout_us;
+    CHECK(stream != NULL);
+
+    pthread_mutex_lock(&receive_mutex);
+    readable =
+        frame_index < frame_count ||
+        receive_shutdown ||
+        receive_eof;
+    pthread_mutex_unlock(&receive_mutex);
+
+    return readable ? 1 : 0;
+}
+
 int pstvnc_transport_physical_stream_shutdown_io(
     pstvnc_transport_physical_stream_t *stream)
 {
@@ -526,7 +546,13 @@ static void initialize_audio_runtime(
 static void start_runtime(pstvnc_transport_runtime_t *runtime)
 {
     CHECK(pstvnc_transport_runtime_start_receiver(runtime) == 1);
-    wait_for_receive_calls(1);
+    CHECK(runtime->receiver_thread_started == 1);
+
+    /*
+     * The single physical-I/O owner performs a readiness poll before receive.
+     * With no queued inbound frame, startup must not call receive_frame().
+     */
+    CHECK(receive_calls == 0);
 }
 
 static void stop_and_release_runtime(pstvnc_transport_runtime_t *runtime)
@@ -567,7 +593,7 @@ static void test_explicit_audio_config_and_rfb_only_regression(void)
         PSTVNC_TRANSPORT_CHANNEL_RFB,
         rfb_payload,
         sizeof(rfb_payload));
-    wait_for_receive_calls(2);
+    wait_for_receive_calls(1);
     CHECK(pstvnc_transport_runtime_rfb_read_exact(
         &runtime, output, sizeof(output)) == 1);
     CHECK(memcmp(output, rfb_payload, sizeof(output)) == 0);
@@ -612,7 +638,7 @@ static void test_interleaved_single_receiver_and_independent_credit(void)
         PSTVNC_TRANSPORT_CHANNEL_AUDIO,
         audio_payload,
         sizeof(audio_payload));
-    wait_for_receive_calls(3);
+    wait_for_receive_calls(2);
 
     CHECK(max_receive_active == 1);
     CHECK(receive_thread_mismatch == 0);
@@ -665,7 +691,7 @@ static void test_marker_drain_exhaust_and_post_marker_reject(void)
         PSTVNC_TRANSPORT_CHANNEL_AUDIO,
         NULL,
         0u);
-    wait_for_receive_calls(3);
+    wait_for_receive_calls(2);
 
     CHECK(pstvnc_transport_runtime_audio_status(
         &runtime, &available, &producer_done) == PSTVNC_TRANSPORT_OK);

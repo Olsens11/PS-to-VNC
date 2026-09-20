@@ -543,6 +543,25 @@ int pstvnc_transport_physical_stream_receive_frame(
     return 1;
 }
 
+
+int pstvnc_transport_physical_stream_wait_readable(
+    pstvnc_transport_physical_stream_t *stream,
+    uint32_t timeout_us)
+{
+    int readable;
+
+    (void)timeout_us;
+    CHECK(stream != NULL);
+
+    pthread_mutex_lock(&rx_mutex);
+    readable =
+        rx_frame_index < rx_frame_count ||
+        receive_shutdown;
+    pthread_mutex_unlock(&rx_mutex);
+
+    return readable ? 1 : 0;
+}
+
 int pstvnc_transport_physical_stream_shutdown_io(
     pstvnc_transport_physical_stream_t *stream)
 {
@@ -659,7 +678,12 @@ static void start_runtime(pstvnc_transport_runtime_t *runtime)
 {
     CHECK(pstvnc_transport_runtime_start_receiver(runtime) == 1);
     CHECK(runtime->receiver_thread_started == 1);
-    wait_for_receive_calls(1);
+
+    /*
+     * The single physical-I/O owner performs a readiness poll before receive.
+     * With no queued inbound frame, startup must not call receive_frame().
+     */
+    CHECK(receive_calls == 0);
 }
 
 static void stop_and_release_runtime(pstvnc_transport_runtime_t *runtime)
@@ -697,14 +721,22 @@ static void test_initialize_and_start_failure_ownership(void)
     CHECK(physical_release_calls == 0);
     CHECK(runtime.initialized == 0);
 
+    /*
+     * The single-physical-I/O-owner runtime starts its owner before startup
+     * credits are submitted. A startup CREDIT send failure therefore retires
+     * an already-started owner rather than failing before thread creation.
+     */
     reset_fixture();
     initialize_runtime(&runtime, &config);
     send_fail_on_call = 1;
     CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 0);
     CHECK(runtime.failed == 1);
-    CHECK(runtime.receiver_thread_started == 0);
-    CHECK(create_thread_calls == 0);
+    CHECK(runtime.receiver_thread_started == 1);
+    CHECK(runtime.receiver_done == 1);
+    CHECK(create_thread_calls == 1);
     CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+    CHECK(runtime.receiver_thread_started == 0);
+    CHECK(delete_thread_calls == 1);
 
     reset_fixture();
     initialize_runtime(&runtime, &config);
@@ -748,7 +780,7 @@ static void test_sole_receiver_dispatch_and_activity(void)
         0u,
         payload,
         sizeof(payload));
-    wait_for_receive_calls(2);
+    wait_for_receive_calls(1);
 
     CHECK(max_receive_active == 1);
     CHECK(receive_thread_mismatch == 0);
@@ -828,7 +860,7 @@ static void test_parser_credit_batch_flush_and_residual_distinction(void)
         0u,
         second,
         sizeof(second));
-    wait_for_receive_calls(3);
+    wait_for_receive_calls(2);
 
     CHECK(pstvnc_transport_runtime_rfb_read_exact(
         &runtime, output, sizeof(output)) == 1);
@@ -854,7 +886,7 @@ static void test_parser_credit_batch_flush_and_residual_distinction(void)
         0u,
         residual,
         sizeof(residual));
-    wait_for_receive_calls(4);
+    wait_for_receive_calls(3);
 
     CHECK(pstvnc_transport_runtime_rfb_read_exact(&runtime, output, 1u) == 1);
     CHECK(runtime.rfb_credit_pending == 1u);
@@ -873,6 +905,7 @@ static void test_parser_credit_batch_flush_and_residual_distinction(void)
     stop_and_release_runtime(&runtime);
 }
 
+
 static void test_outbound_fragmentation_and_failure_propagation(void)
 {
     static const uint8_t payload[] = {
@@ -883,6 +916,7 @@ static void test_outbound_fragmentation_and_failure_propagation(void)
 
     reset_fixture();
     initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
     clear_send_records();
 
     CHECK(pstvnc_transport_runtime_rfb_write_exact(
@@ -896,18 +930,21 @@ static void test_outbound_fragmentation_and_failure_propagation(void)
     CHECK(memcmp(send_records[0].payload, payload, 4u) == 0);
     CHECK(memcmp(send_records[1].payload, payload + 4u, 4u) == 0);
     CHECK(memcmp(send_records[2].payload, payload + 8u, 2u) == 0);
-    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+    stop_and_release_runtime(&runtime);
 
     reset_fixture();
     initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
     clear_send_records();
-    send_fail_on_call = 2;
+
+    send_fail_on_call = send_calls + 2;
     CHECK(pstvnc_transport_runtime_rfb_write_exact(
         &runtime, payload, sizeof(payload)) == 0);
     CHECK(runtime.failed == 1);
     CHECK(send_record_count == 1u);
-    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+    stop_and_release_runtime(&runtime);
 }
+
 
 static void test_finite_quiesce_order_is_distinct_from_fatal_abort(void)
 {
@@ -929,7 +966,7 @@ static void test_finite_quiesce_order_is_distinct_from_fatal_abort(void)
         0u,
         NULL,
         0u);
-    wait_for_receive_calls(2);
+    wait_for_receive_calls(1);
     CHECK(pstvnc_transport_runtime_rfb_quiesce_requested(&runtime) == 1);
     CHECK(runtime.stop_requested == 0);
     CHECK(physical_shutdown_calls == 0);
@@ -948,7 +985,7 @@ static void test_finite_quiesce_order_is_distinct_from_fatal_abort(void)
         0u,
         residual,
         sizeof(residual));
-    wait_for_receive_calls(3);
+    wait_for_receive_calls(2);
 
     /* Pi COMMIT: next zero-length RFB DATA is accepted only after BOUNDARY. */
     push_rx_frame(
@@ -957,7 +994,7 @@ static void test_finite_quiesce_order_is_distinct_from_fatal_abort(void)
         0u,
         NULL,
         0u);
-    wait_for_receive_calls(4);
+    wait_for_receive_calls(3);
     CHECK(pstvnc_transport_runtime_rfb_wait_quiesce_commit(&runtime) == 1);
     CHECK(runtime.rfb_quiesce_commit_received == 1u);
 
@@ -1008,22 +1045,28 @@ static void test_fatal_stop_completion_precedes_reclaim_and_fresh_session(void)
     CHECK(runtime.receiver_stack_allocation == stack_before);
     CHECK(physical_release_calls == 0);
 
-    /* A failed interrupt publishes stop intent but cannot authorize reclaim. */
+    /*
+     * Stop intent is independently visible to the readiness-polling I/O owner.
+     * A failed socket shutdown therefore makes request_stop() report failure,
+     * but it does not strand owner completion: the bounded readiness loop can
+     * observe stop_requested and retire normally without another I/O wake.
+     */
     physical_shutdown_result = 0;
     CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 0);
     CHECK(runtime.stop_requested == 1);
-    CHECK(runtime.receiver_done == 0);
     CHECK(physical_shutdown_calls == 1);
-    CHECK(pstvnc_transport_runtime_release(&runtime) == 0);
-    CHECK(physical_release_calls == 0);
-
-    /* Retry reissues the owned interrupt; stop_requested alone is insufficient. */
-    physical_shutdown_result = 1;
-    CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 1);
-    CHECK(physical_shutdown_calls == 2);
     CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
     CHECK(runtime.receiver_done == 1);
     CHECK(runtime.failed == 0);
+    CHECK(physical_release_calls == 0);
+
+    /*
+     * Once completion is visible, request_stop() is idempotently successful
+     * and must not reissue physical socket shutdown.
+     */
+    physical_shutdown_result = 1;
+    CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 1);
+    CHECK(physical_shutdown_calls == 1);
 
     /* A pre-reclaim kernel-status failure leaves Transport ownership retryable. */
     fail_first_refer = 1;
