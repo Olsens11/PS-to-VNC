@@ -4,7 +4,7 @@ DIRECTORY=src/display
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns platform-neutral display conversion plus presentation-facing geometry, exact-run visible-ownership state, neutral decoded-frame adaptation, and synchronized MPEG compositor coordination above the PS2 graphics platform seam.
+This directory owns platform-neutral display conversion plus presentation-facing geometry, exact-run visible-ownership and two-phase retirement state, neutral decoded-frame adaptation, synchronized MPEG compositor coordination, and final visible-handoff sequencing above the PS2 graphics platform seam.
 
 The inventory below covers clean-generation symbols defined directly in this directory.
 

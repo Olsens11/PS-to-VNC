@@ -7,7 +7,8 @@ COVERAGE=COMPLETE
 This directory owns genuinely PS2-specific system, controller-service
 bootstrap, Ethernet, and the single GS/dmaKit presentation mechanism, including
 desktop, suppression, reusable MPEG video, inner matte, local-overlay layering,
-synchronized flip completion, and post-sync timer observation.
+synchronized flip completion, post-sync timer observation, and fail-closed
+retained-video reveal after a synchronized no-video frame.
 The clean Issue #7 platform surface is limited to the six `ps2_*.[ch]` files
 listed below; no retained historical platform module is silently included.
 
