@@ -1,18 +1,24 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0023
-RECORDED_AT=2026-09-20T17:38:46-04:00
+STATE_REVISION=0024
+RECORDED_AT=2026-09-20T17:47:46-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0022
-SUPERSEDES_FOREMAN_STATE_REVISION=0022
-BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0005
+BASED_ON_FOREMAN_STATE_REVISION=0023
+SUPERSEDES_FOREMAN_STATE_REVISION=0023
+BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
 BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0024 is an execution-policy correction only. It adopts Reconstruction
+Contract revision 0006, applies autonomous repository execution to the currently
+active A004 P2 packet, and leaves that packet's engineering scope, required
+behavior, C1-C9 acceptance criteria, invariants, non-goals, dependency ordering,
+and worker role unchanged.
 
 Revision 0023 independently accepts the completed
 `A004-MPEG-CALIBRATION-CORE-R1` Reconstruction baton and advances A004 into
@@ -153,10 +159,32 @@ PACKET_STATUS=ACTIVE
 ROLE_KEY=`reconstruction`
 WORK_ITEM_KEY=`a004-presentation`
 WORKER_KEY=`interactive`
-EXECUTION_MODE=`NORMAL_RECONSTRUCTION`
+EXECUTION_MODE=`AUTONOMOUS_RECONSTRUCTION`
+USER_TERMINAL_POLICY=`EXCEPTION_ONLY`
+PI_LOCAL_USER_PROXY_REQUIRED=`NO`
 EXECUTION_SEAT=`/home/ps2/src/PS-to-VNC-ledge-manual`
-WORKTREE_PREFLIGHT_REQUIRED=YES
+EXECUTION_SEAT_USE=`OPTIONAL_LOCAL_SURFACE_ONLY_WHEN_EXPLICITLY_REQUIRED`
+WORKTREE_PREFLIGHT_REQUIRED=`CONDITIONAL_ON_EXPLICIT_PI_LOCAL_EXECUTION`
 ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
+
+### Execution policy for this active packet
+
+This packet is ordinary source reconstruction and is executed autonomously
+through repository/GitHub authority. The worker must perform branch/history
+refresh, forensic source inspection, source/test/docs changes, commits/ref
+updates, dictionary/integration work within its role, CI inspection, job/log
+inspection, and ordinary retry/follow-up work directly through available
+GitHub tooling.
+
+The Pi execution seat remains a legitimate local surface but is **not** a
+required user-proxy shell for this packet. This packet's acceptance criteria do
+not currently require a live-Pi observation or physical PS2 action.
+
+If later evidence proves that one exact requirement cannot be satisfied through
+repository/CI authority, stop only at that requirement and return the limitation
+to Foreman. User action requires explicit Foreman reclassification as
+`USER_ASSISTED_LOCAL_EVIDENCE` or `USER_ASSISTED_HARDWARE`; do not silently
+turn this packet into a terminal-proxy workflow.
 
 ### Objective
 
@@ -176,6 +204,8 @@ this packet.
 
 Before behavior-bearing writes, read current:
 
+- `docs/ledge/LEDGE_RECONSTRUCTION_CONTRACT.md` rev 0006, especially the
+  autonomous execution policy;
 - `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` rev 0001;
 - `docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` rev 0011, especially current
   Q7;
@@ -315,6 +345,8 @@ Return:
 - focused/full checks and exact results;
 - any ambiguity preserved rather than inferred;
 - explicit confirmation that current Q7 was not regressed;
+- execution classification/evidence, including any bounded requirement that
+  could not be satisfied autonomously;
 - exact next dependency/baton point.
 
 Emit exactly one immutable Reconstruction log using:

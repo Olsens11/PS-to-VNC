@@ -1,15 +1,17 @@
 # Ledge Reconstruction Contract
 
 DOCUMENT=LEDGE_RECONSTRUCTION_CONTRACT
-DOCUMENT_REVISION=0005
-RECORDED_AT=2026-09-15T21:33:50-04:00
-SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
-BASED_ON_DOCUMENT_REVISION=0004
-SUPERSEDES_DOCUMENT_REVISION=0004
+DOCUMENT_REVISION=0006
+RECORDED_AT=2026-09-20T17:47:46-04:00
+SOURCE_COMMIT=SELF
+BASED_ON_DOCUMENT_REVISION=0005
+SUPERSEDES_DOCUMENT_REVISION=0005
 TEMPORAL_CLASS=POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_POLICY_AT_RECORDED_TIME
 
 This revision records the governing reconstruction policy at the recorded time. Later valid policy revisions supersede conflicting earlier policy; earlier revisions remain authoritative evidence of the rules under which earlier work was performed.
+
+Revision 0006 establishes the default execution model for Ledge Reconstruction and Foreman work: ordinary repository development is autonomous, GitHub/repository authority is the normal development surface, GitHub Actions is the normal machine-verification surface, and the user is not a substitute terminal or remote shell merely because a Pi worktree exists or is not mounted in a chat environment. User action is exceptional and must be explicitly classified as bounded local evidence or hardware work.
 
 Revision 0005 replaces the standalone Integration/Evidence seat with a Reconstruction Foreman seat. The Foreman owns two responsibilities together: (1) assign each upcoming Reconstruction A/B shift a concrete bounded goal with objective acceptance criteria sized as a meaningful engineering tranche, and (2) use the remainder of its own shift for non-behavioral integration/evidence chores, preflight, and queue grooming. Reconstruction A/B become goal-execution seats rather than self-selecting one-microtask workers. The three seats run on a 90-minute cadence staggered by 30 minutes so a reconstruction-pipeline seat begins every half hour.
 
@@ -57,6 +59,123 @@ At wake, A/B must re-read current HEAD, reconstruction state, Foreman state, and
 A/B may correct a reconstruction-owned defect discovered while pursuing the assigned goal when the evidence is sufficient and the fix is safe. Such a correction counts toward coherent goal completion when it is necessary to deliver the acceptance criteria.
 
 A/B should not stop after the first internal checkpoint. Small files, helper functions, test source, and individual commits remain checkpoints inside the assigned goal. The shift is complete when the goal's acceptance criteria are met, a Foreman-authorized stretch target is complete when attempted, or a genuine blocker/authority/collision/window boundary prevents further safe progress.
+
+## Reconstruction execution policy
+
+This section governs ordinary Reconstruction workers, interactive Reconstruction
+workers, and the Reconstruction Foreman. It defines **how** authorized work is
+executed; it does not broaden a packet's engineering scope or transfer behavior
+ownership between roles.
+
+### Default execution classification
+
+For ordinary Reconstruction packets and ordinary Foreman repository work:
+
+```text
+EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
+USER_TERMINAL_POLICY=EXCEPTION_ONLY
+PI_LOCAL_USER_PROXY_REQUIRED=NO
+```
+
+GitHub/repository authority is the normal autonomous development surface.
+Available GitHub tooling should be used directly for work such as:
+
+- refreshing branch, commit, and history authority;
+- source/history archaeology and repository document inspection;
+- source, test, documentation, dictionary, and integration changes authorized
+  to the current role;
+- commit creation and branch/ref updates;
+- workflow/run/job/log/artifact inspection;
+- CI retries and repository follow-up repairs that remain inside role scope.
+
+GitHub Actions is the canonical automated verification surface when its existing
+Ledge jobs cover the claim being checked. Depending on the change, this includes
+host-unit, project-check, strict dictionary audit, PS2 compile, PS2 link, linked
+reproducibility, and preserved workflow/build artifacts.
+
+The absence of a mounted Pi worktree in a worker's chat/tool environment is not
+by itself a blocker and is not permission to turn the user into a general-purpose
+terminal proxy.
+
+Ordinary work such as git fetch/pull/fast-forward, repository inspection,
+patching, host-test execution already represented by CI, dictionary
+reconciliation, committing, pushing, and CI inspection must not be delegated to
+the user merely because the worker cannot open a shell on the Pi.
+
+### Pi execution seat
+
+`/home/ps2/src/PS-to-VNC-ledge-manual` remains a legitimate local
+development/worktree surface. Its existence does not make it the mandatory
+execution backend for ordinary Reconstruction, and it does not make the user the
+worker's remote shell.
+
+A packet requires Pi-local execution only when the actual engineering question
+materially depends on live Pi-local state that repository/CI authority cannot
+supply.
+
+### Explicit user-assisted classifications
+
+When a bounded requirement genuinely needs local access the worker cannot obtain
+autonomously, the step or packet must be explicitly classified as one of:
+
+```text
+USER_ASSISTED_LOCAL_EVIDENCE
+USER_ASSISTED_HARDWARE
+```
+
+Examples of legitimate user-only actions include:
+
+- physically operating the PS2;
+- controller/input observations;
+- television/display observations;
+- cable, power, or physical-network changes;
+- one bounded live-Pi observation unavailable through repository/CI authority;
+- another genuinely physical/local action unavailable to the worker.
+
+A user-assisted classification must identify the exact evidence/action required.
+Ask for one coherent bounded action, then resume autonomous work. Do not silently
+convert an autonomous packet into user-assisted execution.
+
+### Missing-environment rule
+
+If an authorized packet appears to require an environment the current worker
+cannot access autonomously:
+
+1. determine whether repository or GitHub Actions authority can satisfy the
+   requirement;
+2. if yes, continue autonomously through that authority;
+3. if no, stop at that exact bounded requirement rather than issuing a sequence
+   of user-run development commands;
+4. record the infrastructure limitation and the exact unavailable evidence;
+5. return the blocker to the Foreman;
+6. the Foreman deliberately reclassifies or resizes the affected bounded step
+   before user assistance is requested.
+
+A missing local shell is therefore an execution/infrastructure fact, not an
+automatic engineering blocker and not an automatic request for user terminal
+proxy work.
+
+### Packet-authoring requirement
+
+Every newly published Reconstruction packet must state its execution
+classification explicitly.
+
+Unless the packet actually contains a bounded local/hardware requirement, the
+Foreman publishes:
+
+```text
+EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
+USER_TERMINAL_POLICY=EXCEPTION_ONLY
+PI_LOCAL_USER_PROXY_REQUIRED=NO
+```
+
+If user assistance is required, the packet must name the exact bounded step,
+its classification, why repository/CI cannot provide the evidence, and what
+proof returns the worker to autonomous execution.
+
+Changing execution classification must not silently broaden or restart the
+engineering packet. Scope, acceptance criteria, invariants, and non-goals remain
+unchanged unless the Foreman separately and explicitly revises them.
 
 ## 90-minute staggered cadence
 
@@ -120,6 +239,9 @@ When the assigned goal contains several acceptance criteria, workers continue th
 A valid A/B goal packet should be objectively assessable. It normally includes:
 
 - `WORK_ITEM_KEY` and target worker;
+- explicit execution classification, including `EXECUTION_MODE`,
+  `USER_TERMINAL_POLICY`, and `PI_LOCAL_USER_PROXY_REQUIRED`, plus any exact
+  bounded user-assisted step if one is genuinely required;
 - current source/branch/reconstruction-state authority used to assign it;
 - a plain-language objective describing the behavioral result;
 - required deliverables (specific responsibilities/files/seams, not necessarily exact implementation details);
