@@ -4,7 +4,7 @@ DIRECTORY=src/rfb
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns the RFB protocol mechanism family: native wire encoding, exact stream/session framing, synchronized session state, framebuffer update processing, and remote pointer/key serialization.
+This directory owns the RFB protocol mechanism family: native wire encoding, exact stream/session framing, synchronized session state, framebuffer update processing, generic live request/publication flow policy, and remote pointer/key serialization.
 
 The inventory below covers clean-generation symbols defined directly in this directory.
 
