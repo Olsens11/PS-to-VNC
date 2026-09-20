@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0027
-RECORDED_AT=2026-09-20T19:14:32-04:00
+STATE_REVISION=0028
+RECORDED_AT=2026-09-20T19:51:57-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0026
-SUPERSEDES_FOREMAN_STATE_REVISION=0026
+BASED_ON_FOREMAN_STATE_REVISION=0027
+SUPERSEDES_FOREMAN_STATE_REVISION=0027
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,14 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0028 independently accepts the completed
+`A004-Q7-RETIREMENT-VISIBLE-HANDOFF-R5` Reconstruction baton and advances A004
+into the absolute common-clock video scheduler / presentation-drop policy seam.
+R5 now provides exact-run RETIRING and REVEAL_PENDING phases plus a fail-closed
+single-GS synchronized final reveal, while leaving producer-close,
+decoder-safe-stop, Transport residual-finalization and RFB-restoration proof as
+external Application obligations.
 
 Revision 0027 independently accepts the completed
 `A004-SHARED-COMPOSITOR-FIRST-SYNC-R4` Reconstruction baton and advances A004
@@ -50,14 +58,15 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A004_P4_INTEGRATED__A004_Q7_RETIREMENT_VISIBLE_HANDOFF_RECONSTRUCTION_ACTIVE__A003_APPLICATION_ORCHESTRATION_DEPENDS_ON_A004_PRESENTATION_SEAMS`
+`A004_P5_INTEGRATED__A004_ABSOLUTE_VIDEO_SCHEDULER_DROP_RECONSTRUCTION_ACTIVE__A003_APPLICATION_ORCHESTRATION_DEPENDS_ON_A004_PRESENTATION_SEAMS`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
 A004_P2_FOREMAN_ACCEPTED=YES
 A004_P3_FOREMAN_ACCEPTED=YES
 A004_P4_FOREMAN_ACCEPTED=YES
-A004_P5_ACTIVE=YES
+A004_P5_FOREMAN_ACCEPTED=YES
+A004_P6_ACTIVE=YES
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 
@@ -544,9 +553,151 @@ Absolute scheduler/drop is also required A004 behavior, but it is independent
 timing policy and remains the next later tranche rather than being bundled into
 retirement.
 
+## A004 P5 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- branch HEAD `8ab034addb551899c4600c64063a1e1f7db7e557`;
+- final pre-log source/dictionary authority
+  `4367ed3b718c2740d3b3dcefb1ecd24ed93b9556`;
+- immutable Reconstruction log
+  `docs/ledge/work-log/20260920T192712-0400__reconstruction__a004-presentation__interactive.md`.
+
+The worker landed five commits after Foreman base
+`3ce6b596a5fc0936c30ab7c31936e1a2c82c4675`:
+
+- `05e3930a8c82a7f0c4b1080de44972028bb0fd75` —
+  exact-run Presentation retirement and synchronized retained-video reveal;
+- `6480038ae5ec69eae37a2af5e52ecd7972d107fa` —
+  deterministic dictionary-reconciliation trigger;
+- `3b8b9adc09a17fe373edf35b5416934e95e7cc8a` —
+  automated current clean symbol reconciliation;
+- `4367ed3b718c2740d3b3dcefb1ecd24ed93b9556` —
+  maintained Display/Platform responsibility prose;
+- `8ab034addb551899c4600c64063a1e1f7db7e557` —
+  required immutable Reconstruction work log.
+
+Independent source review confirms:
+
+- Presentation now owns the exact visible lifecycle
+  `RFB_ONLY -> WAIT_FIRST_FRAME -> MPEG_OWNED -> RETIRING ->
+  REVEAL_PENDING -> RFB_ONLY`;
+- only the exact nonzero current MPEG_OWNED generation may begin retirement;
+- RETIRING retains the immutable run/geometry snapshot, remains COMPOSITED and
+  visually MPEG-owned, and requires no generic global P2 freeze;
+- exact RETIRING frames remain presentable through the P4 compositor so
+  already-accepted data can drain;
+- REVEAL_PENDING is a distinct exact-generation seal that keeps the snapshot and
+  retained MPEG visual owner but rejects every further MPEG frame before
+  Platform is called;
+- ordinary desktop presentation continues updating the cached RFB desktop while
+  retained retiring MPEG/suppression/mattes remain drawn above it;
+- no RFB source/API or P2 FULL-refresh debt was imported into Presentation;
+- no producer-close, decoder-safe-stop, Transport residual-discard or RFB-current
+  fact is manufactured by P5;
+- Platform remains the sole gsKit/dmaKit owner;
+- `pstvnc_ps2_graphics_reveal_retained_video()` presents cached desktop plus
+  current local overlay while omitting retained MPEG layers through the same
+  render body and synchronized flip;
+- retained `video_visible` and geometry facts are not cleared until that
+  no-video frame has successfully crossed the synchronized boundary;
+- reusable video texture/VRAM remains available after successful reveal;
+- `pstvnc_mpeg_compositor_reveal_retired()` validates exact
+  REVEAL_PENDING generation/snapshot, performs the Platform synchronized reveal,
+  and only then commits logical RFB_ONLY;
+- retirement reveal has no media-clock parameter and does not arm, clear or
+  replace the session epoch;
+- a later distinct MPEG run reuses the same already-armed session epoch;
+- there is no generic `clear_video()` API and no ordinary
+  MPEG_OWNED -> RFB_ONLY direct-stop shortcut.
+
+A004-P5-C1 through A004-P5-C12 are accepted as MET within the bounded
+source/machine-evidence scope.
+
+### P5 integration/evidence chronology
+
+Behavior commit run `35544856315` and reconciliation-trigger run
+`35544918534` failed only the strict dictionary job because newly introduced
+Display/Platform symbols had not yet been committed to their maintained
+dictionaries. On both runs host-unit, project-check, direct PS2 compile and
+linked PS2 build were already green; the second run's authorized reconciliation
+job succeeded.
+
+After the generated dictionaries and maintained responsibility prose landed,
+pre-log run `35544987580` completed SUCCESS across all required gates.
+
+Exact pickup-head run `35545125944` (run number 292) also completed SUCCESS:
+
+- host-unit — PASS;
+- project-check — PASS;
+- dictionary-long/complete/strict — PASS;
+- ps2-compile — PASS;
+- ps2-link/current-source reproducibility — PASS;
+- dictionary-reconcile — SKIPPED as expected on an already-coherent head.
+
+Exact-head host logs explicitly report:
+
+- `transport_runtime_test: PASS`;
+- `MPEG_CALIBRATION_UNIT=PASS`;
+- `RFB_FLOW_POLICY_TEST=PASS`;
+- `MPEG_PRESENTATION_TEST=PASS`;
+- `MPEG_COMPOSITOR_TEST=PASS`.
+
+Exact-head strict PS2 compile directly compiles current
+`src/display/mpeg_presentation.c`, `src/display/mpeg_compositor.c` and
+`src/platform/ps2_graphics.c` and reports
+`CLEAN_PS2_COMPILE_CHECK=PASS`.
+
+The linked job reports both `ISSUE7_LINKED_BUILD=PASS` and
+`LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+
+No physical PS2/television run occurred. Actual visible retirement, underlay
+rebuild timing and hardware failure behavior remain qualification debt.
+
+## Why P6 is absolute scheduler/drop before decoder-runtime wiring
+
+P1-P5 now establish calibration meaning, generic RFB protection, exact visible
+ownership, the single synchronized compositor/clock-arm boundary, and a bounded
+current-Q7 visible retirement path.
+
+The remaining presentation-policy dependency before connecting decoded frames to
+that mechanism is the qualified absolute scheduler/drop behavior.
+
+Frozen H1/P6 evidence establishes:
+
+- source cadence is represented by a rational FPS, historically 30000/1001;
+- frame deadlines are absolute offsets from the common media epoch rather than
+  relative sleeps from the previous frame;
+- late processing must not rebase the schedule and create timing drift;
+- experimental NONE/ONE_VSYNC/TWO_VSYNC comparison modes are not product
+  behavior.
+
+Frozen P7 evidence further establishes the intended stale-presentation rule:
+
+- every MPEG picture still advances decode/reference-picture state;
+- stale handling suppresses presentation only;
+- a picture at least one complete source-frame period late is eligible to be
+  omitted from visible presentation;
+- pictures less than one frame late remain presentable, avoiding ordinary
+  VBlank quantization being treated as stale.
+
+Current clean CONFIG intentionally does not yet carry H1's FPS/scheduler/drop
+laboratory fields. R6 therefore reconstructs one narrow Display-owned immutable
+timing-policy value and pure absolute scheduling decisions without broadening
+the CONFIG wire contract. Profile plumbing belongs to later orchestration.
+
+P4/P5 also settled one important modern constraint absent from the simple H1
+single-run model: the session media epoch survives later MPEG runs. R6 must not
+reset run-local picture ordinal 1 onto the original epoch and thereby classify a
+later run as ancient. Instead the scheduler begins only after P4 has physically
+presented/promoted the run's first frame. It derives one immutable run offset on
+the existing session clock axis from that exact first-sync observation; this is
+a run placement on the shared timeline, not a second epoch and never mutates the
+session clock.
+
 ## Active bounded Reconstruction packet
 
-PACKET_ID=`A004-Q7-RETIREMENT-VISIBLE-HANDOFF-R5`
+PACKET_ID=`A004-ABSOLUTE-VIDEO-SCHEDULER-DROP-R6`
 PACKET_STATUS=ACTIVE
 ROLE_KEY=`reconstruction`
 WORK_ITEM_KEY=`a004-presentation`
@@ -561,184 +712,203 @@ ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
 
 ### Objective
 
-Reconstruct the clean **current-Q7 exact-run presentation retirement and final
-visible handoff seam**.
+Reconstruct the clean **absolute common-clock MPEG video scheduling and stale
+presentation-drop policy** needed between the P4/P5 presentation mechanism and a
+later decoder-worker handoff.
 
-The bounded target is the presentation-side sequence:
-
-`MPEG_OWNED -> RETIRING -> REVEAL_PENDING -> RFB_ONLY`
-
-while preserving the exact active run snapshot and visible MPEG/mattes until the
-one synchronized final reveal actually succeeds.
-
-P5 supplies the Presentation/Platform mechanism that a later Application
-transaction will invoke after it has independently proven producer/Transport,
-decoder-safe-stop and RFB-underlay prerequisites. P5 must not pretend to prove
-those external facts itself.
+R6 owns deterministic timing policy only. It must establish one exact-run
+absolute presentation grid for frames after the already-physical first frame,
+derive deadlines from the existing session media clock plus rational source
+rate, and classify each subsequent frame as WAIT, PRESENT_NOW or
+DROP_PRESENTATION_ONLY without calling GS, decoder, Transport, RFB or
+Application lifecycle APIs.
 
 ### Execution policy
 
 This is ordinary autonomous Reconstruction work through repository/GitHub
 authority and canonical CI.
 
-No physical PS2 or live-Pi action is required for this packet. Do not request
-user terminal proxy work.
+No physical PS2 or live-Pi action is required. Do not ask the user to act as a
+terminal proxy.
 
-### Required authority / forensic trace
+### Required current/frozen authority
 
 Read current at wake, including:
 
 - Reconstruction Contract rev 0006;
-- Foreman State rev 0027;
-- Wire runtime decisions rev 0011, especially current Q7/Q8/Q9;
-- A003 MPEG-generation audit rev 0001, especially safe decoder-stop and residual
-  isolation;
-- A004 presentation/calibration audit rev 0001 as temporal evidence, with
-  current Q7 governing where retirement wording conflicts;
-- clean architecture and architecture overlay;
+- Foreman State rev 0028;
+- A002 CONFIG/audio/common-clock audit rev 0001;
+- A003 MPEG-generation audit rev 0001;
+- A004 presentation/calibration audit rev 0001;
+- Wire runtime decisions rev 0011;
+- current `src/media/clock.{c,h}`;
+- current `src/config/profile.{c,h}`;
 - current `src/display/mpeg_presentation.{c,h}`;
 - current `src/display/mpeg_compositor.{c,h}`;
-- current `src/platform/ps2_graphics.{c,h}`;
-- current `src/rfb/flow_policy.{c,h}`;
-- current `src/mpeg/decoder.{c,h}`;
-- canonical host and PS2 build manifests.
+- current canonical host and PS2 build manifests.
 
-Trace frozen H1 and later qualified retirement evidence only far enough to
-recover safe visible-retirement mechanics, including relevant:
+Trace frozen authority
+`3426f28b93de9519ca93e5f0e0aaf8b67cfca845`, at minimum:
 
-- `h1_cumulative39_graphics.{c,h}`;
-- `CP2P_MPEG_SAFE_STOP_LIFECYCLE.md`;
-- mature CP2P retirement/start-stop evidence;
-- historical direct `clear_video()` only as a mechanism to replace, not product
-  authority.
+- `experiments/media-harness-h1/h1_video_runtime.{c,h}` around
+  `h1_video_frame_period_ticks()` and absolute scheduling;
+- `experiments/media-harness-h1/h1_media_clock.{c,h}`;
+- `experiments/media-harness-h1/h1_profiles.py` for the qualified 30000/1001
+  reference profile and historical scheduler/drop fields;
+- `experiments/media-harness-h1/qualified_p11_video_seed.c` for one-epoch
+  absolute deadline/non-rebase behavior;
+- `experiments/media-stream-exp3/generate_network_live_streaming_p7_late_frame_drop.py`
+  for the presentation-only one-source-frame stale-drop rule.
+
+Historical scheduler comparison modes are experimental evidence only.
 
 ### Required behavior
 
-1. **Presentation owns visible retirement state.** Extend the P3 owner with
-   explicit retirement phases equivalent to RETIRING and REVEAL_PENDING.
-   Do not put run lifecycle meaning in Platform, RFB, Transport or decoder.
-2. **Exact-run begin-retirement fence.** Only the exact nonzero currently
-   MPEG_OWNED generation may enter RETIRING. Wrong/stale/duplicate requests fail
-   closed without replacing or clearing the live snapshot.
-3. **Retiring remains visually MPEG-owned.** RETIRING retains the exact geometry
-   and suppression snapshot, reports COMPOSITED/visual MPEG ownership, requires
-   no global P2 RFB freeze, and does not reveal RFB.
-4. **Accepted-frame drain remains possible.** The P4 compositor may continue to
-   present exact-generation frames while RETIRING so already accepted data can
-   drain. Stale/other-generation frames remain rejected. No new run may arm.
-5. **Underlying RFB remains able to advance.** Ordinary desktop presentation
-   updates during RETIRING must continue refreshing the cached RFB desktop
-   underneath still-visible MPEG/mattes exactly as P4 permits.
-6. **Seal before reveal.** Provide an exact-generation transition from RETIRING
-   to a REVEAL_PENDING-equivalent state that fences any further MPEG frame
-   presentation while retaining the exact run snapshot and visible retained
-   composite.
-7. **External retirement proofs stay external.** Entering RETIRING or
-   REVEAL_PENDING must not claim that Pi production is closed, decoder worker is
-   joined, residual Transport bytes are discarded, or RFB underlay is current.
-   Those are later Application orchestration obligations.
-8. **One GS owner performs final reveal.** Add the smallest Platform mechanism
-   needed to present the cached desktop plus current local overlay without the
-   retained MPEG/suppression/matte layers, through the existing single render
-   owner and one synchronized flip.
-9. **Fail-closed physical reveal.** Platform must not permanently discard the
-   retained MPEG resource/visibility facts merely because reveal was requested.
-   Commit the retained-video removal only after the synchronized no-video frame
-   succeeds; failure must leave a retryable/containable retained presentation
-   state rather than silently exposing stale RFB.
-10. **Commit logical RFB_ONLY only after physical success.** The Display
-    retirement coordinator may clear the P3 run snapshot and return to RFB_ONLY
-    only after exact REVEAL_PENDING state and successful synchronized final
-    reveal. Before then, snapshot/suppression remain authoritative.
-11. **No media-clock rewrite.** Retirement does not re-arm, replace or clear the
-    session media epoch. Session-clock lifetime remains outside per-run visible
-    retirement.
-12. **No RFB refresh-debt duplication.** P5 does not create, consume or fake P2
-    FULL-refresh debt and does not call RFB APIs. Later Application orchestration
-    decides which RFB request/restoration evidence satisfies current Q7.
-13. **Local overlay remains final.** The final no-MPEG synchronized reveal still
-    presents the current local UI/OSK overlay above the cached desktop.
-14. **No H1 direct-stop shortcut.** Do not add a public path that lets ordinary
-    MPEG_OWNED state jump directly to RFB_ONLY or calls a generic
-    `clear_video()` merely because stop was requested.
-15. **No premature runtime wiring.** Do not wire decoder worker callbacks/queues,
-    Transport START/RETIRE, Pi producer control, P2 runtime flow, calibration
-    flow, scheduler/drop, or final Application orchestration in this packet.
-16. **Direct build/test coverage.** Extend focused host contracts for retirement
-    state/final-reveal ordering and preserve direct canonical PS2 compile/link
-    coverage for every modified presentation/Platform translation unit.
+1. **Display owns timing policy.** Add the narrow scheduler under the existing
+   Display/presentation responsibility family. It must not own GS/dmaKit,
+   decoder lifecycle, Transport queues/credit, RFB flow, Application lifecycle
+   or calibration.
+2. **Narrow immutable timing profile.** Represent only the real scheduling facts:
+   positive rational source FPS numerator/denominator and optional
+   presentation-drop policy/threshold. Do not restore H1's scheduler-mode enum
+   or its giant CONFIG laboratory surface.
+3. **No CONFIG-wire broadening in R6.** Current production CONFIG remains
+   unchanged. The new owner-specific timing value is supplied directly by the
+   later runtime/orchestration seam. Tests may use the historically qualified
+   30000/1001 reference and one-frame (1000 milliframe) stale threshold without
+   declaring those values a new public user knob.
+4. **First frame remains P4 authority.** R6 must not schedule, delay, drop,
+   re-present or arm the clock for a run's first MPEG frame. Scheduler state is
+   initialized only after the exact P4 first synchronized frame has completed
+   and the session clock is already armed.
+5. **One session epoch.** Scheduler initialization consumes the existing armed
+   session clock, exact caller-owned run generation and the run's exact P4
+   first-sync observation. It must never arm/re-arm/clear/replace the clock.
+6. **Stable run placement on the session axis.** Derive and retain one run
+   additional-tick anchor relative to the existing session video deadline-zero
+   axis. A suitable clean rule is:
+   - observe the session video deadline for additional_ticks=0;
+   - if first_sync_tick is later, retain the nonnegative difference as the
+     run's base additional offset;
+   - otherwise retain zero.
+   This offset is not a second epoch. It only locates this run on the existing
+   session timeline and must never be recomputed from later frames.
+7. **Absolute deadline grid.** For subsequent run-local picture ordinal N
+   (N >= 2), target:
+   `run_base_additional_ticks + (N - 1) * frame_period_ticks`
+   through the common video-deadline contract. A late frame never rebases the
+   next deadline.
+8. **Pure inspectable decision.** Given the exact run, picture ordinal and a
+   caller/injected current tick, return a narrow result containing the absolute
+   deadline, lateness where applicable, and one decision equivalent to:
+   WAIT_UNTIL_DEADLINE, PRESENT_NOW or DROP_PRESENTATION_ONLY. Do not busy-spin,
+   sleep, wait on GS/VBlank or present a frame inside this policy module.
+9. **Late-but-valid presentation.** If a frame is late but has not reached the
+   enabled stale threshold, classify PRESENT_NOW rather than dropping it.
+10. **Presentation-only stale drop.** When dropping is enabled and lateness is
+    at least the configured threshold expressed as a fraction of one source
+    frame, classify DROP_PRESENTATION_ONLY. This result must not mutate MPEG
+    decode/reference state, Transport consumption/credit, generation state,
+    presentation retirement state or EOF semantics.
+11. **Drop-disabled behavior.** A valid exact-run frame is never classified
+    DROP when drop policy is disabled, regardless of lateness.
+12. **Exact-run fence.** Scheduler state copies the caller-owned nonzero
+    generation verbatim. Stale/wrong-generation decisions fail closed. It must
+    not mint or increment run identity.
+13. **Arithmetic safety.** Reject impossible zero-rate profiles and use
+    overflow-safe/saturating arithmetic for frame-period, run-anchor, ordinal
+    offset, threshold and deadline inputs. Do not permit wraparound to turn a
+    very late/future frame into an early one.
+14. **Clock owner boundary.** Prefer existing media-clock public deadline
+    operations and, only if necessary, add the smallest read-only clock query
+    needed for tick-rate/epoch calculations. Do not expose mutable clock
+    internals or create a second timing service.
+15. **No premature compositor/runtime wiring.** Do not make the decoder worker,
+    P4 compositor, P5 retirement path, RFB flow policy, Transport or Application
+    call the scheduler in R6. That cross-owner wiring is the next runtime
+    tranche.
+16. **Direct build/test coverage.** Add focused deterministic host tests and put
+    any new product timing translation unit directly in canonical strict PS2
+    compile and linked reproducibility manifests.
 
 ### Placement / shape guidance
 
-Keep lifecycle-visible state and exact generation fencing in
-`src/display/mpeg_presentation.{c,h}`.
+Prefer a small module such as
+`src/display/mpeg_scheduler.{c,h}`.
 
-Keep cross-owner synchronized retirement coordination in the existing Display
-presentation/compositor responsibility family.
+Keep the scheduler platform-neutral and deterministic. Inject/accept current tick
+as data for decision tests rather than reading PS2 timers directly.
 
-Keep raw GS/dmaKit retained-video removal in
-`src/platform/ps2_graphics.{c,h}`; Platform receives no generation and learns
-no producer/decoder/RFB lifecycle meaning.
+An immutable per-run scheduler state may contain:
 
-A two-phase logical retirement is preferred over a one-call stop because it
-makes the drain fence and final visible reveal independently inspectable.
+- exact caller generation;
+- validated rational FPS;
+- frame period in session-clock ticks;
+- immutable run-base additional ticks;
+- drop enabled/threshold timing fact.
+
+Do not store or mutate decoder buffers, frame surfaces, Presentation ownership
+state, Transport state or GS resources.
 
 ### Acceptance criteria
 
-- `A004-P5-C1 RETIRING_STATE`: exact active generation alone can enter a
-  distinct retiring state that retains visual MPEG ownership/snapshot.
-- `A004-P5-C2 DRAIN_FENCE`: exact retiring frames may still present until an
-  explicit seal; stale/new-run frames cannot.
-- `A004-P5-C3 UNDERLAY_OVERLAP`: desktop updates can continue underneath
-  retained retiring MPEG without revealing the suppression footprint.
-- `A004-P5-C4 REVEAL_PENDING`: sealing retirement blocks further MPEG frames
-  while retaining exact snapshot and visible MPEG until physical handoff.
-- `A004-P5-C5 EXTERNAL_PROOF_BOUNDARY`: Presentation does not manufacture
-  producer-close, decoder-safe-stop, residual-discard or RFB-current evidence.
-- `A004-P5-C6 SINGLE_GS_REVEAL`: final no-video reveal uses the existing sole
-  Platform GS owner and one synchronized presentation.
-- `A004-P5-C7 FAIL_CLOSED_REVEAL`: failed reveal does not commit retained-video
-  removal or logical RFB_ONLY.
-- `A004-P5-C8 FINAL_COMMIT`: only successful exact pending reveal clears the
-  run snapshot and returns Presentation to RFB_ONLY.
-- `A004-P5-C9 CLOCK_STABILITY`: retirement neither re-arms nor clears the
-  session media epoch.
-- `A004-P5-C10 RFB_POLICY_BOUNDARY`: no RFB/P2 debt or request mechanics are
-  duplicated inside Presentation/Platform.
-- `A004-P5-C11 Q7_COMPATIBILITY`: source shape supports close -> drain ->
-  underlay refresh overlap -> safe synchronized reveal without H1 direct-stop.
-- `A004-P5-C12 CLEAN_EVIDENCE`: focused/full host tests, project/dictionary
-  checks, direct PS2 compile and linked reproducibility all pass for exact final
-  source; physical qualification remains separate.
+- `A004-P6-C1 OWNER_BOUNDARY`: timing policy is Display-owned and independent
+  of GS, decoder, Transport, RFB, calibration and Application lifecycle.
+- `A004-P6-C2 NARROW_PROFILE`: rational FPS/drop facts are explicit without
+  restoring H1 scheduler modes or widening CONFIG wire authority.
+- `A004-P6-C3 FIRST_FRAME_BOUNDARY`: scheduler cannot schedule/drop/arm the
+  first frame and initializes only from an already-armed clock plus exact P4
+  first-sync observation.
+- `A004-P6-C4 SESSION_AXIS`: one immutable run offset is derived on the
+  existing session timeline; no new epoch/re-arm occurs, including later runs.
+- `A004-P6-C5 ABSOLUTE_GRID`: subsequent deadlines remain anchored to
+  run-base + ordinal*period and do not drift/rebase after lateness.
+- `A004-P6-C6 DECISION_SEMANTICS`: early, on-time and slightly-late frames
+  produce deterministic WAIT/PRESENT classifications with inspectable deadline
+  and lateness.
+- `A004-P6-C7 PRESENTATION_ONLY_DROP`: threshold-late frames may be classified
+  DROP only as visible-presentation policy; no decode/Transport/EOF/lifecycle
+  fact is changed.
+- `A004-P6-C8 DROP_DISABLED`: disabled drop never suppresses a valid frame.
+- `A004-P6-C9 EXACT_RUN_FENCE`: stale/wrong generation fails closed and run
+  identity is never minted by the scheduler.
+- `A004-P6-C10 ARITHMETIC_SAFETY`: invalid rate/threshold/ordinal and overflow
+  cases cannot wrap timing calculations.
+- `A004-P6-C11 NO_RUNTIME_WIRING`: current compositor/retirement/decoder/RFB/
+  Transport/Application call graph remains unwired to the new policy.
+- `A004-P6-C12 CLEAN_EVIDENCE`: focused/full host tests, project/dictionary
+  checks, direct PS2 compile and linked reproducibility pass on exact final
+  source; hardware timing qualification remains separate.
 
 ### Explicit non-goals
 
-Do not implement in P5:
+Do not implement in P6:
 
-- absolute video scheduler or lateness/drop;
-- decoder-worker -> compositor frame queue/handoff;
-- Pi producer close/RETIRE transaction;
-- Transport residual discard/credit finalization;
-- P2/RFB request orchestration;
-- calibration input/runtime wiring;
-- final A003/A004 Application transaction;
-- Wire-loss restoration policy;
-- physical PS2/television qualification.
+- decoder-worker -> scheduler/compositor frame handoff;
+- actual thread sleep/VBlank wait loop;
+- changes to P4 first-frame presentation/clock-arm behavior;
+- changes to P5 retirement/final reveal;
+- public CONFIG protocol expansion for FPS/drop fields;
+- Transport START/RETIRE, Pi producer or residual finalization;
+- P2/RFB runtime orchestration;
+- final Application activation/retirement/failure transaction;
+- physical A/V timing qualification.
 
 ### Worker return
 
 Return:
 
-- exact current/frozen retirement evidence inspected;
+- exact current/frozen timing evidence inspected;
 - exact source/test/build/dictionary commits changed;
-- retirement-state and generation-fence shape;
-- whether exact retiring frames remain presentable before seal;
-- final no-video synchronized reveal mechanism and fail-closed ordering;
-- explicit external-proof boundary for producer/decoder/RFB facts;
-- confirmation session media clock is untouched by retirement;
-- A004-P5-C1 through C12 disposition;
+- timing-profile and per-run scheduler-state shape;
+- exact first-sync-to-session-axis anchor rule;
+- exact frame-period/deadline/drop arithmetic;
+- confirmation first frame remains solely P4 authority;
+- confirmation session clock is never re-armed/replaced;
+- confirmation drop is presentation-only and does not alter decoder/Transport/
+  EOF/lifecycle facts;
+- A004-P6-C1 through C12 disposition;
 - focused/full/direct-PS2 evidence;
-- explicit confirmation no MPEG_OWNED -> RFB_ONLY direct-stop shortcut exists;
 - evidence gaps/hardware non-claims;
 - exact next dependency/baton point.
 
@@ -748,22 +918,22 @@ Emit exactly one immutable Reconstruction log using:
 - WORK_ITEM_KEY=`a004-presentation`
 - WORKER_KEY=`interactive`
 
-Do not begin scheduler/drop, decoder-worker handoff or final Application
-orchestration in the same shift.
+Do not begin decoder-worker runtime handoff or final Application orchestration in
+the same shift.
 
 ## Deferred dependency graph
 
-Expected remaining A004 work after active P5 is:
+Expected remaining work after active P6 is:
 
-1. absolute common-clock video scheduler/drop policy as its own deterministic
-   presentation-timing tranche;
-2. explicit decoded-frame handoff/runtime integration from the MPEG worker to
-   the sole Presentation owner, consuming the scheduler and P5 retirement seams;
-3. final Application orchestration consuming A003 plus P1/P2/P3/P4/P5 public
-   seams, including activation, P2 protection/thaw, producer/decoder lifecycle,
-   current-Q7 retirement/restoration, failure containment and shutdown ordering.
+1. explicit decoded-frame runtime handoff from the MPEG worker through the
+   absolute scheduler into the sole P4 compositor, preserving P5 drain/seal
+   retirement boundaries and decoder-safe-stop semantics;
+2. final Application orchestration consuming A003 plus P1-P6 public seams,
+   including activation, calibration/P2 protection, START/producer admission,
+   decoder lifecycle, current-Q7 retirement/RFB restoration, failure containment
+   and shutdown ordering.
 
-Foreman must choose the exact next seam from returned P5 source rather than
+Foreman must choose the exact next seam from returned P6 source rather than
 pre-authorizing later implementation.
 
 This is planning only, not worker authority to pre-implement later work.
@@ -774,10 +944,10 @@ HARDWARE_PENDING=A004 visual geometry/matte/suppression/first-frame qualificatio
 
 ## Foreman next pickup
 
-Consume the `A004-Q7-RETIREMENT-VISIBLE-HANDOFF-R5` Reconstruction baton,
-independently verify exact-run retirement/drain/seal/final-reveal ordering,
-fail-closed retained-video removal through the sole GS owner, preservation of
-external producer/decoder/RFB proof boundaries, and direct PS2 build coverage.
-Then choose the next bounded absolute scheduler/drop seam from actual source.
+Consume the `A004-ABSOLUTE-VIDEO-SCHEDULER-DROP-R6` Reconstruction baton,
+independently verify the one-epoch/run-anchor model, absolute non-rebasing
+deadline math, presentation-only stale-drop semantics, first-frame P4 boundary,
+owner separation and direct PS2 build coverage. Then choose the next bounded
+decoded-frame runtime handoff seam from actual source.
 
 Do not execute the packet from the Foreman seat.
