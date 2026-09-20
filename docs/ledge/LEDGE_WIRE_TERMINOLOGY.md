@@ -1,16 +1,18 @@
 # Ledge Wire Terminology Policy
 
 DOCUMENT=LEDGE_WIRE_TERMINOLOGY
-DOCUMENT_REVISION=0001
-RECORDED_AT=2026-09-17T17:41:54-04:00
+DOCUMENT_REVISION=0002
+RECORDED_AT=2026-09-20T15:54:52-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0003
+BASED_ON_DOCUMENT_REVISION=0001
+SUPERSEDES_DOCUMENT_REVISION=0001
+BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 TEMPORAL_CLASS=ARCHITECTURE_POLICY_REVISION
 TEMPORAL_SEMANTICS=GOVERNING_UNTIL_SUPERSEDED
 SCOPE=ledge/h1-all-guns
 STATUS=ACTIVE
 
-This document records a terminology-only architecture decision. It changes names used for project-owned architecture concepts going forward; it does not change wire behavior, ownership semantics, runtime behavior, historical evidence, or the currently active bounded A003 manual engineering packet.
+This document records a terminology-only architecture decision. It changes names used for project-owned architecture concepts going forward; it does not change wire behavior, ownership semantics, runtime behavior, historical evidence, or current reconstruction packet authority.
 
 Where older current documents use endpoint-specific architecture vocabulary such as `PSTV Transport`, `PSTV Session`, or similar project-owned names, interpret the architecture-neutral responsibility using the canonical terms below. Existing committed source identifiers and historical text may remain unchanged until the separately queued bounded migration runs.
 
@@ -68,7 +70,7 @@ Until the bounded terminology migration runs:
 - new architecture-neutral concepts must not introduce additional `PSTV`, `PS2`, or `Pi` terminology when a neutral responsibility name is available;
 - existing quoted names in current packets remain interpretable historical/current-transition vocabulary rather than authorization for new endpoint-specific architecture names.
 
-The currently active `A003-P2A-MANUAL-START-PREPARED-R1` packet remains active and must not be consumed by this migration.
+The former `A003-P2A-MANUAL-START-PREPARED-R1` packet is historical and superseded. Current packet authority is published only by the current `LEDGE_FOREMAN_STATE.md`. Terminology migration remains separate and must not be mixed into functional reconstruction.
 
 ## Wire compatibility invariant
 

@@ -120,6 +120,9 @@ index after every shift.
 - `docs/ledge/LEDGE_VALIDATION_STATE.md` — Validation state snapshot authority.
 - `docs/ledge/LEDGE_WORK_LOG.md` — historical/global ledge work log.
 - `docs/ledge/LEDGE_WORK_STATE.md` — current global Continuity/reconstruction work state.
+- `docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` — Q1-Q12 Wire runtime architecture decision authority.
+- `docs/ledge/LEDGE_Q1_Q12_RECONCILIATION.md` — post-hardware-detour ledge reconciliation, source-reuse dispositions, and qualification debt.
+- `docs/ledge/LEDGE_WIRE_TERMINOLOGY.md` — canonical architecture-neutral Wire terminology policy.
 - `docs/ledge/work-log/README.md` — immutable per-shift work-log contract and discovery rules.
 
 ## Documentation contract
@@ -219,6 +222,7 @@ Development-system policy:
 - `docs/development/testing.md`
 - `docs/development/tooling.md`
 - `docs/development/lessons-learned.md`
+- `docs/development/module-lifecycle.md` — cross-Wire module lifecycle, complete-retirement, and Transport-owned communication-validity contract.
 - `docs/development/source-naming-and-symbols.md`
 - `docs/development/source-topology.md`
 - `docs/development/source-dictionary-validator.md`

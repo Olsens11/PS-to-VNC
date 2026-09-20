@@ -1,319 +1,201 @@
 # Ledge All-Guns Architecture Overlay
 
 DOCUMENT=LEDGE_ARCHITECTURE_OVERLAY
-DOCUMENT_REVISION=0003
-RECORDED_AT=2026-09-17T07:10:44-04:00
-BASED_ON_DOCUMENT_REVISION=0002
-SUPERSEDES_DOCUMENT_REVISION=0002
+DOCUMENT_REVISION=0004
+RECORDED_AT=2026-09-20T15:54:52-04:00
+SOURCE_COMMIT=SELF
+BASED_ON_DOCUMENT_REVISION=0003
+SUPERSEDES_DOCUMENT_REVISION=0003
+BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
+BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=ARCHITECTURE_POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_LEDGE_ARCHITECTURE_AT_RECORDED_TIME
 BASE_ARCHITECTURE=docs/CLEAN_ARCHITECTURE.md:ARCHITECTURE_VERSION_1
 SCOPE=ledge/h1-all-guns
 
-This overlay is the governing architecture amendment for the ledge all-guns reconstruction. `docs/CLEAN_ARCHITECTURE.md` version 1 remains the primary clean-generation architecture except where this overlay explicitly supersedes it for the ledge branch.
+This overlay is the current ledge amendment to the clean architecture. Revision
+0004 reconciles the completed Q1-Q12 Wire decisions and bounded hardware evidence
+back into clean reconstruction. Revision 0003 remains historical in Git; where
+its manual A003/generation wording conflicts with this revision or
+`LEDGE_WIRE_RUNTIME_DECISIONS.md` revision 0011, the later authority governs.
 
-Revision 0003 preserves the one-physical-PSTV-stream architecture and the owner split recovered by revisions 0001-0002, but changes execution strategy for unresolved A003 Pi/Transport exact-generation mechanics. Immediate autonomous implementation of the production Pi endpoint is no longer an active Reconstruction assignment. That work is deliberately deferred to `docs/ledge/LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION.md` for a later user-assisted session with direct runtime/hardware access.
+## Physical Wire ownership
 
-This deferral changes **when** unresolved mechanism is implemented, not **who owns** the relevant responsibilities and not the accepted A003 wire/control behavior.
+Wire Transport owns one physical PS2↔Pi product connection/session, the sole
+physical receive path, framing/multiplexing, ordered physical send, Transport
+flow-control bookkeeping, connection/session validity, and mechanism failure.
+RFB, PCM/audio, MPEG, control and future riders use logical Wire Channels and may
+not own or bypass the physical socket.
 
-## A001 transport ownership reconciliation
+The mature Pi product contains a product-owned Wire server. A Wire Session is one
+successfully established physical Wire lifetime. It may remain completely idle.
+Connection loss permanently ends that session; reconnect establishes a new Wire
+Session and never resumes the dead one.
 
-For the ledge all-guns generation, supersede architecture-version-1 statements that make application/main the sole owner of VNC socket operations or make RFB directly own the PS2-facing socket.
+Connection establishment is provisional until compatibility establishment
+succeeds. Wire Protocol begins immediately, ACTIVE is published only after
+successful establishment, and the Pi assigns authoritative session identity.
+The final clean product Q4 establishment path remains source/qualification work;
+proof-local establishment is evidence, not product completion.
 
-Adopt one explicit **PSTV Transport owner** per endpoint with mechanism responsibilities:
+## Wire Channel Relay boundary
 
-- own one physical PS2-facing PSTV TCP stream/session when that real endpoint is active;
-- own the sole physical receive path and receive sequencing;
-- validate PSTV physical framing/version/length/sequence state;
-- dispatch received payloads into transport-owned logical-channel/control state;
-- serialize physical sends;
-- own Transport/channel lifecycle, flow control, receiver quiescence/dormancy, and mechanism failure;
-- expose narrow logical-channel/control operations without exposing raw socket ownership to consumers.
+Logical riders attach through Transport-owned Wire Channel Relays. Relay payload
+is domain-opaque. Transport may own bounded capacity, credit, readiness,
+consumption/release accounting and channel-local mechanism failure, but it does
+not acquire rider-domain semantics merely because it moves those bytes.
 
-The application coordinator owns product-level startup/shutdown ordering, recovery policy, and cross-domain decisions. It requests Transport lifecycle operations; it does not become the socket mechanism owner.
+A stalled or failed rider does not by itself make Wire unhealthy. Failure
+containment begins at the smallest owner that can prove a safe state and
+escalates only when necessary.
 
-## RFB ownership under shared Transport
+## One physical-I/O execution context
 
-RFB continues to own synchronized RFB protocol/session behavior: handshake/security/ServerInit, RFB receive buffering/framing, encoding negotiation, requests, server-message parsing, rectangle decoding, framebuffer truth, and pointer/key wire serialization.
+The current architecture requires one Transport-owned physical framed-I/O
+execution context. Hardware characterization showed the tested split-I/O
+execution stalled while the single owner completed the transaction. That is the
+claim boundary; it is **not** proof that PS2IP is generally non-thread-safe.
 
-Under shared PSTV, RFB consumes an explicit logical RFB byte-stream/public bridge supplied by Transport. RFB does not own or open another PS2-facing PSTV socket.
+On PS2, the Transport owner must cooperatively relinquish EE execution often
+enough during idle polling for networking progress. The tested 1000-us delay is
+a hardware-supported implementation baseline, not Wire ABI and not a declared
+final scheduling mechanism or optimum.
 
-RFB also owns safe freeze/quiesce semantics and the fresh nonincremental/full framebuffer-update obligation required after restoration. Other components request/observe those facts through the RFB bridge rather than reaching into RFB parser/request internals.
+## Wire availability and module lifecycle
 
-## Concurrency and quiescence invariant
+Wire exposes only the containing communication fact:
 
-The all-guns concurrency rule remains:
+    INACTIVE
+    ACTIVE(session_id)
 
-> Exactly one Transport receive owner advances each physical PSTV stream; protocol/media/control consumers use owner-defined logical/public seams and may not independently receive from the physical socket.
+ACTIVE means cross-Wire communication is available. It does not mean every
+module is ready or should start.
 
-A received logical frame must complete receiver dispatch before teardown may retire resources that dispatch could still touch. The historical H1 counter-equality plus bounded-delay fence is evidence of required ordering, not the required production synchronization mechanism.
+Each cross-Wire module owns its own start/readiness/stop/failure lifecycle and
+must completely retire its old running instance before replacement startup or
+reuse of module-owned live resources. Wire loss is a stop condition for the
+affected cross-Wire behavior.
 
-## Binding component / directory / bridge invariant
+Transport authority issued to a module instance is valid only for the Wire
+Session under which it was created. Old Session-A authority cannot become
+Session-B authority, cannot consume B inbound state, and cannot send through B.
+Transport owns that communication-validity fence. Transport does **not** own a
+generic module-retirement manager or project-wide admitted-call drain.
 
-The ledge branch now makes the following source-structure rule explicit and binding:
+If a module cannot prove complete local retirement, that module may add the
+smallest module-specific identity/fencing its actual asynchronous behavior earns.
+See `docs/development/module-lifecycle.md`.
 
-> **Inside one genuine component/local-cooperation directory:** internal implementation files may cooperate directly.
->
-> **Across a real component boundary:** communication must pass through the owning component's defined bridge or public process seam.
+## Wire Session identity versus MPEG generation identity
 
-This has several consequences:
+Do not collapse these two dimensions.
 
-- directory membership represents coherent responsibility/local cooperation, not call-site convenience;
-- unrelated owners may not be moved into one directory merely to avoid a bridge;
-- a component bridge is organized around that component's coherent owned processes, not around destinations or callers;
-- destination-specific sprawl such as `input_to_rfb`, `input_to_ui`, `presentation_to_transport`, or `transport_to_everything` is prohibited unless evidence establishes a truly separate owned process rather than convenience routing;
-- application may coordinate several owners, but still consumes every owner through that owner's public bridge;
-- test doubles implement the same public owner boundary used by production callers;
-- no component may export another owner's private socket, queue, parser, decoder-worker, compositor, or input state merely to bypass the owner bridge.
+Wire Session identity fences work across physical connections.
 
-The converse is equally important: files that genuinely belong to one local cooperation boundary need not communicate through artificial per-file bridge layers. Do not create generic indirection merely to make adjacent internal modules look separated.
+MPEG generation/run identity fences stale MPEG-run work across MPEG activations
+inside a Wire Session. Multiple MPEG generations may occur inside one Wire
+Session. An MPEG generation cannot survive loss of its owning Wire Session.
+Reconnect does not silently restart MPEG.
 
-## Dependency-facing contracts versus implementations
+Generation identity remains legitimate runtime/run fencing; Q12 does not remove
+it. Q6 does remove the older assumption that "generation" itself is the
+user-facing product meaning of MPEG activation.
 
-A public contract means another owner may rely on an operation/fact. It does **not** mean the real underlying implementation is complete, cross-machine validated, or hardware qualified.
+## MPEG activation and retirement
 
-Downstream reconstruction may use deterministic fakes at public owner boundaries to prove consumer behavior. Such tests may support `CONTRACT_TESTED` or `HOST_TESTED`; they do not support `REAL_TRANSPORT_IMPLEMENTED`, `CROSS_MACHINE_VALIDATED`, or `HARDWARE_QUALIFIED`.
+MPEG activation is an Application/domain lifecycle transaction. The MPEG region
+is durable domain meaning; manual MPEG calibration is one current source of that
+region definition, not the definition of MPEG behavior itself.
 
-No fake production Transport, generic event bus, callback framework, or alternate receiver may be created merely to satisfy a consumer during the deferral.
+On MPEG stop:
 
-## Transport public contract
-
-Existing clean Transport bridge/session concepts remain the starting authority and should be extended only when an actual downstream consumer requires a missing owner-correct operation.
-
-Transport owns:
-
-### Session lifecycle
-
-- session open;
-- optional AUDIO/MPEG composition where already adopted;
-- abort;
-- receiver completion/dormancy;
-- close;
-- explicit mechanism-level terminal/failure state.
-
-### RFB logical stream
-
-- logical reads;
-- polling/service;
-- logical writes;
-- quiesce/freeze-boundary operations.
-
-### AUDIO
-
-- logical reads;
-- producer status;
-- activity snapshot/wait.
-
-### MPEG
-
-- logical reads;
-- producer status;
-- activity snapshot/wait;
-- publication of real finite producer completion when the real producer exists.
-
-### Exact control mechanism
-
-The contract may expose narrowly scoped operations required by consumers, including:
-
-- send explicit START control;
-- send RETIRE request/control;
-- publish/observe inbound exact START/RETIRE control identity through the sole receiver;
-- expose immutable validated Transport/session/config facts that are genuinely mechanism-owned;
-- expose explicit Transport terminal/quiescence/failure facts.
-
-The existing result vocabulary distinguishing states such as `OK`, `WOULD_BLOCK`, `STOPPED`, `EXHAUSTED`, `CLOSED`, `INVALID`, and `FAILED` remains the preferred narrow mechanism vocabulary.
-
-Transport does **not** expose:
-
-- raw sockets;
-- receiver threads;
-- queue internals;
-- physical sequence implementation;
-- Pi service implementation;
-- send-lease internals;
-- parser internals;
-- generic callback/event-bus machinery;
-- guessed future operations.
-
-Transport remains a replaceable mechanism owner.
-
-## Facts that are explicitly not Transport-owned
-
-Messages may carry these facts over PSTV, but Transport does not own their semantics:
-
-- `GENERATION_PREPARED`;
-- `GENERATION_ACTIVE`;
-- `CAPTURE_INSTALLED`;
-- `SUPPRESSION_INSTALLED`;
-- `PRODUCER_ADMITTED`;
-- `RETIREMENT_PROVEN`;
-- `FIRST_MPEG_FRAME_DECODED`;
-- `FIRST_PHYSICAL_MPEG_FRAME`;
-- `VISUAL_OWNERSHIP_PROMOTED`;
-- `COMMON_MEDIA_EPOCH_ARMED`;
-- `RFB_RESTORATION_ALLOWED`.
-
-Those facts belong to the owner that can actually prove them.
-
-## Exact-generation owner contract
-
-The exact-generation/application-side owner is the authority for:
-
-- active session identity used for exact-generation validation;
-- highest/prepared generation rules;
-- immutable prepared START geometry/state;
-- stale/repeated/conflicting START rejection without mutation;
-- exact preparation fact `GENERATION_PREPARED`;
-- exact retirement request coordination;
-- publication of `RETIREMENT_PROVEN` only after the real exact-generation retirement fence has succeeded.
-
-Historical H1 `H1Session.reader()` and exact-generation application state remain forensic evidence. Revision 0002's **Pi PSTV Session** and **Pi Exact-Generation Coordinator** names remain the intended responsibility split, but revision 0003 supersedes the instruction to immediately create `pi/pstv/` autonomously. The later manual session must first inspect/adopt the actual Pi PSTV runtime/service ownership, then place the mechanism and coordinator according to genuine local cooperation boundaries.
-
-Active Pi desktop bounds remain immutable Pi-local session metadata supplied by the Pi desktop/session authority; they are not derived from START and are not PS2 **DESKTOP CALIBRATION** state.
-
-## MPEG owner contract
-
-MPEG owns decoder/worker behavior and decode/upload readiness. It may expose decoded/upload-ready state through its own bridge when required by another owner.
-
-MPEG does not own:
-
-- PSTV socket/framing;
-- exact-generation preparation or retirement proof;
-- physical composition;
-- visual ownership promotion;
-- common-clock arm.
-
-`FIRST_MPEG_FRAME_DECODED` is not `FIRST_PHYSICAL_MPEG_FRAME`.
-
-## Presentation owner contract
-
-Presentation owns:
-
-- one physical GS/composition path;
-- resolved draw geometry;
-- inner matte and outer suppression rendering;
-- presentation ownership state used for drawing;
-- physical presentation boundary;
-- common-media-epoch arm callsite;
-- absolute common-clock scheduling and qualified lateness/drop policy.
-
-Presentation alone can publish `FIRST_PHYSICAL_MPEG_FRAME` and `VISUAL_OWNERSHIP_PROMOTED` from the physical presentation boundary. CONFIG, calibration acceptance, START send, producer admission, queueing, decode, or upload do not establish those facts.
-
-Within one real presentation component directory, compositor/render/timing files may cooperate directly. Calls to calibration, RFB, MPEG, Transport, Input/UI, or Application cross the owning bridge.
-
-## MPEG CALIBRATION owner contract
-
-**MPEG CALIBRATION** remains distinct from **DESKTOP CALIBRATION**.
-
-MPEG CALIBRATION owns edit/review/commit semantics and one committed geometry containing:
-
-- exact base rectangle used for capture/presentation;
-- PS2-local inner matte;
-- outer suppression footprint used to derive presentation/RFB ownership perimeter.
-
-Acceptance emits one immutable committed geometry. Do not create a second competing geometry store or accepted-edge detector just to cross a component boundary. Presentation consumes resolved geometry through the calibration/public owner seam. Exact-generation preparation consumes only the exact generation inputs it owns; inner matte remains local Presentation data and is not Pi START geometry.
-
-## RFB owner contract
-
-RFB owns protocol/framebuffer truth, safe complete-message freeze/quiescence, request mechanics, and fresh-full-update obligation. `RFB_QUIESCED` and the full-refresh obligation are published through RFB's bridge.
-
-RFB does not learn MPEG/Presentation/Transport internals. Restoration policy may be coordinated by Application using owner facts, but the RFB owner performs the actual protocol/request operation.
-
-## Input / UI owner contract
-
-Input/UI owns physical controller observation, semantic foreground ownership, mouse/pointer/button/wheel interpretation, keyboard/modifier serialization, OSK/local foreground, release quarantine, suspend/rebase/resume state, and cooperative dormancy/teardown.
-
-Input/UI may publish facts such as `INPUT_DORMANT` or foreground handoff state. It does not perform RFB or Transport socket operations.
-
-## Application owner contract
-
-Application owns cross-owner ordering and product policy only. It may coordinate public owner facts such as:
-
-- `TRANSPORT_SESSION_READY`;
-- `TRANSPORT_RECEIVER_DORMANT`;
-- `GENERATION_PREPARED`;
-- `RETIREMENT_PROVEN`;
-- `RFB_QUIESCED`;
-- `INPUT_DORMANT`;
-- `FIRST_PHYSICAL_MPEG_FRAME`.
-
-Application must obtain each through the owning bridge. Correct Application coordination against deterministic fakes proves the consumer policy, not the deferred producer of the fake fact.
-
-## A003 accepted/deferred boundary
-
-Accepted coherent A003 work must be preserved:
-
-- A003-P1 Transport MPEG logical-channel/decoder core;
-- START kind `11`, control channel `0`, flags `0`;
-- exact 44-byte START v1 representation;
-- RETIRE kind `10`, control channel `0`, flags `0`;
-- exact 12-byte RETIRE representation;
-- opaque `DATA/channel 4` MPEG media;
-- no magic-44-byte MPEG discrimination;
-- no per-packet generation tags;
-- 44-byte MPEG-media regression;
-- accepted ordered PS2 START send behavior.
-
-The durable deferred item is:
-
-`docs/ledge/LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION.md`
-
-Its status is `A003_TRANSPORT_PI_MANUAL_COMPLETION_DEFERRED`.
-
-The active autonomous P2A-completion packet from Foreman state 0015 is superseded. Reconstruction is not authorized to create/adopt a production `pi/pstv/` runtime, implement real Pi exact-generation mechanics, or advance P2B/P2C/P2D merely to remove the pending labels.
-
-A003 remains incomplete until the deferred manual item is completed.
-
-## Downstream reconstruction release
-
-The Transport/Pi deferral is not a project-wide stop. A downstream criterion may become source/contract/host/build complete when its own local behavior is complete, while retaining precise external dependency labels.
-
-### A004 — Presentation / MPEG CALIBRATION
-
-A004 may proceed with owner-local behavior against contracts, including:
-
-- MPEG CALIBRATION edit/review/commit behavior;
-- base rectangle, inner matte, outer suppression footprint;
-- immutable accepted geometry;
-- foreground calibration semantics;
-- RFB safe freeze/full-refresh policy;
-- accept-to-first-frame protection;
-- one physical Presentation/GS owner;
-- compositor ordering;
-- first physical MPEG frame promotion;
-- common-clock arm callsite;
-- scheduler/deadline/drop policy;
-- local overlays;
-- restoration conditioned on abstract `RETIREMENT_PROVEN`.
-
-A004 must not implement the Pi mechanism that produces `RETIREMENT_PROVEN`.
-
-### A005 — Interaction / Input
-
-A005 may proceed broadly with input polling/continuity, mouse interpretation, pointer/buttons/wheel, keyboard/modifier serialization, OSK/local foreground, release quarantine, suspend -> neutralize -> rebase -> release -> resume, calibration foreground handoff, parser-safe publication, and cooperative teardown. Every cross-owner call uses that owner's bridge.
-
-### A006 — Application orchestration
-
-A006 may proceed with resident startup, session admission, CONFIG/profile consumption, component startup dependencies, steady-state coordination, failure convergence, terminal result aggregation, reverse teardown, and repeated-session structure against public owner contracts.
-
-A006 may not reach into Transport, MPEG, Presentation, RFB, Input/UI, or deferred Pi exact-generation internals. Its host tests may inject public owner facts but must label real-owner dependencies as pending.
-
-## Acceptance and evidence discipline
-
-Permitted downstream status vocabulary includes:
-
-- `SOURCE_COMPLETE`;
-- `CONTRACT_COMPLETE`;
-- `CONTRACT_TESTED`;
-- `HOST_TESTED`;
-- `PS2_COMPILE_PASS`;
-- `PS2_LINK_PASS`;
-- precise external pending labels such as `PENDING_MANUAL_TRANSPORT`, `PENDING_CROSS_MACHINE`, and `HARDWARE_PENDING` followed by the exact unproven owner fact.
-
-Do not use a generic pending label to hide incomplete local behavior. Conversely, do not fail a locally complete criterion solely because an unrelated external owner remains deliberately deferred.
-
-## Deferred A003 completion and hardware gate
-
-The required manual sequence and exact outstanding obligations are governed by `LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION.md`. That item must close before A003 can be declared complete, before real all-guns exact-generation integration can be claimed, and before final PS2/Pi hardware qualification can close.
-
-Independent Validation remains a separate authority. No architecture state, host fake, compile/link pass, or Foreman disposition constitutes independent Validation PASS or physical qualification.
+1. close admission of **new** MPEG production first;
+2. already accepted work may safely drain under its owning run;
+3. release the RFB suppression constraint so RFB restoration can begin
+   underneath while valid retiring MPEG presentation remains visible;
+4. continue module-owned MPEG retirement to a safe final boundary;
+5. remove MPEG/mattes only when safe, revealing the already-refreshing RFB state.
+
+This ordering explicitly supersedes older A003/A004 wording that required
+complete local MPEG retirement before RFB restoration could even begin.
+Historical audits/logs remain immutable evidence of the earlier understanding.
+
+No old MPEG bytes, callbacks, decoder completion or retirement completion may
+contaminate a later MPEG generation. Wire-session fencing and MPEG-generation
+fencing are independent protections.
+
+## Geometry and calibration ownership
+
+Persistent Pi configuration owns calibrated desktop/display geometry. The
+runtime desktop/session owner publishes one immutable active geometry snapshot.
+The normal product target is the existing Raspberry Pi LightDM/Xorg desktop
+`:0`, currently exposed on the PS2-facing RFB endpoint by socket-activated
+`X0tigervnc` at `192.168.50.1:5900`.
+
+The separate `127.0.0.1:5903` path is Windows/operator development tooling,
+not product architecture. The staged dedicated Openbox/lxpanel `:1` candidate
+is historical/evaluation evidence and is not the current product target.
+
+DESKTOP CALIBRATION and MPEG CALIBRATION remain distinct. MPEG calibration owns
+its base rectangle, inner matte and outer/suppression footprint semantics.
+Desktop geometry is not inferred from MPEG START, and inner matte remains
+presentation-local rather than Pi capture geometry.
+
+## Existing component ownership retained
+
+RFB owns RFB protocol/session behavior, parser/framebuffer truth, safe
+complete-message freeze/quiesce and fresh-full-update obligations through its
+public bridge.
+
+MPEG owns decoder/worker behavior and decode/upload readiness, including
+module-local retirement.
+
+Presentation owns one physical GS/composition path, resolved draw geometry,
+matte/suppression rendering, visible ownership, physical presentation boundary
+and common-clock arm callsite.
+
+Application owns cross-domain product transactions and recovery policy through
+public owner seams. It does not become the physical Wire mechanism owner.
+
+Input/UI owns controller/keyboard/local-foreground semantics and does not own
+Wire, RFB protocol, MPEG decode or Presentation internals.
+
+## Evidence boundaries
+
+The Q1-Q12 hardware detour supplies architecture evidence, not blanket product
+qualification:
+
+- Proof 1A: establishment/session identity and completely idle session worked;
+- Proof 1B: incompatible establishment was rejected and never became ACTIVE;
+- Proof 2: same PS2 process survived loss and established a distinct new session;
+- Proof 3: RFB relay capacity/credit/backpressure and consumption-gated credit worked;
+- Proof 4: single physical-I/O owner completed the tested transaction where the
+  split execution stalled; root-cause PS2IP thread safety remains NOT PROVEN;
+- Proof 4C: RFB and PCM were independent logical riders and PCM failure remained local;
+- Proof 4I plus productized requalification: cooperative idle scheduling and
+  single-I/O product Transport source worked in the bounded hardware workload;
+- Proof 5/Q12: stale A outbound authority did not enter B, stale A inbound access
+  did not consume B payload, and fresh B authority remained usable.
+
+The unexecuted MPEG Proof 6 apparatus is not product or hardware authority.
+
+## Qualification debt is not a source blocker
+
+Source reconstruction may proceed under the settled ownership/lifecycle
+contract without pretending hardware qualification exists. Preserve distinct
+evidence states such as SOURCE_COMPLETE, HOST_TESTED, PS2_COMPILE_PASS,
+PS2_LINK_PASS, MACHINE_EVIDENCE, OPERATOR_OBSERVED and HARDWARE_PROVEN.
+
+Remaining physical qualification includes final product Q4 establishment, exact
+product Wire service/runtime, reconstructed module lifecycle, MPEG one-run and
+repeated-generation behavior, stale generation N vs N+1, Wire loss during MPEG,
+Q7 overlapped RFB restoration, presentation-visible handoff, all-guns endurance
+and exact product ELF qualification.
+
+## Source reuse rule
+
+The hardware-proof branch is reference authority, not a merge target. Reuse
+product-shaped work only through bounded Reconstruction packets or
+Foreman-owned documentation/evidence integration. Proof harnesses and the
+rejected generic Transport admitted-call drain are not promoted into product
+merely because they exist.

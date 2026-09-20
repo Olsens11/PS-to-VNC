@@ -1,144 +1,153 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0020
-RECORDED_AT=2026-09-17T17:42:23-04:00
+STATE_REVISION=0021
+RECORDED_AT=2026-09-20T15:54:52-04:00
 SOURCE_COMMIT=SELF
+BASED_ON_FOREMAN_STATE_REVISION=0020
+SUPERSEDES_FOREMAN_STATE_REVISION=0020
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0005
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
-BASED_ON_RECONSTRUCTION_STATE_REVISION=0007
-BASED_ON_GLOBAL_STATE_REVISION=0035
-BASED_ON_VALIDATION_STATE_REVISION=0006
-BASED_ON_VALIDATION_FINDINGS_REVISION=0005
-BASED_ON_A003_AUDIT_REVISION=0001
-BASED_ON_A004_AUDIT_REVISION=0001
-BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0003
-BASED_ON_A003_MANUAL_COMPLETION_REVISION=0002
-BASED_ON_WIRE_TERMINOLOGY_REVISION=0001
-SUPERSEDES_FOREMAN_STATE_REVISION=0019
+BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
+BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
+BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision `0020` is a terminology-governance advance only. It keeps the currently active manual A003 engineering packet active, adopts the architecture-neutral Wire terminology from `docs/ledge/LEDGE_WIRE_TERMINOLOGY.md` revision `0001`, and queues one separate bounded terminology migration for later. It does not rename product source, does not change wire behavior, does not alter A003 acceptance criteria, and does not activate A004/A005/A006 product work.
-
-The live branch was refreshed immediately before the terminology-policy write at:
-
-`4aff9d920fd61895a1aab0d9b8f09d004fc3537f`
-
-The terminology policy was then committed as:
-
-`53274f12dcd4988a8e77985db20a4c7a96d97ba8` — `docs(architecture): adopt neutral Wire terminology`
+Revision 0021 consumes the bounded Wire/Q1-Q12 detour and resumes ledge
+reconstruction. The former manual A003 packet and its generic owner-discovery
+gate are superseded. A004 is no longer held by unresolved Wire ownership, but it
+remains dependency-queued behind the current bounded A003/Transport packet.
 
 ## Current Foreman phase
 
-`A003_MANUAL_P2A_START_PREPARED_ACTIVE__WIRE_TERMINOLOGY_DECIDED_MIGRATION_DEFERRED__A004_HELD`
+`A003_WIRE_SESSION_FOUNDATION_RECONSTRUCTION_ACTIVE__Q1_Q12_RECONCILED__A004_DEPENDENCY_QUEUED`
 
-## Active A003 manual packet remains unchanged in scope
+ARCHITECTURE_BLOCKER=NONE
+SOURCE_RECONSTRUCTION_RESUMED=YES
+HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 
-The active product packet remains:
+## Governing reconciliation authority
 
-`A003-P2A-MANUAL-START-PREPARED-R1`
+Read before product work:
 
-with stable execution identity:
+- `docs/ledge/LEDGE_Q1_Q12_RECONCILIATION.md` revision 0001;
+- `docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` revision 0011;
+- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision 0004;
+- `docs/development/module-lifecycle.md`;
+- `docs/ledge/LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION.md` revision 0004.
 
-- `ROLE_KEY=reconstruction`
-- `WORK_ITEM_KEY=a003-mpeg-generation`
-- `WORKER_KEY=interactive`
-- `EXECUTION_MODE=USER_ASSISTED_MANUAL`
-- `EXECUTION_SEAT=/home/ps2/src/PS-to-VNC-ledge-manual`
-- `NORMAL_COMMAND_PATH=ps2run-interactive`
+## Active bounded Reconstruction packet
 
-Its governing behavior authority remains `docs/ledge/LEDGE_A003_TRANSPORT_PI_MANUAL_COMPLETION.md` revision `0002` plus architecture overlay revision `0003`, A003 audit revision `0001`, and the new terminology policy revision `0001`.
+PACKET_ID=`A003-WIRE-SESSION-FOUNDATION-R1`
+PACKET_STATUS=ACTIVE
+ROLE_KEY=`reconstruction`
+WORK_ITEM_KEY=`a003-mpeg-generation`
+WORKER_KEY=`interactive`
+EXECUTION_MODE=`NORMAL_RECONSTRUCTION`
+EXECUTION_SEAT=`/home/ps2/src/PS-to-VNC-ledge-manual`
+WORKTREE_PREFLIGHT_REQUIRED=YES
+ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
+REFERENCE_HARDWARE_BRANCH=`wire/q1-q12-hardware-proof@acea15284131abf8b107352c9a6c944d1e3dd469`
 
-Nothing in this terminology decision changes the active packet objective, mandatory ownership-discussion gate, accepted START/RETIRE behavior, acceptance criteria `M1-C1` through `M1-C7`, explicit non-goals, or later deferred A003 sequence.
+### Objective
 
-Read-only real-runtime/service archaeology remains authorized immediately under the active packet. Behavior-bearing production writes still require the existing user discussion/owner-path decision first.
+Land the smallest coherent clean-product Wire/session foundation already learned
+and partly productized during the hardware detour, without importing proof
+harnesses or the rejected generic Transport drain.
 
-## Canonical architecture-neutral terminology going forward
+### Required source reuse / implementation scope
 
-`docs/ledge/LEDGE_WIRE_TERMINOLOGY.md` revision `0001` is governing terminology authority.
+Inspect current source first. Where still compatible, prefer exact reuse of the
+final hardware-branch product behavior from:
 
-Use:
+- `325cf8332212042bc78170fc8d5776a442985006` — one Transport-owned
+  physical framed-I/O execution context;
+- `03b09eb5a917cfca43001ea3322432a91c3c7473` — aligned runtime fixture;
+- `d226b59ba54ef2e3f114906564289dada132b361` — cooperative idle
+  scheduling opportunity on PS2;
+- `8f4841968f47f20eadcb18ed166df54909a30e48` — opaque,
+  Wire-lifetime-bound Transport access for RFB/audio/MPEG;
+- `e5b42f80e36e4c77e1a2f4eccfc55c1ca4457a3d` and
+  `2bbe74e7cce0eb914d9f874bb4270afa12b7cd96` — fixture adaptations.
 
-- **Wire Transport** = physical peer connection/session, ordered send/receive, framing, multiplexed logical channels, Transport flow control, and mechanism-level control delivery;
-- **Wire Protocol** = the project-owned framed protocol carried by Wire Transport, including header representation, frame kinds, channel identities, sequence semantics, START/RETIRE wire representations, and related framing/control representation;
-- **Wire Session**;
-- **Wire Frame**;
-- **Wire Channel**.
+Reconcile source dictionaries with `d31202b547...` and `c69c578a86...` only
+after final source shape is known.
 
-For architecture-neutral project-owned concepts, do not introduce endpoint-specific `PS2`, `Pi`, or `PSTV` names merely because those are the current deployed endpoints. Use responsibility-based names.
+Do **not** import `70aafb4a...`, `f088080f...`, the divergent resume branch,
+or proof harnesses as product code.
 
-Externally defined or genuinely platform-specific names remain specific when materially true, including names such as `ps2sdk`, `ps2ip`, `libpad`, `GS`, `EE`, `IOP`, and `audsrv`.
+### Required invariants
 
-Historical/forensic source and immutable historical logs remain unchanged.
+1. Exactly one Transport-owned physical framed-I/O execution context advances
+   physical Wire I/O. Riders never receive/send on the physical socket directly.
+2. The PS2 idle path provides a cooperative EE scheduling opportunity sufficient
+   for network progress. Preserve 1000 us only as the hardware-tested baseline,
+   not ABI or declared final optimum.
+3. Each ordinary cross-Wire module instance acquires opaque Transport authority
+   valid only for the active Wire Session under which it was created.
+4. Stale Session-A access remains terminal after B establishes; it may not send
+   through B or consume B inbound state. Modules do not need numeric session IDs.
+5. RFB, audio and MPEG carry/use their own acquired Transport access through
+   their public owner boundaries.
+6. Wire loss/terminal Transport access is a stop condition for the affected
+   module instance. Each affected module completely retires old local
+   workers/callbacks/queues/resources before replacement startup or reuse.
+7. Do not solve module retirement with a project-wide Transport admitted-call
+   drain. Add module-specific fencing only if source proves it necessary.
+8. Preserve Q8/Q11 rider failure containment: one rider failure does not
+   automatically fail Wire or unrelated riders.
 
-## Transition rule for the active A003 packet
+### Acceptance criteria
 
-The active packet and older governing documents contain existing `PSTV`, `Pi PSTV Session`, and similar transition-era vocabulary. Those existing words do **not** require an opportunistic rename during tonight's functional work.
+- `R1-C1 SINGLE_PHYSICAL_IO_OWNER`: final source has one Transport physical
+  framed-I/O owner and no rider physical-socket bypass.
+- `R1-C2 COOPERATIVE_IDLE_PROGRESS`: the PS2 idle path preserves the
+  hardware-supported scheduling invariant without making the tested delay ABI.
+- `R1-C3 SESSION_BOUND_ACCESS`: opaque access is acquired per module instance
+  and stale A access is rejected after session replacement.
+- `R1-C4 RIDER_INTEGRATION`: RFB/audio/MPEG product paths and deterministic
+  fixtures use the access-bound public seam.
+- `R1-C5 MODULE_RETIREMENT`: affected module lifecycle evidence proves
+  complete old-instance retirement before replacement/resource reuse, or the
+  smallest module-local repair is landed where necessary.
+- `R1-C6 NO_REJECTED_DRAIN`: no generic Transport admitted-call drain or
+  resume-branch Q12 candidate is present.
+- `R1-C7 DETERMINISTIC_CHECKS`: focused host tests, canonical host suite,
+  `scripts/check.sh`, dictionary checks and available PS2 compile/link gates
+  pass from the worker's normal execution seat.
+- `R1-C8 EVIDENCE_BOUNDARY`: report SOURCE/HOST/PS2 compile/link separately;
+  make no new HARDWARE_PROVEN claim without a physical run.
 
-Interpret architecture-neutral uses according to the new Wire terminology, but:
+### Explicit non-goals
 
-- existing committed identifiers may remain as-is;
-- existing source/API names must not be half-renamed inside unrelated functional changes;
-- new architecture-neutral concepts created by the active worker must use neutral responsibility vocabulary where available;
-- real endpoint/platform references may still say `PS2` or `Pi` when the endpoint itself is actually relevant;
-- current ownership archaeology may quote actual process/service/file names exactly even when they contain legacy vocabulary.
+This packet does not require final clean product Q4 establishment, Pi Wire-server
+service packaging/reproducibility, MPEG activation/retirement state machine,
+repeated MPEG generations, Q7 overlapped restoration implementation, A004
+product work, or a physical PS2 run.
 
-This is an interpretation/naming rule, not a second engineering objective for the active worker.
+### Worker return
 
-## Wire behavior remains frozen by this naming decision
-
-No terminology work may change:
-
-- wire magic bytes;
-- protocol version;
-- frame kinds;
-- channel IDs;
-- header representation;
-- sequence behavior;
-- START identity or payload layout;
-- RETIRE identity or payload layout;
-- accepted MPEG `DATA/channel 4` behavior;
-- any other accepted wire behavior.
-
-The existing A003 facts remain preserved, including START kind `11` / control channel `0` / flags `0`, exact 44-byte START v1, RETIRE kind `10` / control channel `0` / flags `0`, exact 12-byte RETIRE, no payload-length sniffing, no per-MPEG-packet generation tags, and the accepted ordered outbound START framing.
-
-## Deferred bounded migration — WIRE-TERMINOLOGY-MIGRATION-R1
-
-MIGRATION_ID=`WIRE-TERMINOLOGY-MIGRATION-R1`
-WORK_ITEM_KEY=`global-wire-terminology`
-PACKET_STATUS=`DEFERRED__DO_NOT_WAKE_DURING_ACTIVE_A003_MANUAL_SESSION`
-TARGET_WORKER=`UNASSIGNED_UNTIL_FUTURE_FOREMAN_WAKE`
-GOVERNING_TERMINOLOGY=`LEDGE_WIRE_TERMINOLOGY.md:0001`
-
-Objective: perform one bounded terminology/source-name migration after the current interactive engineering packet returns its baton, without changing behavior.
-
-The migration must inventory and classify each candidate occurrence before editing:
-
-- `A` project-owned architecture term -> migrate to canonical Wire terminology;
-- `B` external/platform named entity -> preserve;
-- `C` historical/forensic evidence -> preserve;
-- `D` stable wire-format identifier/constant -> preserve where compatibility requires;
-- `E` ambiguous occurrence -> inspect; never mechanically replace.
-
-The migration must specifically inspect rather than assume:
-
-- whether `pstvnc_` is a stable project namespace or deprecated component terminology;
-- whether `src/transport/` is already sufficiently responsibility-based and should remain unchanged.
-
-A global string replacement is prohibited. The migration may not alter wire behavior or accepted lifecycle semantics.
+Return exact source/test/docs files changed, whether each referenced
+hardware-line commit was adopted exactly or semantically reapplied, criterion
+dispositions, executed commands/results, any dirty/local work found during
+preflight, and the exact next blocker/baton point. Emit exactly one immutable
+Reconstruction shift log using the existing `a003-mpeg-generation` work-item
+key.
 
 ## A004 disposition
 
-`A004-MPEG-CALIBRATION-CORE-R2` remains held. The terminology migration is also held. Tonight's active work remains only `A003-P2A-MANUAL-START-PREPARED-R1`.
+A004 is no longer held on unresolved Wire ownership. Its historical audit remains
+valid except where current Q7 supersedes restoration ordering. It remains
+dependency-queued until this Transport/session foundation returns.
+
+## Remaining hardware qualification debt
+
+HARDWARE_PENDING=final product Q4 establishment; exact product Wire service/runtime; reconstructed module lifecycle; MPEG one-run/repeated generations/stale N-vs-N+1/Wire-loss; Q7 overlapped RFB restoration; presentation-visible handoff; full all-guns endurance; exact product ELF; native Pi RFB reproducibility/lifecycle qualification
 
 ## Foreman next pickup
 
-Take the baton back when the active A003 packet reaches its existing Foreman stop point. Do not wake `WIRE-TERMINOLOGY-MIGRATION-R1` merely because it is now queued.
-
-When a later Foreman deliberately activates that migration, size it as one bounded non-behavioral naming tranche with explicit inventory/classification evidence and canonical checks.
-
-PENDING_MANUAL_TRANSPORT=A003 actual Wire Transport/session owner; sole receive ownership; exact START semantic/prepared-generation implementation; later producer/emission/retirement fence; PS2 exact completion/decoder join/drain-credit; repeated-generation same-stream proof
-PENDING_TERMINOLOGY_MIGRATION=global-wire-terminology / WIRE-TERMINOLOGY-MIGRATION-R1
-PENDING_CROSS_MACHINE=A003 real PS2/Pi generation transaction and later all-guns owner integration
-HARDWARE_PENDING=A001 physical PS2 qualification; A002 physical audio/common-clock qualification; A003 physical MPEG/video qualification; A004-A006 later physical/all-guns qualification
+Consume the `A003-WIRE-SESSION-FOUNDATION-R1` worker baton. If coherent,
+integrate non-behavioral dictionary/topology evidence as needed and issue the
+next bounded packet. Do not reopen Q1-Q12 merely because physical qualification
+remains pending.

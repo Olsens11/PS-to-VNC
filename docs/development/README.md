@@ -88,6 +88,29 @@ it that:
 
 These are architecture and continuity requirements rather than optional style.
 
+## Cross-Wire module lifecycle
+
+Before creating or materially changing a module that performs cross-Wire work,
+read:
+
+    module-lifecycle.md
+
+The project-wide default is:
+
+- Wire owns communication validity;
+- each module owns whether and when it runs;
+- an ordinary module has one running instance at a time;
+- the old instance completely stops before restart;
+- reconnect uses the module's ordinary startup path;
+- Wire availability is a prerequisite, not a universal module-start trigger;
+- old Transport work can never be redirected through a replacement Wire
+  Session;
+- Wire Session IDs and module generation IDs are introduced outside Transport
+  only when an owning subsystem has an independent reason to need them.
+
+This contract deliberately separates Transport correctness from module business
+policy.
+
 ## Two-layer model
 
 ### Portable continuity layer
