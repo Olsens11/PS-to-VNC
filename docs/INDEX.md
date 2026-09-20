@@ -221,6 +221,7 @@ Development-system policy:
 - `docs/development/testing.md`
 - `docs/development/tooling.md`
 - `docs/development/lessons-learned.md`
+- `docs/development/module-lifecycle.md` — cross-Wire module lifecycle, complete-retirement, and Transport-owned communication-validity contract.
 - `docs/development/source-naming-and-symbols.md`
 - `docs/development/source-topology.md`
 - `docs/development/source-dictionary-validator.md`
