@@ -1760,13 +1760,34 @@ durable state, and Transport-validity boundary must be understood.
 
 ### Implementation status
 
-This Q12 section defines the architectural target.
+The product Transport bridge now issues opaque module-facing access bound to the
+Wire lifetime in which it was acquired. RFB, PCM/audio, and MPEG carry only that
+opaque access rather than copied Wire Session IDs.
 
-At this checkpoint, the current product Transport bridge still requires source
-work to guarantee that old Transport access cannot be retargeted through a
-replacement Wire Session.
+Host regression coverage proves that stale access A is rejected after Session B
+is established and cannot invoke B's logical runtime operations.
 
-No source-level or hardware Q12 proof is claimed by this documentation change.
+Real-PS2 run `Q12-STALE-HW1-20260920T011710Z` additionally proves the post-reconnect admission fence in
+both directions: stale A outbound traffic does not enter B, and a stale A read
+does not consume known B inbound data while fresh B access remains usable.
+
+That hardware result is intentionally bounded. It does **not** yet prove the
+stronger in-flight case where an operation was admitted under A before loss and
+is still unwinding while retirement/replacement is attempted. Because the
+current implementation reuses one singleton Transport runtime, complete Q12
+closure still requires an admission/drain lifetime fence that prevents runtime
+release/reinitialization until every already-admitted A call has returned.
+
+Current classification:
+
+    POST_RECONNECT_STALE_ACCESS_FENCING_HOST_PROVEN=YES
+    POST_RECONNECT_STALE_ACCESS_FENCING_HARDWARE_PROVEN=YES
+    IN_FLIGHT_A_OPERATION_DRAIN_PROVEN=NO
+    FULL_Q12_ARCHITECTURAL_FENCE_PROVEN=NO
+
+Result authority:
+
+    experiments/wire-q1-q12-proof/PROOF5_Q12_STALE_ACCESS_HW1_RESULT.md
 
 
 ## Historical/current state versus target state
