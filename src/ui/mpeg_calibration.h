@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 
-enum {
+enum pstvnc_mpeg_calibration_action {
     PSTVNC_MPEG_CALIBRATION_UP = 1u << 0,
     PSTVNC_MPEG_CALIBRATION_RIGHT = 1u << 1,
     PSTVNC_MPEG_CALIBRATION_DOWN = 1u << 2,
