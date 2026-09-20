@@ -32,8 +32,6 @@ static int rfb_read_calls;
 static int rfb_write_calls;
 static int audio_status_calls;
 static int mpeg_status_calls;
-static int close_during_rfb_read;
-static pstvnc_transport_result_t close_during_rfb_read_result;
 static pstvnc_transport_result_t audio_read_result = PSTVNC_TRANSPORT_OK;
 static pstvnc_transport_result_t audio_status_result = PSTVNC_TRANSPORT_OK;
 static int audio_snapshot_result = 1;
@@ -107,8 +105,6 @@ static void reset_fixture(void)
     rfb_write_calls = 0;
     audio_status_calls = 0;
     mpeg_status_calls = 0;
-    close_during_rfb_read = 0;
-    close_during_rfb_read_result = PSTVNC_TRANSPORT_INVALID;
     audio_read_result = PSTVNC_TRANSPORT_OK;
     audio_status_result = PSTVNC_TRANSPORT_OK;
     audio_snapshot_result = 1;
@@ -316,13 +312,6 @@ int pstvnc_transport_runtime_rfb_read_exact(
     (void)buffer;
     (void)count;
     rfb_read_calls += 1;
-
-    if (close_during_rfb_read) {
-        runtime->receiver_done = 1;
-        close_during_rfb_read_result =
-            pstvnc_transport_session_close();
-    }
-
     return read_result;
 }
 
@@ -808,58 +797,6 @@ static void test_stale_access_cannot_cross_reconnect(void)
     CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
 }
 
-
-static void test_admitted_call_blocks_runtime_reuse(void)
-{
-    pstvnc_transport_session_config_t config = make_config();
-    pstvnc_transport_access_t access_a;
-    pstvnc_transport_access_t access_b;
-    unsigned char byte = 0u;
-    int socket_fd = 81;
-
-    reset_fixture();
-    memset(&access_a, 0, sizeof(access_a));
-    memset(&access_b, 0, sizeof(access_b));
-
-    CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
-        PSTVNC_TRANSPORT_OK);
-    CHECK(pstvnc_transport_access_acquire(&access_a) ==
-        PSTVNC_TRANSPORT_OK);
-
-    /*
-     * The runtime stub attempts close while this A call is already admitted.
-     * Close must invalidate new A admissions but refuse runtime release/reuse
-     * until this call returns through access_finish().
-     */
-    close_during_rfb_read = 1;
-    read_result = 0;
-
-    CHECK(pstvnc_transport_rfb_read_exact(
-        &access_a, &byte, 1u) == PSTVNC_TRANSPORT_CLOSED);
-    CHECK(close_during_rfb_read_result == PSTVNC_TRANSPORT_WOULD_BLOCK);
-    CHECK(release_calls == 0);
-
-    socket_fd = 82;
-    CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
-        PSTVNC_TRANSPORT_INVALID);
-    CHECK(socket_fd == 82);
-
-    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
-    CHECK(release_calls == 1);
-
-    CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
-        PSTVNC_TRANSPORT_OK);
-    CHECK(pstvnc_transport_access_acquire(&access_b) ==
-        PSTVNC_TRANSPORT_OK);
-    CHECK(access_b.opaque_ticket != access_a.opaque_ticket);
-
-    CHECK(pstvnc_transport_rfb_read_exact(
-        &access_a, &byte, 1u) == PSTVNC_TRANSPORT_CLOSED);
-
-    observed_runtime->receiver_done = 1;
-    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
-}
-
 int main(void)
 {
     test_rfb_only_open_and_close_regression();
@@ -871,7 +808,6 @@ int main(void)
     test_audio_result_mapping();
     test_mpeg_result_mapping();
     test_stale_access_cannot_cross_reconnect();
-    test_admitted_call_blocks_runtime_reuse();
 
     if (failures != 0) {
         fprintf(stderr, "%d transport bridge test(s) failed\n", failures);

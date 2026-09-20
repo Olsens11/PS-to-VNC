@@ -232,6 +232,41 @@ is rejected before it can affect B.
 The module need only interpret the terminal Transport condition as a reason to
 stop its current instance. It does not need to know the Wire Session number.
 
+## Transport fencing does not replace module retirement
+
+Transport and module lifecycle defend different boundaries.
+
+Transport owns whether a cross-Wire operation may use the current Wire Session.
+The module owns whether work from its old running instance may still exist
+locally.
+
+That means the default contract is deliberately two-part:
+
+    Transport:
+        old Wire authority cannot become replacement-session authority
+
+    Module:
+        old running-instance work is completely retired before a replacement
+        module instance starts or old module resources are reassigned
+
+Transport is therefore allowed to rely on the module's complete-stop invariant
+instead of maintaining a project-wide generation/refcount scheme merely to
+police module retirement.
+
+An operation whose Wire exchange completed while Session A was still valid may
+finish as the last valid A work. If Wire A ends before a further cross-Wire leg
+can complete, Transport returns a terminal result rather than completing through
+Session B. Any local continuation that still exists after that point belongs to
+the old module instance and must disappear as part of that module's stop.
+
+The stale-Transport-access fence remains a backstop: if old module code tries to
+start new cross-Wire work after A has ended, even after B exists, the old access
+is terminal and cannot be retargeted to B.
+
+If a module cannot prove complete local retirement before replacement startup,
+that module has earned module-specific fencing. Transport does not grow a
+generic module-lifecycle mechanism to compensate for that module deficiency.
+
 ## Normal restart, not reconnect-specific migration
 
 Reconnect does not create a second lifecycle implementation inside each module.
@@ -289,6 +324,27 @@ The rule is:
 > exists.
 
 Extra identity is earned by the subsystem that actually needs it.
+
+## Minimum requirements for a cross-Wire module
+
+Every cross-Wire module must satisfy these minimum requirements:
+
+- own its start condition and stop condition;
+- treat Wire loss or terminal Transport access as a stop condition for the
+  affected cross-Wire behavior;
+- have at most one ordinary running instance at a time;
+- completely retire the old instance before a replacement instance starts or
+  its live resources are reassigned;
+- ensure no old worker, callback, queued item, or local completion can publish
+  into replacement-instance state after stop completes;
+- acquire fresh Transport access through ordinary startup rather than rebinding
+  or migrating old access;
+- keep only explicitly durable state across instances;
+- add module-specific identity/fencing only when complete retirement cannot be
+  established by ordinary lifecycle ownership.
+
+These are module-owned requirements even though Transport documentation depends
+on them when describing the complete cross-session safety argument.
 
 ## Required lifecycle description for a module
 

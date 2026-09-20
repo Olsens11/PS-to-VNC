@@ -1645,23 +1645,30 @@ The module need not know the concrete identity.
 
 ### Session termination invalidates old Transport authority
 
-If Wire Session A ends, Transport access issued under A becomes terminal and
-outstanding A work can no longer make a valid round trip.
+If Wire Session A ends, Transport access issued under A becomes terminal.
 
 That remains true even after Wire Session B is active.
 
-Old A work may not be sent through B, completed through B, retried automatically
-through B, rebound to B, interpreted as B work, or allowed to mutate B-owned
-runtime state.
+No new cross-Wire leg may be started through A after that point, and work still
+waiting on A's Wire lifetime may not complete by silently using B. Old A work may
+not be sent through B, retried automatically through B, rebound to B, interpreted
+as B work, or allowed to consume B-owned inbound state.
 
-An operation admitted under one Wire Session can never make a valid round trip
-through another Wire Session.
+Work whose Wire exchange already completed while A was valid is simply final
+valid A work. If a local continuation still exists after A ends, it remains part
+of the old module instance and is retired by that module's stop path; it is not
+reclassified as B work.
+
+The concrete opaque ticket is module-facing authority, not necessarily a literal
+tag attached to every byte or callback. The invariant is ownership: a Wire
+exchange valid under A never becomes valid under B.
 
 ### Transport is the final stale-work fence
 
 Normal module behavior stops promptly when Wire becomes unavailable.
 
-Transport nevertheless remains safe if module shutdown races with reconnect.
+Transport nevertheless remains the final cross-Wire backstop if an old module
+worker has not yet observed shutdown and tries to initiate more remote work.
 
 For example:
 
@@ -1669,21 +1676,44 @@ For example:
         |
     old Wire Session is gone
         |
-    replacement Wire Session is already active
+    replacement Wire Session is current
         |
-    old work reaches Transport
+    old worker attempts new cross-Wire work
 
-The old work still uses only its old Transport authority and therefore becomes
-terminal.
+The old worker still holds only its old Transport authority. That authority is
+terminal, so the attempted operation is rejected before it can become B work.
 
-It cannot be retargeted merely because a replacement Wire Session is now
-current.
+This is the final communication-validity fence if something from the old module
+instance "bolts out the gate" before normal shutdown catches it.
 
-This is the final correctness fence if something from the old module instance
-"bolts out the gate" before normal shutdown catches it.
+Transport does not thereby become the owner of that module's local workers,
+callbacks, queues, or retirement process. Those remain module-owned.
 
-The same rule applies on the return path: a late response or completion from the
-old validity domain cannot be accepted as replacement-session work.
+### Transport documentation depends on module-owned complete retirement
+
+The complete cross-session safety argument has two owners and both are required:
+
+    Transport
+        -> stale A authority cannot communicate through B
+
+    module lifecycle
+        -> old A local work completely stops before replacement module
+           startup or reuse of module-owned live resources
+
+The second rule is a module invariant, not a Transport implementation job.
+
+Transport documentation states it explicitly because it is part of the system
+logic at this boundary. It must not remain only implicit "between the lines."
+
+Accordingly, Transport does not add a generic project-wide admitted-call counter,
+module generation counter, or module-retirement manager merely to enforce this
+rule. If a particular module cannot establish complete retirement, that module
+must add the smallest module-specific fence required by its own asynchronous
+behavior.
+
+The reusable minimum module requirements are maintained in:
+
+    docs/development/module-lifecycle.md
 
 ### Reconnect uses ordinary module startup
 
@@ -1760,30 +1790,36 @@ durable state, and Transport-validity boundary must be understood.
 
 ### Implementation status
 
-The product Transport bridge now issues opaque module-facing access bound to the
+The product Transport bridge issues opaque module-facing access bound to the
 Wire lifetime in which it was acquired. RFB, PCM/audio, and MPEG carry only that
 opaque access rather than copied Wire Session IDs.
 
 Host regression coverage proves that stale access A is rejected after Session B
 is established and cannot invoke B's logical runtime operations.
 
-Real-PS2 run `Q12-STALE-HW1-20260920T011710Z` additionally proves the post-reconnect admission fence in
-both directions: stale A outbound traffic does not enter B, and a stale A read
-does not consume known B inbound data while fresh B access remains usable.
+Real-PS2 run `Q12-STALE-HW1-20260920T011710Z` proves the same Transport boundary
+in both directions: stale A outbound traffic does not enter B, a stale A read
+does not consume known B inbound data, and fresh B access remains usable.
 
-That hardware result is intentionally bounded. It does **not** yet prove the
-stronger in-flight case where an operation was admitted under A before loss and
-is still unwinding while retirement/replacement is attempted. Because the
-current implementation reuses one singleton Transport runtime, complete Q12
-closure still requires an admission/drain lifetime fence that prevents runtime
-release/reinitialization until every already-admitted A call has returned.
+The earlier interpretation that Q12 additionally required a generic
+Transport-owned admitted-call drain was rejected after ownership review. That
+would move the module's complete-stop-before-restart responsibility into
+Transport. Complete local retirement remains a mandatory module invariant and
+must be proven by each module where its lifecycle is implemented or changed.
 
 Current classification:
 
-    POST_RECONNECT_STALE_ACCESS_FENCING_HOST_PROVEN=YES
-    POST_RECONNECT_STALE_ACCESS_FENCING_HARDWARE_PROVEN=YES
-    IN_FLIGHT_A_OPERATION_DRAIN_PROVEN=NO
-    FULL_Q12_ARCHITECTURAL_FENCE_PROVEN=NO
+    Q12_TRANSPORT_SESSION_VALIDITY_HOST_PROVEN=YES
+    Q12_TRANSPORT_SESSION_VALIDITY_HARDWARE_PROVEN=YES
+    STALE_A_OUTBOUND_FENCING_HARDWARE_PROVEN=YES
+    STALE_A_INBOUND_NONCONSUMPTION_HARDWARE_PROVEN=YES
+    FRESH_B_ACCESS_HARDWARE_PROVEN=YES
+    MODULE_COMPLETE_STOP_BEFORE_RESTART=REQUIRED
+    MODULE_LIFECYCLE_PROOF_SCOPE=MODULE_OWNER
+
+This does not change the separate Q4 limitation: Wire establishment in the Q12
+DUT was proof-local, so the generic exact product ELF is not thereby hardware
+proven.
 
 Result authority:
 

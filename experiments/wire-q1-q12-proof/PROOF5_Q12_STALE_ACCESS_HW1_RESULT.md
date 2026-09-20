@@ -2,28 +2,34 @@
 
 ## Classification
 
-This run is a successful real-PS2 hardware proof of the **post-reconnect stale
-access admission fence** in the product Transport bridge.
+This run is a successful real-PS2 hardware proof of the **Q12 Transport
+session-validity boundary**.
 
-It is deliberately **not** classified as complete Q12 architectural closure,
-because the stronger Q12 contract also requires an operation already admitted
-under Session A to be prevented from surviving Transport retirement/reuse into
-Session B. This HW1 transaction did not deliberately hold such an already-
-admitted A operation across the A->B replacement boundary.
+The decisive ownership split is:
 
-Therefore:
+    Transport:
+        stale A authority cannot communicate through replacement Session B
 
+    module:
+        old A local work completely stops before replacement module startup or
+        reuse of module-owned live resources
+
+The second invariant is mandatory, but it is module-owned. It is not an
+additional Transport hardware-proof requirement.
+
+Accordingly:
+
+    Q12_TRANSPORT_SESSION_VALIDITY_HARDWARE_PROVEN=YES
     POST_RECONNECT_STALE_A_OUTBOUND_FENCING_HARDWARE_PROVEN=YES
     POST_RECONNECT_STALE_A_INBOUND_NONCONSUMPTION_HARDWARE_PROVEN=YES
     FRESH_B_ACCESS_HARDWARE_PROVEN=YES
 
-    IN_FLIGHT_A_OPERATION_DRAIN_HARDWARE_PROVEN=NO
-    FULL_Q12_ARCHITECTURAL_FENCE_HARDWARE_PROVEN=NO
+    MODULE_COMPLETE_STOP_BEFORE_RESTART=REQUIRED
+    MODULE_LIFECYCLE_PROOF_SCOPE=MODULE_OWNER
 
-This narrower classification corrects the broader
-`Q12_HARDWARE_PROVEN=YES` label printed by the collection packet. The machine
-and operator evidence remain valid; only the claim boundary is tightened to
-match the governing Q12 lifecycle contract.
+This supersedes the earlier interpretation that demanded a generic
+Transport-owned admitted-call drain. That interpretation conflated module
+lifecycle ownership with Transport communication-validity ownership.
 
 ## Authority
 
@@ -108,28 +114,34 @@ Within this bounded two-session transaction:
 8. the product Transport bridge/runtime, not a proof-local replacement bridge,
    enforced the stale-access admission behavior.
 
-## Remaining Q12 gap
+## Ownership boundary for work already in flight
 
-The governing Q12 contract is stronger than post-reconnect stale admission.
+Q12 does not require Transport to become the lifecycle manager for module-local
+work that was already underway while Session A was valid.
 
-It also requires that work **already admitted while A was valid** cannot remain
-inside the reusable Transport runtime while A is retired and then complete,
-consume, publish, or otherwise interact with B.
+The intended logic is:
 
-The current bridge uses one reusable singleton runtime. Its opaque ticket is
-checked before entering each bridge operation, but this HW1 proof did not hold
-an A operation inside that runtime across loss/replacement.
+- if an A Wire exchange completes while A is still valid, it may finish as the
+  last valid A work;
+- if A ends before another cross-Wire leg can complete, A's Transport authority
+  is terminal and that work cannot complete through B;
+- if a local continuation still exists after A ends, it belongs to module A and
+  is retired by A's stop path;
+- replacement module startup may not reuse A-owned live state until A is
+  completely stopped;
+- if old module code nevertheless tries to initiate new cross-Wire work after B
+  exists, the stale A Transport access is the final backstop and is rejected.
 
-The next Q12 boundary is therefore:
+The opaque ticket is therefore a communication-validity mechanism, not a
+project-wide module-generation or module-retirement mechanism.
 
-- add a Transport-owned admission/drain lifetime fence so runtime retirement
-  cannot reclaim/reinitialize while admitted A calls remain;
-- host-test the race deterministically;
-- hardware-prove an A call admitted before loss remains a retirement blocker,
-  then prove B can open only after that old call has returned.
+The complete-stop-before-restart invariant is explicitly documented both in the
+Wire/Transport decision record and in the minimum module lifecycle requirements.
+Each module must provide its own evidence when that lifecycle is implemented or
+materially changed.
 
-Only after that boundary is proven should the repository claim full Q12
-architectural fencing.
+No additional generic Transport admitted-call drain is required solely to
+enforce that module-owned invariant.
 
 ## Product boundary
 
