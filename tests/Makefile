@@ -662,3 +662,32 @@ $(MPEG_CALIBRATION_TEST): \
 		unit/mpeg_calibration_test.c \
 		../src/ui/mpeg_calibration.c \
 		-o $(MPEG_CALIBRATION_TEST)
+
+RFB_FLOW_POLICY_TEST := .build/rfb_flow_policy_test
+
+.PHONY: rfb-flow-policy-unit
+unit: rfb-flow-policy-unit
+
+rfb-flow-policy-unit: $(RFB_FLOW_POLICY_TEST)
+	./$(RFB_FLOW_POLICY_TEST)
+
+$(RFB_FLOW_POLICY_TEST): \
+	unit/rfb_flow_policy_test.c \
+	../src/rfb/flow_policy.c \
+	../src/rfb/flow_policy.h \
+	../src/rfb/rfb.c \
+	../src/rfb/rfb.h \
+	../src/rfb/rfb_session.c \
+	../src/rfb/rfb_session.h \
+	../src/rfb/bridge.h \
+	../src/framebuffer/framebuffer.c \
+	../src/framebuffer/framebuffer.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/rfb_flow_policy_test.c \
+		../src/rfb/flow_policy.c \
+		../src/rfb/rfb_session.c \
+		../src/rfb/rfb.c \
+		../src/framebuffer/framebuffer.c \
+		-o $(RFB_FLOW_POLICY_TEST)
+
