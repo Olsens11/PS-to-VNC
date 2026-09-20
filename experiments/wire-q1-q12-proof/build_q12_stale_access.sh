@@ -22,7 +22,7 @@ TOOLCHAIN_PATH='/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev
 
 command -v docker >/dev/null 2>&1
 
-python3 "$ROOT/experiments/wire-q1-q12-proof/q12_stale_access_server.py" --self-test
+python3 -B "$ROOT/experiments/wire-q1-q12-proof/q12_stale_access_server.py" --self-test
 
 test "$(sha256sum "$FROZEN_DEP" | awk '{print $1}')" = "$EXPECTED_DEP_SHA"
 
