@@ -85,6 +85,18 @@ int pstvnc_ps2_graphics_present_video_macroblocks(
     const pstvnc_ps2_graphics_video_t *video,
     pstvnc_ps2_graphics_sync_result_t *sync_result);
 
+/*
+ * Present cached desktop plus the current local overlay while omitting the
+ * retained MPEG/suppression/matte layers.
+ *
+ * This is a physical presentation primitive, not lifecycle policy: it receives
+ * no generation and proves no producer/decoder/RFB fact. Retained-video
+ * visibility is committed absent only after the synchronized no-video frame
+ * succeeds; any pre-sync failure leaves the retained composite retryable.
+ */
+int pstvnc_ps2_graphics_reveal_retained_video(
+    pstvnc_ps2_graphics_sync_result_t *sync_result);
+
 void pstvnc_ps2_graphics_shutdown(void);
 
 #endif /* PSTVNC_PS2_GRAPHICS_H */

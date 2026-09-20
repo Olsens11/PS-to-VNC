@@ -230,6 +230,105 @@ static void test_pending_abort_is_exact_and_releases_snapshot(void)
         101u));
 }
 
+
+static void test_retirement_is_exact_two_phase_and_snapshot_preserving(void)
+{
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_mpeg_presentation_geometry_t geometry = valid_geometry();
+    pstvnc_mpeg_presentation_geometry_t snapshot;
+    uint32_t observed_generation = 0u;
+
+    pstvnc_mpeg_presentation_init(&presentation);
+    assert(pstvnc_mpeg_presentation_arm(
+        &presentation,
+        &geometry,
+        300u));
+    assert(pstvnc_mpeg_presentation_first_frame_presented(
+        &presentation,
+        300u));
+
+    assert(!pstvnc_mpeg_presentation_begin_retirement(
+        &presentation,
+        299u));
+    assert(pstvnc_mpeg_presentation_state(&presentation) ==
+        PSTVNC_MPEG_PRESENTATION_MPEG_OWNED);
+
+    assert(pstvnc_mpeg_presentation_begin_retirement(
+        &presentation,
+        300u));
+    assert(pstvnc_mpeg_presentation_state(&presentation) ==
+        PSTVNC_MPEG_PRESENTATION_RETIRING);
+    assert(pstvnc_mpeg_presentation_mode(&presentation) ==
+        PSTVNC_MPEG_PRESENTATION_COMPOSITED);
+    assert(pstvnc_mpeg_presentation_owns_mpeg_visual(
+        &presentation));
+    assert(!pstvnc_mpeg_presentation_requires_global_rfb_protection(
+        &presentation));
+    assert(pstvnc_mpeg_presentation_snapshot(
+        &presentation,
+        &snapshot,
+        &observed_generation));
+    assert(observed_generation == 300u);
+    assert_geometry_equal(&snapshot, &geometry);
+
+    assert(!pstvnc_mpeg_presentation_begin_retirement(
+        &presentation,
+        300u));
+    assert(!pstvnc_mpeg_presentation_arm(
+        &presentation,
+        &geometry,
+        301u));
+    assert(!pstvnc_mpeg_presentation_seal_retirement(
+        &presentation,
+        299u));
+
+    assert(pstvnc_mpeg_presentation_seal_retirement(
+        &presentation,
+        300u));
+    assert(pstvnc_mpeg_presentation_state(&presentation) ==
+        PSTVNC_MPEG_PRESENTATION_REVEAL_PENDING);
+    assert(pstvnc_mpeg_presentation_mode(&presentation) ==
+        PSTVNC_MPEG_PRESENTATION_COMPOSITED);
+    assert(pstvnc_mpeg_presentation_owns_mpeg_visual(
+        &presentation));
+    assert(pstvnc_mpeg_presentation_snapshot(
+        &presentation,
+        &snapshot,
+        &observed_generation));
+    assert(observed_generation == 300u);
+    assert_geometry_equal(&snapshot, &geometry);
+
+    assert(!pstvnc_mpeg_presentation_first_frame_presented(
+        &presentation,
+        300u));
+    assert(!pstvnc_mpeg_presentation_abort_pending(
+        &presentation,
+        300u));
+    assert(!pstvnc_mpeg_presentation_begin_retirement(
+        &presentation,
+        300u));
+    assert(!pstvnc_mpeg_presentation_commit_reveal(
+        &presentation,
+        299u));
+
+    assert(pstvnc_mpeg_presentation_commit_reveal(
+        &presentation,
+        300u));
+    assert(pstvnc_mpeg_presentation_state(&presentation) ==
+        PSTVNC_MPEG_PRESENTATION_RFB_ONLY);
+    assert(pstvnc_mpeg_presentation_mode(&presentation) ==
+        PSTVNC_MPEG_PRESENTATION_DIRECT_RFB);
+    assert(!pstvnc_mpeg_presentation_owns_mpeg_visual(
+        &presentation));
+    assert(!pstvnc_mpeg_presentation_snapshot(
+        &presentation,
+        &snapshot,
+        &observed_generation));
+    assert(!pstvnc_mpeg_presentation_commit_reveal(
+        &presentation,
+        300u));
+}
+
 static void test_invalid_geometry_and_generation_fail_closed(void)
 {
     pstvnc_mpeg_presentation_t presentation;
@@ -290,6 +389,7 @@ int main(void)
     test_arm_snapshots_caller_generation_and_geometry();
     test_only_exact_first_frame_promotes();
     test_pending_abort_is_exact_and_releases_snapshot();
+    test_retirement_is_exact_two_phase_and_snapshot_preserving();
     test_invalid_geometry_and_generation_fail_closed();
 
     puts("MPEG_PRESENTATION_TEST=PASS");

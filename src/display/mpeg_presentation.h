@@ -4,13 +4,17 @@
  * resolved presentation-geometry snapshot for the exact caller-owned MPEG run.
  *
  * This module owns only presentation-visible lifecycle facts:
- * RFB_ONLY -> WAIT_FIRST_FRAME -> MPEG_OWNED, the resolved base/inner/suppression
- * geometry used by later composition, and the exact run generation fence.
+ * RFB_ONLY -> WAIT_FIRST_FRAME -> MPEG_OWNED -> RETIRING -> REVEAL_PENDING
+ * -> RFB_ONLY, the resolved base/inner/suppression geometry used by composition,
+ * and the exact run generation fence.
  *
- * It does not edit calibration, mint MPEG generations, start/stop Transport or
- * decoding, draw through gsKit, arm the media clock, own RFB refresh debt, or
- * perform Application orchestration. Active MPEG retirement is intentionally
- * absent here because current Q7 requires a later ordered retirement process.
+ * RETIRING/REVEAL_PENDING describe visual ownership only. They do not claim
+ * producer closure, decoder safe-stop, Transport residual isolation, or RFB
+ * underlay freshness; those cross-owner proofs remain Application obligations.
+ *
+ * This module does not edit calibration, mint MPEG generations, start/stop
+ * Transport or decoding, draw through gsKit, arm/clear the media clock, own RFB
+ * refresh debt, or perform Application orchestration.
  *
  * Context:
  *   docs/ledge/LEDGE_FOREMAN_STATE.md,
@@ -46,7 +50,9 @@ typedef enum pstvnc_mpeg_presentation_state {
     PSTVNC_MPEG_PRESENTATION_STATE_INVALID = -1,
     PSTVNC_MPEG_PRESENTATION_RFB_ONLY = 0,
     PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME,
-    PSTVNC_MPEG_PRESENTATION_MPEG_OWNED
+    PSTVNC_MPEG_PRESENTATION_MPEG_OWNED,
+    PSTVNC_MPEG_PRESENTATION_RETIRING,
+    PSTVNC_MPEG_PRESENTATION_REVEAL_PENDING
 } pstvnc_mpeg_presentation_state_t;
 
 typedef enum pstvnc_mpeg_presentation_mode {
@@ -101,6 +107,35 @@ int pstvnc_mpeg_presentation_abort_pending(
     pstvnc_mpeg_presentation_t *presentation,
     uint32_t run_generation);
 
+/*
+ * Begin visible retirement for the exact currently MPEG-owned run.
+ *
+ * This transition records no external lifecycle proof. The caller is
+ * responsible for closing new production/admission and coordinating RFB
+ * restoration. Successful begin preserves the immutable run snapshot and
+ * leaves MPEG/mattes visibly composited so already accepted frames may drain.
+ */
+int pstvnc_mpeg_presentation_begin_retirement(
+    pstvnc_mpeg_presentation_t *presentation,
+    uint32_t run_generation);
+
+/*
+ * Seal the exact retiring run after the caller has reached its external
+ * safe-stop/restoration boundary. REVEAL_PENDING keeps the retained MPEG
+ * composite visible but prevents further frame presentation.
+ */
+int pstvnc_mpeg_presentation_seal_retirement(
+    pstvnc_mpeg_presentation_t *presentation,
+    uint32_t run_generation);
+
+/*
+ * Commit logical RFB_ONLY only after the exact REVEAL_PENDING run has crossed
+ * the synchronized physical no-MPEG reveal boundary.
+ */
+int pstvnc_mpeg_presentation_commit_reveal(
+    pstvnc_mpeg_presentation_t *presentation,
+    uint32_t run_generation);
+
 pstvnc_mpeg_presentation_state_t
 pstvnc_mpeg_presentation_state(
     const pstvnc_mpeg_presentation_t *presentation);
@@ -113,7 +148,7 @@ pstvnc_mpeg_presentation_mode(
 int pstvnc_mpeg_presentation_requires_global_rfb_protection(
     const pstvnc_mpeg_presentation_t *presentation);
 
-/* True only after exact first-frame promotion. */
+/* True while MPEG/mattes remain the visible owner, including retirement. */
 int pstvnc_mpeg_presentation_owns_mpeg_visual(
     const pstvnc_mpeg_presentation_t *presentation);
 

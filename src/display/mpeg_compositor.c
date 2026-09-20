@@ -85,7 +85,8 @@ int pstvnc_mpeg_compositor_present(
     state = pstvnc_mpeg_presentation_state(presentation);
 
     if (state != PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME &&
-        state != PSTVNC_MPEG_PRESENTATION_MPEG_OWNED)
+        state != PSTVNC_MPEG_PRESENTATION_MPEG_OWNED &&
+        state != PSTVNC_MPEG_PRESENTATION_RETIRING)
         return PSTVNC_MPEG_COMPOSITOR_INVALID;
 
     if (!pstvnc_mpeg_presentation_snapshot(
@@ -164,5 +165,64 @@ int pstvnc_mpeg_compositor_present(
     if (!clock_armed)
         return PSTVNC_MPEG_COMPOSITOR_CLOCK_FAILED;
 
+    return PSTVNC_MPEG_COMPOSITOR_OK;
+}
+
+int pstvnc_mpeg_compositor_reveal_retired(
+    pstvnc_mpeg_presentation_t *presentation,
+    uint32_t run_generation,
+    pstvnc_mpeg_compositor_effects_t *effects)
+{
+    pstvnc_mpeg_presentation_geometry_t geometry;
+    pstvnc_ps2_graphics_sync_result_t sync_result;
+    uint32_t snapshot_generation;
+
+    if (effects == NULL)
+        return PSTVNC_MPEG_COMPOSITOR_INVALID;
+
+    memset(effects, 0, sizeof(*effects));
+
+    if (presentation == NULL ||
+        run_generation == 0u ||
+        pstvnc_mpeg_presentation_state(presentation) !=
+            PSTVNC_MPEG_PRESENTATION_REVEAL_PENDING ||
+        !pstvnc_mpeg_presentation_snapshot(
+            presentation,
+            &geometry,
+            &snapshot_generation) ||
+        snapshot_generation != run_generation)
+        return PSTVNC_MPEG_COMPOSITOR_INVALID;
+
+    /*
+     * The retained geometry is intentionally observed here even though Platform
+     * already owns its physical layer copy. A successful snapshot proves this
+     * is the exact pending run rather than a generic graphics-clear request.
+     */
+    (void)geometry;
+
+    memset(&sync_result, 0, sizeof(sync_result));
+
+    if (pstvnc_ps2_graphics_reveal_retained_video(
+            &sync_result) != 0)
+        return PSTVNC_MPEG_COMPOSITOR_PLATFORM_FAILED;
+
+    if (!sync_result.synchronized)
+        return PSTVNC_MPEG_COMPOSITOR_SYNC_INVALID;
+
+    effects->synchronized = 1u;
+    effects->observed_sync_tick =
+        sync_result.observed_sync_tick;
+
+    /*
+     * Platform has no callback into Presentation; this coordinator serializes
+     * the cross-owner handoff. The exact pending run validated before the
+     * physical reveal is therefore the only legal logical commit target.
+     */
+    if (!pstvnc_mpeg_presentation_commit_reveal(
+            presentation,
+            run_generation))
+        return PSTVNC_MPEG_COMPOSITOR_RETIREMENT_COMMIT_FAILED;
+
+    effects->retirement_revealed = 1u;
     return PSTVNC_MPEG_COMPOSITOR_OK;
 }

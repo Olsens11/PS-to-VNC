@@ -175,6 +175,51 @@ int pstvnc_mpeg_presentation_abort_pending(
     return 1;
 }
 
+int pstvnc_mpeg_presentation_begin_retirement(
+    pstvnc_mpeg_presentation_t *presentation,
+    uint32_t run_generation)
+{
+    if (presentation == NULL ||
+        presentation->state != PSTVNC_MPEG_PRESENTATION_MPEG_OWNED ||
+        !presentation->snapshot_valid ||
+        run_generation == 0u ||
+        run_generation != presentation->run_generation)
+        return 0;
+
+    presentation->state = PSTVNC_MPEG_PRESENTATION_RETIRING;
+    return 1;
+}
+
+int pstvnc_mpeg_presentation_seal_retirement(
+    pstvnc_mpeg_presentation_t *presentation,
+    uint32_t run_generation)
+{
+    if (presentation == NULL ||
+        presentation->state != PSTVNC_MPEG_PRESENTATION_RETIRING ||
+        !presentation->snapshot_valid ||
+        run_generation == 0u ||
+        run_generation != presentation->run_generation)
+        return 0;
+
+    presentation->state = PSTVNC_MPEG_PRESENTATION_REVEAL_PENDING;
+    return 1;
+}
+
+int pstvnc_mpeg_presentation_commit_reveal(
+    pstvnc_mpeg_presentation_t *presentation,
+    uint32_t run_generation)
+{
+    if (presentation == NULL ||
+        presentation->state != PSTVNC_MPEG_PRESENTATION_REVEAL_PENDING ||
+        !presentation->snapshot_valid ||
+        run_generation == 0u ||
+        run_generation != presentation->run_generation)
+        return 0;
+
+    pstvnc_mpeg_presentation_return_to_rfb(presentation);
+    return 1;
+}
+
 pstvnc_mpeg_presentation_state_t
 pstvnc_mpeg_presentation_state(
     const pstvnc_mpeg_presentation_t *presentation)
@@ -198,7 +243,9 @@ pstvnc_mpeg_presentation_mode(
     if (presentation->state == PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME)
         return PSTVNC_MPEG_PRESENTATION_FROZEN_RFB_DESKTOP;
 
-    if (presentation->state == PSTVNC_MPEG_PRESENTATION_MPEG_OWNED)
+    if (presentation->state == PSTVNC_MPEG_PRESENTATION_MPEG_OWNED ||
+        presentation->state == PSTVNC_MPEG_PRESENTATION_RETIRING ||
+        presentation->state == PSTVNC_MPEG_PRESENTATION_REVEAL_PENDING)
         return PSTVNC_MPEG_PRESENTATION_COMPOSITED;
 
     return PSTVNC_MPEG_PRESENTATION_MODE_INVALID;
@@ -215,7 +262,9 @@ int pstvnc_mpeg_presentation_owns_mpeg_visual(
     const pstvnc_mpeg_presentation_t *presentation)
 {
     return presentation != NULL &&
-        presentation->state == PSTVNC_MPEG_PRESENTATION_MPEG_OWNED;
+        (presentation->state == PSTVNC_MPEG_PRESENTATION_MPEG_OWNED ||
+         presentation->state == PSTVNC_MPEG_PRESENTATION_RETIRING ||
+         presentation->state == PSTVNC_MPEG_PRESENTATION_REVEAL_PENDING);
 }
 
 int pstvnc_mpeg_presentation_snapshot(

@@ -373,6 +373,7 @@ static int render_frame(
     int upload_desktop,
     int upload_video,
     int upload_overlay,
+    int draw_video,
     pstvnc_ps2_graphics_sync_result_t *sync_result)
 {
     const u64 clear_color =
@@ -411,7 +412,9 @@ static int render_frame(
             display,
             &desktop_texture);
 
-    if (video_visible && upload_video)
+    if (draw_video &&
+        video_visible &&
+        upload_video)
         gsKit_texture_upload(
             display,
             &video_texture);
@@ -439,7 +442,7 @@ static int render_frame(
         1,
         texture_color);
 
-    if (video_visible) {
+    if (draw_video && video_visible) {
         draw_black_rect(
             &video_suppression,
             2,
@@ -640,6 +643,7 @@ int pstvnc_ps2_graphics_present(
         1,
         0,
         local_overlay_visible,
+        video_visible,
         NULL);
 }
 
@@ -675,7 +679,55 @@ int pstvnc_ps2_graphics_present_video_macroblocks(
         0,
         1,
         0,
+        1,
         sync_result);
+}
+
+int pstvnc_ps2_graphics_reveal_retained_video(
+    pstvnc_ps2_graphics_sync_result_t *sync_result)
+{
+    if (display == NULL ||
+        sync_result == NULL ||
+        !desktop_texture_configured ||
+        !video_visible)
+        return -1;
+
+    /*
+     * Keep every retained-video fact intact while the no-video frame is being
+     * attempted. render_frame() cannot report success before the synchronized
+     * flip, so a failure leaves the old composite retryable/containable.
+     */
+    if (render_frame(
+            0,
+            0,
+            0,
+            0,
+            sync_result) != 0)
+        return -1;
+
+    if (!sync_result->synchronized)
+        return -1;
+
+    /*
+     * Commit physical retained-video removal only after the no-video frame has
+     * crossed the synchronized presentation boundary. The reusable texture/VRAM
+     * allocation itself remains available for a later MPEG run.
+     */
+    video_visible = 0;
+    memset(
+        &video_base,
+        0,
+        sizeof(video_base));
+    memset(
+        &video_inner_content,
+        0,
+        sizeof(video_inner_content));
+    memset(
+        &video_suppression,
+        0,
+        sizeof(video_suppression));
+
+    return 0;
 }
 
 void pstvnc_ps2_graphics_shutdown(void)
