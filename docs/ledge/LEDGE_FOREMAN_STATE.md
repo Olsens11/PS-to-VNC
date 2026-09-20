@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0022
-RECORDED_AT=2026-09-20T16:46:00-04:00
+STATE_REVISION=0023
+RECORDED_AT=2026-09-20T17:38:46-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0021
-SUPERSEDES_FOREMAN_STATE_REVISION=0021
+BASED_ON_FOREMAN_STATE_REVISION=0022
+SUPERSEDES_FOREMAN_STATE_REVISION=0022
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0005
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,108 +14,141 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0022 independently accepts the completed
-`A003-WIRE-SESSION-FOUNDATION-R1` Reconstruction baton and advances the
-dependency graph into the first bounded A004 product tranche.
+Revision 0023 independently accepts the completed
+`A004-MPEG-CALIBRATION-CORE-R1` Reconstruction baton and advances A004 into
+the next bounded owner seam: generic RFB freeze/request/full-refresh policy at
+the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A003_R1_INTEGRATED__A004_MPEG_CALIBRATION_CORE_RECONSTRUCTION_ACTIVE__A003_APPLICATION_ORCHESTRATION_DEPENDS_ON_A004_OWNER_SEAMS`
+`A004_P1_INTEGRATED__A004_RFB_FREEZE_REFRESH_RECONSTRUCTION_ACTIVE__A003_APPLICATION_ORCHESTRATION_DEPENDS_ON_A004_PRESENTATION_SEAMS`
 
 ARCHITECTURE_BLOCKER=NONE
-R1_FOREMAN_ACCEPTED=YES
-A004_MAY_ADVANCE=YES
+A004_P1_FOREMAN_ACCEPTED=YES
+A004_P2_ACTIVE=YES
+A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 
-## R1 Foreman acceptance
+## A004 P1 Foreman acceptance
 
 Live pickup authority was independently refreshed as:
 
-- branch HEAD `921dc29dd67baadc07c8f648aa4fdb46954b2167`;
-- final source/dictionary authority `170e2198d41b3d703a5fe86bd5c329f2248d031a`;
+- branch HEAD `b566b500c832d9d98bdb2bd4a5ccce7dbd6f05fe`;
+- final pre-log source/dictionary authority
+  `094f07fff17801152bcd0d17ac69c570d8bfad27`;
 - immutable Reconstruction log
-  `docs/ledge/work-log/20260920T160357-0400__reconstruction__a003-mpeg-generation__interactive.md`.
+  `docs/ledge/work-log/20260920T171848-0400__reconstruction__a004-presentation__interactive.md`.
 
-The worker's three substantive commits are coherent with the issued packet:
+The worker landed five commits after Foreman base `672f67eb...`:
 
-- `da9053b1488ead933dde1408cdab875885ffa37c` — single Transport physical-I/O owner plus cooperative idle scheduling;
-- `18025d9278940cec7cf0d8513f99e0a93aeefbe3` — opaque Wire-session-bound Transport access across RFB/audio/MPEG;
-- `170e2198d41b3d703a5fe86bd5c329f2248d031a` — final symbol/dictionary reconciliation.
+- `ad00a7a07c15c8d56f89e5ac664e07507e50c312` —
+  `feat(ui): add MPEG calibration core`;
+- `51025be8553c3dad8b5a11002fb57f9bb7a5af62` —
+  `docs(symbols): index MPEG calibration core`;
+- `3d9f4a821f16d51a3d22597b4a539009aac7705f` —
+  `refactor(ui): name MPEG calibration action enum`;
+- `094f07fff17801152bcd0d17ac69c570d8bfad27` —
+  `docs(symbols): bind calibration actions to named enum`;
+- `b566b500c832d9d98bdb2bd4a5ccce7dbd6f05fe` —
+  the required immutable Reconstruction work log.
 
-The rejected generic Transport drain and divergent resume-branch Q12 candidate
-remain absent. The governing Q12 split remains:
+Independent source review confirms:
 
-    Transport -> cross-session communication validity
-    module    -> complete local retirement
+- MPEG CALIBRATION is separate from DESKTOP CALIBRATION;
+- `src/ui/mpeg_calibration.{c,h}` owns only local calibration value/state;
+- base, inner-content/matte, and outer/suppression meanings remain distinct;
+- width/height are bounded and 16-pixel aligned while x/y remain pixel precise;
+- geometry calculations use widened arithmetic before bounded int32 storage;
+- REVIEW accept remains unarmed while X/accept is held and requires release
+  followed by a fresh press;
+- successful acceptance copies one immutable caller-visible region and does not
+  imply START, producer admission, decode, first presentation, clock arm, or
+  MPEG visual ownership;
+- cancel publishes no false accepted region and exit remains quarantined until
+  all calibration actions are released;
+- no RFB, Transport, MPEG decoder, Display, Pi, GS, or Application dependency
+  was imported into the calibration owner;
+- no new top-level source directory was created.
 
-R1-C1 through R1-C8 are accepted as MET within the packet's bounded source
-scope.
+A004-P1-C1 through A004-P1-C9 are accepted as MET within the packet's bounded
+source scope.
 
-## Independent R1 evidence
+## Independent P1 evidence
 
-GitHub Actions run `35536021547` for pickup HEAD `921dc29d...` completed
-SUCCESS:
+GitHub Actions run `35539055477` at pickup HEAD
+`b566b500c832d9d98bdb2bd4a5ccce7dbd6f05fe` completed SUCCESS.
 
-- canonical host unit suite — PASS;
-- canonical project check — PASS;
-- complete strict dictionary audit — PASS;
-- current clean-core PS2 compile job — PASS;
-- current-source PS2 link/reproducibility job — PASS.
+Observed jobs:
 
-These CI results are additional Foreman-observed machine evidence. They do not
-change the worker's appropriately narrow evidence vocabulary and do not create
-a new HARDWARE_PROVEN claim.
+- host-unit — PASS;
+- project-check — PASS;
+- dictionary-long — PASS;
+- ps2-compile — PASS;
+- ps2-link/current-source reproducibility — PASS;
+- dictionary-reconcile — SKIPPED as expected after already-coherent dictionaries.
 
-No physical hardware run was performed for R1.
+These are machine/repository checks. They do not constitute physical PS2
+qualification.
 
-## Dependency decision after R1
+No physical hardware run was performed for A004 P1.
 
-A003 is **not complete**.
+## Forward-authority correction for A004
 
-Current `src/app.c` still opens the ordinary RFB-only Transport session through
-`pstvnc_transport_session_open()`, does not construct an MPEG-enabled session,
-does not own MPEG activation/retirement, and the default
-`pstvnc_app_run()` remains intentionally fail-closed until concrete validated
-configuration authority exists.
+`docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` revision 0001 is a
+2026-09-15 temporal audit tranche and remains historically truthful. It must not
+be destructively rewritten merely because later architecture work refined
+retirement semantics.
 
-Those facts are not R1 defects; they are outside the R1 packet.
+For forward reconstruction, Q7 in
+`docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` revision 0011 is governing
+where it conflicts with the older audit's retirement wording.
 
-Do not immediately build a temporary A003 application coordinator around
-invented region/presentation callbacks. Q6/Q7 and A004 make the MPEG region,
-MPEG CALIBRATION acceptance, RFB/presentation ownership, first physical frame,
-and visible retirement handoff real owner boundaries. Those seams should exist
-before final Application orchestration consumes them.
+Current Q7 requires:
 
-Therefore A004 may advance now. A003 application-level MPEG orchestration remains
-dependency-queued and will resume after the required A004 owner seams exist.
+1. MPEG retirement first closes new MPEG production/admission;
+2. already accepted MPEG may drain;
+3. RFB suppression may then be released so RFB can request, receive and rebuild
+   the underlying desktop while valid retiring MPEG/mattes remain visible;
+4. final safe MPEG retirement removes MPEG/mattes and reveals the already
+   refreshing RFB desktop.
 
-## Current A004 authority
+Therefore **active or retiring MPEG is not equivalent to a global RFB freeze**.
+The global freeze reconstructed by P2 is for ownership gaps such as calibration
+foreground and WAIT_FIRST_FRAME-style protection. Later presentation ownership
+will use region-local suppression/composition while RFB framebuffer truth may
+continue to advance.
 
-The active A004 worker must read:
+## Why P2 is RFB flow protection before presentation ownership
 
-- `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` revision 0001;
-- `docs/ledge/LEDGE_A004_CALIBRATION_SEPARATION_INVARIANT.md` revision 0001;
-- `docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` revision 0011, especially Q6/Q7;
-- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` revision 0004;
-- `docs/CLEAN_ARCHITECTURE.md`;
-- `docs/development/source-topology.md`;
-- `docs/development/source-naming-and-symbols.md`;
-- the frozen H1 MPEG CALIBRATION lineage under
-  `experiments/media-harness-h1/mpeg_presentation_calibration/` at
-  `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`.
+Current clean RFB already owns:
 
-The current Q7 retirement semantics supersede the older A004-audit wording that
-would delay all RFB restoration until complete local/Pi MPEG teardown. Later
-A004 retirement work must allow RFB refresh underneath once new MPEG production
-is closed, while valid retiring MPEG presentation may remain visible until its
-safe final boundary.
+- exact request serialization through
+  `pstvnc_rfb_session_request_update()`;
+- complete server-message parsing;
+- a nonblocking live service boundary that returns IDLE only before consuming
+  any byte of the next server message;
+- parser-safe finite-session quiesce at that same complete-message boundary.
 
-That Q7 correction is not part of the active P1 source scope below, but workers
-must not reintroduce the obsolete ordering while reconstructing shared state.
+Current Application still drives a simple one-request/one-response cadence and
+has no MPEG lifecycle.
+
+Frozen H1 evidence separately recovered:
+
+- a calibration RFB gate that blocks new requests and remote presentation while
+  frozen without destroying the RFB/PSTV session;
+- one outstanding framebuffer request at a time;
+- an in-flight pre-freeze response still completing protocol ownership while
+  visual publication remains suppressed;
+- one coalesced FULL/nonincremental request after thaw before normal
+  incremental cadence resumes.
+
+Those facts form a small RFB-owned policy seam that can be reconstructed before
+the later presentation owner exists. This avoids putting MPEG/calibration types
+inside RFB and avoids inventing temporary Application callbacks.
 
 ## Active bounded Reconstruction packet
 
-PACKET_ID=`A004-MPEG-CALIBRATION-CORE-R1`
+PACKET_ID=`A004-RFB-FREEZE-REFRESH-R2`
 PACKET_STATUS=ACTIVE
 ROLE_KEY=`reconstruction`
 WORK_ITEM_KEY=`a004-presentation`
@@ -127,121 +160,147 @@ ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
 
 ### Objective
 
-Reconstruct only the clean **MPEG CALIBRATION** owner/model needed to define one
-accepted MPEG region value and its foreground acceptance semantics. Do not yet
-wire live MPEG activation, RFB freeze/suppression, first-frame promotion, GS
-composition, Pi producer behavior, or final Application orchestration.
+Reconstruct the clean **generic RFB freeze/request/full-refresh policy seam**
+needed by later A004 ownership transitions.
 
-This packet creates the owner-correct value/state seam that later A004/A003 work
-can consume rather than inventing temporary application callbacks.
+This tranche owns only RFB flow-policy facts: whether new framebuffer requests
+may be issued, whether completed RFB updates may be visually published, whether
+one request is already outstanding, and whether one post-thaw FULL request is
+owed.
 
-### Mandatory calibration separation invariant
+Do not wire MPEG CALIBRATION, MPEG start/stop, first-frame promotion,
+presentation suppression/composition, or final Application orchestration in
+this packet.
 
-> **CALIBRATION SEPARATION INVARIANT:** DESKTOP CALIBRATION and MPEG CALIBRATION
-> are separate historical systems with separate state, geometry authority,
-> ownership, and evidence. Do not derive MPEG-calibration behavior from the older
-> desktop-calibration implementation merely because both manipulate screen
-> rectangles or use similar UI mechanics. For MPEG calibration, trace
-> `experiments/media-harness-h1/mpeg_presentation_calibration/` and A004 audit
-> authority. If any relationship is unclear, preserve the separation and flag
-> the ambiguity rather than merging the systems.
+### Required authority / forensic trace
 
-### Required forensic trace before source writes
+Before behavior-bearing writes, read current:
 
-At minimum inspect the frozen MPEG CALIBRATION lineage's:
+- `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` rev 0001;
+- `docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` rev 0011, especially current
+  Q7;
+- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` rev 0004;
+- `docs/CLEAN_ARCHITECTURE.md`;
+- `docs/development/source-topology.md`;
+- `src/rfb/rfb_session.{c,h}`;
+- `src/rfb/bridge.{c,h}`;
+- current RFB host tests covering async framing, initial-frame authority and
+  request serialization.
 
-- `README.md`;
-- `mpeg_presentation_calibration.h`;
-- `mpeg_presentation_calibration_geometry.c`;
-- `mpeg_presentation_calibration_state.c`;
-- `mpeg_presentation_calibration_test.c`;
-- `h1_mpeg_calibration_foreground.{c,h}` and its host test;
-- `h1_mpeg_calibration_entry_hold.{c,h}` and its host test;
-- `h1_mpeg_calibration_accept_edge_test.c`;
-- any directly referenced adapter/coordinator test needed to resolve acceptance
-  semantics.
+Trace frozen H1 commit
+`3426f28b93de9519ca93e5f0e0aaf8b67cfca845`, at minimum:
 
-Historical adapters are evidence, not mandatory production structure.
+- `h1_mpeg_calibration_rfb_gate.{c,h}` and test;
+- `h1_mpeg_calibration_rfb_schedule.{c,h}` and test;
+- `h1_mpeg_calibration_rfb_flow.{c,h}` and test;
+- `h1_mpeg_presentation_owner.{c,h}` and test only far enough to distinguish
+  WAIT_FIRST_FRAME global protection from later MPEG-owned composited
+  presentation.
+
+Historical adapters are evidence, not mandatory clean structure.
 
 ### Required behavior
 
-1. Represent **MPEG CALIBRATION base rectangle**, **inner matte**, and
-   **outer/suppression footprint** as distinct meanings. Do not collapse them
-   into DESKTOP CALIBRATION or one generic screen-fit rectangle.
-2. Preserve MPEG-compatible base dimensions: width/height are positive,
-   at least 16 pixels where the recovered product rule requires it, and aligned
-   to the 16-pixel MPEG macroblock grid. X/Y placement remains one-pixel
-   precision rather than 16-pixel grid placement.
-3. Preserve bounded/overflow-safe geometry and the recovered relationships among
-   base, inner matte, outer matte and suppression footprint. Do not invent Pi
-   desktop bounds from this calibration value.
-4. Preserve the MPEG CALIBRATION foreground state needed to edit/review/accept
-   or cancel the candidate value without importing RFB, Transport, MPEG decoder,
-   Pi producer or GS internals.
-5. Preserve the held-X safety rule: entering/reviewing with X already held must
-   not immediately accept. Acceptance requires the recovered release/re-press
-   edge semantics.
-6. One successful accept publishes exactly one immutable committed MPEG
-   CALIBRATION region value for the caller. Do not create duplicate accepted-edge
-   detectors or a second competing geometry authority merely to cross files.
-7. Cancel does not manufacture an accepted MPEG region or claim MPEG ownership.
-8. Acceptance means only "region accepted". It does **not** mean START sent,
-   producer admitted, decoder started, first physical frame presented, media
-   clock armed, or MPEG visual ownership promoted.
+1. **Generic RFB vocabulary.** The new RFB policy must not include MPEG,
+   calibration, decoder, producer, GS, or presentation-owner types/headers.
+   Callers supply generic freeze/thaw intent; RFB remains ignorant of why.
+2. **Freeze without session destruction.** While globally frozen:
+   - issue no new framebuffer-update request;
+   - disallow publication of newly completed remote RFB visuals;
+   - keep the RFB logical session and Transport/Wire session alive.
+3. **In-flight request completion.** Freeze may begin while one framebuffer
+   request is already outstanding. Its response remains protocol-owned and must
+   be consumed to a complete RFB server-message boundary. Completion clears the
+   outstanding-request fact even though visual publication is suppressed.
+4. **One live request outstanding.** After the initial authoritative desktop is
+   established, ordinary live cadence must never manufacture duplicate
+   framebuffer requests while one response is still outstanding.
+5. **Exactly one post-thaw FULL obligation.** A real frozen->thawed ownership
+   interval creates one nonincremental/full-desktop request obligation before
+   normal incremental cadence resumes.
+6. **Obligation survives blocking conditions.** The pending FULL obligation is
+   not lost merely because an older request is still outstanding, because the
+   system is still frozen, or because policy is inspected repeatedly. Repeated
+   observations of the same thaw do not multiply the obligation.
+7. **Distinct later intervals remain distinct.** If another genuine freeze/thaw
+   interval occurs after prior recovery work, it may create its own one-shot
+   FULL obligation; coalescing must not erase a later ownership transition.
+8. **Safe-boundary authority remains singular.** Request-policy decisions are
+   made only at the existing proven complete-server-message/request scheduling
+   boundary. Do not create a second RFB parser boundary, mid-message benign
+   interruption, or MPEG-specific quiesce protocol.
+9. **Fail closed.** Invalid state transitions or request-accounting misuse must
+   not silently clear an outstanding-request fact or consume a required FULL
+   recovery.
+10. **Current-Q7 compatibility.** The policy must be capable of protecting a
+    calibration/WAIT_FIRST_FRAME-style global ownership gap, but it must not
+    encode "MPEG active" or "MPEG retiring" as globally frozen. Later, once first
+    physical MPEG presentation promotes ownership, RFB may refresh underneath
+    presentation-local suppression; during current-Q7 retirement, RFB may also
+    refresh underneath still-visible retiring MPEG.
+11. **No premature cross-domain integration.** Do not add MPEG CALIBRATION
+    entry gesture/timing, pointer neutralization/rebase, mouse suspension,
+    Transport START/RETIRE, presentation owner, compositor, media-clock arm,
+    scheduler/drop, or final Application transaction here.
+12. **Initial-frame authority remains intact.** Do not weaken the current strict
+    initial nonincremental full-frame proof. P2 concerns READY/live request
+    cadence after that authoritative baseline unless exact current source
+    evidence requires a narrower integration adjustment.
 
 ### Placement / topology constraint
 
-Use the smallest current clean owner-correct placement.
+Prefer the existing `src/rfb/` domain because this tranche is generic RFB
+request/publish flow policy.
 
-The worker must inspect the existing `src/ui/` and `src/display/`
-responsibilities before choosing file placement. MPEG CALIBRATION foreground/edit
-state belongs with the owner that understands those semantics; presentation-only
-mechanism belongs to display/presentation, not UI merely for convenience.
+Use the smallest owner-correct representation. It may be a small pure policy
+module, a narrowly integrated RFB-session extension, or a combination justified
+by current ownership, but it must not move cross-domain Application policy into
+RFB merely to make tests convenient.
 
-Do not create a new top-level source directory unless current responsibilities
-cannot express the clean owner boundary. If a new directory is genuinely earned,
-perform the complete topology/dictionary/checker integration required by
-`source-topology.md` in the same coherent change.
+Do not create a new top-level source directory.
+
+Any new clean source file must receive synopsis, local `src/rfb/SYMBOLS.md`
+coverage, build/test registration, and generated portal reconciliation.
 
 ### Acceptance criteria
 
-- `A004-P1-C1 CALIBRATION_SEPARATION`: DESKTOP CALIBRATION remains untouched
-  as an independent authority; no MPEG value is sourced from it by inference.
-- `A004-P1-C2 MPEG_REGION_VALUE`: base, inner matte and outer/suppression
-  meanings are explicit, bounded, and host-testable.
-- `A004-P1-C3 GEOMETRY_RULES`: macroblock-aligned base dimensions and
-  pixel-precision placement are validated with overflow/bounds cases supported
-  by the recovered authority.
-- `A004-P1-C4 FOREGROUND_STATE`: MPEG CALIBRATION edit/review/accept/cancel
-  state is owner-local and does not depend on RFB/Transport/MPEG/GS internals.
-- `A004-P1-C5 ACCEPT_EDGE`: held-X entry cannot auto-accept; release/re-press
-  acceptance is deterministic and exactly-once.
-- `A004-P1-C6 ACCEPTED_VALUE`: accepted region is one immutable caller-visible
-  value; cancel/non-accept paths do not mutate/publish false acceptance.
-- `A004-P1-C7 ACCEPT_NOT_OWNERSHIP`: no code path equates calibration accept
-  with first physical presentation, clock arm or MPEG visual ownership.
-- `A004-P1-C8 CLEAN_INTEGRATION`: source synopses, local symbol dictionaries,
-  build/test registration and generated portal are coherent; focused host tests,
-  full host suite, project check and strict dictionary audit pass.
-- `A004-P1-C9 EVIDENCE_BOUNDARY`: source/host/build evidence is reported
-  separately from hardware. No hardware-qualified or full-A004 completion claim
+- `A004-P2-C1 GENERIC_RFB_POLICY`: no MPEG/calibration/presentation-specific
+  dependency or vocabulary is required by the RFB policy.
+- `A004-P2-C2 SAFE_BOUNDARY`: freeze/request decisions preserve the existing
+  complete-server-message boundary and do not create mid-message interruption.
+- `A004-P2-C3 ONE_OUTSTANDING`: live request accounting deterministically
+  prevents duplicate outstanding framebuffer requests.
+- `A004-P2-C4 INFLIGHT_FREEZE`: a pre-freeze outstanding response can
+  complete into RFB framebuffer truth while remote visual publication remains
+  blocked and the request fact is cleared exactly once.
+- `A004-P2-C5 FULL_REFRESH`: thaw creates exactly one FULL/nonincremental
+  recovery before incremental cadence resumes.
+- `A004-P2-C6 COALESCED_OBLIGATION`: pending FULL recovery survives old
+  outstanding work/freeze/repeated inspection and duplicate restoration intent
+  collapses without erasing a later genuine interval.
+- `A004-P2-C7 Q7_COMPATIBILITY`: no state model equates active/retiring MPEG
+  with global RFB freeze; current Q7 overlapped restoration remains possible.
+- `A004-P2-C8 CLEAN_INTEGRATION`: source synopses, RFB dictionary, tests,
+  build registration and generated portal are coherent; focused tests, full
+  host suite, canonical project check and strict dictionary audit pass.
+- `A004-P2-C9 EVIDENCE_BOUNDARY`: repository/source/build evidence remains
+  distinct from runtime/hardware qualification; no full A004 or hardware claim
   is made.
 
 ### Explicit non-goals
 
 Do not implement in this packet:
 
-- live Application MPEG start/stop orchestration;
-- Transport START/RETIRE transaction wiring;
-- Pi capture/producer service behavior;
-- RFB safe-boundary freeze, suppression or restoration;
-- accept-to-first-frame protection outside the calibration owner's own accepted
-  value;
-- first physically presented frame ownership promotion;
-- shared GS compositor integration;
-- media clock arm callsite;
-- MPEG presentation scheduler/drop policy;
-- final retirement/visible-handoff behavior;
+- MPEG CALIBRATION controller entry chord/hold timing;
+- calibration-to-RFB/Application wiring;
+- pointer neutralization/rebase or mouse suspend/resume orchestration;
+- Transport START/RETIRE or Pi producer control;
+- presentation ownership or first-physical-frame promotion itself;
+- MPEG suppression-rectangle drawing or shared GS composition;
+- common media-epoch arm callsite;
+- MPEG scheduler/drop policy;
+- current-Q7 retirement/visible-handoff implementation;
+- final A003/A004 Application orchestration;
 - A005 general input reconstruction;
 - physical hardware qualification.
 
@@ -249,12 +308,13 @@ Do not implement in this packet:
 
 Return:
 
-- exact H1 forensic files inspected and the behavior recovered from each;
-- exact product/test/docs files changed;
-- placement/ownership decision and why it follows current topology;
-- A004-P1-C1 through C9 disposition;
-- all executed tests/checks and results;
+- exact frozen/current forensic files inspected and behavior recovered;
+- exact product/test/docs files and commits changed;
+- placement/ownership decision;
+- A004-P2-C1 through C9 disposition;
+- focused/full checks and exact results;
 - any ambiguity preserved rather than inferred;
+- explicit confirmation that current Q7 was not regressed;
 - exact next dependency/baton point.
 
 Emit exactly one immutable Reconstruction log using:
@@ -263,27 +323,30 @@ Emit exactly one immutable Reconstruction log using:
 - WORK_ITEM_KEY=`a004-presentation`
 - WORKER_KEY=`interactive`
 
-Do not begin the next A004 tranche from the same shift.
+Do not begin the presentation/first-frame tranche in the same shift.
 
 ## Deferred dependency graph
 
-After A004 P1 returns, Foreman should packetize the next owner seam based on the
-actual reconstructed shape. Expected later boundaries include:
+After P2 returns, Foreman must choose the next owner seam from actual source.
 
-1. RFB freeze/full-refresh ownership plus accept-to-first-frame protection;
-2. presentation ownership/compositor/first-physical-frame seam;
-3. scheduler/drop and retirement-visible handoff under current Q7;
+Expected remaining A004 work is:
+
+1. presentation ownership / WAIT_FIRST_FRAME / first-physical-frame promotion
+   consuming P1 accepted geometry and P2 RFB protection;
+2. shared compositor plus generation/run-scoped suppression and matte layering;
+3. absolute scheduler/drop and current-Q7 retirement/visible handoff;
 4. final Application orchestration consuming A003 + A004 public seams.
 
-This ordering is a planning dependency, not authority to pre-implement later
-steps.
+This is planning only, not worker authority to pre-implement later tranches.
 
 ## Hardware qualification debt
 
-HARDWARE_PENDING=R1 physical product qualification where later required; final product Q4 establishment; exact product Wire service/runtime; A004 visual geometry/matte/suppression/first-frame qualification; MPEG one-run/repeated generations/stale N-vs-N+1/Wire-loss; Q7 overlapped RFB restoration; full all-guns endurance; exact product ELF; native Pi RFB reproducibility/lifecycle qualification
+HARDWARE_PENDING=A004 visual geometry/matte/suppression/first-frame qualification; MPEG one-run/repeated-run stale fencing and Wire-loss behavior; current-Q7 overlapped RFB restoration; R1 product runtime where later required; final product Q4 establishment; exact product Wire service/runtime; all-guns endurance; exact product ELF; native Pi RFB reproducibility/lifecycle qualification
 
 ## Foreman next pickup
 
-Consume the `A004-MPEG-CALIBRATION-CORE-R1` Reconstruction baton, independently
-inspect source/tests/evidence, and decide whether the next coherent A004 owner
-seam is RFB freeze/request ownership or presentation/first-frame ownership.
+Consume the `A004-RFB-FREEZE-REFRESH-R2` Reconstruction baton, independently
+inspect source/tests/evidence and current Q7 compatibility, then decide the next
+bounded presentation/first-frame owner seam.
+
+Do not execute the packet from the Foreman seat.
