@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0025
-RECORDED_AT=2026-09-20T18:08:52-04:00
+STATE_REVISION=0026
+RECORDED_AT=2026-09-20T18:33:18-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0024
-SUPERSEDES_FOREMAN_STATE_REVISION=0024
+BASED_ON_FOREMAN_STATE_REVISION=0025
+SUPERSEDES_FOREMAN_STATE_REVISION=0025
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,14 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0026 independently accepts the completed
+`A004-PRESENTATION-OWNERSHIP-FIRST-FRAME-R3` Reconstruction baton and advances
+A004 into the single physical compositor / first synchronized MPEG presentation
+/ shared-media-clock arm seam. It also accepts the worker's bounded dictionary
+maintenance repair after independently confirming that the final change merely
+adds Display to the known-safe reconciliation set and restores specialized
+Diagnostics metadata exactly.
 
 Revision 0025 independently accepts the completed
 `A004-RFB-FREEZE-REFRESH-R2` Reconstruction baton and advances A004 into the
@@ -33,12 +41,13 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A004_P2_INTEGRATED__A004_PRESENTATION_OWNERSHIP_RECONSTRUCTION_ACTIVE__A003_APPLICATION_ORCHESTRATION_DEPENDS_ON_A004_PRESENTATION_SEAMS`
+`A004_P3_INTEGRATED__A004_SHARED_COMPOSITOR_FIRST_SYNC_RECONSTRUCTION_ACTIVE__A003_APPLICATION_ORCHESTRATION_DEPENDS_ON_A004_PRESENTATION_SEAMS`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
 A004_P2_FOREMAN_ACCEPTED=YES
-A004_P3_ACTIVE=YES
+A004_P3_FOREMAN_ACCEPTED=YES
+A004_P4_ACTIVE=YES
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 
@@ -249,9 +258,156 @@ P3 therefore reconstructs only the start-side visible-ownership contract and
 reserves actual physical composition/clock-arm and Q7 retirement for later
 tranches.
 
+## A004 P3 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- branch HEAD `309a87851c17f65600ee1d647022cb8b6276baab`;
+- final pre-log source/tooling authority
+  `b8abd1a89f39710d99691e89e7e24ef0dcc75509`;
+- immutable Reconstruction log
+  `docs/ledge/work-log/20260920T181426-0400__reconstruction__a004-presentation__interactive.md`.
+
+The worker landed seven commits after Foreman authority `2f16a2b9...`:
+
+- `abe684c79cf49f856d3d72b3fe5523a815a4034b` —
+  Display-owned MPEG visible-ownership core and host fixture;
+- `d4035cce00d4bbef297b2018c1839767fdc2beed` —
+  first tree-identical dictionary reconciliation trigger;
+- `bfd2d0ffc54ef7100ea64b1fea65716a4bf04560` —
+  temporary reconciliation-tool generalization after Display was found absent;
+- `e6ebb4adf2280936f511612999a8793cd296c28b` —
+  second tree-identical reconciliation trigger;
+- `aa367034fa874d854209836e3133f45de5f68caa` —
+  automated symbol reconciliation;
+- `b8abd1a89f39710d99691e89e7e24ef0dcc75509` —
+  bounded tooling correction preserving unsupported dictionary metadata;
+- `309a87851c17f65600ee1d647022cb8b6276baab` —
+  required immutable Reconstruction work log.
+
+Independent source review confirms:
+
+- `src/display/mpeg_presentation.{c,h}` is a pure Display/Presentation owner;
+- it uses no UI/calibration, RFB, Transport, MPEG-decoder, Platform or
+  media-clock API;
+- one caller-supplied nonzero MPEG run/generation is copied verbatim and never
+  minted or incremented by Presentation;
+- one already-resolved `base / inner_content / suppression` geometry snapshot
+  is copied immutably for the run;
+- base geometry remains macroblock-sized while inner content is a symmetric
+  presentation-local inset and suppression must contain the complete base;
+- RFB_ONLY -> WAIT_FIRST_FRAME is the only arm transition;
+- WAIT_FIRST_FRAME reports FROZEN_RFB_DESKTOP/global protection while explicitly
+  not claiming MPEG visual ownership;
+- only an exact-generation first-frame-presented event may promote to
+  MPEG_OWNED, and duplicate/stale/wrong events fail closed;
+- MPEG_OWNED reports COMPOSITED, releases the generic global-freeze requirement,
+  and retains the exact generation/suppression snapshot;
+- exact pending-start abort returns to RFB_ONLY without creating RFB
+  FULL-refresh debt;
+- there is deliberately no active-stop/retire API, so current-Q7 retirement
+  remains attachable without an H1-style early reveal;
+- the first-frame state transition itself performs no physical draw, upload,
+  flip or media-clock arm and therefore does not manufacture hardware evidence.
+
+A004-P3-C1 through A004-P3-C10 are accepted as MET within the packet's bounded
+source scope.
+
+### P3 dictionary/tooling repair acceptance
+
+The worker's first behavior commit exposed a genuine integration defect: the
+canonical deterministic reconciliation helper did not target `src/display`.
+
+The temporary broad reconciliation then removed two maintained Diagnostics rows
+for live GNU `__typeof__(sendto)` alias declarations. The worker correctly
+rejected that collateral removal and narrowed the helper again.
+
+Independent Foreman comparison confirms the final state:
+
+- `src/diagnostics/SYMBOLS.md` is byte-identical to Foreman base
+  (blob `5918063c0a27596ab558aa6160ec69856dd43e5c`);
+- the generated portal again reports Diagnostics=69;
+- Display now has complete coverage with 113 symbols;
+- relative to the prior helper, the only functional target-set change is adding
+  `Path("src/display")`;
+- the workflow change only stages `src/display/SYMBOLS.md` during authorized
+  reconciliation;
+- specialized Diagnostics/framebuffer/UI dictionaries are not newly rewritten
+  by the helper.
+
+That final tooling repair is accepted as bounded integration work rather than
+product behavior.
+
+### P3 evidence
+
+GitHub Actions run `35541637912` at pickup HEAD completed SUCCESS.
+
+Host logs explicitly show:
+
+- `MPEG_PRESENTATION_TEST=PASS`;
+- `RFB_FLOW_POLICY_TEST=PASS`;
+- `MPEG_CALIBRATION_UNIT=PASS`;
+- `transport_runtime_test: PASS`;
+- the remaining canonical host suite passing.
+
+Project check, strict dictionary audit, broad PS2 compile, and linked
+current-source reproducibility also passed.
+
+Evidence limitation remains important: the current PS2 compile/link source
+lists do not yet include the still-unwired new P3 translation unit. Those jobs
+prove the existing linked product was not broken; the direct executable P3
+evidence is the host fixture. No physical PS2 run was performed.
+
+## Why P4 is the single physical compositor / first-sync seam
+
+Current authority now has:
+
+- P1 immutable accepted MPEG calibration meaning;
+- P2 generic RFB freeze/request/full-refresh policy;
+- P3 exact-run Presentation ownership state;
+- A003 MPEG decoder ownership and safe-stop behavior;
+- A002 one session-scoped shared media clock;
+- one existing PS2 Platform graphics owner whose successful
+  `pstvnc_ps2_graphics_present()` returns only after `gsKit_sync_flip()`.
+
+Frozen H1 `h1_cumulative39_graphics` proves the required visible layering:
+
+```text
+remote desktop
+-> black outer suppression footprint
+-> MPEG base
+-> black symmetric inner matte
+-> local UI / OSK overlay
+-> one GS queue / synchronized flip
+```
+
+H1 also proves that MPEG picture memory arrives in RGB16 macroblock order and
+must be presented through the same physical GS owner. Its useful resource
+behavior caches desktop/overlay state, reuses bounded video texture resources,
+and returns video-present success only after synchronized physical presentation.
+
+The clean reconstruction must **not** copy H1's structural shortcuts:
+
+- no textual inclusion/wrapping of another `.c` graphics owner;
+- no second GS presenter;
+- no semaphore justified solely by competing graphics callers;
+- no direct active `clear_video()` product stop that bypasses current Q7;
+- no MPEG decoder worker directly taking GS ownership.
+
+Current clean MPEG decode also exposes a real dependency for later integration:
+the decoder owns its picture buffer but has no per-picture presentation handoff.
+P4 therefore reconstructs the physical compositor contract and first-sync
+semantics without yet wiring the MPEG worker or final Application transaction.
+
+A003/A004 authority requires the shared media epoch to be armed by Presentation
+at the first **real synchronized MPEG presentation boundary**, not at START,
+producer admission, decode completion, upload, or a source-level state change.
+P4 must make that boundary explicit and host-testable while preserving that only
+a PS2 run can qualify the physical result.
+
 ## Active bounded Reconstruction packet
 
-PACKET_ID=`A004-PRESENTATION-OWNERSHIP-FIRST-FRAME-R3`
+PACKET_ID=`A004-SHARED-COMPOSITOR-FIRST-SYNC-R4`
 PACKET_STATUS=ACTIVE
 ROLE_KEY=`reconstruction`
 WORK_ITEM_KEY=`a004-presentation`
@@ -266,193 +422,200 @@ ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
 
 ### Objective
 
-Reconstruct the clean **Presentation-owned MPEG visible-ownership core** for the
-start side of A004:
+Reconstruct the clean **single-owner physical MPEG compositor and first
+synchronized presentation seam** required by A004.
 
-`RFB_ONLY -> WAIT_FIRST_FRAME -> MPEG_OWNED`
+The result must preserve one PS2 GS/dmaKit owner, accept one stable decoded
+RGB16 macroblock frame plus the exact P3 run snapshot, compose the qualified
+desktop/suppression/MPEG/inner-matte/local-overlay order, expose the real
+post-sync completion boundary, and attach the one session-scoped media-clock arm
+plus P3 first-frame promotion only to the exact first successful synchronized
+MPEG presentation.
 
-The owner must consume one already-resolved presentation geometry snapshot and
-one caller-supplied nonzero MPEG run/generation identity, preserve those facts
-immutably for the run, distinguish WAIT_FIRST_FRAME from real MPEG ownership,
-reject stale/wrong generation events, and expose the presentation mode needed by
-later Application/RFB/compositor orchestration.
+This packet reconstructs mechanism and boundary contracts. It does **not** wire
+the MPEG decoder worker, RFB/P2 runtime, calibration entry, START/producer
+transaction, scheduler/drop, Q7 retirement, or final Application lifecycle.
 
-This packet defines the source-level first-physical-frame **promotion contract**.
-It does not yet implement the physical MPEG compositor/GS draw itself and does
-not arm the media clock. Those actions remain the next presentation-mechanism
-tranche so the clock arm can be attached to the actual synchronized physical
-presentation boundary rather than to a synthetic state transition.
+### Required current authority / forensic trace
 
-### Execution policy
+Read current at wake, including:
 
-This is ordinary autonomous source reconstruction. Perform repository/history
-archaeology, source/test/docs changes, commits/ref updates, dictionary work and
-CI inspection through available GitHub/GitHub Actions authority.
-
-No live-Pi observation or physical PS2 action is required by this packet.
-Do not request user terminal proxy work.
-
-### Required authority / forensic trace
-
-Before behavior-bearing writes, read current:
-
-- `docs/ledge/LEDGE_RECONSTRUCTION_CONTRACT.md` rev 0006;
-- `docs/ledge/LEDGE_AUDIT_A004_PRESENTATION_CALIBRATION.md` rev 0001;
-- `docs/ledge/LEDGE_AUDIT_A003_MPEG_GENERATION.md` rev 0001, especially the
-  first-real-presentation clock-arm contract;
-- `docs/ledge/LEDGE_WIRE_RUNTIME_DECISIONS.md` rev 0011, especially Q6/Q7;
-- `docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md` rev 0004;
-- `docs/CLEAN_ARCHITECTURE.md`;
-- `docs/development/source-topology.md`;
-- current `src/display/`, `src/platform/ps2_graphics.{c,h}`,
-  `src/ui/mpeg_calibration.{c,h}`, `src/rfb/flow_policy.{c,h}`,
-  `src/media/clock.{c,h}`, and `src/mpeg/decoder.{c,h}`.
+- Reconstruction Contract rev 0006;
+- Foreman State rev 0026;
+- A002 CONFIG/audio/common-clock audit rev 0001;
+- A003 MPEG-generation audit rev 0001;
+- A004 presentation/calibration audit rev 0001;
+- Wire runtime decisions rev 0011, especially Q6/Q7;
+- architecture overlay rev 0004;
+- clean architecture and source-topology policy;
+- `src/display/display.{c,h}`;
+- `src/display/mpeg_presentation.{c,h}`;
+- `src/platform/ps2_graphics.{c,h}`;
+- `src/media/clock.{c,h}`;
+- `src/mpeg/decoder.{c,h}`;
+- current local-UI presentation types only far enough to preserve final-overlay
+  ordering;
+- current clean PS2 compile/link manifests.
 
 Trace frozen H1 commit
 `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`, at minimum:
 
-- `h1_mpeg_presentation_owner.{c,h}` and host test;
-- `h1_mpeg_start_handoff.{c,h}` and host test;
-- calibration geometry helpers only far enough to recover base/inner/suppression
-  relationships;
-- any directly referenced first-frame ownership fixture needed to distinguish
-  state promotion from physical composition.
+- `experiments/media-harness-h1/h1_cumulative39_graphics.{c,h}`;
+- `h1_video_runtime.{c,h}` around sequence picture layout, upload/draw and
+  first synchronization;
+- `h1_media_clock.{c,h}`;
+- `MEDIA_OBJECT_COMPOSITION_NOTES.md`;
+- P3's already-traced ownership/start evidence only as needed to bind exact run
+  state.
 
-Historical H1 generation minting and direct active-stop behavior are evidence,
-not current product authority.
+Historical wrapper/semaphore/direct-clear shapes are evidence, not current
+product authority.
 
 ### Required behavior
 
-1. **Presentation owns visible-state facts.** Place the new owner in the existing
-   Display/Presentation responsibility family. It must not live in UI, RFB,
-   MPEG decoder, Transport, Platform or Application.
-2. **Neutral resolved geometry.** Presentation consumes a caller-supplied
-   resolved geometry snapshot that keeps the exact MPEG base rectangle,
-   presentation-local inner matte/content meaning, and outer/suppression
-   footprint distinct. Do not make Display depend on UI/calibration internals
-   merely to obtain these values, and do not create a second calibration store.
-3. **Caller-owned generation.** Arming requires one nonzero caller-supplied MPEG
-   run/generation identity. Presentation copies and fences that identity; it
-   does **not** mint, increment or redefine MPEG generation identity.
-4. **Arm only from RFB_ONLY.** A valid arm from ordinary RFB presentation enters
-   WAIT_FIRST_FRAME and snapshots geometry/generation immutably. Nested/repeated
-   arm attempts fail closed without replacing live state.
-5. **WAIT_FIRST_FRAME is not MPEG ownership.** During WAIT_FIRST_FRAME:
-   - MPEG is not yet the visible owner;
-   - the last already-presented RFB desktop is the remote presentation mode;
-   - a generic global RFB protection requirement is exposed for later
-     Application coordination with P2;
-   - START, producer admission, decode completion, upload readiness or accepted
-     calibration alone cannot promote ownership.
-6. **Exact first-frame promotion.** Only the explicit exact-generation
-   first-physical-frame-presented event may transition WAIT_FIRST_FRAME to
-   MPEG_OWNED. Wrong, zero, stale or duplicate generation events fail closed.
-   Repository/host tests exercise the state contract; they are not physical
-   evidence that a frame actually reached the television.
-7. **MPEG_OWNED is composited, not globally frozen.** After promotion:
-   - the presentation mode is COMPOSITED;
-   - global RFB freeze is no longer required;
-   - authoritative RFB framebuffer truth may continue advancing;
-   - the exact generation's suppression footprint remains owned by Presentation
-     for the later compositor.
-8. **Pending-start abort only.** An exact-generation abort while
-   WAIT_FIRST_FRAME may return to RFB_ONLY and release that pending snapshot.
-   Stale/wrong aborts fail closed. Do not create false MPEG ownership or own RFB
-   FULL-refresh debt; later Application orchestration will thaw P2.
-9. **Current-Q7 retirement guard.** Do **not** reconstruct H1's direct
-   MPEG_OWNED -> RFB_ONLY `stop()` semantics in this packet. Do not remove the
-   active generation/suppression snapshot merely because stop was requested.
-   Active retirement/overlapped RFB restoration/final reveal remain a later Q7
-   tranche.
-10. **No premature physical/clock claim.** Do not call
-    `pstvnc_ps2_graphics_present()`, `pstvnc_media_clock_arm()`, or MPEG
-    decode/Transport APIs from this owner. The public contract must make clear
-    that the first-frame promotion event is to be invoked by the later
-    presentation mechanism only at the real synchronized physical boundary.
-11. **No cross-domain orchestration.** Do not wire calibration acceptance,
-    P2 freeze/thaw, MPEG START, decoder worker startup, Pi producer state,
-    pointer/mouse handling or Application transaction sequencing here.
-12. **Fail closed and remain inspectable.** Null/invalid geometry, zero
-    generation, invalid state transition, stale event or geometry inconsistency
-    must not mutate live owner state. Read-only queries must expose enough
-    state/geometry/mode for later clean orchestration without leaking mutable
-    internals.
+1. **One physical GS owner.** Evolve the existing Platform graphics mechanism;
+   do not create a competing GS/dmaKit owner, include another graphics `.c`
+   file, or give MPEG decoder/runtime direct GS ownership.
+2. **Neutral decoded-frame contract.** Define the smallest stable value needed
+   to describe one decoded RGB16 macroblock-order MPEG picture. It must carry
+   explicit source width/height/capacity facts and be consumable by
+   Display/Presentation without importing MPEG decoder private state.
+3. **Exact geometry/run fencing.** A video frame may be physically composed only
+   against the exact current P3 snapshot/generation. Source dimensions and the
+   P3 base rectangle must be mutually consistent; stale generation or geometry
+   mismatch fails before physical presentation.
+4. **Macroblock interpretation.** Preserve the qualified RGB16 16x16 macroblock
+   picture layout. Detile or otherwise adapt it through one clearly owned,
+   bounded mechanism suitable for the existing GS owner. Do not silently
+   reinterpret macroblock memory as a linear desktop texture.
+5. **Single composition order.** While MPEG is visible, one physical frame is:
+   remote desktop -> black suppression footprint -> MPEG base -> black symmetric
+   inner matte -> local UI/OSK overlay -> one GS queue/synchronized flip.
+6. **RFB truth versus suppression.** Remote desktop storage may advance while
+   MPEG is owned. Composition prevents remote pixels from becoming visible
+   inside the exact suppression footprint; suppression is not a second
+   framebuffer truth.
+7. **Local overlay remains final.** Existing local UI/OSK presentation remains
+   above MPEG/mattes and does not become MPEG state.
+8. **Resource discipline.** Keep video presentation resources bounded and
+   reusable. Do not leak VRAM or allocate a new permanent texture per frame/run.
+   Do not require re-uploading an unchanged full desktop for every MPEG frame
+   merely to reproduce H1 mechanically when the single GS owner can safely
+   retain current texture state.
+9. **Real synchronized completion seam.** A successful MPEG composite must
+   distinguish upload/draw submission from completion of the synchronized
+   physical presentation. Expose a narrow post-sync result/fact and, where
+   needed for clock arm, the exact platform timer observation associated with
+   that boundary. Timing primitive ownership remains Platform-facing.
+10. **First-sync clock arm.** For the exact P3 WAIT_FIRST_FRAME run, only after
+    the first MPEG composite has successfully crossed the synchronized boundary:
+    - arm the one session-scoped media clock from that boundary observation;
+    - then record the exact P3 first-frame-presented promotion.
+    START, decode success, picture availability, detile, texture upload, queue
+    submission or an unsynchronized draw must not arm or promote.
+11. **One session epoch, not one epoch per run.** If the session media clock is
+    already armed, a later MPEG run must preserve the existing session epoch;
+    it must not manufacture a second timing origin. The exact first synchronized
+    frame still performs its P3 run promotion.
+12. **Failure is fail-closed.** Invalid/stale frame, compositor failure, timer
+    observation failure, clock-arm failure, or first-frame promotion failure
+    must not report successful first presentation. Preserve enough state for the
+    later Application owner to contain/retire the run safely.
+13. **Subsequent-frame stability.** After P3 is MPEG_OWNED, further exact-run
+    frames use COMPOSITED presentation without re-promoting ownership or
+    re-arming/replacing the session clock.
+14. **No early current-Q7 reveal.** Do not add an active
+    MPEG_OWNED -> RFB_ONLY clear/stop shortcut. Do not clear the P3 active
+    snapshot or reveal the suppression area merely because a stop is requested.
+    Retirement/overlapped RFB restoration/final reveal remains later work.
+15. **No premature cross-domain runtime wiring.** Do not yet make
+    `pstvnc_mpeg_decoder_run()` call the compositor, create a frame queue,
+    wire P2 freeze/thaw, modify calibration/input flow, send START/RETIRE, or
+    perform final Application orchestration.
+16. **Direct PS2 build coverage.** Any P3/P4 source that is now part of the
+    physical compositor mechanism must be added to the canonical strict PS2
+    compile and linked clean-build manifests so successful PS2 jobs genuinely
+    compile/link that code. Preserve reproducible whole-ELF/PT_LOAD checks.
 
-### Placement / topology constraint
+### Placement / shape guidance
 
-Prefer the existing `src/display/` domain. Do not create a new top-level
-`src/presentation` directory merely to mirror historical naming.
+Keep semantic presentation policy in `src/display/` and hardware GS/dmaKit
+mechanism in the existing `src/platform/ps2_graphics.{c,h}` seam.
 
-The worker may choose the smallest coherent file representation after inspecting
-current Display ownership. Any new clean source must receive synopsis,
-`src/display/SYMBOLS.md` coverage, canonical host-test registration and
-generated dictionary reconciliation.
+Do not create a new top-level presentation directory. A small Display-owned
+compositor/coordinator module is acceptable if it makes the first-sync/clock/P3
+boundary testable without moving raw GS ownership out of Platform.
 
-Avoid a `src/display -> src/ui` dependency. If presentation needs a value type,
-define it with the owner whose meaning it represents or use an already-neutral
-type justified by current architecture.
+A narrow Platform frame/result value is acceptable where necessary to report
+successful synchronized completion and timer observation, but Platform must not
+learn MPEG lifecycle/generation meaning.
+
+Do not let Display import UI calibration internals; P3 neutral geometry remains
+the presentation value.
 
 ### Acceptance criteria
 
-- `A004-P3-C1 OWNER_BOUNDARY`: visible MPEG ownership state resides with
-  Display/Presentation and introduces no forbidden domain dependency.
-- `A004-P3-C2 RESOLVED_GEOMETRY`: one immutable start snapshot preserves
-  base, inner-matte/content and suppression meanings without duplicating the
-  calibration owner.
-- `A004-P3-C3 GENERATION_FENCE`: generation is caller-supplied/nonzero and
-  stale/wrong/duplicate events cannot seize or replace ownership.
-- `A004-P3-C4 WAIT_FIRST_FRAME`: arm enters a genuine protected gap that is
-  explicitly not MPEG visual ownership and reports frozen-desktop/global
-  protection semantics.
-- `A004-P3-C5 FIRST_FRAME_PROMOTION`: only the exact first-frame-presented
-  event promotes WAIT_FIRST_FRAME -> MPEG_OWNED exactly once.
-- `A004-P3-C6 COMPOSITED_MODE`: MPEG_OWNED reports composited presentation,
-  releases the global-freeze requirement, and retains exact suppression facts
-  while permitting RFB truth to advance underneath.
-- `A004-P3-C7 ABORT_PENDING`: exact pending-start abort returns safely to
-  RFB_ONLY; stale aborts fail closed and no RFB debt is duplicated.
-- `A004-P3-C8 Q7_RETIREMENT_GUARD`: there is no H1-style direct active stop
-  that reveals RFB or destroys active suppression; current-Q7 retirement
-  remains attachable as a later state/process.
-- `A004-P3-C9 CLOCK_PHYSICAL_BOUNDARY`: no START/decode/upload/state-only path
-  arms the media clock or claims hardware presentation; the later physical
-  compositor retains the real first-frame/clock-arm callsite.
-- `A004-P3-C10 CLEAN_INTEGRATION`: focused tests, full host suite, canonical
-  project check and strict dictionary audit pass; broad PS2 build evidence is
-  classified accurately and no hardware qualification is claimed.
+- `A004-P4-C1 SINGLE_GS_OWNER`: all desktop/MPEG/matte/local-overlay physical
+  drawing converges through the one existing Platform graphics owner.
+- `A004-P4-C2 FRAME_CONTRACT`: one bounded RGB16 macroblock frame contract is
+  explicit, validated and independent of MPEG decoder private state.
+- `A004-P4-C3 EXACT_RUN_GEOMETRY`: stale generation and source/base mismatch
+  are rejected before draw; P3 snapshot is the run geometry authority.
+- `A004-P4-C4 COMPOSITION_ORDER`: desktop -> suppression -> MPEG -> inner
+  matte -> local overlay -> one synchronized presentation is structurally
+  enforced.
+- `A004-P4-C5 SUPPRESSION_TRUTH`: RFB authoritative pixels remain separate
+  from visible suppression; updates underneath MPEG remain representable.
+- `A004-P4-C6 RESOURCE_DISCIPLINE`: bounded reusable video resources and
+  sensible cached desktop/overlay use avoid per-frame/per-run resource leaks or
+  unnecessary full-desktop upload as a correctness requirement.
+- `A004-P4-C7 SYNC_BOUNDARY`: physical success is reported only after the one
+  synchronized presentation boundary; upload/queue submission is not promoted
+  to physical completion.
+- `A004-P4-C8 SESSION_CLOCK_ARM`: only the first real synchronized MPEG
+  presentation can arm an unarmed session media epoch; already-armed epoch is
+  preserved across later runs.
+- `A004-P4-C9 FIRST_FRAME_PROMOTION`: exact P3 WAIT_FIRST_FRAME promotion
+  occurs only after successful synchronized presentation and never on
+  START/decode/upload alone.
+- `A004-P4-C10 SUBSEQUENT_FRAME_STABILITY`: exact MPEG_OWNED frames neither
+  re-arm/replace the clock nor duplicate first-frame promotion.
+- `A004-P4-C11 Q7_GUARD`: no active direct clear/stop reveals RFB or destroys
+  current suppression; Q7 retirement remains a later ordered seam.
+- `A004-P4-C12 CLEAN_DIRECT_BUILD_EVIDENCE`: focused host contracts, complete
+  host suite, project/dictionary checks, and canonical PS2 compile/link
+  manifests directly cover the new physical-compositor source. Hardware
+  qualification remains explicitly separate.
 
 ### Explicit non-goals
 
-Do not implement in this packet:
+Do not implement in P4:
 
-- physical MPEG GS texture upload/draw/compositor mechanics;
-- shared desktop -> suppression/matte -> MPEG -> inner matte -> local overlay
-  render plan;
-- media-clock arm callsite or timer observation;
-- absolute video scheduler/drop;
-- active MPEG retirement or current-Q7 overlapped restoration/final reveal;
-- calibration controller-entry gesture/timing;
-- calibration-to-Presentation/Application runtime wiring;
-- P2 RFB flow-policy runtime wiring;
-- Transport START/RETIRE or Pi producer orchestration;
-- MPEG decoder worker integration;
-- final A003/A004 Application transaction;
-- A005 general input reconstruction;
-- physical hardware qualification.
+- MPEG decoder worker -> presentation handoff/queue/thread integration;
+- final Application MPEG activation transaction;
+- P1 calibration entry/accept wiring;
+- P2 RFB freeze/thaw runtime wiring;
+- Transport START/RETIRE or Pi producer activation;
+- absolute video scheduler or lateness/drop policy;
+- current-Q7 retirement/overlapped RFB rebuild/final reveal;
+- A005 general input composition;
+- hardware visual/A/V/endurance qualification.
 
 ### Worker return
 
 Return:
 
-- exact current/frozen forensic files inspected and behavior recovered;
-- exact source/test/docs files and commits changed;
-- placement and value-type ownership decision;
-- A004-P3-C1 through C10 disposition;
-- focused/full checks and exact results;
-- explicit generation-ownership rationale;
-- explicit confirmation that H1 direct-stop semantics were **not** restored;
-- ambiguity/evidence boundaries preserved;
-- execution classification and any genuinely unavailable evidence;
+- exact current/frozen evidence inspected;
+- exact source/tooling/build/test files and commits changed;
+- one-GS-owner shape and why no semaphore/parallel presenter was introduced;
+- decoded-frame layout/ownership decision;
+- synchronized completion/timer observation contract;
+- session-clock first-arm and later-run behavior;
+- P3 first-frame promotion integration at the mechanism boundary;
+- A004-P4-C1 through C12 disposition;
+- focused/full/PS2 compile/link/dictionary evidence;
+- explicit confirmation that no H1 direct active-clear/stop shortcut was added;
+- evidence gaps and hardware non-claims;
 - exact next dependency/baton point.
 
 Emit exactly one immutable Reconstruction log using:
@@ -461,23 +624,25 @@ Emit exactly one immutable Reconstruction log using:
 - WORK_ITEM_KEY=`a004-presentation`
 - WORKER_KEY=`interactive`
 
-Do not begin the physical compositor/clock-arm tranche in the same shift.
+Do not begin scheduler/drop, Q7 retirement, decoder-worker handoff, or final
+Application orchestration in the same shift.
 
 ## Deferred dependency graph
 
-After P2 returns, Foreman must choose the next owner seam from actual source.
+Expected remaining A004 work after active P4 is:
 
-Expected remaining A004 work after active P3 is:
+1. absolute video scheduler/drop plus current-Q7 active-retirement state,
+   overlapped RFB restoration and final visible handoff;
+2. explicit decoded-frame handoff/runtime integration from the MPEG worker to
+   the sole presentation owner if P4 source evidence shows that seam deserves
+   its own bounded packet;
+3. final Application orchestration consuming A003 plus P1/P2/P3/P4 public
+   seams, including activation/abort/failure/shutdown ordering.
 
-1. physical shared compositor plus first synchronized MPEG presentation and the
-   Presentation-owned media-clock arm callsite;
-2. generation/run-scoped suppression/matte layering and local-overlay ordering
-   as part of that one physical presentation path;
-3. absolute scheduler/drop plus current-Q7 retirement/overlapped RFB
-   restoration/final visible handoff;
-4. final Application orchestration consuming A003 + A004 public seams.
+Foreman must choose the exact next seam from returned P4 source rather than
+pre-authorizing those later tranches.
 
-This is planning only, not worker authority to pre-implement later tranches.
+This is planning only, not worker authority to pre-implement later work.
 
 ## Hardware qualification debt
 
@@ -485,9 +650,11 @@ HARDWARE_PENDING=A004 visual geometry/matte/suppression/first-frame qualificatio
 
 ## Foreman next pickup
 
-Consume the `A004-PRESENTATION-OWNERSHIP-FIRST-FRAME-R3` Reconstruction
-baton, independently inspect source/tests/generation semantics and confirm that
-current Q7 remains attachable without an H1-style direct active stop. Then
-decide the next bounded physical compositor/clock-arm seam.
+Consume the `A004-SHARED-COMPOSITOR-FIRST-SYNC-R4` Reconstruction baton,
+independently verify that one physical GS owner remains authoritative, that
+first-sync/clock/P3 promotion is tied to the actual synchronized boundary, that
+the canonical PS2 build directly covers the new mechanism, and that current Q7
+remains attachable without an active direct-clear shortcut. Then choose the next
+bounded scheduler/retirement/runtime seam from actual source.
 
 Do not execute the packet from the Foreman seat.
