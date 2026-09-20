@@ -60,6 +60,8 @@ static pstvnc_transport_audio_channel_config_t observed_audio_config;
 static pstvnc_transport_mpeg_channel_config_t observed_mpeg_config;
 static pstvnc_transport_runtime_t *observed_runtime;
 static pstvnc_transport_access_t current_access;
+static int close_during_rfb_read;
+static pstvnc_transport_result_t close_during_rfb_read_result;
 
 typedef enum lifecycle_event {
     EVENT_STOP = 1,
@@ -114,6 +116,8 @@ static void reset_fixture(void)
     mpeg_snapshot_result = 1;
     mpeg_wait_result = 1;
     mpeg_done_result = 1;
+    close_during_rfb_read = 0;
+    close_during_rfb_read_result = PSTVNC_TRANSPORT_FAILED;
     quiesce_requested_result = 1;
     quiesce_boundary_result = 1;
     quiesce_commit_result = 1;
@@ -308,10 +312,20 @@ int pstvnc_transport_runtime_rfb_read_exact(
     void *buffer,
     size_t count)
 {
-    (void)runtime;
     (void)buffer;
     (void)count;
     rfb_read_calls += 1;
+
+    /*
+     * Deterministic Q12 race fixture: begin retirement after the bridge has
+     * admitted this call but before the runtime call returns.
+     */
+    if (close_during_rfb_read) {
+        close_during_rfb_read = 0;
+        runtime->receiver_done = 1;
+        close_during_rfb_read_result = pstvnc_transport_session_close();
+    }
+
     return read_result;
 }
 
@@ -797,6 +811,71 @@ static void test_stale_access_cannot_cross_reconnect(void)
     CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
 }
 
+
+static void test_admitted_call_blocks_runtime_reuse(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_access_t access_a;
+    pstvnc_transport_access_t access_b;
+    unsigned char byte = 0u;
+    int socket_fd = 73;
+    int read_before;
+
+    reset_fixture();
+    memset(&access_a, 0, sizeof(access_a));
+    memset(&access_b, 0, sizeof(access_b));
+
+    CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&access_a) ==
+        PSTVNC_TRANSPORT_OK);
+
+    /*
+     * The runtime stub calls session_close() while this A read is already
+     * admitted. Closing admission is immediate, but release must wait for this
+     * Transport operation to return.
+     */
+    close_during_rfb_read = 1;
+    CHECK(pstvnc_transport_rfb_read_exact(
+        &access_a, &byte, 1u) == PSTVNC_TRANSPORT_OK);
+    CHECK(close_during_rfb_read_result == PSTVNC_TRANSPORT_WOULD_BLOCK);
+    CHECK(release_calls == 0);
+
+    /* A's door is already closed: no later A operation may enter Transport. */
+    read_before = rfb_read_calls;
+    CHECK(pstvnc_transport_rfb_read_exact(
+        &access_a, &byte, 1u) == PSTVNC_TRANSPORT_CLOSED);
+    CHECK(rfb_read_calls == read_before);
+
+    /*
+     * The admitted call has returned, but A has not yet completed retirement,
+     * so the singleton runtime still cannot become B.
+     */
+    socket_fd = 74;
+    CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
+        PSTVNC_TRANSPORT_INVALID);
+    CHECK(socket_fd == 74);
+    CHECK(release_calls == 0);
+
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+    CHECK(release_calls == 1);
+
+    /* Only after complete A retirement may ordinary B startup reuse runtime. */
+    CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(socket_fd == -1);
+    CHECK(pstvnc_transport_access_acquire(&access_b) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(access_a.opaque_ticket != access_b.opaque_ticket);
+
+    CHECK(pstvnc_transport_rfb_read_exact(
+        &access_a, &byte, 1u) == PSTVNC_TRANSPORT_CLOSED);
+
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+    CHECK(release_calls == 2);
+}
+
 int main(void)
 {
     test_rfb_only_open_and_close_regression();
@@ -807,6 +886,7 @@ int main(void)
     test_rfb_result_mapping_regression();
     test_audio_result_mapping();
     test_mpeg_result_mapping();
+    test_admitted_call_blocks_runtime_reuse();
     test_stale_access_cannot_cross_reconnect();
 
     if (failures != 0) {
