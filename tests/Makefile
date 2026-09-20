@@ -691,3 +691,21 @@ $(RFB_FLOW_POLICY_TEST): \
 		../src/framebuffer/framebuffer.c \
 		-o $(RFB_FLOW_POLICY_TEST)
 
+MPEG_PRESENTATION_TEST := .build/mpeg_presentation_test
+
+.PHONY: mpeg-presentation-unit
+unit: mpeg-presentation-unit
+
+mpeg-presentation-unit: $(MPEG_PRESENTATION_TEST)
+	./$(MPEG_PRESENTATION_TEST)
+
+$(MPEG_PRESENTATION_TEST): \
+	unit/mpeg_presentation_test.c \
+	../src/display/mpeg_presentation.c \
+	../src/display/mpeg_presentation.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/mpeg_presentation_test.c \
+		../src/display/mpeg_presentation.c \
+		-o $(MPEG_PRESENTATION_TEST)
+
