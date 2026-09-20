@@ -202,7 +202,16 @@ static int video_is_valid(
         !pstvnc_mpeg_rgb16_macroblock_surface_valid(
             &video->surface) ||
         !rect_is_valid(&video->base) ||
-        !rect_is_valid(&video->inner_content) ||
+        video->inner_content.x < 0 ||
+        video->inner_content.y < 0 ||
+        video->inner_content.width < 0 ||
+        video->inner_content.height < 0 ||
+        video->inner_content.x >
+            (int32_t)PSTVNC_DISPLAY_WIDTH -
+            video->inner_content.width ||
+        video->inner_content.y >
+            (int32_t)PSTVNC_DISPLAY_HEIGHT -
+            video->inner_content.height ||
         !rect_is_valid(&video->suppression) ||
         video->surface.width !=
             (unsigned int)video->base.width ||

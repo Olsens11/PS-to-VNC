@@ -483,6 +483,46 @@ static void test_clock_failure_after_sync_does_not_promote(void)
         PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME);
 }
 
+
+static void test_full_inner_matte_remains_presentable(void)
+{
+    uint16_t pixels[512] = { 0u };
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_mpeg_presentation_geometry_t geometry = geometry_32x16();
+    pstvnc_media_clock_t clock;
+    pstvnc_mpeg_compositor_frame_t frame;
+    pstvnc_mpeg_compositor_effects_t effects;
+
+    reset_platform();
+    init_clock(&clock, 0u);
+
+    geometry.inner_content.x =
+        geometry.base.x + geometry.base.width / 2;
+    geometry.inner_content.y =
+        geometry.base.y + geometry.base.height / 2;
+    geometry.inner_content.width = 0;
+    geometry.inner_content.height = 0;
+
+    pstvnc_mpeg_presentation_init(&presentation);
+    assert(pstvnc_mpeg_presentation_arm(
+        &presentation,
+        &geometry,
+        70u));
+
+    frame = make_frame(pixels, 512u, 70u);
+
+    assert(pstvnc_mpeg_compositor_present(
+        &presentation,
+        &clock,
+        &frame,
+        &effects) == PSTVNC_MPEG_COMPOSITOR_OK);
+
+    assert(platform_calls == 1u);
+    assert(last_video.inner_content.width == 0);
+    assert(last_video.inner_content.height == 0);
+    assert(effects.first_frame_promoted);
+}
+
 static void test_promotion_failure_is_not_reported_success(void)
 {
     uint16_t pixels[512] = { 0u };
@@ -526,6 +566,7 @@ int main(void)
     test_stale_and_geometry_mismatch_fail_before_platform();
     test_platform_and_sync_fail_closed();
     test_clock_failure_after_sync_does_not_promote();
+    test_full_inner_matte_remains_presentable();
     test_promotion_failure_is_not_reported_success();
 
     puts("MPEG_COMPOSITOR_TEST=PASS");

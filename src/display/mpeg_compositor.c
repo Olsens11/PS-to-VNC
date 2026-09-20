@@ -98,7 +98,16 @@ int pstvnc_mpeg_compositor_present(
         frame->surface.height !=
             (unsigned int)geometry.base.height ||
         !rect_within_logical_display(&geometry.base) ||
-        !rect_within_logical_display(&geometry.inner_content) ||
+        geometry.inner_content.x < 0 ||
+        geometry.inner_content.y < 0 ||
+        geometry.inner_content.width < 0 ||
+        geometry.inner_content.height < 0 ||
+        geometry.inner_content.x >
+            (int32_t)PSTVNC_DISPLAY_WIDTH -
+            geometry.inner_content.width ||
+        geometry.inner_content.y >
+            (int32_t)PSTVNC_DISPLAY_HEIGHT -
+            geometry.inner_content.height ||
         !rect_within_logical_display(&geometry.suppression))
         return PSTVNC_MPEG_COMPOSITOR_INVALID;
 
