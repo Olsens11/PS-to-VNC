@@ -264,19 +264,29 @@ particular filesystem location.
 
 ## Next action
 
-    NEXT_ACTION=VERIFY_EFFECTIVE_NATIVE_PI_DESKTOP_RFB_PROVIDER
+    NEXT_ACTION=QUALIFY_NATIVE_PI_DESKTOP_RFB_PATH_REPRODUCIBILITY
     BLOCKED_BY=NONE
     ISSUE40_BLOCKED_BY=NATIVE_PI_DESKTOP_RFB_PATH_NOT_YET_REPRODUCIBLY_QUALIFIED
 
 The current target is the **existing Raspberry Pi desktop session**, not a
 second PS2-specific Openbox/lxpanel desktop on `:1`.
 
-The 2026-09-19 read-only live preflight established that no `:1` X display
-currently exists, while the logged-in LightDM graphical session owns `:0`.
-The RFB provider also has a live local drop-in named
-`90-native-x0vnc.conf`; its effective directives must be inspected before any
-lifecycle mutation so the repository can describe the already-configured native
-desktop path accurately.
+The 2026-09-19 read-only live preflights established that no `:1` X display
+currently exists and that the active logged-in LightDM session is X11 on
+`:0`. The effective PS2-facing RFB endpoint is the enabled systemd socket
+`192.168.50.1:5900`, which triggers
+`ps-to-vnc-rfb-tigervnc.service`. Its live
+`90-native-x0vnc.conf` drop-in replaces the historical `:1`
+`Xtigervnc` command with `X0tigervnc -display :0 -rfbport -1`, supplies
+`DISPLAY=:0` and `XAUTHORITY=/home/ps2/.Xauthority`, and uses systemd
+socket activation rather than an alternate desktop.
+
+The separately running `X0tigervnc` listener on `127.0.0.1:5903` is
+operator/development infrastructure used by the Windows VNC-over-SSH access
+path. It is not part of the PS-to-VNC product route. The classification run
+performed no daemon reload, unit-state change, or display mutation. Detailed
+evidence and claim boundaries are recorded in
+`experiments/wire-q1-q12-proof/NATIVE_PI_RFB_PATH_CLASSIFICATION_2026-09-19.md`.
 
 The previously staged dedicated Openbox/lxpanel candidate remains useful
 historical/evaluation evidence, but it is **not** the current desktop target and
