@@ -14,27 +14,26 @@ It does **not** yet create or start the PS2-facing VNC service, choose the final
 window-manager/session contents, configure Samba, install the management service,
 apply traffic pacing, or import old Pi configuration.
 
-## Adopted TigerVNC package
+## Adopted TigerVNC provider packages
 
-The clean Debian 13 / arm64 pre-mutation census found:
+The selected Pi provider authority now needs two exact top-level TigerVNC
+packages from the reviewed Debian 13 / arm64 version:
 
     tigervnc-standalone-server=1.15.0+dfsg-2.1~deb13u1
+    tigervnc-scraping-server=1.15.0+dfsg-2.1~deb13u1
 
-`scripts/pi/install-tigervnc.sh` fails closed if the current APT candidate differs
-from that reviewed version. A changed repository candidate is a dependency-ledger
-review event, not permission to silently install a newer package.
+The standalone package preserves the historically qualified Xtigervnc `:1`
+provider/control. The scraping package supplies the selected native-desktop
+`/usr/bin/X0tigervnc` provider.
 
-The script intentionally uses the normal Debian dependency/recommendation graph.
-The pre-mutation simulation predicted five new packages and no unrelated upgrade:
+`scripts/pi/install-tigervnc.sh` fails closed if either APT candidate or an
+already-installed package differs from the reviewed version. A repository
+candidate change is a dependency-ledger review event, not permission to install
+a newer version silently.
 
-- `tigervnc-standalone-server`;
-- `tigervnc-common`;
-- `tigervnc-tools`;
-- `libfile-readbackwards-perl`;
-- `xfonts-base`.
-
-Exact installed versions are emitted after application and should be recorded in
-the dependency ledger/evidence before this foundation is promoted.
+Transitive package dependencies remain distro-managed. Exact installed package
+versions are emitted after application and should be captured as evidence before
+a later live qualification.
 
 ## Private PS2 Ethernet contract
 
@@ -84,6 +83,37 @@ session/service separately. That layer will prove fixed 480p geometry, the
 PS2-facing RFB/security contract, RGB565 behavior, endpoint health/restartability,
 and the minimum session/window-manager contents actually required.
 
+
+## Selected direct-RFB provider staging — A003 R11
+
+After the exact TigerVNC packages and private Ethernet foundation are present,
+the selected native provider definitions can be staged without changing live
+systemd state:
+
+```sh
+sudo ./scripts/pi/install-rfb-activation-units.sh stage
+sudo ./scripts/pi/install-rfb-activation-units.sh verify
+```
+
+Tracked targets are:
+
+    /etc/systemd/system/ps-to-vnc-rfb.socket
+    /etc/systemd/system/ps-to-vnc-rfb-tigervnc.service
+    /etc/systemd/system/ps-to-vnc-rfb-tigervnc-persistent.service
+    /etc/systemd/system/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf
+
+The first three definitions preserve the historical qualified Issue #5
+authority. The additive drop-in selects the existing LightDM/Xorg `:0`
+desktop through `/usr/bin/X0tigervnc -rfbport -1`.
+
+The stager refuses unknown/non-identical targets, requires the selected
+X0tigervnc executable, checks exact mode/bytes, and performs static composed-unit
+verification. It requires the RFB socket/provider/control units to be inactive
+and disabled.
+
+It performs **no** daemon reload, enable/disable, start/stop/restart, provider
+activation, or LightDM/Xorg mutation. Staging therefore does not constitute a
+fresh native-provider qualification.
 
 ## Product Wire runtime candidate — A003 R8
 
