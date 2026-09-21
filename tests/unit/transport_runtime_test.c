@@ -713,6 +713,36 @@ static void stop_and_release_runtime(pstvnc_transport_runtime_t *runtime)
     CHECK(pstvnc_transport_runtime_release(runtime) == 1);
 }
 
+
+static void test_established_lineage_initialization_preserves_sequence(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_physical_stream_t established_stream;
+    pstvnc_transport_session_config_t config = make_config();
+
+    reset_fixture();
+    memset(&established_stream, 0, sizeof(established_stream));
+    established_stream.socket_fd = 93;
+    established_stream.send_semaphore_id = 77;
+    established_stream.next_send_sequence = 2u;
+    established_stream.expected_receive_sequence = 2u;
+
+    CHECK(pstvnc_transport_runtime_initialize_established(
+        &runtime, &established_stream, &config) == 1);
+    CHECK(physical_adopt_calls == 0);
+    CHECK(established_stream.socket_fd == -1);
+    CHECK(established_stream.send_semaphore_id == -1);
+    CHECK(established_stream.next_send_sequence == 1u);
+    CHECK(established_stream.expected_receive_sequence == 1u);
+    CHECK(runtime.physical_stream.socket_fd == 93);
+    CHECK(runtime.physical_stream.send_semaphore_id == 77);
+    CHECK(runtime.physical_stream.next_send_sequence == 2u);
+    CHECK(runtime.physical_stream.expected_receive_sequence == 2u);
+
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+    CHECK(physical_release_calls == 1);
+}
+
 static void test_initialize_and_start_failure_ownership(void)
 {
     pstvnc_transport_runtime_t runtime;
@@ -1129,6 +1159,7 @@ static void test_fatal_stop_completion_precedes_reclaim_and_fresh_session(void)
 
 int main(void)
 {
+    test_established_lineage_initialization_preserves_sequence();
     test_initialize_and_start_failure_ownership();
     test_sole_receiver_dispatch_and_activity();
     test_invalid_frame_converges_fail_closed();
