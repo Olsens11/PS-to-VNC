@@ -126,22 +126,32 @@ for source in "${SOURCES[@]}"; do
         -o "$object"
 done
 
-declare -A SMS_EXPECTED_BLOBS=(
-    ["include/libmpeg.h"]="ee2195b52dc3a7112537046426a80aa0e603fa6c"
-    ["include/libmpeg_internal.h"]="c2f80a9104380634c3ef6749baa2e5f0acb5c13e"
-    ["src/libmpeg.c"]="f9e5f11689fa6ed3759365249c2d7cfb7335e2fb"
-    ["src/libmpeg_core.S"]="93638fd62e58bfac8c6ed1c5fc84ef119d318438"
-)
+SMS_REFERENCE="$ROOT/experiments/media-stream-exp3/vendor/sms-libmpeg"
 
-for relative_path in "${!SMS_EXPECTED_BLOBS[@]}"; do
-    actual_blob="$(git -C "$ROOT" hash-object "$SMS_VENDOR/$relative_path")"
-    expected_blob="${SMS_EXPECTED_BLOBS[$relative_path]}"
-    if [ "$actual_blob" != "$expected_blob" ]; then
-        echo "SMS_VENDOR_IDENTITY_MISMATCH=$relative_path:$actual_blob:$expected_blob" >&2
+if ! cmp -s "$SMS_VENDOR/UPSTREAM.txt" "$SMS_REFERENCE/UPSTREAM.txt"; then
+    echo 'SMS_VENDOR_PROVENANCE_MISMATCH=UPSTREAM.txt' >&2
+    exit 1
+fi
+
+if ! grep -Fq 'c1898094725ad750ec20e10cc148b39d7c8a9c65' "$SMS_VENDOR/UPSTREAM.txt"; then
+    echo 'SMS_VENDOR_PIN_MISSING=c1898094725ad750ec20e10cc148b39d7c8a9c65' >&2
+    exit 1
+fi
+
+for relative_path in \
+    include/libmpeg.h \
+    include/libmpeg_internal.h \
+    src/libmpeg.c \
+    src/libmpeg_core.S
+do
+    if ! cmp -s "$SMS_VENDOR/$relative_path" "$SMS_REFERENCE/$relative_path"; then
+        echo "SMS_VENDOR_IDENTITY_MISMATCH=$relative_path" >&2
         exit 1
     fi
-    echo "SMS_VENDOR_IDENTITY_PASS=$relative_path:$actual_blob"
+    echo "SMS_VENDOR_IDENTITY_PASS=$relative_path"
 done
+
+echo 'SMS_VENDOR_PROVENANCE_PASS=c1898094725ad750ec20e10cc148b39d7c8a9c65'
 
 SMS_FLAGS=(
     -D_EE
