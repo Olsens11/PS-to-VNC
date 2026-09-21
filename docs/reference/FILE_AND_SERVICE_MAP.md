@@ -44,7 +44,7 @@ Current responsibility locations are:
 
 | Responsibility | Current location |
 |---|---|
-| Raspberry Pi product Wire protocol/server runtime | `pi/wire_protocol.py`, `pi/wire_server.py` |
+| Raspberry Pi product Wire protocol/server and provider-neutral RFB Relay runtime | `pi/wire_protocol.py`, `pi/wire_server.py`, `pi/rfb_relay.py` |
 | Executable entry / application coordination | `src/main.c`, `src/app.c`, `src/app.h` |
 | Session CONFIG/profile decoding, validation, owner-specific immutable values, and config-text helpers | `src/config/` |
 | PCM playback, resident AUDSRV adapter, and session-scoped audio worker/resource/reservoir lifecycle | `src/audio/` |
