@@ -79,7 +79,7 @@ authority. It is not the selected current reconstruction desktop source.
 
 ## Authority and reviewed parameter surface
 
-The adopted Debian 13 package for the current provider is:
+The adopted Debian 13 package for the historical dedicated provider is:
 
     tigervnc-standalone-server
     1.15.0+dfsg-2.1~deb13u1
@@ -115,7 +115,7 @@ References:
 These package facts support the provider contract; the clean-Pi evidence records
 its live qualification.
 
-## Current provider product contract
+## Historical qualified dedicated provider product contract
 
 For the present milestone the provider must satisfy:
 
@@ -144,7 +144,7 @@ relying on resize or mode-selection machinery that belongs to later milestones.
 Why SecurityType None:
 
 The clean Issue #7 RFB client deliberately supports only the proven
-SecurityType None startup path. The current provider therefore has to offer None
+SecurityType None startup path. The historical dedicated provider therefore had to offer None
 for this milestone. The resulting unauthenticated RFB endpoint must be restricted
 to the private PS2-facing address rather than exposed on household/Wi-Fi
 interfaces. Authentication/encryption changes are a later explicit product
