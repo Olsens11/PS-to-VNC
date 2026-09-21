@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0040
-RECORDED_AT=2026-09-21T18:00:41-04:00
+STATE_REVISION=0041
+RECORDED_AT=2026-09-21T18:44:28-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0039
-SUPERSEDES_FOREMAN_STATE_REVISION=0039
+BASED_ON_FOREMAN_STATE_REVISION=0040
+SUPERSEDES_FOREMAN_STATE_REVISION=0040
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,18 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0041 independently accepts the completed
+A003-PI-RFB-INTERNAL-PROVIDER-ENDPOINT-R12 Reconstruction baton and advances to
+the bounded provider-attachment / ordered-quiesce seam. R12 now supplies a
+selected Pi-local-only 127.0.0.1:5900 X0tigervnc demand endpoint while preserving
+all direct-RFB history and keeping the Wire Relay unattached. The next packet
+reconstructs the provider attachment as a session-scoped RFB lifecycle owner,
+begins provider connection only after real RFB rider activity, keeps provider
+connect/read/write off the blocking Wire path, and composes the existing
+REQUEST/BOUNDARY/COMMIT/COMPLETE finite quiesce without inventing Application
+startup/restart policy or Pi flow-control constants that do not yet have shared
+configuration authority.
 
 Revision 0040 independently accepts the completed
 A003-PI-NATIVE-RFB-PROVIDER-AUTHORITY-R11 Reconstruction baton and advances to
@@ -167,7 +179,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A003_R11_INTEGRATED__PI_RFB_INTERNAL_PROVIDER_ENDPOINT_RECONSTRUCTION_ACTIVE__RFB_RELAY_ATTACHMENT_QUIESCE_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R12_INTEGRATED__PI_RFB_ATTACHMENT_QUIESCE_RECONSTRUCTION_ACTIVE__RFB_SESSION_COMPOSITION_CONFIG_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -190,9 +202,10 @@ PI_WIRE_CONTROL_OWNER=FOUNDATION_ACCEPTED_NO_RIDERS
 PI_RFB_WIRE_RELAY_CORE_FOREMAN_ACCEPTED=YES
 PI_RIDER_FOUNDATION=RFB_RELAY_CORE_ACCEPTED
 PI_NATIVE_RFB_PROVIDER_AUTHORITY_FOREMAN_ACCEPTED=YES
-PI_RFB_INTERNAL_PROVIDER_ENDPOINT_ACTIVE=YES
-RFB_PROVIDER_LIFECYCLE=INTERNAL_PROVIDER_ENDPOINT_RECONSTRUCTION_ACTIVE
-RFB_RELAY_PROVIDER_ATTACHMENT_QUIESCE=DEPENDENCY_QUEUED
+PI_RFB_INTERNAL_PROVIDER_ENDPOINT_FOREMAN_ACCEPTED=YES
+PI_RFB_ATTACHMENT_QUIESCE_ACTIVE=YES
+RFB_PROVIDER_LIFECYCLE=ATTACHMENT_QUIESCE_RECONSTRUCTION_ACTIVE
+RFB_SESSION_COMPOSITION_CONFIG=DEPENDENCY_QUEUED
 PI_MPEG_CONTROL_PRODUCER_OWNER=DEPENDENCY_QUEUED
 APPLICATION_ACTIVATION=DEPENDENCY_QUEUED
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
@@ -3293,7 +3306,7 @@ inactive staging. It does not yet connect R10 to it or implement quiesce.
 ## Active bounded Reconstruction packet
 
 PACKET_ID=A003-PI-RFB-INTERNAL-PROVIDER-ENDPOINT-R12
-PACKET_STATUS=ACTIVE
+PACKET_STATUS=COMPLETED_FOREMAN_ACCEPTED
 ROLE_KEY=reconstruction
 WORK_ITEM_KEY=a003-mpeg-generation
 WORKER_KEY=interactive
@@ -3486,6 +3499,406 @@ loopback-only provider socket/service, existing :0 X0 provider reuse, direct /
 internal mutual exclusion, exact inert staging, preserved R11/direct historical
 bytes, 5903 exclusion, R10 no-auto-attach boundary, static tests and all
 physical non-claims.
+
+Do not execute the active packet from the Foreman seat.
+
+## A003 R12 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- prior Foreman base
+  956ffd1f521f6e6654d6161d2cd34f01225b5b9e;
+- final pre-log R12 source/docs/test/tooling authority
+  4bab683674f29a790cc1d8a6d80f788aab2db744;
+- immutable Reconstruction-log head
+  1d5b297acac059f8906a67f28d141972a357dfc6;
+- immutable Reconstruction log
+  docs/ledge/work-log/20260921T181526-0400__reconstruction__a003-mpeg-generation__interactive.md.
+
+The pre-log R12 range is linear, ahead by 14 commits and behind by zero from
+Foreman State 0040 authority. Changed paths are confined to new Pi internal
+provider units/staging, Pi/architecture/reference documentation, tests and the
+test Makefile. No src/ or mk/ path changed.
+
+Independent review confirms:
+
+- systemd/pi/ps-to-vnc-rfb-internal.socket owns exactly
+  127.0.0.1:5900 with Accept=no and no wildcard, eth0, 192.168.50.1, IPv6 or
+  development-5903 selected listener;
+- systemd/pi/ps-to-vnc-rfb-internal-x0tigervnc.service reuses the exact selected
+  R11 X0tigervnc command/policy against the existing LightDM/Xorg :0 desktop and
+  consumes the inherited listener with -rfbport -1;
+- both new internal units conflict/order against the direct socket, direct
+  provider service and persistent direct control, while the preserved direct
+  definitions themselves remain byte-identical;
+- the R11 direct socket, historical base provider, persistent fallback and exact
+  native direct-provider drop-in retain their R12-base Git identities;
+- a dedicated internal-provider stager stages/verifies/removes only the two new
+  internal files, uses the direct alternative only as static-composition input,
+  rejects active/enabled internal units and unknown bytes, and performs no
+  daemon-reload/enable/disable/start/stop/restart or display mutation;
+- R10 Wire server, RFB Relay, Wire protocol and Wire service remain
+  byte-identical and contain no internal-provider connector or auto-attach;
+- current docs distinguish the selected mature internal endpoint, preserved R11
+  direct-native path, historical physically-qualified Xtigervnc :1 path and
+  development-only 5903 path;
+- no PS2 source/build input or new PT_LOAD surface changed.
+
+A003-R12-C1 through A003-R12-C12 are independently accepted as MET within the
+bounded repository/static/machine-evidence scope.
+
+### R12 machine evidence
+
+Canonical final pre-log workflow:
+
+35662431648 at 4bab683674f29a790cc1d8a6d80f788aab2db744 — final SUCCESS on attempt 5.
+
+The retry history is preserved. Exact-head attempts exposed existing
+scheduler-sensitive Transport host fixtures and one transient project-check
+failure whose artifact could not be recovered. No src/ or mk/ source changed
+between attempts and no out-of-scope product correction was made.
+
+The final exact-head run reports:
+
+- transport_runtime_test: PASS;
+- transport_audio_test: PASS;
+- transport_mpeg_test: PASS;
+- all nineteen R10 Pi Wire/Relay tests PASS;
+- all eight R11 native-provider tests PASS;
+- all nine R12 internal-provider tests PASS;
+- SOURCE_DICTIONARIES=PASS;
+- SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS;
+- SOURCE_TOPOLOGY_CONTRACT=PASS;
+- SOURCE_DICTIONARY_PORTAL_SYNC=PASS;
+- WORK_LOG_CHECK=PASS;
+- PS_TO_VNC_PROJECT_CHECK=PASS;
+- CLEAN_PS2_COMPILE_CHECK=PASS;
+- ISSUE7_LINKED_BUILD=PASS;
+- LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS.
+
+The immutable R12 worker-log head
+1d5b297acac059f8906a67f28d141972a357dfc6 has canonical workflow
+35663279849 SUCCESS on attempt 1 across all canonical job classes.
+
+Evidence classification:
+
+SOURCE_COMPLETE=YES_WITHIN_R12
+HOST_STATIC_TESTED=YES
+PS2_SOURCE_CHANGED=NO
+PS2_BUILD_INPUT_CHANGED=NO
+REPOSITORY_PROJECT_CHECK=PASS
+STRICT_DICTIONARIES=PASS
+INDEPENDENT_VALIDATION_R12=NOT_RUN
+LIVE_PI_R12_STAGING=NOT_RUN_NOT_CLAIMED
+INTERNAL_X0_PROVIDER_FRESH_PHYSICAL_QUALIFICATION=NOT_RUN_NOT_CLAIMED
+HARDWARE_QUALIFICATION_R12=PENDING
+
+## Why R13 is attachment + ordered quiesce, but not session composition
+
+Accepted authority now has all three structural pieces needed for the next
+bounded seam:
+
+1. R10 — a provider-neutral, bounded bidirectional RFB Wire Channel Relay;
+2. R11 — exact selected native X0tigervnc provider authority;
+3. R12 — a mature Pi-local-only provider demand endpoint at
+   127.0.0.1:5900.
+
+The remaining gap is lifecycle composition.
+
+The installed/default Wire server must still be allowed to hold an ACTIVE idle
+Wire Session without starting RFB. A provider connect must therefore not be a
+Q4 prerequisite or automatic consequence of TCP/Wire establishment.
+
+The natural first RFB activity is the PS2's channel-1 CREDIT published when the
+PS2 rider runtime actually starts. R13 uses that fact as the lazy provider-start
+edge: the first valid RFB CREDIT may begin the Pi-local provider attachment, but
+no provider connection is attempted merely because Wire became ACTIVE.
+
+R13 must also not invent Pi flow-control tuning. The PS2 RFB queue/initial
+credit/batch/max-payload values already belong to validated session/profile
+authority, but that profile is not yet delivered/composed on the Pi product
+path. Therefore the R13 attachment core takes its finite relay limits through an
+explicit configuration seam. The default installed Wire service remains
+establishment-only until a later session-composition/config packet supplies
+matching RFB authority.
+
+The finite quiesce mechanism is already present and parser-safe on the PS2:
+
+    Pi REQUEST
+      -> PS2 reaches complete RFB message boundary
+      -> PS2 BOUNDARY
+      -> Pi stops new provider reads and fully retires provider I/O
+      -> Pi COMMIT
+      -> PS2 accounts/discards terminal residual under current clean policy
+      -> PS2 COMPLETE
+
+R13 reconstructs the Pi half and the ordered composition with R10. It does not
+create the later policy that decides when ordinary product RFB should stop,
+retry or restart.
+
+## Active bounded Reconstruction packet
+
+PACKET_ID=A003-PI-RFB-ATTACHMENT-QUIESCE-R13
+PACKET_STATUS=ACTIVE
+ROLE_KEY=reconstruction
+WORK_ITEM_KEY=a003-mpeg-generation
+WORKER_KEY=interactive
+EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
+USER_TERMINAL_POLICY=EXCEPTION_ONLY
+PI_LOCAL_USER_PROXY_REQUIRED=NO
+ASSIGNING_BASE_HEAD=REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE
+FOREMAN_DECISION_BASE=1d5b297acac059f8906a67f28d141972a357dfc6
+
+### Objective
+
+Reconstruct the smallest mature Pi-side RFB attachment/lifecycle core that can
+bind one Wire Session's R10 Relay to the selected R12 internal provider endpoint
+without making RFB a Wire-lifetime prerequisite.
+
+R13 must:
+
+- keep idle Wire ACTIVE with no provider connection;
+- lazily begin provider attachment only when real RFB rider activity appears;
+- keep provider connection/read/write readiness-driven and nonblocking;
+- preserve explicit finite flow-control configuration rather than inventing Pi
+  tuning defaults;
+- implement the Pi side of the existing ordered
+  REQUEST/BOUNDARY/COMMIT/COMPLETE RFB quiesce lifecycle;
+- contain provider failure to RFB;
+- fully retire one attachment before any later replacement instance can exist.
+
+R13 reconstructs mechanism and ownership. It does not yet supply the
+Application/session-composition policy that selects RFB ON/OFF, delivers the
+shared profile, or retries/restarts a failed RFB instance.
+
+### Required authority
+
+Read current at wake, including:
+
+- AGENTS.md, CONTRIBUTING.md, Project Intent and Clean Architecture;
+- source naming/topology/module-lifecycle guidance;
+- Reconstruction Contract rev 0006 and work-log contract rev 0007;
+- Foreman State rev 0041;
+- Wire Runtime Decisions rev 0011, especially Q1-Q4 and Q8-Q12;
+- Architecture Overlay and A001 Transport/RFB audit;
+- accepted R10 pi/rfb_relay.py, pi/wire_server.py, pi/wire_protocol.py and
+  focused tests;
+- accepted R11/R12 provider authority and the exact selected internal endpoint;
+- current src/transport RFB credit/quiesce mechanics and src/rfb bridge/session
+  only as the already-accepted PS2 peer contract;
+- reference-only H1 h1_rfb_pi_bridge.py,
+  h1_rfb_session_adapter.py, CP2H and CP2I records for ordering/mechanism
+  evidence, not structural merge authority;
+- current module-lifecycle rule: stop completely before restart.
+
+### Required behavior
+
+1. Add one maintained Pi RFB provider-attachment/lifecycle owner at the smallest
+   appropriate boundary. It may own provider connection/quiesce state but must
+   not become a second Wire reader/writer, RFB parser or generic rider manager.
+2. The selected product provider endpoint is the R12 internal
+   127.0.0.1:5900 endpoint. Development 127.0.0.1:5903 remains prohibited.
+   Endpoint identity/configuration belongs outside the transport-neutral Relay.
+3. Wire establishment alone must not open/start the provider. An ACTIVE idle
+   Wire Session remains valid and does not demand-activate X0tigervnc.
+4. For the bounded RFB composition, the first exact nonzero channel-1 CREDIT
+   from the PS2 is the lazy rider-activity edge that may begin provider
+   attachment. Do not begin on HELLO/ACCEPT alone.
+5. Provider connect must be nonblocking/readiness-driven. A connect in progress
+   must not suspend the sole Pi Wire owner or prevent it from observing Wire
+   EOF/session state. Do not use blocking create_connection()/connect() on the
+   sole Wire execution path.
+6. R13 must not invent queue/window/payload constants. The attachment/Relay
+   receives explicit finite:
+   - provider-read credit limit;
+   - provider-write capacity;
+   - max DATA payload.
+   Validate them against current protocol bounds. Later session composition will
+   supply product values from shared configuration authority.
+7. While provider connection is pending, PS2-granted RFB read credit may be
+   retained only within the explicit finite configured limit. Pi must send no
+   reverse RFB CREDIT and PS2 can therefore send no credited client DATA until
+   provider connection succeeds.
+8. On successful provider connection, transfer/compose that socket into the R10
+   Relay exactly once, apply the already-received PS2 read credit, activate the
+   finite PS2->provider window, and let the Wire owner serialize the initial Pi
+   CREDIT. Preserve R10 actual-drain-before-credit-return behavior.
+9. Provider connection failure, EOF, read/write failure or local terminal state
+   is RFB-local. It stops further provider I/O and credit replenishment but does
+   not set Wire INACTIVE or make the Wire server/session itself fail merely
+   because RFB failed. Do not claim PS2 RFB recovery from this fact.
+10. Preserve the sole Wire I/O owner. The attachment/Relay may expose readiness
+    and bounded actions, but only WireConnectionOwner may recv/send the
+    PS2-facing socket or advance global Wire sequences.
+11. Preserve non-empty channel-1 DATA as opaque RFB bytes. Zero-length
+    channel-1 DATA is lifecycle control only and must never enter X0tigervnc.
+12. Provide an explicit RFB-owned quiesce request seam. REQUEST is a single
+    Pi->PS2 zero-length channel-1 DATA marker serialized by the Wire owner.
+    R13 does not yet decide the product event that calls this seam.
+13. After REQUEST, provider->PS2 reading may continue only until PS2 BOUNDARY so
+    the parser can finish the in-flight complete message. BOUNDARY is the first
+    PS2->Pi zero marker in that state and must be accepted only in-order.
+14. At BOUNDARY:
+    - stop admitting/performing any new provider reads immediately;
+    - stop accepting new provider-read credit as running authority;
+    - preserve already accepted PS2->provider bytes;
+    - nonblockingly drain the existing finite provider-write queue.
+15. COMMIT may be sent only after:
+    - no new provider read can occur;
+    - every provider byte already read before BOUNDARY has already been
+      serialized ahead of COMMIT by the sole Wire owner;
+    - all already-accepted provider writes have either drained successfully or
+      the quiesce has failed locally rather than pretending clean completion;
+    - the provider socket/attachment I/O is fully retired/closed.
+16. COMMIT is the next Pi->PS2 zero-length channel-1 DATA marker and is
+    serialized by the same Wire owner/global send sequence. No ordinary RFB
+    DATA/CREDIT may be emitted after COMMIT for that attachment.
+17. COMPLETE is accepted only as the next PS2->Pi zero-length marker after
+    COMMIT. It marks the attachment fully quiesced/stopped and does not terminate
+    the containing Wire Session.
+18. Out-of-order/duplicate RFB lifecycle markers or RFB-local lifecycle misuse
+    must fail/terminalize the RFB attachment at the smallest safe scope. Do not
+    manufacture a whole-Wire failure for a well-framed channel-local lifecycle
+    error unless a shared Transport invariant is actually compromised.
+19. If provider failure occurs outside a clean requested quiesce, terminate the
+    RFB attachment locally. Do not automatically retry, reconnect, request
+    quiesce, or start a replacement provider in R13; those are later policy.
+20. One attachment belongs permanently to one Wire Session. Wire loss closes
+    provider/Relay/attachment state completely. Session B starts with fresh
+    attachment/credit/quiesce state; no Session-A state or socket is rebound.
+21. Preserve the accepted PS2 parser/Transport quiesce implementation and all
+    src/ source byte-for-byte unless a genuine peer-contract defect is proven.
+    R13 is expected to be Pi-side product integration, not a new PS2 PT_LOAD
+    tranche.
+22. Keep the default installed Wire service establishment-only until later
+    session-composition/config authority can supply validated RFB flow limits.
+    R13 may expose an explicit configured composition/factory seam and exercise
+    it in host tests, but must not hardcode current lab values into the daemon
+    merely to make attachment automatic.
+23. Do not add a generic callback bus, arbitrary rider registry, general
+    reconnect framework, heartbeat, CONFIG implementation, AUDIO or MPEG rider.
+24. Update Pi/architecture/source dictionaries and comments so provider
+    lifecycle ownership, Relay transport ownership, Wire ownership and the
+    remaining session-composition dependency are explicit.
+
+### Acceptance criteria
+
+- A003-R13-C1 RFB_ATTACHMENT_PRODUCT_OWNER
+- A003-R13-C2 IDLE_WIRE_DOES_NOT_START_PROVIDER
+- A003-R13-C3 NONBLOCKING_LAZY_INTERNAL_CONNECT
+- A003-R13-C4 EXPLICIT_FINITE_FLOW_CONFIGURATION
+- A003-R13-C5 R10_RELAY_COMPOSED_ONLY_AFTER_CONNECT
+- A003-R13-C6 SOLE_WIRE_IO_OWNER_PRESERVED
+- A003-R13-C7 ORDERED_REQUEST_BOUNDARY_COMMIT_COMPLETE
+- A003-R13-C8 PROVIDER_IO_RETIRED_BEFORE_COMMIT
+- A003-R13-C9 PROVIDER_FAILURE_RFB_LOCAL
+- A003-R13-C10 SESSION_SCOPED_COMPLETE_STOP_NONRESUME
+- A003-R13-C11 DEFAULT_SERVICE_NO_UNVALIDATED_AUTO_ATTACH
+- A003-R13-C12 CLEAN_EVIDENCE_AND_CLAIM_BOUNDARY
+
+All must be MET for Foreman acceptance.
+
+### Evidence required
+
+Return deterministic host/source evidence proving at minimum:
+
+- an ACTIVE Wire Session with no RFB frames causes zero provider connect calls;
+- first valid PS2 RFB CREDIT starts exactly one provider-attachment attempt;
+- the selected product endpoint is 127.0.0.1:5900 and 5903 is absent;
+- a deliberately pending provider connect does not block Wire-session
+  observation/progress;
+- no Pi reverse RFB CREDIT exists before successful provider connect;
+- connect success creates exactly one R10 Relay, transfers the finite received
+  read credit and publishes only the configured finite reverse capacity;
+- provider->PS2 / PS2->provider R10 credit and drain regressions remain green;
+- connect failure/provider EOF/write failure is RFB-local and Wire stays ACTIVE
+  until the Wire peer itself ends or a genuine Wire error occurs;
+- REQUEST/BBOUNDARY spelling in evidence should be REQUEST/BOUNDARY:
+  exact marker order REQUEST -> BOUNDARY -> COMMIT -> COMPLETE;
+- REQUEST/COMMIT/other zero markers never reach provider bytes;
+- after BOUNDARY no further provider read occurs;
+- any pre-BOUNDARY provider bytes are Wire-sequenced before COMMIT;
+- accepted provider-write queue drains before provider close and COMMIT;
+- provider close/retirement is observable before COMMIT;
+- COMPLETE leaves Wire ACTIVE while the RFB attachment is fully stopped;
+- duplicate/out-of-order markers are RFB-local failures;
+- Session B constructs fresh connector/Relay/credit/quiesce state;
+- current PS2 quiesce/runtime/RFB fixtures remain green without changed src/;
+- default systemd Wire service has no hardcoded RFB flow constants or automatic
+  provider connection;
+- strict pi/source dictionary/topology/project checks remain green;
+- current-source PS2 compile/link remains reproducible and no new PT_LOAD claim
+  is made.
+
+If an evidence label or test name is introduced for marker ordering, spell the
+protocol phase BOUNDARY consistently; do not preserve the typographical
+"BBOUNDARY" above as product vocabulary.
+
+### Explicit non-goals
+
+Do not implement in R13:
+
+- CONFIG frame/product delivery;
+- the product owner that supplies RFB ON/OFF and flow-profile values;
+- automatic RFB reconnect/retry/backoff;
+- provider-failure -> PS2 RFB restart policy;
+- a second RFB instance in the same Wire Session;
+- Application RFB startup/restart orchestration;
+- RFB presentation/input changes;
+- live Pi unit staging, daemon reload or activation;
+- AUDIO Wire relay;
+- Pi MPEG DATA/control/producer behavior;
+- Application MPEG activation;
+- Q7 retirement/restoration;
+- physical PS2/Pi qualification.
+
+### Worker return
+
+Return exact source/test/dictionary/docs commits, attachment ownership and state
+model, nonblocking connect mechanism, explicit flow-config seam, exact marker
+ordering, provider-retirement-before-COMMIT proof, provider-failure containment,
+fresh-session proof, every corrected intermediate defect, strict repository
+evidence and every non-claim.
+
+Emit exactly one immutable Reconstruction log using:
+
+- ROLE_KEY=reconstruction;
+- WORK_ITEM_KEY=a003-mpeg-generation;
+- WORKER_KEY=interactive.
+
+Stop after R13.
+
+## Deferred dependency graph after accepted R13
+
+1. reconstruct the shared RFB session-composition/config authority that supplies
+   matching RFB ON/OFF and finite flow-profile values to the PS2 Transport
+   runtime and Pi attachment without inventing independent defaults;
+2. activate ordinary RFB session startup/readiness through Application using the
+   accepted Q4 + R13 path, then add complete-stop-before-restart policy;
+3. add Pi MPEG START/RETIRE control ownership behind the established Wire/rider
+   architecture;
+4. reconstruct Pi MPEG producer exact-run admission and one-way retirement;
+5. wire accepted MPEG runtime profile/calibration into bounded Application
+   activation;
+6. reconstruct current-Q7 retirement/failure, residual/credit finalization and
+   overlapped RFB restoration;
+7. integrate Wire-loss containment and repeated-run/repeated-session behavior;
+8. physically qualify the exact Pi Wire/internal-provider/Relay + PS2 product
+   path and final ELF.
+
+Foreman must re-evaluate returned R13 authority before authorizing item 1.
+
+## Hardware qualification debt
+
+HARDWARE_PENDING=R13 provider attachment/quiesce integration; R12 internal X0tigervnc loopback endpoint staging/live demand activation; R11 selected native-provider source authority; R10 bidirectional RFB credit/stall mechanics and changed PS2 Transport PT_LOAD; R9 PS2 product Q4 client; R8 Pi Wire service/no-carrier/listener lifecycle; shared RFB session composition/config; live ordinary RFB Application activation; reconstructed A003 R3-R7 MPEG runtime; MPEG one-run/repeated-run stale fencing; Wire-loss during MPEG; current-Q7 overlapped RFB restoration; A004 visible geometry/matte/suppression/first-frame timing; all-guns endurance; exact final product ELF
+
+## Foreman next pickup
+
+Consume A003-PI-RFB-ATTACHMENT-QUIESCE-R13. Independently verify lazy/nonblocking
+provider attachment, explicit finite config, no idle-Wire provider start, exact
+four-marker ordering, provider-I/O retirement before COMMIT, RFB-local failure
+containment, Session-B freshness, default-service no-auto-attach, unchanged PS2
+source and all live/hardware non-claims.
 
 Do not execute the active packet from the Foreman seat.
 
