@@ -143,7 +143,11 @@ typedef struct pstvnc_transport_runtime {
     uint8_t receiver_payload[PSTVNC_TRANSPORT_MAX_PAYLOAD];
 } pstvnc_transport_runtime_t;
 
-/* Preserve the existing RFB-only initialization behavior. */
+/*
+ * Raw-descriptor constructors remain Transport-internal regression seams.
+ * Cross-component bridge code must use the established-lineage constructors
+ * below so ordinary rider activation cannot bypass product Q4.
+ */
 int pstvnc_transport_runtime_initialize(
     pstvnc_transport_runtime_t *runtime,
     int socket_fd,
@@ -163,6 +167,31 @@ int pstvnc_transport_runtime_initialize_with_mpeg(
 int pstvnc_transport_runtime_initialize_with_audio_mpeg(
     pstvnc_transport_runtime_t *runtime,
     int socket_fd,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config);
+
+/*
+ * Rider-runtime constructors that consume one already-established Q4 physical
+ * lineage. Ownership moves only on success and preserves sequence 2/2.
+ */
+int pstvnc_transport_runtime_initialize_established(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config);
+int pstvnc_transport_runtime_initialize_established_with_audio(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config);
+int pstvnc_transport_runtime_initialize_established_with_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config);
+int pstvnc_transport_runtime_initialize_established_with_audio_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
     const pstvnc_transport_session_config_t *config,
     const pstvnc_transport_audio_channel_config_t *audio_config,
     const pstvnc_transport_mpeg_channel_config_t *mpeg_config);
