@@ -829,6 +829,8 @@ static void test_rfb_result_mapping_regression(void)
     reset_fixture();
     CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
         PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_ACTIVE);
     CHECK(pstvnc_transport_access_acquire(&current_access) ==
         PSTVNC_TRANSPORT_OK);
     CHECK(pstvnc_transport_rfb_read_exact(&current_access, &byte, 1u) == PSTVNC_TRANSPORT_OK);
@@ -841,13 +843,25 @@ static void test_rfb_result_mapping_regression(void)
 
     read_result = 0;
     observed_runtime->failed = 1;
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
     CHECK(pstvnc_transport_rfb_read_exact(&current_access, &byte, 1u) ==
         PSTVNC_TRANSPORT_FAILED);
+
+    /*
+     * The fixture clears the synthetic failure only so it can separately prove
+     * receiver completion. Either independently known terminal fact makes Wire
+     * unavailable before final release.
+     */
     observed_runtime->failed = 0;
     observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
     CHECK(pstvnc_transport_rfb_read_exact(&current_access, &byte, 1u) ==
         PSTVNC_TRANSPORT_CLOSED);
     CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
 }
 
 static void test_audio_result_mapping(void)
