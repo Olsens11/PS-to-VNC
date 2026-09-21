@@ -5,16 +5,21 @@
     WORKSTREAM=GITHUB_ISSUE_5
     ROLE=PACKAGE_SURFACE_AUTHORITY
     TARGET_OS=Debian_13_trixie_arm64
-    PACKAGE=tigervnc-standalone-server
+    HISTORICAL_DEDICATED_PACKAGE=tigervnc-standalone-server
+    SELECTED_NATIVE_PACKAGE=tigervnc-scraping-server
     REVIEWED_VERSION=1.15.0+dfsg-2.1~deb13u1
-    LIVE_INSTALLATION=QUALIFIED_ON_CLEAN_PI
-    LIVE_PACKAGE_VERSION=1.15.0+dfsg-2.1~deb13u1
+    HISTORICAL_DEDICATED_LIVE_QUALIFICATION=PASS
+    SELECTED_NATIVE_MACHINE_EVIDENCE=PRESERVED_NOT_FRESHLY_REQUALIFIED
     QUALIFICATION_EVIDENCE_HEAD=b40f422a760a0b7b6f2ab41699c5e72fda83bb83
 
-This note records the reviewed Debian package surface and the later clean-Pi
-qualification of that exact packaged provider. Package research remains source
-authority; the hardware evidence records what the installed implementation
-actually did.
+This note records both TigerVNC package surfaces now required by Pi provider
+authority. The dedicated `Xtigervnc :1` route was hardware-qualified during
+Issue #5. A later preserved machine campaign demonstrated the selected native
+desktop route through `X0tigervnc :0`; A003 R11 makes that package/executable
+reproducible without claiming a fresh live qualification.
+
+Package research and tracked provisioning are source authority. Historical
+machine evidence records what the installed implementations actually did.
 
 ## Debian package paths
 
@@ -41,6 +46,46 @@ package-owned executable path:
 rather than leaving executable-path discovery as an unresolved design question.
 Live qualification confirmed that `/usr/bin/Xtigervnc` belongs to the installed
 reviewed package and version.
+
+## Native desktop provider package
+
+The selected A003 R11 provider is supplied by the exact companion package:
+
+    tigervnc-scraping-server
+    1.15.0+dfsg-2.1~deb13u1
+
+Preserved machine evidence from the same Debian 13 / arm64 Pi recorded:
+
+    /usr/bin/X0tigervnc
+    owner package = tigervnc-scraping-server
+    package version = 1.15.0+dfsg-2.1~deb13u1
+
+The exact selected native-provider systemd drop-in is tracked at:
+
+    systemd/pi/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf
+
+Its recovered historical installed identity is:
+
+    installed path = /etc/systemd/system/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf
+    mode = 0644
+    bytes = 919
+    SHA256 = cf09bdf7b374f022b482e52201d8d6bc95c07687fa8fa827cb25ab74e8bcdf4d
+
+That definition selects the already-running LightDM/Xorg display `:0` and
+invokes `/usr/bin/X0tigervnc` with native systemd socket activation
+(`-rfbport -1`). It does not create another X desktop or another product TCP
+listener.
+
+The separate `127.0.0.1:5903` X0tigervnc listener observed in development
+history is Windows/operator tooling and is explicitly not a PS-to-VNC product
+dependency or internal hop.
+
+R11 provisioning therefore requires both exact-version packages:
+
+- `tigervnc-standalone-server`, retained for the historical qualified
+  dedicated-`:1` definition/control;
+- `tigervnc-scraping-server`, required by the selected native-`:0`
+  reconstruction route.
 
 ## Packaged service does not imply adoption
 
@@ -95,11 +140,15 @@ The 2026-09-02 clean-Pi campaign confirmed:
 - automatic replacement of stale X display artifacts on the next demand;
 - a deterministic `xsetroot` color change physically displayed through the PS2.
 
-The package supplies the current replaceable provider. It does not define the
-permanent PS-to-VNC architecture or silently adopt TigerVNC's packaged
-multi-user-session policy.
+The standalone package supplied the historical qualified replaceable provider.
+The selected reconstruction provider now uses the scraping package against the
+existing native desktop. Neither package defines the permanent PS-to-VNC
+architecture.
 
-    TIGERVNC_PACKAGE_SURFACE=REVIEWED_AND_LIVE_VERIFIED
-    TIGERVNC_DIRECT_EXECUTABLE_PATH=/usr/bin/Xtigervnc
+    HISTORICAL_XTIGERVNC_PACKAGE_SURFACE=REVIEWED_AND_LIVE_VERIFIED
+    HISTORICAL_XTIGERVNC_EXECUTABLE=/usr/bin/Xtigervnc
+    SELECTED_X0TIGERVNC_EXECUTABLE=/usr/bin/X0tigervnc
+    SELECTED_X0TIGERVNC_PACKAGE=tigervnc-scraping-server
     TIGERVNC_SERVICE_MODEL=SYSTEMD_SOCKET_ACTIVATED
-    TIGERVNC_LIVE_VALIDATION=PASS
+    HISTORICAL_XTIGERVNC_LIVE_VALIDATION=PASS
+    R11_NATIVE_PROVIDER_FRESH_LIVE_VALIDATION=NOT_RUN
