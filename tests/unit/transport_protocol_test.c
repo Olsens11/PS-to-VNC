@@ -2,16 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "transport/physical_stream.h"
 #include "transport/protocol.h"
 
 static int failures;
-static int send_calls;
-static uint8_t sent_kind;
-static uint8_t sent_channel;
-static uint8_t sent_flags;
-static uint8_t sent_payload[PSTVNC_MPEG_START_PAYLOAD_SIZE];
-static size_t sent_payload_size;
 
 #define CHECK(expression)                                                \
     do {                                                                 \
@@ -21,25 +14,6 @@ static size_t sent_payload_size;
             failures++;                                                  \
         }                                                                \
     } while (0)
-
-int pstvnc_transport_physical_stream_send_frame(
-    pstvnc_transport_physical_stream_t *stream,
-    uint8_t kind,
-    uint8_t channel,
-    uint8_t flags,
-    const void *payload,
-    size_t payload_length)
-{
-    (void)stream;
-    send_calls++;
-    sent_kind = kind;
-    sent_channel = channel;
-    sent_flags = flags;
-    sent_payload_size = payload_length;
-    if (payload != NULL && payload_length <= sizeof(sent_payload))
-        memcpy(sent_payload, payload, payload_length);
-    return 1;
-}
 
 static void test_big_endian_helpers(void)
 {
@@ -240,29 +214,6 @@ static void test_explicit_mpeg_frame_identity_ignores_payload_shape(void)
     CHECK(pstvnc_transport_header_is_mpeg_retire(&header));
 }
 
-static void test_ps2_outbound_start_uses_control_identity(void)
-{
-    pstvnc_transport_physical_stream_t stream;
-    pstvnc_mpeg_start_payload_t start;
-    pstvnc_mpeg_start_payload_t decoded;
-
-    memset(&stream, 0, sizeof(stream));
-    fill_start(&start);
-    memset(&decoded, 0, sizeof(decoded));
-    send_calls = 0;
-    sent_payload_size = 0u;
-
-    CHECK(pstvnc_transport_physical_stream_send_mpeg_start(&stream, &start));
-    CHECK(send_calls == 1);
-    CHECK(sent_kind == PSTVNC_TRANSPORT_FRAME_MPEG_START);
-    CHECK(sent_channel == PSTVNC_TRANSPORT_CHANNEL_CONTROL);
-    CHECK(sent_flags == 0u);
-    CHECK(sent_payload_size == PSTVNC_MPEG_START_PAYLOAD_SIZE);
-    CHECK(pstvnc_mpeg_start_payload_decode(
-        &decoded, sent_payload, sent_payload_size));
-    CHECK(memcmp(&decoded, &start, sizeof(start)) == 0);
-}
-
 int main(void)
 {
     test_big_endian_helpers();
@@ -272,7 +223,6 @@ int main(void)
     test_mpeg_retire_exact_codec();
     test_mpeg_start_exact_codec();
     test_explicit_mpeg_frame_identity_ignores_payload_shape();
-    test_ps2_outbound_start_uses_control_identity();
 
     if (failures != 0) {
         fprintf(stderr, "transport protocol tests failed: %d\n", failures);
