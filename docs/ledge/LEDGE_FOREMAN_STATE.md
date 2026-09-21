@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0033
-RECORDED_AT=2026-09-21T05:15:00-04:00
+STATE_REVISION=0034
+RECORDED_AT=2026-09-21T06:26:30-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0032
-SUPERSEDES_FOREMAN_STATE_REVISION=0032
+BASED_ON_FOREMAN_STATE_REVISION=0033
+SUPERSEDES_FOREMAN_STATE_REVISION=0033
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,13 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0034 independently accepts the completed
+`A003-PS2-WORKER-EXECUTION-BINDING-R5` Reconstruction baton and advances to
+the missing PS2-side MPEG generation-control relay through the already-governing
+single physical-I/O Transport owner. R5 now supplies concrete aligned-memory,
+independent synchronization, retained-event and dormancy-proven EE-thread
+mechanics without choosing product worker values or acquiring lifecycle policy.
 
 Revision 0033 independently accepts the completed
 `A004-MAIN-THREAD-FRAME-CONSUMER-P7` Reconstruction baton and advances to the
@@ -102,7 +109,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A004_P7_INTEGRATED__A003_PS2_WORKER_EXECUTION_BINDING_RECONSTRUCTION_ACTIVE__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R5_INTEGRATED__A003_MPEG_GENERATION_CONTROL_RELAY_RECONSTRUCTION_ACTIVE__PI_WIRE_CONTROL_OWNER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -115,8 +122,10 @@ A004_P7_FOREMAN_ACCEPTED=YES
 A003_DECODED_PICTURE_STEP_FOREMAN_ACCEPTED=YES
 A003_PS2_LIBMPEG_BACKEND_FOREMAN_ACCEPTED=YES
 A003_MPEG_WORKER_FRAME_RENDEZVOUS_FOREMAN_ACCEPTED=YES
+A003_PS2_WORKER_EXECUTION_BINDING_FOREMAN_ACCEPTED=YES
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
-A003_PS2_WORKER_EXECUTION_BINDING_ACTIVE=YES
+A003_MPEG_GENERATION_CONTROL_RELAY_ACTIVE=YES
+PI_WIRE_CONTROL_OWNER=DEPENDENCY_QUEUED
 APPLICATION_ACTIVATION=DEPENDENCY_QUEUED
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
@@ -1434,9 +1443,143 @@ priority and join polling constants are not product defaults.
 R5 therefore binds only these already-designed execution contracts to PS2
 mechanics. It does not activate an MPEG run or decide Application lifecycle.
 
+## A003 R5 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- branch HEAD `8b198603ace2f7a34bb4dce5753da385aa08b348`;
+- final pre-log source/dictionary/build authority
+  `99d1b46dddad0dfc9b7ec05d1ed239cba6143dc2`;
+- immutable Reconstruction log
+  `docs/ledge/work-log/20260921T054912-0400__reconstruction__a003-mpeg-generation__interactive.md`.
+
+The worker landed five commits after Foreman base
+`f3f69cb9d659b1d8d31e2d0d40b6d9b9a22f1664`:
+
+- `d361baef50fc0eece2737e5147256d863d162aff` —
+  concrete MPEG-owned PS2 worker execution binding plus build wiring;
+- `f03e51ea05137060fa2c73350a18ce13efc2be30` —
+  deterministic dictionary-reconciliation trigger;
+- `6cb92ae8d8a48da96b24587e67c593936e1fd27c` —
+  generated current-clean MPEG dictionary reconciliation;
+- `99d1b46dddad0dfc9b7ec05d1ed239cba6143dc2` —
+  maintained MPEG responsibility prose;
+- `8b198603ace2f7a34bb4dce5753da385aa08b348` —
+  required immutable Reconstruction work log.
+
+Independent review confirms:
+
+- `src/mpeg/ps2_worker_runtime.{c,h}` is one explicit MPEG-owned mechanism
+  object rather than a process-global singleton or generic Platform-thread
+  framework;
+- initialization requires explicit nonzero caller join-poll delay/count and
+  introduces no stack, priority or join-time defaults;
+- decoder and worker allocation callbacks pass the exact requested byte count
+  and power-of-two alignment to `memalign()`, verify returned alignment, and
+  pair allocations with `free()`;
+- decoder and worker/slot synchronization use distinct count-1 semaphores;
+- the frame-slot event is a third count-0/max-1 semaphore, retaining one
+  signal-before-wait token while allowing redundant signals to coalesce;
+- event wait is blocking `WaitSema()` and contains no DelayThread polling;
+- thread create receives the exact R4 stack pointer, byte count and priority and
+  sets `gp_reg = &_gp`;
+- the private EE trampoline calls only the saved portable R4 entry/argument and
+  then explicitly calls `ExitThread()`;
+- one binding has exactly one active thread slot; overlapping create and stale
+  thread IDs fail closed;
+- join treats R4's `worker_finished` only as portable state and independently
+  requires `ReferThreadStatus() == THS_DORMANT`;
+- join polling is bounded solely by caller values; H1's historical 1-ms /
+  3000-loop values were not restored;
+- no `TerminateThread()` or other force-termination path exists;
+- `DeleteThread()` is reachable only after dormancy was already proven or a
+  final direct `ReferThreadStatus()` proves THS_DORMANT;
+- StartThread-failure cleanup also refuses to delete unless dormant state can be
+  proven, preserving ownership on failure;
+- worker release ordering remains compatible with the binding fence:
+  R4 requires EMPTY slot + worker_finished before join, joins the EE thread,
+  destroys the dormant thread, then frees its stack; binding release refuses
+  while either the thread slot or any binding allocation remains live;
+- partial semaphore initialization/deletion failures preserve resource IDs and
+  `resources_owned` rather than falsely reporting successful teardown;
+- no decoder-step/libmpeg/IPU, Display/P7/scheduler/compositor, media-clock,
+  producer, Transport, RFB, GS or generation-allocation behavior entered the
+  adapter.
+
+A003-R5-C1 through A003-R5-C12 are independently accepted as MET within the
+bounded repository/machine-evidence scope.
+
+### R5 machine evidence
+
+Final coherent pre-log source authority:
+
+`99d1b46dddad0dfc9b7ec05d1ed239cba6143dc2`
+
+Workflow:
+
+`35586198869` — run #331 — final attempt SUCCESS.
+
+The first attempt's only red canonical job was the known timing-sensitive
+Transport runtime host fixture. No Transport source changed. Its unchanged
+retry passed.
+
+Final observed evidence includes:
+
+- `transport_runtime_test: PASS`;
+- `transport_audio_test: PASS`;
+- `mpeg_decoder_test: PASS`;
+- `MPEG_WORKER_TEST=PASS`;
+- `APP_MPEG_FRAME_TEST=PASS`;
+- `SOURCE_DICTIONARIES=PASS`;
+- `SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS`;
+- `SOURCE_TOPOLOGY_CONTRACT=PASS`;
+- `SOURCE_DICTIONARY_PORTAL_SYNC=PASS`;
+- `PS_TO_VNC_PROJECT_CHECK=PASS`;
+- `PS2_COMPILE=src/mpeg/ps2_worker_runtime.c`;
+- `CLEAN_PS2_COMPILE_CHECK=PASS`;
+- `ISSUE7_LINKED_BUILD=PASS`;
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+
+Exact immutable-log head workflow:
+
+`35586567057` — run #332 — final attempt SUCCESS.
+
+Attempt 1 again showed the known unchanged Transport-runtime cascade beginning
+at lines 787/789 and dependent quiesce assertions; every non-host job passed.
+The identical-commit host rerun passed. No R5 source regression is inferred.
+
+No physical PS2 worker-thread, semaphore/event, decoder or presentation run
+occurred or is inferred.
+
+## Why R6 is the MPEG generation-control relay before Application activation
+
+Current clean source now has the local decoder/worker/presentation mechanics
+needed for a run, but the cross-Wire control path is not yet owner-correct:
+
+- `src/transport/protocol.{c,h}` already preserves exact START kind 11 /
+  control channel 0 / flags 0 / 44-byte v1 and RETIRE kind 10 / control channel
+  0 / flags 0 / 12-byte v1 representations;
+- the current sole physical-I/O runtime owns generic serialized outbound work
+  through `pstvnc_transport_runtime_submit_frame()`;
+- the public Transport bridge exposes no session-bound START or RETIRE request;
+- the receiver currently dispatches only DATA frames, so an otherwise valid Pi
+  RETIRE completion kind 10 would be classified as unaccepted and fail the Wire
+  session;
+- the older inline physical-stream MPEG START helper predates the governing
+  single-I/O architecture and must not become an Application bypass around the
+  Transport I/O owner.
+
+Frozen exact-retirement evidence establishes that the Pi completion is the
+identical RETIRE payload echoed back only after exact remote cleanup; direction
+plus the higher owner's pending-run state distinguishes request from completion.
+
+Transport should therefore relay the exact control envelope and preserve
+session validity, while Application later owns active-run/generation meaning and
+the ordered lifecycle transaction.
+
 ## Active bounded Reconstruction packet
 
-PACKET_ID=`A003-PS2-WORKER-EXECUTION-BINDING-R5`
+PACKET_ID=`A003-MPEG-GENERATION-CONTROL-RELAY-R6`
 PACKET_STATUS=ACTIVE
 ROLE_KEY=`reconstruction`
 WORK_ITEM_KEY=`a003-mpeg-generation`
@@ -1451,13 +1594,14 @@ ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
 
 ### Objective
 
-Reconstruct the concrete PS2 execution binding that supplies the accepted R2
-decoder and R4 MPEG worker with aligned memory, independent synchronization,
-EE-thread lifecycle and a retained signal-before-wait frame-slot event.
+Reconstruct the PS2-side Transport-owned MPEG **generation-control relay** so
+Application can later send exact START/RETIRE requests and consume the exact Pi
+RETIRE completion without bypassing the sole physical-I/O owner.
 
-This is a mechanism adapter only. It must make R4 actually instantiable on PS2
-without starting an MPEG run, choosing product stack/priority/timing defaults,
-calling Display/P7, or owning producer/Transport/RFB lifecycle.
+R6 owns only Wire envelope/relay mechanics and bounded control storage. It must
+not decide which generation is active, start/stop a decoder or producer, mark
+MPEG producer completion, finalize residual bytes/credit, or perform
+Presentation/RFB/Application lifecycle.
 
 ### Required authority
 
@@ -1465,172 +1609,186 @@ Read current at wake, including:
 
 - Reconstruction Contract rev 0006;
 - work-log contract rev 0007;
-- Foreman State rev 0033;
-- `src/mpeg/decoder.{c,h}`;
-- `src/mpeg/worker.{c,h}`;
-- `src/mpeg/ps2_decoder_backend.{c,h}`;
-- current `src/input/input_runtime.c` only as clean EE lifecycle precedent;
-- frozen
-  `experiments/media-harness-h1/h1_cp2p_mpeg_worker.{c,h}`;
-- frozen `CP2P_MPEG_SAFE_STOP_LIFECYCLE.md`;
-- canonical PS2 build/link manifests.
+- Foreman State rev 0034;
+- Wire Runtime Decisions rev 0011 and Architecture Overlay rev 0004;
+- `src/transport/protocol.{c,h}`;
+- `src/transport/runtime.{c,h}`;
+- `src/transport/bridge.{c,h}`;
+- `src/transport/physical_stream.{c,h}`;
+- current Transport runtime/bridge/protocol tests;
+- A003 audit rev 0001 as historical semantic evidence where not superseded;
+- frozen exact RETIRE control evidence:
+  - `experiments/media-harness-h1/h1_cp2p_retirement_control.py`;
+  - its focused tests;
+  - frozen H1 Transport retire begin/poll/finalize only as mechanism evidence.
 
-Do not restore H1 diagnostics, direct graphics clear, worker-to-Presentation
-calls, or experimental hardcoded scheduling values.
+Governing Q1-Q12 ownership supersedes old direct physical-send structure.
 
 ### Required behavior
 
-1. **MPEG-owned concrete adapter.** Prefer a narrow MPEG-domain PS2 binding such
-   as `src/mpeg/ps2_worker_runtime.{c,h}` or an equivalently clear name.
-   Do not create a generic platform-thread framework solely for this packet.
-2. **Explicit binding lifetime.** One binding object owns all PS2 kernel
-   resources used by one R4 worker interval. Initialization is explicit,
-   partial initialization unwinds safely, and final binding release is legal
-   only after R4 worker release/destroy has completed.
-3. **R2 decoder memory ops.** Supply aligned allocation/free for decoder feed and
-   picture buffers using the exact byte count/alignment requested by R2. No
-   hidden full-frame copy or alternate decoder buffer owner.
-4. **R4 worker memory ops.** Supply aligned allocation/free for the exact worker
-   stack request. Preserve the caller's requested size/alignment rather than
-   substituting H1's 64-KiB experimental stack.
-5. **Independent synchronization.** Decoder synchronization and R4 worker/slot
-   synchronization use distinct owned lock resources. Do not share one lock and
-   do not rely on unsynchronized volatile state.
-6. **EE-thread create fidelity.** The thread adapter uses the exact R4-supplied
-   stack pointer, stack byte count and priority, sets the PS2 global pointer
-   correctly, and introduces no hardcoded priority or stack default.
-7. **Required trampoline.** R4's portable worker entry returns normally. The PS2
-   binding therefore must run it through an EE trampoline that invokes the
-   exact saved entry/argument and then calls `ExitThread()`. Do not assume a C
-   return is equivalent to an EE thread exit.
-8. **Single active thread slot.** One binding cannot silently host overlapping
-   worker threads. Create/start lifecycle is explicit and stale IDs cannot be
-   reused as current authority.
-9. **Start semantics.** `StartThread` receives the binding/trampoline context;
-   the trampoline calls only the exact R4 entry with its saved R4 argument.
-10. **Join proves dormancy.** Join must not infer completion solely from R4's
-    `worker_finished` flag because that flag is set immediately before the
-    portable entry returns. Use `ReferThreadStatus` to prove `THS_DORMANT`.
-11. **Bounded cooperative join only.** If dormancy is not yet visible, use
-    caller-supplied nonzero poll delay/count values. Do not restore H1's 1-ms /
-    3000-loop values as hidden defaults, and never `TerminateThread` or
-    force-delete a live worker.
-12. **Destroy only after proven join.** Thread destroy maps to `DeleteThread`
-    only after dormancy was proven. Failed join/destroy leaves resources owned
-    rather than freeing a possibly live stack.
-13. **Retained frame event.** Supply one event resource with initial count 0 and
-    retained capacity 1 (or an equivalent exact one-pending-wake mechanism).
-    A signal before wait must make the later wait return; repeated signals may
-    coalesce to one pending wake without losing the predicate transition.
-14. **No polling for frame-slot wake.** The event wait is a blocking kernel wait,
-    not DelayThread polling. The R4 worker remains responsible for rechecking
-    its protected slot/stop predicates after wake.
-15. **Lock semantics.** Lock/unlock map to blocking wait/release on their exact
-    owned synchronization resource and return failure on invalid kernel
-    operation where the R2/R4 callback contract permits reporting failure.
-16. **Resource-order safety.** Event/lock semaphores cannot be deleted while a
-    worker may still call them. Binding teardown occurs only after exact worker
-    join/release. Partial-start failures clean only resources proven unowned.
-17. **No behavior leakage.** This adapter performs no decoder step itself, no
-    libmpeg/IPU work, no compositor/scheduler/P7 call, no media-clock arm, no
-    START/RETIRE, no Transport read/wake, no RFB operation and no generation
-    allocation.
-18. **No process-global mutable singleton.** Keep adapter authority in one
-    explicit object. The R3 SMS backend's own single-instance restriction
-    remains separate and unchanged.
-19. **Canonical build/evidence.** Add maintained source/header to MPEG
-    dictionaries, direct strict R5900 compile and current-source linked
-    reproducibility. Preserve all R2/R3/R4/P7 host tests green. Add focused
-    host-testable policy code only if genuinely necessary; do not invent a fake
-    generic kernel abstraction merely to unit-test PS2SDK calls.
+1. **Transport-owned relay, Application-owned meaning.** Add public Transport
+   bridge seams for exact MPEG START request, RETIRE request, and nonblocking
+   receipt of one Pi RETIRE completion. Do not put active-generation business
+   state into Transport.
+2. **Session-bound authority.** Every new public operation requires one current
+   `pstvnc_transport_access_t`; stale Session-A authority must neither send
+   through nor consume control state belonging to Session B.
+3. **Sole physical-I/O send.** START and RETIRE requests must be encoded with the
+   accepted protocol codecs and enter the existing
+   `pstvnc_transport_runtime_submit_frame()` outbound rendezvous. Application
+   or MPEG must never call physical-stream framed send directly.
+4. **Exact START envelope.** Outbound START is kind 11 / channel 0 / flags 0 /
+   exact 44-byte v1 payload. The relay may validate codec/envelope structure but
+   does not decide calibration acceptance or active-generation policy.
+5. **Exact RETIRE envelope.** Outbound RETIRE is kind 10 / channel 0 / flags 0 /
+   exact 12-byte v1 payload.
+6. **Inbound direction contract.** On PS2, inbound kind-10 exact RETIRE is the Pi
+   completion/ACK candidate. Inbound START is not valid PS2-side traffic and
+   remains a protocol failure.
+7. **Exact inbound validation.** The sole receiver accepts RETIRE completion only
+   with exact kind/channel/flags/payload length and a successful v1 payload
+   decode. Malformed control fails the Transport session rather than being
+   reinterpreted as media.
+8. **One bounded completion slot.** Transport owns at most one pending decoded
+   RETIRE-completion value for the active Wire Session, protected by
+   Transport-owned synchronization. No overwrite and no unbounded queue.
+9. **Nonblocking take.** The public bridge returns WOULD_BLOCK when no completion
+   is pending; success copies one exact decoded completion and consumes it once.
+   Duplicate take returns WOULD_BLOCK.
+10. **No generation semantic comparison.** Transport does not decide whether the
+    completion's session/generation matches Application's pending MPEG run.
+    Application later performs that exact-run check.
+11. **No producer terminal side effect.** Receiving a RETIRE completion does
+    **not** call `pstvnc_transport_mpeg_mark_producer_done()` in R6 and does
+    not synthesize decoder EOF. That ordered semantic belongs to the later
+    Application retirement transaction.
+12. **No residual/credit finalization.** R6 does not discard queued MPEG bytes,
+    return retirement residual credit, reopen a successor run, or otherwise
+    implement Q7 finalization.
+13. **Retire slot is session-local.** New Transport session initialization begins
+    with no pending completion; old-session completion cannot leak into the next
+    Wire Session.
+14. **No direct START bypass remains.** Remove, retire, or otherwise make
+    unavailable to product callers the old
+    `pstvnc_transport_physical_stream_send_mpeg_start()` convenience path so
+    the accepted single-I/O owner is the only production send path.
+15. **Pure MPEG DATA preserved.** Nonempty DATA/channel4 remains opaque MPEG
+    media regardless of payload length/content. In particular an exact 44-byte
+    START-shaped media payload remains media.
+16. **Existing riders unchanged.** RFB/AUDIO/MPEG DATA flow, credit, receiver
+    progress and Transport failure behavior remain unchanged outside the new
+    exact control path.
+17. **No Pi implementation.** Do not promote the frozen Python Pi coordinator or
+    invent a production Pi Wire server in this packet. R6 is PS2-side relay
+    completion only.
+18. **No Application/MPEG lifecycle.** Do not arm Presentation, allocate a run
+    generation, start R5/R4, invoke P7, start/retire a Pi producer, release RFB
+    suppression or execute P5/Q7 lifecycle.
+19. **Canonical evidence.** Add focused host tests proving exact outbound
+    envelopes travel through runtime's sole outbound owner, exact inbound RETIRE
+    completion one-shot behavior, malformed/inbound-START rejection, stale
+    Transport-access fencing, fresh-session usability, pure 44-byte MPEG DATA
+    classification, and unchanged rider behavior. Preserve direct PS2 compile,
+    linked reproducibility and strict dictionaries.
 
-### Suggested binding surface
+### Shape guidance
 
-A small binding may expose:
+Prefer extending the earned Transport bridge/runtime rather than creating a
+second control subsystem.
 
-- caller-owned values such as join poll microseconds and maximum poll count;
-- one explicit init/release lifecycle;
-- a bundle or getters for:
-  - R2 decoder memory ops;
-  - R2 decoder sync ops;
-  - R4 worker memory ops;
-  - R4 worker thread ops;
-  - R4 worker sync ops;
-  - R4 worker event ops.
+A small runtime field set may contain:
 
-The exact API name is worker-owned. Keep it small and make lifetime ordering
-obvious.
+- one pending `pstvnc_mpeg_retire_payload_t`;
+- one pending flag;
+- one dedicated control semaphore if needed for concurrent receiver/main access.
+
+A public bridge surface may use names equivalent to:
+
+- `pstvnc_transport_mpeg_send_start(...)`;
+- `pstvnc_transport_mpeg_send_retire(...)`;
+- `pstvnc_transport_mpeg_take_retire_completion(...)`.
+
+Names are worker-owned. Keep the payload representation shared from
+`transport/protocol.h`; do not duplicate the wire struct.
 
 ### Acceptance criteria
 
-- `A003-R5-C1 EXPLICIT_PS2_BINDING_OWNER`
-- `A003-R5-C2 ALIGNED_MEMORY_FIDELITY`
-- `A003-R5-C3 INDEPENDENT_LOCKS`
-- `A003-R5-C4 EE_THREAD_TRAMPOLINE_EXIT`
-- `A003-R5-C5 CALLER_THREAD_VALUES`
-- `A003-R5-C6 DORMANCY_PROVEN_JOIN`
-- `A003-R5-C7 NO_FORCE_TERMINATION`
-- `A003-R5-C8 RETAINED_EVENT_WAKE`
-- `A003-R5-C9 RESOURCE_LIFETIME`
-- `A003-R5-C10 SINGLE_ACTIVE_THREAD`
-- `A003-R5-C11 OWNER_BOUNDARY`
-- `A003-R5-C12 CLEAN_PS2_EVIDENCE`
+- `A003-R6-C1 SOLE_IO_CONTROL_SEND`
+- `A003-R6-C2 EXACT_START_ENVELOPE`
+- `A003-R6-C3 EXACT_RETIRE_ENVELOPE`
+- `A003-R6-C4 INBOUND_RETIRE_COMPLETION`
+- `A003-R6-C5 ONE_SLOT_NONBLOCKING_TAKE`
+- `A003-R6-C6 SESSION_BOUND_ACCESS`
+- `A003-R6-C7 NO_GENERATION_BUSINESS_STATE`
+- `A003-R6-C8 NO_SYNTHETIC_PRODUCER_DONE`
+- `A003-R6-C9 PURE_MPEG_DATA`
+- `A003-R6-C10 NO_DIRECT_PHYSICAL_BYPASS`
+- `A003-R6-C11 EXISTING_RIDERS_PRESERVED`
+- `A003-R6-C12 CLEAN_EVIDENCE`
 
 All must be MET for Foreman acceptance.
 
 ### Explicit non-goals
 
-Do not implement in R5:
+Do not implement in R6:
 
-- concrete Application MPEG activation;
-- scheduler profile defaults;
-- worker stack-size or priority defaults;
-- generation allocation;
+- Pi production Wire server/control receiver;
+- Pi START validation/prepared-generation owner;
+- Pi producer launch/emission admission;
+- Pi RETIRE cleanup/ACK implementation;
+- Application run generation allocation;
 - Presentation arm from calibration;
-- P7 live-loop invocation;
-- Pi START/producer admission;
-- producer RETIRE/ACK;
-- P5/Q7 retirement orchestration;
-- Transport residual discard/credit finalization;
-- RFB restoration;
-- Wire-loss MPEG restoration;
-- physical MPEG decode qualification.
+- R5/R4 worker startup;
+- P7 live-loop service;
+- producer-done publication;
+- residual-byte discard/credit finalization;
+- RFB suppression/restoration;
+- P5 retirement/reveal;
+- successor generation startup;
+- Wire Q4 establishment;
+- physical MPEG qualification.
 
 ### Worker return
 
-Return exact source/build/dictionary commits, binding object/API, semaphore/event
-layout, memory alignment behavior, EE trampoline behavior, caller-owned join
-values, dormant-proof join/delete ordering, resource-unwind paths, C1-C12
-disposition, exact direct-PS2/link and unchanged-host evidence, and all
-hardware/non-claim gaps.
+Return exact source/test/build/dictionary commits, public control-relay API,
+runtime control-slot ownership/synchronization, outbound sole-I/O proof, exact
+inbound validation, one-shot completion behavior, session-bound stale-access
+proof, direct physical-helper disposition, C1-C12 disposition, canonical CI
+evidence, and all non-claims/gaps.
 
 Emit exactly one immutable Reconstruction log using:
 
-- ROLE_KEY=`reconstruction`
-- WORK_ITEM_KEY=`a003-mpeg-generation`
-- WORKER_KEY=`interactive`
+- ROLE_KEY=`reconstruction`;
+- WORK_ITEM_KEY=`a003-mpeg-generation`;
+- WORKER_KEY=`interactive`.
 
-Do not begin Application activation or retirement orchestration in the same
-shift.
+Do not begin Pi product ownership or Application activation in the same shift.
 
 ## Deferred dependency graph
 
-Expected remaining work after active A003 R5 is:
+Expected remaining work after active A003 R6 is:
 
-1. inspect the completed PS2 execution binding together with current clock,
-   calibration, Transport-control and Pi-producer seams and reconstruct the
-   smallest bounded Application activation transaction that can create one exact
-   run without inventing configuration defaults;
-2. wire P7 servicing into the main owner only as part of that explicit
-   activation/lifecycle transaction, preserving ordinary RFB/UI responsiveness;
-3. reconstruct current-Q7 retirement/failure transaction:
+1. inspect the completed PS2 control relay against the still-absent mature Pi
+   product Wire-server/control owner and choose the smallest owner-correct Pi
+   implementation packet required to receive START, own exact remote producer
+   admission/retirement and echo RETIRE completion without restoring H1
+   monolithic coordinator structure;
+2. reconcile the remaining validated-value authority for MPEG queue/credit,
+   decoder resource/feed bounds, worker stack/priority/join policy and scheduler
+   profile before any live Application activation; do not invent defaults;
+3. reconstruct the bounded Application MPEG activation transaction only after
+   both cross-Wire control sides and required caller values exist:
+   accepted region -> exact run fence -> Presentation arm -> worker/backend
+   start -> exact START -> producer admission -> P7 service;
+4. reconstruct current-Q7 retirement/failure transaction:
    close new producer/admission -> begin RETIRING -> allow accepted drain while
-   RFB rebuilds underneath -> safe worker/decoder stop -> producer RETIRE/ACK ->
-   Transport residual/credit finalization -> seal -> synchronized reveal;
-4. integrate Wire-loss/failure containment and final shutdown/restart behavior,
+   RFB rebuilds underneath -> safe worker/decoder stop -> RETIRE completion ->
+   Transport producer-done/residual/credit finalization -> seal -> synchronized
+   reveal;
+5. integrate Wire-loss/failure containment and final shutdown/restart behavior,
    then perform physical qualification on the exact product ELF.
 
-Foreman must choose the exact next seam from returned A003 R5 source rather than
+Foreman must choose the exact next seam from returned A003 R6 source rather than
 pre-authorizing later implementation.
 
 This is planning only, not worker authority to pre-implement later work.
@@ -1641,12 +1799,11 @@ HARDWARE_PENDING=A004 visual geometry/matte/suppression/first-frame qualificatio
 
 ## Foreman next pickup
 
-Consume the `A003-PS2-WORKER-EXECUTION-BINDING-R5` Reconstruction baton,
-independently verify aligned memory, separate decoder/worker locks, the
-EE-thread trampoline + ExitThread boundary, exact caller stack/priority
-fidelity, bounded ReferThreadStatus dormancy proof, retained signal-before-wait
-event behavior, no force termination and teardown ordering. Then inspect the
-remaining concrete activation dependencies before authorizing Application run
-startup.
+Consume the `A003-MPEG-GENERATION-CONTROL-RELAY-R6` Reconstruction baton,
+independently verify sole-I/O START/RETIRE send, exact inbound RETIRE completion,
+one-slot one-shot delivery, session-bound stale-access fencing, pure MPEG DATA
+classification, absence of producer-done/generation-business side effects and
+removal of the direct physical START bypass. Then choose the next owner-correct
+Pi/control or validated-value prerequisite before Application activation.
 
 Do not execute the packet from the Foreman seat.
