@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0036
-RECORDED_AT=2026-09-21T08:13:05-04:00
+STATE_REVISION=0037
+RECORDED_AT=2026-09-21T10:50:51-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0035
-SUPERSEDES_FOREMAN_STATE_REVISION=0035
+BASED_ON_FOREMAN_STATE_REVISION=0036
+SUPERSEDES_FOREMAN_STATE_REVISION=0036
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,15 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0037 independently accepts the completed
+A003-PI-WIRE-SERVER-ESTABLISHMENT-R8 Reconstruction baton and advances to the
+PS2-side Wire Session establishment core before any Pi rider or MPEG producer
+work. R8 now supplies maintained Pi product runtime source, exact product Q4
+HELLO/ACCEPT/NOT_ACCEPTED bytes, one persistent Pi physical owner, repeatable
+finite sessions and reproducible inactive staging. The next dependency is to
+make the PS2 Transport enter that same Q4 session correctly while preserving
+sequence ownership and keeping Wire ACTIVE distinct from rider readiness.
 
 Revision 0036 independently accepts the completed
 A003-MPEG-RUNTIME-PROFILE-AUTHORITY-R7 Reconstruction baton and advances to
@@ -126,7 +135,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A003_R7_INTEGRATED__PI_WIRE_ESTABLISHMENT_FOUNDATION_RECONSTRUCTION_ACTIVE__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R8_INTEGRATED__PS2_WIRE_SESSION_ESTABLISHMENT_RECONSTRUCTION_ACTIVE__PI_RIDER_FOUNDATION_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -143,8 +152,10 @@ A003_PS2_WORKER_EXECUTION_BINDING_FOREMAN_ACCEPTED=YES
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
 A003_MPEG_GENERATION_CONTROL_RELAY_FOREMAN_ACCEPTED=YES
 A003_MPEG_RUNTIME_PROFILE_AUTHORITY_FOREMAN_ACCEPTED=YES
-PI_WIRE_ESTABLISHMENT_FOUNDATION_ACTIVE=YES
-PI_WIRE_CONTROL_OWNER=RECONSTRUCTION_ACTIVE
+PI_WIRE_ESTABLISHMENT_FOUNDATION_FOREMAN_ACCEPTED=YES
+PS2_WIRE_SESSION_ESTABLISHMENT_ACTIVE=YES
+PI_WIRE_CONTROL_OWNER=FOUNDATION_ACCEPTED_NO_RIDERS
+PI_RIDER_FOUNDATION=DEPENDENCY_QUEUED
 PI_MPEG_CONTROL_PRODUCER_OWNER=DEPENDENCY_QUEUED
 APPLICATION_ACTIVATION=DEPENDENCY_QUEUED
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
@@ -1779,7 +1790,7 @@ real Pi Wire owner without simultaneously designing physical-session lifetime.
 ## Active bounded Reconstruction packet
 
 PACKET_ID=A003-PI-WIRE-SERVER-ESTABLISHMENT-R8
-PACKET_STATUS=ACTIVE
+PACKET_STATUS=COMPLETED_FOREMAN_ACCEPTED
 ROLE_KEY=reconstruction
 WORK_ITEM_KEY=a003-mpeg-generation
 WORKER_KEY=interactive
@@ -2066,6 +2077,309 @@ product-source boundary, exact Q4 protocol parity, one physical I/O owner,
 provisional-to-ACTIVE transition, repeated finite sessions, service staging,
 strict source/dictionary checks, unchanged current RFB units and explicit
 no-rider/no-hardware claims.
+
+Do not execute the active packet from the Foreman seat.
+
+## A003 R8 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- prior Foreman base
+  7bac022fb36db15127a01257067d43d1b9d4e71d;
+- final pre-log R8 source/test/docs/tooling authority
+  6d9faaf4ed9d512d1697c0b7b4d56886bde210b6;
+- immutable Reconstruction-log head
+  e127e1597e00d2df892311c37a4774dd467ee7d8;
+- immutable Reconstruction log
+  docs/ledge/work-log/20260921T082624-0400__reconstruction__a003-mpeg-generation__interactive.md.
+
+The pre-log R8 range is linear, ahead by 26 commits and behind by zero from
+Foreman State 0036 authority. It deliberately touches the new maintained Pi
+product root, Q4 protocol representation, Pi service/staging/source-dictionary
+integration and focused tests while leaving Application, Transport runtime and
+bridge, MPEG mechanisms, RFB runtime, audio runtime and Presentation product
+source unchanged.
+
+Independent review confirms:
+
+- top-level pi/ is now explicit maintained Raspberry Pi product source,
+  distinct from src/, scripts/pi/ and experiments/;
+- pi/ participates in current strict source-dictionary and local-file topology
+  gates rather than receiving a product-source exemption;
+- product Q4 representation is exact in both C and Python:
+  fixed 16-byte PSTV header, HELLO kind 1, ACCEPT kind 12,
+  NOT_ACCEPTED kind 13, CONTROL channel 0, flags 0, 8-byte 1/1 HELLO,
+  4-byte nonzero session ID ACCEPT and 4-byte bounded rejection reason;
+- independent direction-local establishment sequence 1 is preserved and the
+  next successful post-establishment sequence is 2;
+- pi/wire_server.py owns the listener and one accepted physical connection at a
+  time; no rider/thread/process receives that accepted socket;
+- TCP accept is PROVISIONAL and ACTIVE is published only after a complete
+  accepted HELLO and successful ACCEPT send;
+- the process-local session allocator is nonzero, monotonic, nonreusing and
+  fail-closed on uint32 exhaustion; a failed ACCEPT send consumes its candidate
+  identity rather than making reuse ambiguous;
+- an ACTIVE Pi Wire Session may remain completely idle with no RFB, MPEG, PCM,
+  CONFIG, heartbeat or telemetry traffic;
+- EOF or session-local protocol failure completely retires the current
+  connection and the persistent server can accept a fresh session with a
+  distinct identity;
+- R8 implements no ordinary DATA/CREDIT/CONFIG/heartbeat/telemetry or MPEG
+  START/RETIRE rider path and no generic rider-registration framework;
+- systemd/pi/ps-to-vnc-wire.service is an ordinary supervised service whose
+  process owns its listener, not a systemd socket-activated rider endpoint;
+- scripts/pi/install-wire-runtime.sh is exact-byte, fail-closed and
+  inactive-only; it performs no daemon-reload, enable/disable or
+  start/stop/restart action;
+- current direct-RFB socket and provider blobs are byte-identical to the R8
+  Foreman base:
+  ps-to-vnc-rfb.socket =
+  e24e4e4f389c155c7e6eff0fbd93c4c01602a361 and
+  ps-to-vnc-rfb-tigervnc.service =
+  bb2e02bda68d40baa4b8c5152c19dbe825978038;
+- no live Pi mutation or physical Q4 qualification is claimed.
+
+A003-R8-C1 through A003-R8-C12 are independently accepted as MET within the
+bounded repository/machine-evidence scope.
+
+### R8 machine evidence
+
+Canonical final pre-log workflow:
+
+35605504470 at 6d9faaf4ed9d512d1697c0b7b4d56886bde210b6 — SUCCESS on attempt 1.
+
+Directly inspected logs report:
+
+- transport protocol tests passed;
+- transport_runtime_test: PASS;
+- config_mpeg_runtime_profile_test: PASS;
+- MPEG_WORKER_TEST=PASS;
+- APP_MPEG_FRAME_TEST=PASS;
+- all focused Pi Wire protocol/server/service/staging tests PASS;
+- SOURCE_DICTIONARIES=PASS;
+- SOURCE_TOPOLOGY_DIRECTORIES includes pi plus every current src domain;
+- SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS;
+- SOURCE_TOPOLOGY_CONTRACT=PASS;
+- SOURCE_DICTIONARY_PORTAL_SYNC=PASS;
+- PS_TO_VNC_PROJECT_CHECK=PASS;
+- PS2_COMPILE=src/transport/protocol.c;
+- CLEAN_PS2_COMPILE_CHECK=PASS;
+- ISSUE7_LINKED_BUILD=PASS;
+- LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS.
+
+The immutable R8 worker-log head
+e127e1597e00d2df892311c37a4774dd467ee7d8 also has canonical workflow
+35605846546 SUCCESS on attempt 1 across the same canonical job classes.
+
+Evidence classification:
+
+SOURCE_COMPLETE=YES_WITHIN_R8
+HOST_TESTED=YES
+PS2_COMPILE=PASS
+PS2_LINK_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+REPOSITORY_PROJECT_CHECK=PASS
+STRICT_DICTIONARIES=PASS
+INDEPENDENT_VALIDATION_R8=NOT_RUN
+PI_WIRE_SERVICE_LIVE_STAGED=NO
+PI_WIRE_SERVICE_ENABLED_OR_STARTED=NO
+PHYSICAL_PI_WIRE_LISTENER=NOT_RUN_NOT_CLAIMED
+PHYSICAL_PS2_PRODUCT_Q4=NOT_RUN_NOT_CLAIMED
+NO_CARRIER_WIRE_SERVICE_QUALIFICATION=NOT_RUN_NOT_CLAIMED
+HARDWARE_QUALIFICATION_R8=PENDING
+
+## Why R9 is PS2 Wire Session establishment before Pi riders
+
+R8 makes the mismatch on the PS2 product side concrete.
+
+Current Application still obtains one raw TCP descriptor from
+pstvnc_ps2_network_connect_pstv() and immediately passes it to
+pstvnc_transport_session_open(). The current physical stream adoption then
+initializes both send and receive sequence authority at 1 and
+pstvnc_transport_runtime_start_receiver() immediately emits the initial RFB
+credit.
+
+That was coherent for the pre-productized proof era, but it cannot be the final
+Q4 product path:
+
+- sequence 1 in each direction is now reserved for PS2 HELLO and Pi
+  ACCEPT/NOT_ACCEPTED;
+- the next ordinary frame after successful establishment must therefore use
+  sequence 2;
+- the R8 Pi product server correctly treats any post-establishment rider byte as
+  unsupported because no rider has been reconstructed yet;
+- Q10 requires an ACTIVE Wire Session to be a fact independent of RFB, MPEG,
+  PCM or any other rider readiness.
+
+Adding Pi MPEG control or a producer before correcting this containing PS2
+session boundary would deepen a rider beneath a product Wire Session the PS2
+cannot yet establish correctly. The next packet therefore reconstructs the
+PS2-side Q4 session core first.
+
+Reference proof1_ps2.c, proof2_reconnect_ps2.c and q12_stale_access_ps2.c on the
+wire/q1-q12-hardware-proof branch demonstrate the useful handshake behavior.
+They remain experiment/reference authority and are not merge targets.
+
+## Active bounded Reconstruction packet
+
+PACKET_ID=A003-PS2-WIRE-SESSION-ESTABLISHMENT-R9
+PACKET_STATUS=ACTIVE
+ROLE_KEY=reconstruction
+WORK_ITEM_KEY=a003-mpeg-generation
+WORKER_KEY=interactive
+EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
+USER_TERMINAL_POLICY=EXCEPTION_ONLY
+PI_LOCAL_USER_PROXY_REQUIRED=NO
+ASSIGNING_BASE_HEAD=REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE
+FOREMAN_DECISION_BASE=e127e1597e00d2df892311c37a4774dd467ee7d8
+
+### Objective
+
+Reconstruct the PS2 Transport-owned Q4 Wire Session establishment core so a
+fresh TCP descriptor can become one product ACTIVE Wire Session before any
+rider is activated.
+
+R9 must consume the exact R8 product Q4 representation, preserve one physical
+owner at every point, carry direction-local sequence authority from
+HELLO/ACCEPT sequence 1 to post-establishment sequence 2, retain the Pi-assigned
+session identity privately inside Transport, and expose the minimal public
+INACTIVE/ACTIVE Wire availability fact required by Q10.
+
+An established Wire Session must be able to remain idle without automatically
+starting RFB, AUDIO, MPEG or sending initial credits.
+
+R9 does not reconstruct a Pi rider, MPEG producer, CONFIG delivery or live
+Application MPEG lifecycle.
+
+### Required authority
+
+Read current at wake, including:
+
+- AGENTS.md, CONTRIBUTING.md, Project Intent and Clean Architecture;
+- source naming/topology/module-lifecycle guidance;
+- Reconstruction Contract rev 0006 and work-log contract rev 0007;
+- Foreman State rev 0037;
+- Wire Runtime Decisions rev 0011, especially Q2, Q4 and Q9-Q12;
+- Architecture Overlay rev 0004;
+- A001 Transport/RFB and A003 MPEG audits;
+- current src/platform/ps2_network.{c,h};
+- current src/transport/protocol.{c,h}, physical_stream.*, bridge.*, runtime.*
+  and transport.h;
+- current bridge/runtime host fixtures;
+- reference-only Q1-Q12 proof sources proof1_ps2.c, proof2_reconnect_ps2.c,
+  q12_stale_access_ps2.c and their result records;
+- R8 Pi wire_protocol.py/wire_server.py only as current peer product authority,
+  not as a source owner for PS2 policy.
+
+### Required behavior
+
+1. Transport owns product Q4. Platform continues to own only private-link/TCP
+   creation before transfer. Application and Platform must not hand-build Q4.
+2. Send exactly one sequence-1 HELLO using current product codecs and exact 1/1
+   compatibility values.
+3. Accept only exact inbound sequence-1 ACCEPT or NOT_ACCEPTED envelopes.
+   Wrong kind/channel/flags/sequence/length, zero ACCEPT ID, unknown reason,
+   EOF or framing failure fail closed.
+4. Cross-component policy can distinguish ESTABLISHED, NOT_ACCEPTED and
+   mechanism failure, with typed rejection evidence as appropriate.
+5. Preserve an explicit descriptor ownership fence with no double-close
+   ambiguity.
+6. Continue the same physical lineage at send sequence 2 / expected receive
+   sequence 2 after ACCEPT; do not expose arbitrary public sequence seeding.
+7. Retain the nonzero Pi session ID as Transport-owned current-session
+   authority. Do not publish a generic module-facing session-ID getter.
+8. Publish one minimal public Transport Wire availability fact: INACTIVE when no
+   current established session exists, ACTIVE only after exact ACCEPT, and
+   INACTIVE again on retirement/known terminality.
+9. Provide an establishment-only ACTIVE path that sends no RFB/AUDIO/MPEG
+   CREDIT, CONFIG, heartbeat or rider DATA merely to stay valid.
+10. Keep Wire ACTIVE distinct from rider readiness. Q4 success alone must not
+    make uninitialized RFB/AUDIO/MPEG runtime callable.
+11. Remove or reshape any cross-component raw-descriptor session-open bypass so
+    ordinary rider runtime cannot skip Q4.
+12. Preserve current RFB/AUDIO/MPEG queues, sole-I/O execution, stale-access
+    fencing and R6 START/RETIRE relay semantics.
+13. Repeated Session B begins a fresh sequence-1 provisional exchange and does
+    not resume Session A sequence/session/access/rider state.
+14. Add comments at ownership handoff, sequence transition, ACTIVE publication
+    and rejection/cleanup boundaries.
+15. Do not make current fail-closed pstvnc_app_run() invent missing production
+    configuration or begin full product activation.
+16. Do not mutate accepted R8 Pi source except for a genuinely bounded
+    parity/test/document correction required by this packet.
+
+### Acceptance criteria
+
+- A003-R9-C1 TRANSPORT_OWNS_Q4_CLIENT
+- A003-R9-C2 EXACT_HELLO_ACCEPT_REJECT
+- A003-R9-C3 DESCRIPTOR_OWNERSHIP_FENCED
+- A003-R9-C4 POST_ESTABLISH_SEQUENCE_TWO
+- A003-R9-C5 TYPED_ESTABLISHMENT_RESULT
+- A003-R9-C6 WIRE_AVAILABILITY_INDEPENDENT
+- A003-R9-C7 IDLE_ACTIVE_NO_RIDER_TRAFFIC
+- A003-R9-C8 PI_SESSION_ID_PRIVATE
+- A003-R9-C9 NO_RAW_SESSION_BYPASS
+- A003-R9-C10 REPEATED_SESSION_NONRESUME
+- A003-R9-C11 EXISTING_RIDER_MECHANICS_PRESERVED
+- A003-R9-C12 CLEAN_EVIDENCE_AND_CLAIM_BOUNDARY
+
+All must be MET for Foreman acceptance.
+
+### Explicit non-goals
+
+Do not implement in R9:
+
+- Pi RFB/AUDIO/MPEG riders;
+- Pi MPEG START/RETIRE owner or producer;
+- CONFIG delivery or full session-composition negotiation;
+- heartbeat/liveness policy;
+- cryptographic authentication or update transfer;
+- automatic reconnect/resume policy;
+- Application MPEG generation allocation/activation;
+- Presentation arm;
+- Q7 retirement/finalization;
+- RFB restoration orchestration;
+- live Pi service activation;
+- physical PS2/Pi qualification.
+
+### Evidence required
+
+Return exact source/test/dictionary/build commits, the Transport-owned Q4 seam,
+descriptor ownership transitions, exact HELLO/result bytes/rejections,
+sequence-2 handoff, ACTIVE/rider-readiness separation, idle no-rider proof, no
+raw-descriptor bypass, private session identity, repeated A/B host proof,
+current rider/stale-access regressions, strict dictionary/topology/project
+checks, direct PS2 compile for every changed maintained C surface,
+current-source linked reproducibility and explicit hardware-pending claims.
+
+Emit exactly one immutable Reconstruction log using reconstruction /
+a003-mpeg-generation / interactive.
+
+Stop after R9.
+
+## Deferred dependency graph after accepted R9
+
+1. choose the smallest first Pi rider boundary from live R9 authority;
+2. add Pi MPEG START/RETIRE control ownership only behind the real Wire owner;
+3. reconstruct the Pi MPEG producer with exact-run admission and one-way
+   retirement;
+4. wire selected runtime profile and MPEG calibration into bounded Application
+   activation;
+5. reconstruct current-Q7 retirement/failure, residual/credit finalization and
+   overlapped RFB restoration;
+6. integrate Wire-loss containment and repeated-run/repeated-session behavior;
+7. physically qualify the exact Pi service + PS2 product path and final ELF.
+
+## Hardware qualification debt
+
+HARDWARE_PENDING=R9 changed PS2 Transport PT_LOAD/Q4 client; R8 Pi Wire service/no-carrier/listener lifecycle; final product Q4 handshake; reconstructed A003 R3-R7 MPEG runtime; Pi RFB-to-Wire rider; MPEG one-run/repeated-run stale fencing; Wire-loss during MPEG; current-Q7 overlapped RFB restoration; A004 visible geometry/matte/suppression/first-frame timing; all-guns endurance; exact final product ELF
+
+## Foreman next pickup
+
+Consume A003-PS2-WIRE-SESSION-ESTABLISHMENT-R9. Independently verify exact Q4
+client bytes, descriptor ownership, sequence-2 handoff, private session
+identity, Wire ACTIVE/rider-readiness separation, idle no-rider behavior,
+absence of a raw-session bypass, current rider regressions and explicit
+hardware-pending claims.
 
 Do not execute the active packet from the Foreman seat.
 
