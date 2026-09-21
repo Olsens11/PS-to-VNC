@@ -43,30 +43,6 @@ int pstvnc_transport_physical_stream_send_frame(
     size_t payload_length);
 
 /*
- * PS2-side outbound START seam. This is framing only: exact-generation state
- * stays with application coordination, while physical_stream keeps the one
- * ordered send path and sequence space for the full-duplex PSTV connection.
- */
-static inline int pstvnc_transport_physical_stream_send_mpeg_start(
-    pstvnc_transport_physical_stream_t *stream,
-    const pstvnc_mpeg_start_payload_t *start)
-{
-    uint8_t payload[PSTVNC_MPEG_START_PAYLOAD_SIZE];
-
-    if (stream == NULL ||
-        !pstvnc_mpeg_start_payload_encode(payload, start))
-        return 0;
-
-    return pstvnc_transport_physical_stream_send_frame(
-        stream,
-        PSTVNC_TRANSPORT_FRAME_MPEG_START,
-        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
-        0u,
-        payload,
-        sizeof(payload));
-}
-
-/*
  * Receives exactly one complete PSTV frame from the sole physical socket.
  * The caller supplies storage large enough for the accepted payload ceiling.
  * Inbound sequence advances only after the complete payload has been read.
