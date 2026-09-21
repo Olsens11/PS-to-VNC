@@ -34,6 +34,9 @@ LISTEN_BACKLOG = 1
 
 
 class WireSessionState(Enum):
+    # INACTIVE: no accepted connection currently owns Wire Session authority.
+    # PROVISIONAL: TCP exists, but HELLO/compatibility/ACCEPT are not complete.
+    # ACTIVE: the Pi successfully sent ACCEPT for a nonzero session identity.
     INACTIVE = "INACTIVE"
     PROVISIONAL = "PROVISIONAL"
     ACTIVE = "ACTIVE"
@@ -74,6 +77,10 @@ class SessionIdAllocator:
         if self._exhausted:
             raise SessionIdExhausted("Wire Session ID space exhausted")
 
+        # IDs are never reused within this long-lived process. Importantly, an
+        # ID remains consumed even if the subsequent ACCEPT send fails: sendall
+        # may have exposed a prefix of that ACCEPT to the peer, so recycling the
+        # same identity would make the next physical connection ambiguous.
         session_id = self._next_session_id
         if session_id == protocol.UINT32_MAX:
             self._exhausted = True
@@ -83,6 +90,9 @@ class SessionIdAllocator:
 
 
 def read_exact(connection: socket.socket, byte_count: int) -> bytes:
+    # TCP is a byte stream, so one recv() is not assumed to return one complete
+    # Wire field. EOF before the requested byte count makes the provisional or
+    # active physical connection terminal.
     chunks: list[bytes] = []
     remaining = byte_count
 
@@ -123,6 +133,8 @@ class WireConnectionOwner:
         self.next_send_sequence = 1
 
     def _send_rejection(self, reason: int) -> None:
+        # Rejections are themselves framed Wire traffic and therefore consume
+        # the server->client sequence exactly like ACCEPT.
         self._connection.sendall(
             protocol.encode_not_accepted_frame(
                 reason,
@@ -136,7 +148,14 @@ class WireConnectionOwner:
         try:
             header = protocol.decode_header(raw_header)
         except protocol.WireProtocolError as exc:
+            # Bad magic/header-version/length means we cannot safely assume the
+            # peer understands enough PSTV framing to interpret NOT_ACCEPTED.
+            # Close instead of manufacturing a response on an untrusted frame.
             raise UnsafeProvisionalFraming(str(exc)) from exc
+
+        # Once the fixed header is structurally valid, consuming its declared
+        # payload lets us distinguish a well-framed but semantically malformed
+        # establishment request from unsafe framing.
         payload = read_exact(self._connection, header.payload_length)
 
         if (
@@ -144,6 +163,9 @@ class WireConnectionOwner:
             or header.sequence != self.next_receive_sequence
             or not protocol.is_hello_header(header)
         ):
+            # Q4 has exactly one legal first application frame. A valid PSTV
+            # header with the wrong sequence/kind/channel/flags/length is safe
+            # to reject as MALFORMED, but it never creates ACTIVE authority.
             raise protocol.WireProtocolError(
                 "first application frame is not exact sequence-1 HELLO"
             )
@@ -156,6 +178,9 @@ class WireConnectionOwner:
         try:
             wire_version, product_version = self._read_provisional_hello()
         except (EOFError, UnsafeProvisionalFraming):
+            # Nothing ACTIVE exists yet. Unsafe framing or premature EOF simply
+            # retires this provisional TCP connection; the persistent listener
+            # survives and may accept a completely fresh connection afterward.
             return self._finish(
                 accepted=False,
                 rejection_reason=None,
@@ -177,6 +202,10 @@ class WireConnectionOwner:
             product_version,
         )
         if rejection is not None:
+            # Compatibility failure is a normal, well-framed Q4 outcome. Send
+            # the exact bounded reason, remain PROVISIONAL/never ACTIVE, then
+            # retire only this connection.
+
             try:
                 self._send_rejection(rejection)
             except OSError:
@@ -191,6 +220,9 @@ class WireConnectionOwner:
                 protocol_failed=False,
             )
 
+        # Allocate before ACCEPT so the Pi is authoritative for identity.
+        # ACTIVE is intentionally *not* published yet: successful ACCEPT send is
+        # the final establishment fence.
         session_id = self._session_ids.allocate()
         try:
             self._connection.sendall(
@@ -206,6 +238,9 @@ class WireConnectionOwner:
                 protocol_failed=True,
             )
 
+        # Only after sendall succeeds may local state claim ACTIVE. The next
+        # sequence values are direction-local and begin ordinary post-Q4 traffic
+        # at 2, preserving sequence 1 for HELLO/ACCEPT establishment.
         self.next_send_sequence = 2
         self.session_id = session_id
         self.state = WireSessionState.ACTIVE
@@ -223,6 +258,11 @@ class WireConnectionOwner:
         if self.state is not WireSessionState.ACTIVE or self.session_id is None:
             raise RuntimeError("Wire Session is not ACTIVE")
 
+        # R8 intentionally has no heartbeat and no rider. This blocking read is
+        # therefore also the proof that a completely idle ACTIVE session is
+        # valid: silence causes no timeout or periodic traffic. EOF/OSError ends
+        # only this session. Any actual byte is rejected because ordinary rider
+        # dispatch has not been authorized yet.
         try:
             unsupported = self._connection.recv(1)
         except OSError:
@@ -248,6 +288,9 @@ class WireConnectionOwner:
         rejection_reason: int | None,
         protocol_failed: bool,
     ) -> WireSessionOutcome:
+        # Retiring the connection removes ACTIVE authority before the outer
+        # server closes the socket or accepts another peer. The historical
+        # session_id is returned only as evidence; it is not reusable authority.
         session_id = self.session_id
         self.state = WireSessionState.INACTIVE
         return WireSessionOutcome(
@@ -278,6 +321,9 @@ class WireServer:
         self.session_ids = session_ids or SessionIdAllocator()
 
     def serve_connection(self, connection: socket.socket) -> WireSessionOutcome:
+        # One connection owner contains every physical read/write for this
+        # accepted socket. The persistent WireServer never hands the socket to a
+        # rider or another thread/process.
         owner = WireConnectionOwner(connection, self.session_ids)
         try:
             outcome = owner.establish()
@@ -297,6 +343,10 @@ class WireServer:
             listener.listen(LISTEN_BACKLOG)
 
             while True:
+                # Sessions are deliberately sequential in R8. serve_connection
+                # fully retires and closes the accepted socket before this loop
+                # accepts the next one, preserving one physical I/O owner and
+                # preventing dead-session state from leaking into replacement.
                 connection, _peer = listener.accept()
                 self.serve_connection(connection)
 
