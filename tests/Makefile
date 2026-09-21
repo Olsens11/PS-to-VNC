@@ -831,3 +831,11 @@ $(APP_MPEG_FRAME_TEST): \
 		../src/display/mpeg_scheduler.c \
 		../src/media/clock.c \
 		-o $(APP_MPEG_FRAME_TEST)
+
+PI_WIRE_SERVER_TEST := unit/pi_wire_server_test.py
+
+.PHONY: pi-wire-server-unit
+unit: pi-wire-server-unit
+
+pi-wire-server-unit:
+	python3 $(PI_WIRE_SERVER_TEST)
