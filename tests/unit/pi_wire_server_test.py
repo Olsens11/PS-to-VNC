@@ -327,6 +327,47 @@ class RepositoryBoundaryTests(unittest.TestCase):
             installer,
         )
 
+    def test_stager_enforces_exact_identity_and_modes(self) -> None:
+        installer = (
+            REPO_ROOT / "scripts/pi/install-wire-runtime.sh"
+        ).read_text(encoding="utf-8")
+
+        # Stage refuses an unknown pre-existing target before install, then
+        # verifies the installed bytes. Remove repeats the same identity fence
+        # before deleting anything.
+        self.assertIn(
+            'if [ -e "$target" ] && ! cmp -s "$source" "$target"',
+            installer,
+        )
+        self.assertIn(
+            'install -D -m "$mode" "$source" "$target"',
+            installer,
+        )
+        self.assertIn(
+            'cmp -s "$source" "$target" || {',
+            installer,
+        )
+        self.assertIn(
+            'verify_file 0755 "$PROTOCOL_SOURCE" "$PROTOCOL_DEST"',
+            installer,
+        )
+        self.assertIn(
+            'verify_file 0755 "$SERVER_SOURCE" "$SERVER_DEST"',
+            installer,
+        )
+        self.assertIn(
+            'verify_file 0644 "$UNIT_SOURCE" "$UNIT_DEST"',
+            installer,
+        )
+        self.assertIn(
+            'systemd-analyze verify "$UNIT_DEST"',
+            installer,
+        )
+        self.assertIn(
+            'cmp -s "$source" "$target" || {',
+            installer,
+        )
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
