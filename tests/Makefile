@@ -779,3 +779,35 @@ $(MPEG_WORKER_TEST): \
 		../src/mpeg/worker.c \
 		../src/mpeg/decoder.c \
 		-o $(MPEG_WORKER_TEST)
+
+APP_MPEG_FRAME_TEST := .build/app_mpeg_frame_test
+
+.PHONY: app-mpeg-frame-unit
+unit: app-mpeg-frame-unit
+
+app-mpeg-frame-unit: $(APP_MPEG_FRAME_TEST)
+	./$(APP_MPEG_FRAME_TEST)
+
+$(APP_MPEG_FRAME_TEST): \
+	unit/app_mpeg_frame_test.c \
+	../src/app_mpeg_frame.c \
+	../src/app_mpeg_frame.h \
+	../src/mpeg/worker.h \
+	../src/display/mpeg_frame.c \
+	../src/display/mpeg_frame.h \
+	../src/display/mpeg_presentation.c \
+	../src/display/mpeg_presentation.h \
+	../src/display/mpeg_scheduler.c \
+	../src/display/mpeg_scheduler.h \
+	../src/display/mpeg_compositor.h \
+	../src/media/clock.c \
+	../src/media/clock.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/app_mpeg_frame_test.c \
+		../src/app_mpeg_frame.c \
+		../src/display/mpeg_frame.c \
+		../src/display/mpeg_presentation.c \
+		../src/display/mpeg_scheduler.c \
+		../src/media/clock.c \
+		-o $(APP_MPEG_FRAME_TEST)

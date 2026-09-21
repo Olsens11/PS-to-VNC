@@ -56,6 +56,8 @@ Current clean C/H files directly in `src/` are restricted to:
     src/main.c
     src/app.c
     src/app.h
+    src/app_mpeg_frame.c
+    src/app_mpeg_frame.h
 
 The root dictionary is:
 
