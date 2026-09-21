@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0028
-RECORDED_AT=2026-09-20T19:51:57-04:00
+STATE_REVISION=0029
+RECORDED_AT=2026-09-20T20:27:11-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0027
-SUPERSEDES_FOREMAN_STATE_REVISION=0027
+BASED_ON_FOREMAN_STATE_REVISION=0028
+SUPERSEDES_FOREMAN_STATE_REVISION=0028
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,16 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0029 independently accepts the completed
+`A004-ABSOLUTE-VIDEO-SCHEDULER-DROP-R6` Reconstruction baton and returns to
+the MPEG owner for the smallest prerequisite to the decoder-worker runtime
+handoff: an explicit one-picture decoded-frame publication/step seam.
+
+The completed R6 worker timed out after publishing its required immutable log.
+A restarted Reconstruction pickup therefore emitted a second immutable NOOP log
+only to confirm that R6 was already complete. That NOOP changed no product
+source, tests, state or packet authority and is preserved as truthful chronology.
 
 Revision 0028 independently accepts the completed
 `A004-Q7-RETIREMENT-VISIBLE-HANDOFF-R5` Reconstruction baton and advances A004
@@ -58,7 +68,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A004_P5_INTEGRATED__A004_ABSOLUTE_VIDEO_SCHEDULER_DROP_RECONSTRUCTION_ACTIVE__A003_APPLICATION_ORCHESTRATION_DEPENDS_ON_A004_PRESENTATION_SEAMS`
+`A004_P6_INTEGRATED__A003_DECODED_PICTURE_STEP_RECONSTRUCTION_ACTIVE__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -66,7 +76,8 @@ A004_P2_FOREMAN_ACCEPTED=YES
 A004_P3_FOREMAN_ACCEPTED=YES
 A004_P4_FOREMAN_ACCEPTED=YES
 A004_P5_FOREMAN_ACCEPTED=YES
-A004_P6_ACTIVE=YES
+A004_P6_FOREMAN_ACCEPTED=YES
+A003_DECODED_PICTURE_STEP_ACTIVE=YES
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 
@@ -695,12 +706,160 @@ the existing session clock axis from that exact first-sync observation; this is
 a run placement on the shared timeline, not a second epoch and never mutates the
 session clock.
 
+## A004 P6 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- branch HEAD `352bf76f0535025e925b66a5e167bbf2e0e07d5c`;
+- final R6 source/dictionary authority
+  `65fec4980fb1362716b5bc3ef6f1b73fdafacaf0`;
+- completed immutable R6 Reconstruction log
+  `docs/ledge/work-log/20260920T195955-0400__reconstruction__a004-presentation__interactive.md`;
+- timeout/restart confirmation NOOP log
+  `docs/ledge/work-log/20260920T202020-0400__reconstruction__a004-presentation__interactive.md`.
+
+The second Reconstruction log exists because the original worker timed out after
+it had already updated the completed R6 log. The restarted worker refreshed live
+authority, proved the sole active packet had already been completed, changed no
+product/state/planning authority and correctly refused to execute R6 again.
+
+The substantive R6 range after Foreman base
+`1845f06c67b95c131f1824920781379fc6a69cae` is:
+
+- `02b71b0c1edd878faeafccc239592de8d27289d9` —
+  Display-owned absolute MPEG presentation scheduler plus focused tests and
+  direct build registration;
+- `f356aee132e52ee3a6cc47e510a615c42c1eee98` —
+  tree-identical noncanonical reconciliation trigger; no product/tree change;
+- `b5e16bb22281ffd750fcdc573d3ebc8fb36b76bf` —
+  canonical deterministic dictionary-reconciliation trigger;
+- `66e312997ae7495a0a83926d141dfd3ae952bffa` —
+  automated current clean dictionary reconciliation;
+- `65fec4980fb1362716b5bc3ef6f1b73fdafacaf0` —
+  maintained Display/Media responsibility prose;
+- `64f74f12f2385e6595161c3f3f21cbd2e12a3525` —
+  required completed R6 Reconstruction log;
+- `352bf76f0535025e925b66a5e167bbf2e0e07d5c` —
+  restart-confirmation NOOP log only.
+
+Independent source review confirms:
+
+- `src/display/mpeg_scheduler.{c,h}` owns only deterministic post-first-frame
+  presentation timing policy and depends only on the common Media clock seam;
+- the profile contains positive rational FPS plus explicit optional
+  presentation-drop enable/threshold facts and does not restore H1 scheduler
+  comparison modes or expand production CONFIG;
+- initialization requires a nonzero caller generation and an already-armed
+  session clock, consumes the caller's exact first-sync tick and never calls
+  `pstvnc_media_clock_arm()`;
+- ordinal 1 is rejected, preserving P4 as the sole first-frame physical
+  presentation/clock-arm/promotion authority;
+- each run stores one immutable
+  `max(first_sync_tick - video_deadline_zero, 0)` placement offset on the
+  existing session timeline, so later runs reuse rather than replace the one
+  session epoch;
+- the scheduler uses an absolute non-rebasing grid
+  `run_base + (ordinal - 1) * frame_period`;
+- decision inspection is pure and accepts an injected current tick rather than
+  sleeping, reading a timer, waiting on VBlank or presenting;
+- early frames classify WAIT, on-time/slightly-late frames PRESENT_NOW, and an
+  enabled threshold-late frame DROP_PRESENTATION_ONLY;
+- disabling drop leaves every otherwise-valid late frame presentable;
+- stale/wrong run generations fail closed and the scheduler never mints or
+  increments run identity;
+- frame period, threshold, ordinal offset, run-base addition and final clock
+  deadline calculations are bounded/saturating so far-future values cannot wrap
+  into early deadlines;
+- the only Media addition is read-only
+  `pstvnc_media_clock_tick_rate()`, exposing an immutable initialization fact
+  without exposing or mutating epoch/armed authority;
+- decoder, compositor, P5 retirement, RFB, Transport and Application runtime
+  call graphs remain unwired to the scheduler;
+- the 30000/1001 and 1000-milliframe values remain qualification/reference test
+  values rather than newly declared public CONFIG knobs.
+
+A004-P6-C1 through A004-P6-C12 are independently accepted as MET within the
+bounded source/machine-evidence scope.
+
+### R6 CI chronology
+
+Behavior-head run `35546545543` passed host-unit, direct PS2 compile and PS2
+link, while project-check and strict dictionary correctly reported missing
+dictionary/topology coverage for the new scheduler files.
+
+The first tree-identical trigger run `35546616557` preserved that expected
+failure because its noncanonical commit message did not satisfy the authorized
+reconciliation predicate.
+
+The canonical trigger run `35546710602` successfully ran dictionary
+reconciliation. Its same-run project/dictionary jobs still observed the
+pre-reconciliation trigger tree and therefore remained red; the automation
+created the coherent dictionary commit afterward.
+
+Final pre-log run `35546830313`, completed-log run `35546948240` (run 299)
+and timeout/restart NOOP-head run `35547407928` (run 300) all completed
+SUCCESS across the required ordinary gates.
+
+Run 299 explicitly reports:
+
+- `MPEG_SCHEDULER_TEST=PASS`;
+- `MPEG_COMPOSITOR_TEST=PASS`;
+- `MPEG_PRESENTATION_TEST=PASS`;
+- `RFB_FLOW_POLICY_TEST=PASS`;
+- `MPEG_CALIBRATION_UNIT=PASS`;
+- `transport_runtime_test: PASS`;
+- `SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS`;
+- `SOURCE_DICTIONARY_PORTAL_SYNC=PASS`;
+- `WORK_LOG_CHECK=PASS`;
+- `PS_TO_VNC_PROJECT_CHECK=PASS`;
+- direct `PS2_COMPILE=src/media/clock.c`;
+- direct `PS2_COMPILE=src/display/mpeg_scheduler.c`;
+- `CLEAN_PS2_COMPILE_CHECK=PASS`;
+- `ISSUE7_LINKED_BUILD=PASS`;
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+
+No physical PS2 timing/drop/A-V run occurred; machine evidence does not qualify
+real VBlank cadence, visible stale-frame omission or A/V synchronization.
+
+## Why the next seam is decoder picture publication before worker/runtime wiring
+
+R6 completes the deterministic presentation-policy surface, but current clean
+`pstvnc_mpeg_decoder_run()` still privately loops over
+`platform_ops.picture()` until terminal completion/stop/failure.
+
+After each successful picture the decoder:
+
+1. validates sequence/feed/result state;
+2. increments `pictures_decoded`;
+3. observes the safe-stop boundary;
+4. immediately enters the next decoder call.
+
+It exposes no public one-picture result containing the just-decoded picture
+buffer, sequence geometry or ordinal.
+
+Therefore a worker-to-Presentation runtime cannot yet be reconstructed without
+one of two bad shortcuts:
+
+- reaching into public decoder struct internals and racing the decoder-owned
+  reusable picture buffer; or
+- duplicating the decoder's qualified feed/sequence/safe-stop loop outside the
+  decoder owner.
+
+The next bounded dependency is consequently an MPEG-owned one-picture step /
+decoded-picture publication seam. It must preserve the proven false-EOF
+prevention and current `run()` behavior while making buffer lifetime explicit.
+
+This packet deliberately does **not** add the MPEG worker thread, main-thread
+frame mailbox, scheduler/compositor calls, concrete PS2 libmpeg backend,
+START/RETIRE orchestration or final Application transaction. Those remain later
+seams chosen from the returned source.
+
 ## Active bounded Reconstruction packet
 
-PACKET_ID=`A004-ABSOLUTE-VIDEO-SCHEDULER-DROP-R6`
+PACKET_ID=`A003-DECODED-PICTURE-HANDOFF-R2`
 PACKET_STATUS=ACTIVE
 ROLE_KEY=`reconstruction`
-WORK_ITEM_KEY=`a004-presentation`
+WORK_ITEM_KEY=`a003-mpeg-generation`
 WORKER_KEY=`interactive`
 EXECUTION_MODE=`AUTONOMOUS_RECONSTRUCTION`
 USER_TERMINAL_POLICY=`EXCEPTION_ONLY`
@@ -712,16 +871,14 @@ ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
 
 ### Objective
 
-Reconstruct the clean **absolute common-clock MPEG video scheduling and stale
-presentation-drop policy** needed between the P4/P5 presentation mechanism and a
-later decoder-worker handoff.
+Reconstruct the clean MPEG-owned **one-picture decoder step and borrowed decoded
+picture publication seam** required before a real worker/main-thread
+presentation handoff can exist.
 
-R6 owns deterministic timing policy only. It must establish one exact-run
-absolute presentation grid for frames after the already-physical first frame,
-derive deadlines from the existing session media clock plus rational source
-rate, and classify each subsequent frame as WAIT, PRESENT_NOW or
-DROP_PRESENTATION_ONLY without calling GS, decoder, Transport, RFB or
-Application lifecycle APIs.
+The packet must let a caller observe exactly one successful decoded picture at a
+completed decoder-call boundary without importing Presentation policy into MPEG,
+without exposing decoder-private mutable state as authority, and without
+weakening A003's hardware-proven safe-stop rule.
 
 ### Execution policy
 
@@ -736,178 +893,150 @@ terminal proxy.
 Read current at wake, including:
 
 - Reconstruction Contract rev 0006;
-- Foreman State rev 0028;
-- A002 CONFIG/audio/common-clock audit rev 0001;
+- Foreman State rev 0029;
 - A003 MPEG-generation audit rev 0001;
-- A004 presentation/calibration audit rev 0001;
-- Wire runtime decisions rev 0011;
-- current `src/media/clock.{c,h}`;
-- current `src/config/profile.{c,h}`;
-- current `src/display/mpeg_presentation.{c,h}`;
-- current `src/display/mpeg_compositor.{c,h}`;
-- current canonical host and PS2 build manifests.
+- A004 accepted P1-P6 source as context only;
+- current `src/mpeg/decoder.{c,h}`;
+- current `tests/unit/mpeg_decoder_test.c`;
+- current `src/display/mpeg_frame.{c,h}` only to understand the later consumer
+  boundary; MPEG must not import Display merely to reuse that type;
+- current canonical host/PS2 build manifests.
 
-Trace frozen authority
-`3426f28b93de9519ca93e5f0e0aaf8b67cfca845`, at minimum:
+Trace frozen authority at least far enough to re-confirm:
 
-- `experiments/media-harness-h1/h1_video_runtime.{c,h}` around
-  `h1_video_frame_period_ticks()` and absolute scheduling;
-- `experiments/media-harness-h1/h1_media_clock.{c,h}`;
-- `experiments/media-harness-h1/h1_profiles.py` for the qualified 30000/1001
-  reference profile and historical scheduler/drop fields;
-- `experiments/media-harness-h1/qualified_p11_video_seed.c` for one-epoch
-  absolute deadline/non-rebase behavior;
-- `experiments/media-stream-exp3/generate_network_live_streaming_p7_late_frame_drop.py`
-  for the presentation-only one-source-frame stale-drop rule.
-
-Historical scheduler comparison modes are experimental evidence only.
+- `experiments/media-harness-h1/CP2P_MPEG_SAFE_STOP_LIFECYCLE.md`;
+- relevant H1 `MPEG_Picture()` success/stop ordering;
+- the A003 false-EOF defect boundary.
 
 ### Required behavior
 
-1. **Display owns timing policy.** Add the narrow scheduler under the existing
-   Display/presentation responsibility family. It must not own GS/dmaKit,
-   decoder lifecycle, Transport queues/credit, RFB flow, Application lifecycle
-   or calibration.
-2. **Narrow immutable timing profile.** Represent only the real scheduling facts:
-   positive rational source FPS numerator/denominator and optional
-   presentation-drop policy/threshold. Do not restore H1's scheduler-mode enum
-   or its giant CONFIG laboratory surface.
-3. **No CONFIG-wire broadening in R6.** Current production CONFIG remains
-   unchanged. The new owner-specific timing value is supplied directly by the
-   later runtime/orchestration seam. Tests may use the historically qualified
-   30000/1001 reference and one-frame (1000 milliframe) stale threshold without
-   declaring those values a new public user knob.
-4. **First frame remains P4 authority.** R6 must not schedule, delay, drop,
-   re-present or arm the clock for a run's first MPEG frame. Scheduler state is
-   initialized only after the exact P4 first synchronized frame has completed
-   and the session clock is already armed.
-5. **One session epoch.** Scheduler initialization consumes the existing armed
-   session clock, exact caller-owned run generation and the run's exact P4
-   first-sync observation. It must never arm/re-arm/clear/replace the clock.
-6. **Stable run placement on the session axis.** Derive and retain one run
-   additional-tick anchor relative to the existing session video deadline-zero
-   axis. A suitable clean rule is:
-   - observe the session video deadline for additional_ticks=0;
-   - if first_sync_tick is later, retain the nonnegative difference as the
-     run's base additional offset;
-   - otherwise retain zero.
-   This offset is not a second epoch. It only locates this run on the existing
-   session timeline and must never be recomputed from later frames.
-7. **Absolute deadline grid.** For subsequent run-local picture ordinal N
-   (N >= 2), target:
-   `run_base_additional_ticks + (N - 1) * frame_period_ticks`
-   through the common video-deadline contract. A late frame never rebases the
-   next deadline.
-8. **Pure inspectable decision.** Given the exact run, picture ordinal and a
-   caller/injected current tick, return a narrow result containing the absolute
-   deadline, lateness where applicable, and one decision equivalent to:
-   WAIT_UNTIL_DEADLINE, PRESENT_NOW or DROP_PRESENTATION_ONLY. Do not busy-spin,
-   sleep, wait on GS/VBlank or present a frame inside this policy module.
-9. **Late-but-valid presentation.** If a frame is late but has not reached the
-   enabled stale threshold, classify PRESENT_NOW rather than dropping it.
-10. **Presentation-only stale drop.** When dropping is enabled and lateness is
-    at least the configured threshold expressed as a fraction of one source
-    frame, classify DROP_PRESENTATION_ONLY. This result must not mutate MPEG
-    decode/reference state, Transport consumption/credit, generation state,
-    presentation retirement state or EOF semantics.
-11. **Drop-disabled behavior.** A valid exact-run frame is never classified
-    DROP when drop policy is disabled, regardless of lateness.
-12. **Exact-run fence.** Scheduler state copies the caller-owned nonzero
-    generation verbatim. Stale/wrong-generation decisions fail closed. It must
-    not mint or increment run identity.
-13. **Arithmetic safety.** Reject impossible zero-rate profiles and use
-    overflow-safe/saturating arithmetic for frame-period, run-anchor, ordinal
-    offset, threshold and deadline inputs. Do not permit wraparound to turn a
-    very late/future frame into an early one.
-14. **Clock owner boundary.** Prefer existing media-clock public deadline
-    operations and, only if necessary, add the smallest read-only clock query
-    needed for tick-rate/epoch calculations. Do not expose mutable clock
-    internals or create a second timing service.
-15. **No premature compositor/runtime wiring.** Do not make the decoder worker,
-    P4 compositor, P5 retirement path, RFB flow policy, Transport or Application
-    call the scheduler in R6. That cross-owner wiring is the next runtime
-    tranche.
-16. **Direct build/test coverage.** Add focused deterministic host tests and put
-    any new product timing translation unit directly in canonical strict PS2
-    compile and linked reproducibility manifests.
+1. **MPEG owns the step.** The one-picture operation belongs to the MPEG decoder
+   owner. Do not move feed, sequence validation, picture-call ownership or
+   safe-stop semantics into Display/Application.
+2. **Exactly one decoder call per step.** A successful step may invoke
+   `platform_ops.picture()` at most once and must return to caller before any
+   later picture call begins.
+3. **Borrowed decoded-picture value.** On a successful picture boundary expose
+   a small caller-readable value containing at least:
+   - read-only picture-buffer pointer;
+   - usable/capacity byte count;
+   - validated sequence width/height;
+   - decoder bytes-per-pixel fact;
+   - monotonically increasing decoder-local picture ordinal.
+   Do not add MPEG generation identity to the decoder; run generation remains
+   caller/Application authority.
+4. **Explicit buffer lifetime.** Document and test that the borrowed decoded
+   picture remains valid only until the next decoder picture step or decoder
+   release. A later worker bridge must therefore consume/copy/release the frame
+   before allowing the decoder to run ahead.
+5. **First successful picture is observable.** The seam must expose picture
+   ordinal 1 as decoded data. It does not present it, schedule it, arm a clock or
+   claim P3/P4 visible ownership.
+6. **Safe stop before call.** A stop request already visible before a new step
+   begins returns STOPPED without entering another `MPEG_Picture()`.
+7. **Safe stop during active picture.** The data callback continues to report
+   only real Transport data/exhaustion/failure while `MPEG_Picture()` owns the
+   call. If stop becomes visible during that call, observe it only after the
+   call returns. Preserve existing accounting and return STOPPED without
+   publishing a new caller-consumable frame from that stopping boundary unless
+   frozen authority proves otherwise.
+8. **Terminal semantics preserved.** Real finite exhaustion remains COMPLETE;
+   unexpected decoder end without exhaustion/owner stop remains failure;
+   sequence/feed/Transport/platform/synchronization errors retain their current
+   classifications.
+9. **Existing run compatibility.** Preserve `pstvnc_mpeg_decoder_run()` as a
+   compatibility/lifecycle operation with materially unchanged terminal
+   behavior and report accounting. It may internally loop over the new step
+   seam if that is the clearest implementation.
+10. **No cross-domain shortcut.** MPEG decoder source must not import
+    `display/mpeg_scheduler.h`, `display/mpeg_compositor.h`,
+    `display/mpeg_presentation.h`, Platform graphics, RFB or Application.
+    No GS call, clock arm, timing wait, presentation drop or visible ownership
+    transition belongs in this packet.
+11. **Transport boundary unchanged.** Keep channel-4 consumption through the
+    existing public Transport MPEG access/wake API. Do not reach into queue,
+    semaphore, credit or physical receive internals and do not invent generation
+    EOF from local stop.
+12. **Direct evidence.** Extend focused decoder tests for one-picture
+    publication/lifetime/ordinal and stop interleavings while preserving the
+    existing decoder suite. Current decoder translation units must remain
+    directly covered by canonical strict PS2 compile and linked reproducibility.
 
 ### Placement / shape guidance
 
-Prefer a small module such as
-`src/display/mpeg_scheduler.{c,h}`.
+Prefer the smallest change in `src/mpeg/decoder.{c,h}`.
 
-Keep the scheduler platform-neutral and deterministic. Inject/accept current tick
-as data for decision tests rather than reading PS2 timers directly.
+A tiny MPEG-domain decoded-picture value is acceptable if it improves API
+clarity. Do not create a Presentation dependency merely to reuse
+`pstvnc_mpeg_frame_surface_t`; the later Application/main-thread adapter can
+construct the Presentation value from the MPEG-owned borrowed picture facts.
 
-An immutable per-run scheduler state may contain:
+A dedicated step result enum or a new positive
+`PICTURE_READY` decoder result is acceptable. Keep terminal/error values
+unambiguous.
 
-- exact caller generation;
-- validated rational FPS;
-- frame period in session-clock ticks;
-- immutable run-base additional ticks;
-- drop enabled/threshold timing fact.
-
-Do not store or mutate decoder buffers, frame surfaces, Presentation ownership
-state, Transport state or GS resources.
+The current reusable decoder picture buffer remains decoder-owned. This packet
+does not add a second full-frame copy merely to make ownership easier.
 
 ### Acceptance criteria
 
-- `A004-P6-C1 OWNER_BOUNDARY`: timing policy is Display-owned and independent
-  of GS, decoder, Transport, RFB, calibration and Application lifecycle.
-- `A004-P6-C2 NARROW_PROFILE`: rational FPS/drop facts are explicit without
-  restoring H1 scheduler modes or widening CONFIG wire authority.
-- `A004-P6-C3 FIRST_FRAME_BOUNDARY`: scheduler cannot schedule/drop/arm the
-  first frame and initializes only from an already-armed clock plus exact P4
-  first-sync observation.
-- `A004-P6-C4 SESSION_AXIS`: one immutable run offset is derived on the
-  existing session timeline; no new epoch/re-arm occurs, including later runs.
-- `A004-P6-C5 ABSOLUTE_GRID`: subsequent deadlines remain anchored to
-  run-base + ordinal*period and do not drift/rebase after lateness.
-- `A004-P6-C6 DECISION_SEMANTICS`: early, on-time and slightly-late frames
-  produce deterministic WAIT/PRESENT classifications with inspectable deadline
-  and lateness.
-- `A004-P6-C7 PRESENTATION_ONLY_DROP`: threshold-late frames may be classified
-  DROP only as visible-presentation policy; no decode/Transport/EOF/lifecycle
-  fact is changed.
-- `A004-P6-C8 DROP_DISABLED`: disabled drop never suppresses a valid frame.
-- `A004-P6-C9 EXACT_RUN_FENCE`: stale/wrong generation fails closed and run
-  identity is never minted by the scheduler.
-- `A004-P6-C10 ARITHMETIC_SAFETY`: invalid rate/threshold/ordinal and overflow
-  cases cannot wrap timing calculations.
-- `A004-P6-C11 NO_RUNTIME_WIRING`: current compositor/retirement/decoder/RFB/
-  Transport/Application call graph remains unwired to the new policy.
-- `A004-P6-C12 CLEAN_EVIDENCE`: focused/full host tests, project/dictionary
-  checks, direct PS2 compile and linked reproducibility pass on exact final
-  source; hardware timing qualification remains separate.
+- `A003-R2-C1 ONE_PICTURE_STEP`: one public operation returns after at most one
+  decoder picture call and can identify a successful picture boundary.
+- `A003-R2-C2 FRAME_VALUE`: a successful picture publishes a bounded read-only
+  buffer/geometry/pixel-width/ordinal value without generation or Presentation
+  authority.
+- `A003-R2-C3 BUFFER_LIFETIME`: borrowed-frame validity is explicit and tested
+  across next-step/release boundaries; no hidden concurrent ownership exists.
+- `A003-R2-C4 FIRST_PICTURE_NEUTRALITY`: decoded ordinal 1 is observable but
+  does not arm clock, schedule, present or promote visible ownership.
+- `A003-R2-C5 SAFE_STOP_PRECALL`: pre-existing stop prevents a new decoder
+  call.
+- `A003-R2-C6 SAFE_STOP_ACTIVE_CALL`: stop during an active picture never
+  becomes callback EOF and is observed only after decoder ownership returns.
+- `A003-R2-C7 TERMINAL_COMPATIBILITY`: finite exhaustion, unexpected end and
+  existing failure classes remain truthful.
+- `A003-R2-C8 RUN_COMPATIBILITY`: existing decoder run behavior/reporting is
+  preserved rather than forked into a competing loop.
+- `A003-R2-C9 ACCOUNTING`: picture/feed/payload/DMA accounting remains
+  monotonic and exactly once per underlying decoder/Transport fact.
+- `A003-R2-C10 OWNER_BOUNDARY`: no Display scheduler/compositor, GS, RFB,
+  Application or generation-lifecycle dependency enters the decoder.
+- `A003-R2-C11 TRANSPORT_BOUNDARY`: public MPEG Transport access/wake remains
+  the sole ingest seam and local stop cannot synthesize stream exhaustion.
+- `A003-R2-C12 CLEAN_EVIDENCE`: focused/full host tests, project/dictionary
+  checks, direct PS2 compile and linked current-source reproducibility all pass
+  on exact final source; hardware claims remain separate.
 
 ### Explicit non-goals
 
-Do not implement in P6:
+Do not implement in R2:
 
-- decoder-worker -> scheduler/compositor frame handoff;
-- actual thread sleep/VBlank wait loop;
-- changes to P4 first-frame presentation/clock-arm behavior;
-- changes to P5 retirement/final reveal;
-- public CONFIG protocol expansion for FPS/drop fields;
-- Transport START/RETIRE, Pi producer or residual finalization;
-- P2/RFB runtime orchestration;
+- an MPEG worker thread/session wrapper;
+- worker-to-main-thread mailbox/rendezvous;
+- scheduler or compositor invocation;
+- actual timing wait/VBlank behavior;
+- P3/P4/P5 presentation state changes;
+- concrete PS2 libmpeg platform adapter if one is still absent;
+- START/RETIRE wire/control protocol;
+- Transport residual discard/credit finalization;
+- Pi producer lifecycle;
+- RFB restoration orchestration;
 - final Application activation/retirement/failure transaction;
-- physical A/V timing qualification.
+- physical PS2 MPEG qualification.
 
 ### Worker return
 
 Return:
 
-- exact current/frozen timing evidence inspected;
+- exact current/frozen decoder evidence inspected;
 - exact source/test/build/dictionary commits changed;
-- timing-profile and per-run scheduler-state shape;
-- exact first-sync-to-session-axis anchor rule;
-- exact frame-period/deadline/drop arithmetic;
-- confirmation first frame remains solely P4 authority;
-- confirmation session clock is never re-armed/replaced;
-- confirmation drop is presentation-only and does not alter decoder/Transport/
-  EOF/lifecycle facts;
-- A004-P6-C1 through C12 disposition;
+- one-picture step/result API shape;
+- exact borrowed-frame fields and lifetime rule;
+- exact stop-before-call and stop-during-call behavior;
+- confirmation ordinal 1 has no presentation/clock side effect;
+- confirmation generation remains outside decoder;
+- confirmation `pstvnc_mpeg_decoder_run()` terminal behavior remains compatible;
+- A003-R2-C1 through C12 disposition;
 - focused/full/direct-PS2 evidence;
 - evidence gaps/hardware non-claims;
 - exact next dependency/baton point.
@@ -915,25 +1044,29 @@ Return:
 Emit exactly one immutable Reconstruction log using:
 
 - ROLE_KEY=`reconstruction`
-- WORK_ITEM_KEY=`a004-presentation`
+- WORK_ITEM_KEY=`a003-mpeg-generation`
 - WORKER_KEY=`interactive`
 
-Do not begin decoder-worker runtime handoff or final Application orchestration in
-the same shift.
+Do not begin the MPEG worker/mailbox, Presentation runtime wiring or final
+Application orchestration in the same shift.
 
 ## Deferred dependency graph
 
-Expected remaining work after active P6 is:
+Expected remaining work after active A003 R2 is:
 
-1. explicit decoded-frame runtime handoff from the MPEG worker through the
-   absolute scheduler into the sole P4 compositor, preserving P5 drain/seal
-   retirement boundaries and decoder-safe-stop semantics;
-2. final Application orchestration consuming A003 plus P1-P6 public seams,
-   including activation, calibration/P2 protection, START/producer admission,
-   decoder lifecycle, current-Q7 retirement/RFB restoration, failure containment
-   and shutdown ordering.
+1. reconstruct the MPEG-owned asynchronous worker/session and a bounded
+   buffer-lifetime-safe handoff to the main/Application thread, using the
+   one-picture decoder seam rather than letting the decoder run ahead over a
+   borrowed frame;
+2. reconstruct any still-missing concrete PS2 libmpeg/platform binding as its
+   own hardware-facing seam if returned source confirms that adapter remains
+   absent;
+3. final Application orchestration consumes the MPEG worker handoff plus A004
+   P1-P6 Presentation seams, routing first frame to P4, later frames through R6,
+   visible frames through the sole P4 compositor, and P5/Q7 retirement through
+   the ordered producer/decoder/RFB transaction.
 
-Foreman must choose the exact next seam from returned P6 source rather than
+Foreman must choose the exact next seam from returned A003 R2 source rather than
 pre-authorizing later implementation.
 
 This is planning only, not worker authority to pre-implement later work.
@@ -944,10 +1077,10 @@ HARDWARE_PENDING=A004 visual geometry/matte/suppression/first-frame qualificatio
 
 ## Foreman next pickup
 
-Consume the `A004-ABSOLUTE-VIDEO-SCHEDULER-DROP-R6` Reconstruction baton,
-independently verify the one-epoch/run-anchor model, absolute non-rebasing
-deadline math, presentation-only stale-drop semantics, first-frame P4 boundary,
-owner separation and direct PS2 build coverage. Then choose the next bounded
-decoded-frame runtime handoff seam from actual source.
+Consume the `A003-DECODED-PICTURE-HANDOFF-R2` Reconstruction baton,
+independently verify the one-picture decoder boundary, borrowed-frame lifetime,
+safe-stop ordering, terminal/run compatibility, exact accounting and strict
+owner separation. Then choose the next bounded MPEG worker/main-thread handoff
+or concrete platform-adapter seam from returned source.
 
 Do not execute the packet from the Foreman seat.
