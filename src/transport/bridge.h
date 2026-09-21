@@ -2,8 +2,9 @@
  * File synopsis:
  * Defines Transport's single cross-component bridge. The bridge exposes the
  * application-requested session lifecycle, logical RFB byte-stream/quiesce
- * processes, and optional logical AUDIO/MPEG2 consumer seams while keeping the
- * physical PSTV descriptor and sole receiver runtime private to Transport.
+ * processes, optional logical AUDIO/MPEG2 consumer seams, and exact MPEG
+ * generation-control relay operations while keeping the physical PSTV descriptor
+ * and sole physical-I/O runtime private to Transport.
  *
  * The bridge does not parse RFB, invent configuration defaults, play PCM,
  * decode MPEG, decide media timing/presentation/generation policy, or perform
@@ -18,6 +19,7 @@
 #ifndef PSTVNC_TRANSPORT_BRIDGE_H
 #define PSTVNC_TRANSPORT_BRIDGE_H
 
+#include "protocol.h"
 #include "transport.h"
 
 #include <stddef.h>
@@ -99,6 +101,16 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_wait_activity(
  */
 pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(
     const pstvnc_transport_access_t *transport_access);
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_send_start(
+    const pstvnc_transport_access_t *transport_access,
+    const pstvnc_mpeg_start_payload_t *start);
+pstvnc_transport_result_t pstvnc_transport_mpeg_send_retire(
+    const pstvnc_transport_access_t *transport_access,
+    const pstvnc_mpeg_retire_payload_t *retire);
+pstvnc_transport_result_t pstvnc_transport_mpeg_take_retire_completion(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_mpeg_retire_payload_t *completion);
 
 pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(
     const pstvnc_transport_access_t *transport_access);
