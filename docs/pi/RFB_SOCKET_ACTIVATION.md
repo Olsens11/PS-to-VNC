@@ -324,7 +324,7 @@ uninstalled.
 - custom link/port watcher daemon: duplicates standard lifecycle/socket
   machinery;
 - `systemd-socket-proxyd` in front of TigerVNC: adds a process/data hop while
-  the current provider already supports inherited listener mode;
+  the then-qualified Issue #5 provider already supported inherited listener mode;
 - PS2 retry as the normal Pi startup mechanism: useful later as client defense in
   depth, but it should not be required to make ordinary Pi readiness correct.
 
