@@ -754,11 +754,13 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
 static int pstvnc_transport_runtime_initialize_internal(
     pstvnc_transport_runtime_t *runtime,
     int socket_fd,
+    pstvnc_transport_physical_stream_t *established_stream,
     const pstvnc_transport_runtime_config_t *config,
     const pstvnc_transport_audio_channel_config_t *audio_config,
     const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
 {
-    if (runtime == NULL || socket_fd < 0 ||
+    if (runtime == NULL ||
+        ((socket_fd < 0) == (established_stream == NULL)) ||
         !pstvnc_transport_runtime_config_valid(config) ||
         (audio_config != NULL &&
          !pstvnc_transport_runtime_audio_config_valid(config, audio_config)) ||
@@ -868,9 +870,21 @@ static int pstvnc_transport_runtime_initialize_internal(
     if (runtime->receiver_stack == NULL)
         goto fail;
 
-    if (!pstvnc_transport_physical_stream_adopt(
-            &runtime->physical_stream, socket_fd))
+    if (established_stream != NULL) {
+        /*
+         * Q4 already consumed sequence 1 in each direction. Move the physical
+         * owner intact so runtime I/O continues at 2/2 without any public
+         * sequence seed or second descriptor adoption.
+         */
+        if (!pstvnc_transport_physical_stream_transfer_established(
+                &runtime->physical_stream,
+                established_stream))
+            goto fail;
+    } else if (!pstvnc_transport_physical_stream_adopt(
+                   &runtime->physical_stream,
+                   socket_fd)) {
         goto fail;
+    }
 
     runtime->rfb_initial_credit_bytes = config->rfb_initial_credit_bytes;
     runtime->rfb_credit_batch_bytes = config->rfb_credit_batch_bytes;
@@ -937,7 +951,7 @@ int pstvnc_transport_runtime_initialize(
     const pstvnc_transport_session_config_t *config)
 {
     return pstvnc_transport_runtime_initialize_internal(
-        runtime, socket_fd, config, NULL, NULL);
+        runtime, socket_fd, NULL, config, NULL, NULL);
 }
 
 int pstvnc_transport_runtime_initialize_with_audio(
@@ -950,7 +964,7 @@ int pstvnc_transport_runtime_initialize_with_audio(
         return 0;
 
     return pstvnc_transport_runtime_initialize_internal(
-        runtime, socket_fd, config, audio_config, NULL);
+        runtime, socket_fd, NULL, config, audio_config, NULL);
 }
 
 int pstvnc_transport_runtime_initialize_with_mpeg(
@@ -963,7 +977,7 @@ int pstvnc_transport_runtime_initialize_with_mpeg(
         return 0;
 
     return pstvnc_transport_runtime_initialize_internal(
-        runtime, socket_fd, config, NULL, mpeg_config);
+        runtime, socket_fd, NULL, config, NULL, mpeg_config);
 }
 
 int pstvnc_transport_runtime_initialize_with_audio_mpeg(
@@ -977,7 +991,56 @@ int pstvnc_transport_runtime_initialize_with_audio_mpeg(
         return 0;
 
     return pstvnc_transport_runtime_initialize_internal(
-        runtime, socket_fd, config, audio_config, mpeg_config);
+        runtime, socket_fd, NULL, config, audio_config, mpeg_config);
+}
+
+int pstvnc_transport_runtime_initialize_established(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config)
+{
+    return pstvnc_transport_runtime_initialize_internal(
+        runtime, -1, physical_stream, config, NULL, NULL);
+}
+
+int pstvnc_transport_runtime_initialize_established_with_audio(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config)
+{
+    if (audio_config == NULL)
+        return 0;
+
+    return pstvnc_transport_runtime_initialize_internal(
+        runtime, -1, physical_stream, config, audio_config, NULL);
+}
+
+int pstvnc_transport_runtime_initialize_established_with_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    if (mpeg_config == NULL)
+        return 0;
+
+    return pstvnc_transport_runtime_initialize_internal(
+        runtime, -1, physical_stream, config, NULL, mpeg_config);
+}
+
+int pstvnc_transport_runtime_initialize_established_with_audio_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    if (audio_config == NULL || mpeg_config == NULL)
+        return 0;
+
+    return pstvnc_transport_runtime_initialize_internal(
+        runtime, -1, physical_stream, config, audio_config, mpeg_config);
 }
 
 
