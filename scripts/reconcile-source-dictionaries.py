@@ -6,9 +6,10 @@ This maintenance helper preserves dictionary rows that still map to a current
 mechanically discovered definition, removes rows whose defining source/lexical
 owner no longer exists, and appends current definitions that the canonical
 source-dictionary validator reports as missing. Its explicit target set contains
-only domains whose current C/H definition forms are safe for this mechanical
-rewriter; other product dictionaries remain governed by the canonical validator
-and are not rewritten merely because they exist in the clean topology.
+only domains whose current definition forms are safe for this mechanical
+rewriter. A003 R8 adds the maintained Python-only `pi/` product root to that
+set; other product dictionaries remain governed by the canonical validator and
+are not rewritten merely because they exist in the clean topology.
 
 Run only with Universal Ctags available. After reconciliation, regenerate the
 portal and run the canonical long/complete/strict source-dictionary check.
@@ -25,6 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 VALIDATOR_PATH = ROOT / "scripts" / "source-dictionary.py"
 TARGET_DIRECTORIES = (
+    Path("pi"),
     Path("src"),
     Path("src/audio"),
     Path("src/config"),
@@ -168,11 +170,19 @@ def discover_directory_definitions(validator, directory: Path):
     )
 
     for source in clean_sources:
-        if source.suffix not in {".c", ".h"}:
-            raise RuntimeError(
-                f"{source}: reconciliation helper only supports current C/H targets"
+        if source.suffix in {".c", ".h"}:
+            definitions.update(
+                validator.discover_c_definitions(ROOT, source)
             )
-        definitions.update(validator.discover_c_definitions(ROOT, source))
+        elif source.suffix == ".py":
+            definitions.update(
+                validator.discover_python_definitions(ROOT, source)
+            )
+        else:
+            raise RuntimeError(
+                f"{source}: reconciliation helper has no safe adapter "
+                "for this current target"
+            )
 
     return sorted(definitions)
 
@@ -190,9 +200,12 @@ def reconcile_dictionary(validator, directory: Path) -> tuple[int, int, int]:
         raise RuntimeError(
             f"{dictionary}: DIRECTORY={declared_directory}, expected {directory}"
         )
-    if coverage != "COMPLETE":
+    if coverage != "COMPLETE" and not (
+        directory == Path("pi") and coverage == "IN_PROGRESS"
+    ):
         raise RuntimeError(
-            f"{dictionary}: expected COVERAGE=COMPLETE before reconciliation"
+            f"{dictionary}: expected COMPLETE coverage, or the explicitly "
+            "adopted pi/ IN_PROGRESS bootstrap"
         )
 
     definitions = discover_directory_definitions(validator, directory)
@@ -232,6 +245,19 @@ def reconcile_dictionary(validator, directory: Path) -> tuple[int, int, int]:
     # Existing current rows retain their semantic wording/order. Newly
     # discovered rows arrive in deterministic Definition ordering.
     replace_table(dictionary, rendered)
+
+    if coverage == "IN_PROGRESS":
+        text = dictionary.read_text(encoding="utf-8")
+        marker = "COVERAGE=IN_PROGRESS"
+        if text.count(marker) != 1:
+            raise RuntimeError(
+                f"{dictionary}: cannot promote ambiguous coverage metadata"
+            )
+        dictionary.write_text(
+            text.replace(marker, "COVERAGE=COMPLETE", 1),
+            encoding="utf-8",
+        )
+
     return len(parsed_entries), removed, added
 
 
