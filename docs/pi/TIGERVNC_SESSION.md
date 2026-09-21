@@ -1,19 +1,22 @@
-# Dedicated Current TigerVNC RFB Provider
+# TigerVNC RFB Provider Authority
 
 ## Status
 
     WORKSTREAM=GITHUB_ISSUE_5
-    ROLE=QUALIFIED_CURRENT_PROVIDER_CONTRACT
-    TIGERVNC=Xtigervnc_1.15.0+dfsg-2.1~deb13u1
-    TIGERVNC_EXECUTABLE=/usr/bin/Xtigervnc
+    ROLE=HISTORICAL_QUALIFICATION_AND_SELECTED_PROVIDER_AUTHORITY
+    HISTORICAL_PROVIDER=Xtigervnc_1.15.0+dfsg-2.1~deb13u1
+    HISTORICAL_EXECUTABLE=/usr/bin/Xtigervnc
+    SELECTED_PROVIDER=X0tigervnc_1.15.0+dfsg-2.1~deb13u1
+    SELECTED_EXECUTABLE=/usr/bin/X0tigervnc
     PROVIDER_ROLE=REPLACEABLE_IMPLEMENTATION
-    LIVE_APPLICATION=PERFORMED
-    HARDWARE_QUALIFICATION=PASS
+    HISTORICAL_LIVE_APPLICATION=PERFORMED
+    HISTORICAL_HARDWARE_QUALIFICATION=PASS
+    R11_NATIVE_FRESH_QUALIFICATION=NOT_RUN
     QUALIFICATION_EVIDENCE_HEAD=b40f422a760a0b7b6f2ab41699c5e72fda83bb83
 
-This document records the smallest clean **current TigerVNC provider** qualified
-for the PS2-facing RFB service. It preserves both the original validation
-contract and the resulting live decision.
+This document preserves the physically qualified dedicated `Xtigervnc :1`
+provider contract and records the selected A003 R11 native-desktop
+`X0tigervnc :0` authority. The two claims are deliberately distinct.
 
 The reconstruction rule remains:
 
@@ -26,6 +29,53 @@ and TigerVNC itself is not the permanent architectural boundary.
 
 `RFB_SOCKET_ACTIVATION.md` owns the adopted lifecycle decision and the
 provider-boundary interpretation.
+
+## Selected A003 R11 native provider
+
+Current reconstruction selection:
+
+    existing LightDM/Xorg X11 display :0
+        -> /usr/bin/X0tigervnc
+        -> inherited systemd ps-to-vnc-rfb.socket
+        -> 192.168.50.1:5900
+
+The selected provider comes from:
+
+    tigervnc-scraping-server
+    1.15.0+dfsg-2.1~deb13u1
+
+and is applied through:
+
+    systemd/pi/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf
+
+The exact recovered/tracked drop-in requires and orders after LightDM, sets
+`DISPLAY=:0` and `XAUTHORITY=/home/ps2/.Xauthority`, changes stdin from the
+historical inetd-style socket handoff to `null`, clears the base ExecStart and
+runs:
+
+    /usr/bin/X0tigervnc -display :0 -rfbport -1         -SecurityTypes None -AlwaysShared=1         -AcceptPointerEvents=1 -AcceptKeyEvents=1         -AcceptSetDesktopSize=0 -UseIPv6=0
+
+`-rfbport -1` is important: X0tigervnc consumes the already inherited systemd
+listener and does not create a competing product TCP endpoint.
+
+The recovered installed drop-in was 919 bytes, mode 0644, SHA-256
+`cf09bdf7b374f022b482e52201d8d6bc95c07687fa8fa827cb25ab74e8bcdf4d`.
+The tracked R11 definition matches those exact bytes.
+
+This provider exposes the existing desktop; it does not create a new fixed
+704x462 X server. The 704x462/depth-16 dedicated virtual framebuffer contract
+below belongs to the historical Issue #5 qualification.
+
+The separate loopback `127.0.0.1:5903` X0tigervnc process belongs to
+development viewing from Windows and is not product routing.
+
+R11 does not activate or physically requalify this native route.
+
+## Historical qualified dedicated provider
+
+Everything describing `Xtigervnc :1`, 704x462/depth-16 server creation, or
+`-inetd` below is retained as the Issue #5 qualified provider/control
+authority. It is not the selected current reconstruction desktop source.
 
 ## Authority and reviewed parameter surface
 
