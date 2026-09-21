@@ -94,7 +94,7 @@ The durable lesson is **endpoint readiness**, not "run TigerVNC at boot."
   socket.
 - the Linux TCP stack owns connection establishment and pending connection
   queues.
-- the current RFB provider uses its upstream-supported inherited-socket
+- the then-current Issue #5 RFB provider used its upstream-supported inherited-socket
   interface rather than a project-specific watcher or proxy.
 
 ### PS-to-VNC adaptation
@@ -106,7 +106,7 @@ standard Linux mechanisms.
 ### Replaceable provider / mechanism
 
 The stable adopted concept is the **PS2-facing RFB endpoint**. The
-current provider is Xtigervnc. TigerVNC-specific process arguments live only in
+then-current Issue #5 provider was Xtigervnc. TigerVNC-specific process arguments lived only in
 the provider unit. A future PS-to-VNC Pi gateway may replace that provider and
 consume the same listener through a standard inherited-file-descriptor interface,
 or the lifecycle mechanism itself may be replaced if future requirements justify
@@ -167,7 +167,7 @@ controlled failure, retrigger, repeated-stop, and cold-reboot/one-launch runs.
 Decision classifications:
 
 - **Adopt:** generic systemd ownership of the PS2-facing RFB endpoint;
-- **Adapt:** packaged Xtigervnc `-inetd` mode localized in the current provider;
+- **Adapt:** packaged Xtigervnc `-inetd` mode localized in the then-current Issue #5 provider;
 - **Reject for the current requirement:** scoped NetworkManager no-carrier
   override;
 - **Adopt as optional:** persistent provider unit retained as a mutually
@@ -192,7 +192,7 @@ PS2
                      | inherited listening socket
                      v
 +----------------------------------------------+
-| Current provider adapter                     |
+| Historical qualified provider adapter        |
 | ps-to-vnc-rfb-tigervnc.service               |
 | Xtigervnc -inetd                             |
 +----------------------------------------------+
@@ -222,7 +222,7 @@ A `.socket` unit is not inherently a TigerVNC mechanism. It is a standard
 service-manager boundary around a listening socket. With `Accept=no`, systemd
 keeps one listening socket and activates one provider service.
 
-For the current provider, `StandardInput=socket` maps that listener into
+For the historical qualified provider, `StandardInput=socket` maps that listener into
 TigerVNC's documented `-inetd` wait mode. A future custom provider could instead
 consume systemd-passed descriptors through the normal systemd socket-activation
 API. We do **not** implement such a provider now.
@@ -331,7 +331,7 @@ uninstalled.
 Any of these may be reconsidered if a future provider exposes a demonstrated
 constraint that changes the problem.
 
-## Current provider contract
+## Historical qualified Issue #5 provider contract
 
 For the qualified Issue #5 lifecycle, TigerVNC remains the current desktop
 provider. Its
@@ -344,7 +344,7 @@ provider-local settings are:
     client desktop resize = disabled
     X11 TCP listener = disabled
 
-These settings qualify the current provider. They do not make TigerVNC itself a
+These settings qualify the historical Issue #5 provider. They do not make TigerVNC itself a
 permanent architecture dependency.
 
 The PS2-facing RFB behavior remains the important compatibility contract.
@@ -438,7 +438,7 @@ Required pre-PS2 state:
 - no wildcard/Wi-Fi/IPv6 RFB listener.
 
 This is the architectural control point: the endpoint boundary is ready while
-the current provider is absent.
+the historical provider process is absent.
 
 ### Phase 4 — one-launch demand activation
 
@@ -498,8 +498,8 @@ Promote a lifecycle only if evidence supports it. Minimum requirements are:
 The adopted statement is:
 
 > systemd owns the PS2-facing RFB listener and activates the selected RFB
-> provider on demand; TigerVNC is the current provider implementation.
+> provider on demand; TigerVNC was the selected Issue #5 provider implementation.
 
 The architecture does **not** require TigerVNC `-inetd`. That is the qualified
-adapter used by the current replaceable provider. This distinction preserves the
+adapter used by the historical qualified replaceable provider. This distinction preserves the
 clean-reconstruction intent while choosing a concrete implementation today.
