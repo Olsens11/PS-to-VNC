@@ -69,10 +69,6 @@ require_sources()
         echo 'ERROR: tracked Wire protocol source is not executable.' >&2
         exit 11
     }
-    [ -x "$RFB_RELAY_SOURCE" ] || {
-        echo 'ERROR: tracked RFB relay source is not executable.' >&2
-        exit 12
-    }
     [ -x "$SERVER_SOURCE" ] || {
         echo 'ERROR: tracked Wire server source is not executable.' >&2
         exit 12
@@ -196,7 +192,7 @@ stage_candidate()
     assert_safe_target "$UNIT_SOURCE" "$UNIT_DEST"
 
     install_file 0755 "$PROTOCOL_SOURCE" "$PROTOCOL_DEST"
-    install_file 0755 "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
+    install_file 0644 "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
     install_file 0755 "$SERVER_SOURCE" "$SERVER_DEST"
     install_file 0644 "$UNIT_SOURCE" "$UNIT_DEST"
 
@@ -215,7 +211,7 @@ verify_candidate()
     refuse_live_wire_lifecycle
 
     verify_file 0755 "$PROTOCOL_SOURCE" "$PROTOCOL_DEST"
-    verify_file 0755 "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
+    verify_file 0644 "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
     verify_file 0755 "$SERVER_SOURCE" "$SERVER_DEST"
     verify_file 0644 "$UNIT_SOURCE" "$UNIT_DEST"
 
