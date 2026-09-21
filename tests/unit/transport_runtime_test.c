@@ -461,6 +461,24 @@ int pstvnc_transport_physical_stream_adopt(
     return 1;
 }
 
+int pstvnc_transport_physical_stream_transfer_established(
+    pstvnc_transport_physical_stream_t *destination,
+    pstvnc_transport_physical_stream_t *source)
+{
+    if (destination == NULL || source == NULL ||
+        source->socket_fd < 0 || source->send_semaphore_id < 0 ||
+        source->next_send_sequence != 2u ||
+        source->expected_receive_sequence != 2u)
+        return 0;
+
+    *destination = *source;
+    source->socket_fd = -1;
+    source->send_semaphore_id = -1;
+    source->next_send_sequence = 1u;
+    source->expected_receive_sequence = 1u;
+    return 1;
+}
+
 int pstvnc_transport_physical_stream_send_frame(
     pstvnc_transport_physical_stream_t *stream,
     uint8_t kind,
