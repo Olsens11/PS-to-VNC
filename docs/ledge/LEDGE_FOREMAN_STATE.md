@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0038
-RECORDED_AT=2026-09-21T16:40:42-04:00
+STATE_REVISION=0039
+RECORDED_AT=2026-09-21T17:14:40-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0037
-SUPERSEDES_FOREMAN_STATE_REVISION=0037
+BASED_ON_FOREMAN_STATE_REVISION=0038
+SUPERSEDES_FOREMAN_STATE_REVISION=0038
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,17 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0039 independently accepts the completed
+A003-PI-RFB-WIRE-RELAY-R10 Reconstruction baton and advances to a bounded Pi
+provider-authority reconciliation before any live RFB-to-Wire attachment. R10
+now supplies a provider-neutral, bounded bidirectional channel-1 Relay while
+preserving the sole Wire I/O owner. Current tracked Pi provider definitions still
+describe the earlier dedicated Xtigervnc :1 route, while newer preserved
+machine classification records the native LightDM/Xorg :0 desktop exposed by
+X0tigervnc behind the same generic systemd RFB socket. The next dependency is
+to make that selected native-provider route reproducible and tracked rather than
+silently attaching R10 to stale provider authority.
 
 Revision 0038 independently accepts the completed
 A003-PS2-WIRE-SESSION-ESTABLISHMENT-R9 Reconstruction baton and advances to
@@ -144,7 +155,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A003_R9_INTEGRATED__PI_RFB_WIRE_RELAY_CORE_RECONSTRUCTION_ACTIVE__RFB_PROVIDER_LIFECYCLE_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R10_INTEGRATED__PI_NATIVE_RFB_PROVIDER_AUTHORITY_RECONSTRUCTION_ACTIVE__RFB_RELAY_PROVIDER_ATTACHMENT_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -164,9 +175,11 @@ A003_MPEG_RUNTIME_PROFILE_AUTHORITY_FOREMAN_ACCEPTED=YES
 PI_WIRE_ESTABLISHMENT_FOUNDATION_FOREMAN_ACCEPTED=YES
 PS2_WIRE_SESSION_ESTABLISHMENT_FOREMAN_ACCEPTED=YES
 PI_WIRE_CONTROL_OWNER=FOUNDATION_ACCEPTED_NO_RIDERS
-PI_RFB_WIRE_RELAY_CORE_ACTIVE=YES
-PI_RIDER_FOUNDATION=RFB_RELAY_RECONSTRUCTION_ACTIVE
-RFB_PROVIDER_LIFECYCLE=DEPENDENCY_QUEUED
+PI_RFB_WIRE_RELAY_CORE_FOREMAN_ACCEPTED=YES
+PI_RIDER_FOUNDATION=RFB_RELAY_CORE_ACCEPTED
+PI_NATIVE_RFB_PROVIDER_AUTHORITY_ACTIVE=YES
+RFB_PROVIDER_LIFECYCLE=NATIVE_PROVIDER_AUTHORITY_RECONSTRUCTION_ACTIVE
+RFB_RELAY_PROVIDER_ATTACHMENT=DEPENDENCY_QUEUED
 PI_MPEG_CONTROL_PRODUCER_OWNER=DEPENDENCY_QUEUED
 APPLICATION_ACTIVATION=DEPENDENCY_QUEUED
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
@@ -2540,7 +2553,7 @@ This separates the reusable last-mile courier from provider/service migration.
 ## Active bounded Reconstruction packet
 
 PACKET_ID=A003-PI-RFB-WIRE-RELAY-R10
-PACKET_STATUS=ACTIVE
+PACKET_STATUS=COMPLETED_FOREMAN_ACCEPTED
 ROLE_KEY=reconstruction
 WORK_ITEM_KEY=a003-mpeg-generation
 WORKER_KEY=interactive
@@ -2765,6 +2778,371 @@ directions, bounded provider-write capacity, no provider read without PS2
 credit, sole Pi Wire I/O ownership, provider-stall liveness, session-scope
 retirement, zero-length marker reservation, unchanged direct-RFB deployment,
 current Transport regressions and explicit physical non-claims.
+
+Do not execute the active packet from the Foreman seat.
+
+## A003 R10 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- prior Foreman base
+  f6081f723057d301068b06dfb32844a2d3f407be;
+- final pre-log R10 source/test/docs authority
+  6256ce33a6ba9dcbf95f836e8e51f061628d6c5b;
+- immutable Reconstruction-log head
+  560c79b07fd3c3165d59cdb2a8ca814d6effb3ef;
+- immutable Reconstruction log
+  docs/ledge/work-log/20260921T164435-0400__reconstruction__a003-mpeg-generation__interactive.md.
+
+The pre-log R10 range is linear, ahead by 17 commits and behind by zero from
+Foreman State 0038 authority. Product changes are confined to maintained Pi Wire
+protocol/server/Relay code, the Pi Wire stager, PS2 Transport's RFB-specific
+outbound-credit mechanism, tests, dictionaries and routing documentation. No
+Application, RFB parser/session, AUDIO, MPEG, Presentation, Platform-network,
+CONFIG or direct-RFB systemd product source changed.
+
+Independent review confirms:
+
+- pi/rfb_relay.py is a maintained provider-neutral, session-scoped last-mile
+  courier and owns no PS2-facing Wire socket;
+- existing Wire DATA kind 3, CREDIT kind 4, RFB channel 1 and flags 0 are reused;
+- provider -> PS2 reading is impossible without PS2-granted RFB credit and each
+  read is bounded by both available credit and maximum DATA payload;
+- PS2 -> provider DATA is admitted only under finite Pi-granted credit into one
+  bounded provider-write queue;
+- replacement Pi credit is generated only after nonblocking provider send()
+  actually drains bytes, not when Wire DATA merely arrives or local storage is
+  notionally free;
+- the PS2 Transport now accepts only exact nonzero channel-1 CREDIT and blocks
+  outbound RFB DATA until corresponding Pi credit exists;
+- partial Pi credit releases only the matching prefix and the writer waits for
+  further credit without gaining a second physical sender;
+- WireConnectionOwner remains the sole Pi physical Wire receive/send owner and
+  multiplexes provider readiness without exposing the Wire socket to the Relay;
+- a saturated provider-write direction does not stop reverse provider -> PS2
+  traffic through the same Wire owner in deterministic host evidence;
+- provider EOF/failure makes only the RFB Relay terminal; already-granted late
+  RFB traffic is contained without manufacturing Wire failure or replacement
+  credit;
+- zero-length channel-1 DATA remains lifecycle-reserved and never enters the raw
+  provider byte stream;
+- Session B receives fresh Relay queue/credit/terminal state and never resumes
+  Session A Relay state;
+- the default installed Wire service still attaches no provider and remains
+  establishment-only;
+- ps-to-vnc-rfb.socket, ps-to-vnc-rfb-tigervnc.service and
+  ps-to-vnc-rfb-tigervnc-persistent.service are byte-identical to the R10
+  Foreman base.
+
+A003-R10-C1 through A003-R10-C12 are independently accepted as MET within the
+bounded repository/machine-evidence scope.
+
+### R10 machine evidence
+
+Canonical final pre-log workflow:
+
+35654550153 at 6256ce33a6ba9dcbf95f836e8e51f061628d6c5b — SUCCESS on attempt 1.
+
+Directly inspected logs report:
+
+- transport protocol tests passed;
+- transport bridge tests passed;
+- transport_physical_stream_test: PASS;
+- transport_runtime_test: PASS;
+- transport_audio_test: PASS;
+- transport_mpeg_test: PASS;
+- exact RFB DATA/CREDIT golden-byte test: PASS;
+- provider-read credit gating/fragmentation test: PASS;
+- provider-write drain-before-credit-return test: PASS;
+- fresh Session-B Relay state test: PASS;
+- stalled-provider opposite-direction Wire-progress test: PASS;
+- provider-neutral/no-Wire-socket source-boundary test: PASS;
+- SOURCE_DICTIONARIES=PASS;
+- SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS;
+- SOURCE_TOPOLOGY_CONTRACT=PASS;
+- SOURCE_DICTIONARY_PORTAL_SYNC=PASS;
+- WORK_LOG_CHECK=PASS;
+- PS_TO_VNC_PROJECT_CHECK=PASS;
+- PS2_COMPILE=src/transport/runtime.c;
+- SMS_DEDICATED_COMPILE_CHECK=PASS;
+- CLEAN_PS2_COMPILE_CHECK=PASS;
+- ISSUE7_LINKED_BUILD=PASS;
+- LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS.
+
+The immutable R10 worker-log head
+560c79b07fd3c3165d59cdb2a8ca814d6effb3ef also has canonical workflow
+35654871914 SUCCESS on attempt 1 across all canonical job classes.
+
+Evidence classification:
+
+SOURCE_COMPLETE=YES_WITHIN_R10
+HOST_TESTED=YES
+PS2_COMPILE=PASS
+PS2_LINK_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+REPOSITORY_PROJECT_CHECK=PASS
+STRICT_DICTIONARIES=PASS
+INDEPENDENT_VALIDATION_R10=NOT_RUN
+PHYSICAL_PS2_PI_RFB_RELAY=NOT_RUN_NOT_CLAIMED
+R10_CHANGED_PS2_PT_LOAD=YES
+HARDWARE_QUALIFICATION_R10=PENDING
+
+## Why R11 reconciles native Pi RFB provider authority before Relay attachment
+
+R10 deliberately leaves provider selection outside the Relay. Current branch
+authority still tracks the earlier qualified Issue-5 provider route:
+
+    systemd-owned 192.168.50.1:5900
+        -> ps-to-vnc-rfb-tigervnc.service
+        -> Xtigervnc :1 -inetd
+
+That historical qualification remains valid evidence and must not be erased.
+
+Newer preserved machine-classification evidence on reference branch
+wire/q1-q12-hardware-proof records a later effective machine route on host
+ps-to-vnc-dev:
+
+    existing LightDM/Xorg X11 desktop :0
+        -> socket-activated X0tigervnc provider
+        -> the same systemd-owned 192.168.50.1:5900 endpoint
+
+The same record explicitly classifies a separate 127.0.0.1:5903 X0tigervnc
+listener as Windows development tooling, not a PS-to-VNC product hop.
+
+That creates a reproducibility mismatch: the useful current native-desktop route
+has machine evidence but no tracked selected provider definition in current
+branch authority. Attaching R10 to the older dedicated :1 definition merely
+because it is tracked would preserve stale deployment structure rather than the
+current native-desktop product lesson.
+
+R11 therefore reconstructs only the selected native-provider definition and
+inactive fail-closed staging. It does not attach the Relay, mutate the live Pi,
+or claim a fresh provider qualification.
+
+A prior interactive machine return also captured the effective native-provider
+drop-in at:
+
+    /etc/systemd/system/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf
+
+with observed SHA-256:
+
+    cf09bdf7b374f022b482e52201d8d6bc95c07687fa8fa827cb25ab74e8bcdf4d
+
+and effective semantics including LightDM ordering, DISPLAY=:0,
+XAUTHORITY=/home/ps2/.Xauthority, StandardInput=null, clearing the base
+ExecStart, and X0tigervnc consuming the inherited listener with -rfbport -1.
+
+This is recovered machine evidence, not a claim that R11 source already has
+byte identity with that live file. Reconstruction must preserve the demonstrated
+semantics and record any inability to reproduce exact historical bytes rather
+than inventing equivalence.
+
+## Active bounded Reconstruction packet
+
+PACKET_ID=A003-PI-NATIVE-RFB-PROVIDER-AUTHORITY-R11
+PACKET_STATUS=ACTIVE
+ROLE_KEY=reconstruction
+WORK_ITEM_KEY=a003-mpeg-generation
+WORKER_KEY=interactive
+EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
+USER_TERMINAL_POLICY=EXCEPTION_ONLY
+PI_LOCAL_USER_PROXY_REQUIRED=NO
+ASSIGNING_BASE_HEAD=REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE
+FOREMAN_DECISION_BASE=560c79b07fd3c3165d59cdb2a8ca814d6effb3ef
+
+### Objective
+
+Reconstruct a tracked, reproducible selected Pi native-desktop RFB provider
+definition matching the useful preserved machine architecture:
+
+    LightDM/Xorg :0
+        -> X0tigervnc provider
+        -> existing generic systemd RFB activation socket
+
+R11 closes provider-authority/reproducibility debt only. It must preserve the
+qualified historical dedicated-:1 evidence, stage the native-provider selection
+fail-closed without changing live systemd state, and leave the accepted R10
+Wire Relay unattached.
+
+### Required authority
+
+Read current at wake, including:
+
+- AGENTS.md, CONTRIBUTING.md, Project Intent and Clean Architecture;
+- Pi provisioning/current-state documentation and dependency ledger;
+- source naming/topology/module-lifecycle guidance where applicable;
+- Reconstruction Contract rev 0006 and work-log contract rev 0007;
+- Foreman State rev 0039;
+- Wire Runtime Decisions rev 0011, especially Q1-Q3, Q8, Q10-Q12;
+- current docs/pi/RFB_SOCKET_ACTIVATION.md, TIGERVNC_SESSION.md,
+  MINIMUM_DESKTOP.md, README.md and scripts/pi/install-rfb-activation-units.sh;
+- current three direct-RFB systemd definitions;
+- accepted R10 Pi Relay/Wire server only to preserve its no-auto-attach boundary;
+- reference-only
+  experiments/wire-q1-q12-proof/NATIVE_PI_RFB_PATH_CLASSIFICATION_2026-09-19.md
+  from wire/q1-q12-hardware-proof;
+- exact package/provider authority already preserved by current Pi docs.
+
+Historical/current-machine evidence is provenance. Do not mechanically merge a
+reference branch or pretend a currently unobserved Pi state was reverified.
+
+### Required behavior
+
+1. Establish a tracked selected native-provider override/drop-in under the
+   existing ps-to-vnc-rfb-tigervnc.service ownership rather than creating a
+   competing PS2-facing listener or second desktop merely for Wire.
+2. The selected provider reuses the existing LightDM/Xorg X11 desktop :0.
+   Preserve explicit DISPLAY=:0 and XAUTHORITY=/home/ps2/.Xauthority authority
+   plus Requires/After lightdm.service.
+3. Use /usr/bin/X0tigervnc as the provider and consume the already inherited
+   systemd RFB listener with -rfbport -1. The provider must not bind its own
+   competing product RFB TCP listener.
+4. Preserve SecurityTypes None, disabled client desktop resize and disabled IPv6
+   behavior required by the current private RFB product contract. Preserve
+   pointer/key acceptance and shared-client behavior only where supported by
+   recovered provider/package authority; do not invent undocumented flags.
+5. Clear/override the base Xtigervnc :1 ExecStart cleanly in the drop-in and
+   replace StandardInput=socket with the effective native-provider input model
+   required by X0tigervnc inherited-listener operation.
+6. Do not promote the failed historical X0tigervnc logger variant. In
+   particular, do not copy Xtigervnc's -Log *:syslog:30 spelling into the native
+   X0 provider without package/current evidence that it is valid.
+7. Keep ps-to-vnc-rfb.socket byte-identical. Its exact endpoint remains
+   192.168.50.1:5900, Accept=no, BindToDevice=eth0, FreeBind=yes and provider
+   service selection unchanged.
+8. Preserve the base dedicated-:1 service and persistent fallback as historical
+   qualified/control definitions. The selected effective socket-activated route
+   may be changed by the tracked drop-in; do not destructively rewrite old
+   Issue-5 evidence as though it had originally qualified X0tigervnc.
+9. Explicitly classify 127.0.0.1:5903 as development tooling and prohibit it as
+   the internal product provider endpoint.
+10. Extend or replace the older RFB activation stager so the selected drop-in is
+    exact-byte/mode staged, verified and removed fail-closed. The Reconstruction
+    staging path must perform no daemon-reload, enable/disable, start/stop,
+    restart or other live service/display mutation.
+11. Static verification must cover the composed unit/drop-in and the selected
+    executable/path assumptions where practical. Require X0tigervnc rather than
+    silently falling back to Xtigervnc :1 for the selected route.
+12. Update current Pi authority docs so the native :0 route is selected current
+    reconstruction authority while dedicated :1 remains historical qualified
+    evidence and the old Openbox/lxpanel :1 candidate remains separate
+    historical/evaluating material.
+13. R10 Wire server/Relay remains establishment-only by default and receives no
+    provider auto-attachment, connector, endpoint or quiesce lifecycle in R11.
+14. Do not modify PS2 source, Application, RFB parser/session, AUDIO, MPEG,
+    Presentation, CONFIG delivery or Wire protocol/runtime behavior.
+15. Add deterministic host/static tests for the selected drop-in, inactive
+    staging, no competing listener, historical unit preservation and R10
+    no-auto-attach boundary.
+16. Preserve source/project/documentation consistency and every claim boundary.
+    No live Pi observation or physical qualification may be inferred from static
+    repository checks.
+
+### Acceptance criteria
+
+- A003-R11-C1 NATIVE_DESKTOP_PROVIDER_SELECTED
+- A003-R11-C2 TRACKED_X0VNC_DROPIN
+- A003-R11-C3 EXISTING_X11_SESSION_REUSED
+- A003-R11-C4 GENERIC_RFB_SOCKET_PRESERVED
+- A003-R11-C5 NO_COMPETING_PROVIDER_LISTENER
+- A003-R11-C6 FAILED_X0_VARIANT_NOT_PROMOTED
+- A003-R11-C7 WINDOWS_5903_EXCLUDED
+- A003-R11-C8 FAIL_CLOSED_INACTIVE_STAGING
+- A003-R11-C9 HISTORICAL_DEDICATED_DESKTOP_AUTHORITY_PRESERVED
+- A003-R11-C10 WIRE_RELAY_NOT_AUTO_ATTACHED
+- A003-R11-C11 STATIC_TEST_AND_DOC_RECONCILIATION
+- A003-R11-C12 CLAIM_BOUNDARY_PRESERVED
+
+All must be MET for Foreman acceptance.
+
+### Evidence required
+
+Return deterministic repository evidence proving at minimum:
+
+- the exact tracked selected drop-in text, mode and installed target path;
+- effective LightDM/:0/XAUTHORITY/X0tigervnc/-rfbport -1 semantics;
+- no selected :1 desktop creation and no new RFB listener;
+- generic socket unit byte identity to R11 base;
+- base service and persistent fallback preserved as historical definitions
+  except for deliberate additive drop-in selection;
+- no product use of 127.0.0.1:5903;
+- staging/verify/remove exact-byte and mode fences;
+- no systemctl daemon-reload/enable/disable/start/stop/restart in the R11 staging
+  path;
+- static systemd validation or deterministic equivalent;
+- default Wire service still has no provider auto-attachment;
+- R10 Pi/Transport regression tests remain green;
+- strict project/dictionary/topology checks remain green;
+- no PS2 source/build-input change and no new PT_LOAD claim.
+
+### Explicit non-goals
+
+Do not implement in R11:
+
+- live Pi file staging or systemd manager reload;
+- live provider activation or fresh native-desktop qualification;
+- R10 Wire Relay provider auto-attachment;
+- provider connector/backoff/retry policy;
+- full REQUEST/BOUNDARY/COMMIT/COMPLETE RFB quiesce integration;
+- provider-failure -> PS2 RFB retirement/restart orchestration;
+- Application RFB startup/readiness;
+- RFB presentation/input changes;
+- AUDIO Wire relay;
+- MPEG DATA/control/producer behavior;
+- CONFIG delivery;
+- Application MPEG activation;
+- Q7 retirement/restoration;
+- physical PS2/Pi qualification.
+
+### Worker return
+
+Return exact source/docs/test/tooling commits, selected-provider ownership,
+historical-versus-current authority reconciliation, exact inactive staging
+contract, static effective-unit evidence, every corrected intermediate defect,
+strict repository evidence and every non-claim.
+
+Emit exactly one immutable Reconstruction log using:
+
+- ROLE_KEY=reconstruction;
+- WORK_ITEM_KEY=a003-mpeg-generation;
+- WORKER_KEY=interactive.
+
+Stop after R11. Do not attach the provider to R10 or begin RFB quiesce,
+Application RFB startup, Pi AUDIO/MPEG, Application MPEG activation or physical
+qualification in the same shift.
+
+## Deferred dependency graph after accepted R11
+
+1. attach the selected native provider to R10 through a bounded nonblocking
+   connector and integrate the existing zero-length
+   REQUEST/BOUNDARY/COMMIT/COMPLETE lifecycle while preserving Wire independence;
+2. reconstruct ordinary RFB startup/readiness/restart policy through
+   Application/configuration with complete-stop-before-restart semantics;
+3. add Pi MPEG START/RETIRE control ownership behind the established Wire/rider
+   architecture;
+4. reconstruct the Pi MPEG producer with exact-run admission, one-way
+   retirement and no post-retire DATA;
+5. wire accepted MPEG runtime profile and calibration into bounded Application
+   activation;
+6. reconstruct current-Q7 retirement/failure, residual/credit finalization and
+   overlapped RFB restoration;
+7. integrate Wire-loss containment and repeated-run/repeated-session behavior;
+8. physically qualify the exact Pi service/provider/Relay + PS2 product path and
+   final ELF.
+
+Foreman must re-evaluate this order from returned R11 source; it is dependency
+planning, not standing authorization.
+
+## Hardware qualification debt
+
+HARDWARE_PENDING=R11 selected native X0tigervnc provider staging/live lifecycle; R10 bidirectional RFB credit/stall mechanics and changed PS2 Transport PT_LOAD; R9 PS2 product Q4 client; R8 Pi Wire service/no-carrier/listener lifecycle; live provider-to-Wire attachment/quiesce; reconstructed A003 R3-R7 MPEG runtime; MPEG one-run/repeated-run stale fencing; Wire-loss during MPEG; current-Q7 overlapped RFB restoration; A004 visible geometry/matte/suppression/first-frame timing; all-guns endurance; exact final product ELF
+
+## Foreman next pickup
+
+Consume A003-PI-NATIVE-RFB-PROVIDER-AUTHORITY-R11. Independently verify the
+selected native :0 provider definition, inherited-socket/no-competing-listener
+semantics, inactive exact staging, historical dedicated-:1 preservation,
+development-5903 exclusion, R10 no-auto-attach boundary, static tests and all
+physical non-claims.
 
 Do not execute the active packet from the Foreman seat.
 
