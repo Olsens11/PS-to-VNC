@@ -35,11 +35,16 @@ SHA256:
 Current maintained clean product source is rooted at:
 
     src/
+    pi/
+
+`src/` is the PS2 executable tree. `pi/` is the custom Raspberry Pi companion
+runtime tree adopted by A003 R8; provisioning remains under `scripts/pi/`.
 
 Current responsibility locations are:
 
 | Responsibility | Current location |
 |---|---|
+| Raspberry Pi product Wire protocol/server runtime | `pi/wire_protocol.py`, `pi/wire_server.py` |
 | Executable entry / application coordination | `src/main.c`, `src/app.c`, `src/app.h` |
 | Session CONFIG/profile decoding, validation, owner-specific immutable values, and config-text helpers | `src/config/` |
 | PCM playback, resident AUDSRV adapter, and session-scoped audio worker/resource/reservoir lifecycle | `src/audio/` |
@@ -125,6 +130,10 @@ head `b40f422a760a0b7b6f2ab41699c5e72fda83bb83`.
 | Responsibility | Current tracked location |
 |---|---|
 | Pi companion authority/router | `docs/pi/README.md` |
+| Maintained Pi product runtime source | `pi/` |
+| Product Wire server | `pi/wire_server.py`, `pi/wire_protocol.py` |
+| Product Wire systemd unit candidate | `systemd/pi/ps-to-vnc-wire.service` |
+| Product Wire inactive stager/verifier | `scripts/pi/install-wire-runtime.sh` |
 | Clean Pi provisioning | `docs/pi/PROVISIONING.md`, `scripts/pi/` |
 | PS2 private-link provisioning | `scripts/pi/configure-ps2-link.sh` |
 | Generic PS2-facing RFB listener | `systemd/pi/ps-to-vnc-rfb.socket` |
