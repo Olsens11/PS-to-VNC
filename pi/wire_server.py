@@ -9,13 +9,18 @@ Wire Session. TCP accept begins PROVISIONAL; only an exact HELLO followed by a
 successfully sent Pi-owned ACCEPT creates ACTIVE. EOF or protocol failure fully
 retires that connection before the persistent owner accepts another.
 
-R8 deliberately supports no ordinary rider traffic. An ACTIVE session may stay
-idle indefinitely, but any post-establishment application byte currently fails
-that session closed. The server owns no RFB provider, AUDIO/MPEG/CONFIG rider,
-MPEG producer, heartbeat, Application policy, or custom restart loop.
+R10 optionally composes one explicit session-scoped RFB provider relay while
+preserving this object as the sole PS2-facing Wire recv/send owner. The relay
+never receives from or sends to the Wire socket; this owner multiplexes Wire
+readiness with provider readiness and moves exact channel-1 DATA/CREDIT between
+them. With no explicit relay attachment the installed service remains the R8
+establishment-only server.
+
+The server still owns no concrete RFB provider selection, AUDIO/MPEG/CONFIG
+rider, MPEG producer, heartbeat, Application policy, or custom restart loop.
 
 Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
-A003-PI-WIRE-SERVER-ESTABLISHMENT-R8.
+A003-PI-RFB-WIRE-RELAY-R10.
 """
 
 from __future__ import annotations
@@ -23,9 +28,11 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from enum import Enum
+import select
 import socket
 import sys
 
+import rfb_relay as rfb
 import wire_protocol as protocol
 
 DEFAULT_LISTEN_ADDRESS = "192.168.50.1"
@@ -124,9 +131,11 @@ class WireConnectionOwner:
         self,
         connection: socket.socket,
         session_ids: SessionIdAllocator,
+        rfb_attachment: rfb.RfbRelay | None = None,
     ) -> None:
         self._connection = connection
         self._session_ids = session_ids
+        self._rfb_relay = rfb_attachment
         self.state = WireSessionState.PROVISIONAL
         self.session_id: int | None = None
         self.next_receive_sequence = 1
@@ -254,15 +263,176 @@ class WireConnectionOwner:
             next_send_sequence=self.next_send_sequence,
         )
 
+    def _send_active_frame(
+        self,
+        kind: int,
+        channel: int,
+        payload: bytes,
+    ) -> None:
+        """Serialize one post-Q4 frame through the sole Wire send owner."""
+
+        self._connection.sendall(
+            protocol.encode_channel_frame(
+                kind,
+                channel,
+                self.next_send_sequence,
+                payload,
+            )
+        )
+        self.next_send_sequence += 1
+
+    def _read_active_frame(self) -> tuple[protocol.WireHeader, bytes]:
+        """Read one complete next-sequence frame through the sole Wire owner."""
+
+        raw_header = read_exact(self._connection, protocol.HEADER_BYTES)
+        header = protocol.decode_header(raw_header)
+        payload = read_exact(self._connection, header.payload_length)
+
+        if header.sequence != self.next_receive_sequence:
+            raise protocol.WireProtocolError(
+                "active Wire receive sequence mismatch"
+            )
+
+        self.next_receive_sequence += 1
+        return header, payload
+
+    def _handle_rfb_frame(
+        self,
+        header: protocol.WireHeader,
+        payload: bytes,
+    ) -> bool:
+        if self._rfb_relay is None:
+            return False
+
+        if protocol.is_rfb_credit_header(header):
+            amount = protocol.decode_rfb_credit_payload(payload)
+            # A terminal provider stops accepting new read authority but does
+            # not redefine the containing Wire Session.
+            self._rfb_relay.add_provider_read_credit(amount)
+            return True
+
+        if protocol.is_rfb_data_header(header):
+            if not payload:
+                # Zero-length channel-1 DATA belongs to the existing quiesce
+                # lifecycle. R10 preserves the reservation but deliberately
+                # does not implement REQUEST/BOUNDARY/COMMIT/COMPLETE here.
+                self._rfb_relay.note_reserved_zero_length_marker()
+                return True
+
+            self._rfb_relay.accept_ps2_data(payload)
+            return True
+
+        return False
+
+    def _wait_with_rfb_relay(self) -> WireSessionOutcome:
+        if self._rfb_relay is None:
+            raise RuntimeError("RFB relay is not attached")
+
+        try:
+            initial_credit = self._rfb_relay.activate()
+            self._send_active_frame(
+                protocol.FRAME_CREDIT,
+                protocol.CHANNEL_RFB,
+                protocol.encode_rfb_credit_payload(initial_credit),
+            )
+        except (OSError, rfb.RfbRelayError):
+            return self._finish(
+                accepted=True,
+                rejection_reason=None,
+                protocol_failed=True,
+            )
+
+        while True:
+            provider = self._rfb_relay.provider_socket
+            read_wait = [self._connection]
+            write_wait: list[socket.socket] = []
+
+            if self._rfb_relay.wants_provider_read:
+                read_wait.append(provider)
+            if self._rfb_relay.wants_provider_write:
+                write_wait.append(provider)
+
+            try:
+                readable, writable, _exceptional = select.select(
+                    read_wait,
+                    write_wait,
+                    [],
+                )
+            except (OSError, ValueError):
+                return self._finish(
+                    accepted=True,
+                    rejection_reason=None,
+                    protocol_failed=True,
+                )
+
+            if self._connection in readable:
+                try:
+                    header, payload = self._read_active_frame()
+                    if not self._handle_rfb_frame(header, payload):
+                        raise protocol.WireProtocolError(
+                            "unsupported active Wire frame"
+                        )
+                except EOFError:
+                    return self._finish(
+                        accepted=True,
+                        rejection_reason=None,
+                        protocol_failed=False,
+                    )
+                except (OSError, protocol.WireProtocolError, rfb.RfbRelayError):
+                    return self._finish(
+                        accepted=True,
+                        rejection_reason=None,
+                        protocol_failed=True,
+                    )
+
+            # Provider writes are nonblocking and readiness-driven. Queue drain
+            # earns replacement Pi CREDIT only after provider send() actually
+            # releases bytes from the finite queue.
+            if provider in writable and not self._rfb_relay.terminal:
+                drained = self._rfb_relay.drain_provider_write_ready()
+                if drained:
+                    try:
+                        self._send_active_frame(
+                            protocol.FRAME_CREDIT,
+                            protocol.CHANNEL_RFB,
+                            protocol.encode_rfb_credit_payload(drained),
+                        )
+                        self._rfb_relay.confirm_credit_sent(drained)
+                    except (OSError, rfb.RfbRelayError):
+                        return self._finish(
+                            accepted=True,
+                            rejection_reason=None,
+                            protocol_failed=True,
+                        )
+
+            # Provider reads occur only while PS2-granted credit exists. The
+            # relay returns raw bytes; only this Wire owner frames/sends them.
+            if provider in readable and not self._rfb_relay.terminal:
+                provider_payload = self._rfb_relay.read_provider_ready()
+                if provider_payload:
+                    try:
+                        self._send_active_frame(
+                            protocol.FRAME_DATA,
+                            protocol.CHANNEL_RFB,
+                            provider_payload,
+                        )
+                    except OSError:
+                        return self._finish(
+                            accepted=True,
+                            rejection_reason=None,
+                            protocol_failed=True,
+                        )
+
     def wait_until_session_end(self) -> WireSessionOutcome:
         if self.state is not WireSessionState.ACTIVE or self.session_id is None:
             raise RuntimeError("Wire Session is not ACTIVE")
 
-        # R8 intentionally has no heartbeat and no rider. This blocking read is
-        # therefore also the proof that a completely idle ACTIVE session is
-        # valid: silence causes no timeout or periodic traffic. EOF/OSError ends
-        # only this session. Any actual byte is rejected because ordinary rider
-        # dispatch has not been authorized yet.
+        if self._rfb_relay is not None:
+            return self._wait_with_rfb_relay()
+
+        # With no explicitly injected rider the installed service remains
+        # establishment-only. An ACTIVE session may be completely idle forever;
+        # any ordinary post-Q4 byte is still unsupported in that composition.
         try:
             unsupported = self._connection.recv(1)
         except OSError:
@@ -320,11 +490,18 @@ class WireServer:
         self.port = port
         self.session_ids = session_ids or SessionIdAllocator()
 
-    def serve_connection(self, connection: socket.socket) -> WireSessionOutcome:
-        # One connection owner contains every physical read/write for this
-        # accepted socket. The persistent WireServer never hands the socket to a
-        # rider or another thread/process.
-        owner = WireConnectionOwner(connection, self.session_ids)
+    def serve_connection(
+        self,
+        connection: socket.socket,
+        rfb_attachment: rfb.RfbRelay | None = None,
+    ) -> WireSessionOutcome:
+        # One connection owner contains every physical Wire read/write. An
+        # optional relay owns only its separately injected provider socket.
+        owner = WireConnectionOwner(
+            connection,
+            self.session_ids,
+            rfb_attachment=rfb_attachment,
+        )
         try:
             outcome = owner.establish()
             if outcome.accepted:
@@ -335,6 +512,8 @@ class WireServer:
                 connection.close()
             except OSError:
                 pass
+            if rfb_attachment is not None:
+                rfb_attachment.close()
 
     def serve_forever(self) -> None:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
@@ -343,10 +522,9 @@ class WireServer:
             listener.listen(LISTEN_BACKLOG)
 
             while True:
-                # Sessions are deliberately sequential in R8. serve_connection
-                # fully retires and closes the accepted socket before this loop
-                # accepts the next one, preserving one physical I/O owner and
-                # preventing dead-session state from leaking into replacement.
+                # Sessions remain deliberately sequential. The installed
+                # service passes no provider attachment here, so R10 does not
+                # silently select/migrate a concrete RFB endpoint.
                 connection, _peer = listener.accept()
                 self.serve_connection(connection)
 
