@@ -6,6 +6,8 @@
     CLASSIFICATION=ADOPTED_RUNTIME
     BASE_AUTHORITY=87baebce32e3c07ffc12298d6a168ac890231cf2
     SELECTED_RECONSTRUCTION_PROVIDER=X0tigervnc_native_display_0
+    SELECTED_PROVIDER_ENDPOINT=127.0.0.1:5900_internal_systemd_socket
+    DIRECT_192_168_50_1_5900_ROUTE=PRESERVED_FALLBACK_EVIDENCE
     HISTORICAL_QUALIFIED_PROVIDER=Xtigervnc_dedicated_display_1
     CURRENT_PROVIDER_ROLE=REPLACEABLE_IMPLEMENTATION
     NETWORK_OWNER=NetworkManager
@@ -26,6 +28,59 @@ clean, conventional, replaceable PS2-facing service boundary whose **current**
 provider happens to be TigerVNC.
 
 The pre-test design below is now reconciled with the completed live qualification.
+
+## A003 R12 internal-provider endpoint reconciliation
+
+R12 keeps the R11 provider identity but changes the selected **provider-side
+endpoint** from the preserved direct PS2-facing socket to Pi-local
+infrastructure:
+
+    127.0.0.1:5900
+        -> ps-to-vnc-rfb-internal.socket
+        -> ps-to-vnc-rfb-internal-x0tigervnc.service
+        -> /usr/bin/X0tigervnc -display :0 -rfbport -1
+        -> existing LightDM/Xorg :0
+
+This loopback socket is not a second physical PS2 product connection and does
+not carry Wire Protocol. Its future consumer is the provider-neutral RFB Relay
+through a separately authorized connector.
+
+The R12 socket owns exactly one IPv4 loopback listener:
+
+    ListenStream=127.0.0.1:5900
+    Accept=no
+    Service=ps-to-vnc-rfb-internal-x0tigervnc.service
+
+The R12 provider preserves the R11 native policy:
+
+    DISPLAY=:0
+    XAUTHORITY=/home/ps2/.Xauthority
+    /usr/bin/X0tigervnc -display :0 -rfbport -1
+        -SecurityTypes None
+        -AlwaysShared=1
+        -AcceptPointerEvents=1
+        -AcceptKeyEvents=1
+        -AcceptSetDesktopSize=0
+        -UseIPv6=0
+
+The internal socket and service both declare conflicts plus ordering against:
+
+- `ps-to-vnc-rfb.socket`;
+- `ps-to-vnc-rfb-tigervnc.service`;
+- `ps-to-vnc-rfb-tigervnc-persistent.service`.
+
+Those dependencies make the internal and direct alternatives mutually
+exclusive without changing the preserved R11 files.
+
+The direct `192.168.50.1:5900` socket, R11 native drop-in, historical
+Xtigervnc `:1` service and persistent control remain byte-identical fallback /
+qualification evidence.
+
+`127.0.0.1:5903` remains Windows/operator development tooling and is not the
+selected internal provider endpoint.
+
+R12 does not attach the R10 Relay, reload systemd, activate either endpoint or
+claim fresh live/hardware qualification.
 
 ## A003 R11 provider-authority reconciliation
 
