@@ -4,7 +4,7 @@ DIRECTORY=src/media
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns the session-scoped common media epoch, signed/saturating presentation-deadline math, synchronization contract, and deterministic wait boundary shared by later audio and neutral-video consumers. It does not own PCM/AUDSRV runtime, MPEG/video presentation policy, or platform timer/lock bindings.
+This directory owns the session-scoped common media epoch, immutable timer-rate observation, signed/saturating presentation-deadline math, synchronization contract, and deterministic wait boundary shared by audio and neutral-video consumers. It does not own PCM/AUDSRV runtime, MPEG/video presentation policy, or platform timer/lock bindings.
 
 The inventory below covers maintained clean-generation symbols defined directly in this directory.
 
