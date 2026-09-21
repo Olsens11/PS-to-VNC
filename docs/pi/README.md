@@ -237,3 +237,33 @@ manager reload and makes no enable/start/stop/restart change.
 The existing qualified direct-RFB `192.168.50.1:5900` socket/provider
 definitions remain unchanged and independent. R8 does not migrate RFB onto Wire
 and implements no AUDIO, MPEG, CONFIG, heartbeat, or generic rider framework.
+
+
+## Product RFB Wire Relay core — A003 R10
+
+A003 R10 adds a maintained provider-neutral raw-RFB relay at
+`pi/rfb_relay.py` and composes it only through an explicit
+`WireServer.serve_connection(..., rfb_attachment=...)` seam.
+
+The ownership boundary is strict:
+
+- `wire_server.py` remains the only reader/writer of the PS2-facing Wire
+  connection and the only owner of its global send/receive sequence;
+- `rfb_relay.py` owns only the injected local provider socket and bounded
+  channel-1 credit/queue state;
+- provider reads stop at zero PS2-granted credit and rely on provider TCP
+  backpressure rather than an unbounded staging reservoir;
+- PS2->provider bytes enter only Pi-granted finite capacity;
+- replacement Pi CREDIT is earned only after queued bytes actually leave through
+  a nonblocking provider send;
+- zero-length RFB DATA remains reserved for the existing quiesce lifecycle and
+  is never forwarded as provider bytes.
+
+R10 deliberately does **not** select a provider endpoint or mutate the current
+qualified direct-RFB deployment. The ordinary installed Wire service invokes
+`serve_forever()` without an RFB attachment, so its runtime behavior remains
+establishment-only until a later authorized integration supplies a provider
+socket explicitly.
+
+This tranche is source/host/build evidence only. It does not claim a live Pi
+provider connection or physical PS2↔Pi RFB relay qualification.
