@@ -83,3 +83,32 @@ After this foundation passes on the clean Pi, define the dedicated TigerVNC
 session/service separately. That layer will prove fixed 480p geometry, the
 PS2-facing RFB/security contract, RGB565 behavior, endpoint health/restartability,
 and the minimum session/window-manager contents actually required.
+
+
+## Product Wire runtime candidate — A003 R8
+
+The maintained Pi product Wire runtime is sourced from `pi/` and staged with:
+
+    sudo ./scripts/pi/install-wire-runtime.sh stage
+    sudo ./scripts/pi/install-wire-runtime.sh verify
+
+Tracked installation targets are:
+
+    /usr/lib/ps-to-vnc/wire_protocol.py
+    /usr/lib/ps-to-vnc/wire_server.py
+    /etc/systemd/system/ps-to-vnc-wire.service
+
+The current selected listener value is `192.168.50.1:5902`. The service runs
+as the existing `ps2` user using the OS-base `/usr/bin/python3`.
+
+The stager is intentionally inactive-only. It copies exact tracked bytes,
+refuses non-identical pre-existing targets, verifies installed identity/modes,
+and statically validates the installed unit. It does **not** reload systemd,
+change enablement, start/stop/restart the Wire service, or touch the qualified
+direct-RFB socket/provider definitions.
+
+Removal likewise requires the candidate service to be inactive and disabled and
+removes only byte-identical tracked targets.
+
+R8 therefore establishes reproducible installation definitions without claiming
+live listener, no-carrier, repeated-session, or physical PS2/Pi qualification.
