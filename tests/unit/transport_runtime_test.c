@@ -892,6 +892,27 @@ static void test_invalid_frame_converges_fail_closed(void)
     CHECK(pstvnc_transport_rfb_channel_available(&runtime.rfb_channel) == 0u);
     CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
 
+    /* Exact CREDIT framing with a zero amount is also invalid and terminal. */
+    reset_fixture();
+    initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
+    {
+        uint8_t zero_credit[PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE] = {
+            0u, 0u, 0u, 0u
+        };
+        push_rx_frame(
+            PSTVNC_TRANSPORT_FRAME_CREDIT,
+            PSTVNC_TRANSPORT_CHANNEL_RFB,
+            0u,
+            zero_credit,
+            sizeof(zero_credit));
+    }
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+    CHECK(runtime.failed == 1);
+    CHECK(runtime.receiver_done == 1);
+    CHECK(runtime.rfb_outbound_credit_bytes == 0u);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+
     reset_fixture();
     initialize_runtime(&runtime, &config);
     start_runtime(&runtime);
