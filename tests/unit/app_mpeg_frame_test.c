@@ -517,6 +517,53 @@ static void test_failure_preserves_physical_effects(void)
     CHECK(!result.claim_outstanding);
 }
 
+
+static void test_scheduler_decision_failure_contains_claim(void)
+{
+    fixture_t fixture;
+    pstvnc_app_mpeg_frame_service_result_t result;
+    pstvnc_app_mpeg_frame_status_t status;
+
+    fixture_init(&fixture);
+    fake_worker_offer(&fixture, 1u);
+
+    CHECK(pstvnc_app_mpeg_frame_consumer_service(
+        &fixture.consumer,
+        TEST_GENERATION,
+        0u,
+        &result) == PSTVNC_APP_MPEG_FRAME_PRESENTED);
+
+    /*
+     * Corrupt only the copied scheduler run fence to force the accepted P6
+     * decision API to reject ordinal 2. P7 must contain the exact borrowed
+     * frame before returning the scheduler failure.
+     */
+    fixture.consumer.scheduler.run_generation =
+        TEST_GENERATION + 1u;
+
+    fake_worker_offer(&fixture, 2u);
+
+    CHECK(pstvnc_app_mpeg_frame_consumer_service(
+        &fixture.consumer,
+        TEST_GENERATION,
+        1100u,
+        &result) == PSTVNC_APP_MPEG_FRAME_SCHEDULER_FAILED);
+    CHECK(result.scheduler_result == PSTVNC_MPEG_SCHEDULER_INVALID);
+    CHECK(result.stop_attempted);
+    CHECK(result.release_attempted);
+    CHECK(g_worker.stop_calls == 1);
+    CHECK(g_worker.release_calls == 2);
+    CHECK(!result.claim_outstanding);
+
+    CHECK(pstvnc_app_mpeg_frame_consumer_status(
+        &fixture.consumer,
+        TEST_GENERATION,
+        &status) == PSTVNC_APP_MPEG_FRAME_OK);
+    CHECK(status.faulted);
+    CHECK(!status.claim_outstanding);
+    CHECK(status.last_consumed_ordinal == 1u);
+}
+
 static void test_scheduler_init_failure_after_first_sync(void)
 {
     fixture_t fixture;
@@ -585,6 +632,7 @@ int main(void)
     test_invalid_mapping_and_ordinal_containment();
     test_stop_failure_retains_borrow();
     test_failure_preserves_physical_effects();
+    test_scheduler_decision_failure_contains_claim();
     test_scheduler_init_failure_after_first_sync();
     test_idle_reports_worker_finished_without_outcome();
     test_wrong_generation_fails_closed();
