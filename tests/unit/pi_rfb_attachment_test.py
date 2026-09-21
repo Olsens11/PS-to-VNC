@@ -234,6 +234,9 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
             self.assertFalse(outcome.protocol_failed)
             self.assertEqual(provider_factory.calls, 0)
         finally:
+            # This provider endpoint must remain unused by the idle-session
+            # proof, so the attachment never takes ownership of it.
+            raw.close()
             provider_peer.close()
             if worker.is_alive():
                 worker.join(timeout=1.0)
