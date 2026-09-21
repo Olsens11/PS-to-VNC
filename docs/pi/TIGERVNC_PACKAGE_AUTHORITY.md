@@ -104,7 +104,7 @@ Do not copy the historical Pi's systemd units to answer this question.
 ## Reviewed command-line surface
 
 The Debian trixie `Xtigervnc(1)` manual for the adopted package supports the
-parameters used by the current provider:
+parameters used by the historical dedicated provider:
 
 - `-geometry` for the virtual desktop dimensions;
 - `-depth 16`;
