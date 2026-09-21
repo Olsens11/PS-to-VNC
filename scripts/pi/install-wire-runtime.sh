@@ -21,10 +21,12 @@ REPO_ROOT="$(
 )"
 
 PROTOCOL_SOURCE="$REPO_ROOT/pi/wire_protocol.py"
+RFB_RELAY_SOURCE="$REPO_ROOT/pi/rfb_relay.py"
 SERVER_SOURCE="$REPO_ROOT/pi/wire_server.py"
 UNIT_SOURCE="$REPO_ROOT/systemd/pi/ps-to-vnc-wire.service"
 
 PROTOCOL_DEST='/usr/lib/ps-to-vnc/wire_protocol.py'
+RFB_RELAY_DEST='/usr/lib/ps-to-vnc/rfb_relay.py'
 SERVER_DEST='/usr/lib/ps-to-vnc/wire_server.py'
 UNIT_DEST='/etc/systemd/system/ps-to-vnc-wire.service'
 
@@ -55,7 +57,7 @@ require_sources()
 {
     local source
 
-    for source in "$PROTOCOL_SOURCE" "$SERVER_SOURCE" "$UNIT_SOURCE"
+    for source in "$PROTOCOL_SOURCE" "$RFB_RELAY_SOURCE" "$SERVER_SOURCE" "$UNIT_SOURCE"
     do
         [ -f "$source" ] || {
             echo "ERROR: tracked Wire source missing: $source" >&2
@@ -66,6 +68,10 @@ require_sources()
     [ -x "$PROTOCOL_SOURCE" ] || {
         echo 'ERROR: tracked Wire protocol source is not executable.' >&2
         exit 11
+    }
+    [ -x "$RFB_RELAY_SOURCE" ] || {
+        echo 'ERROR: tracked RFB relay source is not executable.' >&2
+        exit 12
     }
     [ -x "$SERVER_SOURCE" ] || {
         echo 'ERROR: tracked Wire server source is not executable.' >&2
@@ -82,7 +88,7 @@ require_sources()
         exit 14
     }
 
-    python3 - "$PROTOCOL_SOURCE" "$SERVER_SOURCE" <<'__PS2VNC_WIRE_SYNTAX_EOF__'
+    python3 - "$PROTOCOL_SOURCE" "$RFB_RELAY_SOURCE" "$SERVER_SOURCE" <<'__PS2VNC_WIRE_SYNTAX_EOF__'
 from pathlib import Path
 import sys
 
@@ -185,10 +191,12 @@ stage_candidate()
     refuse_live_wire_lifecycle
 
     assert_safe_target "$PROTOCOL_SOURCE" "$PROTOCOL_DEST"
+    assert_safe_target "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
     assert_safe_target "$SERVER_SOURCE" "$SERVER_DEST"
     assert_safe_target "$UNIT_SOURCE" "$UNIT_DEST"
 
     install_file 0755 "$PROTOCOL_SOURCE" "$PROTOCOL_DEST"
+    install_file 0755 "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
     install_file 0755 "$SERVER_SOURCE" "$SERVER_DEST"
     install_file 0644 "$UNIT_SOURCE" "$UNIT_DEST"
 
@@ -207,6 +215,7 @@ verify_candidate()
     refuse_live_wire_lifecycle
 
     verify_file 0755 "$PROTOCOL_SOURCE" "$PROTOCOL_DEST"
+    verify_file 0755 "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
     verify_file 0755 "$SERVER_SOURCE" "$SERVER_DEST"
     verify_file 0644 "$UNIT_SOURCE" "$UNIT_DEST"
 
@@ -239,6 +248,7 @@ remove_candidate()
         echo "REMOVED=$target"
     done <<__PS2VNC_WIRE_REMOVE_EOF__
 $PROTOCOL_SOURCE|$PROTOCOL_DEST
+$RFB_RELAY_SOURCE|$RFB_RELAY_DEST
 $SERVER_SOURCE|$SERVER_DEST
 $UNIT_SOURCE|$UNIT_DEST
 __PS2VNC_WIRE_REMOVE_EOF__
