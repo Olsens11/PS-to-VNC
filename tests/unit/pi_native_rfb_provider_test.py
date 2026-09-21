@@ -113,7 +113,11 @@ class NativeProviderAuthorityTests(unittest.TestCase):
 
         for required in (
             "{stage|verify|remove}",
-            "90-native-x0vnc.conf",
+            "DEST_DIR='/etc/systemd/system'",
+            "ACTIVATED_SERVICE_NAME='ps-to-vnc-rfb-tigervnc.service'",
+            "DROPIN_NAME='90-native-x0vnc.conf'",
+            'DROPIN_RELATIVE="$ACTIVATED_SERVICE_NAME.d/$DROPIN_NAME"',
+            'DROPIN_DEST="$DEST_DIR/$DROPIN_RELATIVE"',
             "/usr/bin/X0tigervnc",
             "refuse_live_rfb_lifecycle",
             "systemctl is-active --quiet",
@@ -126,6 +130,7 @@ class NativeProviderAuthorityTests(unittest.TestCase):
             "RFB_UNIT_ENABLEMENT=NOT_CHANGED",
             "RFB_UNIT_RUNNING_STATE=NOT_CHANGED",
             "LIGHTDM_XORG_STATE=NOT_CHANGED",
+            "RFB_NATIVE_PROVIDER_REMOVE=PASS",
         ):
             self.assertIn(required, script)
 
