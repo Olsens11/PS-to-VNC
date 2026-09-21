@@ -1,9 +1,10 @@
 /*
  * File synopsis:
  * Implements ownership of the one adopted physical PSTV socket, the single
- * serialized framed-send path, and the sole framed-receive sequencing path.
- * This file deliberately does not dispatch logical channels, parse RFB, manage
- * media policy, or decide product lifecycle; those remain documented owners.
+ * serialized framed-send path, the sole framed-receive sequencing path, and
+ * the exact Transport-internal Q4 client establishment transaction. This file
+ * deliberately does not dispatch logical channels, parse RFB, manage media
+ * policy, or decide product lifecycle; those remain documented owners.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
  */
@@ -90,6 +91,133 @@ int pstvnc_transport_physical_stream_adopt(
 
     stream->socket_fd = socket_fd;
     stream->send_semaphore_id = send_semaphore_id;
+    return 1;
+}
+
+int pstvnc_transport_physical_stream_establish_client(
+    pstvnc_transport_physical_stream_t *stream,
+    int *socket_fd,
+    uint32_t *session_id,
+    pstvnc_wire_not_accepted_reason_t *rejection_reason)
+{
+    uint8_t payload[PSTVNC_WIRE_HELLO_PAYLOAD_SIZE];
+    pstvnc_transport_header_t header;
+    pstvnc_wire_hello_payload_t hello;
+    int result = 0;
+
+    if (stream == NULL || socket_fd == NULL || *socket_fd < 0 ||
+        session_id == NULL || rejection_reason == NULL)
+        return 0;
+
+    *session_id = 0u;
+    *rejection_reason = (pstvnc_wire_not_accepted_reason_t)0;
+
+    if (!pstvnc_transport_physical_stream_adopt(stream, *socket_fd))
+        return 0;
+
+    /*
+     * Descriptor ownership transfers at successful adoption, before any Wire
+     * byte is sent. From here on, every failure path closes through Transport,
+     * so Application/Platform can never race a second close.
+     */
+    *socket_fd = -1;
+
+    hello.wire_version = PSTVNC_TRANSPORT_VERSION;
+    hello.product_establishment_version =
+        PSTVNC_WIRE_PRODUCT_ESTABLISHMENT_VERSION;
+
+    if (!pstvnc_wire_hello_payload_encode(payload, &hello) ||
+        !pstvnc_transport_physical_stream_send_frame(
+            stream,
+            PSTVNC_TRANSPORT_FRAME_HELLO,
+            PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+            0u,
+            payload,
+            PSTVNC_WIRE_HELLO_PAYLOAD_SIZE))
+        goto fail;
+
+    /*
+     * send_frame() consumed outbound sequence 1. The matching receive path must
+     * now consume exactly inbound sequence 1; only a complete result advances
+     * expected_receive_sequence to 2.
+     */
+    if (!pstvnc_transport_physical_stream_receive_frame(
+            stream,
+            &header,
+            payload,
+            sizeof(payload)))
+        goto fail;
+
+    if (pstvnc_transport_header_is_wire_accept(&header)) {
+        pstvnc_wire_accept_payload_t acceptance;
+
+        if (!pstvnc_wire_accept_payload_decode(
+                &acceptance,
+                payload,
+                header.payload_length))
+            goto fail;
+
+        *session_id = acceptance.session_id;
+        result = 1;
+    } else if (pstvnc_transport_header_is_wire_not_accepted(&header)) {
+        pstvnc_wire_not_accepted_payload_t rejection;
+
+        if (!pstvnc_wire_not_accepted_payload_decode(
+                &rejection,
+                payload,
+                header.payload_length))
+            goto fail;
+
+        *rejection_reason =
+            (pstvnc_wire_not_accepted_reason_t)rejection.reason;
+        result = -1;
+    } else {
+        goto fail;
+    }
+
+    if (result == 1) {
+        /*
+         * Do not permit a hidden sequence reset between Q4 and later riders.
+         * These are the exact continuation values the runtime must inherit.
+         */
+        if (stream->next_send_sequence != 2u ||
+            stream->expected_receive_sequence != 2u)
+            goto fail;
+        return 1;
+    }
+
+    /* NOT_ACCEPTED is a typed protocol outcome but owns no live session. */
+    pstvnc_transport_physical_stream_release(stream);
+    return -1;
+
+fail:
+    pstvnc_transport_physical_stream_release(stream);
+    *session_id = 0u;
+    *rejection_reason = (pstvnc_wire_not_accepted_reason_t)0;
+    return 0;
+}
+
+int pstvnc_transport_physical_stream_transfer_established(
+    pstvnc_transport_physical_stream_t *destination,
+    pstvnc_transport_physical_stream_t *source)
+{
+    if (destination == NULL || source == NULL || destination == source ||
+        source->socket_fd < 0 || source->send_semaphore_id < 0 ||
+        source->next_send_sequence != 2u ||
+        source->expected_receive_sequence != 2u)
+        return 0;
+
+    /*
+     * This is an ownership move, not sequence seeding. The exact physical
+     * lineage and its send lock move together; callers cannot provide arbitrary
+     * next-sequence values.
+     */
+    *destination = *source;
+
+    source->socket_fd = -1;
+    source->send_semaphore_id = -1;
+    source->next_send_sequence = 1u;
+    source->expected_receive_sequence = 1u;
     return 1;
 }
 
