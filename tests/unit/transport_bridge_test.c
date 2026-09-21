@@ -26,6 +26,13 @@ static int start_result = 1;
 static int request_stop_result = 1;
 static int wait_done_result = 1;
 static int release_result = 1;
+static int establish_result = 1;
+static uint32_t establish_session_id = 0x10203040u;
+static pstvnc_wire_not_accepted_reason_t establish_rejection_reason =
+    (pstvnc_wire_not_accepted_reason_t)0;
+static int establish_calls;
+static int physical_shutdown_calls;
+static int physical_release_calls;
 static int read_result = 1;
 static int poll_result = 1;
 static int write_result = 1;
@@ -108,6 +115,12 @@ static void reset_fixture(void)
     request_stop_result = 1;
     wait_done_result = 1;
     release_result = 1;
+    establish_result = 1;
+    establish_session_id = 0x10203040u;
+    establish_rejection_reason = (pstvnc_wire_not_accepted_reason_t)0;
+    establish_calls = 0;
+    physical_shutdown_calls = 0;
+    physical_release_calls = 0;
     read_result = 1;
     poll_result = 1;
     write_result = 1;
@@ -275,6 +288,150 @@ int pstvnc_transport_runtime_initialize_with_audio_mpeg(
     observed_mpeg_config = *mpeg_config;
     initialize_stub_runtime(runtime, socket_fd, 1, 1);
     return 1;
+}
+
+static int initialize_stub_established_runtime(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    int socket_fd;
+
+    if (runtime == NULL || physical_stream == NULL || config == NULL ||
+        physical_stream->socket_fd < 0 ||
+        physical_stream->next_send_sequence != 2u ||
+        physical_stream->expected_receive_sequence != 2u)
+        return 0;
+
+    socket_fd = physical_stream->socket_fd;
+    adopted_socket_fd = socket_fd;
+    initialize_stub_runtime(
+        runtime,
+        socket_fd,
+        audio_config != NULL,
+        mpeg_config != NULL);
+    runtime->physical_stream.next_send_sequence = 2u;
+    runtime->physical_stream.expected_receive_sequence = 2u;
+
+    physical_stream->socket_fd = -1;
+    physical_stream->send_semaphore_id = -1;
+    physical_stream->next_send_sequence = 1u;
+    physical_stream->expected_receive_sequence = 1u;
+    return 1;
+}
+
+int pstvnc_transport_runtime_initialize_established(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config)
+{
+    initialize_calls++;
+    if (!initialize_result)
+        return 0;
+    return initialize_stub_established_runtime(
+        runtime, physical_stream, config, NULL, NULL);
+}
+
+int pstvnc_transport_runtime_initialize_established_with_audio(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config)
+{
+    initialize_audio_calls++;
+    if (!initialize_audio_result || audio_config == NULL)
+        return 0;
+    observed_audio_config = *audio_config;
+    return initialize_stub_established_runtime(
+        runtime, physical_stream, config, audio_config, NULL);
+}
+
+int pstvnc_transport_runtime_initialize_established_with_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    initialize_mpeg_calls++;
+    if (!initialize_mpeg_result || mpeg_config == NULL)
+        return 0;
+    observed_mpeg_config = *mpeg_config;
+    return initialize_stub_established_runtime(
+        runtime, physical_stream, config, NULL, mpeg_config);
+}
+
+int pstvnc_transport_runtime_initialize_established_with_audio_mpeg(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_transport_physical_stream_t *physical_stream,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio_config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
+    initialize_audio_mpeg_calls++;
+    if (!initialize_audio_mpeg_result ||
+        audio_config == NULL || mpeg_config == NULL)
+        return 0;
+    observed_audio_config = *audio_config;
+    observed_mpeg_config = *mpeg_config;
+    return initialize_stub_established_runtime(
+        runtime, physical_stream, config, audio_config, mpeg_config);
+}
+
+int pstvnc_transport_physical_stream_establish_client(
+    pstvnc_transport_physical_stream_t *stream,
+    int *socket_fd,
+    uint32_t *session_id,
+    pstvnc_wire_not_accepted_reason_t *rejection_reason)
+{
+    establish_calls++;
+
+    if (stream == NULL || socket_fd == NULL || *socket_fd < 0 ||
+        session_id == NULL || rejection_reason == NULL)
+        return 0;
+
+    if (establish_result == 0)
+        return 0;
+
+    *socket_fd = -1;
+    stream->socket_fd = 88;
+    stream->send_semaphore_id = 3;
+    stream->next_send_sequence = 2u;
+    stream->expected_receive_sequence = 2u;
+
+    if (establish_result < 0) {
+        *session_id = 0u;
+        *rejection_reason = establish_rejection_reason;
+        stream->socket_fd = -1;
+        stream->send_semaphore_id = -1;
+        stream->next_send_sequence = 1u;
+        stream->expected_receive_sequence = 1u;
+        return -1;
+    }
+
+    *session_id = establish_session_id;
+    *rejection_reason = (pstvnc_wire_not_accepted_reason_t)0;
+    return 1;
+}
+
+int pstvnc_transport_physical_stream_shutdown_io(
+    pstvnc_transport_physical_stream_t *stream)
+{
+    physical_shutdown_calls++;
+    return stream != NULL && stream->socket_fd >= 0;
+}
+
+void pstvnc_transport_physical_stream_release(
+    pstvnc_transport_physical_stream_t *stream)
+{
+    physical_release_calls++;
+    if (stream == NULL)
+        return;
+    stream->socket_fd = -1;
+    stream->send_semaphore_id = -1;
+    stream->next_send_sequence = 1u;
+    stream->expected_receive_sequence = 1u;
 }
 
 int pstvnc_transport_runtime_start_receiver(
@@ -945,8 +1102,144 @@ static void test_stale_access_cannot_cross_reconnect(void)
     CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
 }
 
+
+static void test_q4_establishment_only_is_active_without_riders(void)
+{
+    pstvnc_transport_wire_establishment_result_t result;
+    int socket_fd = 51;
+
+    reset_fixture();
+
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
+
+    result = pstvnc_transport_wire_establish(&socket_fd);
+    CHECK(result.status == PSTVNC_TRANSPORT_WIRE_ESTABLISHED);
+    CHECK(result.rejection_reason == (pstvnc_wire_not_accepted_reason_t)0);
+    CHECK(socket_fd == -1);
+    CHECK(establish_calls == 1);
+    CHECK(initialize_calls == 0);
+    CHECK(initialize_audio_calls == 0);
+    CHECK(initialize_mpeg_calls == 0);
+    CHECK(initialize_audio_mpeg_calls == 0);
+    CHECK(start_calls == 0);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_ACTIVE);
+
+    CHECK(pstvnc_transport_access_acquire(&current_access) ==
+        PSTVNC_TRANSPORT_CLOSED);
+
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+    CHECK(physical_release_calls == 1);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
+}
+
+static void test_q4_typed_rejection_and_mechanism_failure(void)
+{
+    pstvnc_transport_wire_establishment_result_t result;
+    int socket_fd;
+
+    reset_fixture();
+    establish_result = -1;
+    establish_rejection_reason = PSTVNC_WIRE_NOT_ACCEPTED_PRODUCT_VERSION;
+    socket_fd = 52;
+
+    result = pstvnc_transport_wire_establish(&socket_fd);
+    CHECK(result.status == PSTVNC_TRANSPORT_WIRE_NOT_ACCEPTED);
+    CHECK(result.rejection_reason ==
+        PSTVNC_WIRE_NOT_ACCEPTED_PRODUCT_VERSION);
+    CHECK(socket_fd == -1);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
+    CHECK(start_calls == 0);
+
+    reset_fixture();
+    establish_result = 0;
+    socket_fd = 53;
+    result = pstvnc_transport_wire_establish(&socket_fd);
+    CHECK(result.status == PSTVNC_TRANSPORT_WIRE_ESTABLISHMENT_FAILED);
+    CHECK(result.rejection_reason == (pstvnc_wire_not_accepted_reason_t)0);
+    CHECK(socket_fd == 53);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
+    CHECK(start_calls == 0);
+}
+
+static void test_established_wire_then_rider_activation_preserves_lineage(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_wire_establishment_result_t result;
+    int socket_fd = 54;
+    int no_descriptor = -1;
+
+    reset_fixture();
+    result = pstvnc_transport_wire_establish(&socket_fd);
+    CHECK(result.status == PSTVNC_TRANSPORT_WIRE_ESTABLISHED);
+    CHECK(start_calls == 0);
+
+    CHECK(pstvnc_transport_session_open(
+        &no_descriptor, &config) == PSTVNC_TRANSPORT_OK);
+    CHECK(no_descriptor == -1);
+    CHECK(establish_calls == 1);
+    CHECK(initialize_calls == 1);
+    CHECK(start_calls == 1);
+    CHECK(observed_runtime != NULL);
+    CHECK(observed_runtime->physical_stream.next_send_sequence == 2u);
+    CHECK(observed_runtime->physical_stream.expected_receive_sequence == 2u);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_ACTIVE);
+
+    complete_and_close();
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
+}
+
+static void test_repeated_wire_sessions_do_not_resume_rider_access(void)
+{
+    pstvnc_transport_wire_establishment_result_t result;
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_access_t access_a;
+    pstvnc_transport_access_t access_b;
+    int socket_fd = 55;
+    int no_descriptor = -1;
+
+    reset_fixture();
+    memset(&access_a, 0, sizeof(access_a));
+    memset(&access_b, 0, sizeof(access_b));
+
+    result = pstvnc_transport_wire_establish(&socket_fd);
+    CHECK(result.status == PSTVNC_TRANSPORT_WIRE_ESTABLISHED);
+    CHECK(pstvnc_transport_session_open(
+        &no_descriptor, &config) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&access_a) == PSTVNC_TRANSPORT_OK);
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+
+    establish_session_id = 0x55667788u;
+    socket_fd = 56;
+    no_descriptor = -1;
+    result = pstvnc_transport_wire_establish(&socket_fd);
+    CHECK(result.status == PSTVNC_TRANSPORT_WIRE_ESTABLISHED);
+    CHECK(pstvnc_transport_session_open(
+        &no_descriptor, &config) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&access_b) == PSTVNC_TRANSPORT_OK);
+    CHECK(access_a.opaque_ticket != access_b.opaque_ticket);
+    CHECK(pstvnc_transport_rfb_write_exact(
+        &access_a, "x", 1u) == PSTVNC_TRANSPORT_CLOSED);
+    CHECK(pstvnc_transport_rfb_write_exact(
+        &access_b, "x", 1u) == PSTVNC_TRANSPORT_OK);
+
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+}
+
 int main(void)
 {
+    test_q4_establishment_only_is_active_without_riders();
+    test_q4_typed_rejection_and_mechanism_failure();
+    test_established_wire_then_rider_activation_preserves_lineage();
+    test_repeated_wire_sessions_do_not_resume_rider_access();
     test_rfb_only_open_and_close_regression();
     test_audio_open_requires_explicit_config();
     test_mpeg_open_and_combined_authority();
