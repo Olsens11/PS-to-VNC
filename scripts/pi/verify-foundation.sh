@@ -12,9 +12,12 @@ fail() {
     exit 1
 }
 
-installed="$(dpkg-query -W -f='${Version}' tigervnc-standalone-server 2>/dev/null || true)"
-[ "$installed" = "$EXPECTED_TIGERVNC" ] || fail "tigervnc-version:${installed:-NONE}"
+standalone="$(dpkg-query -W -f='${Version}' tigervnc-standalone-server 2>/dev/null || true)"
+scraping="$(dpkg-query -W -f='${Version}' tigervnc-scraping-server 2>/dev/null || true)"
+[ "$standalone" = "$EXPECTED_TIGERVNC" ] || fail "tigervnc-standalone-version:${standalone:-NONE}"
+[ "$scraping" = "$EXPECTED_TIGERVNC" ] || fail "tigervnc-scraping-version:${scraping:-NONE}"
 command -v Xtigervnc >/dev/null 2>&1 || fail 'Xtigervnc-missing'
+[ -x /usr/bin/X0tigervnc ] || fail 'X0tigervnc-missing'
 
 nmcli -t -f NAME connection show | grep -Fxq "$PROFILE" || fail 'ps2-link-missing'
 
@@ -42,7 +45,9 @@ if [ "$connection" = "$PROFILE" ] && [ "$active_address" != "$ADDRESS" ]; then
     fail "active-address:${active_address:-NONE}"
 fi
 
-echo "TIGERVNC_VERSION=$installed"
+echo "TIGERVNC_STANDALONE_VERSION=$standalone"
+echo "TIGERVNC_SCRAPING_VERSION=$scraping"
+echo 'X0TIGERVNC=/usr/bin/X0tigervnc'
 echo "PS2_LINK_PROFILE=$PROFILE"
 echo "PS2_LINK_EXPECTED_ADDRESS=$ADDRESS"
 echo "ETH0_STATE=${state:-UNKNOWN}"
