@@ -86,6 +86,26 @@ architecture.
 
 R11 still does not attach that selected provider to the R10 Wire Relay.
 
+As of A003 R12, the selected provider-side endpoint is no longer the direct
+PS2-facing socket. Maintained authority now defines:
+
+    127.0.0.1:5900
+        -> ps-to-vnc-rfb-internal.socket
+        -> ps-to-vnc-rfb-internal-x0tigervnc.service
+        -> X0tigervnc
+        -> existing LightDM/Xorg :0
+
+That loopback listener is Pi-local provider infrastructure for a future bounded
+R10 Relay connector. It is neither a Wire Protocol endpoint nor a second
+physical PS2 connection. The R12 units own bidirectional systemd conflict plus
+ordering dependencies against the preserved direct socket/provider/persistent
+control, making the direct and internal alternatives mutually exclusive without
+rewriting R11 evidence.
+
+The R11 `192.168.50.1:5900` route remains direct-RFB qualification/fallback
+authority, and `127.0.0.1:5903` remains development-only. R12 still does not
+attach the R10 Relay or implement quiesce/provider-failure orchestration.
+
 ## One physical-I/O execution context
 
 The current architecture requires one Transport-owned physical framed-I/O
@@ -165,9 +185,11 @@ fencing are independent protections.
 
 Persistent Pi configuration owns calibrated desktop/display geometry. The
 runtime desktop/session owner publishes one immutable active geometry snapshot.
-The normal product target is the existing Raspberry Pi LightDM/Xorg desktop
-`:0`, currently exposed on the PS2-facing RFB endpoint by socket-activated
-`X0tigervnc` at `192.168.50.1:5900`.
+The normal product desktop target is the existing Raspberry Pi LightDM/Xorg
+desktop `:0`. R12 selects socket-activated X0tigervnc behind the Pi-local
+provider endpoint `127.0.0.1:5900`; the future Wire Relay connector will
+consume that local endpoint. The direct `192.168.50.1:5900` route is preserved
+fallback/qualification evidence rather than the mature provider endpoint.
 
 The separate `127.0.0.1:5903` path is Windows/operator development tooling,
 not product architecture. The staged dedicated Openbox/lxpanel `:1` candidate
