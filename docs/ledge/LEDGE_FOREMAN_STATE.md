@@ -1,18 +1,25 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0031
-RECORDED_AT=2026-09-20T21:33:37-04:00
+STATE_REVISION=0032
+RECORDED_AT=2026-09-21T02:18:31-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0030
-SUPERSEDES_FOREMAN_STATE_REVISION=0030
+BASED_ON_FOREMAN_STATE_REVISION=0031
+SUPERSEDES_FOREMAN_STATE_REVISION=0031
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
-BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
+BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
 BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0032 independently accepts the completed
+`A003-MPEG-WORKER-FRAME-RENDEZVOUS-R4` Reconstruction baton, records work-log
+contract revision 0007's exact immutable filename-stamp compatibility repair,
+and advances into the bounded A004 main-thread frame-consumer seam. R4 now
+provides an exact-generation MPEG worker with one borrowed frame slot whose
+storage cannot be overwritten while AVAILABLE or CLAIMED.
 
 Revision 0031 independently accepts the completed
 `A003-PS2-LIBMPEG-BACKEND-R3` Reconstruction baton and advances A003 into the
@@ -88,7 +95,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A003_R3_INTEGRATED__A003_MPEG_WORKER_FRAME_RENDEZVOUS_RECONSTRUCTION_ACTIVE__A004_RUNTIME_HANDOFF_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R4_INTEGRATED__A004_P7_MAIN_THREAD_FRAME_CONSUMER_RECONSTRUCTION_ACTIVE__PS2_WORKER_BINDING_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -99,8 +106,10 @@ A004_P5_FOREMAN_ACCEPTED=YES
 A004_P6_FOREMAN_ACCEPTED=YES
 A003_DECODED_PICTURE_STEP_FOREMAN_ACCEPTED=YES
 A003_PS2_LIBMPEG_BACKEND_FOREMAN_ACCEPTED=YES
-A003_MPEG_WORKER_FRAME_RENDEZVOUS_ACTIVE=YES
-A004_RUNTIME_HANDOFF=DEPENDENCY_QUEUED
+A003_MPEG_WORKER_FRAME_RENDEZVOUS_FOREMAN_ACCEPTED=YES
+WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
+A004_P7_MAIN_THREAD_FRAME_CONSUMER_ACTIVE=YES
+PS2_WORKER_BINDING=DEPENDENCY_QUEUED
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 
@@ -1150,12 +1159,148 @@ one synchronized frame slot. The worker decodes one frame, publishes that exact
 borrowed value, and cannot enter another decoder step until the consumer releases
 or explicitly discards the exact frame.
 
+## A003 R4 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- branch HEAD `4d2139d0b2443e65e5e3884b3ac5558bb1a0ddad`;
+- final pre-log source/dictionary/build authority
+  `e56d9cb47439ef60c82e3dd78328d7ea6732995e`;
+- immutable Reconstruction log
+  `docs/ledge/work-log/20260921T020723-0400__reconstruction__a003-mpeg-generation__interactive.md`.
+
+The worker landed five commits after Foreman base
+`3bbbd8ecbfa54a1cd155c1195e990ac4101a33b2`:
+
+- `51f45cdb59cd61565246159e1915f002b0c7de2d` —
+  one-slot asynchronous MPEG decoder worker, focused tests and build wiring;
+- `785ec520812a9c7e07862717a4fab87febc6c623` —
+  deterministic dictionary-reconciliation trigger;
+- `d63e8af665a689acf38e3ce58f6cce62f3bf61a1` —
+  generated current-clean MPEG dictionary reconciliation;
+- `e56d9cb47439ef60c82e3dd78328d7ea6732995e` —
+  maintained MPEG ownership prose;
+- `4d2139d0b2443e65e5e3884b3ac5558bb1a0ddad` —
+  immutable Reconstruction log whose filename mistake is preserved through
+  work-log contract revision 0007.
+
+Independent source review confirms:
+
+- `src/mpeg/worker.{c,h}` owns the asynchronous decoder worker and one
+  exact-generation borrowed-frame slot;
+- worker start copies one nonzero caller generation verbatim and never mints or
+  increments generation identity;
+- after start, decoder initialize, every decoder step and decoder release occur
+  only on the worker thread;
+- owner-thread stop uses the decoder's accepted synchronized stop request and
+  never changes callback EOF/Transport semantics;
+- the synchronized slot lifecycle is exactly
+  `EMPTY -> AVAILABLE -> CLAIMED -> EMPTY`;
+- PICTURE_READY copies only R2 borrowed-picture metadata; no full RGB16 frame is
+  copied and no Display type enters MPEG;
+- worker cannot enter another decoder step while the slot is AVAILABLE or
+  CLAIMED;
+- nonblocking claim changes only AVAILABLE -> CLAIMED and returns the exact run,
+  picture metadata and ordinal-derived claim token;
+- release requires exact run plus exact claimed picture ordinal, clears the slot
+  exactly once and signals the retained event;
+- wrong generation, zero/wrong token, duplicate release and non-AVAILABLE claim
+  fail closed;
+- the event contract explicitly retains signal-before-wait and the worker
+  rechecks synchronized stop/slot predicates after every wake, eliminating a
+  correctness-critical poll timer;
+- stop discards an unclaimed AVAILABLE frame but never invalidates CLAIMED
+  storage;
+- a claimed frame pins decoder storage until exact release, after which stop can
+  proceed to decoder teardown;
+- stop already visible before decoding prevents a picture call;
+- stop during an active picture preserves R2's real Transport/feed semantics,
+  accounts the completed picture once and suppresses caller publication;
+- decoder COMPLETE, STOPPED and failure outcomes remain distinct and carry exact
+  decoder report/release result;
+- a previously published frame cannot mask a later decoder failure;
+- join refuses non-empty slot and unfinished worker state, and is the final
+  worker-write visibility fence;
+- release requires join before thread destruction/stack reclamation;
+- no Display scheduler/compositor/Presentation, Platform graphics, RFB,
+  Application, media-clock or Transport-private dependency entered the worker.
+
+A003-R4-C1 through A003-R4-C12 are independently accepted as MET within the
+bounded source/machine-evidence scope.
+
+### R4 machine evidence
+
+Exact final pre-log source run:
+
+`35566964942` — run #318 — SUCCESS first attempt.
+
+It proves:
+
+- host-unit PASS;
+- `MPEG_WORKER_TEST=PASS`;
+- `mpeg_decoder_test: PASS`;
+- existing scheduler/compositor/RFB/Transport host suites PASS;
+- project-check PASS;
+- complete strict dictionaries PASS;
+- direct R5900 compile including `src/mpeg/worker.c` PASS;
+- SMS dedicated compile preservation PASS;
+- clean linked build PASS;
+- current-source linked reproducibility PASS.
+
+The immutable log head run
+`35567149530` (#319) has all host/dictionary/PS2 compile/link jobs green and
+project-check red for one exact reason only:
+
+`20260921T020723-0400...: filename stamp 20260921T020723-0400 != STARTED_AT-derived 20260921T015200-0400`.
+
+No product/source regression is inferred from that policy-format failure.
+
+### Immutable log compatibility repair
+
+The malformed log truthfully records:
+
+`STARTED_AT=2026-09-21T01:52:00-04:00`
+
+and:
+
+`COMPLETED_AT=2026-09-21T02:07:23-04:00`.
+
+Its already-frozen filename incorrectly used the completion stamp:
+
+`20260921T020723-0400__reconstruction__a003-mpeg-generation__interactive.md`.
+
+The governing immutability rule prohibits renaming, replacing, rewriting or
+duplicating that record. Work-log contract revision 0007 therefore adds one
+exact path-specific filename-stamp exception. Unlike the older broad grandfather
+set, every other canonical metadata/schema/status/key check remains active for
+this file, and both its frozen filename stamp and truthful STARTED_AT are pinned
+exactly in the checker.
+
+No generalized timestamp mismatch, role/date pattern or completion-time naming
+rule is accepted.
+
+## Why A004 P7 is the next seam
+
+R4 now safely publishes exactly one borrowed frame to the main owner without
+decoder run-ahead. A004 P3-P6 already provide exact-run visible ownership,
+first-synchronized presentation, retirement-visible state and absolute
+post-first-frame scheduler/drop policy.
+
+The missing seam is the narrow **main-thread per-frame consumer** that translates
+one exact R4 claim into A004 presentation work. Clean architecture assigns this
+cross-domain coordination to Application/main-thread ownership; MPEG must not
+call Display directly and Display must not own the decoder worker.
+
+P7 deliberately stops before START/producer lifecycle and Q7 retirement
+orchestration. It only owns one-frame claim -> validate/map -> first-frame or
+scheduler decision -> present/drop -> exact release behavior.
+
 ## Active bounded Reconstruction packet
 
-PACKET_ID=`A003-MPEG-WORKER-FRAME-RENDEZVOUS-R4`
+PACKET_ID=`A004-MAIN-THREAD-FRAME-CONSUMER-P7`
 PACKET_STATUS=ACTIVE
 ROLE_KEY=`reconstruction`
-WORK_ITEM_KEY=`a003-mpeg-generation`
+WORK_ITEM_KEY=`a004-presentation`
 WORKER_KEY=`interactive`
 EXECUTION_MODE=`AUTONOMOUS_RECONSTRUCTION`
 USER_TERMINAL_POLICY=`EXCEPTION_ONLY`
@@ -1167,169 +1312,209 @@ ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
 
 ### Objective
 
-Reconstruct the clean MPEG-owned **asynchronous decoder worker and one-slot
-borrowed-frame rendezvous** between the accepted R2/R3 decoder and a later
-main/Application-thread Presentation consumer.
+Reconstruct the narrow Application/main-thread **MPEG frame consumer** that
+bridges one exact R4 worker claim into the accepted A004 P4/P6 presentation
+contracts without moving decoder/thread ownership into Display or moving
+GS/timing ownership into MPEG.
 
-The worker owns decoder-call/thread lifetime. The rendezvous preserves R2's
-borrowed-picture lifetime by preventing decoder run-ahead while one decoded
-picture is available to or claimed by the consumer.
-
-R4 must not call the A004 scheduler/compositor or take GS/Presentation ownership.
+P7 consumes already-started exact-run state only. It does not start/stop the Pi
+producer, arm Presentation from calibration, execute P5/Q7 retirement, or own
+Transport residual/RFB restoration.
 
 ### Execution policy
 
 Ordinary autonomous Reconstruction through repository/GitHub authority and
 canonical CI. No physical PS2 or live-Pi user proxy is required.
 
-### Required current/frozen authority
+### Required authority
 
 Read current at wake, including:
 
 - Reconstruction Contract rev 0006;
-- Foreman State rev 0031;
-- A003 MPEG-generation audit rev 0001;
-- accepted R2 `src/mpeg/decoder.{c,h}`;
-- accepted R3 `src/mpeg/ps2_decoder_backend.{c,h}` as downstream concrete
-  platform-ops context only;
-- current A004 P4/P5/P6 headers only for the later consumer boundary;
-- current audio-session thread/lifecycle abstractions as style evidence only;
+- work-log contract rev 0007;
+- Foreman State rev 0032;
+- accepted R4 `src/mpeg/worker.{c,h}`;
+- accepted A004 P3-P6:
+  - `src/display/mpeg_presentation.{c,h}`;
+  - `src/display/mpeg_frame.{c,h}`;
+  - `src/display/mpeg_compositor.{c,h}`;
+  - `src/display/mpeg_scheduler.{c,h}`;
+- `src/media/clock.{c,h}`;
+- Clean Architecture Application/main-thread ownership rules;
 - current canonical host/PS2 build manifests.
 
-Trace frozen authority at least:
-
-- `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`;
-- `experiments/media-harness-h1/h1_cp2p_mpeg_worker.{c,h}`;
-- `experiments/media-harness-h1/CP2P_MPEG_SAFE_STOP_LIFECYCLE.md`.
-
-Use frozen worker evidence for decoder/thread lifetime and safe-stop ordering
-only. Do not restore H1 direct graphics clear, old retirement ordering,
-hardcoded tuning or Presentation calls.
+Use frozen H1 timing/presentation evidence only to confirm semantic ordering.
+Do not restore direct worker->GS calls or H1 retirement shortcuts.
 
 ### Required behavior
 
-1. **MPEG owns the worker.** Add one MPEG-domain worker/session owner around the
-   public R2 decoder seam.
-2. **Exact caller-owned run fence.** Start requires one nonzero caller generation,
-   copies it verbatim and never mints/increments it. Public claim/release/stop/
-   status operations fail closed on stale/wrong generation.
-3. **Worker is sole decoder-call owner.** After start, only the worker thread may
-   initialize, step and release its `pstvnc_mpeg_decoder_t`.
-4. **Injected execution mechanics.** Caller values own stack bytes/priority;
-   caller-supplied memory/thread/sync/wake operations own mechanics. No silent
-   H1 defaults and no CONFIG-wire expansion.
-5. **One-slot state machine.** Maintain synchronized
-   `EMPTY -> AVAILABLE -> CLAIMED -> EMPTY`. No second frame may be published
-   while non-empty.
-6. **Publish exact R2 borrow.** PICTURE_READY publishes exactly the borrowed
-   `pstvnc_mpeg_decoded_picture_t` plus exact run generation. No full-frame
-   copy and no Display type inside MPEG.
-7. **No run-ahead.** After AVAILABLE publication, worker must not call decoder
-   step again until slot returns EMPTY or stop handling takes over. Pointer
-   remains stable throughout AVAILABLE/CLAIMED.
-8. **Exact claim.** A nonblocking consumer may atomically claim only the exact
-   run's AVAILABLE frame and copy its metadata to a caller-visible MPEG-domain
-   value. AVAILABLE -> CLAIMED does not release decoder storage.
-9. **Exact release.** Release validates exact run plus exact picture ordinal or
-   equivalent immutable claim token, performs CLAIMED -> EMPTY exactly once and
-   wakes worker. Stale/duplicate/wrong release fails closed.
-10. **Lost-wake-safe event.** Frame-slot wait uses an injected event/wake
-    contract retaining signal-before-wait. Worker re-checks protected predicates
-    after every wake. No correctness-critical polling timer.
-11. **Stop while AVAILABLE.** Owner stop may discard an unclaimed AVAILABLE
-    frame, make it unclaimable, wake worker and proceed toward safe teardown.
-12. **Stop while CLAIMED.** Stop may not invalidate, overwrite or free a claimed
-    borrowed picture. Worker cannot release decoder storage or finish teardown
-    until exact claim release. Join/release must expose this obligation.
-13. **Safe stop during decoder call.** Local stop remains lifecycle state, never
-    callback EOF. Active R2 feed continues real Transport facts. Stop observed
-    after a successful decoder call suppresses publication of that stopping
-    frame and prevents another picture call. Real exhaustion/failure truth wins.
-14. **Blocked decoder caveat.** If worker is inside decoder/feed wait, R4 stop
-    alone does not synthesize Transport activity/EOF. Final Application later
-    coordinates producer/Transport facts needed for return.
-15. **Terminal outcome observable.** Preserve synchronized stopped/completed/
-    failed classification plus exact decoder result/report. Earlier frames do
-    not mask later failure.
-16. **Thread lifetime fence.** Completion/join/destroy explicit; join is the
-    visibility fence for final outcome. Worker-visible memory cannot be
-    reclaimed before join; decoder release cannot occur while claimed.
-17. **No cross-domain runtime calls.** No Display scheduler/compositor/
-    Presentation, Platform graphics, RFB or Application dependency; no Transport
-    queue/semaphore internals.
-18. **No concrete PS2-thread shortcut required.** Core may remain host-testable
-    through injected thread/sync/wake operations. Do not create generic platform
-    threading infrastructure solely for R4.
-19. **Canonical build authority.** Add maintained MPEG TU to focused host tests,
-    strict PS2 compile and current-source linked reproducibility. Preserve R3
-    SMS dependency/build flags unchanged.
+1. **Application/main-thread owner.** The consumer is a narrow cross-domain
+   coordinator owned by the Application/main-thread side. MPEG worker and
+   Display remain separate mechanism owners.
+2. **Exact run fence.** Initialize with one nonzero caller-owned run generation,
+   one already-armed/starting Presentation object for that exact run, one R4
+   worker and one caller-supplied immutable scheduler profile. Never mint or
+   increment generation identity.
+3. **Nonblocking acquisition.** When no frame is currently held, claim at most
+   one exact R4 AVAILABLE frame. FRAME_UNAVAILABLE is an ordinary idle result,
+   not failure.
+4. **Borrowed RGB16 mapping.** Convert only the claimed MPEG-domain metadata into
+   a neutral `pstvnc_mpeg_rgb16_macroblock_surface_t` /
+   compositor frame value. Require RGB16 bytes-per-pixel, nonnull/aligned
+   pixels, even usable byte count, valid width/height/macroblock geometry and
+   usable pixel capacity. Do not copy the full frame.
+5. **Exact ordinal continuity.** First consumable picture must be ordinal 1.
+   Later consumed pictures must advance monotonically by exactly one. Reject
+   stale/duplicate/out-of-order claims before presentation.
+6. **First-frame authority remains P4.** Ordinal 1 bypasses P6 scheduling and is
+   passed once through the exact-run P4 compositor while Presentation is
+   WAIT_FIRST_FRAME. Only a successful P4 result with truthful synchronized
+   effects may establish first-frame completion.
+7. **Scheduler initialization after real first sync.** Initialize P6 exactly once
+   after successful ordinal-1 P4 presentation, using the compositor's
+   post-synchronized `observed_sync_tick`, exact run generation, existing
+   session media clock and caller-supplied profile. Never arm/re-arm the clock
+   here.
+8. **Later-frame scheduling.** Ordinal >=2 requires initialized P6 state. Caller
+   supplies current tick as data. Invoke P6 and preserve its exact
+   WAIT_UNTIL_DEADLINE / PRESENT_NOW / DROP_PRESENTATION_ONLY decision.
+9. **WAIT pins the claim without blocking main thread.** On WAIT, keep the exact
+   R4 frame CLAIMED and return a result containing the absolute deadline. Do not
+   sleep, spin, VBlank-wait or release the claim. A later main-loop service call
+   re-evaluates that same ordinal with a newer caller-supplied tick.
+10. **PRESENT uses sole compositor.** PRESENT_NOW passes the exact run/frame to
+    P4 compositor; MPEG worker never calls compositor itself. Successful present
+    then releases the exact R4 claim.
+11. **DROP is presentation-only.** DROP_PRESENTATION_ONLY performs no compositor
+    call, updates only consumer ordinal/accounting facts and releases the exact
+    R4 claim so decoder may advance. It never alters decoder reference state,
+    Transport, generation or Presentation ownership.
+12. **RETIRING drain compatible.** Later exact frames may continue through the
+    same scheduler/present/drop flow while Presentation is RETIRING. P7 must not
+    itself begin or seal retirement.
+13. **REVEAL_PENDING/RFB_ONLY fail closed.** No new frame may be consumed into
+    visible MPEG after Presentation is sealed or already RFB_ONLY. Expose
+    whether a claim remains outstanding so the higher-level retirement owner can
+    prove no P7-held frame before P5 seal/reveal.
+14. **Failure containment preserves borrowed lifetime.** Validation,
+    scheduler-init/decision or compositor failure must never leave the decoder
+    free to overwrite pixels still referenced by the consumer. Stop the exact
+    R4 worker before releasing a failed held claim when safe to do so; if stop
+    cannot be established, retain/publish the outstanding-claim fact rather than
+    silently releasing live storage. Return truthful failure/effects upward for
+    final Application retirement policy.
+15. **Physical effects remain truthful.** If compositor reports that physical
+    synchronization occurred before a later clock/promotion failure, preserve
+    those effects in the P7 result; do not rewrite it as if nothing became
+    visible.
+16. **Worker terminal state is not presentation success.** No-frame service may
+    observe worker status, but P7 does not join/destroy the worker or reinterpret
+    decoder COMPLETE/STOPPED/FAILED. Final lifecycle owner handles worker
+    terminal outcome.
+17. **No producer/Transport/RFB ownership.** P7 imports no Transport queue,
+    control-wire, Pi producer or RFB flow internals and sends no START/RETIRE.
+18. **No concrete time/thread defaults.** Current tick is injected per service
+    call. No timer frequency, polling interval, worker priority/stack or
+    scheduler profile default is invented here.
+19. **Canonical evidence.** Add focused host tests for first-frame handoff,
+    WAIT-held claim, PRESENT, DROP, RETIRING, invalid mapping, exact ordinals,
+    stale generation/presentation state and failure containment. Add maintained
+    source to dictionaries, strict PS2 compile and linked reproducibility.
+
+### Placement guidance
+
+Prefer a small Application-owned module near the existing coordinator, for
+example:
+
+- `src/app_mpeg_frame.c`
+- `src/app_mpeg_frame.h`
+
+or an equivalently clear Application-owned placement that does not create an
+unearned framework/directory.
+
+It may hold:
+
+- exact run generation;
+- pointers/references to worker, Presentation and session media clock;
+- caller-supplied scheduler profile;
+- P6 scheduler state;
+- currently claimed R4 frame while waiting;
+- last consumed ordinal;
+- bounded status/effects needed by the main owner.
+
+It must not hold decoder buffers independently, GS resources, Transport queues,
+Pi producer state or RFB ownership state.
 
 ### Acceptance criteria
 
-- `A003-R4-C1 WORKER_DECODER_OWNER`
-- `A003-R4-C2 EXACT_RUN_FENCE`
-- `A003-R4-C3 ONE_SLOT_BORROW`
-- `A003-R4-C4 CLAIM_RELEASE`
-- `A003-R4-C5 BUFFER_LIFETIME`
-- `A003-R4-C6 LOST_WAKE_SAFETY`
-- `A003-R4-C7 STOP_PUBLICATION_FENCE`
-- `A003-R4-C8 SAFE_STOP_STREAM_BOUNDARY`
-- `A003-R4-C9 TERMINAL_TRUTH`
-- `A003-R4-C10 THREAD_LIFETIME`
-- `A003-R4-C11 OWNER_BOUNDARY`
-- `A003-R4-C12 CLEAN_EVIDENCE`
+- `A004-P7-C1 APPLICATION_OWNER`
+- `A004-P7-C2 EXACT_RUN_AND_ORDINAL`
+- `A004-P7-C3 BORROWED_RGB16_MAPPING`
+- `A004-P7-C4 FIRST_FRAME_P4_ONLY`
+- `A004-P7-C5 SCHEDULER_AFTER_SYNC`
+- `A004-P7-C6 WAIT_PINS_CLAIM`
+- `A004-P7-C7 PRESENT_RELEASES`
+- `A004-P7-C8 DROP_RELEASES_ONLY_PRESENTATION`
+- `A004-P7-C9 RETIRING_DRAIN`
+- `A004-P7-C10 SEALED_STATE_FENCE`
+- `A004-P7-C11 FAILURE_BORROW_SAFETY`
+- `A004-P7-C12 CLEAN_EVIDENCE`
 
 All must be MET for Foreman acceptance.
 
 ### Explicit non-goals
 
-Do not implement:
+Do not implement in P7:
 
-- scheduler/compositor invocation;
-- conversion into `pstvnc_mpeg_compositor_frame_t`;
-- first-frame clock arm/Presentation promotion;
-- runtime deadline waits or presentation drop execution;
-- P5 retirement transitions;
-- final concrete PS2 Application thread/wake adapter if absent;
-- START/RETIRE producer control;
-- Transport residual finalization;
-- RFB restoration;
-- final Application orchestration;
-- physical PS2 MPEG qualification.
+- calibration UI or persistence;
+- Presentation arm from accepted calibration;
+- MPEG worker creation/start mechanics;
+- concrete PS2 worker/thread/event binding;
+- START/producer activation;
+- P5 begin-retirement/seal/reveal calls;
+- producer RETIRE/ACK orchestration;
+- Transport residual discard/credit finalization;
+- RFB restoration/FULL-refresh orchestration;
+- Wire-loss restoration;
+- final all-in Application MPEG transaction;
+- physical PS2 qualification.
 
 ### Worker return
 
-Return exact current/frozen worker evidence, source/test/build/dictionary commits,
-worker API/ownership shape, run fencing, slot states, claim/release token,
-run-ahead proof, all stop interleavings, terminal outcome precedence,
-thread/join/release lifetime, owner-boundary proof, C1-C12 disposition,
-host/direct-PS2/link evidence, gaps/non-claims and exact next dependency.
+Return exact source/test/build/dictionary commits, Application-owned consumer API
+and state, exact frame mapping, first-frame and scheduler ordering, WAIT/PRESENT/
+DROP claim behavior, RETIRING/sealed behavior, failure containment, C1-C12
+disposition, exact host/direct-PS2/link evidence, evidence gaps/non-claims and
+the exact next dependency.
 
-Emit exactly one immutable Reconstruction log with:
+Emit exactly one immutable Reconstruction log using:
 
 - ROLE_KEY=`reconstruction`
-- WORK_ITEM_KEY=`a003-mpeg-generation`
+- WORK_ITEM_KEY=`a004-presentation`
 - WORKER_KEY=`interactive`
 
-Do not begin A004 runtime consumption or final Application orchestration.
+Do not begin producer/retirement/final Application orchestration in the same
+shift.
 
 ## Deferred dependency graph
 
-Expected remaining work after active A003 R4 is:
+Expected remaining work after active A004 P7 is:
 
-1. reconstruct the main-thread A003->A004 runtime consumer that maps one claimed
-   MPEG frame into the neutral RGB16 macroblock surface, routes ordinal 1 through
-   P4 first-sync, initializes R6 only from that synchronized first-frame result,
-   routes later ordinals through R6, waits only outside decoder worker, presents
-   or drops, and releases the exact claim;
-2. bind any still-missing concrete PS2 worker thread/sync/wake/memory adapters
-   required by final product without changing R4 ownership semantics;
-3. final Application orchestration consumes A003 plus A004 public seams for
-   activation, START/producer admission, worker lifecycle, current-Q7 producer
-   close / RFB-underlay restoration / decoder-safe-stop / Transport residual
-   finalization / synchronized reveal, failure containment and shutdown.
+1. bind the accepted R4 worker execution contracts to concrete PS2
+   thread/synchronization/retained-event/memory mechanics if still absent,
+   without changing worker ownership or injecting tuning defaults;
+2. reconstruct the bounded Application MPEG activation transaction:
+   accepted/persisted calibration -> exact run generation -> Presentation arm ->
+   worker/backend start -> exact START/producer admission, using only public
+   component seams;
+3. reconstruct current-Q7 retirement/failure transaction:
+   close new producer/admission -> begin RETIRING -> allow accepted drain while
+   RFB rebuilds underneath -> safe worker/decoder stop -> producer RETIRE/ACK ->
+   Transport residual/credit finalization -> seal -> synchronized reveal;
+4. integrate Wire-loss/failure containment and final shutdown/restart behavior,
+   then perform physical qualification on the exact product ELF.
 
-Foreman must choose the exact next seam from returned A003 R4 source rather than
+Foreman must choose the exact next seam from returned A004 P7 source rather than
 pre-authorizing later implementation.
 
 This is planning only, not worker authority to pre-implement later work.
@@ -1340,11 +1525,11 @@ HARDWARE_PENDING=A004 visual geometry/matte/suppression/first-frame qualificatio
 
 ## Foreman next pickup
 
-Consume the `A003-MPEG-WORKER-FRAME-RENDEZVOUS-R4` Reconstruction baton,
-independently verify sole decoder-call ownership, exact-run frame fencing,
-one-slot borrow lifetime, claim/release and lost-wake behavior, safe-stop
-ordering, terminal truth, thread/join/release fencing and strict absence of
-Display/GS/Application ownership. Then choose the bounded A003->A004
-main-thread runtime-consumption seam from returned source.
+Consume the `A004-MAIN-THREAD-FRAME-CONSUMER-P7` Reconstruction baton,
+independently verify Application ownership, exact run/ordinal mapping, borrowed
+frame lifetime, first-sync/scheduler order, WAIT-held claims, PRESENT/DROP
+release semantics, RETIRING/sealed-state behavior and failure containment. Then
+choose the smallest remaining concrete PS2 worker-binding or activation
+transaction seam from returned source.
 
 Do not execute the packet from the Foreman seat.

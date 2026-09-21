@@ -1,12 +1,12 @@
 # Ledge Immutable Worker Log Contract
 
 DOCUMENT=LEDGE_WORK_LOG_CONTRACT
-DOCUMENT_REVISION=0006
-RECORDED_AT=2026-09-17T06:40:18-04:00
+DOCUMENT_REVISION=0007
+RECORDED_AT=2026-09-21T02:18:31-04:00
 TEMPORAL_CLASS=POLICY_REVISION
 TEMPORAL_SEMANTICS=TRUE_AS_GOVERNING_POLICY_AT_RECORDED_TIME
 STATUS=OPERATIONAL
-SUPERSEDES_DOCUMENT_REVISION=0005
+SUPERSEDES_DOCUMENT_REVISION=0006
 
 ## Purpose
 
@@ -98,6 +98,34 @@ This does not establish log format revision 0005 as a valid format. New records 
 
 This is not a reusable escape hatch. No later path, malformed filename, noncanonical metadata shape, or incorrect log-format value is accepted through pattern matching, date ranges, role-wide exceptions, or operator discretion. Any future deviation from the canonical schema is a check failure and must be corrected before that new record is committed whenever possible; if one is nevertheless committed, a new explicit policy revision is required rather than silently extending either compatibility set.
 
+## Exact immutable filename-stamp exception
+
+Revision 0007 records one additional narrow compatibility case discovered only
+after the record had already become immutable history.
+
+The following exact record has a complete revision-0001 metadata shape,
+canonical status/key values, valid timestamps, and a canonical filename grammar,
+but its already-frozen filename stamp was accidentally derived from
+`COMPLETED_AT` instead of its truthful `STARTED_AT`:
+
+- `20260921T020723-0400__reconstruction__a003-mpeg-generation__interactive.md`
+  - frozen filename stamp: `20260921T020723-0400`
+  - authoritative `STARTED_AT=2026-09-21T01:52:00-04:00`
+  - canonical STARTED_AT-derived stamp would have been
+    `20260921T015200-0400`.
+
+This path is not added to the broad grandfather set. The checker must continue
+applying the complete canonical filename grammar, required metadata,
+`DOCUMENT`, `LOG_FORMAT_REVISION`, status, `SELF_PAUSED`, valid
+`COMPLETED_AT`, and exact role/work-item/worker-key equality. It may skip only
+the ordinary equality between filename timestamp and STARTED_AT-derived timestamp
+for this exact path, while also proving both frozen values above remain exact.
+
+The historical path/content must not be renamed, replaced, rewritten, or
+duplicated under a corrected filename. This compatibility entry records the
+mistake without erasing it and does not authorize completion-time filenames for
+any future record.
+
 ## Stable search keys
 
 Searchability depends on workers reusing the same canonical task key while continuing the same task.
@@ -183,6 +211,6 @@ The pre-cutover files such as lane/global append-only logs remain valid historic
 
 ## Enforcement
 
-`scripts/work-log-check.py` validates every canonical shift-record filename and the required metadata, including that the filename timestamp/role/work-item/worker keys exactly match the record body. It separately validates the exact core metadata contract for the nine broad grandfathered records and the exact path-specific log-format compatibility for the two revision-0006 records. `scripts/check.sh` runs that checker as part of the canonical project check.
+`scripts/work-log-check.py` validates every canonical shift-record filename and the required metadata, including that the filename timestamp/role/work-item/worker keys exactly match the record body. It separately validates the exact core metadata contract for the nine broad grandfathered records, the exact path-specific log-format compatibility for the two revision-0006 records, and the one exact revision-0007 filename-stamp compatibility record while retaining every other canonical check. `scripts/check.sh` runs that checker as part of the canonical project check.
 
 A malformed new name is therefore not merely a style issue: it is a repository check failure because inconsistent names would break deterministic worker discovery and search. Only the exact paths explicitly frozen by the current contract revision are accepted outside the canonical grammar/value rules.

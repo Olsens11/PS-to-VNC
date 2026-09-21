@@ -35,8 +35,8 @@ REQUIRED_KEYS = {
 }
 ALLOWED_STATUS = {"COMPLETED", "PARTIAL", "BLOCKED", "SELF_PAUSED", "NOOP"}
 
-# Work-log contract revision 0006 retains the nine broad legacy/malformed
-# exceptions inherited from revision 0005. No pattern, role, or date-range
+# Work-log contract revision 0007 retains the nine broad legacy/malformed
+# exceptions inherited from revision 0006. No pattern, role, or date-range
 # exception is permitted.
 GRANDFATHERED_LOGS = {
     "2026-09-16T05-18-33-04-00__validation__v005-fatal-teardown__validation.md": {
@@ -103,6 +103,18 @@ GRANDFATHERED_LOGS = {
 FORMAT_REVISION_EXCEPTIONS = {
     "20260916T160445-0400__integration__global-dictionary-prep__dictionary.md": "0005",
     "20260916T162043-0400__validation__a003-mpeg-generation__validation.md": "0005",
+}
+
+# Contract revision 0007 preserves one exact immutable record whose canonical
+# filename stamp was accidentally taken from COMPLETED_AT rather than STARTED_AT.
+# Every other canonical check remains active for this path. The exact frozen
+# filename stamp and exact truthful STARTED_AT are both pinned so this cannot
+# become a generalized timestamp-mismatch escape hatch.
+FILENAME_STAMP_EXCEPTIONS = {
+    "20260921T020723-0400__reconstruction__a003-mpeg-generation__interactive.md": {
+        "FILENAME_STAMP": "20260921T020723-0400",
+        "STARTED_AT": "2026-09-21T01:52:00-04:00",
+    },
 }
 
 LEGACY_REQUIRED_KEYS = {
@@ -204,8 +216,20 @@ def check_log(path: Path) -> list[str]:
         errors.append(f"{path}: SELF_PAUSED must be YES or NO")
 
     started_stamp = safe_stamp(metadata["STARTED_AT"])
+    stamp_exception = FILENAME_STAMP_EXCEPTIONS.get(path.name)
     if started_stamp is None:
         errors.append(f"{path}: STARTED_AT must use ISO-8601 local time with numeric offset")
+    elif stamp_exception is not None:
+        if metadata["STARTED_AT"] != stamp_exception["STARTED_AT"]:
+            errors.append(
+                f"{path}: frozen STARTED_AT={metadata['STARTED_AT']} "
+                f"!= exact compatibility authority {stamp_exception['STARTED_AT']}"
+            )
+        if match.group("stamp") != stamp_exception["FILENAME_STAMP"]:
+            errors.append(
+                f"{path}: frozen filename stamp {match.group('stamp')} "
+                f"!= exact compatibility authority {stamp_exception['FILENAME_STAMP']}"
+            )
     elif started_stamp != match.group("stamp"):
         errors.append(
             f"{path}: filename stamp {match.group('stamp')} != STARTED_AT-derived {started_stamp}"
@@ -237,6 +261,7 @@ def main() -> int:
     records = 0
     grandfathered = 0
     format_compat = 0
+    stamp_compat = 0
     for path in sorted(LOG_DIR.glob("*.md")):
         if path.name == "README.md":
             continue
@@ -245,6 +270,8 @@ def main() -> int:
             grandfathered += 1
         if path.name in FORMAT_REVISION_EXCEPTIONS:
             format_compat += 1
+        if path.name in FILENAME_STAMP_EXCEPTIONS:
+            stamp_compat += 1
         errors.extend(check_log(path))
 
     if errors:
@@ -253,14 +280,16 @@ def main() -> int:
         print(
             f"WORK_LOG_CHECK=FAIL records={records} "
             f"grandfathered={grandfathered} "
-            f"format_compat={format_compat} errors={len(errors)}"
+            f"format_compat={format_compat} "
+            f"stamp_compat={stamp_compat} errors={len(errors)}"
         )
         return 1
 
     print(
         f"WORK_LOG_CHECK=PASS records={records} "
         f"grandfathered={grandfathered} "
-        f"format_compat={format_compat}"
+        f"format_compat={format_compat} "
+        f"stamp_compat={stamp_compat}"
     )
     return 0
 
