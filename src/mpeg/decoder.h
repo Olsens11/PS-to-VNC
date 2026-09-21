@@ -3,7 +3,8 @@
  * Defines A003's clean synchronous MPEG decoder owner. The owner allocates and
  * bounds decoder-visible feed/picture resources, establishes one explicit
  * decoder/platform ownership interval, consumes MPEG only through Transport's
- * public logical channel, and observes local stop only at decoder-call
+ * public logical channel, exposes one completed-picture step with a borrowed
+ * read-only frame value, and observes local stop only at decoder-call
  * boundaries.
  *
  * This interface does not own a worker thread, exact producer generations,
@@ -73,6 +74,7 @@ typedef struct pstvnc_mpeg_decoder_platform_ops {
 typedef enum pstvnc_mpeg_decoder_result {
     PSTVNC_MPEG_DECODER_COMPLETE = 0,
     PSTVNC_MPEG_DECODER_STOPPED = 1,
+    PSTVNC_MPEG_DECODER_PICTURE_READY = 2,
     PSTVNC_MPEG_DECODER_INVALID = -1,
     PSTVNC_MPEG_DECODER_ALLOCATION_FAILED = -2,
     PSTVNC_MPEG_DECODER_PREPARE_FAILED = -3,
@@ -88,6 +90,28 @@ typedef enum pstvnc_mpeg_decoder_result {
     PSTVNC_MPEG_DECODER_STATE_RELEASE_FAILED = -13,
     PSTVNC_MPEG_DECODER_ACCOUNTING_FAILED = -14
 } pstvnc_mpeg_decoder_result_t;
+
+/*
+ * Borrowed view of exactly one successfully decoded picture.
+ *
+ * pixels remains decoder-owned. This value is valid only until the next call to
+ * pstvnc_mpeg_decoder_step() on the same decoder or until decoder release,
+ * whichever occurs first. A caller that needs the picture beyond that boundary
+ * must copy/consume it before allowing the decoder to advance.
+ *
+ * byte_count is the usable macroblock-backed byte extent for the validated
+ * sequence. capacity_bytes is the decoder-owned allocation capacity. No MPEG
+ * generation or Presentation authority is carried here.
+ */
+typedef struct pstvnc_mpeg_decoded_picture {
+    const void *pixels;
+    size_t byte_count;
+    size_t capacity_bytes;
+    uint32_t width;
+    uint32_t height;
+    uint32_t bytes_per_pixel;
+    uint32_t picture_ordinal;
+} pstvnc_mpeg_decoded_picture_t;
 
 typedef struct pstvnc_mpeg_decoder_report {
     uint32_t sequence_width;
@@ -110,6 +134,7 @@ typedef struct pstvnc_mpeg_decoder {
     void *picture_buffer;
     size_t feed_transfer_capacity;
     size_t picture_capacity;
+    size_t sequence_picture_bytes;
 
     int initialized;
     int known_state_prepared;
@@ -134,6 +159,20 @@ pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_initialize(
 
 pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_request_stop(
     pstvnc_mpeg_decoder_t *decoder);
+
+/*
+ * Execute at most one platform picture call.
+ *
+ * PICTURE_READY publishes exactly one borrowed picture and returns before any
+ * later picture call can begin. COMPLETE/STOPPED/error results publish no
+ * picture. A stop already visible before the step prevents the picture call.
+ * A stop raised while picture() owns the call is observed only after picture()
+ * returns and returns STOPPED without publishing that just-completed picture.
+ */
+pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_step(
+    pstvnc_mpeg_decoder_t *decoder,
+    pstvnc_mpeg_decoded_picture_t *picture,
+    pstvnc_mpeg_decoder_report_t *report);
 
 pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_run(
     pstvnc_mpeg_decoder_t *decoder,

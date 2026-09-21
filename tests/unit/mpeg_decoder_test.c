@@ -52,7 +52,8 @@ typedef enum fake_picture_mode {
     FAKE_PICTURE_STOP_THEN_FEED = 1,
     FAKE_PICTURE_UNEXPECTED_END = 2,
     FAKE_PICTURE_BAD_SEQUENCE = 3,
-    FAKE_PICTURE_RELEASE_THEN_STOP_FEED = 4
+    FAKE_PICTURE_RELEASE_THEN_STOP_FEED = 4,
+    FAKE_PICTURE_TWO_READY = 5
 } fake_picture_mode_t;
 
 typedef struct fake_platform {
@@ -77,6 +78,8 @@ typedef struct fake_platform {
     size_t last_transfer_bytes;
     uint8_t last_transfer[128];
     pstvnc_mpeg_decoder_result_t active_release_result;
+    void *picture_buffer;
+    size_t picture_capacity;
 } fake_platform_t;
 
 typedef struct fake_transport {
@@ -295,17 +298,27 @@ static int fake_release_known_state(void *context)
     return platform->fail_release_state ? -1 : 0;
 }
 
-static void fake_accept_sequence(fake_platform_t *platform)
+static void fake_accept_sequence_size(
+    fake_platform_t *platform,
+    uint32_t width,
+    uint32_t height)
 {
     size_t capacity = 0u;
     void *picture = platform->sequence_callback(
         platform->sequence_context,
-        64u,
-        32u,
+        width,
+        height,
         &capacity);
 
     CHECK(picture != NULL);
     CHECK(capacity == 4096u);
+    platform->picture_buffer = picture;
+    platform->picture_capacity = capacity;
+}
+
+static void fake_accept_sequence(fake_platform_t *platform)
+{
+    fake_accept_sequence_size(platform, 64u, 32u);
 }
 
 static int fake_picture(void *context)
@@ -328,8 +341,28 @@ static int fake_picture(void *context)
         return -1;
     }
 
-    if (platform->picture_calls == 1)
-        fake_accept_sequence(platform);
+    if (platform->picture_calls == 1) {
+        if (platform->picture_mode == FAKE_PICTURE_TWO_READY)
+            fake_accept_sequence_size(platform, 32u, 16u);
+        else
+            fake_accept_sequence(platform);
+    }
+
+    if (platform->picture_mode == FAKE_PICTURE_TWO_READY) {
+        if (platform->picture_calls <= 2) {
+            CHECK(platform->picture_buffer != NULL);
+            CHECK(platform->picture_capacity >= 1024u);
+            if (platform->picture_buffer != NULL &&
+                platform->picture_capacity >= 1024u) {
+                memset(
+                    platform->picture_buffer,
+                    platform->picture_calls,
+                    1024u);
+            }
+            return 1;
+        }
+        return 0;
+    }
 
     if (platform->picture_mode == FAKE_PICTURE_STOP_THEN_FEED &&
         platform->picture_calls == 1) {
@@ -406,6 +439,112 @@ static void set_payload(size_t count)
     g_transport.payload_length = count;
     for (index = 0u; index < count; ++index)
         g_transport.payload[index] = (uint8_t)(index + 1u);
+}
+
+
+static void test_one_picture_step_borrowed_value_and_lifetime(void)
+{
+    fixture_t fixture;
+    pstvnc_mpeg_decoded_picture_t picture;
+    pstvnc_mpeg_decoder_report_t report;
+    const uint8_t *first_pixels;
+
+    fixture_init(&fixture);
+    fixture.platform.picture_mode = FAKE_PICTURE_TWO_READY;
+    CHECK(fixture_initialize(&fixture) == PSTVNC_MPEG_DECODER_COMPLETE);
+
+    CHECK(pstvnc_mpeg_decoder_step(
+        &fixture.decoder,
+        &picture,
+        &report) == PSTVNC_MPEG_DECODER_PICTURE_READY);
+    CHECK(fixture.platform.picture_calls == 1);
+    CHECK(picture.pixels == fixture.memory.records[1].aligned);
+    CHECK(picture.byte_count == 1024u);
+    CHECK(picture.capacity_bytes == 4096u);
+    CHECK(picture.width == 32u);
+    CHECK(picture.height == 16u);
+    CHECK(picture.bytes_per_pixel == 2u);
+    CHECK(picture.picture_ordinal == 1u);
+    CHECK(report.pictures_decoded == 1u);
+
+    first_pixels = (const uint8_t *)picture.pixels;
+    CHECK(first_pixels != NULL);
+    if (first_pixels != NULL)
+        CHECK(first_pixels[0] == 1u);
+
+    /*
+     * The next step reuses the decoder-owned picture allocation. The old
+     * borrowed view therefore cannot be retained as immutable caller storage.
+     */
+    CHECK(pstvnc_mpeg_decoder_step(
+        &fixture.decoder,
+        &picture,
+        &report) == PSTVNC_MPEG_DECODER_PICTURE_READY);
+    CHECK(fixture.platform.picture_calls == 2);
+    CHECK(picture.pixels == first_pixels);
+    CHECK(picture.picture_ordinal == 2u);
+    CHECK(report.pictures_decoded == 2u);
+    if (first_pixels != NULL)
+        CHECK(first_pixels[0] == 2u);
+
+    CHECK(pstvnc_mpeg_decoder_release(&fixture.decoder) ==
+        PSTVNC_MPEG_DECODER_COMPLETE);
+    CHECK(fixture.memory.records[1].released);
+}
+
+static void test_step_stop_before_call_publishes_no_picture(void)
+{
+    fixture_t fixture;
+    pstvnc_mpeg_decoded_picture_t picture;
+    pstvnc_mpeg_decoder_report_t report;
+
+    fixture_init(&fixture);
+    CHECK(fixture_initialize(&fixture) == PSTVNC_MPEG_DECODER_COMPLETE);
+    CHECK(pstvnc_mpeg_decoder_request_stop(&fixture.decoder) ==
+        PSTVNC_MPEG_DECODER_COMPLETE);
+
+    memset(&picture, 0xA5, sizeof(picture));
+    CHECK(pstvnc_mpeg_decoder_step(
+        &fixture.decoder,
+        &picture,
+        &report) == PSTVNC_MPEG_DECODER_STOPPED);
+    CHECK(fixture.platform.picture_calls == 0);
+    CHECK(picture.pixels == NULL);
+    CHECK(picture.picture_ordinal == 0u);
+    CHECK(report.pictures_decoded == 0u);
+
+    CHECK(pstvnc_mpeg_decoder_release(&fixture.decoder) ==
+        PSTVNC_MPEG_DECODER_COMPLETE);
+}
+
+static void test_step_stop_during_picture_accounts_without_publication(void)
+{
+    fixture_t fixture;
+    pstvnc_mpeg_decoded_picture_t picture;
+    pstvnc_mpeg_decoder_report_t report;
+
+    fixture_init(&fixture);
+    set_payload(7u);
+    fixture.platform.picture_mode = FAKE_PICTURE_STOP_THEN_FEED;
+    CHECK(fixture_initialize(&fixture) == PSTVNC_MPEG_DECODER_COMPLETE);
+
+    memset(&picture, 0xA5, sizeof(picture));
+    CHECK(pstvnc_mpeg_decoder_step(
+        &fixture.decoder,
+        &picture,
+        &report) == PSTVNC_MPEG_DECODER_STOPPED);
+    CHECK(fixture.platform.picture_calls == 1);
+    CHECK(fixture.platform.submit_calls == 1);
+    CHECK(report.payload_bytes_consumed == 7u);
+    CHECK(report.transfer_bytes_submitted == 16u);
+    CHECK(report.pictures_decoded == 1u);
+    CHECK(picture.pixels == NULL);
+    CHECK(picture.picture_ordinal == 0u);
+    CHECK(g_transport.data_delivered == 1);
+    CHECK(g_transport.read_calls == 1);
+
+    CHECK(pstvnc_mpeg_decoder_release(&fixture.decoder) ==
+        PSTVNC_MPEG_DECODER_COMPLETE);
 }
 
 static void test_bounds_padding_and_finite_exhaustion(void)
@@ -596,6 +735,9 @@ static void test_explicit_authority_and_setup_failures(void)
 
 int main(void)
 {
+    test_one_picture_step_borrowed_value_and_lifetime();
+    test_step_stop_before_call_publishes_no_picture();
+    test_step_stop_during_picture_accounts_without_publication();
     test_bounds_padding_and_finite_exhaustion();
     test_event_driven_empty_queue_wait();
     test_stop_inside_active_picture_does_not_synthesize_eof();

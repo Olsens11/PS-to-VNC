@@ -1,8 +1,9 @@
 /*
  * File synopsis:
- * Implements A003's synchronous MPEG decoder ownership and safe-stop core.
- * Decoder-visible feed/picture resources are explicitly bounded and owned from
- * known-state preparation through decoder destruction. MPEG bytes arrive only
+ * Implements A003's synchronous MPEG decoder ownership, one-picture borrowed
+ * publication step, and safe-stop core. Decoder-visible feed/picture resources
+ * are explicitly bounded and owned from known-state preparation through decoder
+ * destruction. MPEG bytes arrive only
  * through Transport's public logical channel and temporary starvation waits on
  * Transport activity rather than timer polling.
  *
@@ -137,6 +138,7 @@ static void pstvnc_mpeg_decoder_free_buffers(
             decoder->picture_buffer);
         decoder->picture_buffer = NULL;
     }
+    decoder->sequence_picture_bytes = 0u;
 
     if (decoder->feed_buffer != NULL) {
         decoder->memory_ops.release(
@@ -361,6 +363,7 @@ static void *pstvnc_mpeg_decoder_sequence(
     }
 
     decoder->sequence_seen = 1;
+    decoder->sequence_picture_bytes = (size_t)required;
     decoder->report.sequence_width = width;
     decoder->report.sequence_height = height;
     *picture_capacity = decoder->picture_capacity;
@@ -473,85 +476,129 @@ pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_request_stop(
     return PSTVNC_MPEG_DECODER_COMPLETE;
 }
 
+pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_step(
+    pstvnc_mpeg_decoder_t *decoder,
+    pstvnc_mpeg_decoded_picture_t *picture,
+    pstvnc_mpeg_decoder_report_t *report)
+{
+    int stop_requested = 0;
+    int picture_result;
+
+    if (decoder == NULL || picture == NULL || report == NULL ||
+        !decoder->initialized || !decoder->decoder_initialized)
+        return PSTVNC_MPEG_DECODER_INVALID;
+
+    /*
+     * Every step invocation invalidates any previously returned borrowed view,
+     * even if this invocation terminates before another picture becomes ready.
+     */
+    memset(picture, 0, sizeof(*picture));
+
+    if (!pstvnc_mpeg_decoder_observe_stop(decoder, &stop_requested))
+        return PSTVNC_MPEG_DECODER_SYNC_FAILED;
+    if (stop_requested) {
+        *report = decoder->report;
+        return PSTVNC_MPEG_DECODER_STOPPED;
+    }
+
+    if (!pstvnc_mpeg_decoder_set_call_active(decoder, 1))
+        return PSTVNC_MPEG_DECODER_SYNC_FAILED;
+
+    picture_result = decoder->platform_ops.picture(
+        decoder->platform_ops.context);
+
+    if (!pstvnc_mpeg_decoder_set_call_active(decoder, 0))
+        return PSTVNC_MPEG_DECODER_SYNC_FAILED;
+
+    if (decoder->sequence_invalid) {
+        *report = decoder->report;
+        return PSTVNC_MPEG_DECODER_SEQUENCE_INVALID;
+    }
+
+    if (decoder->feed_failed) {
+        *report = decoder->report;
+        return decoder->feed_transport_result == PSTVNC_TRANSPORT_OK
+            ? PSTVNC_MPEG_DECODER_TRANSFER_FAILED
+            : PSTVNC_MPEG_DECODER_TRANSPORT_FAILED;
+    }
+
+    if (picture_result < 0) {
+        *report = decoder->report;
+        return PSTVNC_MPEG_DECODER_PICTURE_FAILED;
+    }
+
+    if (picture_result == 0) {
+        if (decoder->feed_exhausted) {
+            *report = decoder->report;
+            return PSTVNC_MPEG_DECODER_COMPLETE;
+        }
+
+        if (!pstvnc_mpeg_decoder_observe_stop(
+                decoder,
+                &stop_requested))
+            return PSTVNC_MPEG_DECODER_SYNC_FAILED;
+
+        *report = decoder->report;
+        return stop_requested
+            ? PSTVNC_MPEG_DECODER_STOPPED
+            : PSTVNC_MPEG_DECODER_UNEXPECTED_END;
+    }
+
+    if (!decoder->sequence_seen ||
+        decoder->sequence_picture_bytes == 0u ||
+        decoder->sequence_picture_bytes > decoder->picture_capacity) {
+        *report = decoder->report;
+        return PSTVNC_MPEG_DECODER_SEQUENCE_INVALID;
+    }
+
+    if (decoder->report.pictures_decoded == UINT32_MAX) {
+        *report = decoder->report;
+        return PSTVNC_MPEG_DECODER_ACCOUNTING_FAILED;
+    }
+    decoder->report.pictures_decoded += 1u;
+
+    /*
+     * Safe-stop authority point: picture accounting remains exactly once, but a
+     * lifecycle stop observed here suppresses publication of this boundary.
+     */
+    if (!pstvnc_mpeg_decoder_observe_stop(decoder, &stop_requested))
+        return PSTVNC_MPEG_DECODER_SYNC_FAILED;
+    if (stop_requested) {
+        *report = decoder->report;
+        return PSTVNC_MPEG_DECODER_STOPPED;
+    }
+
+    picture->pixels = decoder->picture_buffer;
+    picture->byte_count = decoder->sequence_picture_bytes;
+    picture->capacity_bytes = decoder->picture_capacity;
+    picture->width = decoder->report.sequence_width;
+    picture->height = decoder->report.sequence_height;
+    picture->bytes_per_pixel = decoder->config.bytes_per_pixel;
+    picture->picture_ordinal = decoder->report.pictures_decoded;
+
+    *report = decoder->report;
+    return PSTVNC_MPEG_DECODER_PICTURE_READY;
+}
+
 pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_run(
     pstvnc_mpeg_decoder_t *decoder,
     pstvnc_mpeg_decoder_report_t *report)
 {
+    pstvnc_mpeg_decoded_picture_t picture;
+    pstvnc_mpeg_decoder_result_t result;
+
     if (decoder == NULL || report == NULL || !decoder->initialized ||
         !decoder->decoder_initialized)
         return PSTVNC_MPEG_DECODER_INVALID;
 
     for (;;) {
-        int stop_requested = 0;
-        int picture_result;
+        result = pstvnc_mpeg_decoder_step(
+            decoder,
+            &picture,
+            report);
 
-        if (!pstvnc_mpeg_decoder_observe_stop(decoder, &stop_requested))
-            return PSTVNC_MPEG_DECODER_SYNC_FAILED;
-        if (stop_requested) {
-            *report = decoder->report;
-            return PSTVNC_MPEG_DECODER_STOPPED;
-        }
-
-        if (!pstvnc_mpeg_decoder_set_call_active(decoder, 1))
-            return PSTVNC_MPEG_DECODER_SYNC_FAILED;
-
-        picture_result = decoder->platform_ops.picture(
-            decoder->platform_ops.context);
-
-        if (!pstvnc_mpeg_decoder_set_call_active(decoder, 0))
-            return PSTVNC_MPEG_DECODER_SYNC_FAILED;
-
-        if (decoder->sequence_invalid) {
-            *report = decoder->report;
-            return PSTVNC_MPEG_DECODER_SEQUENCE_INVALID;
-        }
-
-        if (decoder->feed_failed) {
-            *report = decoder->report;
-            return decoder->feed_transport_result == PSTVNC_TRANSPORT_OK
-                ? PSTVNC_MPEG_DECODER_TRANSFER_FAILED
-                : PSTVNC_MPEG_DECODER_TRANSPORT_FAILED;
-        }
-
-        if (picture_result < 0) {
-            *report = decoder->report;
-            return PSTVNC_MPEG_DECODER_PICTURE_FAILED;
-        }
-
-        if (picture_result == 0) {
-            if (decoder->feed_exhausted) {
-                *report = decoder->report;
-                return PSTVNC_MPEG_DECODER_COMPLETE;
-            }
-
-            if (!pstvnc_mpeg_decoder_observe_stop(
-                    decoder, &stop_requested))
-                return PSTVNC_MPEG_DECODER_SYNC_FAILED;
-
-            *report = decoder->report;
-            return stop_requested
-                ? PSTVNC_MPEG_DECODER_STOPPED
-                : PSTVNC_MPEG_DECODER_UNEXPECTED_END;
-        }
-
-        if (!decoder->sequence_seen) {
-            *report = decoder->report;
-            return PSTVNC_MPEG_DECODER_SEQUENCE_INVALID;
-        }
-
-        if (decoder->report.pictures_decoded == UINT32_MAX) {
-            *report = decoder->report;
-            return PSTVNC_MPEG_DECODER_ACCOUNTING_FAILED;
-        }
-        decoder->report.pictures_decoded += 1u;
-
-        /* Safe-stop authority point: only after picture/decode ownership returns. */
-        if (!pstvnc_mpeg_decoder_observe_stop(decoder, &stop_requested))
-            return PSTVNC_MPEG_DECODER_SYNC_FAILED;
-        if (stop_requested) {
-            *report = decoder->report;
-            return PSTVNC_MPEG_DECODER_STOPPED;
-        }
+        if (result != PSTVNC_MPEG_DECODER_PICTURE_READY)
+            return result;
     }
 }
 
