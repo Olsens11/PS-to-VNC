@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0034
-RECORDED_AT=2026-09-21T06:26:30-04:00
+STATE_REVISION=0035
+RECORDED_AT=2026-09-21T07:48:11-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0033
-SUPERSEDES_FOREMAN_STATE_REVISION=0033
+BASED_ON_FOREMAN_STATE_REVISION=0034
+SUPERSEDES_FOREMAN_STATE_REVISION=0034
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,14 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0035 independently accepts the completed
+A003-MPEG-GENERATION-CONTROL-RELAY-R6 Reconstruction baton and advances to a
+configuration-owned MPEG runtime profile authority before any live Application
+activation. R6 now supplies exact session-bound START/RETIRE control relay
+mechanics through the sole Transport physical-I/O owner, with one bounded
+RETIRE-completion handoff and no Transport-owned generation business policy.
+Physical qualification remains pending.
 
 Revision 0034 independently accepts the completed
 `A003-PS2-WORKER-EXECUTION-BINDING-R5` Reconstruction baton and advances to
@@ -109,7 +117,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A003_R5_INTEGRATED__A003_MPEG_GENERATION_CONTROL_RELAY_RECONSTRUCTION_ACTIVE__PI_WIRE_CONTROL_OWNER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R6_INTEGRATED__A003_MPEG_RUNTIME_PROFILE_AUTHORITY_RECONSTRUCTION_ACTIVE__PI_WIRE_CONTROL_OWNER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -124,7 +132,8 @@ A003_PS2_LIBMPEG_BACKEND_FOREMAN_ACCEPTED=YES
 A003_MPEG_WORKER_FRAME_RENDEZVOUS_FOREMAN_ACCEPTED=YES
 A003_PS2_WORKER_EXECUTION_BINDING_FOREMAN_ACCEPTED=YES
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
-A003_MPEG_GENERATION_CONTROL_RELAY_ACTIVE=YES
+A003_MPEG_GENERATION_CONTROL_RELAY_FOREMAN_ACCEPTED=YES
+A003_MPEG_RUNTIME_PROFILE_AUTHORITY_ACTIVE=YES
 PI_WIRE_CONTROL_OWNER=DEPENDENCY_QUEUED
 APPLICATION_ACTIVATION=DEPENDENCY_QUEUED
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
@@ -1551,259 +1560,343 @@ The identical-commit host rerun passed. No R5 source regression is inferred.
 No physical PS2 worker-thread, semaphore/event, decoder or presentation run
 occurred or is inferred.
 
-## Why R6 is the MPEG generation-control relay before Application activation
+## A003 R6 Foreman acceptance
 
-Current clean source now has the local decoder/worker/presentation mechanics
-needed for a run, but the cross-Wire control path is not yet owner-correct:
+Live pickup authority was independently refreshed as:
 
-- `src/transport/protocol.{c,h}` already preserves exact START kind 11 /
-  control channel 0 / flags 0 / 44-byte v1 and RETIRE kind 10 / control channel
-  0 / flags 0 / 12-byte v1 representations;
-- the current sole physical-I/O runtime owns generic serialized outbound work
-  through `pstvnc_transport_runtime_submit_frame()`;
-- the public Transport bridge exposes no session-bound START or RETIRE request;
-- the receiver currently dispatches only DATA frames, so an otherwise valid Pi
-  RETIRE completion kind 10 would be classified as unaccepted and fail the Wire
-  session;
-- the older inline physical-stream MPEG START helper predates the governing
-  single-I/O architecture and must not become an Application bypass around the
-  Transport I/O owner.
+- branch HEAD 6b37d60690be15754d9f0bf1e47f4081f16b1bef;
+- final pre-log R6 source/dictionary authority
+  31db24ad56515d09a0218b1d9e20718c7bcf9662;
+- immutable Reconstruction log
+  docs/ledge/work-log/20260921T071223-0400__reconstruction__a003-mpeg-generation__interactive.md;
+- exact prior Foreman base
+  a646b49ed8200ee127dd96f37d4e3359145c6607.
 
-Frozen exact-retirement evidence establishes that the Pi completion is the
-identical RETIRE payload echoed back only after exact remote cleanup; direction
-plus the higher owner's pending-run state distinguishes request from completion.
+The substantive R6 source range is a linear eleven-commit descendant of that
+Foreman base, followed by the immutable worker-log commit at current HEAD. The
+range touches only Transport source/tests, generated/current dictionaries and
+Transport ownership documentation. No Application, MPEG decoder/worker,
+Display/Presentation, RFB, audio, configuration or Pi product source entered R6.
 
-Transport should therefore relay the exact control envelope and preserve
-session validity, while Application later owns active-run/generation meaning and
-the ordered lifecycle transaction.
+Independent review confirms:
+
+- public START, RETIRE and nonblocking RETIRE-completion operations require one
+  current opaque Transport access authority;
+- stale Session-A access is rejected before it can send through or consume
+  Session-B state;
+- exact START and RETIRE payload codecs remain shared from Transport protocol
+  authority rather than duplicated;
+- START is kind 11 / control channel 0 / flags 0 / exact 44-byte v1 payload;
+- RETIRE is kind 10 / control channel 0 / flags 0 / exact 12-byte v1 payload;
+- both outbound controls enter the existing synchronous
+  pstvnc_transport_runtime_submit_frame() rendezvous;
+- within current Transport product source, the private runtime I/O owner remains
+  the sole caller of the physical framed-send primitive;
+- inbound exact RETIRE is decoded into one synchronized session-local pending
+  completion slot;
+- malformed RETIRE and inbound START remain protocol failures;
+- the completion slot cannot be overwritten, take is nonblocking and one-shot,
+  and a second take returns WOULD_BLOCK;
+- Transport never compares the completion against an Application pending-run
+  identity;
+- RETIRE receipt does not publish MPEG producer_done, synthesize EOF, discard
+  residual MPEG bytes, return retirement credit or reopen a successor run;
+- DATA/channel4 remains opaque MPEG media even when its 44 bytes happen to have
+  START-shaped contents;
+- the obsolete direct physical-stream MPEG START convenience helper is removed,
+  so product callers cannot bypass the sole-I/O runtime through that surface;
+- existing RFB/AUDIO/MPEG DATA mechanics remain outside the new control meaning.
+
+A003-R6-C1 through A003-R6-C12 are independently accepted as MET within the
+bounded repository/machine-evidence scope.
+
+### R6 machine evidence
+
+Canonical final pre-log workflow:
+
+35593508080 at 31db24ad56515d09a0218b1d9e20718c7bcf9662 — SUCCESS.
+
+Observed canonical jobs:
+
+- host-unit — PASS;
+- project-check — PASS;
+- dictionary-long — PASS;
+- ps2-compile — PASS;
+- ps2-link/current-source reproducibility — PASS;
+- dictionary-reconcile — SKIPPED as expected.
+
+This is source/host/repository/PS2 compile-link evidence only. No independent
+Validation run consumed R6, no physical PS2/Pi generation-control run occurred,
+and no machine result is promoted to hardware qualification.
+
+## Why R7 is runtime-profile authority before Application activation
+
+The reconstructed owner mechanisms are intentionally parameteric:
+
+- Transport's MPEG channel requires caller-supplied queue/credit values;
+- the MPEG decoder requires caller-supplied resource/feed/alignment bounds;
+- the MPEG worker requires caller-supplied stack bytes and priority;
+- the PS2 worker binding requires caller-supplied bounded join-observation
+  delay/count;
+- the Display scheduler requires caller-supplied source-rate/drop policy.
+
+R3-R6/P6 deliberately refused to manufacture these values because mechanism
+owners are not configuration policy owners. Current clean CONFIG still carries
+only the A001/A002 production subset and does not contain H1's 61-field
+laboratory surface.
+
+Repository evidence is sufficient to select one narrow current MPEG runtime
+profile without reopening the broad lab protocol:
+
+- the 600-second all-guns event-wake hardware confirmation used MPEG queue and
+  initial credit 524288 bytes with 8192-byte credit batches;
+- the mature H1 video profile and decoder mechanism used a 704x480 maximum,
+  RGB16/two-byte pixels, 2048-byte feed payload, 16-byte transfer alignment and
+  64-byte backing-buffer alignment;
+- the hardware-proven safe-stop worker used a 64-KiB EE stack, priority 67 and
+  a fail-closed 1000-us by 3000-observation dormancy wait;
+- the qualified presentation path is absolute common-clock scheduling at
+  30000/1001 source cadence; the current all-guns profile leaves lateness-drop
+  disabled, so drop threshold remains zero until a separately qualified product
+  profile elects to enable it.
+
+Those historical values are evidence for selecting the initial clean profile;
+they are not a claim that reconstructed source is physically qualified.
+
+R7 therefore makes the selection explicit in Configuration ownership while
+reusing the already-defined narrow owner value types. It does not extend the
+session CONFIG wire with laboratory knobs, does not add a generic settings
+object, and does not activate any run.
+
+The Pi product Wire runtime remains a required downstream dependency. It is not
+chosen as R7 because the current ledge has no mature product Pi Wire
+server/service/source topology; combining that topology decision, Q4 product
+establishment, control ownership and MPEG producer lifecycle in one immediate
+packet would be broader than the already-defined value-authority seam.
 
 ## Active bounded Reconstruction packet
 
-PACKET_ID=`A003-MPEG-GENERATION-CONTROL-RELAY-R6`
+PACKET_ID=A003-MPEG-RUNTIME-PROFILE-AUTHORITY-R7
 PACKET_STATUS=ACTIVE
-ROLE_KEY=`reconstruction`
-WORK_ITEM_KEY=`a003-mpeg-generation`
-WORKER_KEY=`interactive`
-EXECUTION_MODE=`AUTONOMOUS_RECONSTRUCTION`
-USER_TERMINAL_POLICY=`EXCEPTION_ONLY`
-PI_LOCAL_USER_PROXY_REQUIRED=`NO`
-EXECUTION_SEAT=`/home/ps2/src/PS-to-VNC-ledge-manual`
-EXECUTION_SEAT_USE=`OPTIONAL_LOCAL_SURFACE_ONLY_WHEN_EXPLICITLY_REQUIRED`
-WORKTREE_PREFLIGHT_REQUIRED=`CONDITIONAL_ON_EXPLICIT_PI_LOCAL_EXECUTION`
-ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
+ROLE_KEY=reconstruction
+WORK_ITEM_KEY=a003-mpeg-generation
+WORKER_KEY=interactive
+EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
+USER_TERMINAL_POLICY=EXCEPTION_ONLY
+PI_LOCAL_USER_PROXY_REQUIRED=NO
+ASSIGNING_BASE_HEAD=REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE
+FOREMAN_DECISION_BASE=6b37d60690be15754d9f0bf1e47f4081f16b1bef
 
 ### Objective
 
-Reconstruct the PS2-side Transport-owned MPEG **generation-control relay** so
-Application can later send exact START/RETIRE requests and consume the exact Pi
-RETIRE completion without bypassing the sole physical-I/O owner.
+Reconstruct one narrow Configuration-owned selected MPEG runtime profile that
+supplies the already-accepted Transport, MPEG decoder/worker/PS2 binding and
+Display scheduler public value types with explicit evidence-selected values.
 
-R6 owns only Wire envelope/relay mechanics and bounded control storage. It must
-not decide which generation is active, start/stop a decoder or producer, mark
-MPEG producer completion, finalize residual bytes/credit, or perform
-Presentation/RFB/Application lifecycle.
+R7 is value authority only. It must not widen the current CONFIG wire into H1's
+laboratory parameter surface and must not wire a live Application MPEG run.
 
 ### Required authority
 
 Read current at wake, including:
 
-- Reconstruction Contract rev 0006;
-- work-log contract rev 0007;
-- Foreman State rev 0034;
+- AGENTS.md and CONTRIBUTING.md;
+- Clean Architecture and current source-topology/naming/lifecycle documents;
+- Reconstruction Contract rev 0006 and work-log contract rev 0007;
+- Foreman State rev 0035;
 - Wire Runtime Decisions rev 0011 and Architecture Overlay rev 0004;
-- `src/transport/protocol.{c,h}`;
-- `src/transport/runtime.{c,h}`;
-- `src/transport/bridge.{c,h}`;
-- `src/transport/physical_stream.{c,h}`;
-- current Transport runtime/bridge/protocol tests;
-- A003 audit rev 0001 as historical semantic evidence where not superseded;
-- frozen exact RETIRE control evidence:
-  - `experiments/media-harness-h1/h1_cp2p_retirement_control.py`;
-  - its focused tests;
-  - frozen H1 Transport retire begin/poll/finalize only as mechanism evidence.
-
-Governing Q1-Q12 ownership supersedes old direct physical-send structure.
+- A002 CONFIG/audio/clock audit;
+- A003 MPEG audit and A004 presentation/calibration audit;
+- current public value types in:
+  - src/transport/transport.h;
+  - src/mpeg/decoder.h;
+  - src/mpeg/worker.h;
+  - src/mpeg/ps2_worker_runtime.h;
+  - src/display/mpeg_scheduler.h;
+- current src/config profile ownership and tests;
+- frozen H1 value evidence, especially:
+  - h1_profiles.py;
+  - h1_video_runtime.c;
+  - h1_cp2p_mpeg_worker.c;
+  - CP2P_MPEG_EVENT_WAKE_HARDWARE_RESULT.md;
+  - CP2P_MPEG_SAFE_STOP_LIFECYCLE.md;
+- current R3/R4/R5/P6 Foreman acceptance sections so mechanism ownership is not
+  accidentally moved into Configuration.
 
 ### Required behavior
 
-1. **Transport-owned relay, Application-owned meaning.** Add public Transport
-   bridge seams for exact MPEG START request, RETIRE request, and nonblocking
-   receipt of one Pi RETIRE completion. Do not put active-generation business
-   state into Transport.
-2. **Session-bound authority.** Every new public operation requires one current
-   `pstvnc_transport_access_t`; stale Session-A authority must neither send
-   through nor consume control state belonging to Session B.
-3. **Sole physical-I/O send.** START and RETIRE requests must be encoded with the
-   accepted protocol codecs and enter the existing
-   `pstvnc_transport_runtime_submit_frame()` outbound rendezvous. Application
-   or MPEG must never call physical-stream framed send directly.
-4. **Exact START envelope.** Outbound START is kind 11 / channel 0 / flags 0 /
-   exact 44-byte v1 payload. The relay may validate codec/envelope structure but
-   does not decide calibration acceptance or active-generation policy.
-5. **Exact RETIRE envelope.** Outbound RETIRE is kind 10 / channel 0 / flags 0 /
-   exact 12-byte v1 payload.
-6. **Inbound direction contract.** On PS2, inbound kind-10 exact RETIRE is the Pi
-   completion/ACK candidate. Inbound START is not valid PS2-side traffic and
-   remains a protocol failure.
-7. **Exact inbound validation.** The sole receiver accepts RETIRE completion only
-   with exact kind/channel/flags/payload length and a successful v1 payload
-   decode. Malformed control fails the Transport session rather than being
-   reinterpreted as media.
-8. **One bounded completion slot.** Transport owns at most one pending decoded
-   RETIRE-completion value for the active Wire Session, protected by
-   Transport-owned synchronization. No overwrite and no unbounded queue.
-9. **Nonblocking take.** The public bridge returns WOULD_BLOCK when no completion
-   is pending; success copies one exact decoded completion and consumes it once.
-   Duplicate take returns WOULD_BLOCK.
-10. **No generation semantic comparison.** Transport does not decide whether the
-    completion's session/generation matches Application's pending MPEG run.
-    Application later performs that exact-run check.
-11. **No producer terminal side effect.** Receiving a RETIRE completion does
-    **not** call `pstvnc_transport_mpeg_mark_producer_done()` in R6 and does
-    not synthesize decoder EOF. That ordered semantic belongs to the later
-    Application retirement transaction.
-12. **No residual/credit finalization.** R6 does not discard queued MPEG bytes,
-    return retirement residual credit, reopen a successor run, or otherwise
-    implement Q7 finalization.
-13. **Retire slot is session-local.** New Transport session initialization begins
-    with no pending completion; old-session completion cannot leak into the next
-    Wire Session.
-14. **No direct START bypass remains.** Remove, retire, or otherwise make
-    unavailable to product callers the old
-    `pstvnc_transport_physical_stream_send_mpeg_start()` convenience path so
-    the accepted single-I/O owner is the only production send path.
-15. **Pure MPEG DATA preserved.** Nonempty DATA/channel4 remains opaque MPEG
-    media regardless of payload length/content. In particular an exact 44-byte
-    START-shaped media payload remains media.
-16. **Existing riders unchanged.** RFB/AUDIO/MPEG DATA flow, credit, receiver
-    progress and Transport failure behavior remain unchanged outside the new
-    exact control path.
-17. **No Pi implementation.** Do not promote the frozen Python Pi coordinator or
-    invent a production Pi Wire server in this packet. R6 is PS2-side relay
-    completion only.
-18. **No Application/MPEG lifecycle.** Do not arm Presentation, allocate a run
-    generation, start R5/R4, invoke P7, start/retire a Pi producer, release RFB
-    suppression or execute P5/Q7 lifecycle.
-19. **Canonical evidence.** Add focused host tests proving exact outbound
-    envelopes travel through runtime's sole outbound owner, exact inbound RETIRE
-    completion one-shot behavior, malformed/inbound-START rejection, stale
-    Transport-access fencing, fresh-session usability, pure 44-byte MPEG DATA
-    classification, and unchanged rider behavior. Preserve direct PS2 compile,
-    linked reproducibility and strict dictionaries.
-
-### Shape guidance
-
-Prefer extending the earned Transport bridge/runtime rather than creating a
-second control subsystem.
-
-A small runtime field set may contain:
-
-- one pending `pstvnc_mpeg_retire_payload_t`;
-- one pending flag;
-- one dedicated control semaphore if needed for concurrent receiver/main access.
-
-A public bridge surface may use names equivalent to:
-
-- `pstvnc_transport_mpeg_send_start(...)`;
-- `pstvnc_transport_mpeg_send_retire(...)`;
-- `pstvnc_transport_mpeg_take_retire_completion(...)`.
-
-Names are worker-owned. Keep the payload representation shared from
-`transport/protocol.h`; do not duplicate the wire struct.
+1. Add one small Configuration-owned MPEG runtime-profile authority. Prefer a
+   focused config module rather than enlarging the general CONFIG decoder with
+   unrelated implementation knobs.
+2. Reuse the existing public owner value types. Do not duplicate Transport,
+   decoder, worker, PS2 worker-runtime or Display scheduler structures merely to
+   rename their fields.
+3. Publish exactly one current selected profile with these Transport MPEG
+   channel values:
+   - queue_capacity = 524288;
+   - initial_credit_bytes = 524288;
+   - credit_batch_bytes = 8192;
+   - credit_flush_on_empty = 1;
+   - credit_return_enabled = 1.
+4. Publish exactly one current decoder profile with:
+   - max_width = 704;
+   - max_height = 480;
+   - bytes_per_pixel = 2;
+   - feed_payload_capacity = 2048;
+   - transfer_alignment = 16;
+   - buffer_alignment = 64.
+5. Publish exactly one current MPEG worker profile with:
+   - worker_stack_bytes = 65536;
+   - worker_priority = 67.
+6. Publish exactly one current PS2 worker-runtime policy with:
+   - join_poll_delay_us = 1000;
+   - join_poll_max_count = 3000.
+   This is a bounded fail-closed dormancy observation policy, not permission to
+   treat timeout as successful retirement or to force-delete a live thread.
+7. Publish exactly one current Display scheduler profile with:
+   - fps_numerator = 30000;
+   - fps_denominator = 1001;
+   - drop_enabled = 0;
+   - drop_threshold_milliframes = 0.
+   Preserve the existing absolute scheduler implementation. Do not resurrect
+   scheduler-comparison modes.
+8. Do not add MPEG queue/feed/thread/scheduler tuning fields to the current
+   session CONFIG wire. The selected runtime profile is internal product
+   configuration authority, not a user/network sweep surface.
+9. Do not productize H1 MPEG_EMPTY_DELAY_US, VIDEO_IPU_RESET_EACH_SESSION,
+   stage markers/holds, profile IDs, allocation-order experimentation,
+   scheduler-mode selection, socket-buffer knobs or arbitrary drop tuning.
+10. Do not create a second geometry authority. Active MPEG calibration/region,
+    START geometry and Presentation base/inner/outer regions stay with their
+    current owners. The 704x480 value is a decoder resource bound, not active
+    presentation geometry.
+11. Keep video presentation offset in the existing media-clock/session profile
+    authority; R7 does not duplicate it.
+12. Keep MPEG start-target/prefill polling knobs out of the clean selected
+    profile unless current clean source has an actual owner/API requiring them.
+    Current event-driven decode starvation and START ordering must not acquire a
+    timer-poll correctness dependency merely to preserve H1 fields.
+13. No module may silently substitute a different local default for an R7 value.
+    Later Application wiring must be able to obtain the selected profile and
+    pass its narrow owner values explicitly.
+14. Add focused host tests that assert the exact selected values, prove the
+    profile is immutable/copy-safe as appropriate, and prove no CONFIG-wire
+    field-count/schema expansion occurred.
+15. Preserve clean source synopsis, naming, dictionary and topology contracts;
+    update direct build/test manifests for any new maintained source.
+16. Preserve the current product call graph: no Transport session open, decoder
+    start, worker start, Presentation activation, scheduler initialization,
+    START/RETIRE send, Pi service or Application loop wiring may be introduced
+    by R7.
 
 ### Acceptance criteria
 
-- `A003-R6-C1 SOLE_IO_CONTROL_SEND`
-- `A003-R6-C2 EXACT_START_ENVELOPE`
-- `A003-R6-C3 EXACT_RETIRE_ENVELOPE`
-- `A003-R6-C4 INBOUND_RETIRE_COMPLETION`
-- `A003-R6-C5 ONE_SLOT_NONBLOCKING_TAKE`
-- `A003-R6-C6 SESSION_BOUND_ACCESS`
-- `A003-R6-C7 NO_GENERATION_BUSINESS_STATE`
-- `A003-R6-C8 NO_SYNTHETIC_PRODUCER_DONE`
-- `A003-R6-C9 PURE_MPEG_DATA`
-- `A003-R6-C10 NO_DIRECT_PHYSICAL_BYPASS`
-- `A003-R6-C11 EXISTING_RIDERS_PRESERVED`
-- `A003-R6-C12 CLEAN_EVIDENCE`
+- A003-R7-C1 CONFIG_OWNS_SELECTED_MPEG_PROFILE
+- A003-R7-C2 EXACT_TRANSPORT_VALUES
+- A003-R7-C3 EXACT_DECODER_VALUES
+- A003-R7-C4 EXACT_WORKER_EXECUTION_VALUES
+- A003-R7-C5 EXACT_SCHEDULER_VALUES
+- A003-R7-C6 EXISTING_OWNER_TYPES_REUSED
+- A003-R7-C7 CONFIG_WIRE_NOT_BROADENED
+- A003-R7-C8 LAB_KNOBS_NOT_PRODUCTIZED
+- A003-R7-C9 GEOMETRY_OWNERSHIP_PRESERVED
+- A003-R7-C10 NO_LIVE_ACTIVATION
+- A003-R7-C11 FOCUSED_TESTS_AND_STRICT_DICTIONARIES
+- A003-R7-C12 CLEAN_BUILD_EVIDENCE
 
 All must be MET for Foreman acceptance.
 
+### Invariants
+
+- Configuration selects values; mechanism owners continue to validate and use
+  only their own narrow types.
+- Transport does not acquire decoder/Presentation/Application policy.
+- MPEG does not acquire Transport queue internals or Display policy.
+- Display scheduler remains pure policy over an already-armed media clock.
+- Application remains the future cross-domain lifecycle coordinator.
+- Wire Session identity and MPEG generation identity remain distinct.
+- R7 does not alter current Q7 retirement ordering.
+- Hardware evidence for H1 values is provenance, not reconstructed-code
+  hardware qualification.
+
 ### Explicit non-goals
 
-Do not implement in R6:
+Do not implement in R7:
 
-- Pi production Wire server/control receiver;
-- Pi START validation/prepared-generation owner;
-- Pi producer launch/emission admission;
-- Pi RETIRE cleanup/ACK implementation;
-- Application run generation allocation;
-- Presentation arm from calibration;
-- R5/R4 worker startup;
-- P7 live-loop service;
-- producer-done publication;
-- residual-byte discard/credit finalization;
+- a Pi product Wire server/service;
+- Q4 product establishment;
+- Pi START handling or prepared-generation state;
+- Pi producer launch/emission/RETIRE cleanup;
+- Application generation allocation;
+- MPEG calibration or active-region policy;
 - RFB suppression/restoration;
-- P5 retirement/reveal;
-- successor generation startup;
-- Wire Q4 establishment;
-- physical MPEG qualification.
+- decoder/worker startup;
+- P7 live-loop wiring;
+- START/RETIRE runtime calls;
+- producer_done publication;
+- residual-byte/credit finalization;
+- Q7 retirement orchestration;
+- Wire-loss MPEG recovery;
+- new display-mode/profile selection UI;
+- physical PS2/Pi qualification.
 
-### Worker return
+### Evidence required
 
-Return exact source/test/build/dictionary commits, public control-relay API,
-runtime control-slot ownership/synchronization, outbound sole-I/O proof, exact
-inbound validation, one-shot completion behavior, session-bound stale-access
-proof, direct physical-helper disposition, C1-C12 disposition, canonical CI
-evidence, and all non-claims/gaps.
+Worker return must identify:
+
+- exact source/test/dictionary/build commits;
+- selected profile public seam and owner-type reuse;
+- exact values for each owner subprofile;
+- proof that current CONFIG wire field count/schema is unchanged;
+- proof no live activation call graph was added;
+- focused host-test results;
+- canonical project-check/dictionary result;
+- direct PS2 compile evidence for new maintained C where applicable;
+- linked/current-source reproducibility result;
+- explicit machine-vs-hardware evidence boundary.
 
 Emit exactly one immutable Reconstruction log using:
 
-- ROLE_KEY=`reconstruction`;
-- WORK_ITEM_KEY=`a003-mpeg-generation`;
-- WORKER_KEY=`interactive`.
+- ROLE_KEY=reconstruction;
+- WORK_ITEM_KEY=a003-mpeg-generation;
+- WORKER_KEY=interactive.
 
-Do not begin Pi product ownership or Application activation in the same shift.
+Stop after R7. Do not begin Pi product Wire ownership or Application activation
+in the same shift.
 
 ## Deferred dependency graph
 
-Expected remaining work after active A003 R6 is:
+After accepted R7:
 
-1. inspect the completed PS2 control relay against the still-absent mature Pi
-   product Wire-server/control owner and choose the smallest owner-correct Pi
-   implementation packet required to receive START, own exact remote producer
-   admission/retirement and echo RETIRE completion without restoring H1
-   monolithic coordinator structure;
-2. reconcile the remaining validated-value authority for MPEG queue/credit,
-   decoder resource/feed bounds, worker stack/priority/join policy and scheduler
-   profile before any live Application activation; do not invent defaults;
-3. reconstruct the bounded Application MPEG activation transaction only after
-   both cross-Wire control sides and required caller values exist:
-   accepted region -> exact run fence -> Presentation arm -> worker/backend
+1. define the smallest mature Pi product Wire runtime/control-owner foundation
+   needed for provisional Q4 establishment, one physical session/I/O owner and
+   exact START/RETIRE control ownership without importing the H1 monolith;
+2. add Pi MPEG producer admission/retirement behind that owner, preserving exact
+   run fencing and the R6 completion contract;
+3. reconstruct bounded Application MPEG activation only after Pi control and
+   selected runtime values both exist:
+   accepted MPEG region -> run fence -> Presentation arm -> local worker/backend
    start -> exact START -> producer admission -> P7 service;
-4. reconstruct current-Q7 retirement/failure transaction:
-   close new producer/admission -> begin RETIRING -> allow accepted drain while
-   RFB rebuilds underneath -> safe worker/decoder stop -> RETIRE completion ->
-   Transport producer-done/residual/credit finalization -> seal -> synchronized
+4. reconstruct current-Q7 retirement/failure:
+   close new producer/admission -> RETIRING -> accepted MPEG drains while RFB
+   rebuilds underneath -> safe worker/decoder stop -> exact RETIRE completion ->
+   Transport producer_done/residual/credit finalization -> seal -> synchronized
    reveal;
-5. integrate Wire-loss/failure containment and final shutdown/restart behavior,
-   then perform physical qualification on the exact product ELF.
-
-Foreman must choose the exact next seam from returned A003 R6 source rather than
-pre-authorizing later implementation.
-
-This is planning only, not worker authority to pre-implement later work.
+5. integrate Wire-loss containment, repeated-run/repeated-session behavior and
+   final shutdown/re-admission;
+6. perform exact-source physical qualification on the reconstructed product
+   path and final ELF.
 
 ## Hardware qualification debt
 
-HARDWARE_PENDING=A004 visual geometry/matte/suppression/first-frame qualification; MPEG one-run/repeated-run stale fencing and Wire-loss behavior; current-Q7 overlapped RFB restoration; R1 product runtime where later required; final product Q4 establishment; exact product Wire service/runtime; all-guns endurance; exact product ELF; native Pi RFB reproducibility/lifecycle qualification
+HARDWARE_PENDING=A003 R3/R4/R5/R6/R7 reconstructed MPEG runtime; one-run and repeated-run stale fencing; Wire-loss during MPEG; current-Q7 overlapped RFB restoration; A004 presentation-visible geometry/matte/suppression/first-frame timing; final product Q4/Wire Pi service; all-guns endurance; exact product ELF; native Pi RFB reproducibility/lifecycle
 
 ## Foreman next pickup
 
-Consume the `A003-MPEG-GENERATION-CONTROL-RELAY-R6` Reconstruction baton,
-independently verify sole-I/O START/RETIRE send, exact inbound RETIRE completion,
-one-slot one-shot delivery, session-bound stale-access fencing, pure MPEG DATA
-classification, absence of producer-done/generation-business side effects and
-removal of the direct physical START bypass. Then choose the next owner-correct
-Pi/control or validated-value prerequisite before Application activation.
+Consume A003-MPEG-RUNTIME-PROFILE-AUTHORITY-R7. Independently verify exact
+selected values, no CONFIG-wire expansion, no duplicated owner types, no live
+activation and canonical machine evidence. Then choose the smallest Pi
+Wire/control owner foundation; do not skip directly to Application orchestration.
 
-Do not execute the packet from the Foreman seat.
+Do not execute the active packet from the Foreman seat.
+
