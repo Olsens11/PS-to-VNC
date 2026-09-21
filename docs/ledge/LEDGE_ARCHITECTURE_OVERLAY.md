@@ -59,6 +59,21 @@ A stalled or failed rider does not by itself make Wire unhealthy. Failure
 containment begins at the smallest owner that can prove a safe state and
 escalates only when necessary.
 
+As of A003 R10, maintained product source contains the first concrete
+provider-neutral RFB Relay on both sides of that boundary. The Pi relay owns an
+explicitly injected local provider socket, finite provider-write storage, and
+RFB-specific credit only; the Pi Wire connection owner alone performs physical
+Wire recv/send. Provider reads stop at zero PS2 credit, provider writes are
+nonblocking/readiness-driven, and Pi capacity is re-granted only after bytes
+actually leave the queue. On PS2, outbound RFB DATA is released only against
+Pi-granted channel-1 CREDIT through an RFB-specific wait/counter, while the sole
+Transport I/O thread remains the only physical Wire sender.
+
+The installed Pi Wire service still auto-attaches no provider, and R10 does not
+migrate or replace the qualified direct-RFB deployment. Zero-length channel-1
+DATA remains reserved for the existing finite quiesce lifecycle; full product
+quiesce orchestration and provider-selection policy remain later work.
+
 ## One physical-I/O execution context
 
 The current architecture requires one Transport-owned physical framed-I/O
