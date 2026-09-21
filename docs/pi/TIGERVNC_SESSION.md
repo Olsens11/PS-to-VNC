@@ -53,7 +53,10 @@ The exact recovered/tracked drop-in requires and orders after LightDM, sets
 historical inetd-style socket handoff to `null`, clears the base ExecStart and
 runs:
 
-    /usr/bin/X0tigervnc -display :0 -rfbport -1         -SecurityTypes None -AlwaysShared=1         -AcceptPointerEvents=1 -AcceptKeyEvents=1         -AcceptSetDesktopSize=0 -UseIPv6=0
+    /usr/bin/X0tigervnc -display :0 -rfbport -1
+        -SecurityTypes None -AlwaysShared=1
+        -AcceptPointerEvents=1 -AcceptKeyEvents=1
+        -AcceptSetDesktopSize=0 -UseIPv6=0
 
 `-rfbport -1` is important: X0tigervnc consumes the already inherited systemd
 listener and does not create a competing product TCP endpoint.
