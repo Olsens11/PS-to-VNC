@@ -40,8 +40,7 @@ DIRECT_UNIT_BLOBS = {
     DIRECT_DROPIN: "4dfbdbe7a3fc8ef4964c5704a337631482296cbb",
 }
 
-R10_PRODUCT_BLOBS = {
-    WIRE_SERVER: "d1accd8b3b786bea4969ca8a74ecdb03c548eddc",
+R10_STABLE_BLOBS = {
     RFB_RELAY: "55e946f2cc8e7d449b83616a6fe8653695c06702",
     WIRE_PROTOCOL: "a136640272ab942ce3e15096ff9da2089491745d",
     WIRE_UNIT: "316c6d2eafdfdf5ecd8c89678e2dfe227e709556",
@@ -234,8 +233,10 @@ class InternalProviderAuthorityTests(unittest.TestCase):
             msg=result.stderr,
         )
 
-    def test_r10_wire_and_relay_remain_byte_identical_and_unattached(self) -> None:
-        for path, expected_blob in R10_PRODUCT_BLOBS.items():
+    def test_r10_relay_protocol_and_default_service_remain_stable(self) -> None:
+        # R13 deliberately evolves the Wire owner around the accepted R10 Relay.
+        # Keep pinning provider-neutral Relay/protocol and default-unit surfaces.
+        for path, expected_blob in R10_STABLE_BLOBS.items():
             self.assertEqual(
                 git_blob_sha1(path),
                 expected_blob,

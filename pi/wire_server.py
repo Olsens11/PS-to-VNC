@@ -9,18 +9,19 @@ Wire Session. TCP accept begins PROVISIONAL; only an exact HELLO followed by a
 successfully sent Pi-owned ACCEPT creates ACTIVE. EOF or protocol failure fully
 retires that connection before the persistent owner accepts another.
 
-R10 optionally composes one explicit session-scoped RFB provider relay while
-preserving this object as the sole PS2-facing Wire recv/send owner. The relay
-never receives from or sends to the Wire socket; this owner multiplexes Wire
-readiness with provider readiness and moves exact channel-1 DATA/CREDIT between
-them. With no explicit relay attachment the installed service remains the R8
-establishment-only server.
+R13 optionally composes one explicit session-scoped RFB attachment mechanism
+while preserving this object as the sole PS2-facing Wire recv/send and global
+sequence owner. The attachment lazily connects only after first valid RFB
+CREDIT, owns provider/quiesce state, and composes the provider-neutral R10 Relay
+only after local connection succeeds.
 
-The server still owns no concrete RFB provider selection, AUDIO/MPEG/CONFIG
-rider, MPEG producer, heartbeat, Application policy, or custom restart loop.
+With no explicit attachment factory the installed service remains the R8
+establishment-only server. The server still owns no flow-profile defaults,
+Application RFB start/restart policy, AUDIO/MPEG/CONFIG rider, MPEG producer,
+heartbeat, or custom restart loop.
 
 Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
-A003-PI-RFB-WIRE-RELAY-R10.
+A003-PI-RFB-ATTACHMENT-QUIESCE-R13.
 """
 
 from __future__ import annotations
@@ -31,8 +32,9 @@ from enum import Enum
 import select
 import socket
 import sys
+from typing import Callable
 
-import rfb_relay as rfb
+import rfb_attachment as rfb_attach
 import wire_protocol as protocol
 
 DEFAULT_LISTEN_ADDRESS = "192.168.50.1"
@@ -131,11 +133,11 @@ class WireConnectionOwner:
         self,
         connection: socket.socket,
         session_ids: SessionIdAllocator,
-        rfb_attachment: rfb.RfbRelay | None = None,
+        rfb_attachment: rfb_attach.RfbAttachment | None = None,
     ) -> None:
         self._connection = connection
         self._session_ids = session_ids
-        self._rfb_relay = rfb_attachment
+        self._rfb_attachment = rfb_attachment
         self.state = WireSessionState.PROVISIONAL
         self.session_id: int | None = None
         self.next_receive_sequence = 1
@@ -301,62 +303,92 @@ class WireConnectionOwner:
         header: protocol.WireHeader,
         payload: bytes,
     ) -> bool:
-        if self._rfb_relay is None:
+        attachment = self._rfb_attachment
+        if attachment is None:
             return False
 
         if protocol.is_rfb_credit_header(header):
             amount = protocol.decode_rfb_credit_payload(payload)
-            # A terminal provider stops accepting new read authority but does
-            # not redefine the containing Wire Session.
-            self._rfb_relay.add_provider_read_credit(amount)
+            attachment.add_ps2_credit(amount)
             return True
 
         if protocol.is_rfb_data_header(header):
             if not payload:
-                # Zero-length channel-1 DATA belongs to the existing quiesce
-                # lifecycle. R10 preserves the reservation but deliberately
-                # does not implement REQUEST/BOUNDARY/COMMIT/COMPLETE here.
-                self._rfb_relay.note_reserved_zero_length_marker()
+                attachment.accept_ps2_marker()
                 return True
-
-            self._rfb_relay.accept_ps2_data(payload)
+            attachment.accept_ps2_data(payload)
             return True
 
         return False
 
-    def _wait_with_rfb_relay(self) -> WireSessionOutcome:
-        if self._rfb_relay is None:
-            raise RuntimeError("RFB relay is not attached")
+    def _flush_rfb_attachment_output(self) -> None:
+        """Serialize attachment-owned CREDIT/REQUEST/COMMIT through Wire."""
 
-        try:
-            initial_credit = self._rfb_relay.activate()
+        attachment = self._rfb_attachment
+        if attachment is None:
+            return
+
+        initial_credit = attachment.take_initial_ps2_credit()
+        if initial_credit:
             self._send_active_frame(
                 protocol.FRAME_CREDIT,
                 protocol.CHANNEL_RFB,
                 protocol.encode_rfb_credit_payload(initial_credit),
             )
-        except (OSError, rfb.RfbRelayError):
-            return self._finish(
-                accepted=True,
-                rejection_reason=None,
-                protocol_failed=True,
+
+        if attachment.wants_request_marker:
+            self._send_active_frame(
+                protocol.FRAME_DATA,
+                protocol.CHANNEL_RFB,
+                b"",
             )
+            attachment.confirm_request_sent()
+
+        if attachment.wants_commit_marker:
+            self._send_active_frame(
+                protocol.FRAME_DATA,
+                protocol.CHANNEL_RFB,
+                b"",
+            )
+            attachment.confirm_commit_sent()
+
+    def _wait_with_rfb_attachment(self) -> WireSessionOutcome:
+        """Drive one lazy provider attachment without surrendering Wire I/O."""
+
+        attachment = self._rfb_attachment
+        if attachment is None:
+            raise RuntimeError("RFB attachment is not configured")
 
         while True:
-            provider = self._rfb_relay.provider_socket
+            try:
+                self._flush_rfb_attachment_output()
+            except OSError:
+                return self._finish(
+                    accepted=True,
+                    rejection_reason=None,
+                    protocol_failed=True,
+                )
+
+            connecting = attachment.connecting_socket
+            provider = attachment.provider_socket
+
             read_wait = [self._connection]
             write_wait: list[socket.socket] = []
+            exception_wait: list[socket.socket] = []
 
-            if self._rfb_relay.wants_provider_read:
+            if connecting is not None:
+                write_wait.append(connecting)
+                exception_wait.append(connecting)
+            if provider is not None and attachment.wants_provider_read:
                 read_wait.append(provider)
-            if self._rfb_relay.wants_provider_write:
+            if provider is not None and attachment.wants_provider_write:
                 write_wait.append(provider)
 
             try:
-                readable, writable, _exceptional = select.select(
+                readable, writable, exceptional = select.select(
                     read_wait,
                     write_wait,
-                    [],
+                    exception_wait,
                 )
             except (OSError, ValueError):
                 return self._finish(
@@ -378,18 +410,25 @@ class WireConnectionOwner:
                         rejection_reason=None,
                         protocol_failed=False,
                     )
-                except (OSError, protocol.WireProtocolError, rfb.RfbRelayError):
+                except (OSError, protocol.WireProtocolError):
                     return self._finish(
                         accepted=True,
                         rejection_reason=None,
                         protocol_failed=True,
                     )
 
-            # Provider writes are nonblocking and readiness-driven. Queue drain
-            # earns replacement Pi CREDIT only after provider send() actually
-            # releases bytes from the finite queue.
-            if provider in writable and not self._rfb_relay.terminal:
-                drained = self._rfb_relay.drain_provider_write_ready()
+            if (
+                connecting is not None
+                and (connecting in writable or connecting in exceptional)
+            ):
+                attachment.finish_connect_ready()
+
+            if (
+                provider is not None
+                and provider in writable
+                and attachment.wants_provider_write
+            ):
+                drained = attachment.drain_provider_write_ready()
                 if drained:
                     try:
                         self._send_active_frame(
@@ -397,18 +436,20 @@ class WireConnectionOwner:
                             protocol.CHANNEL_RFB,
                             protocol.encode_rfb_credit_payload(drained),
                         )
-                        self._rfb_relay.confirm_credit_sent(drained)
-                    except (OSError, rfb.RfbRelayError):
+                    except OSError:
                         return self._finish(
                             accepted=True,
                             rejection_reason=None,
                             protocol_failed=True,
                         )
+                    attachment.confirm_credit_sent(drained)
 
-            # Provider reads occur only while PS2-granted credit exists. The
-            # relay returns raw bytes; only this Wire owner frames/sends them.
-            if provider in readable and not self._rfb_relay.terminal:
-                provider_payload = self._rfb_relay.read_provider_ready()
+            if (
+                provider is not None
+                and provider in readable
+                and attachment.wants_provider_read
+            ):
+                provider_payload = attachment.read_provider_ready()
                 if provider_payload:
                     try:
                         self._send_active_frame(
@@ -427,8 +468,8 @@ class WireConnectionOwner:
         if self.state is not WireSessionState.ACTIVE or self.session_id is None:
             raise RuntimeError("Wire Session is not ACTIVE")
 
-        if self._rfb_relay is not None:
-            return self._wait_with_rfb_relay()
+        if self._rfb_attachment is not None:
+            return self._wait_with_rfb_attachment()
 
         # With no explicitly injected rider the installed service remains
         # establishment-only. An ACTIVE session may be completely idle forever;
@@ -481,6 +522,9 @@ class WireServer:
         listen_address: str = DEFAULT_LISTEN_ADDRESS,
         port: int = DEFAULT_LISTEN_PORT,
         session_ids: SessionIdAllocator | None = None,
+        rfb_attachment_factory: Callable[
+            [], rfb_attach.RfbAttachment
+        ] | None = None,
     ) -> None:
         if not listen_address:
             raise ValueError("listen_address must be non-empty")
@@ -489,18 +533,21 @@ class WireServer:
         self.listen_address = listen_address
         self.port = port
         self.session_ids = session_ids or SessionIdAllocator()
+        self.rfb_attachment_factory = rfb_attachment_factory
 
     def serve_connection(
         self,
         connection: socket.socket,
-        rfb_attachment: rfb.RfbRelay | None = None,
+        rfb_attachment: rfb_attach.RfbAttachment | None = None,
     ) -> WireSessionOutcome:
-        # One connection owner contains every physical Wire read/write. An
-        # optional relay owns only its separately injected provider socket.
+        attachment = rfb_attachment
+        if attachment is None and self.rfb_attachment_factory is not None:
+            attachment = self.rfb_attachment_factory()
+
         owner = WireConnectionOwner(
             connection,
             self.session_ids,
-            rfb_attachment=rfb_attachment,
+            rfb_attachment=attachment,
         )
         try:
             outcome = owner.establish()
@@ -512,8 +559,8 @@ class WireServer:
                 connection.close()
             except OSError:
                 pass
-            if rfb_attachment is not None:
-                rfb_attachment.close()
+            if attachment is not None:
+                attachment.close()
 
     def serve_forever(self) -> None:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
@@ -522,9 +569,10 @@ class WireServer:
             listener.listen(LISTEN_BACKLOG)
 
             while True:
-                # Sessions remain deliberately sequential. The installed
-                # service passes no provider attachment here, so R10 does not
-                # silently select/migrate a concrete RFB endpoint.
+                # Sessions remain deliberately sequential. The default
+                # service supplies no attachment factory, so an idle or active
+                # Wire Session cannot select/start RFB merely because the
+                # physical connection exists.
                 connection, _peer = listener.accept()
                 self.serve_connection(connection)
 

@@ -833,14 +833,18 @@ $(APP_MPEG_FRAME_TEST): \
 		-o $(APP_MPEG_FRAME_TEST)
 
 PI_WIRE_SERVER_TEST := unit/pi_wire_server_test.py
+PI_RFB_ATTACHMENT_TEST := unit/pi_rfb_attachment_test.py
 PI_NATIVE_RFB_PROVIDER_TEST := unit/pi_native_rfb_provider_test.py
 PI_INTERNAL_RFB_PROVIDER_TEST := unit/pi_internal_rfb_provider_test.py
 
-.PHONY: pi-wire-server-unit pi-native-rfb-provider-unit pi-internal-rfb-provider-unit
-unit: pi-wire-server-unit pi-native-rfb-provider-unit pi-internal-rfb-provider-unit
+.PHONY: pi-wire-server-unit pi-rfb-attachment-unit pi-native-rfb-provider-unit pi-internal-rfb-provider-unit
+unit: pi-wire-server-unit pi-rfb-attachment-unit pi-native-rfb-provider-unit pi-internal-rfb-provider-unit
 
 pi-wire-server-unit:
 	python3 $(PI_WIRE_SERVER_TEST)
+
+pi-rfb-attachment-unit:
+	python3 $(PI_RFB_ATTACHMENT_TEST)
 
 pi-native-rfb-provider-unit:
 	python3 $(PI_NATIVE_RFB_PROVIDER_TEST)
