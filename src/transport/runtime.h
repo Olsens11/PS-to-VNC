@@ -1,10 +1,10 @@
 /*
  * File synopsis:
  * Defines Transport's session-local runtime above the physical PSTV stream.
- * The runtime owns the sole receiver thread plus synchronized logical RFB and
- * optional AUDIO/MPEG2 storage, independent per-channel flow-control/activity
- * rendezvous, and the receiver completion event required before receiver-touched
- * resources can be reclaimed.
+ * The runtime owns the sole physical-I/O thread plus synchronized logical RFB
+ * and optional AUDIO/MPEG2 storage, independent per-channel flow-control/activity
+ * rendezvous, one bounded MPEG RETIRE-completion control slot, and the receiver
+ * completion event required before receiver-touched resources can be reclaimed.
  *
  * This is an internal Transport boundary. It does not parse RFB, play PCM,
  * decode MPEG, decide product recovery/presentation policy, expose the physical
@@ -58,6 +58,7 @@ typedef struct pstvnc_transport_runtime {
     int audio_activity_semaphore_id;
     int mpeg_queue_semaphore_id;
     int mpeg_activity_semaphore_id;
+    int mpeg_control_semaphore_id;
     int receiver_done_semaphore_id;
 
     /*
@@ -129,6 +130,14 @@ typedef struct pstvnc_transport_runtime {
     volatile uint32_t rfb_quiesce_boundary_sent;
     volatile uint32_t rfb_quiesce_commit_received;
     volatile uint32_t rfb_quiesce_complete_sent;
+
+    /*
+     * One decoded Pi RETIRE completion may wait for the higher Application
+     * owner. The dedicated semaphore separates this control handoff from MPEG
+     * media bytes and from decoder producer-done semantics.
+     */
+    pstvnc_mpeg_retire_payload_t mpeg_retire_completion;
+    int mpeg_retire_completion_pending;
 
     pstvnc_transport_outbound_work_t outbound_work;
     uint8_t receiver_payload[PSTVNC_TRANSPORT_MAX_PAYLOAD];
@@ -239,6 +248,21 @@ int pstvnc_transport_runtime_mpeg_wait_activity(
     uint32_t *activity_sequence);
 int pstvnc_transport_runtime_mpeg_mark_producer_done(
     pstvnc_transport_runtime_t *runtime);
+
+/*
+ * Exact generation-control relay mechanics. These operations move accepted
+ * protocol payloads through Transport but do not decide active-generation or
+ * producer lifecycle meaning.
+ */
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_send_start(
+    pstvnc_transport_runtime_t *runtime,
+    const pstvnc_mpeg_start_payload_t *start);
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_send_retire(
+    pstvnc_transport_runtime_t *runtime,
+    const pstvnc_mpeg_retire_payload_t *retire);
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_take_retire_completion(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_mpeg_retire_payload_t *completion);
 
 int pstvnc_transport_runtime_rfb_quiesce_requested(
     pstvnc_transport_runtime_t *runtime);
