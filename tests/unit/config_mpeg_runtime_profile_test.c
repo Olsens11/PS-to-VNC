@@ -94,6 +94,11 @@ static void test_selected_profile_is_copy_safe(void)
     copy.ps2_worker_runtime.join_poll_max_count = 1u;
     copy.scheduler.fps_numerator = 1u;
 
+    CHECK(copy.transport.queue_capacity == 1u);
+    CHECK(copy.decoder.max_width == 1u);
+    CHECK(copy.worker.worker_stack_bytes == 1u);
+    CHECK(copy.ps2_worker_runtime.join_poll_max_count == 1u);
+    CHECK(copy.scheduler.fps_numerator == 1u);
     CHECK(memcmp(selected, &before, sizeof(before)) == 0);
     CHECK(pstvnc_config_mpeg_runtime_profile_selected() == selected);
 }
