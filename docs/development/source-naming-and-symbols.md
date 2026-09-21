@@ -108,9 +108,17 @@ ignore design are recorded in
 
 Required scope is maintained PS-to-VNC product source.
 
-The current product-source root is:
+The current product-source roots are:
 
     src/
+    pi/
+
+`src/` is the PlayStation 2 executable/application source tree. `pi/` is the
+maintained Raspberry Pi companion runtime source root adopted by A003 R8 on
+2026-09-21. Both participate in the same completeness gate and each owns local
+`SYMBOLS.md` authority. `scripts/pi/` remains development/provisioning
+machinery and does not become product source merely because it installs
+`pi/` artifacts.
 
 A later source tree enters the completeness boundary only when the project
 explicitly adopts that tree as maintained product source.
