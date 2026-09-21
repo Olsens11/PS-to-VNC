@@ -1,9 +1,10 @@
 /*
  * File synopsis:
- * Implements the backend-independent PSTV fixed-header encoder/decoder plus
- * exact MPEG generation-control wire codecs and explicit frame-identity tests.
- * This file deliberately contains no socket, queue, scheduler, prepared-
- * generation state, MPEG producer lifecycle, or PS2-specific policy.
+ * Implements the backend-independent PSTV fixed-header encoder/decoder, exact
+ * provisional Wire-establishment payload codecs, exact MPEG generation-control
+ * codecs, and explicit frame-identity tests. This file deliberately contains
+ * no socket, session allocator, queue, scheduler, prepared-generation state,
+ * MPEG producer lifecycle, or PS2-specific policy.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
  * LEDGE_AUDIT_A003_MPEG_GENERATION.md.
@@ -65,6 +66,92 @@ int pstvnc_transport_header_decode(
     header->payload_length = pstvnc_transport_read_be32(&input[12]);
 
     return header->payload_length <= PSTVNC_TRANSPORT_MAX_PAYLOAD;
+}
+
+
+static int pstvnc_wire_not_accepted_reason_valid(uint32_t reason)
+{
+    return reason == (uint32_t)PSTVNC_WIRE_NOT_ACCEPTED_WIRE_VERSION ||
+        reason == (uint32_t)PSTVNC_WIRE_NOT_ACCEPTED_PRODUCT_VERSION ||
+        reason == (uint32_t)PSTVNC_WIRE_NOT_ACCEPTED_MALFORMED;
+}
+
+int pstvnc_wire_hello_payload_encode(
+    uint8_t output[PSTVNC_WIRE_HELLO_PAYLOAD_SIZE],
+    const pstvnc_wire_hello_payload_t *payload)
+{
+    if (output == NULL || payload == NULL)
+        return 0;
+
+    pstvnc_transport_write_be32(&output[0], payload->wire_version);
+    pstvnc_transport_write_be32(
+        &output[4],
+        payload->product_establishment_version);
+    return 1;
+}
+
+int pstvnc_wire_hello_payload_decode(
+    pstvnc_wire_hello_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size)
+{
+    if (payload == NULL || input == NULL ||
+        input_size != PSTVNC_WIRE_HELLO_PAYLOAD_SIZE)
+        return 0;
+
+    payload->wire_version = pstvnc_transport_read_be32(&input[0]);
+    payload->product_establishment_version =
+        pstvnc_transport_read_be32(&input[4]);
+    return 1;
+}
+
+int pstvnc_wire_accept_payload_encode(
+    uint8_t output[PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE],
+    const pstvnc_wire_accept_payload_t *payload)
+{
+    if (output == NULL || payload == NULL || payload->session_id == 0u)
+        return 0;
+
+    pstvnc_transport_write_be32(&output[0], payload->session_id);
+    return 1;
+}
+
+int pstvnc_wire_accept_payload_decode(
+    pstvnc_wire_accept_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size)
+{
+    if (payload == NULL || input == NULL ||
+        input_size != PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE)
+        return 0;
+
+    payload->session_id = pstvnc_transport_read_be32(&input[0]);
+    return payload->session_id != 0u;
+}
+
+int pstvnc_wire_not_accepted_payload_encode(
+    uint8_t output[PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE],
+    const pstvnc_wire_not_accepted_payload_t *payload)
+{
+    if (output == NULL || payload == NULL ||
+        !pstvnc_wire_not_accepted_reason_valid(payload->reason))
+        return 0;
+
+    pstvnc_transport_write_be32(&output[0], payload->reason);
+    return 1;
+}
+
+int pstvnc_wire_not_accepted_payload_decode(
+    pstvnc_wire_not_accepted_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size)
+{
+    if (payload == NULL || input == NULL ||
+        input_size != PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE)
+        return 0;
+
+    payload->reason = pstvnc_transport_read_be32(&input[0]);
+    return pstvnc_wire_not_accepted_reason_valid(payload->reason);
 }
 
 int pstvnc_mpeg_retire_payload_encode(
@@ -139,6 +226,37 @@ int pstvnc_mpeg_start_payload_decode(
     payload->suppression_width = pstvnc_transport_read_be32(&input[36]);
     payload->suppression_height = pstvnc_transport_read_be32(&input[40]);
     return payload->version == PSTVNC_MPEG_GENERATION_CONTROL_VERSION;
+}
+
+
+int pstvnc_transport_header_is_wire_hello(
+    const pstvnc_transport_header_t *header)
+{
+    return header != NULL &&
+        header->kind == PSTVNC_TRANSPORT_FRAME_HELLO &&
+        header->channel == PSTVNC_TRANSPORT_CHANNEL_CONTROL &&
+        header->flags == 0u &&
+        header->payload_length == PSTVNC_WIRE_HELLO_PAYLOAD_SIZE;
+}
+
+int pstvnc_transport_header_is_wire_accept(
+    const pstvnc_transport_header_t *header)
+{
+    return header != NULL &&
+        header->kind == PSTVNC_TRANSPORT_FRAME_ACCEPT &&
+        header->channel == PSTVNC_TRANSPORT_CHANNEL_CONTROL &&
+        header->flags == 0u &&
+        header->payload_length == PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE;
+}
+
+int pstvnc_transport_header_is_wire_not_accepted(
+    const pstvnc_transport_header_t *header)
+{
+    return header != NULL &&
+        header->kind == PSTVNC_TRANSPORT_FRAME_NOT_ACCEPTED &&
+        header->channel == PSTVNC_TRANSPORT_CHANNEL_CONTROL &&
+        header->flags == 0u &&
+        header->payload_length == PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE;
 }
 
 int pstvnc_transport_header_is_mpeg_data(

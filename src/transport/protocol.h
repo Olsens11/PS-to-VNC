@@ -1,9 +1,10 @@
 /*
  * File synopsis:
  * Defines the shared PSTV transport wire-header representation, stable logical
- * channel identities, and exact MPEG generation-control wire codecs. This file
- * owns framing vocabulary only; it does not own sockets, dispatch, queues,
- * exact-generation lifecycle state, media policy, or threading.
+ * channel identities, exact provisional Wire-establishment codecs, and exact
+ * MPEG generation-control wire codecs. This file owns framing vocabulary only;
+ * it does not own sockets, dispatch, queues, active-session policy, exact-
+ * generation lifecycle state, media policy, or threading.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
  * LEDGE_AUDIT_A003_MPEG_GENERATION.md.
@@ -21,6 +22,11 @@
 #define PSTVNC_TRANSPORT_MAX_PAYLOAD 8192u
 #define PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE 4u
 
+#define PSTVNC_WIRE_PRODUCT_ESTABLISHMENT_VERSION 1u
+#define PSTVNC_WIRE_HELLO_PAYLOAD_SIZE 8u
+#define PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE 4u
+#define PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE 4u
+
 #define PSTVNC_MPEG_GENERATION_CONTROL_VERSION 1u
 #define PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE 12u
 #define PSTVNC_MPEG_START_PAYLOAD_SIZE 44u
@@ -34,7 +40,9 @@ typedef enum pstvnc_transport_frame_kind {
     PSTVNC_TRANSPORT_FRAME_HEARTBEAT = 6,
     PSTVNC_TRANSPORT_FRAME_ERROR = 7,
     PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE = 10,
-    PSTVNC_TRANSPORT_FRAME_MPEG_START = 11
+    PSTVNC_TRANSPORT_FRAME_MPEG_START = 11,
+    PSTVNC_TRANSPORT_FRAME_ACCEPT = 12,
+    PSTVNC_TRANSPORT_FRAME_NOT_ACCEPTED = 13
 } pstvnc_transport_frame_kind_t;
 
 typedef enum pstvnc_transport_channel {
@@ -53,6 +61,25 @@ typedef struct pstvnc_transport_header {
     uint32_t sequence;
     uint32_t payload_length;
 } pstvnc_transport_header_t;
+
+typedef enum pstvnc_wire_not_accepted_reason {
+    PSTVNC_WIRE_NOT_ACCEPTED_WIRE_VERSION = 1,
+    PSTVNC_WIRE_NOT_ACCEPTED_PRODUCT_VERSION = 2,
+    PSTVNC_WIRE_NOT_ACCEPTED_MALFORMED = 3
+} pstvnc_wire_not_accepted_reason_t;
+
+typedef struct pstvnc_wire_hello_payload {
+    uint32_t wire_version;
+    uint32_t product_establishment_version;
+} pstvnc_wire_hello_payload_t;
+
+typedef struct pstvnc_wire_accept_payload {
+    uint32_t session_id;
+} pstvnc_wire_accept_payload_t;
+
+typedef struct pstvnc_wire_not_accepted_payload {
+    uint32_t reason;
+} pstvnc_wire_not_accepted_payload_t;
 
 typedef struct pstvnc_mpeg_retire_payload {
     uint32_t version;
@@ -83,6 +110,28 @@ int pstvnc_transport_header_decode(
 uint32_t pstvnc_transport_read_be32(const uint8_t input[4]);
 void pstvnc_transport_write_be32(uint8_t output[4], uint32_t value);
 
+int pstvnc_wire_hello_payload_encode(
+    uint8_t output[PSTVNC_WIRE_HELLO_PAYLOAD_SIZE],
+    const pstvnc_wire_hello_payload_t *payload);
+int pstvnc_wire_hello_payload_decode(
+    pstvnc_wire_hello_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size);
+int pstvnc_wire_accept_payload_encode(
+    uint8_t output[PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE],
+    const pstvnc_wire_accept_payload_t *payload);
+int pstvnc_wire_accept_payload_decode(
+    pstvnc_wire_accept_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size);
+int pstvnc_wire_not_accepted_payload_encode(
+    uint8_t output[PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE],
+    const pstvnc_wire_not_accepted_payload_t *payload);
+int pstvnc_wire_not_accepted_payload_decode(
+    pstvnc_wire_not_accepted_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size);
+
 int pstvnc_mpeg_retire_payload_encode(
     uint8_t output[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE],
     const pstvnc_mpeg_retire_payload_t *payload);
@@ -97,6 +146,13 @@ int pstvnc_mpeg_start_payload_decode(
     pstvnc_mpeg_start_payload_t *payload,
     const uint8_t *input,
     size_t input_size);
+
+int pstvnc_transport_header_is_wire_hello(
+    const pstvnc_transport_header_t *header);
+int pstvnc_transport_header_is_wire_accept(
+    const pstvnc_transport_header_t *header);
+int pstvnc_transport_header_is_wire_not_accepted(
+    const pstvnc_transport_header_t *header);
 
 int pstvnc_transport_header_is_mpeg_data(
     const pstvnc_transport_header_t *header);

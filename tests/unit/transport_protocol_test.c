@@ -116,6 +116,116 @@ static void test_decode_rejects_invalid_wire_contract(void)
     CHECK(!pstvnc_transport_header_decode(&header, wire));
 }
 
+
+static void test_wire_establishment_exact_codecs_and_frames(void)
+{
+    pstvnc_transport_header_t header;
+    pstvnc_wire_hello_payload_t hello;
+    pstvnc_wire_hello_payload_t decoded_hello;
+    pstvnc_wire_accept_payload_t acceptance;
+    pstvnc_wire_accept_payload_t decoded_acceptance;
+    pstvnc_wire_not_accepted_payload_t rejection;
+    pstvnc_wire_not_accepted_payload_t decoded_rejection;
+    uint8_t header_bytes[PSTVNC_TRANSPORT_HEADER_SIZE];
+    uint8_t payload[PSTVNC_WIRE_HELLO_PAYLOAD_SIZE];
+    uint8_t frame[PSTVNC_TRANSPORT_HEADER_SIZE + PSTVNC_WIRE_HELLO_PAYLOAD_SIZE];
+    static const uint8_t expected_hello[] = {
+        0x50u, 0x53u, 0x54u, 0x56u,
+        0x01u, 0x01u, 0x00u, 0x00u,
+        0x00u, 0x00u, 0x00u, 0x01u,
+        0x00u, 0x00u, 0x00u, 0x08u,
+        0x00u, 0x00u, 0x00u, 0x01u,
+        0x00u, 0x00u, 0x00u, 0x01u
+    };
+    static const uint8_t expected_accept[] = {
+        0x50u, 0x53u, 0x54u, 0x56u,
+        0x01u, 0x0cu, 0x00u, 0x00u,
+        0x00u, 0x00u, 0x00u, 0x01u,
+        0x00u, 0x00u, 0x00u, 0x04u,
+        0x12u, 0x34u, 0x56u, 0x78u
+    };
+    static const uint8_t expected_reject[] = {
+        0x50u, 0x53u, 0x54u, 0x56u,
+        0x01u, 0x0du, 0x00u, 0x00u,
+        0x00u, 0x00u, 0x00u, 0x01u,
+        0x00u, 0x00u, 0x00u, 0x04u,
+        0x00u, 0x00u, 0x00u, 0x02u
+    };
+
+    memset(&header, 0, sizeof(header));
+    hello.wire_version = PSTVNC_TRANSPORT_VERSION;
+    hello.product_establishment_version =
+        PSTVNC_WIRE_PRODUCT_ESTABLISHMENT_VERSION;
+    CHECK(pstvnc_wire_hello_payload_encode(payload, &hello));
+
+    header.version = PSTVNC_TRANSPORT_VERSION;
+    header.kind = PSTVNC_TRANSPORT_FRAME_HELLO;
+    header.channel = PSTVNC_TRANSPORT_CHANNEL_CONTROL;
+    header.flags = 0u;
+    header.sequence = 1u;
+    header.payload_length = PSTVNC_WIRE_HELLO_PAYLOAD_SIZE;
+    CHECK(pstvnc_transport_header_encode(header_bytes, &header));
+    memcpy(frame, header_bytes, sizeof(header_bytes));
+    memcpy(frame + sizeof(header_bytes), payload, PSTVNC_WIRE_HELLO_PAYLOAD_SIZE);
+    CHECK(memcmp(frame, expected_hello, sizeof(expected_hello)) == 0);
+    CHECK(pstvnc_transport_header_is_wire_hello(&header));
+    CHECK(pstvnc_wire_hello_payload_decode(
+        &decoded_hello, payload, PSTVNC_WIRE_HELLO_PAYLOAD_SIZE));
+    CHECK(decoded_hello.wire_version == PSTVNC_TRANSPORT_VERSION);
+    CHECK(decoded_hello.product_establishment_version ==
+        PSTVNC_WIRE_PRODUCT_ESTABLISHMENT_VERSION);
+
+    acceptance.session_id = 0x12345678u;
+    CHECK(pstvnc_wire_accept_payload_encode(payload, &acceptance));
+    header.kind = PSTVNC_TRANSPORT_FRAME_ACCEPT;
+    header.payload_length = PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE;
+    CHECK(pstvnc_transport_header_encode(header_bytes, &header));
+    memcpy(frame, header_bytes, sizeof(header_bytes));
+    memcpy(frame + sizeof(header_bytes), payload, PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE);
+    CHECK(memcmp(frame, expected_accept, sizeof(expected_accept)) == 0);
+    CHECK(pstvnc_transport_header_is_wire_accept(&header));
+    CHECK(pstvnc_wire_accept_payload_decode(
+        &decoded_acceptance, payload, PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE));
+    CHECK(decoded_acceptance.session_id == 0x12345678u);
+
+    acceptance.session_id = 0u;
+    CHECK(!pstvnc_wire_accept_payload_encode(payload, &acceptance));
+    memset(payload, 0, PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE);
+    CHECK(!pstvnc_wire_accept_payload_decode(
+        &decoded_acceptance, payload, PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE));
+
+    rejection.reason = PSTVNC_WIRE_NOT_ACCEPTED_PRODUCT_VERSION;
+    CHECK(pstvnc_wire_not_accepted_payload_encode(payload, &rejection));
+    header.kind = PSTVNC_TRANSPORT_FRAME_NOT_ACCEPTED;
+    header.payload_length = PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE;
+    CHECK(pstvnc_transport_header_encode(header_bytes, &header));
+    memcpy(frame, header_bytes, sizeof(header_bytes));
+    memcpy(frame + sizeof(header_bytes), payload,
+        PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE);
+    CHECK(memcmp(frame, expected_reject, sizeof(expected_reject)) == 0);
+    CHECK(pstvnc_transport_header_is_wire_not_accepted(&header));
+    CHECK(pstvnc_wire_not_accepted_payload_decode(
+        &decoded_rejection, payload, PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE));
+    CHECK(decoded_rejection.reason ==
+        (uint32_t)PSTVNC_WIRE_NOT_ACCEPTED_PRODUCT_VERSION);
+
+    rejection.reason = 0u;
+    CHECK(!pstvnc_wire_not_accepted_payload_encode(payload, &rejection));
+    rejection.reason = 4u;
+    CHECK(!pstvnc_wire_not_accepted_payload_encode(payload, &rejection));
+    pstvnc_transport_write_be32(payload, 4u);
+    CHECK(!pstvnc_wire_not_accepted_payload_decode(
+        &decoded_rejection, payload, PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE));
+
+    header.kind = PSTVNC_TRANSPORT_FRAME_HELLO;
+    header.payload_length = PSTVNC_WIRE_HELLO_PAYLOAD_SIZE;
+    header.channel = PSTVNC_TRANSPORT_CHANNEL_RFB;
+    CHECK(!pstvnc_transport_header_is_wire_hello(&header));
+    header.channel = PSTVNC_TRANSPORT_CHANNEL_CONTROL;
+    header.flags = 1u;
+    CHECK(!pstvnc_transport_header_is_wire_hello(&header));
+}
+
 static void test_mpeg_retire_exact_codec(void)
 {
     pstvnc_mpeg_retire_payload_t input;
@@ -220,6 +330,7 @@ int main(void)
     test_header_round_trip_and_exact_wire_bytes();
     test_encode_rejects_invalid_contract();
     test_decode_rejects_invalid_wire_contract();
+    test_wire_establishment_exact_codecs_and_frames();
     test_mpeg_retire_exact_codec();
     test_mpeg_start_exact_codec();
     test_explicit_mpeg_frame_identity_ignores_payload_shape();
