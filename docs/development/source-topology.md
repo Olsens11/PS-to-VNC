@@ -37,6 +37,7 @@ The current clean-generation directories are:
 
 | Directory | Responsibility |
 |---|---|
+| `pi/` | maintained Raspberry Pi companion runtime: product Wire protocol/server ownership and later Pi-side product mechanisms |
 | `src/` | executable entry point and application coordinator only |
 | `src/audio/` | session-scoped audio worker/resources, non-consuming startup reservoir and common-clock audio gating, synchronous PCM consumption, and resident AUDSRV stream operations |
 | `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values, and small config-text helpers |
@@ -65,13 +66,30 @@ MPEG worker and Display presentation mechanisms. It owns neither domain's
 private mechanism and does not justify a new top-level source directory.
 
 
-The root dictionary is:
+The PS2 application root dictionary is:
 
     src/SYMBOLS.md
 
-Each clean subdirectory owns its own sibling:
+The maintained Pi product root owns:
+
+    pi/SYMBOLS.md
+
+Each clean product directory owns its local sibling:
 
     SYMBOLS.md
+
+## Raspberry Pi product-source adoption
+
+`pi/` was deliberately adopted as maintained clean product source during A003
+R8 on 2026-09-21. It owns custom installed Raspberry Pi companion runtime code,
+beginning with the product Wire protocol/server. It is deliberately distinct
+from `scripts/pi/` provisioning/development tooling and from experimental
+apparatus under `experiments/`.
+
+The `pi/` root participates in the same long/complete/strict symbol-dictionary
+and local-file topology checks as `src/`. Its runtime installation definitions
+remain under `systemd/pi/`, while the installed product Python bytes live under
+`/usr/lib/ps-to-vnc`.
 
 ## Retained pre-refresh source
 
