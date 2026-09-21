@@ -48,7 +48,7 @@ Allowed states:
 | Scoped NetworkManager no-carrier behavior for `eth0` | `REJECTED` | Not required for the present endpoint contract. The private address was absent without carrier but NetworkManager installed it about 1.18 seconds before the sole PS2 SYN; no override was installed. Retain the scoped candidate only as rejected evidence for reconsideration if future hardware changes the timing requirement. |
 | Pi management service / TCP 5959 | `EVALUATING` | Product behavior is rebuild-ready but not required for the first minimal Ethernet+RFB proof. |
 | Historical VNC-only 60 Mbit/s pacing | `EVALUATING` | Historical integrated setting; not a universal requirement. Re-evaluate only if clean hardware evidence needs it. |
-| Historical Openbox/LXPanel dedicated desktop stack | `REPLACED` | The old stack as a unit is not adopted. TigerVNC is retained deliberately for the current provider; LXPanel is rejected; Openbox remains independently evaluable if the clean dedicated session needs a lightweight window manager. |
+| Historical Openbox/LXPanel dedicated desktop stack | `REPLACED` | The old stack as a unit is not adopted. TigerVNC remains in the provider family; LXPanel is rejected; the dedicated Openbox stack is historical/evaluating rather than the selected R11 native desktop route. |
 | WayVNC as optional desktop source/provider component | `EVALUATING` | Future possibility informed by the preserved experiment. It may expose the Pi's real labwc/Wayland desktop directly or feed a future gateway. It is not part of the first clean milestone and does not redefine the PS2-side RFB contract today. |
 | Remote-computer desktop source through Pi | `EVALUATING` | Future architecture direction: the Pi may normalize another machine's desktop for the PS2. Do not pre-commit to TigerVNC, WayVNC, a proxy, or a custom gateway as that future implementation until the requirements become active. |
 | Hybrid MPEG-2 high-motion video path | `EVALUATING` | Deferred future performance direction already acknowledged by the clean architecture. Its relevance today is only to preserve replaceable transport/provider seams; no media protocol or gateway implementation belongs in the first clean milestone. |
@@ -79,7 +79,4 @@ The first clean PS2↔Pi foundation now has:
 6. verified RFB 3.8, SecurityType None, fixed 704x462/depth-16 behavior, private
    listener scope, Raw presentation, and incremental framebuffer updates.
 
-The next Pi layer is deliberate desktop/session content selection. WayVNC
-integration, remote-source routing, custom gateway work, MPEG-2, audio,
-management, Samba, traffic pacing, and extra desktop conveniences remain outside
-this milestone until their own requirements justify them.
+That was the qualified Issue #5 stopping point. A003 R11 subsequently selected the existing LightDM/Xorg `:0` desktop through X0tigervnc as current reconstruction authority, while fresh live qualification remains pending. Remote-source routing, custom gateway work, MPEG-2, audio, management, Samba, traffic pacing, and extra desktop conveniences remain outside this provider-authority packet.
