@@ -31,7 +31,7 @@ DICT_NAME = "SYMBOLS.md"
 #
 # Add another root only when that tree deliberately becomes maintained
 # PS-to-VNC product source.
-PRODUCT_SOURCE_ROOTS = (Path("src"),)
+PRODUCT_SOURCE_ROOTS = (Path("src"), Path("pi"))
 
 EXCLUDED_PARTS = {"baseline", "evidence", "working", "build", ".git"}
 PLACEHOLDERS = {"todo", "tbd", "unknown", "placeholder", "describe me"}
