@@ -226,6 +226,59 @@ static void test_wire_establishment_exact_codecs_and_frames(void)
     CHECK(!pstvnc_transport_header_is_wire_hello(&header));
 }
 
+
+static void test_rfb_data_credit_exact_wire_bytes(void)
+{
+    pstvnc_transport_header_t header;
+    uint8_t header_bytes[PSTVNC_TRANSPORT_HEADER_SIZE];
+    uint8_t credit_payload[PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE];
+    uint8_t credit_frame[
+        PSTVNC_TRANSPORT_HEADER_SIZE + PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE];
+    uint8_t data_frame[PSTVNC_TRANSPORT_HEADER_SIZE + 3u];
+    static const uint8_t expected_credit[] = {
+        0x50u, 0x53u, 0x54u, 0x56u,
+        0x01u, 0x04u, 0x01u, 0x00u,
+        0x00u, 0x00u, 0x00u, 0x02u,
+        0x00u, 0x00u, 0x00u, 0x04u,
+        0x00u, 0x00u, 0x00u, 0x08u
+    };
+    static const uint8_t expected_data[] = {
+        0x50u, 0x53u, 0x54u, 0x56u,
+        0x01u, 0x03u, 0x01u, 0x00u,
+        0x00u, 0x00u, 0x00u, 0x03u,
+        0x00u, 0x00u, 0x00u, 0x03u,
+        0x61u, 0x62u, 0x63u
+    };
+
+    memset(&header, 0, sizeof(header));
+    header.version = PSTVNC_TRANSPORT_VERSION;
+    header.kind = PSTVNC_TRANSPORT_FRAME_CREDIT;
+    header.channel = PSTVNC_TRANSPORT_CHANNEL_RFB;
+    header.flags = 0u;
+    header.sequence = 2u;
+    header.payload_length = PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE;
+    pstvnc_transport_write_be32(credit_payload, 8u);
+
+    CHECK(pstvnc_transport_header_encode(header_bytes, &header));
+    memcpy(credit_frame, header_bytes, sizeof(header_bytes));
+    memcpy(
+        credit_frame + sizeof(header_bytes),
+        credit_payload,
+        sizeof(credit_payload));
+    CHECK(memcmp(
+        credit_frame,
+        expected_credit,
+        sizeof(expected_credit)) == 0);
+
+    header.kind = PSTVNC_TRANSPORT_FRAME_DATA;
+    header.sequence = 3u;
+    header.payload_length = 3u;
+    CHECK(pstvnc_transport_header_encode(header_bytes, &header));
+    memcpy(data_frame, header_bytes, sizeof(header_bytes));
+    memcpy(data_frame + sizeof(header_bytes), "abc", 3u);
+    CHECK(memcmp(data_frame, expected_data, sizeof(expected_data)) == 0);
+}
+
 static void test_mpeg_retire_exact_codec(void)
 {
     pstvnc_mpeg_retire_payload_t input;
@@ -331,6 +384,7 @@ int main(void)
     test_encode_rejects_invalid_contract();
     test_decode_rejects_invalid_wire_contract();
     test_wire_establishment_exact_codecs_and_frames();
+    test_rfb_data_credit_exact_wire_bytes();
     test_mpeg_retire_exact_codec();
     test_mpeg_start_exact_codec();
     test_explicit_mpeg_frame_identity_ignores_payload_shape();
