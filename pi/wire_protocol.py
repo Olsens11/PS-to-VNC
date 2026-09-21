@@ -3,10 +3,10 @@
 Defines the Raspberry Pi product-side PSTV Wire framing and provisional
 establishment representation shared conceptually with src/transport/protocol.*.
 
-This module owns bytes only: fixed headers, HELLO, ACCEPT and NOT_ACCEPTED
-payloads, exact envelope classification, and unsigned-field validation. It owns
-no sockets, listener/session lifecycle, rider dispatch, MPEG producer state,
-RFB provider lifecycle, reconnect policy, or systemd behavior.
+This module owns bytes only: fixed headers, HELLO, ACCEPT, NOT_ACCEPTED, exact
+RFB DATA/CREDIT framing, envelope classification, and unsigned-field
+validation. It owns no sockets, listener/session lifecycle, rider dispatch, MPEG
+producer state, RFB provider lifecycle, reconnect policy, or systemd behavior.
 
 Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
 A003-PI-WIRE-SERVER-ESTABLISHMENT-R8.
@@ -30,9 +30,13 @@ MAX_PAYLOAD_BYTES = 8192
 # Q4 establishment frame identities are now product protocol authority. They
 # deliberately occupy the control channel and do not imply any rider exists.
 FRAME_HELLO = 1
+FRAME_DATA = 3
+FRAME_CREDIT = 4
 FRAME_ACCEPT = 12
 FRAME_NOT_ACCEPTED = 13
+
 CHANNEL_CONTROL = 0
+CHANNEL_RFB = 1
 
 # HELLO carries two independent compatibility words. WIRE_VERSION covers the
 # current PSTV Wire contract; PRODUCT_ESTABLISHMENT_VERSION lets establishment
@@ -44,6 +48,7 @@ PRODUCT_ESTABLISHMENT_VERSION = 1
 # uint32 value: a nonzero Pi-owned session ID or a bounded rejection reason.
 HELLO = struct.Struct(">II")
 ONE_WORD = struct.Struct(">I")
+CREDIT = ONE_WORD
 
 REJECT_WIRE_VERSION = 1
 REJECT_PRODUCT_VERSION = 2
@@ -116,18 +121,34 @@ def decode_header(data: bytes) -> WireHeader:
     )
 
 
-def encode_frame(kind: int, sequence: int, payload: bytes) -> bytes:
-    # Establishment helpers use this narrow constructor so control-channel and
-    # zero-flags identity cannot drift independently between frame kinds.
+def encode_channel_frame(
+    kind: int,
+    channel: int,
+    sequence: int,
+    payload: bytes,
+) -> bytes:
+    """Encode one exact zero-flags PSTV frame for a selected logical channel."""
+
     header = WireHeader(
         version=WIRE_HEADER_VERSION,
         kind=kind,
-        channel=CHANNEL_CONTROL,
+        channel=channel,
         flags=0,
         sequence=sequence,
         payload_length=len(payload),
     )
     return encode_header(header) + payload
+
+
+def encode_frame(kind: int, sequence: int, payload: bytes) -> bytes:
+    # Establishment helpers use the control channel so Q4 identity cannot drift
+    # independently between frame kinds.
+    return encode_channel_frame(
+        kind,
+        CHANNEL_CONTROL,
+        sequence,
+        payload,
+    )
 
 
 def encode_hello_payload(
@@ -209,6 +230,62 @@ def encode_not_accepted_frame(reason: int, sequence: int = 1) -> bytes:
         FRAME_NOT_ACCEPTED,
         sequence,
         encode_not_accepted_payload(reason),
+    )
+
+
+def encode_rfb_credit_payload(amount: int) -> bytes:
+    _require_u32(amount, "RFB credit")
+    if amount == 0:
+        raise WireProtocolError("RFB credit must be nonzero")
+    return CREDIT.pack(amount)
+
+
+def decode_rfb_credit_payload(payload: bytes) -> int:
+    if len(payload) != CREDIT.size:
+        raise WireProtocolError("RFB CREDIT payload must be exactly 4 bytes")
+    amount = CREDIT.unpack(payload)[0]
+    if amount == 0:
+        raise WireProtocolError("RFB credit must be nonzero")
+    return amount
+
+
+def encode_rfb_credit_frame(amount: int, sequence: int) -> bytes:
+    return encode_channel_frame(
+        FRAME_CREDIT,
+        CHANNEL_RFB,
+        sequence,
+        encode_rfb_credit_payload(amount),
+    )
+
+
+def encode_rfb_data_frame(payload: bytes, sequence: int) -> bytes:
+    if len(payload) > MAX_PAYLOAD_BYTES:
+        raise WireProtocolError("RFB DATA payload exceeds product Wire maximum")
+    return encode_channel_frame(
+        FRAME_DATA,
+        CHANNEL_RFB,
+        sequence,
+        payload,
+    )
+
+
+def is_rfb_credit_header(header: WireHeader) -> bool:
+    return (
+        header.kind == FRAME_CREDIT
+        and header.channel == CHANNEL_RFB
+        and header.flags == 0
+        and header.payload_length == CREDIT.size
+    )
+
+
+def is_rfb_data_header(header: WireHeader) -> bool:
+    # Zero-length DATA is intentionally valid framing but reserved for the
+    # existing RFB quiesce lifecycle rather than raw provider bytes.
+    return (
+        header.kind == FRAME_DATA
+        and header.channel == CHANNEL_RFB
+        and header.flags == 0
+        and header.payload_length <= MAX_PAYLOAD_BYTES
     )
 
 
