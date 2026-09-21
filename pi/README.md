@@ -11,29 +11,44 @@ runtime code. It is distinct from:
 - `scripts/pi/`, which is provisioning/staging/development tooling;
 - `experiments/`, which is evidence and apparatus rather than product runtime.
 
-Current R10 ownership:
+Current R13 ownership:
 
 - `wire_protocol.py` — exact product Wire framing, Q4 establishment, and exact
   logical RFB DATA/CREDIT representation;
 - `wire_server.py` — persistent Pi listener, provisional establishment,
-  process-local session IDs, the sole accepted physical Wire I/O owner, and
-  optional composition of an explicitly supplied session-scoped RFB relay;
-- `rfb_relay.py` — provider-neutral bounded raw-RFB courier. It owns only the
-  supplied local provider socket, PS2-granted provider-read credit, Pi-granted
-  provider-write capacity, and one finite PS2->provider queue. It never reads
-  from or writes to the PS2-facing Wire socket;
+  process-local session IDs, the sole accepted physical Wire recv/send and
+  sequence owner, plus optional composition of one explicitly supplied
+  session-scoped RFB attachment;
+- `rfb_relay.py` — the accepted R10 provider-neutral bounded raw-RFB courier.
+  It owns only a supplied connected provider socket, RFB credit, and one finite
+  PS2->provider queue; it never reads from or writes to the PS2-facing Wire
+  socket;
+- `rfb_attachment.py` — the R13 one-Wire-Session RFB attachment/lifecycle
+  mechanism. It owns lazy nonblocking connection to the selected Pi-local
+  `127.0.0.1:5900` provider, explicit injected flow limits, composition of the
+  R10 Relay only after connect success, RFB-local provider failure, and ordered
+  REQUEST -> BOUNDARY -> COMMIT -> COMPLETE retirement;
 - `SYMBOLS.md` — local clean product symbol authority.
 
-The ordinary installed `ps-to-vnc-wire.service` remains establishment-only:
-`serve_forever()` supplies no provider attachment and R10 adds no automatic
-provider selection, endpoint migration, or direct-RFB service replacement.
-A later authorized owner may compose `RfbRelay` with an explicit provider
-socket without changing which object owns physical Wire I/O.
+An attachment is inert when constructed. The first exact nonzero channel-1
+CREDIT is the only R13 lazy provider-start edge. A healthy idle ACTIVE Wire
+Session therefore does not connect or start the RFB provider.
 
-R10 implements only the raw bidirectional RFB Relay core. It does not implement
-full RFB quiesce lifecycle orchestration, CONFIG delivery, Application RFB
-startup, RFB presentation/input policy, AUDIO/MPEG riders, MPEG producer policy,
-or reconnect/backoff.
+The R13 quiesce mechanism stops new provider reads at BOUNDARY, drains or
+locally fails already accepted provider writes, retires provider I/O before
+COMMIT, and treats COMPLETE as an RFB-attachment stop rather than a Wire-Session
+stop. One attachment is permanently session-scoped and is never rebound to a
+replacement Wire Session.
+
+The ordinary installed `ps-to-vnc-wire.service` remains establishment-only:
+`serve_forever()` supplies no RFB attachment factory and no flow profile.
+R13 therefore adds mechanism and an explicit composition seam without inventing
+Application RFB ON/OFF policy, automatic reconnect/backoff, CONFIG delivery, or
+service auto-attachment.
+
+`127.0.0.1:5903` remains development/operator tooling and is not product
+provider authority. R13 does not alter the PS2 `src/` peer contract and makes
+no live Pi or physical PS2/Pi qualification claim.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
-`A003-PI-RFB-WIRE-RELAY-R10`.
+`A003-PI-RFB-ATTACHMENT-QUIESCE-R13`.

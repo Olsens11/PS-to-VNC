@@ -1,11 +1,11 @@
 # Ledge All-Guns Architecture Overlay
 
 DOCUMENT=LEDGE_ARCHITECTURE_OVERLAY
-DOCUMENT_REVISION=0004
-RECORDED_AT=2026-09-20T15:54:52-04:00
+DOCUMENT_REVISION=0005
+RECORDED_AT=2026-09-21T19:38:46.622-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_DOCUMENT_REVISION=0003
-SUPERSEDES_DOCUMENT_REVISION=0003
+BASED_ON_DOCUMENT_REVISION=0004
+SUPERSEDES_DOCUMENT_REVISION=0004
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=ARCHITECTURE_POLICY_REVISION
@@ -14,10 +14,11 @@ BASE_ARCHITECTURE=docs/CLEAN_ARCHITECTURE.md:ARCHITECTURE_VERSION_1
 SCOPE=ledge/h1-all-guns
 
 This overlay is the current ledge amendment to the clean architecture. Revision
-0004 reconciles the completed Q1-Q12 Wire decisions and bounded hardware evidence
-back into clean reconstruction. Revision 0003 remains historical in Git; where
-its manual A003/generation wording conflicts with this revision or
-`LEDGE_WIRE_RUNTIME_DECISIONS.md` revision 0011, the later authority governs.
+0005 adds the accepted R13 reconstruction mechanism for one session-scoped Pi
+RFB attachment and its finite quiesce lifecycle. Revision 0004 remains
+historical in Git; where its pre-R13 attachment wording conflicts with this
+revision or `LEDGE_WIRE_RUNTIME_DECISIONS.md` revision 0011, the later
+authority governs.
 
 ## Physical Wire ownership
 
@@ -105,6 +106,38 @@ rewriting R11 evidence.
 The R11 `192.168.50.1:5900` route remains direct-RFB qualification/fallback
 authority, and `127.0.0.1:5903` remains development-only. R12 still does not
 attach the R10 Relay or implement quiesce/provider-failure orchestration.
+
+As of A003 R13, maintained Pi product source adds one session-scoped RFB
+attachment mechanism around the R10 Relay. Merely reaching Wire ACTIVE is inert:
+the first exact nonzero channel-1 CREDIT is the bounded lazy-start edge for one
+nonblocking connection attempt to the selected `127.0.0.1:5900` provider.
+Finite provider-read credit, provider-write capacity, and maximum DATA payload
+are explicit injected configuration, not Pi daemon defaults. The R10 Relay is
+created only after provider connect succeeds.
+
+The Wire connection owner remains the sole PS2-facing recv/send and global
+sequence owner. Provider failure is RFB-local and does not by itself retire
+Wire; the attachment has no reconnect/retry/backoff mechanism and may never be
+rebound to another Wire Session. A later Wire Session receives fresh attachment,
+credit, and quiesce state.
+
+Zero-length channel-1 DATA now has the strict attachment-local lifecycle:
+
+    REQUEST -> BOUNDARY -> COMMIT -> COMPLETE
+
+REQUEST is an explicit mechanism seam, not Application ON/OFF policy. Provider
+reads may continue after REQUEST but stop immediately when BOUNDARY is accepted.
+Already accepted provider writes then drain or fail locally; provider I/O is
+fully retired before COMMIT. No ordinary attachment DATA/CREDIT is emitted after
+COMMIT. COMPLETE stops only the attachment and leaves the containing Wire
+Session ACTIVE. Duplicate or out-of-order lifecycle markers fail at the
+smallest safe RFB scope.
+
+The default installed Wire service still supplies no attachment factory or
+flow profile, so R13 does not create unvalidated service auto-attachment,
+CONFIG delivery, Application RFB orchestration, AUDIO/MPEG ownership, or a new
+physical product connection. R13 is source/host/project/build authority, not a
+live Pi or physical qualification claim.
 
 ## One physical-I/O execution context
 

@@ -299,6 +299,52 @@ remain later work.
 R12 is repository/static authority only. No live Pi activation or physical
 qualification is claimed.
 
+## Session-scoped RFB attachment and quiesce — A003 R13
+
+R13 adds the maintained Pi product mechanism that can bind one accepted Wire
+Session to the selected R12 provider endpoint:
+
+    first nonzero channel-1 CREDIT
+        -> one nonblocking connect attempt to 127.0.0.1:5900
+        -> successful provider connection
+        -> one configured R10 Relay
+        -> opaque channel-1 RFB DATA/CREDIT
+
+The attachment is created with explicit finite provider-read credit,
+provider-write capacity and maximum DATA payload. Those values are injected by
+composition; the Pi daemon does not invent a tuning profile. Construction and a
+healthy idle ACTIVE Wire Session are provider-inert. The default installed
+`ps-to-vnc-wire.service` still supplies no attachment factory or flow profile,
+so R13 does not silently auto-attach RFB.
+
+Provider connection/read/write is readiness-driven. The Wire connection owner
+remains the sole PS2-facing recv/send and global sequence owner. A provider
+connect failure, EOF, write failure, or attachment lifecycle error is contained
+to the RFB attachment and does not by itself end the containing Wire Session.
+R13 does not reconnect or rebind a failed attachment.
+
+Zero-length channel-1 DATA is lifecycle control only. Nonempty channel-1 DATA
+remains opaque RFB bytes. The finite stop sequence is exactly:
+
+    REQUEST
+      -> BOUNDARY
+      -> COMMIT
+      -> COMPLETE
+
+REQUEST is an explicit mechanism seam rather than Application policy. After
+BOUNDARY no new provider read or provider-read credit is admitted; any
+previously accepted provider writes must drain or fail locally. Provider I/O is
+fully retired before COMMIT is serialized. COMPLETE stops the RFB attachment
+while the Wire Session remains ACTIVE. Duplicate or out-of-order lifecycle
+markers fail at the RFB-local scope.
+
+Each attachment belongs permanently to one Wire Session. A later Wire Session
+starts with a fresh attachment, fresh credit, and fresh quiesce state. R13 does
+not implement CONFIG delivery, Application RFB activation/restart policy,
+automatic provider retry/backoff, AUDIO/MPEG riders, or live Pi unit
+activation. It is source/host/project/build evidence only and makes no physical
+qualification claim.
+
 ## Product Wire server foundation — A003 R8
 
 A003 R8 establishes the first maintained custom Pi product runtime under

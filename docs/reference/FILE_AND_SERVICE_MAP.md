@@ -132,6 +132,7 @@ head `b40f422a760a0b7b6f2ab41699c5e72fda83bb83`.
 | Pi companion authority/router | `docs/pi/README.md` |
 | Maintained Pi product runtime source | `pi/` |
 | Product Wire server | `pi/wire_server.py`, `pi/wire_protocol.py` |
+| Product RFB Relay / session attachment | `pi/rfb_relay.py`, `pi/rfb_attachment.py` |
 | Product Wire systemd unit candidate | `systemd/pi/ps-to-vnc-wire.service` |
 | Product Wire inactive stager/verifier | `scripts/pi/install-wire-runtime.sh` |
 | Clean Pi provisioning | `docs/pi/PROVISIONING.md`, `scripts/pi/` |
@@ -152,7 +153,11 @@ systemd socket on `127.0.0.1:5900`, which demand-activates X0tigervnc against
 the existing LightDM/Xorg `:0` desktop. The R11 direct
 `192.168.50.1:5900` socket/drop-in, base Xtigervnc `:1` service and
 persistent provider remain preserved fallback / historical qualification
-authority. R12 does not attach the R10 Relay or make a live/hardware claim.
+authority. R12 itself did not attach the R10 Relay or make a live/hardware
+claim. A003 R13 now supplies the session-scoped, first-CREDIT-lazy attachment
+mechanism to that internal endpoint while preserving the default installed Wire
+service as establishment-only. R13 adds no live Pi activation or physical
+qualification claim.
 
 The tracked NetworkManager no-carrier candidate under `config/pi/` is preserved
 as rejected Issue #5 evidence and is not part of the selected installed
