@@ -136,19 +136,23 @@ head `b40f422a760a0b7b6f2ab41699c5e72fda83bb83`.
 | Product Wire inactive stager/verifier | `scripts/pi/install-wire-runtime.sh` |
 | Clean Pi provisioning | `docs/pi/PROVISIONING.md`, `scripts/pi/` |
 | PS2 private-link provisioning | `scripts/pi/configure-ps2-link.sh` |
-| Generic PS2-facing RFB listener | `systemd/pi/ps-to-vnc-rfb.socket` |
+| Preserved direct PS2-facing RFB listener | `systemd/pi/ps-to-vnc-rfb.socket` |
 | Historical qualified RFB provider base | `systemd/pi/ps-to-vnc-rfb-tigervnc.service` |
-| Selected native-desktop RFB provider override | `systemd/pi/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf` |
-| Optional mutually exclusive provider control | `systemd/pi/ps-to-vnc-rfb-tigervnc-persistent.service` |
-| RFB lifecycle installer/stager | `scripts/pi/install-rfb-activation-units.sh` |
+| Preserved R11 direct native-desktop provider override | `systemd/pi/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf` |
+| Optional mutually exclusive direct provider control | `systemd/pi/ps-to-vnc-rfb-tigervnc-persistent.service` |
+| Direct RFB authority stager | `scripts/pi/install-rfb-activation-units.sh` |
+| Selected Pi-local RFB provider socket | `systemd/pi/ps-to-vnc-rfb-internal.socket` |
+| Selected Pi-local X0tigervnc provider service | `systemd/pi/ps-to-vnc-rfb-internal-x0tigervnc.service` |
+| Internal RFB provider stager | `scripts/pi/install-rfb-internal-provider-units.sh` |
 | Qualified lifecycle record | `docs/pi/RFB_SOCKET_ACTIVATION.md` |
 | Qualified provider/session record | `docs/pi/TIGERVNC_SESSION.md` |
 
-The selected reconstruction lifecycle remains the same generic systemd socket,
-now composed with the tracked native X0tigervnc drop-in that exposes the
-existing LightDM/Xorg `:0` desktop. The base Xtigervnc `:1` service and
-persistent provider remain historical qualified/control authority. R11 makes no
-live systemd change or fresh hardware claim.
+The selected provider-side reconstruction lifecycle is now the R12 internal
+systemd socket on `127.0.0.1:5900`, which demand-activates X0tigervnc against
+the existing LightDM/Xorg `:0` desktop. The R11 direct
+`192.168.50.1:5900` socket/drop-in, base Xtigervnc `:1` service and
+persistent provider remain preserved fallback / historical qualification
+authority. R12 does not attach the R10 Relay or make a live/hardware claim.
 
 The tracked NetworkManager no-carrier candidate under `config/pi/` is preserved
 as rejected Issue #5 evidence and is not part of the selected installed
