@@ -156,3 +156,9 @@ The inventory below covers maintained clean-generation symbols defined directly 
 | poll_us | prototype parameter | src/media/clock.h | pstvnc_media_clock_wait_video | prototype | Supplies the nonzero polling delay. | A002 common media clock |
 | time_ops | prototype parameter | src/media/clock.h | pstvnc_media_clock_wait_video | prototype | Supplies timer/delay observers. | A002 common media clock |
 | stop_observer | prototype parameter | src/media/clock.h | pstvnc_media_clock_wait_video | prototype | Supplies optional cancellation observation. | A002 common media clock |
+| pstvnc_media_clock_tick_rate | function | src/media/clock.c | clock | file | Defines pstvnc_media_clock_tick_rate as a current clean-source function. | mechanically reconciled current clean source |
+| clock | parameter | src/media/clock.c | pstvnc_media_clock_tick_rate | local | Defines clock as a current clean-source parameter. | mechanically reconciled current clean source |
+| ticks_per_second | parameter | src/media/clock.c | pstvnc_media_clock_tick_rate | local | Defines ticks_per_second as a current clean-source parameter. | mechanically reconciled current clean source |
+| pstvnc_media_clock_tick_rate | function declaration | src/media/clock.h | clock interface | public | Defines pstvnc_media_clock_tick_rate as a current clean-source function declaration. | mechanically reconciled current clean source |
+| clock | prototype parameter | src/media/clock.h | pstvnc_media_clock_tick_rate | local | Defines clock as a current clean-source prototype parameter. | mechanically reconciled current clean source |
+| ticks_per_second | prototype parameter | src/media/clock.h | pstvnc_media_clock_tick_rate | local | Defines ticks_per_second as a current clean-source prototype parameter. | mechanically reconciled current clean source |
