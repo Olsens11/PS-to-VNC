@@ -137,15 +137,18 @@ head `b40f422a760a0b7b6f2ab41699c5e72fda83bb83`.
 | Clean Pi provisioning | `docs/pi/PROVISIONING.md`, `scripts/pi/` |
 | PS2 private-link provisioning | `scripts/pi/configure-ps2-link.sh` |
 | Generic PS2-facing RFB listener | `systemd/pi/ps-to-vnc-rfb.socket` |
-| Current replaceable RFB provider | `systemd/pi/ps-to-vnc-rfb-tigervnc.service` |
+| Historical qualified RFB provider base | `systemd/pi/ps-to-vnc-rfb-tigervnc.service` |
+| Selected native-desktop RFB provider override | `systemd/pi/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf` |
 | Optional mutually exclusive provider control | `systemd/pi/ps-to-vnc-rfb-tigervnc-persistent.service` |
 | RFB lifecycle installer/stager | `scripts/pi/install-rfb-activation-units.sh` |
 | Qualified lifecycle record | `docs/pi/RFB_SOCKET_ACTIVATION.md` |
 | Qualified provider/session record | `docs/pi/TIGERVNC_SESSION.md` |
 
-The selected runtime lifecycle is systemd socket activation with packaged
-Xtigervnc as the current replaceable provider. The persistent provider remains
-an optional control/fallback rather than the selected runtime.
+The selected reconstruction lifecycle remains the same generic systemd socket,
+now composed with the tracked native X0tigervnc drop-in that exposes the
+existing LightDM/Xorg `:0` desktop. The base Xtigervnc `:1` service and
+persistent provider remain historical qualified/control authority. R11 makes no
+live systemd change or fresh hardware claim.
 
 The tracked NetworkManager no-carrier candidate under `config/pi/` is preserved
 as rejected Issue #5 evidence and is not part of the selected installed
