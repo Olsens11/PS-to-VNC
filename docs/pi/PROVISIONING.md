@@ -115,6 +115,37 @@ It performs **no** daemon reload, enable/disable, start/stop/restart, provider
 activation, or LightDM/Xorg mutation. Staging therefore does not constitute a
 fresh native-provider qualification.
 
+## Selected internal RFB provider staging — A003 R12
+
+R12 stages its mature provider-side endpoint independently of the preserved
+direct-RFB alternative:
+
+```sh
+sudo ./scripts/pi/install-rfb-internal-provider-units.sh stage
+sudo ./scripts/pi/install-rfb-internal-provider-units.sh verify
+```
+
+Only these targets are installed by the R12 tool:
+
+    /etc/systemd/system/ps-to-vnc-rfb-internal.socket
+    /etc/systemd/system/ps-to-vnc-rfb-internal-x0tigervnc.service
+
+The selected endpoint is exactly `127.0.0.1:5900`. The service exposes the
+existing LightDM/Xorg `:0` desktop through `/usr/bin/X0tigervnc -rfbport -1`.
+
+The tool requires exact tracked bytes, mode `0644`, user/home/provider
+prerequisites, and inactive/disabled internal units. It copies the R11/direct
+definitions only into a temporary static-verification tree so systemd can
+validate both alternatives and their mutual-exclusion dependencies.
+
+It does **not** stage the direct definitions, reload systemd, change enablement,
+start/stop/restart either path, activate a listener, or mutate LightDM/Xorg.
+
+Removal likewise touches only byte-identical R12 internal-unit targets.
+
+R12 staging is repository/source authority only and is not a live activation or
+hardware qualification.
+
 ## Product Wire runtime candidate — A003 R8
 
 The maintained Pi product Wire runtime is sourced from `pi/` and staged with:
