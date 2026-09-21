@@ -1,0 +1,29 @@
+# PS-to-VNC Pi-local native-desktop RFB provider.
+#
+# X0tigervnc exposes the existing LightDM/Xorg :0 desktop through the socket
+# inherited from ps-to-vnc-rfb-internal.socket. It must not bind another RFB
+# listener. The future Wire RFB Relay may connect to the local socket, but this
+# service owns no Wire connection and no Relay lifecycle.
+#
+# Conflicts= keeps this selected internal provider mutually exclusive with every
+# preserved direct-RFB provider path without rewriting those historical units.
+[Unit]
+Description=PS-to-VNC Pi-local X0tigervnc RFB provider
+Documentation=https://github.com/Olsens11/PS-to-VNC/blob/ledge/h1-all-guns/docs/pi/RFB_SOCKET_ACTIVATION.md
+Requires=ps-to-vnc-rfb-internal.socket lightdm.service
+After=ps-to-vnc-rfb-internal.socket lightdm.service
+Conflicts=ps-to-vnc-rfb.socket ps-to-vnc-rfb-tigervnc.service ps-to-vnc-rfb-tigervnc-persistent.service
+After=ps-to-vnc-rfb.socket ps-to-vnc-rfb-tigervnc.service ps-to-vnc-rfb-tigervnc-persistent.service
+
+[Service]
+Type=simple
+User=ps2
+Group=ps2
+WorkingDirectory=/home/ps2
+UMask=0077
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/ps2/.Xauthority
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+ExecStart=/usr/bin/X0tigervnc -display :0 -rfbport -1 -SecurityTypes None -AlwaysShared=1 -AcceptPointerEvents=1 -AcceptKeyEvents=1 -AcceptSetDesktopSize=0 -UseIPv6=0
