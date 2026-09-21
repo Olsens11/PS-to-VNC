@@ -7,9 +7,10 @@
     PRODUCT_MUTATIONS=TRACKED_AND_QUALIFIED
     DEPENDENCY_LEDGER=ACTIVE
     TIGERVNC_DECISION=ADOPTED_RUNTIME
-    TIGERVNC_ROLE=CURRENT_REPLACEABLE_RFB_PROVIDER
+    TIGERVNC_ROLE=PROVIDER_FAMILY_REPLACEABLE
     TRACKED_FOUNDATION_PROVISIONING=READY
-    TIGERVNC_SESSION_CANDIDATE=QUALIFIED_CURRENT_PROVIDER
+    SELECTED_RFB_PROVIDER=X0TIGERVNC_NATIVE_DISPLAY_0
+    HISTORICAL_QUALIFIED_PROVIDER=XTIGERVNC_DEDICATED_DISPLAY_1
     TIGERVNC_SESSION_LIVE_VALIDATION=PASS
     RFB_SOCKET_ACTIVATION=ADOPTED_RUNTIME
     NETWORKMANAGER_NO_CARRIER_OVERRIDE=REJECTED_FOR_CURRENT_REQUIREMENT
@@ -62,8 +63,10 @@ addresses, credentials, and other host-specific private values.
 The reason for a state is part of the record. Rejected and replaced experiments
 remain documented.
 
-TigerVNC/Xtigervnc is adopted as the **current runtime provider** of the stable
-PS2-facing RFB endpoint for the present milestone. That adoption does not make
+TigerVNC remains the adopted provider family, but A003 R11 distinguishes two
+authorities: the hardware-qualified historical dedicated `Xtigervnc :1`
+provider and the selected current reconstruction route,
+`X0tigervnc -> existing LightDM/Xorg :0`. That selection does not make
 TigerVNC the permanent architectural boundary. The durable requirement is a
 predictable PS2-facing RFB service contract; provider-specific assumptions should
 remain localized so a future gateway or different provider can replace the
@@ -109,14 +112,15 @@ These deliberately stop before VNC service/session creation. The first clean
 foundation must be applied and verified before a systemd RFB-provider service is
 promoted.
 
-## Dedicated TigerVNC provider
+## TigerVNC provider authority
 
-`TIGERVNC_SESSION.md` records the qualified smallest current provider for the
-clean Issue #7 milestone.
+`TIGERVNC_SESSION.md` preserves the qualified Issue #5 dedicated provider and
+records the selected A003 R11 native-desktop provider separately.
 
-The provider deliberately separates the PS2-facing RFB behavior from desktop
-contents. It targets one fixed 704x462, depth-16 Xtigervnc virtual desktop on
-`192.168.50.1:5900` with SecurityType None restricted to the private PS2 link.
+The historical qualification targeted one fixed 704x462, depth-16 Xtigervnc
+virtual desktop on `192.168.50.1:5900`. R11 does not erase that result; it
+selects the later machine-proven native architecture that exposes the existing
+LightDM/Xorg `:0` desktop through X0tigervnc behind the same generic socket.
 It does not adopt Openbox, LXPanel, management, Samba, traffic pacing, WayVNC
 bridging, or remote-VNC routing.
 
@@ -134,9 +138,10 @@ The adopted lifecycle separates:
 
 - NetworkManager as owner of the static private `eth0` identity;
 - `ps-to-vnc-rfb.socket` as the generic PS2-facing RFB endpoint boundary;
-- `ps-to-vnc-rfb-tigervnc.service` as the **current replaceable provider**;
-- TigerVNC's documented `-inetd` wait mode as the provider-specific adapter to
-  the inherited listening socket.
+- `ps-to-vnc-rfb-tigervnc.service` as the replaceable provider service;
+- the tracked `90-native-x0vnc.conf` drop-in as the selected reconstruction
+  adapter, clearing the historical Xtigervnc `:1` ExecStart and using
+  X0tigervnc native socket activation for existing display `:0`.
 
 A conventional always-running provider control remains tracked as
 `ps-to-vnc-rfb-tigervnc-persistent.service`. It must not run concurrently with
@@ -210,6 +215,40 @@ The committed candidate is now staged byte-exact in its production filesystem
 locations but remains `EVALUATING`: systemd has not been daemon-reloaded and the
 desktop has not yet been qualified on the real `:1` provider.
 
+
+## Selected native Raspberry Pi desktop provider — A003 R11
+
+R11 reconstructs the selected direct-RFB provider authority without attaching
+it to the R10 Wire Relay.
+
+Selected effective route:
+
+    existing LightDM/Xorg X11 desktop :0
+        -> /usr/bin/X0tigervnc
+        -> inherited ps-to-vnc-rfb.socket
+        -> 192.168.50.1:5900
+
+Tracked selection:
+
+    systemd/pi/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf
+
+The tracked drop-in is byte-identical to the preserved historical machine copy:
+919 bytes, mode 0644, SHA-256
+`cf09bdf7b374f022b482e52201d8d6bc95c07687fa8fa827cb25ab74e8bcdf4d`.
+
+The base `Xtigervnc :1` service and persistent fallback remain tracked as the
+historical qualified/control definitions. The old Openbox/lxpanel dedicated
+`:1` candidate remains historical/evaluating material rather than the
+selected current desktop route.
+
+`127.0.0.1:5903` is Windows/operator development tooling, not an internal
+product provider endpoint.
+
+The R11 stager is exact-byte, mode-aware and inactive-only. It performs no
+systemd manager reload, enable/disable, start/stop/restart, or LightDM/Xorg
+mutation. R11 therefore records selected source authority and historical
+machine provenance only; it does not claim a fresh live native-provider
+qualification.
 
 ## Product Wire server foundation — A003 R8
 
