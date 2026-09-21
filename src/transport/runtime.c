@@ -161,6 +161,7 @@ static void pstvnc_transport_runtime_reset_identifiers(
     runtime->physical_stream.send_semaphore_id = -1;
     runtime->rfb_queue_semaphore_id = -1;
     runtime->rfb_activity_semaphore_id = -1;
+    runtime->rfb_outbound_credit_semaphore_id = -1;
     runtime->audio_queue_semaphore_id = -1;
     runtime->audio_activity_semaphore_id = -1;
     runtime->mpeg_queue_semaphore_id = -1;
@@ -414,6 +415,151 @@ static int pstvnc_transport_runtime_accept_quiesce_marker_locked(
     }
 
     return 0;
+}
+
+/*
+ * Pi CREDIT for channel 1 is the only authority that may release outbound RFB
+ * DATA toward the provider relay. The counter and three-state waiter fence are
+ * protected by the existing RFB queue semaphore so no separate generic rider
+ * scheduler is introduced.
+ */
+static int pstvnc_transport_runtime_accept_rfb_credit(
+    pstvnc_transport_runtime_t *runtime,
+    const pstvnc_transport_header_t *header)
+{
+    uint32_t amount;
+    int signal_waiter = 0;
+
+    if (header == NULL ||
+        header->channel != PSTVNC_TRANSPORT_CHANNEL_RFB ||
+        header->flags != 0u ||
+        header->payload_length != PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE)
+        return 0;
+
+    amount = pstvnc_transport_read_be32(runtime->receiver_payload);
+    if (amount == 0u)
+        return 0;
+
+    if (WaitSema(runtime->rfb_queue_semaphore_id) < 0)
+        return 0;
+
+    if (runtime->rfb_outbound_credit_bytes > UINT32_MAX - amount) {
+        (void)SignalSema(runtime->rfb_queue_semaphore_id);
+        return 0;
+    }
+
+    runtime->rfb_outbound_credit_bytes += amount;
+
+    if (runtime->rfb_outbound_credit_wait_state == 1) {
+        /*
+         * State 2 means the wake token has been published but the writer still
+         * owns the rendezvous until it returns through the protected state.
+         */
+        runtime->rfb_outbound_credit_wait_state = 2;
+        signal_waiter = 1;
+    }
+
+    if (SignalSema(runtime->rfb_queue_semaphore_id) < 0)
+        return 0;
+
+    if (signal_waiter &&
+        SignalSema(runtime->rfb_outbound_credit_semaphore_id) < 0)
+        return 0;
+
+    return 1;
+}
+
+static int pstvnc_transport_runtime_wake_rfb_outbound_credit_waiter(
+    pstvnc_transport_runtime_t *runtime)
+{
+    int signal_waiter = 0;
+
+    if (runtime->rfb_queue_semaphore_id < 0 ||
+        WaitSema(runtime->rfb_queue_semaphore_id) < 0)
+        return 0;
+
+    if (runtime->rfb_outbound_credit_wait_state == 1) {
+        runtime->rfb_outbound_credit_wait_state = 2;
+        signal_waiter = 1;
+    }
+
+    if (SignalSema(runtime->rfb_queue_semaphore_id) < 0)
+        return 0;
+
+    if (signal_waiter &&
+        SignalSema(runtime->rfb_outbound_credit_semaphore_id) < 0)
+        return 0;
+
+    return 1;
+}
+
+static int pstvnc_transport_runtime_reserve_rfb_outbound_credit(
+    pstvnc_transport_runtime_t *runtime,
+    size_t requested,
+    size_t *granted)
+{
+    if (runtime == NULL || requested == 0u || granted == NULL)
+        return 0;
+
+    *granted = 0u;
+
+    for (;;) {
+        size_t available;
+        size_t amount;
+
+        if (WaitSema(runtime->rfb_queue_semaphore_id) < 0) {
+            runtime->failed = 1;
+            return 0;
+        }
+
+        if (runtime->rfb_outbound_credit_wait_state == 2)
+            runtime->rfb_outbound_credit_wait_state = 0;
+
+        if (runtime->failed ||
+            runtime->receiver_done ||
+            runtime->stop_requested) {
+            if (SignalSema(runtime->rfb_queue_semaphore_id) < 0)
+                runtime->failed = 1;
+            return 0;
+        }
+
+        available = (size_t)runtime->rfb_outbound_credit_bytes;
+        if (available != 0u) {
+            amount = requested;
+            if (amount > available)
+                amount = available;
+            if (amount > (size_t)runtime->max_data_payload)
+                amount = (size_t)runtime->max_data_payload;
+
+            runtime->rfb_outbound_credit_bytes -= (uint32_t)amount;
+
+            if (SignalSema(runtime->rfb_queue_semaphore_id) < 0) {
+                runtime->failed = 1;
+                return 0;
+            }
+
+            *granted = amount;
+            return 1;
+        }
+
+        if (runtime->rfb_outbound_credit_wait_state != 0) {
+            (void)SignalSema(runtime->rfb_queue_semaphore_id);
+            runtime->failed = 1;
+            return 0;
+        }
+
+        runtime->rfb_outbound_credit_wait_state = 1;
+
+        if (SignalSema(runtime->rfb_queue_semaphore_id) < 0) {
+            runtime->failed = 1;
+            return 0;
+        }
+
+        if (WaitSema(runtime->rfb_outbound_credit_semaphore_id) < 0) {
+            runtime->failed = 1;
+            return 0;
+        }
+    }
 }
 
 static int pstvnc_transport_runtime_accept_rfb_frame(
@@ -705,6 +851,10 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
             else if (header.channel == PSTVNC_TRANSPORT_CHANNEL_MPEG2)
                 accepted = pstvnc_transport_runtime_accept_mpeg_frame(
                     runtime, &header);
+        } else if (header.kind == PSTVNC_TRANSPORT_FRAME_CREDIT &&
+                   header.channel == PSTVNC_TRANSPORT_CHANNEL_RFB) {
+            accepted = pstvnc_transport_runtime_accept_rfb_credit(
+                runtime, &header);
         } else if (header.kind == PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE) {
             accepted = pstvnc_transport_runtime_accept_mpeg_retire_completion(
                 runtime, &header);
@@ -726,6 +876,13 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
      */
     runtime->receiver_done = 1;
     pstvnc_transport_runtime_fail_pending_outbound(runtime);
+
+    /*
+     * A domain writer may be blocked waiting for Pi-granted RFB credit. Wake
+     * that one RFB-specific waiter so terminal Wire state is observable without
+     * deleting its semaphore underneath a sleeping thread.
+     */
+    (void)pstvnc_transport_runtime_wake_rfb_outbound_credit_waiter(runtime);
 
     /* Wake each enabled logical owner so terminal state is event-visible. */
     if (runtime->rfb_queue_semaphore_id >= 0 &&
@@ -790,6 +947,11 @@ static int pstvnc_transport_runtime_initialize_internal(
     runtime->rfb_activity_semaphore_id =
         pstvnc_transport_runtime_create_semaphore(0, 1);
     if (runtime->rfb_activity_semaphore_id < 0)
+        goto fail;
+
+    runtime->rfb_outbound_credit_semaphore_id =
+        pstvnc_transport_runtime_create_semaphore(0, 1);
+    if (runtime->rfb_outbound_credit_semaphore_id < 0)
         goto fail;
 
     if (audio_config != NULL) {
@@ -932,6 +1094,8 @@ fail:
         (void)DeleteSema(runtime->audio_activity_semaphore_id);
     if (runtime->audio_queue_semaphore_id >= 0)
         (void)DeleteSema(runtime->audio_queue_semaphore_id);
+    if (runtime->rfb_outbound_credit_semaphore_id >= 0)
+        (void)DeleteSema(runtime->rfb_outbound_credit_semaphore_id);
     if (runtime->rfb_activity_semaphore_id >= 0)
         (void)DeleteSema(runtime->rfb_activity_semaphore_id);
     if (runtime->rfb_queue_semaphore_id >= 0)
@@ -1416,11 +1580,19 @@ int pstvnc_transport_runtime_rfb_write_exact(
         return 0;
 
     while (offset < count) {
-        size_t remaining = count - offset;
-        size_t fragment = remaining;
+        size_t fragment;
 
-        if (fragment > (size_t)runtime->max_data_payload)
-            fragment = (size_t)runtime->max_data_payload;
+        /*
+         * Outbound RFB bytes may not enter Wire merely because the socket and
+         * rider runtime are live. Each fragment reserves exact Pi-granted free
+         * provider capacity first. Partial credit therefore releases only the
+         * matching prefix and the same writer waits for later replenishment.
+         */
+        if (!pstvnc_transport_runtime_reserve_rfb_outbound_credit(
+                runtime,
+                count - offset,
+                &fragment))
+            return 0;
 
         if (!pstvnc_transport_runtime_submit_frame(
                 runtime,
@@ -1429,6 +1601,11 @@ int pstvnc_transport_runtime_rfb_write_exact(
                 0u,
                 bytes + offset,
                 fragment)) {
+            /*
+             * Do not restore reserved credit after a send failure. The physical
+             * send may have exposed a frame prefix and the Wire Session is now
+             * terminal, so reusing the same capacity would be ambiguous.
+             */
             runtime->failed = 1;
             return 0;
         }
@@ -1954,6 +2131,16 @@ int pstvnc_transport_runtime_release(
      * already-existing waiter that still owns its rendezvous. Preserve all
      * waiter-visible resources and let the caller retry after it returns.
      */
+    if (WaitSema(runtime->rfb_queue_semaphore_id) < 0)
+        return 0;
+    waiter_live = runtime->rfb_outbound_credit_wait_state != 0;
+    if (SignalSema(runtime->rfb_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+    if (waiter_live)
+        return 0;
+
     if (!pstvnc_transport_runtime_media_waiter_live(
             runtime,
             runtime->audio_enabled,
@@ -2023,6 +2210,9 @@ int pstvnc_transport_runtime_release(
         result = 0;
     if (runtime->audio_queue_semaphore_id >= 0 &&
         DeleteSema(runtime->audio_queue_semaphore_id) < 0)
+        result = 0;
+    if (runtime->rfb_outbound_credit_semaphore_id >= 0 &&
+        DeleteSema(runtime->rfb_outbound_credit_semaphore_id) < 0)
         result = 0;
     if (runtime->rfb_activity_semaphore_id >= 0 &&
         DeleteSema(runtime->rfb_activity_semaphore_id) < 0)
