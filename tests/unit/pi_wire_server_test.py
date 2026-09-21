@@ -6,6 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 import socket
 import sys
+import threading
 import unittest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -144,21 +145,54 @@ class WireProtocolTests(unittest.TestCase):
 class WireServerTests(unittest.TestCase):
     def test_accepted_session_is_provisional_then_active_and_idle_safe(self) -> None:
         wire_server = server.WireServer(session_ids=server.SessionIdAllocator(10))
-        outcome, response = run_session(wire_server, protocol.encode_hello_frame())
+        peer, product = socket.socketpair()
+        outcomes: list[server.WireSessionOutcome] = []
 
-        self.assertTrue(outcome.accepted)
-        self.assertFalse(outcome.protocol_failed)
-        self.assertEqual(outcome.session_id, 10)
-        self.assertEqual(outcome.next_receive_sequence, 2)
-        self.assertEqual(outcome.next_send_sequence, 2)
+        def serve() -> None:
+            outcomes.append(wire_server.serve_connection(product))
 
-        header = protocol.decode_header(response[: protocol.HEADER_BYTES])
-        self.assertTrue(protocol.is_accept_header(header))
-        self.assertEqual(header.sequence, 1)
-        self.assertEqual(
-            protocol.decode_accept_payload(response[protocol.HEADER_BYTES :]),
-            10,
-        )
+        worker = threading.Thread(target=serve)
+        worker.start()
+        try:
+            peer.sendall(protocol.encode_hello_frame())
+            response = b""
+            expected_bytes = (
+                protocol.HEADER_BYTES + protocol.ONE_WORD.size
+            )
+            while len(response) < expected_bytes:
+                response += peer.recv(expected_bytes - len(response))
+
+            header = protocol.decode_header(
+                response[: protocol.HEADER_BYTES]
+            )
+            self.assertTrue(protocol.is_accept_header(header))
+            self.assertEqual(header.sequence, 1)
+            self.assertEqual(
+                protocol.decode_accept_payload(
+                    response[protocol.HEADER_BYTES :]
+                ),
+                10,
+            )
+
+            # No rider or heartbeat follows ACCEPT. The owner must remain alive
+            # waiting on the active physical session until the peer ends it.
+            self.assertTrue(worker.is_alive())
+
+            peer.shutdown(socket.SHUT_WR)
+            worker.join(timeout=1.0)
+            self.assertFalse(worker.is_alive())
+            self.assertEqual(len(outcomes), 1)
+
+            outcome = outcomes[0]
+            self.assertTrue(outcome.accepted)
+            self.assertFalse(outcome.protocol_failed)
+            self.assertEqual(outcome.session_id, 10)
+            self.assertEqual(outcome.next_receive_sequence, 2)
+            self.assertEqual(outcome.next_send_sequence, 2)
+        finally:
+            peer.close()
+            if worker.is_alive():
+                worker.join(timeout=1.0)
 
     def test_wire_and_product_version_rejections_never_activate(self) -> None:
         for wire_version, product_version, reason in (
@@ -216,15 +250,14 @@ class WireServerTests(unittest.TestCase):
 
     def test_accept_send_failure_never_publishes_active(self) -> None:
         failing = SendFailureSocket(protocol.encode_hello_frame())
-        owner = server.WireConnectionOwner(
-            failing,
-            server.SessionIdAllocator(20),
-        )
+        allocator = server.SessionIdAllocator(20)
+        owner = server.WireConnectionOwner(failing, allocator)
         outcome = owner.establish()
 
         self.assertFalse(outcome.accepted)
         self.assertIsNone(outcome.session_id)
         self.assertEqual(owner.state, server.WireSessionState.INACTIVE)
+        self.assertEqual(allocator.allocate(), 21)
 
     def test_consecutive_sessions_receive_distinct_monotonic_ids(self) -> None:
         wire_server = server.WireServer(session_ids=server.SessionIdAllocator(30))
