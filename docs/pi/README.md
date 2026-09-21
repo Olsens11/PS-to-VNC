@@ -160,7 +160,7 @@ Prepared apparatus and mutation staging are intentionally separate:
 - `scripts/pi/capture-rfb-activation-timeline.sh` — bounded read-only timing and
   packet evidence;
 - `scripts/pi/install-rfb-activation-units.sh` — fail-closed staging of the
-  generic socket, current provider, and persistent control, with no
+  generic socket, selected provider definition, and persistent control, with no
   enable/start/stop side effects;
 - `scripts/pi/install-ps2-link-no-carrier-candidate.sh` — fail-closed conditional
   NetworkManager snippet staging, with no reload or connection-state side effect.
@@ -184,7 +184,7 @@ Issue #5 hardware qualification passed the planned socket-lifecycle gates:
 
 Evidence through
 `b40f422a760a0b7b6f2ab41699c5e72fda83bb83` supports adopting the generic
-systemd-owned RFB endpoint with packaged Xtigervnc as its current replaceable
+systemd-owned RFB endpoint with packaged Xtigervnc as its then-current replaceable
 provider. The persistent unit remains an optional mutually exclusive fallback.
 
 The qualified provider supplies a bare virtual framebuffer, not the finished
