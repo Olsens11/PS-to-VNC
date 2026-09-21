@@ -557,6 +557,27 @@ static void test_q4_accept_establishes_and_transfers_sequence_two(void)
     CHECK(runtime_stream.next_send_sequence == 2u);
     CHECK(runtime_stream.expected_receive_sequence == 2u);
 
+    /*
+     * Prove the continuation value on actual encoded traffic, not only by
+     * inspecting private counters. The first post-Q4 frame must be sequence 2.
+     */
+    CHECK(pstvnc_transport_physical_stream_send_frame(
+        &runtime_stream,
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        NULL,
+        0u) == 1);
+    CHECK(pstvnc_transport_header_decode(
+        &sent_header,
+        fake_socket.outbound +
+            PSTVNC_TRANSPORT_HEADER_SIZE +
+            PSTVNC_WIRE_HELLO_PAYLOAD_SIZE) == 1);
+    CHECK(sent_header.kind == PSTVNC_TRANSPORT_FRAME_DATA);
+    CHECK(sent_header.channel == PSTVNC_TRANSPORT_CHANNEL_RFB);
+    CHECK(sent_header.sequence == 2u);
+    CHECK(runtime_stream.next_send_sequence == 3u);
+
     pstvnc_transport_physical_stream_release(&runtime_stream);
 }
 
