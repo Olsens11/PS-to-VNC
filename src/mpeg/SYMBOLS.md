@@ -69,8 +69,6 @@ The inventory below covers maintained clean-generation symbols defined directly 
 | decoder | parameter | src/mpeg/decoder.c | pstvnc_mpeg_decoder_request_stop | local | Supplies the decoder owner whose resources and call state are controlled to pstvnc_mpeg_decoder_request_stop. | A003 MPEG Transport/decoder core |
 | decoder | parameter | src/mpeg/decoder.c | pstvnc_mpeg_decoder_run | local | Supplies the decoder owner whose resources and call state are controlled to pstvnc_mpeg_decoder_run. | A003 MPEG Transport/decoder core |
 | report | parameter | src/mpeg/decoder.c | pstvnc_mpeg_decoder_run | local | Supplies caller-visible decoder sequence, feed, picture, and accounting report to pstvnc_mpeg_decoder_run. | A003 MPEG Transport/decoder core |
-| picture_result | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_run | local | Tracks decoder picture-call return code classified after ownership ends while pstvnc_mpeg_decoder_run executes. | A003 MPEG Transport/decoder core |
-| stop_requested | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_run | local | Tracks owner cancellation observed only outside active decoder calls while pstvnc_mpeg_decoder_run executes. | A003 MPEG Transport/decoder core |
 | context | parameter | src/mpeg/decoder.c | pstvnc_mpeg_decoder_sequence | local | Supplies callback context carrying the owning decoder instance to pstvnc_mpeg_decoder_sequence. | A003 MPEG Transport/decoder core |
 | height | parameter | src/mpeg/decoder.c | pstvnc_mpeg_decoder_sequence | local | Supplies decoder-reported sequence height validated before surface use to pstvnc_mpeg_decoder_sequence. | A003 MPEG Transport/decoder core |
 | picture_capacity | parameter | src/mpeg/decoder.c | pstvnc_mpeg_decoder_sequence | local | Supplies bounded macroblock-rounded picture-surface capacity to pstvnc_mpeg_decoder_sequence. | A003 MPEG Transport/decoder core |
@@ -175,3 +173,26 @@ The inventory below covers maintained clean-generation symbols defined directly 
 | unlock | field | src/mpeg/decoder.h | pstvnc_mpeg_decoder_sync_ops | local | Stores the matching injected owner-state unlock operation as state owned by pstvnc_mpeg_decoder_sync_ops. | A003 MPEG Transport/decoder core |
 | transport_result | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_initialize | local | Stores the Transport result produced while acquiring or using session-scoped access. | Q12 MPEG module-lifecycle integration |
 | transport_access | field | src/mpeg/decoder.h | pstvnc_mpeg_decoder | public | Stores this running module instance's opaque Transport access ticket. | Q12 MPEG module-lifecycle integration |
+| pstvnc_mpeg_decoder_step | function | src/mpeg/decoder.c | decoder | file | Defines pstvnc_mpeg_decoder_step as a current clean-source function. | mechanically reconciled current clean source |
+| picture | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_run | local | Defines picture as a current clean-source variable. | mechanically reconciled current clean source |
+| result | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_run | local | Defines result as a current clean-source variable. | mechanically reconciled current clean source |
+| decoder | parameter | src/mpeg/decoder.c | pstvnc_mpeg_decoder_step | local | Defines decoder as a current clean-source parameter. | mechanically reconciled current clean source |
+| picture | parameter | src/mpeg/decoder.c | pstvnc_mpeg_decoder_step | local | Defines picture as a current clean-source parameter. | mechanically reconciled current clean source |
+| report | parameter | src/mpeg/decoder.c | pstvnc_mpeg_decoder_step | local | Defines report as a current clean-source parameter. | mechanically reconciled current clean source |
+| picture_result | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_step | local | Defines picture_result as a current clean-source variable. | mechanically reconciled current clean source |
+| stop_requested | variable | src/mpeg/decoder.c | pstvnc_mpeg_decoder_step | local | Defines stop_requested as a current clean-source variable. | mechanically reconciled current clean source |
+| pstvnc_mpeg_decoder_step | function declaration | src/mpeg/decoder.h | decoder interface | public | Defines pstvnc_mpeg_decoder_step as a current clean-source function declaration. | mechanically reconciled current clean source |
+| pstvnc_mpeg_decoded_picture | structure | src/mpeg/decoder.h | decoder interface | public | Defines pstvnc_mpeg_decoded_picture as a current clean-source structure. | mechanically reconciled current clean source |
+| pstvnc_mpeg_decoded_picture_t | type | src/mpeg/decoder.h | decoder interface | public | Defines pstvnc_mpeg_decoded_picture_t as a current clean-source type. | mechanically reconciled current clean source |
+| byte_count | field | src/mpeg/decoder.h | pstvnc_mpeg_decoded_picture | local | Defines byte_count as a current clean-source field. | mechanically reconciled current clean source |
+| bytes_per_pixel | field | src/mpeg/decoder.h | pstvnc_mpeg_decoded_picture | local | Defines bytes_per_pixel as a current clean-source field. | mechanically reconciled current clean source |
+| capacity_bytes | field | src/mpeg/decoder.h | pstvnc_mpeg_decoded_picture | local | Defines capacity_bytes as a current clean-source field. | mechanically reconciled current clean source |
+| height | field | src/mpeg/decoder.h | pstvnc_mpeg_decoded_picture | local | Defines height as a current clean-source field. | mechanically reconciled current clean source |
+| picture_ordinal | field | src/mpeg/decoder.h | pstvnc_mpeg_decoded_picture | local | Defines picture_ordinal as a current clean-source field. | mechanically reconciled current clean source |
+| pixels | field | src/mpeg/decoder.h | pstvnc_mpeg_decoded_picture | local | Defines pixels as a current clean-source field. | mechanically reconciled current clean source |
+| width | field | src/mpeg/decoder.h | pstvnc_mpeg_decoded_picture | local | Defines width as a current clean-source field. | mechanically reconciled current clean source |
+| sequence_picture_bytes | field | src/mpeg/decoder.h | pstvnc_mpeg_decoder | local | Defines sequence_picture_bytes as a current clean-source field. | mechanically reconciled current clean source |
+| PSTVNC_MPEG_DECODER_PICTURE_READY | enum value | src/mpeg/decoder.h | pstvnc_mpeg_decoder_result | local | Defines PSTVNC_MPEG_DECODER_PICTURE_READY as a current clean-source enum value. | mechanically reconciled current clean source |
+| decoder | prototype parameter | src/mpeg/decoder.h | pstvnc_mpeg_decoder_step | local | Defines decoder as a current clean-source prototype parameter. | mechanically reconciled current clean source |
+| picture | prototype parameter | src/mpeg/decoder.h | pstvnc_mpeg_decoder_step | local | Defines picture as a current clean-source prototype parameter. | mechanically reconciled current clean source |
+| report | prototype parameter | src/mpeg/decoder.h | pstvnc_mpeg_decoder_step | local | Defines report as a current clean-source prototype parameter. | mechanically reconciled current clean source |
