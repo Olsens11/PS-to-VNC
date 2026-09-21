@@ -74,6 +74,18 @@ migrate or replace the qualified direct-RFB deployment. Zero-length channel-1
 DATA remains reserved for the existing finite quiesce lifecycle; full product
 quiesce orchestration and provider-selection policy remain later work.
 
+As of A003 R11, the selected **direct-RFB provider authority** is separately
+reproducible: the existing LightDM/Xorg `:0` desktop is exposed by
+`/usr/bin/X0tigervnc` through the unchanged generic systemd-owned
+`192.168.50.1:5900` socket. An additive provider-service drop-in owns this
+selection; it clears the historically qualified Xtigervnc `:1` ExecStart and
+uses X0tigervnc native socket activation with `-rfbport -1`. The historical
+dedicated `:1` unit remains evidence/control authority rather than being
+rewritten. The `127.0.0.1:5903` development listener is not product
+architecture.
+
+R11 still does not attach that selected provider to the R10 Wire Relay.
+
 ## One physical-I/O execution context
 
 The current architecture requires one Transport-owned physical framed-I/O
