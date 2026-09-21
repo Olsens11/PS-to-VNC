@@ -3,7 +3,7 @@
 ## Status
 
     WORKSTREAM=PRE_ISSUE40_PI_DESKTOP_PREREQUISITE
-    CLASSIFICATION=EVALUATING
+    CLASSIFICATION=HISTORICAL_EVALUATING_NOT_SELECTED_R11
     BASE_AUTHORITY=fc5fad58404c5d9ffdaaedae3b850aed8fcbfa51
     ISSUE5_FOUNDATION=PRESERVED
     DESKTOP_WINDOW_MANAGER=OPENBOX
@@ -12,6 +12,23 @@
     DEDICATED_UNIX_USER_REQUIRED=NO_EVIDENCE
     PANEL_PROFILE_BISECTION_REQUIRED=NO
     REAL_DISPLAY1_APPLICATION=NOT_YET_PERFORMED
+
+## A003 R11 current-authority note
+
+This document remains valuable evidence for the earlier dedicated-display
+Openbox/lxpanel experiment, but it is **not** the selected current provider
+architecture.
+
+A003 R11 selects the already-running Raspberry Pi LightDM/Xorg X11 desktop
+`:0`, exposed by X0tigervnc through the existing systemd-owned RFB socket.
+That route requires no second `:1` desktop merely to supply the PS2's RFB
+source.
+
+The dedicated `Xtigervnc :1 -> private XDG/DBus -> Openbox -> lxpanel-pi`
+work below remains historical/evaluating material. Its results are preserved;
+they are not silently reclassified as failures and are not deleted.
+
+R11 performs no live LightDM/Xorg, panel, Openbox, or systemd mutation.
 
 ## Purpose
 
