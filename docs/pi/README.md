@@ -10,6 +10,8 @@
     TIGERVNC_ROLE=PROVIDER_FAMILY_REPLACEABLE
     TRACKED_FOUNDATION_PROVISIONING=READY
     SELECTED_RFB_PROVIDER=X0TIGERVNC_NATIVE_DISPLAY_0
+    SELECTED_RFB_PROVIDER_ENDPOINT=INTERNAL_LOOPBACK_127_0_0_1_5900
+    DIRECT_RFB_ROUTE=PRESERVED_FALLBACK_EVIDENCE
     HISTORICAL_QUALIFIED_PROVIDER=XTIGERVNC_DEDICATED_DISPLAY_1
     TIGERVNC_SESSION_LIVE_VALIDATION=PASS
     RFB_SOCKET_ACTIVATION=ADOPTED_RUNTIME
@@ -63,11 +65,13 @@ addresses, credentials, and other host-specific private values.
 The reason for a state is part of the record. Rejected and replaced experiments
 remain documented.
 
-TigerVNC remains the adopted provider family, but A003 R11 distinguishes two
-authorities: the hardware-qualified historical dedicated `Xtigervnc :1`
-provider and the selected current reconstruction route,
-`X0tigervnc -> existing LightDM/Xorg :0`. That selection does not make
-TigerVNC the permanent architectural boundary. The durable requirement is a
+TigerVNC remains the adopted provider family. A003 R11 selected
+`X0tigervnc -> existing LightDM/Xorg :0` as the native desktop provider while
+preserving the hardware-qualified historical dedicated `Xtigervnc :1`
+authority. A003 R12 then moves the selected provider endpoint behind the
+Pi-local-only `127.0.0.1:5900` systemd socket so a later Wire Relay attachment
+does not require a competing PS2-facing RFB connection. That selection does not
+make TigerVNC the permanent architectural boundary. The durable requirement is a
 predictable PS2-facing RFB service contract; provider-specific assumptions should
 remain localized so a future gateway or different provider can replace the
 implementation when real requirements justify it.
@@ -134,14 +138,16 @@ incremental-update questions that source documentation alone could not answer.
 by the cold-boot/first-connect risk. `RFB_SOCKET_ACTIVATION.md` records the
 completed live evaluation and adopted lifecycle decision.
 
-The adopted lifecycle separates:
+The authority now separates:
 
 - NetworkManager as owner of the static private `eth0` identity;
-- `ps-to-vnc-rfb.socket` as the generic PS2-facing RFB endpoint boundary;
-- `ps-to-vnc-rfb-tigervnc.service` as the replaceable provider service;
-- the tracked `90-native-x0vnc.conf` drop-in as the selected reconstruction
-  adapter, clearing the historical Xtigervnc `:1` ExecStart and using
-  X0tigervnc native socket activation for existing display `:0`.
+- the R11 direct `ps-to-vnc-rfb.socket` route as preserved physically
+  qualified/fallback evidence on `192.168.50.1:5900`;
+- `ps-to-vnc-rfb-internal.socket` as the selected mature Pi-local provider
+  endpoint on `127.0.0.1:5900`;
+- `ps-to-vnc-rfb-internal-x0tigervnc.service` as the selected native provider
+  service exposing existing display `:0`;
+- the tracked R11 `90-native-x0vnc.conf` as preserved direct-route provenance.
 
 A conventional always-running provider control remains tracked as
 `ps-to-vnc-rfb-tigervnc-persistent.service`. It must not run concurrently with
@@ -160,8 +166,10 @@ Prepared apparatus and mutation staging are intentionally separate:
 - `scripts/pi/capture-rfb-activation-timeline.sh` — bounded read-only timing and
   packet evidence;
 - `scripts/pi/install-rfb-activation-units.sh` — fail-closed staging of the
-  generic socket, selected provider definition, and persistent control, with no
+  preserved direct socket/provider/fallback authority, with no
   enable/start/stop side effects;
+- `scripts/pi/install-rfb-internal-provider-units.sh` — separate fail-closed
+  staging of only the selected internal loopback provider endpoint;
 - `scripts/pi/install-ps2-link-no-carrier-candidate.sh` — fail-closed conditional
   NetworkManager snippet staging, with no reload or connection-state side effect.
 
@@ -249,6 +257,47 @@ systemd manager reload, enable/disable, start/stop/restart, or LightDM/Xorg
 mutation. R11 therefore records selected source authority and historical
 machine provenance only; it does not claim a fresh live native-provider
 qualification.
+
+## Selected internal RFB provider endpoint — A003 R12
+
+R12 internalizes the selected native provider endpoint without attaching it to
+the R10 Relay.
+
+Selected provider-side route:
+
+    future R10 Relay connector
+        -> 127.0.0.1:5900
+        -> ps-to-vnc-rfb-internal.socket
+        -> ps-to-vnc-rfb-internal-x0tigervnc.service
+        -> /usr/bin/X0tigervnc -display :0 -rfbport -1
+        -> existing LightDM/Xorg :0
+
+Tracked units:
+
+    systemd/pi/ps-to-vnc-rfb-internal.socket
+    systemd/pi/ps-to-vnc-rfb-internal-x0tigervnc.service
+
+The socket binds exactly `127.0.0.1:5900`; it is Pi-local provider
+infrastructure, not a second PS2-facing product connection and not a Wire
+Protocol endpoint.
+
+Both new units conflict with and are ordered against the preserved direct
+`ps-to-vnc-rfb.socket`, direct provider service and persistent control. The
+mutual-exclusion declarations live only in the new R12 units, leaving every R11
+direct/historical unit byte-identical.
+
+The separate
+`scripts/pi/install-rfb-internal-provider-units.sh` stages/verifies/removes
+only the two R12 units. It uses the direct definitions only in a temporary
+static-verification tree and performs no manager reload, enable/disable,
+start/stop/restart, LightDM/Xorg mutation or endpoint activation.
+
+The R10 Wire service and Relay remain byte-identical and unattached. Provider
+connection/retry policy and the RFB REQUEST/BOUNDARY/COMMIT/COMPLETE lifecycle
+remain later work.
+
+R12 is repository/static authority only. No live Pi activation or physical
+qualification is claimed.
 
 ## Product Wire server foundation — A003 R8
 
