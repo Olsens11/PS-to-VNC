@@ -759,3 +759,23 @@ $(MPEG_COMPOSITOR_TEST): \
 		../src/media/clock.c \
 		-o $(MPEG_COMPOSITOR_TEST)
 
+MPEG_WORKER_TEST := .build/mpeg_worker_test
+
+.PHONY: mpeg-worker-unit
+unit: mpeg-worker-unit
+
+mpeg-worker-unit: $(MPEG_WORKER_TEST)
+	./$(MPEG_WORKER_TEST)
+
+$(MPEG_WORKER_TEST): \
+	unit/mpeg_worker_test.c \
+	../src/mpeg/worker.c \
+	../src/mpeg/worker.h \
+	../src/mpeg/decoder.c \
+	../src/mpeg/decoder.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/mpeg_worker_test.c \
+		../src/mpeg/worker.c \
+		../src/mpeg/decoder.c \
+		-o $(MPEG_WORKER_TEST)
