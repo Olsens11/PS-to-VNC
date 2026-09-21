@@ -4,7 +4,7 @@ DIRECTORY=src/mpeg
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns the clean MPEG decoder lifecycle and safe-stop core. It consumes only the public logical MPEG Transport seam, owns explicit caller-supplied feed/sequence/resource bounds, known-state prepare/initialize/picture/destroy ordering, decoder-call lifetime fencing, and truthful payload-versus-padded-transfer accounting. It does not own the physical PSTV receiver, exact-generation START/retirement orchestration, Pi producer/capture control, presentation/compositor work, first-presentation clock arming, scheduling/drop policy, calibration, application orchestration, or hardware qualification.
+This directory owns the clean MPEG decoder lifecycle, safe-stop core, and one-picture borrowed decoded-frame publication boundary. It consumes only the public logical MPEG Transport seam, owns explicit caller-supplied feed/sequence/resource bounds, known-state prepare/initialize/picture/destroy ordering, decoder-call lifetime fencing, decoder-local picture ordinal/accounting, and truthful payload-versus-padded-transfer accounting. It does not own the physical PSTV receiver, exact-generation START/retirement orchestration, Pi producer/capture control, presentation/compositor work, first-presentation clock arming, scheduling/drop policy, calibration, application orchestration, or hardware qualification.
 
 The inventory below covers maintained clean-generation symbols defined directly in this directory.
 

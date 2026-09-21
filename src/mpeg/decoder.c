@@ -484,15 +484,18 @@ pstvnc_mpeg_decoder_result_t pstvnc_mpeg_decoder_step(
     int stop_requested = 0;
     int picture_result;
 
+    /*
+     * Every call with a writable output invalidates any previously returned
+     * borrowed view, even when validation/terminal handling prevents a picture
+     * call. Non-PICTURE_READY results therefore never leave a stale consumable
+     * picture value behind.
+     */
+    if (picture != NULL)
+        memset(picture, 0, sizeof(*picture));
+
     if (decoder == NULL || picture == NULL || report == NULL ||
         !decoder->initialized || !decoder->decoder_initialized)
         return PSTVNC_MPEG_DECODER_INVALID;
-
-    /*
-     * Every step invocation invalidates any previously returned borrowed view,
-     * even if this invocation terminates before another picture becomes ready.
-     */
-    memset(picture, 0, sizeof(*picture));
 
     if (!pstvnc_mpeg_decoder_observe_stop(decoder, &stop_requested))
         return PSTVNC_MPEG_DECODER_SYNC_FAILED;
