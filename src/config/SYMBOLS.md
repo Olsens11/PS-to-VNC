@@ -4,7 +4,7 @@ DIRECTORY=src/config
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns pure configuration/profile value decoding and validation plus small configuration-text normalization helpers. It does not own live CONFIG negotiation, Transport receive mechanics, PCM playback, AUDSRV lifecycle, media-clock runtime waiting/arming, or MPEG/video behavior.
+This directory owns pure production CONFIG-wire value decoding/validation, small configuration-text normalization helpers, and the one selected internal MPEG runtime profile assembled directly from existing Transport, decoder/worker, PS2 execution, and Display scheduler value types. It does not own live CONFIG negotiation, Transport receive mechanics, PCM playback, AUDSRV lifecycle, media-clock runtime waiting/arming, active MPEG geometry/generation meaning, decoder/worker execution, Presentation activation, or Application lifecycle orchestration.
 
 The inventory below covers maintained clean-generation symbols defined directly in this directory.
 
