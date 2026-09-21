@@ -43,6 +43,10 @@ class SessionIdExhausted(RuntimeError):
     """Fail closed rather than wrap a process-local Wire Session identity."""
 
 
+class UnsafeProvisionalFraming(protocol.WireProtocolError):
+    """Header bytes are not valid enough to send a Wire rejection safely."""
+
+
 @dataclass(frozen=True)
 class WireSessionOutcome:
     accepted: bool
@@ -129,7 +133,10 @@ class WireConnectionOwner:
 
     def _read_provisional_hello(self) -> tuple[int, int]:
         raw_header = read_exact(self._connection, protocol.HEADER_BYTES)
-        header = protocol.decode_header(raw_header)
+        try:
+            header = protocol.decode_header(raw_header)
+        except protocol.WireProtocolError as exc:
+            raise UnsafeProvisionalFraming(str(exc)) from exc
         payload = read_exact(self._connection, header.payload_length)
 
         if (
@@ -148,7 +155,7 @@ class WireConnectionOwner:
     def establish(self) -> WireSessionOutcome:
         try:
             wire_version, product_version = self._read_provisional_hello()
-        except EOFError:
+        except (EOFError, UnsafeProvisionalFraming):
             return self._finish(
                 accepted=False,
                 rejection_reason=None,
