@@ -1,12 +1,14 @@
 /*
  * File synopsis:
- * Implements Transport's one cross-component bridge body. It coordinates the
- * application-owned session lifecycle and adapts logical RFB plus optional
- * AUDIO/MPEG2 delivery and exact MPEG generation-control relay operations to the
- * private Transport runtime without exposing the physical PSTV descriptor or
- * moving active-generation/media policy into Transport.
+ * Implements Transport's one cross-component bridge body. It owns product Q4
+ * establishment and Wire availability, then adapts explicitly opened logical
+ * RFB plus optional AUDIO/MPEG2 riders to the private Transport runtime without
+ * exposing the physical PSTV descriptor or Pi-assigned session identity.
  *
- * One active bridge still means one physical connection and one sole receiver.
+ * Wire ACTIVE is deliberately independent from rider readiness. One established
+ * physical lineage may remain idle at sequence 2/2 until a rider runtime is
+ * explicitly opened; only then is the lineage transferred to the sole I/O
+ * thread.
  * RFB safe-boundary choice, PCM playback, MPEG decoding, media-clock use,
  * exact-generation orchestration, and presentation remain outside this bridge.
  *
@@ -20,7 +22,13 @@
 #include "runtime.h"
 
 static pstvnc_transport_runtime_t pstvnc_transport_bridge_runtime;
-static int pstvnc_transport_bridge_session_active;
+static pstvnc_transport_physical_stream_t
+    pstvnc_transport_bridge_established_stream = {
+        -1, -1, 1u, 1u
+    };
+static int pstvnc_transport_bridge_wire_active;
+static uint32_t pstvnc_transport_bridge_private_session_id;
+static int pstvnc_transport_bridge_runtime_active;
 static uint32_t pstvnc_transport_bridge_last_ticket;
 static uint32_t pstvnc_transport_bridge_active_ticket;
 
@@ -44,7 +52,7 @@ static pstvnc_transport_result_t pstvnc_transport_bridge_access_result(
     if (transport_access == NULL || transport_access->opaque_ticket == 0u)
         return PSTVNC_TRANSPORT_INVALID;
 
-    if (!pstvnc_transport_bridge_session_active ||
+    if (!pstvnc_transport_bridge_runtime_active ||
         transport_access->opaque_ticket !=
             pstvnc_transport_bridge_active_ticket)
         return PSTVNC_TRANSPORT_CLOSED;
@@ -67,7 +75,7 @@ pstvnc_transport_result_t pstvnc_transport_access_acquire(
 
     transport_access->opaque_ticket = 0u;
 
-    if (!pstvnc_transport_bridge_session_active)
+    if (!pstvnc_transport_bridge_runtime_active)
         return PSTVNC_TRANSPORT_CLOSED;
     if (pstvnc_transport_bridge_runtime.failed)
         return PSTVNC_TRANSPORT_FAILED;
@@ -83,6 +91,73 @@ pstvnc_transport_result_t pstvnc_transport_access_acquire(
     return PSTVNC_TRANSPORT_OK;
 }
 
+static void pstvnc_transport_bridge_clear_wire_authority(void)
+{
+    /*
+     * The Pi session ID is Transport-private and dies with this physical Wire
+     * Session. Never carry it into the next provisional connection.
+     */
+    pstvnc_transport_bridge_private_session_id = 0u;
+    pstvnc_transport_bridge_wire_active = 0;
+}
+
+pstvnc_transport_wire_availability_t pstvnc_transport_wire_availability(void)
+{
+    if (!pstvnc_transport_bridge_wire_active)
+        return PSTVNC_TRANSPORT_WIRE_INACTIVE;
+
+    if (pstvnc_transport_bridge_runtime_active &&
+        (pstvnc_transport_bridge_runtime.failed ||
+         pstvnc_transport_bridge_runtime.receiver_done ||
+         pstvnc_transport_bridge_runtime.stop_requested))
+        return PSTVNC_TRANSPORT_WIRE_INACTIVE;
+
+    return PSTVNC_TRANSPORT_WIRE_ACTIVE;
+}
+
+pstvnc_transport_wire_establishment_result_t pstvnc_transport_wire_establish(
+    int *socket_fd)
+{
+    pstvnc_transport_wire_establishment_result_t result;
+    pstvnc_wire_not_accepted_reason_t rejection_reason =
+        (pstvnc_wire_not_accepted_reason_t)0;
+    uint32_t private_session_id = 0u;
+    int establish_result;
+
+    result.status = PSTVNC_TRANSPORT_WIRE_ESTABLISHMENT_FAILED;
+    result.rejection_reason = (pstvnc_wire_not_accepted_reason_t)0;
+
+    if (socket_fd == NULL || *socket_fd < 0 ||
+        pstvnc_transport_bridge_wire_active ||
+        pstvnc_transport_bridge_runtime_active)
+        return result;
+
+    establish_result = pstvnc_transport_physical_stream_establish_client(
+        &pstvnc_transport_bridge_established_stream,
+        socket_fd,
+        &private_session_id,
+        &rejection_reason);
+
+    if (establish_result < 0) {
+        result.status = PSTVNC_TRANSPORT_WIRE_NOT_ACCEPTED;
+        result.rejection_reason = rejection_reason;
+        return result;
+    }
+
+    if (establish_result == 0 || private_session_id == 0u)
+        return result;
+
+    /*
+     * ACTIVE is published only after the physical owner has consumed exact
+     * ACCEPT sequence 1. The established stream is already positioned at 2/2,
+     * but no rider thread, queue, credit or DATA path is started here.
+     */
+    pstvnc_transport_bridge_private_session_id = private_session_id;
+    pstvnc_transport_bridge_wire_active = 1;
+    result.status = PSTVNC_TRANSPORT_WIRE_ESTABLISHED;
+    return result;
+}
+
 static pstvnc_transport_result_t pstvnc_transport_bridge_finish_release(void)
 {
     int released = pstvnc_transport_runtime_release(
@@ -92,7 +167,8 @@ static pstvnc_transport_result_t pstvnc_transport_bridge_finish_release(void)
         return PSTVNC_TRANSPORT_FAILED;
 
     pstvnc_transport_bridge_active_ticket = 0u;
-    pstvnc_transport_bridge_session_active = 0;
+    pstvnc_transport_bridge_runtime_active = 0;
+    pstvnc_transport_bridge_clear_wire_authority();
     return released ? PSTVNC_TRANSPORT_OK : PSTVNC_TRANSPORT_FAILED;
 }
 
@@ -102,12 +178,29 @@ static pstvnc_transport_result_t pstvnc_transport_session_open_internal(
     const pstvnc_transport_audio_channel_config_t *audio_config,
     const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
 {
+    pstvnc_transport_wire_establishment_result_t establishment;
     uint32_t candidate_ticket;
     int initialized;
 
-    if (socket_fd == NULL || *socket_fd < 0 || config == NULL ||
-        pstvnc_transport_bridge_session_active)
+    if (config == NULL || pstvnc_transport_bridge_runtime_active)
         return PSTVNC_TRANSPORT_INVALID;
+
+    if (!pstvnc_transport_bridge_wire_active) {
+        if (socket_fd == NULL || *socket_fd < 0)
+            return PSTVNC_TRANSPORT_INVALID;
+
+        establishment = pstvnc_transport_wire_establish(socket_fd);
+        if (establishment.status == PSTVNC_TRANSPORT_WIRE_NOT_ACCEPTED)
+            return PSTVNC_TRANSPORT_CLOSED;
+        if (establishment.status != PSTVNC_TRANSPORT_WIRE_ESTABLISHED)
+            return PSTVNC_TRANSPORT_FAILED;
+    } else if (socket_fd != NULL && *socket_fd >= 0) {
+        /*
+         * An ACTIVE Wire Session already owns its physical lineage. Refuse a
+         * second raw descriptor rather than making ownership ambiguous.
+         */
+        return PSTVNC_TRANSPORT_INVALID;
+    }
 
     if (pstvnc_transport_bridge_last_ticket == UINT32_MAX)
         return PSTVNC_TRANSPORT_FAILED;
@@ -115,46 +208,51 @@ static pstvnc_transport_result_t pstvnc_transport_session_open_internal(
     candidate_ticket = pstvnc_transport_bridge_last_ticket + 1u;
 
     if (audio_config != NULL && mpeg_config != NULL) {
-        initialized = pstvnc_transport_runtime_initialize_with_audio_mpeg(
-            &pstvnc_transport_bridge_runtime,
-            *socket_fd,
-            config,
-            audio_config,
-            mpeg_config);
+        initialized =
+            pstvnc_transport_runtime_initialize_established_with_audio_mpeg(
+                &pstvnc_transport_bridge_runtime,
+                &pstvnc_transport_bridge_established_stream,
+                config,
+                audio_config,
+                mpeg_config);
     } else if (audio_config != NULL) {
-        initialized = pstvnc_transport_runtime_initialize_with_audio(
+        initialized = pstvnc_transport_runtime_initialize_established_with_audio(
             &pstvnc_transport_bridge_runtime,
-            *socket_fd,
+            &pstvnc_transport_bridge_established_stream,
             config,
             audio_config);
     } else if (mpeg_config != NULL) {
-        initialized = pstvnc_transport_runtime_initialize_with_mpeg(
+        initialized = pstvnc_transport_runtime_initialize_established_with_mpeg(
             &pstvnc_transport_bridge_runtime,
-            *socket_fd,
+            &pstvnc_transport_bridge_established_stream,
             config,
             mpeg_config);
     } else {
-        initialized = pstvnc_transport_runtime_initialize(
+        initialized = pstvnc_transport_runtime_initialize_established(
             &pstvnc_transport_bridge_runtime,
-            *socket_fd,
+            &pstvnc_transport_bridge_established_stream,
             config);
     }
 
     if (!initialized)
         return PSTVNC_TRANSPORT_FAILED;
 
-    *socket_fd = -1;
-
+    /*
+     * Runtime now owns the exact established stream and its 2/2 sequence
+     * lineage. Starting the owner thread is the explicit rider-activation
+     * boundary; startup credits are not part of Q4 itself.
+     */
     if (!pstvnc_transport_runtime_start_receiver(
             &pstvnc_transport_bridge_runtime)) {
         (void)pstvnc_transport_runtime_release(
             &pstvnc_transport_bridge_runtime);
+        pstvnc_transport_bridge_clear_wire_authority();
         return PSTVNC_TRANSPORT_FAILED;
     }
 
     pstvnc_transport_bridge_last_ticket = candidate_ticket;
     pstvnc_transport_bridge_active_ticket = candidate_ticket;
-    pstvnc_transport_bridge_session_active = 1;
+    pstvnc_transport_bridge_runtime_active = 1;
     return PSTVNC_TRANSPORT_OK;
 }
 
@@ -205,23 +303,36 @@ pstvnc_transport_result_t pstvnc_transport_session_open_with_audio_mpeg(
 
 pstvnc_transport_result_t pstvnc_transport_session_abort(void)
 {
-    if (!pstvnc_transport_bridge_session_active)
+    if (pstvnc_transport_bridge_runtime_active) {
+        if (!pstvnc_transport_runtime_request_stop(
+                &pstvnc_transport_bridge_runtime))
+            return PSTVNC_TRANSPORT_FAILED;
+
+        if (!pstvnc_transport_runtime_wait_receiver_done(
+                &pstvnc_transport_bridge_runtime))
+            return PSTVNC_TRANSPORT_FAILED;
+
+        return pstvnc_transport_bridge_finish_release();
+    }
+
+    if (!pstvnc_transport_bridge_wire_active)
         return PSTVNC_TRANSPORT_INVALID;
 
-    if (!pstvnc_transport_runtime_request_stop(
-            &pstvnc_transport_bridge_runtime))
-        return PSTVNC_TRANSPORT_FAILED;
-
-    if (!pstvnc_transport_runtime_wait_receiver_done(
-            &pstvnc_transport_bridge_runtime))
-        return PSTVNC_TRANSPORT_FAILED;
-
-    return pstvnc_transport_bridge_finish_release();
+    /*
+     * Establishment-only ACTIVE owns no receiver thread. Interrupt/close the
+     * private physical stream directly and retire all Wire authority.
+     */
+    (void)pstvnc_transport_physical_stream_shutdown_io(
+        &pstvnc_transport_bridge_established_stream);
+    pstvnc_transport_physical_stream_release(
+        &pstvnc_transport_bridge_established_stream);
+    pstvnc_transport_bridge_clear_wire_authority();
+    return PSTVNC_TRANSPORT_OK;
 }
 
 pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void)
 {
-    if (!pstvnc_transport_bridge_session_active)
+    if (!pstvnc_transport_bridge_runtime_active)
         return PSTVNC_TRANSPORT_INVALID;
 
     if (!pstvnc_transport_runtime_wait_receiver_done(
@@ -233,14 +344,26 @@ pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void)
 
 pstvnc_transport_result_t pstvnc_transport_session_close(void)
 {
-    if (!pstvnc_transport_bridge_session_active)
+    if (pstvnc_transport_bridge_runtime_active) {
+        if (pstvnc_transport_bridge_runtime.receiver_thread_started &&
+            !pstvnc_transport_bridge_runtime.receiver_done)
+            return PSTVNC_TRANSPORT_WOULD_BLOCK;
+
+        return pstvnc_transport_bridge_finish_release();
+    }
+
+    if (!pstvnc_transport_bridge_wire_active)
         return PSTVNC_TRANSPORT_INVALID;
 
-    if (pstvnc_transport_bridge_runtime.receiver_thread_started &&
-        !pstvnc_transport_bridge_runtime.receiver_done)
-        return PSTVNC_TRANSPORT_WOULD_BLOCK;
-
-    return pstvnc_transport_bridge_finish_release();
+    /*
+     * An idle established Wire Session has no rider resources to drain. Closing
+     * its private stream is sufficient to return public availability to
+     * INACTIVE and prevent its Pi session identity from leaking forward.
+     */
+    pstvnc_transport_physical_stream_release(
+        &pstvnc_transport_bridge_established_stream);
+    pstvnc_transport_bridge_clear_wire_authority();
+    return PSTVNC_TRANSPORT_OK;
 }
 
 pstvnc_transport_result_t pstvnc_transport_rfb_read_exact(
