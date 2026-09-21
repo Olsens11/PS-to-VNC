@@ -4,7 +4,7 @@ DIRECTORY=src/transport
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns the one physical PSTV stream and sole receive owner; framed sequence and serialized send; independent bounded logical RFB, AUDIO, and MPEG storage/credit authority; producer-driven media activity wakeups; explicit finite-producer MPEG completion; finite-session quiescence; and Transport-owned terminal convergence. It does not own MPEG decoder resources, exact-generation START/retirement orchestration, presentation, or application policy.
+This directory owns the one physical PSTV stream and sole physical-I/O owner; framed sequence and serialized send; independent bounded logical RFB, AUDIO, and MPEG storage/credit authority; producer-driven media activity wakeups; exact MPEG START/RETIRE envelope relay with one session-local pending RETIRE-completion slot; explicit finite-producer MPEG completion publication; finite-session quiescence; and Transport-owned terminal convergence. It preserves Wire/session validity and payload identity but does not decide active MPEG generation meaning, producer lifecycle ordering, MPEG decoder resources, residual finalization, presentation, or application policy.
 
 The inventory below covers clean-generation symbols defined directly in this directory.
 
