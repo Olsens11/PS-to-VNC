@@ -394,8 +394,8 @@ int pstvnc_transport_physical_stream_establish_client(
     if (establish_result == 0)
         return 0;
 
+    stream->socket_fd = *socket_fd;
     *socket_fd = -1;
-    stream->socket_fd = 88;
     stream->send_semaphore_id = 3;
     stream->next_send_sequence = 2u;
     stream->expected_receive_sequence = 2u;
@@ -788,9 +788,12 @@ static void test_failed_open_ownership_regression(void)
     initialize_result = 0;
     CHECK(pstvnc_transport_session_open(&socket_fd, &config) ==
         PSTVNC_TRANSPORT_FAILED);
-    CHECK(socket_fd == 17);
+    CHECK(socket_fd == -1);
     CHECK(start_calls == 0);
     CHECK(release_calls == 0);
+    CHECK(physical_release_calls == 1);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
 
     reset_fixture();
     start_result = 0;
