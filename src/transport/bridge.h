@@ -1,10 +1,11 @@
 /*
  * File synopsis:
  * Defines Transport's single cross-component bridge. The bridge exposes the
- * application-requested session lifecycle, logical RFB byte-stream/quiesce
- * processes, optional logical AUDIO/MPEG2 consumer seams, and exact MPEG
- * generation-control relay operations while keeping the physical PSTV descriptor
- * and sole physical-I/O runtime private to Transport.
+ * product Wire establishment/availability, application-requested rider-runtime
+ * lifecycle, logical RFB byte-stream/quiesce processes, optional logical
+ * AUDIO/MPEG2 consumer seams, and exact MPEG generation-control relay operations
+ * while keeping the physical PSTV descriptor, Pi session identity, and sole
+ * physical-I/O runtime private to Transport.
  *
  * The bridge does not parse RFB, invent configuration defaults, play PCM,
  * decode MPEG, decide media timing/presentation/generation policy, or perform
@@ -25,6 +26,38 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef enum pstvnc_transport_wire_establishment_status {
+    PSTVNC_TRANSPORT_WIRE_ESTABLISHMENT_FAILED = 0,
+    PSTVNC_TRANSPORT_WIRE_ESTABLISHED = 1,
+    PSTVNC_TRANSPORT_WIRE_NOT_ACCEPTED = 2
+} pstvnc_transport_wire_establishment_status_t;
+
+typedef struct pstvnc_transport_wire_establishment_result {
+    pstvnc_transport_wire_establishment_status_t status;
+    pstvnc_wire_not_accepted_reason_t rejection_reason;
+} pstvnc_transport_wire_establishment_result_t;
+
+typedef enum pstvnc_transport_wire_availability {
+    PSTVNC_TRANSPORT_WIRE_INACTIVE = 0,
+    PSTVNC_TRANSPORT_WIRE_ACTIVE = 1
+} pstvnc_transport_wire_availability_t;
+
+/*
+ * Transfer a fresh caller-owned TCP descriptor into Transport and perform Q4.
+ * If physical adoption succeeds, *socket_fd is set to -1 on every later
+ * outcome. The Pi-assigned session ID remains private to Transport.
+ */
+pstvnc_transport_wire_establishment_result_t pstvnc_transport_wire_establish(
+    int *socket_fd);
+
+pstvnc_transport_wire_availability_t pstvnc_transport_wire_availability(void);
+
+/*
+ * Rider-runtime opens retain the legacy descriptor pointer only as a migration
+ * seam. If Wire is INACTIVE they first perform Q4 on that descriptor; if Wire
+ * is already ACTIVE the pointer must be NULL or contain -1. No rider runtime
+ * can therefore skip establishment.
+ */
 pstvnc_transport_result_t pstvnc_transport_session_open(
     int *socket_fd,
     const pstvnc_transport_session_config_t *config);
