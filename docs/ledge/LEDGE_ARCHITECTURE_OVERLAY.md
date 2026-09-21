@@ -35,8 +35,18 @@ Session and never resumes the dead one.
 Connection establishment is provisional until compatibility establishment
 succeeds. Wire Protocol begins immediately, ACTIVE is published only after
 successful establishment, and the Pi assigns authoritative session identity.
-The final clean product Q4 establishment path remains source/qualification work;
-proof-local establishment is evidence, not product completion.
+
+As of A003 R8/R9, this Q4 establishment boundary exists in maintained product
+source on both peers. The Pi product server owns provisional accept and
+authoritative session-ID allocation; PS2 Transport owns HELLO/result handling,
+descriptor transfer, private current-session identity, and the public
+INACTIVE/ACTIVE availability fact. Successful establishment consumes sequence 1
+independently in each direction and preserves the same physical lineage at
+sequence 2 for later rider activation.
+
+This is source/host/build authority, not physical qualification of the final
+product path. The earlier Q1-Q12 proofs remain hardware evidence and reference
+provenance rather than substitute qualification for the R8/R9 product source.
 
 ## Wire Channel Relay boundary
 
