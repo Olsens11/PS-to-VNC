@@ -53,7 +53,10 @@ def run_session(
 
         response_parts: list[bytes] = []
         while True:
-            chunk = peer.recv(4096)
+            try:
+                chunk = peer.recv(4096)
+            except ConnectionResetError:
+                break
             if not chunk:
                 break
             response_parts.append(chunk)
