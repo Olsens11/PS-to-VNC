@@ -226,7 +226,7 @@ desktop has not yet been qualified on the real `:1` provider.
 
 ## Selected native Raspberry Pi desktop provider — A003 R11
 
-R11 reconstructs the selected direct-RFB provider authority without attaching
+R11 originally reconstructed the direct-RFB provider authority without attaching
 it to the R10 Wire Relay.
 
 Selected effective route:
