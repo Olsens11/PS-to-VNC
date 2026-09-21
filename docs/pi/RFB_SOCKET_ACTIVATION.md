@@ -5,7 +5,8 @@
     WORKSTREAM=GITHUB_ISSUE_5
     CLASSIFICATION=ADOPTED_RUNTIME
     BASE_AUTHORITY=87baebce32e3c07ffc12298d6a168ac890231cf2
-    CURRENT_PROVIDER=Xtigervnc_1.15.0+dfsg-2.1~deb13u1
+    SELECTED_RECONSTRUCTION_PROVIDER=X0tigervnc_native_display_0
+    HISTORICAL_QUALIFIED_PROVIDER=Xtigervnc_dedicated_display_1
     CURRENT_PROVIDER_ROLE=REPLACEABLE_IMPLEMENTATION
     NETWORK_OWNER=NetworkManager
     LIFECYCLE_OWNER=systemd
@@ -25,6 +26,54 @@ clean, conventional, replaceable PS2-facing service boundary whose **current**
 provider happens to be TigerVNC.
 
 The pre-test design below is now reconciled with the completed live qualification.
+
+## A003 R11 provider-authority reconciliation
+
+The generic endpoint lifecycle qualified during Issue #5 remains authoritative:
+systemd owns `192.168.50.1:5900` through
+`ps-to-vnc-rfb.socket`. R11 does not alter that socket.
+
+Issue #5 physically qualified the then-selected dedicated adapter:
+
+    ps-to-vnc-rfb-tigervnc.service
+        -> Xtigervnc :1 -inetd
+
+That result remains historical hardware evidence and the base service file is
+preserved byte-for-byte.
+
+Later machine evidence established the useful native-desktop route:
+
+    existing LightDM/Xorg X11 desktop :0
+        -> X0tigervnc
+        -> inherited ps-to-vnc-rfb.socket
+
+R11 makes that later selection reproducible with the additive drop-in:
+
+    systemd/pi/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf
+
+The drop-in requires/starts after LightDM, sets `DISPLAY=:0` and
+`XAUTHORITY=/home/ps2/.Xauthority`, replaces `StandardInput=socket` with
+`StandardInput=null`, clears the base ExecStart, and invokes
+`/usr/bin/X0tigervnc -display :0 -rfbport -1` with the recovered product
+RFB policy.
+
+Historical installed identity:
+
+    path = /etc/systemd/system/ps-to-vnc-rfb-tigervnc.service.d/90-native-x0vnc.conf
+    mode = 0644
+    bytes = 919
+    SHA256 = cf09bdf7b374f022b482e52201d8d6bc95c07687fa8fa827cb25ab74e8bcdf4d
+
+The tracked R11 file reproduces those exact bytes. This is source/provenance
+reconciliation, not a fresh live observation or physical requalification.
+
+The separate `127.0.0.1:5903` X0tigervnc route is development tooling for a
+Windows/operator connection and is not part of the product path.
+
+The remaining Issue #5 text below is retained as the chronology and
+qualification record of the dedicated `:1` adapter. Statements describing
+Xtigervnc as "current" are temporal descriptions of that qualification campaign,
+not overrides of the R11 selected reconstruction authority above.
 
 ## Reconstruction decision check
 
@@ -361,8 +410,9 @@ no-carrier override was not installed.
 
 ### Phase 2 — stage lifecycle candidates
 
-Use `install-rfb-activation-units.sh install` only after the live state is
-understood. It stages but does not start/enable:
+Use `install-rfb-activation-units.sh stage` only when the RFB socket, provider,
+and persistent control are all inactive and disabled. The R11 tool stages but
+does not reload, start, stop, enable, disable, or restart:
 
 - generic RFB socket;
 - socket-activated TigerVNC provider;
