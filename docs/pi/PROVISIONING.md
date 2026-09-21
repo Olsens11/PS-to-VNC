@@ -84,10 +84,10 @@ PS2-facing RFB/security contract, RGB565 behavior, endpoint health/restartabilit
 and the minimum session/window-manager contents actually required.
 
 
-## Selected direct-RFB provider staging — A003 R11
+## Preserved direct-RFB provider staging — A003 R11
 
 After the exact TigerVNC packages and private Ethernet foundation are present,
-the selected native provider definitions can be staged without changing live
+the preserved R11 native direct-provider definitions can be staged without changing live
 systemd state:
 
 ```sh
