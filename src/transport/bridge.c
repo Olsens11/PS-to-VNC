@@ -101,6 +101,21 @@ static void pstvnc_transport_bridge_clear_wire_authority(void)
     pstvnc_transport_bridge_wire_active = 0;
 }
 
+static void pstvnc_transport_bridge_retire_idle_wire(void)
+{
+    if (!pstvnc_transport_bridge_wire_active)
+        return;
+
+    /*
+     * Rider-open failure must not strand a descriptor that Application has
+     * already transferred to Transport. Fail closed by retiring the established
+     * physical lineage before returning the open failure.
+     */
+    pstvnc_transport_physical_stream_release(
+        &pstvnc_transport_bridge_established_stream);
+    pstvnc_transport_bridge_clear_wire_authority();
+}
+
 pstvnc_transport_wire_availability_t pstvnc_transport_wire_availability(void)
 {
     if (!pstvnc_transport_bridge_wire_active)
@@ -202,8 +217,10 @@ static pstvnc_transport_result_t pstvnc_transport_session_open_internal(
         return PSTVNC_TRANSPORT_INVALID;
     }
 
-    if (pstvnc_transport_bridge_last_ticket == UINT32_MAX)
+    if (pstvnc_transport_bridge_last_ticket == UINT32_MAX) {
+        pstvnc_transport_bridge_retire_idle_wire();
         return PSTVNC_TRANSPORT_FAILED;
+    }
 
     candidate_ticket = pstvnc_transport_bridge_last_ticket + 1u;
 
@@ -234,8 +251,10 @@ static pstvnc_transport_result_t pstvnc_transport_session_open_internal(
             config);
     }
 
-    if (!initialized)
+    if (!initialized) {
+        pstvnc_transport_bridge_retire_idle_wire();
         return PSTVNC_TRANSPORT_FAILED;
+    }
 
     /*
      * Runtime now owns the exact established stream and its 2/2 sequence
