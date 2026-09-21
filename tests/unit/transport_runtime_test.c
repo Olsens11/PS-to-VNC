@@ -89,6 +89,10 @@ static fake_semaphore_t fake_semaphores[MAX_FAKE_SEMAS];
 static int create_sema_calls;
 static int create_sema_fail_on_call;
 static int receiver_done_semaphore_id = -1;
+static int rfb_outbound_credit_wait_semaphore_id = -1;
+static int rfb_outbound_credit_wait_calls;
+static pthread_mutex_t rfb_credit_wait_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t rfb_credit_wait_condition = PTHREAD_COND_INITIALIZER;
 
 typedef struct fake_thread {
     int used;
@@ -175,6 +179,13 @@ int WaitSema(int semaphore_id)
     if (semaphore_id <= 0 || semaphore_id >= MAX_FAKE_SEMAS ||
         !fake_semaphores[semaphore_id].used)
         return -1;
+
+    if (semaphore_id == rfb_outbound_credit_wait_semaphore_id) {
+        pthread_mutex_lock(&rfb_credit_wait_mutex);
+        rfb_outbound_credit_wait_calls++;
+        pthread_cond_broadcast(&rfb_credit_wait_condition);
+        pthread_mutex_unlock(&rfb_credit_wait_mutex);
+    }
 
     semaphore = &fake_semaphores[semaphore_id];
     pthread_mutex_lock(&semaphore->mutex);
@@ -428,6 +439,10 @@ static void reset_fixture(void)
     create_sema_calls = 0;
     create_sema_fail_on_call = 0;
     receiver_done_semaphore_id = -1;
+    rfb_outbound_credit_wait_semaphore_id = -1;
+    pthread_mutex_lock(&rfb_credit_wait_mutex);
+    rfb_outbound_credit_wait_calls = 0;
+    pthread_mutex_unlock(&rfb_credit_wait_mutex);
     create_thread_calls = 0;
     create_thread_fail = 0;
     start_thread_fail = 0;
@@ -674,6 +689,16 @@ static void clear_send_records(void)
     pthread_mutex_unlock(&send_mutex);
 }
 
+static void wait_for_rfb_credit_wait_calls(int target)
+{
+    pthread_mutex_lock(&rfb_credit_wait_mutex);
+    while (rfb_outbound_credit_wait_calls < target)
+        pthread_cond_wait(
+            &rfb_credit_wait_condition,
+            &rfb_credit_wait_mutex);
+    pthread_mutex_unlock(&rfb_credit_wait_mutex);
+}
+
 static uint32_t credit_record_amount(size_t index)
 {
     CHECK(index < send_record_count);
@@ -689,6 +714,8 @@ static void initialize_runtime(
     memset(runtime, 0xa5, sizeof(*runtime));
     CHECK(pstvnc_transport_runtime_initialize(runtime, 91, config) == 1);
     receiver_done_semaphore_id = runtime->receiver_done_semaphore_id;
+    rfb_outbound_credit_wait_semaphore_id =
+        runtime->rfb_outbound_credit_semaphore_id;
     CHECK(runtime->initialized == 1);
 }
 
@@ -954,6 +981,38 @@ static void test_parser_credit_batch_flush_and_residual_distinction(void)
 }
 
 
+typedef struct rfb_writer_test_context {
+    pstvnc_transport_runtime_t *runtime;
+    const uint8_t *payload;
+    size_t payload_length;
+    int result;
+} rfb_writer_test_context_t;
+
+static void *rfb_writer_test_thread(void *opaque)
+{
+    rfb_writer_test_context_t *context =
+        (rfb_writer_test_context_t *)opaque;
+
+    context->result = pstvnc_transport_runtime_rfb_write_exact(
+        context->runtime,
+        context->payload,
+        context->payload_length);
+    return NULL;
+}
+
+static void push_rfb_credit(uint32_t amount)
+{
+    uint8_t payload[PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE];
+
+    pstvnc_transport_write_be32(payload, amount);
+    push_rx_frame(
+        PSTVNC_TRANSPORT_FRAME_CREDIT,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        payload,
+        sizeof(payload));
+}
+
 static void test_outbound_fragmentation_and_failure_propagation(void)
 {
     static const uint8_t payload[] = {
@@ -967,6 +1026,8 @@ static void test_outbound_fragmentation_and_failure_propagation(void)
     start_runtime(&runtime);
     clear_send_records();
 
+    push_rfb_credit((uint32_t)sizeof(payload));
+    wait_for_receive_calls(1);
     CHECK(pstvnc_transport_runtime_rfb_write_exact(
         &runtime, payload, sizeof(payload)) == 1);
     CHECK(send_record_count == 3u);
@@ -978,6 +1039,7 @@ static void test_outbound_fragmentation_and_failure_propagation(void)
     CHECK(memcmp(send_records[0].payload, payload, 4u) == 0);
     CHECK(memcmp(send_records[1].payload, payload + 4u, 4u) == 0);
     CHECK(memcmp(send_records[2].payload, payload + 8u, 2u) == 0);
+    CHECK(runtime.rfb_outbound_credit_bytes == 0u);
     stop_and_release_runtime(&runtime);
 
     reset_fixture();
@@ -985,11 +1047,65 @@ static void test_outbound_fragmentation_and_failure_propagation(void)
     start_runtime(&runtime);
     clear_send_records();
 
+    push_rfb_credit((uint32_t)sizeof(payload));
+    wait_for_receive_calls(1);
     send_fail_on_call = send_calls + 2;
     CHECK(pstvnc_transport_runtime_rfb_write_exact(
         &runtime, payload, sizeof(payload)) == 0);
     CHECK(runtime.failed == 1);
     CHECK(send_record_count == 1u);
+    stop_and_release_runtime(&runtime);
+}
+
+static void test_outbound_rfb_waits_for_partial_pi_credit(void)
+{
+    static const uint8_t payload[] = { 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5 };
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t config = make_config();
+    rfb_writer_test_context_t writer;
+    pthread_t writer_thread;
+
+    reset_fixture();
+    initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
+    clear_send_records();
+
+    memset(&writer, 0, sizeof(writer));
+    writer.runtime = &runtime;
+    writer.payload = payload;
+    writer.payload_length = sizeof(payload);
+    writer.result = -1;
+
+    CHECK(pthread_create(
+        &writer_thread, NULL, rfb_writer_test_thread, &writer) == 0);
+
+    /* No Pi CREDIT means absolutely no outbound channel-1 DATA. */
+    wait_for_rfb_credit_wait_calls(1);
+    CHECK(send_record_count == 0u);
+
+    push_rfb_credit(3u);
+    wait_for_receive_calls(1);
+    wait_for_rfb_credit_wait_calls(2);
+    CHECK(send_record_count == 1u);
+    CHECK(send_records[0].payload_length == 3u);
+    CHECK(memcmp(send_records[0].payload, payload, 3u) == 0);
+
+    push_rfb_credit(2u);
+    wait_for_receive_calls(2);
+    wait_for_rfb_credit_wait_calls(3);
+    CHECK(send_record_count == 2u);
+    CHECK(send_records[1].payload_length == 2u);
+    CHECK(memcmp(send_records[1].payload, payload + 3u, 2u) == 0);
+
+    push_rfb_credit(1u);
+    wait_for_receive_calls(3);
+    CHECK(pthread_join(writer_thread, NULL) == 0);
+    CHECK(writer.result == 1);
+    CHECK(send_record_count == 3u);
+    CHECK(send_records[2].payload_length == 1u);
+    CHECK(send_records[2].payload[0] == payload[5]);
+    CHECK(runtime.rfb_outbound_credit_bytes == 0u);
+
     stop_and_release_runtime(&runtime);
 }
 
@@ -1165,6 +1281,7 @@ int main(void)
     test_invalid_frame_converges_fail_closed();
     test_parser_credit_batch_flush_and_residual_distinction();
     test_outbound_fragmentation_and_failure_propagation();
+    test_outbound_rfb_waits_for_partial_pi_credit();
     test_finite_quiesce_order_is_distinct_from_fatal_abort();
     test_fatal_stop_completion_precedes_reclaim_and_fresh_session();
 
