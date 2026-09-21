@@ -17,20 +17,31 @@ from __future__ import annotations
 from dataclasses import dataclass
 import struct
 
+# Every PSTV frame starts with the same 16-byte network-order header:
+# magic, header version, kind, logical channel, flags, sequence, payload length.
+# The header version describes framing itself; WIRE_VERSION below is the
+# separately negotiated product Wire compatibility version carried by HELLO.
 MAGIC = b"PSTV"
 HEADER = struct.Struct(">4sBBBBII")
 HEADER_BYTES = HEADER.size
 WIRE_HEADER_VERSION = 1
 MAX_PAYLOAD_BYTES = 8192
 
+# Q4 establishment frame identities are now product protocol authority. They
+# deliberately occupy the control channel and do not imply any rider exists.
 FRAME_HELLO = 1
 FRAME_ACCEPT = 12
 FRAME_NOT_ACCEPTED = 13
 CHANNEL_CONTROL = 0
 
+# HELLO carries two independent compatibility words. WIRE_VERSION covers the
+# current PSTV Wire contract; PRODUCT_ESTABLISHMENT_VERSION lets establishment
+# semantics evolve without changing the fixed frame-header representation.
 WIRE_VERSION = 1
 PRODUCT_ESTABLISHMENT_VERSION = 1
 
+# HELLO is exactly two uint32 values. ACCEPT and NOT_ACCEPTED each carry one
+# uint32 value: a nonzero Pi-owned session ID or a bounded rejection reason.
 HELLO = struct.Struct(">II")
 ONE_WORD = struct.Struct(">I")
 
@@ -106,6 +117,8 @@ def decode_header(data: bytes) -> WireHeader:
 
 
 def encode_frame(kind: int, sequence: int, payload: bytes) -> bytes:
+    # Establishment helpers use this narrow constructor so control-channel and
+    # zero-flags identity cannot drift independently between frame kinds.
     header = WireHeader(
         version=WIRE_HEADER_VERSION,
         kind=kind,
@@ -134,6 +147,8 @@ def decode_hello_payload(payload: bytes) -> tuple[int, int]:
 
 def encode_accept_payload(session_id: int) -> bytes:
     _require_u32(session_id, "session_id")
+    # Zero is reserved to mean "no active Wire Session"; ACCEPT may therefore
+    # publish only a Pi-authoritative nonzero identity.
     if session_id == 0:
         raise WireProtocolError("ACCEPT session_id must be nonzero")
     return ONE_WORD.pack(session_id)
@@ -175,6 +190,9 @@ def encode_hello_frame(
     product_version: int = PRODUCT_ESTABLISHMENT_VERSION,
     sequence: int = 1,
 ) -> bytes:
+    # Sequence 1 is the provisional transaction's first client->server frame.
+    # Later ordinary Wire traffic, once implemented, begins from the next
+    # direction-local sequence rather than reusing this establishment slot.
     return encode_frame(
         FRAME_HELLO,
         sequence,
