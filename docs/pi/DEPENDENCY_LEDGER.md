@@ -28,7 +28,7 @@ Allowed states:
 | NetworkManager `1.52.1-1+rpt4` | `OS_BASE` | Installed in virgin image; suitable candidate for private `eth0` configuration. |
 | SSH service | `OS_BASE` | Enabled in virgin image and used only as ordinary administration/development access. |
 | Avahi/mDNS | `OS_BASE` | Enabled in virgin image; useful for `ps-to-vnc-dev.local`, not a PS2 runtime dependency. |
-| Python 3 `3.13.5-1` | `OS_BASE` | Installed in virgin image; may support Pi-side management tooling if adopted. |
+| Python 3 `3.13.5-1` | `ADOPTED_RUNTIME` | Present in the virgin image and adopted by A003 R8 as the interpreter for the maintained `pi/` product Wire server. No additional package mutation is required; the tracked service uses `/usr/bin/python3`. |
 | curl `8.14.1-2+deb13u3` | `OS_BASE` | Installed in virgin image. |
 | git `1:2.47.3-0+deb13u1` | `OS_BASE` | Installed in virgin image; development/install-time capability, not runtime requirement by itself. |
 | labwc `0.9.7-1+rpt1` | `OS_BASE` | Installed and active as the virgin graphical compositor. It remains the ordinary local Pi frontend, not automatically the PS2-facing desktop source. |
