@@ -1,0 +1,22 @@
+# PS-to-VNC Pi-local RFB provider endpoint.
+#
+# This socket is provider infrastructure behind the future Wire RFB Relay. It is
+# never a PS2-facing product connection and never carries Wire Protocol.
+#
+# The direct 192.168.50.1:5900 definitions remain preserved fallback/evidence.
+# Conflicts= is declared here so those historical files stay byte-identical.
+# systemd treats Conflicts= bidirectionally; the ordering dependency ensures the
+# losing path is stopped before the selected path starts.
+[Unit]
+Description=PS-to-VNC Pi-local RFB provider activation socket
+Documentation=https://github.com/Olsens11/PS-to-VNC/blob/ledge/h1-all-guns/docs/pi/RFB_SOCKET_ACTIVATION.md
+Conflicts=ps-to-vnc-rfb.socket ps-to-vnc-rfb-tigervnc.service ps-to-vnc-rfb-tigervnc-persistent.service
+After=ps-to-vnc-rfb.socket ps-to-vnc-rfb-tigervnc.service ps-to-vnc-rfb-tigervnc-persistent.service
+
+[Socket]
+ListenStream=127.0.0.1:5900
+Accept=no
+Service=ps-to-vnc-rfb-internal-x0tigervnc.service
+
+[Install]
+WantedBy=sockets.target
