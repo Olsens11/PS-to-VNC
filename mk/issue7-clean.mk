@@ -11,6 +11,18 @@ DEP_DIR = $(BUILD_DIR)/deps
 PS2IP_LIB = $(DEP_DIR)/libps2ip_mtu1458_wscale128.a
 EE_BIN ?= $(BUILD_DIR)/PS-to-VNC-Issue7.ELF
 
+SMS_VENDOR = vendor/sms-libmpeg
+SMS_INC = $(SMS_VENDOR)/include
+SMS_SRC = $(SMS_VENDOR)/src
+SMS_DECODER_CFLAGS = \
+	-D_EE \
+	-O2 \
+	-G8192 \
+	-mgpopt \
+	-mno-abicalls \
+	-Wall \
+	-mno-check-zero-division
+
 EXTRA_EE_OBJS ?=
 
 EE_OBJS = \
@@ -23,6 +35,9 @@ EE_OBJS = \
 	$(BUILD_DIR)/config_text.o \
 	$(BUILD_DIR)/media_clock.o \
 	$(BUILD_DIR)/mpeg_decoder.o \
+	$(BUILD_DIR)/mpeg_ps2_decoder_backend.o \
+	$(BUILD_DIR)/sms_libmpeg.o \
+	$(BUILD_DIR)/sms_libmpeg_core.o \
 	$(BUILD_DIR)/diagnostics.o \
 	$(BUILD_DIR)/diagnostics_identity.o \
 	$(BUILD_DIR)/rfb.o \
@@ -63,8 +78,8 @@ EE_OBJS = \
 
 EE_OBJS += $(EXTRA_EE_OBJS)
 
-EE_INCS = -Isrc -Isrc/audio -Isrc/config -Isrc/media -Isrc/mpeg -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
-EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -lnetman -lpad -laudsrv $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
+EE_INCS = -I$(SMS_INC) -Isrc -Isrc/audio -Isrc/config -Isrc/media -Isrc/mpeg -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
+EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -ldma -lnetman -lpad -laudsrv $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
 
 .PHONY: all clean
 
@@ -106,6 +121,15 @@ $(BUILD_DIR)/media_clock.o: src/media/clock.c src/media/clock.h src/config/profi
 
 $(BUILD_DIR)/mpeg_decoder.o: src/mpeg/decoder.c src/mpeg/decoder.h src/transport/bridge.h src/transport/transport.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/mpeg_ps2_decoder_backend.o: src/mpeg/ps2_decoder_backend.c src/mpeg/ps2_decoder_backend.h src/mpeg/decoder.h $(SMS_INC)/libmpeg.h $(SMS_INC)/libmpeg_internal.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/sms_libmpeg.o: $(SMS_SRC)/libmpeg.c $(SMS_INC)/libmpeg.h $(SMS_INC)/libmpeg_internal.h | $(BUILD_DIR)
+	$(EE_CC) $(SMS_DECODER_CFLAGS) -I$(SMS_INC) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/sms_libmpeg_core.o: $(SMS_SRC)/libmpeg_core.S $(SMS_INC)/libmpeg_internal.h | $(BUILD_DIR)
+	$(EE_CC) $(SMS_DECODER_CFLAGS) -I$(SMS_INC) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/diagnostics.o: src/diagnostics/diagnostics.c src/diagnostics/diagnostics.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@

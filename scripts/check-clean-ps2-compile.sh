@@ -14,6 +14,9 @@ ROOT="$(
 : "${GSKIT:=$PS2DEV/gsKit}"
 
 CC="$PS2DEV/ee/bin/mips64r5900el-ps2-elf-gcc"
+SMS_VENDOR="$ROOT/vendor/sms-libmpeg"
+SMS_INC="$SMS_VENDOR/include"
+SMS_SRC="$SMS_VENDOR/src"
 
 if [ ! -x "$CC" ]; then
     echo "PS2 compiler not found: $CC" >&2
@@ -50,6 +53,7 @@ COMMON_FLAGS=(
     -Wall
     -Wextra
     -Werror
+    -I"$SMS_INC"
     -I"$ROOT/src"
     -I"$ROOT/src/audio"
     -I"$ROOT/src/config"
@@ -78,6 +82,7 @@ SOURCES=(
     src/config/text.c
     src/media/clock.c
     src/mpeg/decoder.c
+    src/mpeg/ps2_decoder_backend.c
     src/diagnostics/diagnostics.c
     src/diagnostics/identity.c
     src/rfb/rfb.c
@@ -121,4 +126,45 @@ for source in "${SOURCES[@]}"; do
         -o "$object"
 done
 
+declare -A SMS_EXPECTED_BLOBS=(
+    ["include/libmpeg.h"]="ee2195b52dc3a7112537046426a80aa0e603fa6c"
+    ["include/libmpeg_internal.h"]="c2f80a9104380634c3ef6749baa2e5f0acb5c13e"
+    ["src/libmpeg.c"]="f9e5f11689fa6ed3759365249c2d7cfb7335e2fb"
+    ["src/libmpeg_core.S"]="93638fd62e58bfac8c6ed1c5fc84ef119d318438"
+)
+
+for relative_path in "${!SMS_EXPECTED_BLOBS[@]}"; do
+    actual_blob="$(git -C "$ROOT" hash-object "$SMS_VENDOR/$relative_path")"
+    expected_blob="${SMS_EXPECTED_BLOBS[$relative_path]}"
+    if [ "$actual_blob" != "$expected_blob" ]; then
+        echo "SMS_VENDOR_IDENTITY_MISMATCH=$relative_path:$actual_blob:$expected_blob" >&2
+        exit 1
+    fi
+    echo "SMS_VENDOR_IDENTITY_PASS=$relative_path:$actual_blob"
+done
+
+SMS_FLAGS=(
+    -D_EE
+    -O2
+    -G8192
+    -mgpopt
+    -mno-abicalls
+    -Wall
+    -mno-check-zero-division
+    -I"$SMS_INC"
+    -I"$PS2SDK/ee/include"
+    -I"$PS2SDK/common/include"
+)
+
+echo 'PS2_SMS_COMPILE=vendor/sms-libmpeg/src/libmpeg.c'
+"$CC" "${SMS_FLAGS[@]}" \
+    -c "$SMS_SRC/libmpeg.c" \
+    -o "$BUILD_DIR/sms_libmpeg.o"
+
+echo 'PS2_SMS_COMPILE=vendor/sms-libmpeg/src/libmpeg_core.S'
+"$CC" "${SMS_FLAGS[@]}" \
+    -c "$SMS_SRC/libmpeg_core.S" \
+    -o "$BUILD_DIR/sms_libmpeg_core.o"
+
+echo 'SMS_DEDICATED_COMPILE_CHECK=PASS'
 echo 'CLEAN_PS2_COMPILE_CHECK=PASS'

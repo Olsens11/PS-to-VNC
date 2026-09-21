@@ -1,0 +1,26 @@
+SMS libmpeg experimental reference copy
+
+Upstream repository:
+https://github.com/ps2homebrew/SMS.git
+
+Pinned upstream commit:
+c1898094725ad750ec20e10cc148b39d7c8a9c65
+
+Files copied unchanged:
+include/libmpeg.h
+include/libmpeg_internal.h
+src/libmpeg.c
+src/libmpeg_core.S
+
+Git blob identities:
+include/libmpeg.h          ee2195b52dc3a7112537046426a80aa0e603fa6c
+include/libmpeg_internal.h c2f80a9104380634c3ef6749baa2e5f0acb5c13e
+src/libmpeg.c              f9e5f11689fa6ed3759365249c2d7cfb7335e2fb
+src/libmpeg_core.S         93638fd62e58bfac8c6ed1c5fc84ef119d318438
+
+Purpose:
+Controlled EXP3 hardware A/B between the mature SMS assembly libmpeg core
+and the modern PS2SDK libmpeg C core.
+
+The four upstream source files retain their original Academic Free License
+2.0 notices and authorship headers.
