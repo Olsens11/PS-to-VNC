@@ -37,6 +37,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/media_clock.o \
 	$(BUILD_DIR)/mpeg_decoder.o \
 	$(BUILD_DIR)/mpeg_worker.o \
+	$(BUILD_DIR)/mpeg_ps2_worker_runtime.o \
 	$(BUILD_DIR)/mpeg_ps2_decoder_backend.o \
 	$(BUILD_DIR)/sms_libmpeg.o \
 	$(BUILD_DIR)/sms_libmpeg_core.o \
@@ -128,6 +129,9 @@ $(BUILD_DIR)/mpeg_decoder.o: src/mpeg/decoder.c src/mpeg/decoder.h src/transport
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/mpeg_worker.o: src/mpeg/worker.c src/mpeg/worker.h src/mpeg/decoder.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/mpeg_ps2_worker_runtime.o: src/mpeg/ps2_worker_runtime.c src/mpeg/ps2_worker_runtime.h src/mpeg/worker.h src/mpeg/decoder.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/mpeg_ps2_decoder_backend.o: src/mpeg/ps2_decoder_backend.c src/mpeg/ps2_decoder_backend.h src/mpeg/decoder.h $(SMS_INC)/libmpeg.h $(SMS_INC)/libmpeg_internal.h | $(BUILD_DIR)

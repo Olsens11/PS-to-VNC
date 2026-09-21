@@ -84,6 +84,7 @@ SOURCES=(
     src/media/clock.c
     src/mpeg/decoder.c
     src/mpeg/worker.c
+    src/mpeg/ps2_worker_runtime.c
     src/mpeg/ps2_decoder_backend.c
     src/diagnostics/diagnostics.c
     src/diagnostics/identity.c
