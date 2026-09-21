@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0037
-RECORDED_AT=2026-09-21T10:50:51-04:00
+STATE_REVISION=0038
+RECORDED_AT=2026-09-21T16:40:42-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0036
-SUPERSEDES_FOREMAN_STATE_REVISION=0036
+BASED_ON_FOREMAN_STATE_REVISION=0037
+SUPERSEDES_FOREMAN_STATE_REVISION=0037
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,15 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0038 independently accepts the completed
+A003-PS2-WIRE-SESSION-ESTABLISHMENT-R9 Reconstruction baton and advances to
+the first mature ordinary rider boundary: a bounded bidirectional RFB Wire
+Channel Relay core. R9 now makes product Q4 a real PS2 Transport-owned session
+transaction, preserves the sequence-2 physical lineage, keeps the Pi session ID
+private, publishes Wire ACTIVE independently of rider readiness, and prevents
+ordinary rider startup from bypassing Q4. The next dependency is the RFB
+last-mile courier itself, not MPEG generation policy.
 
 Revision 0037 independently accepts the completed
 A003-PI-WIRE-SERVER-ESTABLISHMENT-R8 Reconstruction baton and advances to the
@@ -135,7 +144,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A003_R8_INTEGRATED__PS2_WIRE_SESSION_ESTABLISHMENT_RECONSTRUCTION_ACTIVE__PI_RIDER_FOUNDATION_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R9_INTEGRATED__PI_RFB_WIRE_RELAY_CORE_RECONSTRUCTION_ACTIVE__RFB_PROVIDER_LIFECYCLE_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -153,9 +162,11 @@ WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
 A003_MPEG_GENERATION_CONTROL_RELAY_FOREMAN_ACCEPTED=YES
 A003_MPEG_RUNTIME_PROFILE_AUTHORITY_FOREMAN_ACCEPTED=YES
 PI_WIRE_ESTABLISHMENT_FOUNDATION_FOREMAN_ACCEPTED=YES
-PS2_WIRE_SESSION_ESTABLISHMENT_ACTIVE=YES
+PS2_WIRE_SESSION_ESTABLISHMENT_FOREMAN_ACCEPTED=YES
 PI_WIRE_CONTROL_OWNER=FOUNDATION_ACCEPTED_NO_RIDERS
-PI_RIDER_FOUNDATION=DEPENDENCY_QUEUED
+PI_RFB_WIRE_RELAY_CORE_ACTIVE=YES
+PI_RIDER_FOUNDATION=RFB_RELAY_RECONSTRUCTION_ACTIVE
+RFB_PROVIDER_LIFECYCLE=DEPENDENCY_QUEUED
 PI_MPEG_CONTROL_PRODUCER_OWNER=DEPENDENCY_QUEUED
 APPLICATION_ACTIVATION=DEPENDENCY_QUEUED
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
@@ -2222,7 +2233,7 @@ They remain experiment/reference authority and are not merge targets.
 ## Active bounded Reconstruction packet
 
 PACKET_ID=A003-PS2-WIRE-SESSION-ESTABLISHMENT-R9
-PACKET_STATUS=ACTIVE
+PACKET_STATUS=COMPLETED_FOREMAN_ACCEPTED
 ROLE_KEY=reconstruction
 WORK_ITEM_KEY=a003-mpeg-generation
 WORKER_KEY=interactive
@@ -2380,6 +2391,380 @@ client bytes, descriptor ownership, sequence-2 handoff, private session
 identity, Wire ACTIVE/rider-readiness separation, idle no-rider behavior,
 absence of a raw-session bypass, current rider regressions and explicit
 hardware-pending claims.
+
+Do not execute the active packet from the Foreman seat.
+
+## A003 R9 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- prior Foreman base
+  16c1e24fd56df10a035dbd96287cc9ca33d1d1b5;
+- final pre-log R9 source/test/docs authority
+  d9868a69249b5afde73fc4717cf20a3a41382c05;
+- immutable Reconstruction-log head
+  2c29d2b32f439d7549b6cc375e9c46230d6ef3f7;
+- immutable Reconstruction log
+  docs/ledge/work-log/20260921T105524-0400__reconstruction__a003-mpeg-generation__interactive.md.
+
+The pre-log R9 range is linear, ahead by 21 commits and behind by zero from
+Foreman State 0037 authority. Its product changes remain confined to Transport
+plus Transport-focused tests and routing/dictionaries. No Pi product source,
+Application source, RFB parser/session source, audio domain source, MPEG domain
+source or Presentation source changed.
+
+Independent source review confirms:
+
+- Transport physical_stream now owns the complete PS2 Q4 client transaction;
+- successful descriptor adoption clears caller-visible descriptor ownership
+  before any Wire byte, while adoption failure leaves the descriptor caller
+  owned;
+- exact product HELLO uses sequence 1, CONTROL channel 0, flags 0, Wire version
+  1 and product-establishment version 1;
+- exact sequence-1 ACCEPT and NOT_ACCEPTED are the only accepted establishment
+  results; bad kind/channel/flags/sequence/length, zero ACCEPT identity, unknown
+  rejection reason, short read and framing failure all fail closed;
+- exact NOT_ACCEPTED remains a typed protocol result but owns no ACTIVE Wire
+  Session;
+- successful ACCEPT leaves the same physical lineage at send sequence 2 and
+  expected receive sequence 2;
+- the established physical stream and its send lock move intact into rider
+  runtime through a private established-lineage constructor rather than a
+  public arbitrary sequence seed;
+- the Pi-assigned nonzero session ID remains Transport-private and is cleared on
+  Wire retirement;
+- public Wire availability is only INACTIVE/ACTIVE and ACTIVE is published only
+  after ACCEPT;
+- an established Wire Session may remain idle at sequence 2/2 with no rider
+  runtime, no startup CREDIT and no ordinary DATA;
+- acquiring RFB/AUDIO/MPEG Transport access while Wire is merely ACTIVE but no
+  rider runtime exists fails closed, preserving Wire-availability versus
+  rider-readiness separation;
+- cross-component session-open paths cannot turn a raw descriptor into rider
+  runtime while skipping Q4;
+- repeated Session B starts a fresh sequence-1 Q4 exchange and stale Session-A
+  opaque access remains terminal;
+- existing RFB/AUDIO/MPEG runtime mechanics, one physical-I/O execution context,
+  R6 MPEG START/RETIRE relay and stale-access behavior remain intact.
+
+A003-R9-C1 through A003-R9-C12 are independently accepted as MET within the
+bounded repository/machine-evidence scope.
+
+### R9 machine evidence
+
+Canonical final pre-log workflow:
+
+35626184669 at d9868a69249b5afde73fc4717cf20a3a41382c05 — SUCCESS on attempt 1.
+
+Directly inspected logs report:
+
+- transport protocol tests passed;
+- transport bridge tests passed;
+- transport_physical_stream_test: PASS;
+- transport_runtime_test: PASS;
+- transport_audio_test: PASS;
+- transport_mpeg_test: PASS;
+- MPEG_WORKER_TEST=PASS;
+- APP_MPEG_FRAME_TEST=PASS;
+- SOURCE_DICTIONARIES=PASS;
+- SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS;
+- SOURCE_TOPOLOGY_CONTRACT=PASS;
+- SOURCE_DICTIONARY_PORTAL_SYNC=PASS;
+- PS_TO_VNC_PROJECT_CHECK=PASS;
+- direct PS2 compile PASS for physical_stream.c, runtime.c and bridge.c;
+- SMS_DEDICATED_COMPILE_CHECK=PASS;
+- CLEAN_PS2_COMPILE_CHECK=PASS;
+- ISSUE7_LINKED_BUILD=PASS;
+- LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS.
+
+The immutable R9 worker-log head
+2c29d2b32f439d7549b6cc375e9c46230d6ef3f7 also has canonical workflow
+35626437923 SUCCESS on attempt 1 across all canonical job classes.
+
+Evidence classification:
+
+SOURCE_COMPLETE=YES_WITHIN_R9
+HOST_TESTED=YES
+PS2_COMPILE=PASS
+PS2_LINK_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+REPOSITORY_PROJECT_CHECK=PASS
+STRICT_DICTIONARIES=PASS
+INDEPENDENT_VALIDATION_R9=NOT_RUN
+PHYSICAL_PS2_PI_PRODUCT_Q4=NOT_RUN_NOT_CLAIMED
+PI_WIRE_SERVICE_LIVE=NOT_RUN_NOT_CLAIMED
+R9_CHANGED_PS2_PT_LOAD=YES
+HARDWARE_QUALIFICATION_R9=PENDING
+
+## Why R10 is the bounded bidirectional RFB Relay core
+
+After R9, both sides own a real product Wire Session but there is still no
+ordinary Pi rider. RFB is the smallest first rider because:
+
+- Q1 already chooses a provider-neutral Pi-local RFB adapter;
+- Q3 requires a Transport-owned Wire Channel Relay between channel 1 and the
+  RFB domain boundary;
+- the existing PS2 RFB parser/session and Transport RFB logical queue already
+  consume channel-1 bytes and return receiver credit;
+- ordinary desktop service is a prerequisite for the later MPEG/RFB composition
+  and restoration work, while MPEG startup remains explicitly user/calibration
+  driven;
+- historical Proof 3 physically established the representative channel-1
+  credit/data mechanism and byte opacity on real PS2 hardware;
+- historical Proof 4C established the value of bounded rider isolation behind
+  one physical-I/O owner.
+
+Historical H1 Pi RFB bridge source is useful mechanism evidence, especially its
+rule that provider-to-PS2 reads stop when PS2-granted credit is exhausted.
+However, its synchronous PS2-to-provider write on the Wire reader cannot simply
+be promoted as mature architecture. A stalled provider must not block the sole
+Wire owner, and arbitrary unbounded buffering is prohibited by Q3.
+
+R10 therefore makes both directions bounded:
+
+- PS2 receiver credit bounds provider -> PS2 DATA;
+- Pi receiver credit bounds PS2 -> provider DATA.
+
+The second direction is a deliberate mature extension of the historical bridge
+mechanism. It is source/host work and remains physical-qualification debt.
+
+R10 does not select or migrate a concrete provider endpoint. In particular:
+
+- current direct-RFB 192.168.50.1:5900 service definitions remain untouched;
+- historical 127.0.0.1:5903 was explicitly classified as Windows development
+  tooling and must not be promoted as a product endpoint;
+- the relay accepts an explicitly supplied provider socket/attachment seam but
+  the installed Wire service does not automatically attach one in this packet.
+
+This separates the reusable last-mile courier from provider/service migration.
+
+## Active bounded Reconstruction packet
+
+PACKET_ID=A003-PI-RFB-WIRE-RELAY-R10
+PACKET_STATUS=ACTIVE
+ROLE_KEY=reconstruction
+WORK_ITEM_KEY=a003-mpeg-generation
+WORKER_KEY=interactive
+EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
+USER_TERMINAL_POLICY=EXCEPTION_ONLY
+PI_LOCAL_USER_PROXY_REQUIRED=NO
+ASSIGNING_BASE_HEAD=REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE
+FOREMAN_DECISION_BASE=2c29d2b32f439d7549b6cc375e9c46230d6ef3f7
+
+### Objective
+
+Reconstruct the smallest mature bidirectional RFB Wire Channel Relay core
+between the accepted Pi Wire server and an explicitly supplied local RFB
+provider socket.
+
+R10 must make channel-1 payload movement raw-byte opaque and bounded in both
+directions, preserve the single Pi Wire physical-I/O execution context, and add
+only the PS2 Transport receive-credit mechanics required to keep
+PS2-to-provider writes from outrunning bounded Pi capacity.
+
+The result is a reusable product relay core, not a live provider migration or
+full RFB lifecycle activation.
+
+### Required authority
+
+Read current at wake, including:
+
+- AGENTS.md, CONTRIBUTING.md, Project Intent and Clean Architecture;
+- source naming/topology/module-lifecycle guidance;
+- Reconstruction Contract rev 0006 and work-log contract rev 0007;
+- Foreman State rev 0038;
+- Wire Runtime Decisions rev 0011, especially Q1-Q3 and Q8-Q12;
+- Architecture Overlay rev 0004;
+- A001 Transport/RFB audit and current A003 audit;
+- current pi/wire_protocol.py and pi/wire_server.py;
+- current src/transport/protocol.*, runtime.*, bridge.* and rfb_channel.*;
+- current src/rfb/bridge.* and rfb_session.* only to preserve their public
+  boundaries and zero-length quiesce reservation;
+- current direct-RFB systemd definitions and Pi service documentation;
+- reference-only Proof 3 and Proof 4C results;
+- reference-only historical H1 h1_rfb_pi_bridge.py,
+  h1_rfb_session_adapter.py and CP2H/CP2I records.
+
+Historical apparatus is evidence, not merge authority.
+
+### Required behavior
+
+1. **Explicit product owner.** Add the Pi RFB relay mechanism under the
+   maintained pi/ product root with clear local source/dictionary ownership.
+   Do not put product runtime under experiments/ or scripts/pi/.
+2. **Existing Wire vocabulary only.** Use existing DATA kind 3, CREDIT kind 4,
+   RFB channel 1 and flags 0. Add exact Python CREDIT representation/classifiers
+   as needed, but do not allocate a new frame kind or widen product Q4.
+3. **Provider-neutral attachment.** The relay consumes an already-established
+   local provider socket or equivalent explicit injected attachment. It must not
+   hardcode TigerVNC, X0tigervnc, 192.168.50.1:5900, 127.0.0.1:5903 or any new
+   permanent provider endpoint.
+4. **Payload opacity.** Non-empty channel-1 DATA is raw RFB byte-stream data.
+   The Pi relay does not parse RFB message syntax, framebuffer rectangles,
+   encoding, input semantics or provider-specific protocol meaning.
+5. **Provider -> PS2 bounded by PS2 credit.** RFB CREDIT received from the PS2
+   increases only the relay's provider-read budget. The relay must not read
+   provider bytes when that budget is zero. Each Wire DATA fragment is bounded
+   by both available credit and the configured Wire DATA maximum, and consumes
+   exactly the credit represented by its payload length.
+6. **PS2 -> provider bounded by Pi credit.** Add a bounded Pi provider-write
+   queue/capacity owned by the relay. On relay activation the Pi grants only
+   that finite free capacity as RFB CREDIT. The PS2 Transport must accept exact
+   channel-1 CREDIT and gate outbound RFB DATA so it never transmits more bytes
+   than the Pi has granted.
+7. **Credit means real free capacity.** Pi credit for PS2 -> provider bytes is
+   replenished only after bytes actually leave the bounded relay queue into the
+   provider socket. A stalled provider therefore causes credit to stop rather
+   than blocking the physical Wire owner or growing memory without bound.
+8. **Sole Pi physical-I/O owner preserved.** The RFB relay must never call
+   recv()/send()/sendall() on the PS2-facing Wire socket. The Wire server's
+   existing owner remains the only physical Wire receive/send context. If local
+   provider readiness requires multiplexing, use a direct bounded server/relay
+   composition rather than a second Wire reader/writer or generic rider bus.
+9. **No blocking provider write in the Wire receive path.** Provider writes must
+   be nonblocking/readiness-driven or otherwise proven bounded so a provider
+   stall cannot suspend the sole Wire receive owner. Host tests must exercise a
+   full/stalled provider-write direction while Wire remains serviceable.
+10. **RFB-specific PS2 outbound credit only.** Implement the minimum Transport
+    state/wake mechanism needed for RFB outbound credit. Do not create a generic
+    all-rider scheduler, callback registry or new module-generation system.
+11. **Wire ACTIVE remains independent.** Attaching, stalling, detaching or
+    failing the optional RFB relay does not redefine Wire ACTIVE. R10 may mark
+    the RFB relay locally terminal and stop credits; it must not claim complete
+    PS2 RFB-module recovery before the later lifecycle packet.
+12. **Session scope / no reuse.** One relay instance belongs to one Wire Session
+    only. It must be fully retired/closed before a replacement session can
+    receive a new relay instance. No provider queue, credit budget or pending
+    payload may be rebound from Session A to Session B.
+13. **Preserve the zero-length reservation.** Zero-length channel-1 DATA remains
+    reserved for the existing RFB quiesce lifecycle and must never enter the
+    raw provider byte stream. Full REQUEST/BOUNDARY/COMMIT/COMPLETE Pi lifecycle
+    integration is explicitly deferred from R10.
+14. **Default installed service remains establishment-only.** The ordinary
+    ps-to-vnc-wire.service startup path must not automatically select or connect
+    a provider in this packet. Any host fixture attaches the relay explicitly.
+15. **Current direct-RFB deployment untouched.** Do not edit, disable, remove,
+    replace or redirect ps-to-vnc-rfb.socket,
+    ps-to-vnc-rfb-tigervnc.service or its persistent fallback. Preserve exact
+    tracked blob identity across the packet.
+16. **No unrelated riders.** No AUDIO relay, MPEG DATA relay, MPEG
+    START/RETIRE Pi ownership, CONFIG delivery, heartbeat policy, provider
+    migration, Application activation, Presentation change or input-policy work
+    enters R10.
+
+### Acceptance criteria
+
+- A003-R10-C1 RFB_RELAY_PRODUCT_OWNER
+- A003-R10-C2 EXISTING_RFB_WIRE_VOCABULARY
+- A003-R10-C3 PROVIDER_TO_PS2_CREDIT_BOUNDED
+- A003-R10-C4 PS2_TO_PROVIDER_CREDIT_BOUNDED
+- A003-R10-C5 SOLE_PI_WIRE_IO_OWNER
+- A003-R10-C6 RAW_RFB_PAYLOAD_OPACITY
+- A003-R10-C7 PROVIDER_STALL_DOES_NOT_BLOCK_WIRE
+- A003-R10-C8 SESSION_SCOPED_NONRESUME
+- A003-R10-C9 ZERO_LENGTH_QUIESCE_RESERVATION_PRESERVED
+- A003-R10-C10 CURRENT_DIRECT_RFB_RUNTIME_UNCHANGED
+- A003-R10-C11 EXISTING_PS2_RIDER_REGRESSIONS_PRESERVED
+- A003-R10-C12 CLEAN_EVIDENCE_AND_CLAIM_BOUNDARY
+
+All must be MET for Foreman acceptance.
+
+### Evidence required
+
+Deterministic host evidence must prove at minimum:
+
+- exact Python/C-compatible DATA/CREDIT frame identities and four-byte
+  big-endian nonzero credit payload;
+- provider bytes cannot be read/sent toward PS2 before PS2 RFB credit exists;
+- an N-byte PS2 credit releases at most N provider bytes and emitted fragments
+  never exceed the configured DATA maximum;
+- further provider bytes remain unread until replenishment;
+- relay activation grants only its finite provider-write free capacity to PS2;
+- PS2 Transport emits no outbound RFB DATA before Pi credit;
+- partial Pi credit releases only that many PS2 outbound bytes and the remainder
+  stays blocked until later credit;
+- Pi provider-write queue cannot exceed its advertised capacity;
+- Pi returned credit follows actual provider-socket drain, not mere Wire
+  receipt;
+- a deliberately non-reading/stalled provider fills only the bounded queue,
+  stops further credit and does not block the Wire owner's ability to process
+  the opposite RFB direction or session-local Wire work;
+- relay/provider EOF or local failure can make the relay terminal without
+  redefining Wire ACTIVE; do not claim the PS2 RFB module is already cleanly
+  retired;
+- zero-length RFB DATA is never written into the provider byte stream;
+- Session B receives fresh relay/credit/queue state with no Session-A carryover;
+- default Wire service starts with no provider relay selected;
+- current direct-RFB service blobs are exactly unchanged;
+- strict pi/ and src/ dictionaries/topology/project checks remain green;
+- direct PS2 compile covers every changed maintained C surface;
+- current-source linked reproducibility is green.
+
+### Explicit non-goals
+
+Do not implement in R10:
+
+- concrete RFB provider endpoint selection or service migration;
+- live Pi provider connection from ps-to-vnc-wire.service;
+- full Pi REQUEST/BOUNDARY/COMMIT/COMPLETE quiesce lifecycle;
+- complete provider-failure -> PS2 RFB stop/restart orchestration;
+- CONFIG delivery or selected live all-guns session composition;
+- Application RFB startup/restart policy;
+- RFB presentation/input changes;
+- AUDIO/PCM Pi relay;
+- MPEG DATA/control/producer behavior;
+- MPEG Application activation;
+- Q7 retirement/restoration orchestration;
+- physical PS2/Pi qualification.
+
+### Worker return
+
+Return exact source/test/docs/tooling commits, the Pi relay ownership and
+session-scope model, both credit directions, provider-stall proof, sole-Wire-I/O
+proof, direct-RFB unchanged proof, all corrected intermediate defects, strict
+dictionary/project/build evidence and every non-claim.
+
+Emit exactly one immutable Reconstruction log using:
+
+- ROLE_KEY=reconstruction;
+- WORK_ITEM_KEY=a003-mpeg-generation;
+- WORKER_KEY=interactive.
+
+Stop after R10. Do not proceed into provider migration/quiesce lifecycle, Pi
+MPEG ownership or Application activation in the same shift.
+
+## Deferred dependency graph after accepted R10
+
+1. reconstruct RFB relay lifecycle/provider attachment: select a reproducible
+   local provider endpoint from current Pi authority, integrate the existing
+   zero-length REQUEST/BOUNDARY/COMMIT/COMPLETE handshake, prove provider
+   stop/failure remains RFB-local, and keep the Wire service independent;
+2. wire ordinary RFB startup/restart policy through Application/configuration
+   once the Pi relay lifecycle is real;
+3. add Pi MPEG START/RETIRE control ownership only behind the established Wire
+   and rider architecture;
+4. reconstruct the Pi MPEG producer with exact-run admission, one-way retirement
+   and no post-retire DATA;
+5. wire the accepted MPEG runtime profile and calibration into bounded
+   Application activation;
+6. reconstruct current-Q7 retirement/failure, residual/credit finalization and
+   overlapped RFB restoration;
+7. integrate Wire-loss containment and repeated-run/repeated-session behavior;
+8. physically qualify the exact Pi service + PS2 product path and final ELF.
+
+Foreman must re-evaluate this order from returned R10 source; it is dependency
+planning, not standing authorization.
+
+## Hardware qualification debt
+
+HARDWARE_PENDING=R10 bidirectional RFB credit/stall mechanics and changed PS2 Transport PT_LOAD; R9 PS2 product Q4 client; R8 Pi Wire service/no-carrier/listener lifecycle; concrete Pi provider-to-Wire migration; full RFB quiesce/failure lifecycle; reconstructed A003 R3-R7 MPEG runtime; MPEG one-run/repeated-run stale fencing; Wire-loss during MPEG; current-Q7 overlapped RFB restoration; A004 visible geometry/matte/suppression/first-frame timing; all-guns endurance; exact final product ELF
+
+## Foreman next pickup
+
+Consume A003-PI-RFB-WIRE-RELAY-R10. Independently verify both credit
+directions, bounded provider-write capacity, no provider read without PS2
+credit, sole Pi Wire I/O ownership, provider-stall liveness, session-scope
+retirement, zero-length marker reservation, unchanged direct-RFB deployment,
+current Transport regressions and explicit physical non-claims.
 
 Do not execute the active packet from the Foreman seat.
 
