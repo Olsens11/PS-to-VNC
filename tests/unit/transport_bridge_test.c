@@ -2,8 +2,9 @@
  * File synopsis:
  * Host-tests Transport's cross-component bridge ownership/result mapping with
  * deterministic private-runtime stubs. The fixture preserves established
- * RFB/AUDIO/session lifecycle proofs and adds A003 opt-in logical MPEG opening,
- * bounded consumer, status, activity, and producer-completion result seams
+ * RFB/AUDIO/session lifecycle proofs and covers A003 opt-in logical MPEG
+ * opening, bounded consumer/status/activity, producer-completion publication,
+ * exact generation-control relay result mapping, and stale-access fencing
  * without exposing physical descriptor authority or decoder policy.
  *
  * Context: LEDGE_FOREMAN_STATE revisions 0009 and 0012.
@@ -41,6 +42,15 @@ static pstvnc_transport_result_t mpeg_status_result = PSTVNC_TRANSPORT_OK;
 static int mpeg_snapshot_result = 1;
 static int mpeg_wait_result = 1;
 static int mpeg_done_result = 1;
+static pstvnc_transport_result_t mpeg_start_result = PSTVNC_TRANSPORT_OK;
+static pstvnc_transport_result_t mpeg_retire_result = PSTVNC_TRANSPORT_OK;
+static pstvnc_transport_result_t mpeg_take_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
+static int mpeg_start_calls;
+static int mpeg_retire_calls;
+static int mpeg_take_calls;
+static pstvnc_mpeg_start_payload_t observed_start;
+static pstvnc_mpeg_retire_payload_t observed_retire;
+static pstvnc_mpeg_retire_payload_t available_completion;
 static int quiesce_requested_result = 1;
 static int quiesce_boundary_result = 1;
 static int quiesce_commit_result = 1;
@@ -114,6 +124,15 @@ static void reset_fixture(void)
     mpeg_snapshot_result = 1;
     mpeg_wait_result = 1;
     mpeg_done_result = 1;
+    mpeg_start_result = PSTVNC_TRANSPORT_OK;
+    mpeg_retire_result = PSTVNC_TRANSPORT_OK;
+    mpeg_take_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
+    mpeg_start_calls = 0;
+    mpeg_retire_calls = 0;
+    mpeg_take_calls = 0;
+    memset(&observed_start, 0, sizeof(observed_start));
+    memset(&observed_retire, 0, sizeof(observed_retire));
+    memset(&available_completion, 0, sizeof(available_completion));
     quiesce_requested_result = 1;
     quiesce_boundary_result = 1;
     quiesce_commit_result = 1;
@@ -437,6 +456,39 @@ int pstvnc_transport_runtime_mpeg_mark_producer_done(
     return mpeg_done_result;
 }
 
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_send_start(
+    pstvnc_transport_runtime_t *runtime,
+    const pstvnc_mpeg_start_payload_t *start)
+{
+    (void)runtime;
+    mpeg_start_calls++;
+    if (start != NULL)
+        observed_start = *start;
+    return mpeg_start_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_send_retire(
+    pstvnc_transport_runtime_t *runtime,
+    const pstvnc_mpeg_retire_payload_t *retire)
+{
+    (void)runtime;
+    mpeg_retire_calls++;
+    if (retire != NULL)
+        observed_retire = *retire;
+    return mpeg_retire_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_take_retire_completion(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_mpeg_retire_payload_t *completion)
+{
+    (void)runtime;
+    mpeg_take_calls++;
+    if (mpeg_take_result == PSTVNC_TRANSPORT_OK && completion != NULL)
+        *completion = available_completion;
+    return mpeg_take_result;
+}
+
 int pstvnc_transport_runtime_rfb_quiesce_requested(
     pstvnc_transport_runtime_t *runtime)
 {
@@ -728,6 +780,102 @@ static void test_mpeg_result_mapping(void)
 }
 
 
+
+static void fill_bridge_start(pstvnc_mpeg_start_payload_t *start)
+{
+    memset(start, 0, sizeof(*start));
+    start->version = PSTVNC_MPEG_GENERATION_CONTROL_VERSION;
+    start->session_id = 0x10203040u;
+    start->generation = 7u;
+    start->base_width = 640u;
+    start->base_height = 448u;
+    start->suppression_width = 640u;
+    start->suppression_height = 448u;
+}
+
+static void test_mpeg_control_relay_and_stale_access_fence(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    pstvnc_transport_access_t access_a;
+    pstvnc_transport_access_t access_b;
+    pstvnc_mpeg_start_payload_t start;
+    pstvnc_mpeg_retire_payload_t retire;
+    pstvnc_mpeg_retire_payload_t completion;
+    int socket_fd = 80;
+    int starts_before;
+    int retires_before;
+    int takes_before;
+
+    reset_fixture();
+    memset(&access_a, 0, sizeof(access_a));
+    memset(&access_b, 0, sizeof(access_b));
+    fill_bridge_start(&start);
+    memset(&retire, 0, sizeof(retire));
+    retire.version = PSTVNC_MPEG_GENERATION_CONTROL_VERSION;
+    retire.session_id = start.session_id;
+    retire.generation = start.generation;
+
+    CHECK(pstvnc_transport_session_open_with_mpeg(
+        &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&access_a) == PSTVNC_TRANSPORT_OK);
+
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access_a, &start) == PSTVNC_TRANSPORT_OK);
+    CHECK(mpeg_start_calls == 1);
+    CHECK(memcmp(&observed_start, &start, sizeof(start)) == 0);
+
+    CHECK(pstvnc_transport_mpeg_send_retire(
+        &access_a, &retire) == PSTVNC_TRANSPORT_OK);
+    CHECK(mpeg_retire_calls == 1);
+    CHECK(memcmp(&observed_retire, &retire, sizeof(retire)) == 0);
+
+    memset(&completion, 0, sizeof(completion));
+    CHECK(pstvnc_transport_mpeg_take_retire_completion(
+        &access_a, &completion) == PSTVNC_TRANSPORT_WOULD_BLOCK);
+    CHECK(mpeg_take_calls == 1);
+
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+
+    socket_fd = 81;
+    CHECK(pstvnc_transport_session_open_with_mpeg(
+        &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&access_b) == PSTVNC_TRANSPORT_OK);
+    CHECK(access_a.opaque_ticket != access_b.opaque_ticket);
+
+    starts_before = mpeg_start_calls;
+    retires_before = mpeg_retire_calls;
+    takes_before = mpeg_take_calls;
+
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access_a, &start) == PSTVNC_TRANSPORT_CLOSED);
+    CHECK(pstvnc_transport_mpeg_send_retire(
+        &access_a, &retire) == PSTVNC_TRANSPORT_CLOSED);
+    CHECK(pstvnc_transport_mpeg_take_retire_completion(
+        &access_a, &completion) == PSTVNC_TRANSPORT_CLOSED);
+    CHECK(mpeg_start_calls == starts_before);
+    CHECK(mpeg_retire_calls == retires_before);
+    CHECK(mpeg_take_calls == takes_before);
+
+    available_completion = retire;
+    available_completion.generation = 8u;
+    mpeg_take_result = PSTVNC_TRANSPORT_OK;
+    memset(&completion, 0, sizeof(completion));
+    CHECK(pstvnc_transport_mpeg_take_retire_completion(
+        &access_b, &completion) == PSTVNC_TRANSPORT_OK);
+    CHECK(mpeg_take_calls == takes_before + 1);
+    CHECK(memcmp(
+        &completion, &available_completion, sizeof(completion)) == 0);
+
+    mpeg_start_result = PSTVNC_TRANSPORT_FAILED;
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access_b, &start) == PSTVNC_TRANSPORT_FAILED);
+
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+}
+
 static void test_stale_access_cannot_cross_reconnect(void)
 {
     pstvnc_transport_session_config_t config = make_config();
@@ -807,6 +955,7 @@ int main(void)
     test_rfb_result_mapping_regression();
     test_audio_result_mapping();
     test_mpeg_result_mapping();
+    test_mpeg_control_relay_and_stale_access_fence();
     test_stale_access_cannot_cross_reconnect();
 
     if (failures != 0) {
