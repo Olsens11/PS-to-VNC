@@ -691,6 +691,68 @@ static void test_q4_rejects_malformed_result_envelopes(void)
         0u, 1u, reject_payload, sizeof(reject_payload));
 }
 
+
+static uint32_t establish_fake_q4_session(uint32_t accepted_session_id)
+{
+    pstvnc_transport_physical_stream_t stream;
+    pstvnc_transport_header_t sent_header;
+    pstvnc_wire_accept_payload_t acceptance;
+    pstvnc_wire_not_accepted_reason_t reason =
+        (pstvnc_wire_not_accepted_reason_t)0;
+    uint8_t accept_payload[PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE];
+    uint32_t session_id = 0u;
+    int socket_fd = TEST_SOCKET_FD;
+
+    acceptance.session_id = accepted_session_id;
+    CHECK(pstvnc_wire_accept_payload_encode(
+        accept_payload, &acceptance) == 1);
+    append_inbound_frame(
+        PSTVNC_TRANSPORT_FRAME_ACCEPT,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+        0u,
+        1u,
+        accept_payload,
+        sizeof(accept_payload));
+
+    memset(&stream, 0, sizeof(stream));
+    CHECK(pstvnc_transport_physical_stream_establish_client(
+        &stream, &socket_fd, &session_id, &reason) == 1);
+    CHECK(socket_fd == -1);
+    CHECK(session_id == accepted_session_id);
+    CHECK(stream.next_send_sequence == 2u);
+    CHECK(stream.expected_receive_sequence == 2u);
+    CHECK(pstvnc_transport_header_decode(
+        &sent_header, fake_socket.outbound) == 1);
+    CHECK(pstvnc_transport_header_is_wire_hello(&sent_header));
+    CHECK(sent_header.sequence == 1u);
+
+    pstvnc_transport_physical_stream_release(&stream);
+    return session_id;
+}
+
+static void test_q4_repeated_sessions_restart_sequence_one(void)
+{
+    uint32_t session_a;
+    uint32_t session_b;
+
+    reset_fixture();
+    session_a = establish_fake_q4_session(0x01020304u);
+    CHECK(fake_socket.close_calls == 1);
+
+    /*
+     * Same client process, new physical connection. No previous sequence state
+     * survives release; the new HELLO must again be sequence 1 while the
+     * authoritative Pi identity is independently replaced.
+     */
+    reset_fixture();
+    session_b = establish_fake_q4_session(0x05060708u);
+    CHECK(fake_socket.close_calls == 1);
+
+    CHECK(session_a != 0u);
+    CHECK(session_b != 0u);
+    CHECK(session_a != session_b);
+}
+
 static void test_q4_adoption_failure_leaves_descriptor_with_caller(void)
 {
     pstvnc_transport_physical_stream_t stream;
@@ -724,6 +786,7 @@ int main(void)
     test_q4_accept_establishes_and_transfers_sequence_two();
     test_q4_not_accepted_is_typed_and_retires_owned_socket();
     test_q4_rejects_malformed_result_envelopes();
+    test_q4_repeated_sessions_restart_sequence_one();
     test_q4_adoption_failure_leaves_descriptor_with_caller();
 
     if (failures != 0) {
