@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0029
-RECORDED_AT=2026-09-20T20:27:11-04:00
+STATE_REVISION=0030
+RECORDED_AT=2026-09-20T20:53:42-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0028
-SUPERSEDES_FOREMAN_STATE_REVISION=0028
+BASED_ON_FOREMAN_STATE_REVISION=0029
+SUPERSEDES_FOREMAN_STATE_REVISION=0029
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0006
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,19 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0030 independently accepts the completed
+`A003-DECODED-PICTURE-HANDOFF-R2` Reconstruction baton and advances A003 into
+the concrete PS2 SMS-libmpeg/IPU backend seam. R2 now exposes exactly one
+completed decoded picture as an explicitly borrowed MPEG-owned value while
+preserving the qualified safe-stop boundary and existing decoder-run semantics.
+
+Current source inspection also confirms that no clean product implementation of
+`pstvnc_mpeg_decoder_platform_ops_t` exists and the clean linked build does not
+yet contain SMS libmpeg. Revision 0030 therefore reconstructs that synchronous
+hardware backend before adding the asynchronous MPEG worker/rendezvous. This
+avoids designing concurrency around a decoder abstraction that has not yet been
+instantiated against the qualified PS2 mechanism.
 
 Revision 0029 independently accepts the completed
 `A004-ABSOLUTE-VIDEO-SCHEDULER-DROP-R6` Reconstruction baton and returns to
@@ -68,7 +81,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A004_P6_INTEGRATED__A003_DECODED_PICTURE_STEP_RECONSTRUCTION_ACTIVE__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R2_INTEGRATED__A003_PS2_LIBMPEG_BACKEND_RECONSTRUCTION_ACTIVE__MPEG_WORKER_RENDEZVOUS_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -77,7 +90,9 @@ A004_P3_FOREMAN_ACCEPTED=YES
 A004_P4_FOREMAN_ACCEPTED=YES
 A004_P5_FOREMAN_ACCEPTED=YES
 A004_P6_FOREMAN_ACCEPTED=YES
-A003_DECODED_PICTURE_STEP_ACTIVE=YES
+A003_DECODED_PICTURE_STEP_FOREMAN_ACCEPTED=YES
+A003_PS2_LIBMPEG_BACKEND_ACTIVE=YES
+A003_MPEG_WORKER_RENDEZVOUS=DEPENDENCY_QUEUED
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 
@@ -854,9 +869,155 @@ frame mailbox, scheduler/compositor calls, concrete PS2 libmpeg backend,
 START/RETIRE orchestration or final Application transaction. Those remain later
 seams chosen from the returned source.
 
+## A003 R2 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- branch HEAD `b67a077c0a56c0b4db2fdcaf5a19ed21b70f440d`;
+- final pre-log source/dictionary authority
+  `ed5c03e9c3666d784d073b2922d8bff02d10e800`;
+- immutable Reconstruction log
+  `docs/ledge/work-log/20260920T203600-0400__reconstruction__a003-mpeg-generation__interactive.md`.
+
+The worker landed five commits after Foreman base
+`c88a9fcf0011eacc5c43bdc11184af29c320907f`:
+
+- `bf6ec2bf2a870287b624de65b44c14835fed2e8f` —
+  one-picture decoder handoff;
+- `7a3a43274fae3d975f9450e10e20911f52f504e8` —
+  deterministic dictionary-reconciliation trigger;
+- `d1fd65633292952d1c12683433a06c4234a03085` —
+  automated current-clean dictionary reconciliation;
+- `ed5c03e9c3666d784d073b2922d8bff02d10e800` —
+  fail-closed borrowed-picture output plus maintained MPEG responsibility prose;
+- `b67a077c0a56c0b4db2fdcaf5a19ed21b70f440d` —
+  required immutable Reconstruction work log.
+
+Independent source review confirms:
+
+- `pstvnc_mpeg_decoder_step()` owns at most one underlying platform
+  `picture()` call and returns before a later call may begin;
+- `PSTVNC_MPEG_DECODER_PICTURE_READY` is the sole successful publication
+  result;
+- the published `pstvnc_mpeg_decoded_picture_t` is a read-only borrowed view
+  carrying only decoder-owned pixels, usable macroblock-backed byte count,
+  allocation capacity, validated sequence width/height, bytes-per-pixel and
+  decoder-local picture ordinal;
+- no MPEG generation, Presentation or Application authority is carried in the
+  decoded-picture value;
+- the borrow is explicitly valid only until the next step on that decoder or
+  decoder release, whichever occurs first;
+- tests prove the next step reuses/overwrites the same decoder-owned picture
+  allocation rather than manufacturing immutable caller storage;
+- every call with a writable picture output zeroes that output before
+  validation/terminal handling, so every non-PICTURE_READY result fails closed
+  instead of leaving stale borrowed metadata consumable;
+- sequence callback accounting now retains the exact macroblock-backed usable
+  byte extent independently from maximum picture allocation capacity;
+- ordinal 1 is observable as decoded data but no scheduler, clock, GS,
+  compositor, visible-ownership or generation effect occurs in MPEG;
+- stop already visible before a step prevents a new decoder call and returns
+  STOPPED with no picture publication;
+- stop requested during an active picture does not enter the libmpeg data
+  callback as synthetic EOF: real Transport data continues, successful-picture
+  accounting occurs once after decoder-call return, then STOPPED suppresses
+  publication of that stopping boundary;
+- real Transport exhaustion remains COMPLETE and decoder end without real
+  exhaustion/owner stop remains UNEXPECTED_END;
+- existing sequence, Transport, transfer, picture, synchronization and
+  accounting result classes remain distinct;
+- `pstvnc_mpeg_decoder_run()` now loops over the one-picture step and adds no
+  second decoder loop or duplicate accounting;
+- feed/payload/padded-transfer accounting remains owned by the existing feed
+  callback, while picture accounting is incremented exactly once in the step;
+- MPEG still imports no Display scheduler/compositor, Platform graphics, RFB,
+  media clock or Application runtime dependency;
+- channel-4 consumption remains exclusively through the public Transport MPEG
+  activity/read/wait seam.
+
+A003-R2-C1 through A003-R2-C12 are independently accepted as MET within the
+bounded source/machine-evidence scope.
+
+### R2 machine evidence
+
+Final pre-log run `35548538065` (#305) completed SUCCESS.
+
+Exact pickup-head run `35548659856` (#306) also completed SUCCESS:
+
+- host-unit — PASS;
+- project-check — PASS;
+- dictionary-long/complete/strict — PASS;
+- ps2-compile — PASS;
+- ps2-link/current-source reproducibility — PASS;
+- dictionary-reconcile — SKIPPED as expected on a coherent ordinary head.
+
+Exact-head logs explicitly report:
+
+- `mpeg_decoder_test: PASS`;
+- `transport_runtime_test: PASS`;
+- `MPEG_CALIBRATION_UNIT=PASS`;
+- `RFB_FLOW_POLICY_TEST=PASS`;
+- `MPEG_PRESENTATION_TEST=PASS`;
+- `MPEG_SCHEDULER_TEST=PASS`;
+- `MPEG_COMPOSITOR_TEST=PASS`;
+- `SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS`;
+- `SOURCE_DICTIONARY_PORTAL_SYNC=PASS`;
+- `WORK_LOG_CHECK=PASS`;
+- `PS_TO_VNC_PROJECT_CHECK=PASS`;
+- direct `PS2_COMPILE=src/mpeg/decoder.c`;
+- `CLEAN_PS2_COMPILE_CHECK=PASS`;
+- `ISSUE7_LINKED_BUILD=PASS`;
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+
+No physical PS2 MPEG decode/start-stop test occurred and none is inferred.
+
+## Why R3 is the concrete PS2 libmpeg backend before worker threading
+
+R2 makes the synchronous decoder boundary suitable for a bounded asynchronous
+rendezvous, but current clean product source still contains no concrete
+implementation of `pstvnc_mpeg_decoder_platform_ops_t`.
+
+The clean linked build presently compiles `src/mpeg/decoder.c` only. It does
+not link SMS libmpeg and has no clean source that calls:
+
+- `MPEG_Initialize()`;
+- `MPEG_Picture()`;
+- `MPEG_Destroy()`;
+- `_MPEG_Set16(1)`;
+- TO_IPU DMA submission;
+- the qualified IPU/DMAC known-state preparation.
+
+The only mature SMS libmpeg source currently lives under the EXP3 historical
+vendor path. Its `UPSTREAM.txt` pins upstream SMS commit
+`c1898094725ad750ec20e10cc148b39d7c8a9c65` and records the four copied files
+as unchanged with Academic Free License 2.0 notices retained.
+
+Frozen qualified evidence further shows that the clean split must preserve only
+decoder hardware mechanisms from H1:
+
+- establish the known IPU/DMAC state before `MPEG_Initialize()`;
+- use the mature pinned SMS libmpeg implementation;
+- use RGB16 through `_MPEG_Set16(1)`;
+- submit padded feed data through ordinary TO_IPU DMA;
+- translate libmpeg sequence width/height into the decoder-owned sequence
+  callback and picture buffer;
+- use `MPEG_Picture(NULL,...)` for the first call and the accepted decoder
+  picture buffer for later calls as required by the mature API;
+- wait for TO_IPU ownership before teardown and call `MPEG_Destroy()` only
+  after decoder-call ownership has returned.
+
+H1's GIF upload/draw packets, GS initialization, VBlank scheduling and
+presentation work are explicitly not part of the clean decoder backend because
+P4 owns the sole current GS/compositor path.
+
+Building the concrete synchronous hardware backend before the worker also tests
+whether the already-accepted decoder platform-ops seam is actually sufficient
+against the qualified libmpeg API before introducing thread/rendezvous
+complexity.
+
 ## Active bounded Reconstruction packet
 
-PACKET_ID=`A003-DECODED-PICTURE-HANDOFF-R2`
+PACKET_ID=`A003-PS2-LIBMPEG-BACKEND-R3`
 PACKET_STATUS=ACTIVE
 ROLE_KEY=`reconstruction`
 WORK_ITEM_KEY=`a003-mpeg-generation`
@@ -871,14 +1032,15 @@ ASSIGNING_BASE_HEAD=`REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE`
 
 ### Objective
 
-Reconstruct the clean MPEG-owned **one-picture decoder step and borrowed decoded
-picture publication seam** required before a real worker/main-thread
-presentation handoff can exist.
+Reconstruct the clean **PS2 SMS-libmpeg/IPU backend** for the accepted
+`pstvnc_mpeg_decoder_platform_ops_t` seam and make it part of canonical clean
+PS2 compile/link authority.
 
-The packet must let a caller observe exactly one successful decoded picture at a
-completed decoder-call boundary without importing Presentation policy into MPEG,
-without exposing decoder-private mutable state as authority, and without
-weakening A003's hardware-proven safe-stop rule.
+R3 gives the synchronous A003 decoder a real qualified PS2 implementation before
+any asynchronous MPEG worker is added.
+
+It must preserve the mature SMS decoder and IPU/DMAC mechanisms while removing
+all historical GS/presentation/scheduler/Application behavior from the backend.
 
 ### Execution policy
 
@@ -893,151 +1055,186 @@ terminal proxy.
 Read current at wake, including:
 
 - Reconstruction Contract rev 0006;
-- Foreman State rev 0029;
+- Foreman State rev 0030;
 - A003 MPEG-generation audit rev 0001;
-- A004 accepted P1-P6 source as context only;
+- accepted A003 R1/R2 decoder source;
 - current `src/mpeg/decoder.{c,h}`;
-- current `tests/unit/mpeg_decoder_test.c`;
-- current `src/display/mpeg_frame.{c,h}` only to understand the later consumer
-  boundary; MPEG must not import Display merely to reuse that type;
-- current canonical host/PS2 build manifests.
+- current canonical strict PS2 compile and linked-build manifests;
+- current EXP3 pinned SMS libmpeg vendor copy and
+  `experiments/media-stream-exp3/vendor/sms-libmpeg/UPSTREAM.txt`;
+- current Display/P4 source only as a prohibited ownership boundary.
 
-Trace frozen authority at least far enough to re-confirm:
+Trace frozen authority:
 
-- `experiments/media-harness-h1/CP2P_MPEG_SAFE_STOP_LIFECYCLE.md`;
-- relevant H1 `MPEG_Picture()` success/stop ordering;
-- the A003 false-EOF defect boundary.
+- `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`;
+- `experiments/media-harness-h1/h1_video_runtime.c` around:
+  - `h1_video_reference_ipu_reset()`;
+  - `h1_video_feed_ipu()`;
+  - `MPEG_Initialize()`;
+  - `_MPEG_Set16(1)`;
+  - first/subsequent `MPEG_Picture()` calls;
+  - `h1_video_release_session()`;
+- `CP2P_MPEG_SAFE_STOP_LIFECYCLE.md`;
+- relevant mature SMS one-picture/build evidence under
+  `mk/media-stream-exp3-sms-*.mk`.
 
 ### Required behavior
 
-1. **MPEG owns the step.** The one-picture operation belongs to the MPEG decoder
-   owner. Do not move feed, sequence validation, picture-call ownership or
-   safe-stop semantics into Display/Application.
-2. **Exactly one decoder call per step.** A successful step may invoke
-   `platform_ops.picture()` at most once and must return to caller before any
-   later picture call begins.
-3. **Borrowed decoded-picture value.** On a successful picture boundary expose
-   a small caller-readable value containing at least:
-   - read-only picture-buffer pointer;
-   - usable/capacity byte count;
-   - validated sequence width/height;
-   - decoder bytes-per-pixel fact;
-   - monotonically increasing decoder-local picture ordinal.
-   Do not add MPEG generation identity to the decoder; run generation remains
-   caller/Application authority.
-4. **Explicit buffer lifetime.** Document and test that the borrowed decoded
-   picture remains valid only until the next decoder picture step or decoder
-   release. A later worker bridge must therefore consume/copy/release the frame
-   before allowing the decoder to run ahead.
-5. **First successful picture is observable.** The seam must expose picture
-   ordinal 1 as decoded data. It does not present it, schedule it, arm a clock or
-   claim P3/P4 visible ownership.
-6. **Safe stop before call.** A stop request already visible before a new step
-   begins returns STOPPED without entering another `MPEG_Picture()`.
-7. **Safe stop during active picture.** The data callback continues to report
-   only real Transport data/exhaustion/failure while `MPEG_Picture()` owns the
-   call. If stop becomes visible during that call, observe it only after the
-   call returns. Preserve existing accounting and return STOPPED without
-   publishing a new caller-consumable frame from that stopping boundary unless
-   frozen authority proves otherwise.
-8. **Terminal semantics preserved.** Real finite exhaustion remains COMPLETE;
-   unexpected decoder end without exhaustion/owner stop remains failure;
-   sequence/feed/Transport/platform/synchronization errors retain their current
-   classifications.
-9. **Existing run compatibility.** Preserve `pstvnc_mpeg_decoder_run()` as a
-   compatibility/lifecycle operation with materially unchanged terminal
-   behavior and report accounting. It may internally loop over the new step
-   seam if that is the clearest implementation.
-10. **No cross-domain shortcut.** MPEG decoder source must not import
-    `display/mpeg_scheduler.h`, `display/mpeg_compositor.h`,
-    `display/mpeg_presentation.h`, Platform graphics, RFB or Application.
-    No GS call, clock arm, timing wait, presentation drop or visible ownership
-    transition belongs in this packet.
-11. **Transport boundary unchanged.** Keep channel-4 consumption through the
-    existing public Transport MPEG access/wake API. Do not reach into queue,
-    semaphore, credit or physical receive internals and do not invent generation
-    EOF from local stop.
-12. **Direct evidence.** Extend focused decoder tests for one-picture
-    publication/lifetime/ordinal and stop interleavings while preserving the
-    existing decoder suite. Current decoder translation units must remain
-    directly covered by canonical strict PS2 compile and linked reproducibility.
+1. **Concrete owner seam.** Add one clean PS2 implementation that can populate
+   or expose the already-accepted `pstvnc_mpeg_decoder_platform_ops_t`.
+   Do not redesign the decoder API merely because the backend is now concrete.
+2. **MPEG-owned hardware mechanism.** Decoder/IPU/libmpeg mechanism remains in
+   the MPEG responsibility family. Do not place decoder lifecycle inside
+   `ps2_graphics` or give Platform graphics MPEG lifecycle meaning.
+3. **Pinned mature dependency.** Product clean build must use the exact pinned
+   SMS libmpeg source currently proven under the EXP3 vendor copy, not the
+   modern system `-lmpeg` implementation. Preserve upstream commit
+   `c1898094725ad750ec20e10cc148b39d7c8a9c65`, original authorship/license
+   notices and byte identity of the four upstream source/header files.
+4. **Non-experimental product dependency path.** Do not make final clean product
+   source depend semantically on an `experiments/` path. Prefer promoting one
+   byte-identical vendor/dependency copy with provenance metadata into a stable
+   product dependency location, or an equally clean mechanism that leaves
+   experimental harness ownership separate. Do not edit the third-party SMS
+   source to fit the product.
+5. **Preserve SMS compilation model.** The mature SMS C/assembly decoder must be
+   compiled with its qualified small-data/instruction-placement flags, including
+   the historical `-G8192 -mgpopt -mno-abicalls` model used by the successful
+   SMS hardware targets. Do not force `libmpeg_core.S` through the clean
+   product `-G0` translation-unit flags merely for uniformity.
+6. **Known-state preparation is unconditional product behavior.** Implement the
+   qualified IPU/DMAC quiesce/reset/BCLR sequence before
+   `MPEG_Initialize()`. Do not restore the old
+   `VIDEO_IPU_RESET_EACH_SESSION` product toggle.
+7. **No GS ownership in backend.** Do not copy H1 GIF transfer packets, texture
+   VRAM allocation, graph initialization, draw packets, VBlank waits or visible
+   stage markers. R3 may touch TO_IPU/IPU/DMAC decoder hardware only.
+8. **Callback translation.** Store only the decoder-supplied feed and sequence
+   callbacks/contexts needed by the SMS API. The SMS data callback delegates to
+   the decoder feed callback; the SMS sequence callback validates signed SMS
+   dimensions and delegates width/height to the decoder sequence callback,
+   capturing only the returned decoder-owned picture pointer needed by
+   `MPEG_Picture()`.
+9. **RGB16 current product path.** Initialize the mature decoder in the
+   currently qualified RGB16 mode via `_MPEG_Set16(1)`. Do not reopen a broad
+   runtime pixel-mode experiment in R3.
+10. **Feed DMA boundary.** `submit_feed` must accept the decoder's already
+    bounded/padded transfer request, require nonzero 16-byte-aligned transfer
+    length, wait for ordinary TO_IPU DMA ownership, and submit exactly the
+    supplied aligned bytes. It must not read Transport itself, repad payload,
+    alter decoder accounting or synthesize EOF.
+11. **First/subsequent picture semantics.** The backend must preserve the mature
+    API pattern: first picture call uses the libmpeg first-picture form before a
+    prior returned picture pointer is available; later calls use the
+    decoder-owned picture buffer captured through the sequence callback. PTS
+    storage required by the SMS API remains backend-local and carries no
+    Presentation/common-clock authority.
+12. **Destroy/release ordering.** `destroy` may run only through the decoder's
+    existing post-call lifecycle fence. Wait for TO_IPU ownership as required,
+    call `MPEG_Destroy()` exactly once for an initialized backend interval,
+    and leave a reusable clean backend state. `release_known_state` must not
+    claim unsupported global restoration; clear only backend-owned state and
+    preserve the next-acquisition known-state preparation rule.
+13. **Single-instance libmpeg constraint.** Because mature SMS libmpeg exposes
+    process-global decoder entry points/state, fail closed against overlapping
+    backend initialization rather than pretending multiple independent decoder
+    instances are supported. Do not add a project-wide generic lock manager.
+14. **No stop semantics in backend callback.** Local stop remains decoder/worker
+    lifecycle state and must not be consulted by the SMS data callback or
+    translated into zero/EOF. Preserve R2/A003 safe-stop authority.
+15. **No Presentation/runtime wiring.** Do not create the MPEG worker, mailbox,
+    scheduler/compositor calls, P3/P4/P5 transitions, START/RETIRE control,
+    producer lifecycle, RFB restoration or final Application orchestration.
+16. **Canonical build authority.** Add the backend and exact pinned SMS
+    dependency to the clean current-source linked build. Direct compile evidence
+    must cover the clean backend C source and explicitly verify the SMS
+    C/assembly objects under their dedicated qualified flags. Do not weaken the
+    existing strict compile checks for ordinary clean source.
 
 ### Placement / shape guidance
 
-Prefer the smallest change in `src/mpeg/decoder.{c,h}`.
+Prefer a small clean MPEG hardware file such as:
 
-A tiny MPEG-domain decoded-picture value is acceptable if it improves API
-clarity. Do not create a Presentation dependency merely to reuse
-`pstvnc_mpeg_frame_surface_t`; the later Application/main-thread adapter can
-construct the Presentation value from the MPEG-owned borrowed picture facts.
+- `src/mpeg/ps2_decoder_backend.{c,h}`
 
-A dedicated step result enum or a new positive
-`PICTURE_READY` decoder result is acceptable. Keep terminal/error values
-unambiguous.
+or an equivalently clear name.
 
-The current reusable decoder picture buffer remains decoder-owned. This packet
-does not add a second full-frame copy merely to make ownership easier.
+Keep the backend context ordinary and explicit: stored decoder callbacks,
+sequence-owned picture pointer, PTS scratch and initialized/ownership facts are
+reasonable. It must not store Presentation state, run generation, scheduler
+state, Transport queue state or GS resources.
+
+For the mature third-party dependency, prefer a stable dependency path such as:
+
+- `vendor/sms-libmpeg/`
+
+with byte-identical upstream files and provenance metadata copied from the
+existing pinned EXP3 reference.
+
+Do not silently update the SMS upstream revision.
 
 ### Acceptance criteria
 
-- `A003-R2-C1 ONE_PICTURE_STEP`: one public operation returns after at most one
-  decoder picture call and can identify a successful picture boundary.
-- `A003-R2-C2 FRAME_VALUE`: a successful picture publishes a bounded read-only
-  buffer/geometry/pixel-width/ordinal value without generation or Presentation
-  authority.
-- `A003-R2-C3 BUFFER_LIFETIME`: borrowed-frame validity is explicit and tested
-  across next-step/release boundaries; no hidden concurrent ownership exists.
-- `A003-R2-C4 FIRST_PICTURE_NEUTRALITY`: decoded ordinal 1 is observable but
-  does not arm clock, schedule, present or promote visible ownership.
-- `A003-R2-C5 SAFE_STOP_PRECALL`: pre-existing stop prevents a new decoder
-  call.
-- `A003-R2-C6 SAFE_STOP_ACTIVE_CALL`: stop during an active picture never
-  becomes callback EOF and is observed only after decoder ownership returns.
-- `A003-R2-C7 TERMINAL_COMPATIBILITY`: finite exhaustion, unexpected end and
-  existing failure classes remain truthful.
-- `A003-R2-C8 RUN_COMPATIBILITY`: existing decoder run behavior/reporting is
-  preserved rather than forked into a competing loop.
-- `A003-R2-C9 ACCOUNTING`: picture/feed/payload/DMA accounting remains
-  monotonic and exactly once per underlying decoder/Transport fact.
-- `A003-R2-C10 OWNER_BOUNDARY`: no Display scheduler/compositor, GS, RFB,
-  Application or generation-lifecycle dependency enters the decoder.
-- `A003-R2-C11 TRANSPORT_BOUNDARY`: public MPEG Transport access/wake remains
-  the sole ingest seam and local stop cannot synthesize stream exhaustion.
-- `A003-R2-C12 CLEAN_EVIDENCE`: focused/full host tests, project/dictionary
-  checks, direct PS2 compile and linked current-source reproducibility all pass
-  on exact final source; hardware claims remain separate.
+- `A003-R3-C1 CONCRETE_BACKEND`: clean source realizes all accepted decoder
+  platform ops without changing their ownership meaning.
+- `A003-R3-C2 PINNED_SMS_IDENTITY`: product build uses the exact pinned mature
+  SMS revision/files with provenance/license identity preserved.
+- `A003-R3-C3 SMS_BUILD_MODEL`: SMS C/assembly compile under the qualified
+  dedicated small-data flags rather than generic product -G0 treatment.
+- `A003-R3-C4 KNOWN_STATE`: qualified IPU/DMAC prepare/reset is unconditional
+  before decoder initialization and the obsolete reset toggle is absent.
+- `A003-R3-C5 NO_GS_OWNERSHIP`: backend has no GIF/GS/VRAM/VBlank/presentation
+  mechanism or dependency.
+- `A003-R3-C6 CALLBACK_TRANSLATION`: SMS feed/sequence callbacks delegate only
+  through the accepted decoder callbacks and capture only required decoder
+  picture state.
+- `A003-R3-C7 RGB16`: current qualified SMS RGB16 mode is explicitly selected
+  without restoring experimental runtime pixel-mode policy.
+- `A003-R3-C8 TO_IPU_DMA`: feed submission waits/submits exact aligned decoder
+  transfer bytes and owns no Transport/EOF/accounting policy.
+- `A003-R3-C9 PICTURE_CALLS`: first/subsequent SMS picture calls preserve the
+  mature NULL-then-decoder-buffer behavior with backend-local PTS scratch only.
+- `A003-R3-C10 LIFECYCLE_FENCE`: destroy/release and single-instance reuse are
+  fail-closed, exactly-once and compatible with the decoder's active-call fence.
+- `A003-R3-C11 SAFE_STOP_BOUNDARY`: no backend callback observes local stop or
+  manufactures stream exhaustion; R2 behavior remains unchanged.
+- `A003-R3-C12 CLEAN_BUILD_EVIDENCE`: focused hostable adapter tests where
+  meaningful, existing decoder tests, project/dictionary checks, dedicated SMS
+  C/assembly compile evidence and full linked current-source reproducibility all
+  pass; physical decoder qualification remains separate.
 
 ### Explicit non-goals
 
-Do not implement in R2:
+Do not implement in R3:
 
-- an MPEG worker thread/session wrapper;
-- worker-to-main-thread mailbox/rendezvous;
-- scheduler or compositor invocation;
-- actual timing wait/VBlank behavior;
-- P3/P4/P5 presentation state changes;
-- concrete PS2 libmpeg platform adapter if one is still absent;
-- START/RETIRE wire/control protocol;
-- Transport residual discard/credit finalization;
+- MPEG worker thread/session;
+- worker/main-thread frame rendezvous;
+- scheduler/compositor invocation;
+- GS upload/draw or Presentation ownership;
+- runtime timing wait/VBlank policy;
+- CONFIG expansion for video pixel modes;
+- generation START/RETIRE transaction;
 - Pi producer lifecycle;
-- RFB restoration orchestration;
-- final Application activation/retirement/failure transaction;
-- physical PS2 MPEG qualification.
+- Transport residual finalization;
+- RFB restoration;
+- final Application orchestration;
+- physical PS2 decode qualification.
 
 ### Worker return
 
 Return:
 
-- exact current/frozen decoder evidence inspected;
-- exact source/test/build/dictionary commits changed;
-- one-picture step/result API shape;
-- exact borrowed-frame fields and lifetime rule;
-- exact stop-before-call and stop-during-call behavior;
-- confirmation ordinal 1 has no presentation/clock side effect;
-- confirmation generation remains outside decoder;
-- confirmation `pstvnc_mpeg_decoder_run()` terminal behavior remains compatible;
-- A003-R2-C1 through C12 disposition;
-- focused/full/direct-PS2 evidence;
+- exact current/frozen backend evidence inspected;
+- exact SMS upstream/provenance/identity evidence;
+- exact source/vendor/build/test/dictionary commits changed;
+- concrete backend context and platform-ops mapping;
+- known-state prepare mechanism;
+- feed/sequence callback translation;
+- first/subsequent picture-call behavior;
+- SMS dedicated compile flags and canonical build integration;
+- proof no GS/Presentation/worker/Application ownership entered the backend;
+- A003-R3-C1 through C12 disposition;
+- exact host/direct-PS2/link evidence;
 - evidence gaps/hardware non-claims;
 - exact next dependency/baton point.
 
@@ -1047,26 +1244,27 @@ Emit exactly one immutable Reconstruction log using:
 - WORK_ITEM_KEY=`a003-mpeg-generation`
 - WORKER_KEY=`interactive`
 
-Do not begin the MPEG worker/mailbox, Presentation runtime wiring or final
-Application orchestration in the same shift.
+Do not begin worker/rendezvous or final Application orchestration in the same
+shift.
 
 ## Deferred dependency graph
 
-Expected remaining work after active A003 R2 is:
+Expected remaining work after active A003 R3 is:
 
 1. reconstruct the MPEG-owned asynchronous worker/session and a bounded
-   buffer-lifetime-safe handoff to the main/Application thread, using the
-   one-picture decoder seam rather than letting the decoder run ahead over a
-   borrowed frame;
-2. reconstruct any still-missing concrete PS2 libmpeg/platform binding as its
-   own hardware-facing seam if returned source confirms that adapter remains
-   absent;
-3. final Application orchestration consumes the MPEG worker handoff plus A004
-   P1-P6 Presentation seams, routing first frame to P4, later frames through R6,
-   visible frames through the sole P4 compositor, and P5/Q7 retirement through
-   the ordered producer/decoder/RFB transaction.
+   buffer-lifetime-safe rendezvous with the main/Application thread, using the
+   R2 one-picture borrow so the decoder cannot run ahead over a frame still in
+   use;
+2. connect that worker handoff through A004: ordinal 1 to the P4 first-frame
+   compositor boundary, later ordinals through the R6 absolute scheduler, and
+   PRESENT decisions through the sole P4 compositor while preserving P5
+   retirement drain/seal behavior;
+3. final Application orchestration consumes A003 plus A004 public seams for
+   activation, START/producer admission, worker lifecycle, Q7 producer close /
+   RFB-underlay restoration / decoder-safe-stop / Transport residual
+   finalization / synchronized reveal, failure containment and shutdown.
 
-Foreman must choose the exact next seam from returned A003 R2 source rather than
+Foreman must choose the exact next seam from returned A003 R3 source rather than
 pre-authorizing later implementation.
 
 This is planning only, not worker authority to pre-implement later work.
@@ -1077,10 +1275,11 @@ HARDWARE_PENDING=A004 visual geometry/matte/suppression/first-frame qualificatio
 
 ## Foreman next pickup
 
-Consume the `A003-DECODED-PICTURE-HANDOFF-R2` Reconstruction baton,
-independently verify the one-picture decoder boundary, borrowed-frame lifetime,
-safe-stop ordering, terminal/run compatibility, exact accounting and strict
-owner separation. Then choose the next bounded MPEG worker/main-thread handoff
-or concrete platform-adapter seam from returned source.
+Consume the `A003-PS2-LIBMPEG-BACKEND-R3` Reconstruction baton,
+independently verify exact SMS dependency identity/build flags, IPU/DMAC
+known-state preparation, callback/DMA/picture-call translation, lifecycle and
+single-instance fencing, strict absence of GS/Presentation ownership, and
+canonical linked-build coverage. Then choose the bounded MPEG worker/main-thread
+rendezvous from returned source.
 
 Do not execute the packet from the Foreman seat.
