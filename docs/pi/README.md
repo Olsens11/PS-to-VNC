@@ -209,3 +209,31 @@ active.
 The committed candidate is now staged byte-exact in its production filesystem
 locations but remains `EVALUATING`: systemd has not been daemon-reloaded and the
 desktop has not yet been qualified on the real `:1` provider.
+
+
+## Product Wire server foundation — A003 R8
+
+A003 R8 establishes the first maintained custom Pi product runtime under
+`pi/`. The tracked product files are:
+
+- `pi/wire_protocol.py` — exact PSTV framing and provisional Q4
+  HELLO/ACCEPT/NOT_ACCEPTED representation;
+- `pi/wire_server.py` — the persistent listener/session owner for the selected
+  `192.168.50.1:5902` product Wire endpoint;
+- `systemd/pi/ps-to-vnc-wire.service` — ordinary systemd supervision for that
+  process;
+- `scripts/pi/install-wire-runtime.sh` — exact-byte stage/verify/remove tooling.
+
+The Wire server owns its own listener; it is **not** systemd socket activated.
+TCP accept remains provisional until exact Q4 establishment succeeds. An
+accepted session may remain completely idle. EOF or session-local protocol
+failure retires only that connection and the persistent server returns to
+listening.
+
+This R8 source is tracked/repository-tested but **not live-qualified or
+activated on the Pi**. The staging tool deliberately performs no systemd
+manager reload and makes no enable/start/stop/restart change.
+
+The existing qualified direct-RFB `192.168.50.1:5900` socket/provider
+definitions remain unchanged and independent. R8 does not migrate RFB onto Wire
+and implements no AUDIO, MPEG, CONFIG, heartbeat, or generic rider framework.
