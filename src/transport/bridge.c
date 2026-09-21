@@ -2,8 +2,9 @@
  * File synopsis:
  * Implements Transport's one cross-component bridge body. It coordinates the
  * application-owned session lifecycle and adapts logical RFB plus optional
- * AUDIO/MPEG2 delivery to the private Transport runtime without exposing the
- * physical PSTV descriptor or moving protocol/media policy into Transport.
+ * AUDIO/MPEG2 delivery and exact MPEG generation-control relay operations to the
+ * private Transport runtime without exposing the physical PSTV descriptor or
+ * moving active-generation/media policy into Transport.
  *
  * One active bridge still means one physical connection and one sole receiver.
  * RFB safe-boundary choice, PCM playback, MPEG decoding, media-clock use,
@@ -474,6 +475,51 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(
         return PSTVNC_TRANSPORT_OK;
 
     return pstvnc_transport_bridge_terminal_result();
+}
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_send_start(
+    const pstvnc_transport_access_t *transport_access,
+    const pstvnc_mpeg_start_payload_t *start)
+{
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    return pstvnc_transport_runtime_mpeg_send_start(
+        &pstvnc_transport_bridge_runtime,
+        start);
+}
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_send_retire(
+    const pstvnc_transport_access_t *transport_access,
+    const pstvnc_mpeg_retire_payload_t *retire)
+{
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    return pstvnc_transport_runtime_mpeg_send_retire(
+        &pstvnc_transport_bridge_runtime,
+        retire);
+}
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_take_retire_completion(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_mpeg_retire_payload_t *completion)
+{
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    return pstvnc_transport_runtime_mpeg_take_retire_completion(
+        &pstvnc_transport_bridge_runtime,
+        completion);
 }
 
 pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(
