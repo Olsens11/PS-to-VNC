@@ -8,6 +8,8 @@
     HISTORICAL_EXECUTABLE=/usr/bin/Xtigervnc
     SELECTED_PROVIDER=X0tigervnc_1.15.0+dfsg-2.1~deb13u1
     SELECTED_EXECUTABLE=/usr/bin/X0tigervnc
+    SELECTED_PROVIDER_ENDPOINT=127.0.0.1:5900
+    DIRECT_NATIVE_ROUTE=PRESERVED_R11_FALLBACK_EVIDENCE
     PROVIDER_ROLE=REPLACEABLE_IMPLEMENTATION
     HISTORICAL_LIVE_APPLICATION=PERFORMED
     HISTORICAL_HARDWARE_QUALIFICATION=PASS
@@ -15,8 +17,9 @@
     QUALIFICATION_EVIDENCE_HEAD=b40f422a760a0b7b6f2ab41699c5e72fda83bb83
 
 This document preserves the physically qualified dedicated `Xtigervnc :1`
-provider contract and records the selected A003 R11 native-desktop
-`X0tigervnc :0` authority. The two claims are deliberately distinct.
+provider contract, the exact A003 R11 native-desktop `X0tigervnc :0`
+authority, and the A003 R12 selection of a Pi-local-only provider endpoint.
+Those claims are deliberately distinct.
 
 The reconstruction rule remains:
 
@@ -30,9 +33,27 @@ and TigerVNC itself is not the permanent architectural boundary.
 `RFB_SOCKET_ACTIVATION.md` owns the adopted lifecycle decision and the
 provider-boundary interpretation.
 
-## Selected A003 R11 native provider
+## Selected A003 R12 internal native provider
 
-Current reconstruction selection:
+Current provider-side reconstruction selection:
+
+    127.0.0.1:5900
+        -> ps-to-vnc-rfb-internal.socket
+        -> ps-to-vnc-rfb-internal-x0tigervnc.service
+        -> /usr/bin/X0tigervnc
+        -> existing LightDM/Xorg X11 display :0
+
+The internal service uses the same X0tigervnc command/policy recorded by R11.
+Its socket owns the loopback listener while X0tigervnc consumes the inherited
+descriptor with `-rfbport -1`.
+
+The R12 internal units are mutually exclusive with the preserved direct socket,
+direct provider service and persistent control. R12 does not connect the Wire
+Relay to this endpoint and does not activate or physically qualify it.
+
+## Preserved A003 R11 direct native provider
+
+R11 direct reconstruction selection, retained as fallback/evidence after R12:
 
     existing LightDM/Xorg X11 display :0
         -> /usr/bin/X0tigervnc
