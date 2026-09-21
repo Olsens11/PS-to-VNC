@@ -531,9 +531,10 @@ $(TRANSPORT_MPEG_TEST): \
 		-o $(TRANSPORT_MPEG_TEST)
 
 CONFIG_PROFILE_TEST := .build/config_profile_test
+CONFIG_MPEG_RUNTIME_PROFILE_TEST := .build/config_mpeg_runtime_profile_test
 
-.PHONY: config-profile-unit
-unit: config-profile-unit
+.PHONY: config-profile-unit config-mpeg-runtime-profile-unit
+unit: config-profile-unit config-mpeg-runtime-profile-unit
 
 config-profile-unit: $(CONFIG_PROFILE_TEST)
 	./$(CONFIG_PROFILE_TEST)
@@ -549,6 +550,25 @@ $(CONFIG_PROFILE_TEST): \
 		unit/config_profile_test.c \
 		../src/config/profile.c \
 		-o $(CONFIG_PROFILE_TEST)
+
+config-mpeg-runtime-profile-unit: $(CONFIG_MPEG_RUNTIME_PROFILE_TEST)
+	./$(CONFIG_MPEG_RUNTIME_PROFILE_TEST)
+
+$(CONFIG_MPEG_RUNTIME_PROFILE_TEST): \
+	unit/config_mpeg_runtime_profile_test.c \
+	../src/config/mpeg_runtime_profile.c \
+	../src/config/mpeg_runtime_profile.h \
+	../src/config/profile.h \
+	../src/transport/transport.h \
+	../src/mpeg/decoder.h \
+	../src/mpeg/worker.h \
+	../src/mpeg/ps2_worker_runtime.h \
+	../src/display/mpeg_scheduler.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/config_mpeg_runtime_profile_test.c \
+		../src/config/mpeg_runtime_profile.c \
+		-o $(CONFIG_MPEG_RUNTIME_PROFILE_TEST)
 
 MEDIA_CLOCK_TEST := .build/media_clock_test
 

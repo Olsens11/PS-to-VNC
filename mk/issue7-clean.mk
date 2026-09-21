@@ -33,6 +33,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/audio_audsrv_service.o \
 	$(BUILD_DIR)/audio_session.o \
 	$(BUILD_DIR)/config_profile.o \
+	$(BUILD_DIR)/config_mpeg_runtime_profile.o \
 	$(BUILD_DIR)/config_text.o \
 	$(BUILD_DIR)/media_clock.o \
 	$(BUILD_DIR)/mpeg_decoder.o \
@@ -117,6 +118,9 @@ $(BUILD_DIR)/audio_session.o: src/audio/session.c src/audio/session.h src/audio/
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/config_profile.o: src/config/profile.c src/config/profile.h src/transport/transport.h src/transport/protocol.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/config_mpeg_runtime_profile.o: src/config/mpeg_runtime_profile.c src/config/mpeg_runtime_profile.h src/transport/transport.h src/mpeg/decoder.h src/mpeg/worker.h src/mpeg/ps2_worker_runtime.h src/display/mpeg_scheduler.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/config_text.o: src/config/text.c src/config/text.h | $(BUILD_DIR)
