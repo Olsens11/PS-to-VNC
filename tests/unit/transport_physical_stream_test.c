@@ -496,6 +496,198 @@ static void test_shutdown_interrupt_preserves_descriptor_ownership(void)
     CHECK(stream.expected_receive_sequence == 1u);
 }
 
+
+static void test_q4_accept_establishes_and_transfers_sequence_two(void)
+{
+    pstvnc_transport_physical_stream_t stream;
+    pstvnc_transport_physical_stream_t runtime_stream;
+    pstvnc_transport_header_t sent_header;
+    pstvnc_wire_accept_payload_t acceptance;
+    pstvnc_wire_not_accepted_reason_t reason =
+        (pstvnc_wire_not_accepted_reason_t)0;
+    uint8_t accept_payload[PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE];
+    pstvnc_wire_hello_payload_t hello;
+    uint32_t session_id = 0u;
+    int socket_fd = TEST_SOCKET_FD;
+
+    reset_fixture();
+    acceptance.session_id = 0x12345678u;
+    CHECK(pstvnc_wire_accept_payload_encode(
+        accept_payload, &acceptance) == 1);
+    append_inbound_frame(
+        PSTVNC_TRANSPORT_FRAME_ACCEPT,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+        0u,
+        1u,
+        accept_payload,
+        sizeof(accept_payload));
+
+    memset(&stream, 0xa5, sizeof(stream));
+    CHECK(pstvnc_transport_physical_stream_establish_client(
+        &stream, &socket_fd, &session_id, &reason) == 1);
+    CHECK(socket_fd == -1);
+    CHECK(session_id == 0x12345678u);
+    CHECK(reason == (pstvnc_wire_not_accepted_reason_t)0);
+    CHECK(stream.next_send_sequence == 2u);
+    CHECK(stream.expected_receive_sequence == 2u);
+
+    CHECK(fake_socket.outbound_length ==
+        PSTVNC_TRANSPORT_HEADER_SIZE + PSTVNC_WIRE_HELLO_PAYLOAD_SIZE);
+    CHECK(pstvnc_transport_header_decode(
+        &sent_header, fake_socket.outbound) == 1);
+    CHECK(pstvnc_transport_header_is_wire_hello(&sent_header));
+    CHECK(sent_header.sequence == 1u);
+    CHECK(pstvnc_wire_hello_payload_decode(
+        &hello,
+        fake_socket.outbound + PSTVNC_TRANSPORT_HEADER_SIZE,
+        PSTVNC_WIRE_HELLO_PAYLOAD_SIZE) == 1);
+    CHECK(hello.wire_version == PSTVNC_TRANSPORT_VERSION);
+    CHECK(hello.product_establishment_version ==
+        PSTVNC_WIRE_PRODUCT_ESTABLISHMENT_VERSION);
+
+    memset(&runtime_stream, 0, sizeof(runtime_stream));
+    CHECK(pstvnc_transport_physical_stream_transfer_established(
+        &runtime_stream, &stream) == 1);
+    CHECK(stream.socket_fd == -1);
+    CHECK(stream.send_semaphore_id == -1);
+    CHECK(stream.next_send_sequence == 1u);
+    CHECK(stream.expected_receive_sequence == 1u);
+    CHECK(runtime_stream.socket_fd == TEST_SOCKET_FD);
+    CHECK(runtime_stream.send_semaphore_id == 3);
+    CHECK(runtime_stream.next_send_sequence == 2u);
+    CHECK(runtime_stream.expected_receive_sequence == 2u);
+
+    pstvnc_transport_physical_stream_release(&runtime_stream);
+}
+
+static void test_q4_not_accepted_is_typed_and_retires_owned_socket(void)
+{
+    pstvnc_transport_physical_stream_t stream;
+    pstvnc_wire_not_accepted_payload_t rejection;
+    pstvnc_wire_not_accepted_reason_t reason =
+        (pstvnc_wire_not_accepted_reason_t)0;
+    uint8_t reject_payload[PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE];
+    uint32_t session_id = 99u;
+    int socket_fd = TEST_SOCKET_FD;
+
+    reset_fixture();
+    rejection.reason = PSTVNC_WIRE_NOT_ACCEPTED_PRODUCT_VERSION;
+    CHECK(pstvnc_wire_not_accepted_payload_encode(
+        reject_payload, &rejection) == 1);
+    append_inbound_frame(
+        PSTVNC_TRANSPORT_FRAME_NOT_ACCEPTED,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+        0u,
+        1u,
+        reject_payload,
+        sizeof(reject_payload));
+
+    memset(&stream, 0, sizeof(stream));
+    CHECK(pstvnc_transport_physical_stream_establish_client(
+        &stream, &socket_fd, &session_id, &reason) == -1);
+    CHECK(socket_fd == -1);
+    CHECK(session_id == 0u);
+    CHECK(reason == PSTVNC_WIRE_NOT_ACCEPTED_PRODUCT_VERSION);
+    CHECK(stream.socket_fd == -1);
+    CHECK(fake_socket.close_calls == 1);
+    CHECK(delete_sema_calls == 1);
+}
+
+static void run_q4_invalid_response_case(
+    uint8_t kind,
+    uint8_t channel,
+    uint8_t flags,
+    uint32_t sequence,
+    const uint8_t *payload,
+    size_t payload_length)
+{
+    pstvnc_transport_physical_stream_t stream;
+    pstvnc_wire_not_accepted_reason_t reason =
+        (pstvnc_wire_not_accepted_reason_t)0;
+    uint32_t session_id = 77u;
+    int socket_fd = TEST_SOCKET_FD;
+
+    reset_fixture();
+    append_inbound_frame(
+        kind, channel, flags, sequence, payload, payload_length);
+    memset(&stream, 0, sizeof(stream));
+
+    CHECK(pstvnc_transport_physical_stream_establish_client(
+        &stream, &socket_fd, &session_id, &reason) == 0);
+    CHECK(socket_fd == -1);
+    CHECK(session_id == 0u);
+    CHECK(reason == (pstvnc_wire_not_accepted_reason_t)0);
+    CHECK(stream.socket_fd == -1);
+    CHECK(fake_socket.close_calls == 1);
+}
+
+static void test_q4_rejects_malformed_result_envelopes(void)
+{
+    pstvnc_wire_accept_payload_t acceptance;
+    pstvnc_wire_not_accepted_payload_t rejection;
+    uint8_t accept_payload[PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE];
+    uint8_t reject_payload[PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE];
+    uint8_t short_payload[3] = { 0u, 0u, 1u };
+
+    acceptance.session_id = 9u;
+    CHECK(pstvnc_wire_accept_payload_encode(
+        accept_payload, &acceptance) == 1);
+    rejection.reason = PSTVNC_WIRE_NOT_ACCEPTED_WIRE_VERSION;
+    CHECK(pstvnc_wire_not_accepted_payload_encode(
+        reject_payload, &rejection) == 1);
+
+    run_q4_invalid_response_case(
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+        0u, 1u, accept_payload, sizeof(accept_payload));
+    run_q4_invalid_response_case(
+        PSTVNC_TRANSPORT_FRAME_ACCEPT,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u, 1u, accept_payload, sizeof(accept_payload));
+    run_q4_invalid_response_case(
+        PSTVNC_TRANSPORT_FRAME_ACCEPT,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+        1u, 1u, accept_payload, sizeof(accept_payload));
+    run_q4_invalid_response_case(
+        PSTVNC_TRANSPORT_FRAME_ACCEPT,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+        0u, 2u, accept_payload, sizeof(accept_payload));
+    run_q4_invalid_response_case(
+        PSTVNC_TRANSPORT_FRAME_ACCEPT,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+        0u, 1u, short_payload, sizeof(short_payload));
+
+    memset(accept_payload, 0, sizeof(accept_payload));
+    run_q4_invalid_response_case(
+        PSTVNC_TRANSPORT_FRAME_ACCEPT,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+        0u, 1u, accept_payload, sizeof(accept_payload));
+
+    pstvnc_transport_write_be32(reject_payload, 99u);
+    run_q4_invalid_response_case(
+        PSTVNC_TRANSPORT_FRAME_NOT_ACCEPTED,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+        0u, 1u, reject_payload, sizeof(reject_payload));
+}
+
+static void test_q4_adoption_failure_leaves_descriptor_with_caller(void)
+{
+    pstvnc_transport_physical_stream_t stream;
+    pstvnc_wire_not_accepted_reason_t reason =
+        (pstvnc_wire_not_accepted_reason_t)0;
+    uint32_t session_id = 0u;
+    int socket_fd = TEST_SOCKET_FD;
+
+    reset_fixture();
+    create_sema_fail = 1;
+    memset(&stream, 0, sizeof(stream));
+
+    CHECK(pstvnc_transport_physical_stream_establish_client(
+        &stream, &socket_fd, &session_id, &reason) == 0);
+    CHECK(socket_fd == TEST_SOCKET_FD);
+    CHECK(fake_socket.close_calls == 0);
+}
+
 int main(void)
 {
     test_adopt_failure_keeps_socket_unowned();
@@ -508,6 +700,10 @@ int main(void)
     test_short_receive_payload_does_not_advance_sequence();
     test_receive_capacity_rejection_does_not_advance_sequence();
     test_shutdown_interrupt_preserves_descriptor_ownership();
+    test_q4_accept_establishes_and_transfers_sequence_two();
+    test_q4_not_accepted_is_typed_and_retires_owned_socket();
+    test_q4_rejects_malformed_result_envelopes();
+    test_q4_adoption_failure_leaves_descriptor_with_caller();
 
     if (failures != 0) {
         fprintf(stderr,
