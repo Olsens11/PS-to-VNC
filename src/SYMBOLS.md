@@ -4,7 +4,7 @@ DIRECTORY=src
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns the executable entry point and application coordinator. Cross-domain product sequencing remains here; private input, UI, RFB, framebuffer, display, diagnostics, and platform mechanisms live in their earned domain directories.
+This directory owns the executable entry point and application coordinator, including narrow main-thread cross-domain sequencing such as the exact-run MPEG worker-claim to Display scheduler/compositor bridge. Private MPEG decode/thread mechanics, Display presentation/timing mechanisms, input, UI, RFB, framebuffer, diagnostics, Transport, and platform mechanisms remain in their earned domain directories.
 
 The inventory below covers clean-generation symbols defined directly in this directory.
 

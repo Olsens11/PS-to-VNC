@@ -59,6 +59,12 @@ Current clean C/H files directly in `src/` are restricted to:
     src/app_mpeg_frame.c
     src/app_mpeg_frame.h
 
+`app_mpeg_frame.{c,h}` was admitted at the Application root during A004 P7
+because it is deliberately a cross-domain main-thread coordinator between the
+MPEG worker and Display presentation mechanisms. It owns neither domain's
+private mechanism and does not justify a new top-level source directory.
+
+
 The root dictionary is:
 
     src/SYMBOLS.md
