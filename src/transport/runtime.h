@@ -54,6 +54,12 @@ typedef struct pstvnc_transport_runtime {
 
     int rfb_queue_semaphore_id;
     int rfb_activity_semaphore_id;
+    /*
+     * RFB-specific outbound-credit wake. The RFB queue semaphore protects both
+     * the credit counter and this wait state; 0=no waiter, 1=armed, 2=signaled
+     * but not yet returned through the protected state.
+     */
+    int rfb_outbound_credit_semaphore_id;
     int audio_queue_semaphore_id;
     int audio_activity_semaphore_id;
     int mpeg_queue_semaphore_id;
@@ -84,6 +90,14 @@ typedef struct pstvnc_transport_runtime {
     /* RFB producer activity is protected by rfb_queue_semaphore_id. */
     uint32_t activity_sequence;
     int activity_wait_armed;
+
+    /*
+     * Pi-granted credit gates PS2->provider RFB DATA. This state is deliberately
+     * RFB-specific: it does not establish a generic all-rider scheduler or
+     * reusable module-generation mechanism.
+     */
+    uint32_t rfb_outbound_credit_bytes;
+    int rfb_outbound_credit_wait_state;
 
     /*
      * AUDIO and MPEG producer/terminal activity use identical three-state
