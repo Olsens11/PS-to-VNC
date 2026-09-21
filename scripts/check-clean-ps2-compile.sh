@@ -87,6 +87,7 @@ SOURCES=(
     src/display/display.c
     src/display/mpeg_frame.c
     src/display/mpeg_presentation.c
+    src/display/mpeg_scheduler.c
     src/display/mpeg_compositor.c
     src/input/input.c
     src/input/mouse.c

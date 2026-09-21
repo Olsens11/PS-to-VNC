@@ -73,6 +73,11 @@ int pstvnc_media_clock_epoch(
     const pstvnc_media_clock_t *clock,
     uint64_t *epoch_tick);
 
+/* Read the immutable session timer rate without exposing mutable clock state. */
+int pstvnc_media_clock_tick_rate(
+    const pstvnc_media_clock_t *clock,
+    uint32_t *ticks_per_second);
+
 int pstvnc_media_clock_arm(
     pstvnc_media_clock_t *clock,
     uint64_t observed_now_tick);

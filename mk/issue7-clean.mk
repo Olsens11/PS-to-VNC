@@ -32,6 +32,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/display.o \
 	$(BUILD_DIR)/mpeg_frame.o \
 	$(BUILD_DIR)/mpeg_presentation.o \
+	$(BUILD_DIR)/mpeg_scheduler.o \
 	$(BUILD_DIR)/mpeg_compositor.o \
 	$(BUILD_DIR)/input.o \
 	$(BUILD_DIR)/mouse.o \
@@ -131,6 +132,9 @@ $(BUILD_DIR)/mpeg_frame.o: src/display/mpeg_frame.c src/display/mpeg_frame.h | $
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/mpeg_presentation.o: src/display/mpeg_presentation.c src/display/mpeg_presentation.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/mpeg_scheduler.o: src/display/mpeg_scheduler.c src/display/mpeg_scheduler.h src/media/clock.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/mpeg_compositor.o: src/display/mpeg_compositor.c src/display/mpeg_compositor.h src/display/mpeg_frame.h src/display/mpeg_presentation.h src/media/clock.h src/platform/ps2_graphics.h src/display/display.h | $(BUILD_DIR)

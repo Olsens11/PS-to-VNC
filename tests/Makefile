@@ -709,6 +709,28 @@ $(MPEG_PRESENTATION_TEST): \
 		../src/display/mpeg_presentation.c \
 		-o $(MPEG_PRESENTATION_TEST)
 
+MPEG_SCHEDULER_TEST := .build/mpeg_scheduler_test
+
+.PHONY: mpeg-scheduler-unit
+unit: mpeg-scheduler-unit
+
+mpeg-scheduler-unit: $(MPEG_SCHEDULER_TEST)
+	./$(MPEG_SCHEDULER_TEST)
+
+$(MPEG_SCHEDULER_TEST): \
+	unit/mpeg_scheduler_test.c \
+	../src/display/mpeg_scheduler.c \
+	../src/display/mpeg_scheduler.h \
+	../src/media/clock.c \
+	../src/media/clock.h \
+	../src/config/profile.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/mpeg_scheduler_test.c \
+		../src/display/mpeg_scheduler.c \
+		../src/media/clock.c \
+		-o $(MPEG_SCHEDULER_TEST)
+
 MPEG_COMPOSITOR_TEST := .build/mpeg_compositor_test
 
 .PHONY: mpeg-compositor-unit

@@ -249,6 +249,19 @@ int pstvnc_media_clock_epoch(
     return PSTVNC_MEDIA_CLOCK_OK;
 }
 
+int pstvnc_media_clock_tick_rate(
+    const pstvnc_media_clock_t *clock,
+    uint32_t *ticks_per_second)
+{
+    if (clock == 0 ||
+        ticks_per_second == 0 ||
+        clock->ticks_per_second == 0u)
+        return PSTVNC_MEDIA_CLOCK_INVALID;
+
+    *ticks_per_second = clock->ticks_per_second;
+    return PSTVNC_MEDIA_CLOCK_OK;
+}
+
 int pstvnc_media_clock_arm(
     pstvnc_media_clock_t *clock,
     uint64_t observed_now_tick)
