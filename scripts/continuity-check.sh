@@ -441,6 +441,7 @@ import sys
 CLEAN_MARKER = "File synopsis:"
 
 EXPECTED_DIRECTORIES = {
+    "pi",
     "src",
     "src/audio",
     "src/config",
@@ -496,26 +497,27 @@ def split_dictionary_row(line: str) -> list[str]:
 
 clean_files: set[Path] = set()
 
-for path in sorted(Path("src").rglob("*")):
-    if not path.is_file():
-        continue
+for product_root in (Path("src"), Path("pi")):
+    for path in sorted(product_root.rglob("*")):
+        if not path.is_file():
+            continue
 
-    if (
-        path.suffix not in SOURCE_SUFFIXES
-        and path.name != "Makefile"
-    ):
-        continue
+        if (
+            path.suffix not in SOURCE_SUFFIXES
+            and path.name != "Makefile"
+        ):
+            continue
 
-    text = path.read_text(
-        encoding="utf-8",
-        errors="strict",
-    )
+        text = path.read_text(
+            encoding="utf-8",
+            errors="strict",
+        )
 
-    if (
-        CLEAN_MARKER in text[:2048]
-        or is_make_source(path)
-    ):
-        clean_files.add(path)
+        if (
+            CLEAN_MARKER in text[:2048]
+            or is_make_source(path)
+        ):
+            clean_files.add(path)
 
 actual_directories = {
     path.parent.as_posix()
@@ -557,7 +559,8 @@ if root_sources != ROOT_SOURCE_ALLOWLIST:
     sys.exit(42)
 
 dictionary_paths = sorted(
-    Path("src").rglob("SYMBOLS.md")
+    list(Path("src").rglob("SYMBOLS.md")) +
+    list(Path("pi").rglob("SYMBOLS.md"))
 )
 
 dictionary_directories = {
@@ -686,7 +689,7 @@ if generated_portal != committed_portal:
 counts: dict[str, int] = {}
 
 pattern = re.compile(
-    r"^\| `(?P<directory>src(?:/[^`]+)?)` "
+    r"^\| `(?P<directory>(?:src(?:/[^`]+)?|pi))` "
     r"\| .* \| COMPLETE \| (?P<count>[0-9]+) \|$"
 )
 
