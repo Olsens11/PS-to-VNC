@@ -2,7 +2,9 @@
  * File synopsis:
  * Owns the synchronized RFB handshake, requests, server-message framing, Raw
  * decoding, initial coverage proof, parser-safe finite-session quiesce, and
- * fail-closed state over RFB's logical Transport bridge.
+ * fail-closed state over RFB's logical Transport bridge. Generic bridge I/O
+ * failure is refined to the first typed provider-terminal cause when Transport
+ * has such a cause for this exact access ticket.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Shared Raw
  * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session";
@@ -127,10 +129,35 @@ static int discard_exact_for_session(
     return 1;
 }
 
+static pstvnc_rfb_session_error_t resolve_io_error(
+    pstvnc_rfb_session_t *session)
+{
+    pstvnc_rfb_provider_failure_reason_t reason =
+        PSTVNC_RFB_PROVIDER_FAILURE_NONE;
+
+    if (session == NULL ||
+        pstvnc_rfb_bridge_provider_failure(
+            &session->transport_access,
+            &reason) != 1)
+        return PSTVNC_RFB_SESSION_ERROR_IO;
+
+    if (reason == PSTVNC_RFB_PROVIDER_FAILURE_CONNECT)
+        return PSTVNC_RFB_SESSION_ERROR_PROVIDER_CONNECT;
+    if (reason == PSTVNC_RFB_PROVIDER_FAILURE_READ)
+        return PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ;
+    if (reason == PSTVNC_RFB_PROVIDER_FAILURE_WRITE)
+        return PSTVNC_RFB_SESSION_ERROR_PROVIDER_WRITE;
+
+    return PSTVNC_RFB_SESSION_ERROR_IO;
+}
+
 static int fail(
     pstvnc_rfb_session_t *session,
     pstvnc_rfb_session_error_t error)
 {
+    if (error == PSTVNC_RFB_SESSION_ERROR_IO)
+        error = resolve_io_error(session);
+
     session->state = PSTVNC_RFB_SESSION_FAILED;
     session->error = error;
     return 0;
