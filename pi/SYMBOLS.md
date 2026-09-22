@@ -449,3 +449,6 @@ in this directory.
 | self | parameter | pi/rfb_attachment.py | RfbAttachment.quiesce_wake_reader | local | Defines self as a current clean-source parameter. | mechanically reconciled current clean source |
 | writer | variable | pi/rfb_attachment.py | RfbAttachment.request_quiesce | local | Defines writer as a current clean-source variable. | mechanically reconciled current clean source |
 | quiesce_wake | variable | pi/wire_server.py | WireConnectionOwner._wait_with_rfb_attachment | local | Defines quiesce_wake as a current clean-source variable. | mechanically reconciled current clean source |
+| project_rfb_flow_config | function | pi/rfb_runtime_profile.py | rfb_runtime_profile | file | Defines project_rfb_flow_config as a current clean-source function. | mechanically reconciled current clean source |
+| selected_rfb_flow_config | function | pi/rfb_runtime_profile.py | rfb_runtime_profile | file | Defines selected_rfb_flow_config as a current clean-source function. | mechanically reconciled current clean source |
+| mode | parameter | pi/rfb_runtime_profile.py | project_rfb_flow_config | local | Defines mode as a current clean-source parameter. | mechanically reconciled current clean source |
