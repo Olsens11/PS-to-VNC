@@ -8,13 +8,14 @@ Type=simple
 User=ps2
 Group=ps2
 WorkingDirectory=/usr/lib/ps-to-vnc
-ExecStart=/usr/bin/python3 /usr/lib/ps-to-vnc/wire_server.py --listen 192.168.50.1 --port 5902
+ExecStart=/usr/bin/python3 /usr/lib/ps-to-vnc/wire_runtime.py --listen 192.168.50.1 --port 5902
 Restart=on-failure
 RestartSec=1s
 
 # The product Wire process owns its own listener and every accepted physical
 # connection. systemd supervises the process but does not socket-activate it.
-# RFB provider lifecycle remains independent and is not required by this unit.
+# wire_runtime.py composes the selected R14 RFB profile into a fresh R13
+# attachment factory without starting the internal provider before first CREDIT.
 
 [Install]
 WantedBy=multi-user.target
