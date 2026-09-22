@@ -30,6 +30,7 @@ from dataclasses import dataclass
 from enum import Enum
 import errno
 import socket
+import threading
 from typing import Callable
 
 import rfb_relay as rfb
@@ -139,6 +140,50 @@ class RfbAttachment:
         self._pending_initial_ps2_credit = 0
         self._closed = False
 
+        # request_quiesce() is the one intentional cross-thread seam. The
+        # caller publishes RFB-local intent only; this private socketpair wakes
+        # the sole Wire owner so that owner can serialize REQUEST itself.
+        #
+        # A per-attachment pair prevents Session-A wake state from becoming
+        # Session-B authority. Both ends are nonblocking because the notification
+        # is a one-bit edge, never a byte queue or alternate Wire path.
+        self._quiesce_lock = threading.RLock()
+        wake_reader, wake_writer = socket.socketpair()
+        wake_reader.setblocking(False)
+        wake_writer.setblocking(False)
+        self._quiesce_wake_reader: socket.socket | None = wake_reader
+        self._quiesce_wake_writer: socket.socket | None = wake_writer
+
+    @property
+    def quiesce_wake_reader(self) -> socket.socket | None:
+        """Expose only the local readiness descriptor to the sole Wire owner."""
+
+        with self._quiesce_lock:
+            return self._quiesce_wake_reader
+
+    def acknowledge_quiesce_wake(self) -> bool:
+        """Drain the local wake edge; never serialize or mutate Wire traffic."""
+
+        with self._quiesce_lock:
+            reader = self._quiesce_wake_reader
+            if reader is None:
+                return False
+
+            saw_wake = False
+            while True:
+                try:
+                    payload = reader.recv(64)
+                except BlockingIOError:
+                    break
+                except OSError:
+                    return False
+
+                if not payload:
+                    break
+                saw_wake = True
+
+            return saw_wake
+
     @property
     def connecting_socket(self) -> socket.socket | None:
         """Expose only readiness identity for an in-progress provider connect."""
@@ -188,7 +233,8 @@ class RfbAttachment:
 
     @property
     def wants_request_marker(self) -> bool:
-        return self.state is RfbAttachmentState.REQUEST_PENDING
+        with self._quiesce_lock:
+            return self.state is RfbAttachmentState.REQUEST_PENDING
 
     @property
     def wants_commit_marker(self) -> bool:
@@ -208,22 +254,44 @@ class RfbAttachment:
         except OSError:
             pass
 
+    def _close_quiesce_wake(self) -> None:
+        """Retire the Session-local wake descriptors exactly once."""
+
+        with self._quiesce_lock:
+            reader = self._quiesce_wake_reader
+            writer = self._quiesce_wake_writer
+            self._quiesce_wake_reader = None
+            self._quiesce_wake_writer = None
+
+            for endpoint in (reader, writer):
+                if endpoint is None:
+                    continue
+                try:
+                    endpoint.close()
+                except OSError:
+                    pass
+
     def _fail_local(self, *, connect_failure: bool = False) -> None:
         """Terminalize only this attachment and retire all provider I/O."""
 
-        if self.state is RfbAttachmentState.FAILED:
-            return
+        with self._quiesce_lock:
+            if self.state is RfbAttachmentState.FAILED:
+                return
 
-        if connect_failure:
-            self.stats.connect_failures += 1
-        self.stats.lifecycle_failures += 1
-        self.state = RfbAttachmentState.FAILED
-        self._pending_initial_ps2_credit = 0
-        self._pending_provider_read_credit = 0
-        self._close_connecting_socket()
+            if connect_failure:
+                self.stats.connect_failures += 1
+            self.stats.lifecycle_failures += 1
+            self.state = RfbAttachmentState.FAILED
+            self._pending_initial_ps2_credit = 0
+            self._pending_provider_read_credit = 0
+            self._close_connecting_socket()
 
-        if self.relay is not None:
-            self.relay.close()
+            if self.relay is not None:
+                self.relay.close()
+
+            # A failed attachment cannot publish a future quiesce intent. Close
+            # both local wake endpoints so no stale Session-A readiness survives.
+            self._close_quiesce_wake()
 
     def _begin_connect(self) -> None:
         """Start exactly one nonblocking connection to the selected endpoint."""
@@ -471,22 +539,39 @@ class RfbAttachment:
             self._fail_local()
 
     def request_quiesce(self) -> bool:
-        """Make the single Pi REQUEST marker pending for the Wire send owner."""
+        """Publish one REQUEST intent and wake, but never send, the Wire owner."""
 
-        if self.state is not RfbAttachmentState.RUNNING:
-            self._fail_local()
-            return False
-        self.state = RfbAttachmentState.REQUEST_PENDING
-        return True
+        with self._quiesce_lock:
+            if self.state is not RfbAttachmentState.RUNNING:
+                self._fail_local()
+                return False
+
+            writer = self._quiesce_wake_writer
+            if writer is None:
+                self._fail_local()
+                return False
+
+            # State becomes observable before the wake edge. Once select() sees
+            # this byte, the Wire owner can deterministically find exactly one
+            # pending REQUEST and serialize it through _send_active_frame().
+            self.state = RfbAttachmentState.REQUEST_PENDING
+            try:
+                writer.send(b"Q")
+            except (BlockingIOError, OSError):
+                self._fail_local()
+                return False
+
+            return True
 
     def confirm_request_sent(self) -> None:
         """Advance only after the sole Wire owner serialized REQUEST."""
 
-        if self.state is not RfbAttachmentState.REQUEST_PENDING:
-            self._fail_local()
-            return
-        self.stats.request_markers_sent += 1
-        self.state = RfbAttachmentState.WAIT_BOUNDARY
+        with self._quiesce_lock:
+            if self.state is not RfbAttachmentState.REQUEST_PENDING:
+                self._fail_local()
+                return
+            self.stats.request_markers_sent += 1
+            self.state = RfbAttachmentState.WAIT_BOUNDARY
 
     def accept_ps2_marker(self) -> str | None:
         """Interpret one zero DATA marker strictly by the local ordered phase."""
@@ -509,6 +594,7 @@ class RfbAttachment:
         if self.state is RfbAttachmentState.WAIT_COMPLETE:
             self.stats.complete_markers_received += 1
             self.state = RfbAttachmentState.STOPPED
+            self._close_quiesce_wake()
             return "COMPLETE"
 
         self._fail_local()
@@ -542,17 +628,20 @@ class RfbAttachment:
         self.state = RfbAttachmentState.WAIT_COMPLETE
 
     def close(self) -> None:
-        """Retire all Session-owned provider state; never rebind this instance."""
+        """Retire all Session-owned provider/wake state; never rebind it."""
 
-        if self._closed:
-            return
-        self._closed = True
-        self._pending_initial_ps2_credit = 0
-        self._pending_provider_read_credit = 0
-        self._close_connecting_socket()
+        with self._quiesce_lock:
+            if self._closed:
+                return
+            self._closed = True
+            self._pending_initial_ps2_credit = 0
+            self._pending_provider_read_credit = 0
+            self._close_connecting_socket()
 
-        if self.relay is not None:
-            self.relay.close()
+            if self.relay is not None:
+                self.relay.close()
 
-        if self.state is not RfbAttachmentState.FAILED:
-            self.state = RfbAttachmentState.STOPPED
+            if self.state is not RfbAttachmentState.FAILED:
+                self.state = RfbAttachmentState.STOPPED
+
+            self._close_quiesce_wake()
