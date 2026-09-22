@@ -4,12 +4,12 @@ Defines the Raspberry Pi product-side PSTV Wire framing and provisional
 establishment representation shared conceptually with src/transport/protocol.*.
 
 This module owns bytes only: fixed headers, HELLO, ACCEPT, NOT_ACCEPTED, exact
-RFB DATA/CREDIT framing, envelope classification, and unsigned-field
-validation. It owns no sockets, listener/session lifecycle, rider dispatch, MPEG
-producer state, RFB provider lifecycle, reconnect policy, or systemd behavior.
+RFB DATA/CREDIT/provider-terminal framing, envelope classification, and
+unsigned-field validation. It owns no sockets, listener/session lifecycle,
+rider dispatch, MPEG producer state, RFB provider lifecycle, reconnect policy,
+or systemd behavior.
 
-Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
-A003-PI-WIRE-SERVER-ESTABLISHMENT-R8.
+Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
 """
 
 from __future__ import annotations
@@ -27,32 +27,42 @@ HEADER_BYTES = HEADER.size
 WIRE_HEADER_VERSION = 1
 MAX_PAYLOAD_BYTES = 8192
 
-# Q4 establishment frame identities are now product protocol authority. They
-# deliberately occupy the control channel and do not imply any rider exists.
+# Product protocol frame identities. ERROR=7 was a dormant framing reservation
+# until R16A assigned the exact channel-1 provider-terminal contract below.
 FRAME_HELLO = 1
 FRAME_DATA = 3
 FRAME_CREDIT = 4
+FRAME_ERROR = 7
 FRAME_ACCEPT = 12
 FRAME_NOT_ACCEPTED = 13
 
 CHANNEL_CONTROL = 0
 CHANNEL_RFB = 1
 
-# HELLO carries two independent compatibility words. WIRE_VERSION covers the
-# current PSTV Wire contract; PRODUCT_ESTABLISHMENT_VERSION lets establishment
-# semantics evolve without changing the fixed frame-header representation.
+# HELLO carries two independent compatibility words. Fixed framing and the
+# existing Wire mechanics remain version 1. Product-establishment version 2 is
+# the deliberate Q4 compatibility fence for R16A's post-Q4 channel-1 ERROR
+# semantics: a peer that knows only product version 1 is rejected before ACTIVE.
 WIRE_VERSION = 1
-PRODUCT_ESTABLISHMENT_VERSION = 1
+PRODUCT_ESTABLISHMENT_VERSION = 2
 
-# HELLO is exactly two uint32 values. ACCEPT and NOT_ACCEPTED each carry one
-# uint32 value: a nonzero Pi-owned session ID or a bounded rejection reason.
+# HELLO is exactly two uint32 values. ACCEPT, NOT_ACCEPTED, CREDIT, and the R16A
+# RFB provider-terminal ERROR payload each carry one network-order uint32 word.
 HELLO = struct.Struct(">II")
 ONE_WORD = struct.Struct(">I")
 CREDIT = ONE_WORD
+RFB_PROVIDER_FAILURE = ONE_WORD
 
 REJECT_WIRE_VERSION = 1
 REJECT_PRODUCT_VERSION = 2
 REJECT_MALFORMED = 3
+
+# R16A terminal causes are deliberately mechanism-level and finite. READ covers
+# either provider EOF or a provider recv/read failure because both are terminal
+# observations at the same accepted provider-read boundary.
+RFB_PROVIDER_FAILURE_CONNECT = 1
+RFB_PROVIDER_FAILURE_READ = 2
+RFB_PROVIDER_FAILURE_WRITE = 3
 
 UINT32_MAX = 0xFFFFFFFF
 
@@ -212,8 +222,8 @@ def encode_hello_frame(
     sequence: int = 1,
 ) -> bytes:
     # Sequence 1 is the provisional transaction's first client->server frame.
-    # Later ordinary Wire traffic, once implemented, begins from the next
-    # direction-local sequence rather than reusing this establishment slot.
+    # Later ordinary Wire traffic begins from the next direction-local sequence
+    # rather than reusing this establishment slot.
     return encode_frame(
         FRAME_HELLO,
         sequence,
@@ -269,6 +279,39 @@ def encode_rfb_data_frame(payload: bytes, sequence: int) -> bytes:
     )
 
 
+def _require_rfb_provider_failure_reason(reason: int) -> None:
+    if reason not in (
+        RFB_PROVIDER_FAILURE_CONNECT,
+        RFB_PROVIDER_FAILURE_READ,
+        RFB_PROVIDER_FAILURE_WRITE,
+    ):
+        raise WireProtocolError("unknown RFB provider failure reason")
+
+
+def encode_rfb_provider_failure_payload(reason: int) -> bytes:
+    """Encode one exact first-terminal RFB provider mechanism cause."""
+
+    _require_rfb_provider_failure_reason(reason)
+    return RFB_PROVIDER_FAILURE.pack(reason)
+
+
+def decode_rfb_provider_failure_payload(payload: bytes) -> int:
+    if len(payload) != RFB_PROVIDER_FAILURE.size:
+        raise WireProtocolError("RFB provider failure payload must be exactly 4 bytes")
+    reason = RFB_PROVIDER_FAILURE.unpack(payload)[0]
+    _require_rfb_provider_failure_reason(reason)
+    return reason
+
+
+def encode_rfb_provider_failure_frame(reason: int, sequence: int) -> bytes:
+    return encode_channel_frame(
+        FRAME_ERROR,
+        CHANNEL_RFB,
+        sequence,
+        encode_rfb_provider_failure_payload(reason),
+    )
+
+
 def is_rfb_credit_header(header: WireHeader) -> bool:
     return (
         header.kind == FRAME_CREDIT
@@ -286,6 +329,15 @@ def is_rfb_data_header(header: WireHeader) -> bool:
         and header.channel == CHANNEL_RFB
         and header.flags == 0
         and header.payload_length <= MAX_PAYLOAD_BYTES
+    )
+
+
+def is_rfb_provider_failure_header(header: WireHeader) -> bool:
+    return (
+        header.kind == FRAME_ERROR
+        and header.channel == CHANNEL_RFB
+        and header.flags == 0
+        and header.payload_length == RFB_PROVIDER_FAILURE.size
     )
 
 
