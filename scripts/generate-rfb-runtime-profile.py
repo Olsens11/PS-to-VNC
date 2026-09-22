@@ -120,17 +120,13 @@ def render_python(profile: dict[str, object]) -> str:
 Source: src/config/rfb_runtime_profile.json
 Generator: scripts/generate-rfb-runtime-profile.py
 
-These are selected Configuration values only. They do not create a Wire
-Session, activate RFB, or own runtime lifecycle.
+This is the narrow Pi R13 projection only. It carries semantic mode, the one
+shared RFB window, and maximum DATA payload; PS2-only receiver/credit-policy
+values stay out of the Pi artifact.
 """
 
 RFB_MODE = "{profile["rfb_mode"]}"
 RFB_WINDOW_BYTES = {profile["rfb_window_bytes"]}
-RFB_CREDIT_BATCH_BYTES = {profile["rfb_credit_batch_bytes"]}
-RFB_CREDIT_FLUSH_ON_EMPTY = {profile["rfb_credit_flush_on_empty"]}
-RFB_CREDIT_RETURN_ENABLED = {profile["rfb_credit_return_enabled"]}
-RECEIVER_THREAD_PRIORITY = {profile["receiver_thread_priority"]}
-RECEIVER_THREAD_STACK_SIZE = {profile["receiver_thread_stack_size"]}
 MAX_DATA_PAYLOAD = {profile["max_data_payload"]}
 '''
 
