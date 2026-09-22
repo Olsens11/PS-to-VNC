@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0046
-RECORDED_AT=2026-09-22T09:36:47-04:00
+STATE_REVISION=0047
+RECORDED_AT=2026-09-22T15:43:20-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0045
-SUPERSEDES_FOREMAN_STATE_REVISION=0045
+BASED_ON_FOREMAN_STATE_REVISION=0046
+SUPERSEDES_FOREMAN_STATE_REVISION=0046
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,39 +14,56 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0046 independently confirms the truthful `BLOCKED` result returned by
-`A003-RFB-FAILURE-STOP-RESTART-POLICY-R16`. The worker made no product-source
-change and obeyed R16's explicit stop rule: accepted R13 provider connect,
-provider EOF/read, and provider write failures are local terminal attachment
-facts, but the currently accepted cross-Wire contract contains no unambiguous
-provider-failure representation that can deliver that fact to the PS2 RFB /
-Application side while keeping the physical Wire Session healthy.
+Revision 0047 independently accepts the completed
+`A003-RFB-PROVIDER-FAILURE-REPRESENTATION-R16A` source baton and activates the
+bounded downstream recovery packet `A003-RFB-FAILURE-STOP-RESTART-POLICY-R16B`.
+R16A supplies the missing typed RFB-provider terminal fact that caused original
+R16 to stop truthfully `BLOCKED`: Pi provider CONNECT, READ/EOF, and WRITE
+failure can now cross the existing Wire owner seam to PS2 without falsely
+turning the still-healthy physical Wire Session into a Transport failure.
 
-The blocker is architectural/mechanical, not a failed implementation attempt.
-Closing the physical Wire socket would falsely convert rider-local provider
-failure into Wire failure. Existing zero-length channel-1 DATA is already exact
-R13 REQUEST/BOUNDARY/COMMIT/COMPLETE authority. The maintained Pi protocol has
-no provider-failure codec or dispatch path. The PS2 runtime has no RFB-local
-terminal-frame receive path. The numeric `ERROR=7` frame kind exists as a
-historical/dormant framing reservation only; repository evidence does not assign
-it a payload, channel rule, reason vocabulary, dispatch behavior, or compatibility
-meaning. It is therefore evidence/candidate surface for Reconstruction to assess,
-not Foreman authority to declare its semantics.
-
-Because Reconstruction Contract revision 0006 keeps protocol mechanics,
-lifecycle interfaces, and product behavior with Reconstruction, Foreman does
-not choose the missing bytes or compatibility/version design here. Instead this
-revision activates one bounded prerequisite packet that owns that engineering
-decision under the already-governing failure-domain, sole-owner, and
-complete-stop-before-restart constraints.
+The original R16 remains historically `BLOCKED_FOREMAN_CONFIRMED`; revision 0047
+does not rewrite that outcome into completion. R16A is the accepted prerequisite
+that resolves its representation blocker. R16B owns the remaining Application
+failure-convergence, complete-stop-before-restart, and fresh-authority recovery
+work.
 
 No current-source hardware qualification is claimed by this state.
 
+## Temporal architecture reconciliation
+
+Wire Runtime Decisions revision 0011 and Architecture Overlay revision 0007
+remain governing for their ownership/lifecycle rules. Their earlier statements
+that then-accepted packets preserved existing Wire/product-version bytes are
+true as-of those revisions and do not prohibit a later explicitly authorized,
+compatibility-gated protocol semantic extension.
+
+The accepted R16A contract
+`docs/ledge/LEDGE_R16A_RFB_PROVIDER_FAILURE_CONTRACT.md`, together with this
+later Foreman state, is the narrow later authority for provider-terminal Wire
+representation and Q4 product compatibility. It does not alter the fixed PSTV
+header/framing version, physical ownership, R13 finite-quiesce meanings, R14
+runtime profile authority, or Application recovery ownership.
+
+Current accepted representation:
+
+- fixed PSTV framing/header version remains `1`;
+- Q4 product-establishment compatibility is `2` on both Pi and PS2;
+- RFB provider-terminal report is frame kind `ERROR=7`, channel `RFB=1`, flags
+  `0`, payload length `4`;
+- payload is one big-endian `uint32`: `CONNECT=1`, `READ=2`, `WRITE=3`;
+- wrong channel, flags, payload length, or unknown reason is invalid;
+- zero-length channel-1 DATA remains exclusively the accepted R13
+  REQUEST/BOUNDARY/COMMIT/COMPLETE lifecycle representation;
+- a valid provider-terminal fact is RFB-local and does not by itself set generic
+  physical Wire/Transport failure;
+- incompatible product-v1/product-v2 peers reject during Q4 before ACTIVE.
+
 ## Current Foreman phase
 
-`A003_R15_INTEGRATED__R16_BLOCKER_CONFIRMED__RFB_PROVIDER_FAILURE_REPRESENTATION_RECONSTRUCTION_ACTIVE__RFB_FAILURE_STOP_RESTART_POLICY_BLOCKED_PENDING_R16A__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R15_INTEGRATED__R16_BLOCKER_CONFIRMED__R16A_PROVIDER_FAILURE_REPRESENTATION_FOREMAN_ACCEPTED__R16B_RFB_FAILURE_STOP_RESTART_POLICY_RECONSTRUCTION_ACTIVE__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
-ARCHITECTURE_BLOCKER=RFB_PROVIDER_FAILURE_REPRESENTATION_MISSING
+ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
 A004_P1_FOREMAN_ACCEPTED=YES
 A004_P2_FOREMAN_ACCEPTED=YES
@@ -72,97 +89,163 @@ RFB_SHARED_RUNTIME_PROFILE=FOREMAN_ACCEPTED
 RFB_SESSION_COMPOSITION_CONFIG=SHARED_PROFILE_FOREMAN_ACCEPTED
 APPLICATION_RFB_ACTIVATION=FOREMAN_ACCEPTED
 APPLICATION_ACTIVATION=RFB_ONLY_FOREMAN_ACCEPTED
-RFB_FAILURE_RESTART_POLICY=BLOCKED_PENDING_R16A
-RFB_PROVIDER_FAILURE_REPRESENTATION=RECONSTRUCTION_ACTIVE
+RFB_PROVIDER_FAILURE_REPRESENTATION=FOREMAN_ACCEPTED
+RFB_FAILURE_RESTART_POLICY=RECONSTRUCTION_ACTIVE
 PI_MPEG_CONTROL_PRODUCER_OWNER=DEPENDENCY_QUEUED
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 
-## R16 blocker disposition
+## Accepted R16A authority
 
-PACKET_ID=A003-RFB-FAILURE-STOP-RESTART-POLICY-R16
-PACKET_STATUS=BLOCKED_FOREMAN_CONFIRMED
-ASSIGNING_FOREMAN_STATE_REVISION=0045
-ASSIGNING_FOREMAN_COMMIT=903c80694af0f13bec0134594a1824664e002df5
-RECONSTRUCTION_STARTING_COMMIT=84e88377b55228dcf6fa0af8601550c05639ea6f
-RECONSTRUCTION_BLOCKER_LOG_COMMIT=a957b9069be93398e1bd0e761bbe92da0e22a088
-R16_PRODUCT_SOURCE_CHANGED=NO
+PACKET_ID=A003-RFB-PROVIDER-FAILURE-REPRESENTATION-R16A
+PACKET_STATUS=COMPLETED_FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0046
+ASSIGNING_FOREMAN_COMMIT=ea9b07f21bab5e1686f024cae154697f0a85b1c0
+RECONSTRUCTION_STARTING_COMMIT=594f2fdcebbf0f23e724b203532aeb2a14882f36
+FINAL_R16A_SOURCE_COMMIT=961ad59d82b1c865b9d330a7dd9cdc1ed1e32528
+R16A_RECONSTRUCTION_LOG_COMMIT=a307de050c015a46548647b45ac9f145b8ba8e71
+R16A_PRE_LOG_COMMIT_COUNT=34
+R16A_COMPARE_BEHIND_BY=0
 
-The required Reconstruction blocker record is:
+The required Reconstruction closeout is:
 
-`docs/ledge/work-log/20260922T085807-0400__reconstruction__a003-mpeg-generation__interactive.md`
+`docs/ledge/work-log/20260922T094431-0400__reconstruction__a003-mpeg-generation__interactive.md`
 
-Independent Foreman review confirms:
+### R16A criterion disposition
 
-1. R13 already makes provider connect failure, provider EOF/read failure and
-   provider write failure terminal to the session-scoped Pi attachment without
-   giving that attachment physical-Wire ownership or restart policy.
-2. `pi/wire_server.py` remains the sole Pi physical send/receive/sequence owner.
-   Its RFB path currently understands ordinary channel-1 DATA/CREDIT plus the
-   exact R13 zero-length quiesce exchange, not a provider-failure fact.
-3. `pi/wire_protocol.py` has no provider-failure representation or reason codec.
-4. PS2 `src/transport/runtime.c` has no RFB-provider-terminal dispatch. Treating
-   an unknown frame as generic Transport failure would collapse the required
-   distinction between rider failure and physical Wire/session failure.
-5. `src/transport/protocol.h` contains the numeric frame-kind reservation
-   `PSTVNC_TRANSPORT_FRAME_ERROR = 7`, but historical/current source assigns it
-   no product semantics. Its existence alone is not authority to use it.
-6. The Pi source already distinguishes fixed framing/header version from the
-   negotiated Wire/product compatibility values, while current PS2 establishment
-   source uses the existing Transport version in Q4. Any new incompatible
-   semantics therefore require explicit, symmetric compatibility reasoning rather
-   than an accidental one-sided interpretation.
-7. Existing Q4 identity, channel numbers and R13 quiesce meanings remain intact.
-8. The worker correctly made no speculative protocol edit and returned `BLOCKED`
-   under R16 requirement 10.
+A003-R16A-C1=MET
+A003-R16A-C2=MET
+A003-R16A-C3=MET
+A003-R16A-C4=MET
+A003-R16A-C5=MET
+A003-R16A-C6=MET
+A003-R16A-C7=MET
+A003-R16A-C8=MET
+A003-R16A-C9=MET
+A003-R16A-C10=MET
+A003-R16A-C11=MET
+A003-R16A-C12=MET
 
-At exact blocker authority `a957b9069be93398e1bd0e761bbe92da0e22a088`,
-GitHub Actions run `35732117886` completed SUCCESS. The blocked result is thus a
-canonically green evidence baton, not a CI/build failure.
+Independent Foreman findings:
 
-R16_SOURCE_COMPLETE=NO
-R16_BLOCKER_VALID=YES
-R16_PRODUCT_CHANGE=NONE
-R16_HARDWARE_QUALIFIED=NO
+1. `pi/rfb_attachment.py` latches the first specific CONNECT/READ/WRITE provider
+   cause, makes the attachment terminal, clears provider-bound capacity, and
+   retires provider and private wake resources. It contains no reconnect/rebind
+   loop.
+2. `pi/wire_server.py` remains the sole Pi physical recv/send/global-sequence
+   owner. It serializes the attachment's terminal fact through the existing owner
+   send path; successful report transmission does not erase the local failure.
+3. `pi/wire_protocol.py` and PS2 `src/transport/protocol.*` define the same exact
+   ERROR/channel/reason contract while retaining fixed framing version 1.
+4. PS2 `src/transport/runtime.c` accepts the typed RFB terminal fact into
+   RFB-local state, removes provider-bound credit, wakes blocked RFB activity,
+   and does not set generic `runtime->failed` merely because the provider died.
+5. Already ordered old RFB DATA may drain in its existing sequence; no later
+   provider credit/ticket is minted after terminal reporting and no old authority
+   is rebound to a replacement instance.
+6. `src/rfb/bridge.*` and `src/rfb/rfb_session.*` expose/refine the typed terminal
+   cause as RFB CONNECT/READ/WRITE failure without acquiring Application retry
+   policy.
+7. PS2 establishment emits Q4 product compatibility 2 on the actual physical
+   establishment path. Pi and PS2 golden/protocol tests preserve header version
+   1 and prove product-version mismatch rejection before ACTIVE.
+8. R13 zero-length channel-1 quiesce bytes retain their sole existing meaning;
+   ERROR reporting is structurally distinct from DATA/CREDIT/quiesce.
+9. The dedicated PS2 host fixture proves a reader genuinely blocked for
+   provider-supplied RFB bytes and a writer genuinely blocked for provider
+   capacity both terminate on the typed provider fact while the physical Wire
+   runtime remains live.
+10. The complete R16A diff stays inside the packet-authorized Pi RFB/Wire and PS2
+    Transport/RFB mechanism surfaces plus tests, workflow, dictionaries and
+    directly affected documentation. `src/app.*` recovery behavior, AUDIO and
+    MPEG product source are untouched.
 
-The original R16 acceptance criteria remain unresolved where they require the
-missing cross-Wire fact. R16 is not accepted as completed behavior and must not
-resume until R16A establishes an accepted representation/interface authority.
+### Exact current machine evidence
 
-## Governing invariants for R16A
+At exact pre-log source authority
+`961ad59d82b1c865b9d330a7dd9cdc1ed1e32528`, GitHub Actions run
+`35772175812` completed SUCCESS. Observed successful jobs:
 
-1. One physical PS2↔Pi Wire connection and one physical receive/send owner per
-   Wire Session remain authoritative. No RFB provider/attachment may acquire or
-   bypass that ownership.
-2. RFB provider failure remains an RFB/channel-local mechanism fact. Correctly
-   reporting it must not, by itself, declare the physical Wire Session failed.
-3. Q4 remains the sole establishment/compatibility gate for an active Wire
-   Session. If the representation requires incompatible peer semantics, the
-   compatibility boundary must be deliberate, symmetric and fail before peers
-   disagree about an ACTIVE session.
-4. Existing R13 zero-length channel-1 DATA REQUEST/BOUNDARY/COMMIT/COMPLETE
-   representation is frozen and must not be overloaded with provider failure.
-5. Application owns product recovery policy. R16A supplies only the missing
-   protocol/interface mechanism needed to report the fact; it does not implement
-   Application retry/restart/reconnect policy.
-6. A dead R13 attachment remains terminal and is never rebound. R16A may expose
-   its failure, but may not restart it in place.
-7. Complete-stop-before-restart, stale-access rejection and fresh-session
-   authority remain governing downstream recovery obligations.
-8. Transport may perform channel-local mechanism reporting/bookkeeping but may
-   not parse or acquire RFB domain policy.
-9. A delivered failure fact never erases the original local failure merely
-   because its report was transmitted successfully.
-10. No generic timeout, sleep, poll count, systemd restart or peer disconnect may
-    stand in for typed provider-failure semantics.
-11. The accepted R14 runtime values remain singular Configuration authority and
-    may not be copied/retuned by this packet.
-12. Current-source host/CI/build evidence does not constitute PS2 hardware
-    qualification.
+- `host-unit`, including `Prove R16A PS2 RFB wait termination`;
+- `project-check`;
+- `dictionary-long`;
+- `ps2-compile`;
+- `ps2-link` with current-source reproducibility.
+
+At exact immutable closeout head
+`a307de050c015a46548647b45ac9f145b8ba8e71`, GitHub Actions run
+`35773248375` also completed SUCCESS with the same canonical gates and dedicated
+R16A wait-termination step. `dictionary-reconcile` was correctly skipped because
+committed dictionaries were already reconciled.
+
+Current linked-build evidence at the closeout head:
+
+ISSUE7_LINKED_BUILD=PASS
+LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS
+ELF_PRISTINE_SHA256=06a1d2858dd195458bab81d8e88842d4fca4d3e3aa38d412c8b303fc9f8b4de2
+PT_LOAD_SEGMENTS=1
+PT_LOAD_SHA256=db94f95160ec28491546d53231ecf9235fcacbae1680875ac7f16bcd1b77bff8
+PT_LOAD_BYTES=486932
+PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74
+
+R16A_SOURCE_COMPLETE=YES
+R16A_HOST_TESTED=YES
+R16A_PROJECT_CHECK=PASS
+R16A_STRICT_DICTIONARIES=PASS
+R16A_PS2_COMPILE=PASS
+R16A_PS2_LINK=PASS
+R16A_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R16A_MACHINE_EVIDENCE=GITHUB_ACTIONS_ONLY
+R16A_INDEPENDENT_VALIDATION=NOT_RUN
+R16A_OPERATOR_OBSERVED=NO
+R16A_HARDWARE_QUALIFIED=NO
+
+The new linked identity is reproducible evidence only. It does not inherit
+hardware qualification from earlier H1/checkpoint or RFB-only ELFs.
+
+## Governing invariants for R16B
+
+1. Application owns product recovery policy. RFB, Transport and the Pi attachment
+   expose mechanism/domain facts and retirement operations; none may silently
+   acquire retry/reconnect/restart policy.
+2. The accepted R16A provider-terminal representation is frozen for R16B.
+   Header/framing version 1, Q4 product compatibility 2, ERROR=7/channel-1/4-byte
+   reason semantics and malformed-frame rules must not be redesigned here.
+3. Provider failure remains distinct from physical Wire failure. Application may
+   deliberately choose teardown as policy, but mechanism must not falsify which
+   domain actually failed.
+4. Once a typed provider-terminal fact reaches Application, the failed ordinary
+   RFB attempt admits no new RFB/input work and converges monotonically toward
+   stop.
+5. Complete stop is an observed owner-state fact, not elapsed time. Input,
+   current RFB use, Transport receive/runtime ownership, the current physical
+   descriptor/session, and all attempt-scoped authority must reach their proper
+   retirement boundaries before replacement authority is admitted.
+6. The dead R13 Pi attachment is never rebound. Recovery that needs ordinary RFB
+   again must acquire a fresh attachment through fresh accepted authority.
+7. If the old Wire/Application session is retired to recover RFB, restoration
+   uses a fresh network connection and fresh Q4 Wire Session identity. The old
+   session identity is never relabeled as the new attempt.
+8. No stale Transport access ticket, channel credit, sequence state, provider
+   descriptor, private wake descriptor, RFB parser/session state, framebuffer
+   validity, published input state or input-worker state may become authority for
+   the replacement attempt.
+9. A successfully completed stop does not imply successful restart. A fresh
+   connect/Q4/attachment/RFB startup must independently succeed before ordinary
+   RFB is healthy again.
+10. Delays/backoff may only pace explicit recovery operations; no timeout, sleep,
+    poll count or retry count is proof that an old owner retired or a new owner
+    became healthy.
+11. Existing R13 finite quiesce semantics and the singular selected R14
+    32768/8192/16384/63 profile remain unchanged. R16B must not duplicate or
+    retune those values.
+12. No AUDIO, MPEG, CONFIG-on-Wire, heartbeat/liveness, direct-RFB fallback or
+    final all-guns orchestration is authorized by this packet.
+13. Current-source host/build evidence is not PS2 hardware qualification.
 
 ## ACTIVE RECONSTRUCTION PACKET
 
-PACKET_ID=A003-RFB-PROVIDER-FAILURE-REPRESENTATION-R16A
+PACKET_ID=A003-RFB-FAILURE-STOP-RESTART-POLICY-R16B
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a003-mpeg-generation
@@ -170,194 +253,166 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0046
-BASED_ON_BLOCKED_R16_AUTHORITY=a957b9069be93398e1bd0e761bbe92da0e22a088
+BASED_ON_FOREMAN_STATE_REVISION=0047
+BASED_ON_ACCEPTED_R16A_SOURCE=961ad59d82b1c865b9d330a7dd9cdc1ed1e32528
+BASED_ON_R16A_LOG=a307de050c015a46548647b45ac9f145b8ba8e71
 
 ### Objective
 
-Reconstruct the smallest explicit cross-Wire mechanism that reports terminal
-RFB-provider mechanism failure from the accepted Pi R13 attachment to the PS2
-RFB-facing boundary while preserving a healthy physical Wire Session as a
-separate fact. The packet must define the missing representation/interface and
-its compatibility rules rigorously enough that downstream Application recovery
-can later consume it without guessing.
+Complete the recovery-policy work that original R16 could not lawfully perform
+before R16A existed. Make the accepted typed RFB-provider terminal cause reach an
+explicit Application-owned recovery decision, stop the failed ordinary-RFB
+attempt completely, and restore ordinary RFB only through fresh session-scoped
+authority with no stale-state reuse.
 
-R16A owns the bounded protocol/interface engineering decision that R16 was
-forbidden to invent. Foreman intentionally does not prescribe the exact bytes,
-reason encoding, use/non-use of the dormant `ERROR=7` reservation, or version
-number. Reconstruction must derive and document the smallest coherent design
-from current repository authority and prove it symmetrically on Pi and PS2.
+R16B is an Application recovery/lifecycle packet. It is not permission to alter
+the accepted R16A Wire contract, R13 quiesce mechanism, R14 tuning, media
+activation, or final all-guns orchestration.
 
 ### Required behavior
 
-1. **Typed provider-terminal visibility.** Provider-connect failure,
-   provider EOF/read failure and provider-write failure must cross the Wire
-   boundary as an unambiguous RFB-local terminal mechanism fact and become
-   observable at the PS2 RFB-facing seam.
-2. **Preserve specific cause.** Where current mechanism evidence can distinguish
-   the first terminal cause, preserve that first/specific cause through the
-   reporting seam rather than collapsing every provider failure into generic
-   physical-I/O failure.
-3. **Sole-owner transmission.** Any Pi report must be serialized by the existing
-   sole Wire physical send/sequence owner. The attachment/relay may publish a
-   local fact to that owner but may not send on the physical socket itself.
-4. **Wire remains distinct.** Correct delivery/receipt of an RFB provider-terminal
-   fact must not itself close, rebind, or mark the physical Wire Session failed.
-   Genuine Wire/Transport failure must remain separately observable.
-5. **Do not overload R13 quiesce.** Existing zero-length channel-1 DATA
-   REQUEST/BOUNDARY/COMMIT/COMPLETE bytes and meanings remain exact and must not
-   acquire a second failure meaning.
-6. **No ambiguous DATA/CREDIT reuse.** Do not encode terminal provider failure by
-   a payload/value that an accepted peer can lawfully interpret as existing
-   RFB DATA, CREDIT, quiesce or other established traffic.
-7. **Resolve dormant framing vocabulary deliberately.** Inspect the historical
-   `ERROR=7` reservation and either define a complete, symmetric, bounded
-   channel-local contract for it or reject it with repository evidence and use
-   another bounded representation. The numeric reservation alone is not semantic
-   authority.
-8. **Explicit compatibility/version contract.** Reconcile the current Pi/PS2
-   versioning model. If the chosen provider-failure semantics are incompatible
-   with an accepted Wire-v1 peer, introduce the smallest deliberate compatibility
-   boundary and prove incompatible peers reject before ordinary ACTIVE-session
-   traffic can be interpreted differently. Do not casually change fixed header
-   framing merely because product semantics evolve.
-9. **PS2 wait termination as RFB-local fact.** A PS2 RFB read/poll/session path
-   blocked or waiting for provider-supplied RFB bytes must be able to observe the
-   provider-terminal condition and converge as an RFB-local failure, not wait
-   indefinitely and not misclassify it as physical Wire failure.
-10. **Contain late/stale RFB payload.** Already credited/in-flight channel-1
-    payload from the failed attachment must remain bounded to the old session
-    scope. R16A must not create any mechanism by which stale old provider bytes
-    or status can be rebound into a future attachment/session.
-11. **No recovery-policy expansion.** Do not implement Application retry,
-    reconnect, backoff, fresh-Q4 session creation, attachment restart or complete
-    R16 recovery. Those resume only after this representation is Foreman accepted.
-12. **No media or unrelated protocol expansion.** Do not activate AUDIO, MPEG,
-    CONFIG delivery, heartbeat/liveness, direct-RFB fallback, or unrelated Wire
-    control facilities. Do not retune R14 values.
-13. **Document ownership and compatibility.** Update the smallest directly
-    affected architecture/component/development records and dictionaries so the
-    new fact's producer, Wire owner, consumer, failure-domain meaning and
-    compatibility boundary are recoverable without conversational memory.
-14. **Keep implementation bounded.** Avoid wholesale H1/checkpoint imports or
-    opportunistic refactors. Prefer the smallest clean source surface that makes
-    the new representation complete and testable.
+1. **Application observes the typed terminal cause.** CONNECT, READ/EOF and WRITE
+   provider terminal results exposed by accepted R16A must reach an explicit
+   Application recovery-policy branch. Do not turn them back into an anonymous
+   physical-I/O failure merely to reuse an old fatal path.
+2. **Close admission immediately for the failed attempt.** After Application has
+   the terminal RFB fact, no new controller/keyboard/mouse publication, RFB
+   update request, or other provider-bound ordinary-RFB work may be admitted to
+   that failed attempt.
+3. **Converge monotonically to complete stop.** Drive the attempt's actual owners
+   through their documented shutdown/release boundaries. Do not restart a failed
+   subcomponent inside its still-live old attempt as a shortcut.
+4. **Prove input retirement.** Any input worker/runtime belonging to the failed
+   attempt must be shut down to its owned completion boundary before a later
+   attempt can publish fresh input authority.
+5. **Prove Transport/session retirement.** If recovery retires the containing
+   Wire session, Application must use the existing Transport owner seam so the
+   sole receiver is interrupted, proven complete, and released before a new
+   physical/Q4 session is admitted. Application never directly races Transport
+   for descriptor ownership.
+6. **Fresh authority on restoration.** A recovery attempt must acquire a fresh
+   network connection, fresh accepted Q4 session identity, fresh Transport
+   runtime/access authority, fresh Pi R13 attachment/factory result, freshly
+   initialized RFB parser/session state, fresh framebuffer validity, and fresh
+   input-runtime/publication state as applicable to that attempt.
+7. **No dead-authority rebind.** Never relabel/reuse the failed attachment, old
+   Q4 identity, old Transport ticket/credit/sequence state, old provider/wake
+   descriptors, old parser state, old framebuffer validity or old input-worker
+   state as replacement authority.
+8. **Keep failure domains truthful.** Provider-local terminal cause and genuine
+   physical Wire/Transport failure remain distinguishable mechanism facts even
+   if Application chooses a common outer teardown operation for both. R16B must
+   not weaken R16A's `runtime->failed` distinction.
+9. **Restart success requires fresh proof.** Do not report restored ordinary RFB
+   until the new attempt has independently completed the required connect/Q4/RFB
+   startup and reached the same ordinary healthy boundary used by normal startup.
+10. **No success by delay.** A delay/backoff may pace retry attempts if the clean
+    Application policy genuinely needs one, but it cannot prove retirement,
+    provider health, Wire acceptance, or successful RFB startup. Do not use a
+    timeout to force-delete a possibly-live owner.
+11. **Preserve accepted lower-layer contracts.** R16A ERROR/Q4 compatibility,
+    R13 finite quiesce, one physical Wire owner and the selected R14 profile stay
+    byte-for-byte/semantically unchanged except for test fixtures that must
+    observe them. Do not introduce another protocol marker/version or copy the
+    selected tuning literals into recovery policy.
+12. **No media scope.** Do not activate AUDIO, MPEG START/RETIRE, Pi MPEG
+    production, decoder/presentation recovery, CONFIG delivery, heartbeat, or
+    final orchestration.
+13. **Stable repeated-attempt evidence.** Tests must prove at least one complete
+    typed-provider-failure -> stop -> fresh-attempt -> ordinary-RFB-success cycle
+    and a repeated cycle or equivalent deterministic fixture demonstrating stale
+    attempt authority cannot contaminate the next attempt.
+14. **Keep docs/dictionaries/build boundary current.** Update directly affected
+    lifecycle/development documentation and symbol dictionaries, and preserve
+    canonical host/project/dictionary/PS2 compile/link evidence for linked source
+    changes.
 
 ### Acceptance criteria
 
-- A003-R16A-C1 CONNECT_FAILURE_CROSSES_AS_TYPED_RFB_FACT
-- A003-R16A-C2 EOF_READ_FAILURE_CROSSES_AS_TYPED_RFB_FACT
-- A003-R16A-C3 WRITE_FAILURE_CROSSES_AS_TYPED_RFB_FACT
-- A003-R16A-C4 FIRST_SPECIFIC_PROVIDER_FAILURE_PRESERVED
-- A003-R16A-C5 WIRE_SESSION_REMAINS_DISTINCT_AND_NOT_FALSELY_FAILED
-- A003-R16A-C6 SOLE_WIRE_SEND_RECEIVE_AND_SEQUENCE_OWNERSHIP_PRESERVED
-- A003-R16A-C7 NORMAL_R13_QUIESCE_BYTES_AND_MEANING_UNCHANGED
-- A003-R16A-C8 COMPATIBILITY_VERSION_CONTRACT_EXPLICIT_AND_SYMMETRIC
-- A003-R16A-C9 PS2_RFB_WAIT_TERMINATES_WITH_RFB_LOCAL_FAILURE
-- A003-R16A-C10 LATE_CREDITED_RFB_BYTES_CONTAINED_NO_REBIND
-- A003-R16A-C11 NO_APPLICATION_RESTART_PROTOCOL_MEDIA_TIMEOUT_OR_RETUNE_SCOPE_CREEP
-- A003-R16A-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A003-R16B-C1 TYPED_PROVIDER_FAILURE_REACHES_APPLICATION_POLICY
+- A003-R16B-C2 FAILED_ATTEMPT_ADMISSION_CLOSES_BEFORE_TEARDOWN
+- A003-R16B-C3 INPUT_RFB_TRANSPORT_COMPLETE_STOP_PROVEN
+- A003-R16B-C4 DEAD_ATTEMPT_AUTHORITY_NEVER_REBOUND
+- A003-R16B-C5 RESTORATION_USES_FRESH_NETWORK_Q4_TRANSPORT_AND_ATTACHMENT_AUTHORITY
+- A003-R16B-C6 RFB_FRAMEBUFFER_INPUT_STATE_FRESH_ON_RESTART
+- A003-R16B-C7 STALE_TICKET_CREDIT_SEQUENCE_PROVIDER_WAKE_AND_INPUT_STATE_CONTAINED
+- A003-R16B-C8 PHYSICAL_WIRE_FAILURE_REMAINS_DISTINCT_FROM_PROVIDER_FAILURE
+- A003-R16B-C9 NO_SUCCESS_BY_DELAY_OR_IMPLICIT_COMPONENT_RESTART
+- A003-R16B-C10 R16A_R13_R14_LOWER_LAYER_CONTRACTS_UNCHANGED
+- A003-R16B-C11 NO_MEDIA_PROTOCOL_HEARTBEAT_OR_RETUNE_SCOPE_CREEP
+- A003-R16B-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
-All twelve criteria must be MET for source acceptance. A valid BLOCKED result is
-still permitted if repository evidence proves no bounded representation can
-satisfy the governing failure-domain/compatibility invariants; such a result
-must identify the exact conflicting authority rather than weakening it.
+All twelve criteria must be MET for source acceptance. If current owner seams
+cannot prove complete stop/fresh authority without adding a missing bounded
+lifecycle interface, Reconstruction may add the smallest packet-local interface
+within Application/RFB/Transport ownership or return `BLOCKED` with the exact
+conflicting authority. It must not hide uncertainty behind sleeps, forced owner
+deletion, or protocol redesign.
 
 ### Required evidence
 
-R16A must preserve executable/source evidence that distinguishes at least:
+R16B must preserve deterministic executable/source evidence that distinguishes
+at least:
 
-1. provider connect failure from provider EOF/read failure and provider write
-   failure where those causes are mechanically distinguishable;
-2. the exact Pi producer-side terminal fact and the exact PS2 consumer-side
-   decoded/status result;
-3. normal RFB DATA from provider-terminal reporting;
-4. normal R13 finite quiesce from provider-terminal reporting;
-5. RFB-provider failure from genuine physical Wire failure;
-6. ordered publication through the sole Pi Wire send/sequence owner;
-7. unchanged single physical receive ownership on both sides;
-8. compatibility/version acceptance and rejection across the chosen semantic
-   boundary, including old/new peer mismatch if the representation is not
-   backward compatible;
-9. a waiting PS2 RFB path terminating on the typed provider-local fact rather
-   than hanging or receiving a generic Transport failure;
-10. containment/rejection of stale old channel/session state after terminal
-    reporting;
-11. exact singular R14 selected values and absence of media/direct-RFB scope;
+1. all three accepted typed provider causes reaching the Application policy seam;
+2. no new ordinary-RFB/input admission after the terminal cause is observed;
+3. input-worker shutdown completion before replacement input authority;
+4. Transport sole-receiver/session shutdown completion before fresh Q4 authority;
+5. old versus new Q4 session identity and old versus new attempt-scoped
+   Transport/RFB/input state;
+6. fresh Pi attachment/factory allocation for the replacement Wire Session,
+   using existing accepted R15/R13 authority or a direct regression fixture;
+7. stale old access/credit/sequence/provider/wake/parser/framebuffer/input state
+   being rejected, unreachable, or otherwise incapable of contaminating the new
+   attempt;
+8. provider-local failure remaining distinct from genuine physical Wire failure;
+9. fresh ordinary-RFB startup success after complete retirement;
+10. at least one repeated recovery cycle or equivalent deterministic
+    generation/attempt-fencing proof;
+11. unchanged R16A exact representation/Q4-v2 compatibility, unchanged R13
+    quiesce semantics and singular R14 selected profile;
 12. canonical host tests, project check, strict dictionaries and pinned PS2
-    compile/link/current-source reproducibility when linked bytes change.
-
-New linked bytes are identity evidence only and remain hardware-unqualified.
+    compile/link/current-source reproducibility for the exact final source.
 
 ### Authorized source surface
 
-R16A may modify only the smallest justified subset of:
+R16B may modify only the smallest justified subset of:
 
-- `pi/rfb_relay.py`;
-- `pi/rfb_attachment.py`;
-- `pi/wire_protocol.py`;
-- `pi/wire_server.py`;
-- `src/transport/protocol.h` / `src/transport/protocol.c`;
-- `src/transport/runtime.h` / `src/transport/runtime.c`;
-- `src/transport/bridge.h` / `src/transport/bridge.c` only for channel-local
-  mechanism/status exposure;
-- `src/rfb/bridge.h` / `src/rfb/bridge.c`;
-- `src/rfb/rfb_session.h` / `src/rfb/rfb_session.c` only to expose the terminal
-  RFB-local result to its owning boundary;
-- directly affected unit/integration fixtures, build manifests, source-symbol
-  dictionaries and component/architecture documentation.
+- `src/app.c` / `src/app.h`;
+- `src/rfb/rfb_session.c` / `src/rfb/rfb_session.h` only if Application needs a
+  narrow public lifecycle/status seam not already exposed by R16A;
+- `src/rfb/bridge.c` / `src/rfb/bridge.h` only for the same narrow public seam;
+- `src/transport/bridge.c` / `src/transport/bridge.h` and
+  `src/transport/runtime.c` / `src/transport/runtime.h` only if a missing
+  explicit stop/status boundary is proven necessary for Application-owned
+  complete-stop evidence; do not alter accepted R16A protocol mechanics;
+- directly affected Application/RFB/Transport test fixtures;
+- directly affected source-symbol dictionaries and lifecycle/development docs;
+- Pi test fixtures only where needed to prove existing fresh-per-Wire-session
+  attachment authority; Pi product RFB/Wire mechanism is not open for redesign.
 
-`src/app.*` recovery/restart behavior is not authorized by R16A. If a tiny
-Application compile/test adaptation becomes mechanically unavoidable solely
-because an existing public return type changes, keep it compatibility-only and
-record why; do not implement recovery policy.
+A need to change `pi/wire_protocol.py`, `src/transport/protocol.*`, R13 quiesce
+bytes, R14 selected values, AUDIO/MPEG product source, or final orchestration is
+outside this packet and requires a new Foreman decision.
 
-### Non-goals / forbidden expansion
+### Required checks before handoff
 
-Do not:
+Run the repository's canonical host tests and project check, the complete strict
+dictionary audit, and pinned PS2 compile/link/current-source reproducibility when
+linked source changes. Preserve exact new linked identity/PT_LOAD evidence if
+bytes change.
 
-- implement the downstream R16 Application restart/reconnect loop;
-- rebind or retry a failed R13 attachment in place;
-- close the physical Wire solely to communicate provider failure;
-- create a second physical sender, receiver or sequence owner;
-- overload R13 zero-length quiesce markers;
-- silently reinterpret existing peers under the same compatibility identity;
-- add heartbeat/liveness, generic timeout authority or systemd-restart policy;
-- activate MPEG/PCM/audio/CONFIG delivery;
-- reopen a direct-RFB PS2-facing product socket;
-- retune/copy the R14 profile;
-- claim hardware qualification from CI/build evidence.
+At shift end, emit exactly one immutable Reconstruction work log under
+`docs/ledge/work-log/` following revision 0007 of its governing contract. Return
+the baton only after that record exists.
 
-### R16A stop rule
+## Current hardware debt
 
-Stop after R16A. Emit exactly one immutable Reconstruction work-log record under
-work-log contract revision 0007 and return the baton to the Foreman. Do not
-resume R16 Application failure/stop/restart policy in the same shift even if
-R16A is successful; Foreman must independently accept the representation first.
+R16A source/build acceptance does not qualify its new linked PS2 bytes, Q4-v2
+compatibility, provider-terminal behavior, or any future R16B recovery behavior
+on physical hardware. Existing earlier hardware evidence remains historical
+provenance for the exact binaries/workloads that produced it.
 
-## Deferred dependency graph after R16 blocker confirmation
-
-1. complete and independently accept `A003-RFB-PROVIDER-FAILURE-REPRESENTATION-R16A`;
-2. resume/repacketize the bounded Application RFB failure/stop/restart policy
-   using the accepted R16A representation;
-3. add Pi MPEG START/RETIRE control ownership behind the established Wire/rider
-   architecture;
-4. reconstruct Pi MPEG producer exact-run admission and one-way retirement;
-5. compose accepted MPEG runtime profile/calibration into Application activation;
-6. complete later all-guns integration, machine/hardware qualification and
-   endurance work under fresh authority.
-
-## Hardware qualification debt
-
-HARDWARE_PENDING=R15 ordinary default RFB product activation and linked PS2 bytes; R14 shared profile linked bytes; corrected R13 attachment/quiesce/wake; R12 internal provider endpoint; R11 provider authority; R10 RFB Relay; R9 Q4 client; R8 Pi Wire service; any future R16A representation and linked PS2 bytes; downstream RFB recovery; reconstructed A003 MPEG runtime; MPEG repeated-run stale fencing; Wire-loss during MPEG; current-Q7 RFB restoration; A004 visible handoff; all-guns endurance; exact final product ELF
-
-## Foreman next pickup
-
-Consume the immutable Reconstruction return for
-`A003-RFB-PROVIDER-FAILURE-REPRESENTATION-R16A`. Independently verify the chosen
-representation and compatibility boundary against both Pi and PS2 source, prove
-provider-local failure remains distinct from physical Wire failure and R13
-quiesce, inspect exact CI/build evidence, and either accept the prerequisite and
-issue the downstream recovery packet or publish a bounded corrective/blocker
-packet. Do not infer success merely from the presence of a numeric `ERROR=7`
-constant or a passing build.
+Current source may continue under this debt because
+`HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO`; no later state may silently upgrade
+CI, compile, link or reproducibility evidence into `HARDWARE_QUALIFIED`.
