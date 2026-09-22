@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # File synopsis:
-# Stage, verify, or remove the tracked PS-to-VNC product Wire server runtime and
-# its ordinary systemd service definition.
+# Stage, verify, or remove the tracked PS-to-VNC product Wire runtime, selected
+# RFB profile projections, composed product entrypoint, and ordinary systemd
+# service definition.
 #
 # This tool copies only exact tracked bytes. It never reloads the systemd
 # manager, changes service enablement, changes service running state, or touches
@@ -23,13 +24,19 @@ REPO_ROOT="$(
 PROTOCOL_SOURCE="$REPO_ROOT/pi/wire_protocol.py"
 RFB_RELAY_SOURCE="$REPO_ROOT/pi/rfb_relay.py"
 RFB_ATTACHMENT_SOURCE="$REPO_ROOT/pi/rfb_attachment.py"
+RFB_PROFILE_GENERATED_SOURCE="$REPO_ROOT/pi/rfb_runtime_profile_generated.py"
+RFB_PROFILE_SOURCE="$REPO_ROOT/pi/rfb_runtime_profile.py"
 SERVER_SOURCE="$REPO_ROOT/pi/wire_server.py"
+RUNTIME_SOURCE="$REPO_ROOT/pi/wire_runtime.py"
 UNIT_SOURCE="$REPO_ROOT/systemd/pi/ps-to-vnc-wire.service"
 
 PROTOCOL_DEST='/usr/lib/ps-to-vnc/wire_protocol.py'
 RFB_RELAY_DEST='/usr/lib/ps-to-vnc/rfb_relay.py'
 RFB_ATTACHMENT_DEST='/usr/lib/ps-to-vnc/rfb_attachment.py'
+RFB_PROFILE_GENERATED_DEST='/usr/lib/ps-to-vnc/rfb_runtime_profile_generated.py'
+RFB_PROFILE_DEST='/usr/lib/ps-to-vnc/rfb_runtime_profile.py'
 SERVER_DEST='/usr/lib/ps-to-vnc/wire_server.py'
+RUNTIME_DEST='/usr/lib/ps-to-vnc/wire_runtime.py'
 UNIT_DEST='/etc/systemd/system/ps-to-vnc-wire.service'
 
 usage()
@@ -47,7 +54,17 @@ usage()
     exit 3
 }
 
-for command_name in     cmp     id     install     python3     rm     rmdir     sha256sum     stat     systemctl     systemd-analyze
+for command_name in \
+    cmp \
+    id \
+    install \
+    python3 \
+    rm \
+    rmdir \
+    sha256sum \
+    stat \
+    systemctl \
+    systemd-analyze
 do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "ERROR: required command missing: $command_name" >&2
@@ -59,7 +76,15 @@ require_sources()
 {
     local source
 
-    for source in "$PROTOCOL_SOURCE" "$RFB_RELAY_SOURCE" "$RFB_ATTACHMENT_SOURCE" "$SERVER_SOURCE" "$UNIT_SOURCE"
+    for source in \
+        "$PROTOCOL_SOURCE" \
+        "$RFB_RELAY_SOURCE" \
+        "$RFB_ATTACHMENT_SOURCE" \
+        "$RFB_PROFILE_GENERATED_SOURCE" \
+        "$RFB_PROFILE_SOURCE" \
+        "$SERVER_SOURCE" \
+        "$RUNTIME_SOURCE" \
+        "$UNIT_SOURCE"
     do
         [ -f "$source" ] || {
             echo "ERROR: tracked Wire source missing: $source" >&2
@@ -86,7 +111,14 @@ require_sources()
         exit 14
     }
 
-    python3 - "$PROTOCOL_SOURCE" "$RFB_RELAY_SOURCE" "$RFB_ATTACHMENT_SOURCE" "$SERVER_SOURCE" <<'__PS2VNC_WIRE_SYNTAX_EOF__'
+    python3 - \
+        "$PROTOCOL_SOURCE" \
+        "$RFB_RELAY_SOURCE" \
+        "$RFB_ATTACHMENT_SOURCE" \
+        "$RFB_PROFILE_GENERATED_SOURCE" \
+        "$RFB_PROFILE_SOURCE" \
+        "$SERVER_SOURCE" \
+        "$RUNTIME_SOURCE" <<'__PS2VNC_WIRE_SYNTAX_EOF__'
 from pathlib import Path
 import sys
 
@@ -191,13 +223,19 @@ stage_candidate()
     assert_safe_target "$PROTOCOL_SOURCE" "$PROTOCOL_DEST"
     assert_safe_target "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
     assert_safe_target "$RFB_ATTACHMENT_SOURCE" "$RFB_ATTACHMENT_DEST"
+    assert_safe_target "$RFB_PROFILE_GENERATED_SOURCE" "$RFB_PROFILE_GENERATED_DEST"
+    assert_safe_target "$RFB_PROFILE_SOURCE" "$RFB_PROFILE_DEST"
     assert_safe_target "$SERVER_SOURCE" "$SERVER_DEST"
+    assert_safe_target "$RUNTIME_SOURCE" "$RUNTIME_DEST"
     assert_safe_target "$UNIT_SOURCE" "$UNIT_DEST"
 
     install_file 0755 "$PROTOCOL_SOURCE" "$PROTOCOL_DEST"
     install_file 0644 "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
     install_file 0644 "$RFB_ATTACHMENT_SOURCE" "$RFB_ATTACHMENT_DEST"
+    install_file 0644 "$RFB_PROFILE_GENERATED_SOURCE" "$RFB_PROFILE_GENERATED_DEST"
+    install_file 0644 "$RFB_PROFILE_SOURCE" "$RFB_PROFILE_DEST"
     install_file 0755 "$SERVER_SOURCE" "$SERVER_DEST"
+    install_file 0644 "$RUNTIME_SOURCE" "$RUNTIME_DEST"
     install_file 0644 "$UNIT_SOURCE" "$UNIT_DEST"
 
     systemd-analyze verify "$UNIT_DEST"
@@ -217,7 +255,10 @@ verify_candidate()
     verify_file 0755 "$PROTOCOL_SOURCE" "$PROTOCOL_DEST"
     verify_file 0644 "$RFB_RELAY_SOURCE" "$RFB_RELAY_DEST"
     verify_file 0644 "$RFB_ATTACHMENT_SOURCE" "$RFB_ATTACHMENT_DEST"
+    verify_file 0644 "$RFB_PROFILE_GENERATED_SOURCE" "$RFB_PROFILE_GENERATED_DEST"
+    verify_file 0644 "$RFB_PROFILE_SOURCE" "$RFB_PROFILE_DEST"
     verify_file 0755 "$SERVER_SOURCE" "$SERVER_DEST"
+    verify_file 0644 "$RUNTIME_SOURCE" "$RUNTIME_DEST"
     verify_file 0644 "$UNIT_SOURCE" "$UNIT_DEST"
 
     systemd-analyze verify "$UNIT_DEST"
@@ -251,7 +292,10 @@ remove_candidate()
 $PROTOCOL_SOURCE|$PROTOCOL_DEST
 $RFB_RELAY_SOURCE|$RFB_RELAY_DEST
 $RFB_ATTACHMENT_SOURCE|$RFB_ATTACHMENT_DEST
+$RFB_PROFILE_GENERATED_SOURCE|$RFB_PROFILE_GENERATED_DEST
+$RFB_PROFILE_SOURCE|$RFB_PROFILE_DEST
 $SERVER_SOURCE|$SERVER_DEST
+$RUNTIME_SOURCE|$RUNTIME_DEST
 $UNIT_SOURCE|$UNIT_DEST
 __PS2VNC_WIRE_REMOVE_EOF__
 
