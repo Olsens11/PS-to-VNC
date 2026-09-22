@@ -9,19 +9,20 @@ Wire Session. TCP accept begins PROVISIONAL; only an exact HELLO followed by a
 successfully sent Pi-owned ACCEPT creates ACTIVE. EOF or protocol failure fully
 retires that connection before the persistent owner accepts another.
 
-R13 optionally composes one explicit session-scoped RFB attachment mechanism
-while preserving this object as the sole PS2-facing Wire recv/send and global
-sequence owner. The attachment lazily connects only after first valid RFB
-CREDIT, owns provider/quiesce state, and composes the provider-neutral R10 Relay
-only after local connection succeeds.
+R13 composes one explicit session-scoped RFB attachment mechanism while
+preserving this object as the sole PS2-facing Wire recv/send and global sequence
+owner. The attachment lazily connects only after first valid RFB CREDIT, owns
+provider/quiesce state, and composes the provider-neutral R10 Relay only after
+local connection succeeds. R16A also serializes the attachment's first typed
+provider-terminal fact through this same sole owner; reporting it does not end
+the Wire Session.
 
 With no explicit attachment factory the installed service remains the R8
 establishment-only server. The server still owns no flow-profile defaults,
 Application RFB start/restart policy, AUDIO/MPEG/CONFIG rider, MPEG producer,
 heartbeat, or custom restart loop.
 
-Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
-A003-PI-RFB-ATTACHMENT-QUIESCE-R13.
+Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
 """
 
 from __future__ import annotations
@@ -216,7 +217,6 @@ class WireConnectionOwner:
             # Compatibility failure is a normal, well-framed Q4 outcome. Send
             # the exact bounded reason, remain PROVISIONAL/never ACTIVE, then
             # retire only this connection.
-
             try:
                 self._send_rejection(rejection)
             except OSError:
@@ -322,7 +322,7 @@ class WireConnectionOwner:
         return False
 
     def _flush_rfb_attachment_output(self) -> None:
-        """Serialize attachment-owned CREDIT/REQUEST/COMMIT through Wire."""
+        """Serialize attachment output through the sole physical Wire owner."""
 
         attachment = self._rfb_attachment
         if attachment is None:
@@ -351,6 +351,22 @@ class WireConnectionOwner:
                 b"",
             )
             attachment.confirm_commit_sent()
+
+        if attachment.wants_provider_failure_report:
+            # ERROR=7 on channel 1 is R16A's typed provider-terminal mechanism.
+            # The attachment never sends it itself: this owner allocates the
+            # ordinary Wire sequence and performs the physical send. Successful
+            # reporting does not clear the attachment's FAILED/cause authority.
+            reason = attachment.provider_failure
+            if reason is None:
+                raise RuntimeError("provider failure report has no reason")
+            self._send_active_frame(
+                protocol.FRAME_ERROR,
+                protocol.CHANNEL_RFB,
+                protocol.encode_rfb_provider_failure_payload(reason.value),
+            )
+            if not attachment.confirm_provider_failure_reported(reason):
+                raise RuntimeError("provider failure report confirmation failed")
 
     def _wait_with_rfb_attachment(self) -> WireSessionOutcome:
         """Drive one lazy provider attachment without surrendering Wire I/O."""
