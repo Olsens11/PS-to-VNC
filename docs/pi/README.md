@@ -331,12 +331,20 @@ remains opaque RFB bytes. The finite stop sequence is exactly:
       -> COMMIT
       -> COMPLETE
 
-REQUEST is an explicit mechanism seam rather than Application policy. After
-BOUNDARY no new provider read or provider-read credit is admitted; any
+REQUEST is an explicit mechanism seam rather than Application policy. A
+successful `request_quiesce()` publishes only attachment-local intent and
+signals one private per-attachment socketpair. That readiness edge wakes the
+otherwise-blocked `WireConnectionOwner`; the requester never sends Wire
+traffic. The owner drains the local notification and remains the only code that
+serializes REQUEST or advances Wire sequence. No select timeout or polling loop
+is used.
+
+After BOUNDARY no new provider read or provider-read credit is admitted; any
 previously accepted provider writes must drain or fail locally. Provider I/O is
 fully retired before COMMIT is serialized. COMPLETE stops the RFB attachment
-while the Wire Session remains ACTIVE. Duplicate or out-of-order lifecycle
-markers fail at the RFB-local scope.
+while the Wire Session remains ACTIVE. The wake pair is retired with attachment
+failure/stop/session retirement, and Session B constructs a fresh pair.
+Duplicate or out-of-order lifecycle markers fail at the RFB-local scope.
 
 Each attachment belongs permanently to one Wire Session. A later Wire Session
 starts with a fresh attachment, fresh credit, and fresh quiesce state. R13 does
