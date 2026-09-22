@@ -3,17 +3,19 @@
  * Implements Transport's session-local single physical-I/O owner and synchronized logical
  * RFB/AUDIO/MPEG2 runtime. One EE Transport I/O thread is the only caller of
  * physical framed send and receive primitives; complete DATA frames are
- * dispatched into three
- * independent bounded logical channels with independent credit/activity state.
- * On PS2, an idle physical-socket readiness timeout cooperatively yields the EE
- * so queued network-stack work can progress without delaying active I/O paths.
+ * dispatched into three independent bounded logical channels with independent
+ * credit/activity state. Typed RFB provider-terminal reporting is latched as a
+ * channel-local fact without converting a healthy physical Wire Session into a
+ * Transport failure. On PS2, an idle physical-socket readiness timeout
+ * cooperatively yields the EE so queued network-stack work can progress without
+ * delaying active I/O paths.
  *
- * RFB parser consumption/quiesce, AUDIO's audited finite marker, MPEG's explicit
- * producer-completion fact, exact MPEG generation-control envelope relay,
- * outbound logical RFB fragmentation, and receiver completion remain
- * Transport-owned. RFB parsing, PCM playback, MPEG decoding,
- * common-clock/presentation policy, active-generation business meaning, and
- * product recovery remain outside this file.
+ * RFB parser consumption/quiesce, provider-terminal mechanism state, AUDIO's
+ * audited finite marker, MPEG's explicit producer-completion fact, exact MPEG
+ * generation-control envelope relay, outbound logical RFB fragmentation, and
+ * receiver completion remain Transport-owned. RFB parsing, PCM playback, MPEG
+ * decoding, common-clock/presentation policy, active-generation business
+ * meaning, and product recovery remain outside this file.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
  * LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md; docs/ledge/
@@ -443,7 +445,9 @@ static int pstvnc_transport_runtime_accept_rfb_credit(
     if (WaitSema(runtime->rfb_queue_semaphore_id) < 0)
         return 0;
 
-    if (runtime->rfb_outbound_credit_bytes > UINT32_MAX - amount) {
+    if (runtime->rfb_provider_failure_reason !=
+            PSTVNC_RFB_PROVIDER_FAILURE_NONE ||
+        runtime->rfb_outbound_credit_bytes > UINT32_MAX - amount) {
         (void)SignalSema(runtime->rfb_queue_semaphore_id);
         return 0;
     }
@@ -493,6 +497,52 @@ static int pstvnc_transport_runtime_wake_rfb_outbound_credit_waiter(
     return 1;
 }
 
+static int pstvnc_transport_runtime_accept_rfb_provider_failure(
+    pstvnc_transport_runtime_t *runtime,
+    const pstvnc_transport_header_t *header)
+{
+    pstvnc_rfb_provider_failure_payload_t failure;
+    int signal_reader;
+
+    if (!pstvnc_transport_header_is_rfb_provider_failure(header) ||
+        !pstvnc_rfb_provider_failure_payload_decode(
+            &failure,
+            runtime->receiver_payload,
+            header->payload_length))
+        return 0;
+
+    if (WaitSema(runtime->rfb_queue_semaphore_id) < 0)
+        return 0;
+
+    /* One first/specific provider terminal fact exists per runtime. */
+    if (runtime->rfb_provider_failure_reason !=
+            PSTVNC_RFB_PROVIDER_FAILURE_NONE) {
+        (void)SignalSema(runtime->rfb_queue_semaphore_id);
+        return 0;
+    }
+
+    runtime->rfb_provider_failure_reason =
+        (pstvnc_rfb_provider_failure_reason_t)failure.reason;
+
+    /*
+     * No unused provider-capacity authority survives the terminal report.
+     * DATA already sequenced before this ERROR remains in the old RFB queue and
+     * may be consumed in-order; no new provider-bound fragment can reserve this
+     * retired credit afterward.
+     */
+    runtime->rfb_outbound_credit_bytes = 0u;
+    signal_reader = pstvnc_transport_runtime_publish_rfb_activity_locked(runtime);
+
+    if (SignalSema(runtime->rfb_queue_semaphore_id) < 0)
+        return 0;
+
+    if (!pstvnc_transport_runtime_signal_rfb_activity(runtime, signal_reader))
+        return 0;
+
+    /* A writer blocked waiting for provider capacity observes the same fact. */
+    return pstvnc_transport_runtime_wake_rfb_outbound_credit_waiter(runtime);
+}
+
 static int pstvnc_transport_runtime_reserve_rfb_outbound_credit(
     pstvnc_transport_runtime_t *runtime,
     size_t requested,
@@ -515,7 +565,9 @@ static int pstvnc_transport_runtime_reserve_rfb_outbound_credit(
         if (runtime->rfb_outbound_credit_wait_state == 2)
             runtime->rfb_outbound_credit_wait_state = 0;
 
-        if (runtime->failed ||
+        if (runtime->rfb_provider_failure_reason !=
+                PSTVNC_RFB_PROVIDER_FAILURE_NONE ||
+            runtime->failed ||
             runtime->receiver_done ||
             runtime->stop_requested) {
             if (SignalSema(runtime->rfb_queue_semaphore_id) < 0)
@@ -576,7 +628,10 @@ static int pstvnc_transport_runtime_accept_rfb_frame(
     if (WaitSema(runtime->rfb_queue_semaphore_id) < 0)
         return 0;
 
-    if (header->payload_length == 0u) {
+    if (runtime->rfb_provider_failure_reason !=
+            PSTVNC_RFB_PROVIDER_FAILURE_NONE) {
+        accepted = 0;
+    } else if (header->payload_length == 0u) {
         accepted = pstvnc_transport_runtime_accept_quiesce_marker_locked(runtime);
     } else {
         accepted = pstvnc_transport_rfb_channel_commit(
@@ -855,14 +910,19 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
                    header.channel == PSTVNC_TRANSPORT_CHANNEL_RFB) {
             accepted = pstvnc_transport_runtime_accept_rfb_credit(
                 runtime, &header);
+        } else if (header.kind == PSTVNC_TRANSPORT_FRAME_ERROR &&
+                   header.channel == PSTVNC_TRANSPORT_CHANNEL_RFB) {
+            accepted = pstvnc_transport_runtime_accept_rfb_provider_failure(
+                runtime, &header);
         } else if (header.kind == PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE) {
             accepted = pstvnc_transport_runtime_accept_mpeg_retire_completion(
                 runtime, &header);
         }
 
         /*
-         * Inbound START and every malformed/unrecognized control envelope are
-         * invalid PS2-side traffic and terminate this Wire Session.
+         * Every malformed/unrecognized envelope remains a physical Wire
+         * protocol failure. A well-formed channel-1 ERROR is accepted above as
+         * RFB-local terminal state and deliberately does not exit this owner.
          */
         if (!accepted) {
             runtime->failed = 1;
@@ -1337,6 +1397,8 @@ int pstvnc_transport_runtime_rfb_wait_activity(
         return 0;
 
     if (runtime->activity_sequence != *activity_sequence ||
+        runtime->rfb_provider_failure_reason !=
+            PSTVNC_RFB_PROVIDER_FAILURE_NONE ||
         runtime->receiver_done || runtime->failed || runtime->stop_requested) {
         *activity_sequence = runtime->activity_sequence;
         if (SignalSema(runtime->rfb_queue_semaphore_id) < 0) {
@@ -1501,6 +1563,7 @@ int pstvnc_transport_runtime_rfb_read_exact(
     while (done < count) {
         size_t taken;
         int queue_empty;
+        int provider_failed;
 
         if (runtime->failed || runtime->stop_requested)
             return 0;
@@ -1514,6 +1577,9 @@ int pstvnc_transport_runtime_rfb_read_exact(
             count - done);
         queue_empty =
             pstvnc_transport_rfb_channel_available(&runtime->rfb_channel) == 0u;
+        provider_failed =
+            runtime->rfb_provider_failure_reason !=
+                PSTVNC_RFB_PROVIDER_FAILURE_NONE;
 
         if (SignalSema(runtime->rfb_queue_semaphore_id) < 0) {
             runtime->failed = 1;
@@ -1521,16 +1587,22 @@ int pstvnc_transport_runtime_rfb_read_exact(
         }
 
         if (taken != 0u) {
+            /*
+             * DATA sequenced before the terminal ERROR remains readable. Once
+             * the terminal fact is visible, however, do not intentionally grant
+             * replacement provider-read capacity for those old queued bytes.
+             */
             if (taken > UINT32_MAX ||
-                !pstvnc_transport_runtime_return_rfb_credit(
-                    runtime, (uint32_t)taken, queue_empty))
+                (!provider_failed &&
+                 !pstvnc_transport_runtime_return_rfb_credit(
+                    runtime, (uint32_t)taken, queue_empty)))
                 return 0;
 
             done += taken;
             continue;
         }
 
-        if (runtime->receiver_done)
+        if (provider_failed || runtime->receiver_done)
             return 0;
 
         if (!pstvnc_transport_runtime_rfb_wait_activity(
@@ -1545,6 +1617,7 @@ int pstvnc_transport_runtime_rfb_poll_receive(
     pstvnc_transport_runtime_t *runtime)
 {
     size_t available;
+    int provider_failed;
 
     if (runtime == NULL || !runtime->initialized)
         return -1;
@@ -1553,6 +1626,8 @@ int pstvnc_transport_runtime_rfb_poll_receive(
         return -1;
 
     available = pstvnc_transport_rfb_channel_available(&runtime->rfb_channel);
+    provider_failed =
+        runtime->rfb_provider_failure_reason != PSTVNC_RFB_PROVIDER_FAILURE_NONE;
 
     if (SignalSema(runtime->rfb_queue_semaphore_id) < 0) {
         runtime->failed = 1;
@@ -1561,7 +1636,8 @@ int pstvnc_transport_runtime_rfb_poll_receive(
 
     if (available != 0u)
         return 1;
-    if (runtime->failed || runtime->receiver_done || runtime->stop_requested)
+    if (provider_failed || runtime->failed || runtime->receiver_done ||
+        runtime->stop_requested)
         return -1;
     return 0;
 }
@@ -1614,6 +1690,43 @@ int pstvnc_transport_runtime_rfb_write_exact(
     }
 
     return 1;
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_rfb_provider_failure(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_rfb_provider_failure_reason_t *reason)
+{
+    pstvnc_rfb_provider_failure_reason_t current;
+
+    if (runtime == NULL || reason == NULL || !runtime->initialized)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    *reason = PSTVNC_RFB_PROVIDER_FAILURE_NONE;
+
+    if (WaitSema(runtime->rfb_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    current = runtime->rfb_provider_failure_reason;
+
+    if (SignalSema(runtime->rfb_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (current != PSTVNC_RFB_PROVIDER_FAILURE_NONE) {
+        *reason = current;
+        return PSTVNC_TRANSPORT_OK;
+    }
+
+    if (runtime->failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (runtime->stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+    if (runtime->receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    return PSTVNC_TRANSPORT_WOULD_BLOCK;
 }
 
 
