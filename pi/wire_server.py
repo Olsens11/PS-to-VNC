@@ -371,10 +371,17 @@ class WireConnectionOwner:
 
             connecting = attachment.connecting_socket
             provider = attachment.provider_socket
+            quiesce_wake = attachment.quiesce_wake_reader
 
             read_wait = [self._connection]
             write_wait: list[socket.socket] = []
             exception_wait: list[socket.socket] = []
+
+            # The wake descriptor carries no Wire bytes. It only interrupts the
+            # owner's blocking readiness wait so this same owner can observe the
+            # attachment-local REQUEST_PENDING state and serialize REQUEST.
+            if quiesce_wake is not None:
+                read_wait.append(quiesce_wake)
 
             if connecting is not None:
                 write_wait.append(connecting)
@@ -396,6 +403,20 @@ class WireConnectionOwner:
                     rejection_reason=None,
                     protocol_failed=True,
                 )
+
+            if quiesce_wake is not None and quiesce_wake in readable:
+                # Drain/acknowledge only the local notification edge. The
+                # requesting thread never receives Wire authority; REQUEST still
+                # leaves exclusively through _flush_rfb_attachment_output().
+                attachment.acknowledge_quiesce_wake()
+                try:
+                    self._flush_rfb_attachment_output()
+                except OSError:
+                    return self._finish(
+                        accepted=True,
+                        rejection_reason=None,
+                        protocol_failed=True,
+                    )
 
             if self._connection in readable:
                 try:
