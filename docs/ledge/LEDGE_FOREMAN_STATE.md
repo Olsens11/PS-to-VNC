@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0041
-RECORDED_AT=2026-09-21T18:44:28-04:00
+STATE_REVISION=0042
+RECORDED_AT=2026-09-21T20:24:26-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0040
-SUPERSEDES_FOREMAN_STATE_REVISION=0040
+BASED_ON_FOREMAN_STATE_REVISION=0041
+SUPERSEDES_FOREMAN_STATE_REVISION=0041
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -13,6 +13,20 @@ BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0004
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0042 does NOT accept A003-PI-RFB-ATTACHMENT-QUIESCE-R13 yet. Five
+provisional R13 commits landed after State 0041 and the resulting candidate tree
+is canonically green, but the required immutable Reconstruction shift log was
+never emitted. Independent Foreman review also found a functional quiesce wake
+defect: request_quiesce() only changes attachment state while the sole Wire
+owner may be blocked indefinitely in select(), and the current proof injects an
+unrelated PS2 CREDIT solely to wake that loop before REQUEST can be serialized.
+R13 therefore remains active under a bounded corrective packet. The correction
+must add an RFB-local/session-local wake mechanism that wakes the Wire owner
+without becoming a second Wire sender, remove the artificial peer-traffic wake
+from the proof, correct premature R13 acceptance wording in the provisional
+architecture overlay, and then emit one truthful immutable Reconstruction log
+for the corrective shift.
 
 Revision 0041 independently accepts the completed
 A003-PI-RFB-INTERNAL-PROVIDER-ENDPOINT-R12 Reconstruction baton and advances to
@@ -179,7 +193,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A003_R12_INTEGRATED__PI_RFB_ATTACHMENT_QUIESCE_RECONSTRUCTION_ACTIVE__RFB_SESSION_COMPOSITION_CONFIG_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R13_PROVISIONAL__RFB_QUIESCE_WAKE_CORRECTIVE_ACTIVE__RFB_SESSION_COMPOSITION_CONFIG_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__APPLICATION_ACTIVATION_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -203,8 +217,10 @@ PI_RFB_WIRE_RELAY_CORE_FOREMAN_ACCEPTED=YES
 PI_RIDER_FOUNDATION=RFB_RELAY_CORE_ACCEPTED
 PI_NATIVE_RFB_PROVIDER_AUTHORITY_FOREMAN_ACCEPTED=YES
 PI_RFB_INTERNAL_PROVIDER_ENDPOINT_FOREMAN_ACCEPTED=YES
-PI_RFB_ATTACHMENT_QUIESCE_ACTIVE=YES
-RFB_PROVIDER_LIFECYCLE=ATTACHMENT_QUIESCE_RECONSTRUCTION_ACTIVE
+PI_RFB_ATTACHMENT_QUIESCE_PROVISIONAL=YES
+PI_RFB_ATTACHMENT_QUIESCE_FOREMAN_ACCEPTED=NO
+RFB_PROVIDER_LIFECYCLE=ATTACHMENT_QUIESCE_CORRECTIVE_ACTIVE
+RFB_QUIESCE_WAKE_DEFECT=OPEN
 RFB_SESSION_COMPOSITION_CONFIG=DEPENDENCY_QUEUED
 PI_MPEG_CONTROL_PRODUCER_OWNER=DEPENDENCY_QUEUED
 APPLICATION_ACTIVATION=DEPENDENCY_QUEUED
@@ -3639,7 +3655,7 @@ retry or restart.
 ## Active bounded Reconstruction packet
 
 PACKET_ID=A003-PI-RFB-ATTACHMENT-QUIESCE-R13
-PACKET_STATUS=ACTIVE
+PACKET_STATUS=PROVISIONAL_CORRECTIVE_REQUIRED
 ROLE_KEY=reconstruction
 WORK_ITEM_KEY=a003-mpeg-generation
 WORKER_KEY=interactive
@@ -3901,4 +3917,265 @@ containment, Session-B freshness, default-service no-auto-attach, unchanged PS2
 source and all live/hardware non-claims.
 
 Do not execute the active packet from the Foreman seat.
+
+## A003 R13 provisional Foreman review — corrective required
+
+Live pickup authority was independently refreshed as:
+
+- assigning Foreman base
+  4d65fdf19be311264eb6b7f15fd43794d685c511;
+- current provisional R13 head
+  44497ff08432ccee900d10bc6fff03c72a6ab1b3.
+
+Five commits landed after the assigning Foreman base:
+
+1. 6fad7700b23444094b75a14f6c72bcbefd0ab03f
+   — feat(pi): add lazy RFB attachment quiesce;
+2. 17318f5ebfac043c93e8ad0a4f18d39b5d494afa
+   — tooling(symbols): run deterministic dictionary reconciliation;
+3. 9f2b20dc51c2edd7f34b17189257c8867e33bd8a
+   — docs(symbols): reconcile current clean definitions;
+4. 643a37492192faeeadaee2268f6c9840732ce0a4
+   — docs(pi): record R13 attachment lifecycle;
+5. 44497ff08432ccee900d10bc6fff03c72a6ab1b3
+   — test(pi): close unused R13 idle provider fixture.
+
+There is no new immutable Reconstruction work-log entry after
+docs/ledge/work-log/20260921T181526-0400__reconstruction__a003-mpeg-generation__interactive.md.
+The newest Reconstruction log is still R12. Under Reconstruction Contract rev
+0006 and work-log contract rev 0007, every Reconstruction shift must emit
+exactly one truthful immutable shift record. R13 therefore has no valid completed
+baton yet.
+
+### Provisional source findings
+
+The landed candidate does correctly establish substantial R13 mechanism:
+
+- maintained pi/rfb_attachment.py owns one session-scoped provider attachment;
+- the first exact nonzero RFB CREDIT is the lazy connect edge;
+- connect_ex() plus readiness/SO_ERROR completion is nonblocking;
+- the selected endpoint is 127.0.0.1:5900 and 5903 remains excluded;
+- RfbFlowConfig injects finite limits with no installed-daemon tuning defaults;
+- R10 Relay composition occurs only after provider connect success;
+- WireConnectionOwner remains the only PS2-facing Wire recv/send and sequence
+  owner;
+- provider failure is contained to attachment/RFB state in the tested cases;
+- BOUNDARY stops new provider reads, accepted provider writes drain before
+  provider retirement, and COMMIT is gated on closed provider I/O;
+- COMPLETE leaves Wire alive while attachment becomes STOPPED;
+- Session B constructs fresh attachment state;
+- the default Wire daemon still supplies no attachment factory or flow profile;
+- no src/ or mk/ path changed.
+
+Current candidate workflow 35668710009 at
+44497ff08432ccee900d10bc6fff03c72a6ab1b3 completed SUCCESS on attempt 1.
+Observed evidence includes:
+
+- transport_runtime_test: PASS;
+- transport_audio_test: PASS;
+- transport_mpeg_test: PASS;
+- all current pi_rfb_attachment_test.py cases PASS;
+- SOURCE_DICTIONARIES=PASS;
+- SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS;
+- SOURCE_TOPOLOGY_CONTRACT=PASS;
+- SOURCE_DICTIONARY_PORTAL_SYNC=PASS;
+- WORK_LOG_CHECK=PASS for the logs that actually exist;
+- PS_TO_VNC_PROJECT_CHECK=PASS;
+- CLEAN_PS2_COMPILE_CHECK=PASS;
+- ISSUE7_LINKED_BUILD=PASS;
+- LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS.
+
+These green gates do not cure a missing required shift log or a test that proves
+the wrong wake condition.
+
+### Blocking defect — REQUEST depends on unrelated readiness
+
+The current public RFB quiesce seam is not independently driveable.
+
+RfbAttachment.request_quiesce() changes:
+
+    RUNNING -> REQUEST_PENDING
+
+but does not signal any descriptor/event that WireConnectionOwner is waiting on.
+The owner may already be blocked indefinitely in select() over:
+
+- the physical Wire socket;
+- a provider socket when provider read/write readiness is wanted;
+- a pending provider-connect socket.
+
+If all of those are idle, REQUEST_PENDING alone cannot wake select(), so
+WireConnectionOwner cannot reach _flush_rfb_attachment_output() and cannot
+serialize REQUEST.
+
+The current test
+test_request_boundary_drains_and_retires_before_commit_complete() masks this by
+calling request_quiesce() and then sending an unrelated additional PS2 RFB
+CREDIT solely to make the Wire socket readable. That proves marker ordering only
+after external traffic happens; it does not prove the quiesce request seam can
+actually cause REQUEST to leave the Pi.
+
+This is especially important because quiesce is required to work at an RFB
+message boundary that may otherwise be idle.
+
+Foreman disposition for current R13 criteria:
+
+- A003-R13-C1 RFB_ATTACHMENT_PRODUCT_OWNER — PROVISIONALLY MET;
+- A003-R13-C2 IDLE_WIRE_DOES_NOT_START_PROVIDER — PROVISIONALLY MET;
+- A003-R13-C3 NONBLOCKING_LAZY_INTERNAL_CONNECT — PROVISIONALLY MET;
+- A003-R13-C4 EXPLICIT_FINITE_FLOW_CONFIGURATION — PROVISIONALLY MET;
+- A003-R13-C5 R10_RELAY_COMPOSED_ONLY_AFTER_CONNECT — PROVISIONALLY MET;
+- A003-R13-C6 SOLE_WIRE_IO_OWNER_PRESERVED — PROVISIONALLY MET;
+- A003-R13-C7 ORDERED_REQUEST_BOUNDARY_COMMIT_COMPLETE — NOT MET because
+  REQUEST publication depends on unrelated readiness/traffic;
+- A003-R13-C8 PROVIDER_IO_RETIRED_BEFORE_COMMIT — PROVISIONALLY MET;
+- A003-R13-C9 PROVIDER_FAILURE_RFB_LOCAL — PROVISIONALLY MET;
+- A003-R13-C10 SESSION_SCOPED_COMPLETE_STOP_NONRESUME — PROVISIONALLY MET;
+- A003-R13-C11 DEFAULT_SERVICE_NO_UNVALIDATED_AUTO_ATTACH — PROVISIONALLY MET;
+- A003-R13-C12 CLEAN_EVIDENCE_AND_CLAIM_BOUNDARY — NOT MET because the required
+  immutable Reconstruction log is absent and provisional Architecture Overlay
+  revision 0005 calls R13 "accepted" before Foreman acceptance.
+
+FOREMAN_DISPOSITION=CORRECTIVE_RECONSTRUCTION_REQUIRED
+
+## Active bounded corrective Reconstruction packet
+
+PACKET_ID=A003-PI-RFB-ATTACHMENT-QUIESCE-R13-CORRECTIVE-A
+PACKET_STATUS=ACTIVE
+ROLE_KEY=reconstruction
+WORK_ITEM_KEY=a003-mpeg-generation
+WORKER_KEY=interactive
+EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
+USER_TERMINAL_POLICY=EXCEPTION_ONLY
+PI_LOCAL_USER_PROXY_REQUIRED=NO
+ASSIGNING_BASE_HEAD=REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE
+FOREMAN_DECISION_BASE=44497ff08432ccee900d10bc6fff03c72a6ab1b3
+
+### Objective
+
+Correct only the R13 completion defects:
+
+1. make an already-requested RFB quiesce wake the sole Wire owner without any
+   PS2/provider/network traffic and without creating a second Wire sender;
+2. prove REQUEST -> BOUNDARY -> COMMIT -> COMPLETE from that real wake path;
+3. remove premature self-acceptance wording from provisional R13 documentation;
+4. close the Reconstruction shift with one truthful immutable log.
+
+Do not redesign the otherwise-provisional R13 provider attachment.
+
+### Required behavior
+
+1. Add the smallest RFB/session-local wake primitive needed to interrupt the
+   Wire owner's blocking wait when request_quiesce() transitions RUNNING to
+   REQUEST_PENDING.
+2. The quiesce caller must never send Wire bytes, advance Wire sequence, call
+   recv() on the physical Wire socket, or become a second physical I/O owner.
+   It may only publish RFB-local intent and signal the local wake primitive.
+3. WireConnectionOwner remains the only code that serializes REQUEST and every
+   other Wire frame. The owner must include the wake primitive in its readiness
+   wait, drain/acknowledge the local wake deterministically, then serialize the
+   pending REQUEST through _send_active_frame().
+4. Do not solve this with an arbitrary select timeout/poll loop. Use an explicit
+   bounded/session-local notification mechanism such as a dedicated socketpair,
+   eventfd-like primitive, or equally narrow mechanism.
+5. The wake mechanism belongs to one attachment/Wire Session and must be closed
+   on stop/failure/session retirement. Session B receives fresh wake state.
+6. request_quiesce() must be safe against the owner concurrently inspecting
+   attachment state. Add only the synchronization actually required by this
+   cross-thread seam; do not create a generic callback/event bus or project-wide
+   lifecycle manager.
+7. A clean request while provider and PS2 are otherwise idle must cause exactly
+   one REQUEST marker to appear without:
+   - sending an extra PS2 CREDIT;
+   - sending provider bytes;
+   - closing either endpoint;
+   - relying on timeout polling.
+8. Rewrite the existing quiesce integration test so the test calls
+   request_quiesce() and receives REQUEST directly. The current artificial
+   post-request PS2 CREDIT wake must be removed.
+9. Preserve exact lifecycle ordering:
+   REQUEST -> BOUNDARY -> drain accepted provider writes -> provider close ->
+   COMMIT -> COMPLETE.
+10. Preserve the existing rule that provider reads stop immediately after
+    BOUNDARY and ordinary DATA/CREDIT do not appear after COMMIT.
+11. Preserve provider-local failure containment, lazy first-CREDIT connect,
+    explicit finite flow configuration, Session-B freshness and default-service
+    no-auto-attach behavior.
+12. Keep src/ and mk/ byte-for-byte unchanged unless a genuinely new peer defect
+    is independently demonstrated. No new PS2 PT_LOAD tranche is authorized.
+13. Correct docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md revision 0005 so it does
+    not claim the R13 candidate was "accepted" by Reconstruction itself.
+    Describe it as provisional/candidate reconstructed source or use neutral
+    wording. Foreman acceptance remains Foreman-owned.
+14. Re-run strict project/dictionary/topology, host, PS2 compile and
+    current-source linked-reproducibility gates.
+15. Do not backfill a fake immutable log for the earlier unlogged attempt. At the
+    end of this corrective shift, emit exactly one new truthful immutable
+    Reconstruction log using the actual corrective-shift STARTED_AT and
+    COMPLETED_AT. The log must explicitly record:
+    - that provisional R13 commits already existed at pickup;
+    - that the prior attempt had no immutable Reconstruction log;
+    - the wake defect found by Foreman;
+    - exact corrective commits/evidence;
+    - final C1-C12 worker dispositions;
+    - all remaining live/hardware non-claims.
+
+### Corrective acceptance criteria
+
+The original A003-R13-C1 through A003-R13-C12 remain governing. In addition,
+Foreman will require:
+
+- R13-CA1 QUIESCE_REQUEST_WAKE_INDEPENDENT_OF_PEER_TRAFFIC;
+- R13-CA2 SOLE_WIRE_SENDER_PRESERVED;
+- R13-CA3 NO_TIMEOUT_POLLING_WORKAROUND;
+- R13-CA4 WAKE_STATE_SESSION_SCOPED_AND_RETIRED;
+- R13-CA5 QUIESCE_TEST_HAS_NO_ARTIFICIAL_CREDIT_WAKE;
+- R13-CA6 PREMATURE_ACCEPTANCE_WORDING_REMOVED;
+- R13-CA7 TRUTHFUL_IMMUTABLE_RECONSTRUCTION_LOG_EMITTED.
+
+All original and corrective criteria must be MET before Foreman acceptance.
+
+### Explicit non-goals
+
+Do not implement:
+
+- shared CONFIG/session composition;
+- product RFB ON/OFF policy;
+- automatic RFB retry/reconnect/backoff;
+- Application RFB startup/restart;
+- live Pi staging or provider activation;
+- AUDIO/MPEG riders or Pi MPEG producer;
+- Application MPEG activation;
+- Q7 retirement/restoration;
+- physical qualification.
+
+### Worker return
+
+Return the exact wake mechanism and ownership, the corrected no-external-traffic
+quiesce proof, exact lifecycle ordering evidence, corrected authority wording,
+strict CI evidence, every non-claim, and exactly one truthful immutable
+Reconstruction log for this corrective shift.
+
+Stop after R13-CORRECTIVE-A.
+
+## Deferred dependency graph
+
+Do not advance the dependency graph until corrected R13 is independently
+accepted. If accepted, the previously queued next dependency remains shared RFB
+session-composition/config authority so the Pi and PS2 consume matching RFB
+ON/OFF and finite flow-profile values without independent defaults.
+
+## Hardware qualification debt
+
+HARDWARE_PENDING=corrected R13 provider attachment/quiesce including local request-wake; R12 internal X0tigervnc loopback endpoint staging/live demand activation; R11 selected native-provider source authority; R10 bidirectional RFB credit/stall mechanics and changed PS2 Transport PT_LOAD; R9 PS2 product Q4 client; R8 Pi Wire service/no-carrier/listener lifecycle; shared RFB session composition/config; live ordinary RFB Application activation; reconstructed A003 R3-R7 MPEG runtime; MPEG repeated-run stale fencing; Wire-loss during MPEG; current-Q7 overlapped RFB restoration; A004 visible handoff; all-guns endurance; exact final product ELF
+
+## Foreman next pickup
+
+Consume A003-PI-RFB-ATTACHMENT-QUIESCE-R13-CORRECTIVE-A. Verify that
+request_quiesce() wakes the Wire owner with no peer/provider traffic, the caller
+still cannot send Wire, the explicit wake state is session-local and retired,
+the artificial test CREDIT is gone, exact four-marker ordering still holds, the
+premature acceptance wording is corrected, a truthful immutable Reconstruction
+log exists, and all original R13 criteria plus R13-CA1 through CA7 are MET.
+
+Do not execute the corrective packet from the Foreman seat.
 
