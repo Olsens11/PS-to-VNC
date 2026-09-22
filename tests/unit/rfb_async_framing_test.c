@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "rfb_session.h"
+#include "transport/protocol.h"
 
 static int failures = 0;
 
@@ -100,6 +101,17 @@ int pstvnc_rfb_bridge_write_exact(
     (void)transport_access;
     (void)buffer;
     (void)count;
+    return 0;
+}
+
+int pstvnc_rfb_bridge_provider_failure(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_rfb_provider_failure_reason_t *reason)
+{
+    (void)transport_access;
+    if (reason == NULL)
+        return -1;
+    *reason = PSTVNC_RFB_PROVIDER_FAILURE_NONE;
     return 0;
 }
 
@@ -385,12 +397,6 @@ static void test_quiesce_after_complete_message_stops_before_next_byte(void)
     script_reset();
     prepare_live(&session, &framebuffer, pixels);
     append_input(stream, sizeof(stream));
-
-    /*
-     * REQUEST becomes visible only after Bell's one-byte complete message has
-     * been consumed. The following unsupported message byte must remain unread
-     * when quiesce completes at that proven boundary.
-     */
     quiesce_after_input_pos = 1;
 
     CHECK(
@@ -442,7 +448,6 @@ int main(void)
     test_color_map_truncation();
     test_unsupported_message_invalidates();
     test_bell_then_empty_update_preserves_authority();
-
     test_try_receive_idle_preserves_authority();
     test_try_receive_empty_update_completes();
     test_try_receive_bell_then_idle_yields_at_boundary();
