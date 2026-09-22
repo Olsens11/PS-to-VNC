@@ -58,5 +58,29 @@ service auto-attachment.
 provider authority. R13 does not alter the PS2 `src/` peer contract and makes
 no live Pi or physical PS2/Pi qualification claim.
 
+## R14 shared RFB runtime profile projection
+
+A003 R14 adds configuration authority without changing R13 lifecycle mechanics.
+`src/config/rfb_runtime_profile.json` is the single selected numeric RFB
+profile. `scripts/generate-rfb-runtime-profile.py` deterministically projects
+that record into checked-in C and Python constants and `--check` fails when a
+projection is stale.
+
+On the Pi, `rfb_runtime_profile.py` maps semantic ON onto exactly one
+`RfbFlowConfig`. Both `provider_read_credit_limit` and
+`provider_write_capacity` derive from the same canonical 32768-byte window;
+`max_data_payload` derives from the same canonical profile. Semantic OFF
+returns no flow configuration rather than a zero-valued running attachment.
+
+The selected values preserve CP2N's hardware-qualified historical RFB-only
+baseline and CP2J's recorded starting-profile values. Equality of the new R13
+provider-write capacity to that 32768-byte window does **not** independently
+hardware-qualify the Pi provider-write direction. R14 is configuration/source
+authority only.
+
+The default Wire daemon remains establishment-only: it imports neither the R14
+projection nor an attachment factory. Application activation remains a later
+dependency.
+
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
-`A003-PI-RFB-ATTACHMENT-QUIESCE-R13`.
+`A003-RFB-SHARED-RUNTIME-PROFILE-R14`.

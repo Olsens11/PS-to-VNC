@@ -91,6 +91,32 @@ and local-file topology checks as `src/`. Its runtime installation definitions
 remain under `systemd/pi/`, while the installed product Python bytes live under
 `/usr/lib/ps-to-vnc`.
 
+
+### R14 shared RFB profile authority
+
+The current selected RFB tuning authority is the machine-readable
+`src/config/rfb_runtime_profile.json`. It owns only semantic RFB ON/OFF plus
+the evidence-selected RFB window, credit, receiver-thread, and payload values.
+It owns no Wire Session ID and does not widen the production CONFIG payload.
+
+`scripts/generate-rfb-runtime-profile.py` is the deterministic projection
+tool. Its checked-in generated artifacts are
+`src/config/rfb_runtime_profile_generated.h` and
+`pi/rfb_runtime_profile_generated.py`; canonical project checks run the
+tool's `--check` mode so a source change cannot silently leave either owner
+projection stale.
+
+The hand-written owner seams remain narrow:
+
+- `src/config/rfb_runtime_profile.{c,h}` projects semantic ON into the existing
+  `pstvnc_transport_session_config_t` and treats OFF as no active Transport
+  projection;
+- `pi/rfb_runtime_profile.py` projects semantic ON into R13's existing
+  `RfbFlowConfig` and treats OFF as no attachment flow projection.
+
+No selected numeric tuning literal is independently maintained in either
+hand-written projection.
+
 ## Retained pre-refresh source
 
 `src/video/` currently contains retained pre-refresh source. Its physical

@@ -133,6 +133,10 @@ head `b40f422a760a0b7b6f2ab41699c5e72fda83bb83`.
 | Maintained Pi product runtime source | `pi/` |
 | Product Wire server | `pi/wire_server.py`, `pi/wire_protocol.py` |
 | Product RFB Relay / session attachment | `pi/rfb_relay.py`, `pi/rfb_attachment.py` |
+| Canonical selected RFB runtime profile | `src/config/rfb_runtime_profile.json` |
+| Deterministic RFB profile generator / drift check | `scripts/generate-rfb-runtime-profile.py` |
+| PS2 RFB profile projection | `src/config/rfb_runtime_profile.{c,h}`, generated `src/config/rfb_runtime_profile_generated.h` |
+| Pi RFB profile projection | `pi/rfb_runtime_profile.py`, generated `pi/rfb_runtime_profile_generated.py` |
 | Product Wire systemd unit candidate | `systemd/pi/ps-to-vnc-wire.service` |
 | Product Wire inactive stager/verifier | `scripts/pi/install-wire-runtime.sh` |
 | Clean Pi provisioning | `docs/pi/PROVISIONING.md`, `scripts/pi/` |
@@ -158,6 +162,15 @@ claim. A003 R13 now supplies the session-scoped, first-CREDIT-lazy attachment
 mechanism to that internal endpoint while preserving the default installed Wire
 service as establishment-only. R13 adds no live Pi activation or physical
 qualification claim.
+
+A003 R14 places the one current selected RFB value authority in
+`src/config/rfb_runtime_profile.json`. Generated C/Python constants are strict
+projections, while the hand-written PS2 and Pi seams project into the existing
+Transport and R13 flow types. Semantic OFF is an absent composition, not a
+zero-filled running configuration. Neither default Wire service nor
+`pstvnc_app_run()` consumes this profile yet. The CP2N baseline provenance is
+preserved; the new Pi provider-write-capacity projection remains hardware
+pending.
 
 The tracked NetworkManager no-carrier candidate under `config/pi/` is preserved
 as rejected Issue #5 evidence and is not part of the selected installed

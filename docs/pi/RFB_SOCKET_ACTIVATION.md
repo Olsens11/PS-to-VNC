@@ -82,6 +82,28 @@ selected internal provider endpoint.
 R12 does not attach the R10 Relay, reload systemd, activate either endpoint or
 claim fresh live/hardware qualification.
 
+
+## A003 R14 shared-profile projection reconciliation
+
+R14 does not change provider lifecycle. It adds one Configuration-owned selected
+RFB profile at `src/config/rfb_runtime_profile.json` and deterministic
+owner-specific projections.
+
+The selected semantic mode is RFB ON. Its current values are the CP2N/CP2J
+RFB-only baseline values: one 32768-byte RFB window, 8192-byte credit batch,
+flush-on-empty enabled, credit return enabled, receiver priority 63, receiver
+stack 16384 bytes, and maximum DATA payload 8192 bytes.
+
+The Pi projection maps the one 32768-byte window to both R13
+`provider_read_credit_limit` and `provider_write_capacity`, with the
+8192-byte maximum DATA payload. The second use is a bounded source projection,
+not a claim that CP2N separately hardware-qualified R13's provider-write queue.
+
+Semantic OFF produces no active Pi flow projection and no active PS2 Transport
+projection. R14 does not create `RfbAttachment`, open the loopback provider,
+start this systemd endpoint, add a second session identity, alter Wire/Q4, or
+activate RFB from either default runtime.
+
 ## A003 R11 provider-authority reconciliation
 
 The generic endpoint lifecycle qualified during Issue #5 remains authoritative:
