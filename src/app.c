@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 
+#include "config/rfb_runtime_profile.h"
 #include "diagnostics.h"
 #include "display.h"
 #include "framebuffer.h"
@@ -871,10 +872,10 @@ fail:
 
 int pstvnc_app_run(void)
 {
-    /*
-     * No validated concrete all-guns Transport configuration owner exists in
-     * current repository authority. Keep process entry fail-closed until that
-     * owner is reconstructed instead of guessing numeric defaults here.
-     */
-    return pstvnc_app_run_with_transport_config(NULL);
+    pstvnc_transport_session_config_t transport_config;
+
+    if (!pstvnc_config_rfb_runtime_profile_selected(&transport_config))
+        return -1;
+
+    return pstvnc_app_run_with_transport_config(&transport_config);
 }
