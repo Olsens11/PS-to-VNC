@@ -2,7 +2,8 @@
  * File synopsis:
  * Host-tests RFB's cross-component byte-stream bridge by replacing Transport's
  * public bridge operations with deterministic stubs. The test verifies exact
- * I/O result mapping and the finite-session quiesce ordering owned by this seam.
+ * I/O result mapping, typed RFB-provider failure mapping, and the finite-session
+ * quiesce ordering owned by this seam.
  *
  * This fixture does not exercise physical sockets, Transport lifecycle, RFB
  * parsing, or choose the complete-message safe boundary.
@@ -21,6 +22,10 @@ static pstvnc_transport_access_t test_access;
 static pstvnc_transport_result_t read_result = PSTVNC_TRANSPORT_OK;
 static pstvnc_transport_result_t poll_result = PSTVNC_TRANSPORT_OK;
 static pstvnc_transport_result_t write_result = PSTVNC_TRANSPORT_OK;
+static pstvnc_transport_result_t provider_failure_result =
+    PSTVNC_TRANSPORT_WOULD_BLOCK;
+static pstvnc_rfb_provider_failure_reason_t provider_failure_reason =
+    PSTVNC_RFB_PROVIDER_FAILURE_NONE;
 static pstvnc_transport_result_t request_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
 static pstvnc_transport_result_t boundary_result = PSTVNC_TRANSPORT_OK;
 static pstvnc_transport_result_t commit_result = PSTVNC_TRANSPORT_OK;
@@ -85,6 +90,17 @@ pstvnc_transport_result_t pstvnc_transport_rfb_write_exact(
     observed_write_buffer = buffer;
     observed_write_count = count;
     return write_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_rfb_provider_failure(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_rfb_provider_failure_reason_t *reason)
+{
+    CHECK(transport_access == &test_access);
+    if (reason == NULL)
+        return PSTVNC_TRANSPORT_INVALID;
+    *reason = provider_failure_reason;
+    return provider_failure_result;
 }
 
 pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(
@@ -164,6 +180,33 @@ static void test_exact_io_mapping(void)
     CHECK(pstvnc_rfb_bridge_write_exact(&test_access, bytes, sizeof(bytes)) == -1);
 }
 
+static void test_provider_failure_mapping(void)
+{
+    pstvnc_rfb_provider_failure_reason_t reason =
+        PSTVNC_RFB_PROVIDER_FAILURE_NONE;
+
+    provider_failure_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
+    provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_NONE;
+    CHECK(pstvnc_rfb_bridge_provider_failure(&test_access, &reason) == 0);
+    CHECK(reason == PSTVNC_RFB_PROVIDER_FAILURE_NONE);
+
+    provider_failure_result = PSTVNC_TRANSPORT_OK;
+    provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_CONNECT;
+    CHECK(pstvnc_rfb_bridge_provider_failure(&test_access, &reason) == 1);
+    CHECK(reason == PSTVNC_RFB_PROVIDER_FAILURE_CONNECT);
+
+    provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_READ;
+    CHECK(pstvnc_rfb_bridge_provider_failure(&test_access, &reason) == 1);
+    CHECK(reason == PSTVNC_RFB_PROVIDER_FAILURE_READ);
+
+    provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_WRITE;
+    CHECK(pstvnc_rfb_bridge_provider_failure(&test_access, &reason) == 1);
+    CHECK(reason == PSTVNC_RFB_PROVIDER_FAILURE_WRITE);
+
+    provider_failure_result = PSTVNC_TRANSPORT_FAILED;
+    CHECK(pstvnc_rfb_bridge_provider_failure(&test_access, &reason) == -1);
+}
+
 static void test_readiness_mapping(void)
 {
     poll_result = PSTVNC_TRANSPORT_OK;
@@ -222,6 +265,7 @@ static void test_quiesce_mapping_and_order(void)
 int main(void)
 {
     test_exact_io_mapping();
+    test_provider_failure_mapping();
     test_readiness_mapping();
     test_quiesce_mapping_and_order();
 
