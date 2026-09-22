@@ -431,6 +431,100 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
             if worker.is_alive():
                 worker.join(timeout=1.0)
 
+    def test_quiesce_request_wakes_idle_wire_without_peer_or_provider_traffic(
+        self,
+    ) -> None:
+        raw, provider_peer = socket.socketpair()
+        controlled = ControlledConnectSocket(raw, connect_result=0)
+        item = attachment.RfbAttachment(
+            flow(),
+            socket_factory=ProviderSocketFactory([controlled]),
+        )
+        wire_server = server.WireServer(
+            session_ids=server.SessionIdAllocator(139),
+            rfb_attachment_factory=lambda: item,
+        )
+        peer, worker, outcomes = start_active_session(wire_server)
+        try:
+            # First CREDIT is only the ordinary lazy-start edge. Once the
+            # initial reverse-capacity grant is consumed, both Wire and provider
+            # sides are otherwise idle before REQUEST is published.
+            peer.sendall(protocol.encode_rfb_credit_frame(4, sequence=2))
+            initial_header, _initial_payload = recv_frame(peer)
+            self.assertTrue(protocol.is_rfb_credit_header(initial_header))
+            self.assertEqual(
+                item.state,
+                attachment.RfbAttachmentState.RUNNING,
+            )
+
+            request_results: list[bool] = []
+            requester = threading.Thread(
+                target=lambda: request_results.append(item.request_quiesce())
+            )
+            requester.start()
+            requester.join(timeout=1.0)
+            self.assertFalse(requester.is_alive())
+            self.assertEqual(request_results, [True])
+
+            # No peer CREDIT, provider bytes, endpoint close, or timeout poll is
+            # used to wake the sole Wire owner. The local socketpair edge must
+            # make exactly one REQUEST immediately observable.
+            peer.settimeout(1.0)
+            request_header, request_payload = recv_frame(peer)
+            self.assertTrue(protocol.is_rfb_data_header(request_header))
+            self.assertEqual(request_header.sequence, 3)
+            self.assertEqual(request_payload, b"")
+            self.assertEqual(
+                item.state,
+                attachment.RfbAttachmentState.WAIT_BOUNDARY,
+            )
+            self.assertEqual(item.stats.request_markers_sent, 1)
+            self.assertFalse(controlled.closed)
+
+            peer.settimeout(0.05)
+            with self.assertRaises(TimeoutError):
+                peer.recv(1)
+            peer.settimeout(None)
+
+            provider_peer.settimeout(0.05)
+            with self.assertRaises(TimeoutError):
+                provider_peer.recv(1)
+            provider_peer.settimeout(None)
+
+            # Finish the exact lifecycle only after the independent REQUEST wake
+            # has already been proved.
+            peer.sendall(protocol.encode_rfb_data_frame(b"", sequence=3))
+            commit_header, commit_payload = recv_frame(peer)
+            self.assertTrue(protocol.is_rfb_data_header(commit_header))
+            self.assertEqual(commit_header.sequence, 4)
+            self.assertEqual(commit_payload, b"")
+            self.assertTrue(controlled.closed)
+            self.assertTrue(item.relay.closed)
+            self.assertEqual(
+                item.state,
+                attachment.RfbAttachmentState.WAIT_COMPLETE,
+            )
+
+            peer.sendall(protocol.encode_rfb_data_frame(b"", sequence=4))
+            wait_for(
+                lambda: item.state
+                is attachment.RfbAttachmentState.STOPPED,
+                "idle wake COMPLETE stopped state",
+            )
+            self.assertIsNone(item.quiesce_wake_reader)
+            self.assertTrue(worker.is_alive())
+
+            outcome = finish_wire(peer, worker, outcomes)
+            self.assertTrue(outcome.accepted)
+            self.assertFalse(outcome.protocol_failed)
+        finally:
+            try:
+                provider_peer.close()
+            except OSError:
+                pass
+            if worker.is_alive():
+                worker.join(timeout=1.0)
+
     def test_request_boundary_drains_and_retires_before_commit_complete(
         self,
     ) -> None:
@@ -472,7 +566,6 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
             self.assertEqual(provider_header.sequence, 3)
 
             self.assertTrue(item.request_quiesce())
-            peer.sendall(protocol.encode_rfb_credit_frame(1, sequence=4))
             request_header, request_payload = recv_frame(peer)
             self.assertTrue(protocol.is_rfb_data_header(request_header))
             self.assertEqual(request_header.sequence, 4)
@@ -482,7 +575,7 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
                 attachment.RfbAttachmentState.WAIT_BOUNDARY,
             )
 
-            peer.sendall(protocol.encode_rfb_data_frame(b"", sequence=5))
+            peer.sendall(protocol.encode_rfb_data_frame(b"", sequence=4))
             wait_for(
                 lambda: item.state
                 is attachment.RfbAttachmentState.DRAINING,
@@ -526,7 +619,7 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
                 peer.recv(1)
             peer.settimeout(None)
 
-            peer.sendall(protocol.encode_rfb_data_frame(b"", sequence=6))
+            peer.sendall(protocol.encode_rfb_data_frame(b"", sequence=5))
             wait_for(
                 lambda: item.state
                 is attachment.RfbAttachmentState.STOPPED,
@@ -607,12 +700,11 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
             )
 
             self.assertTrue(item.request_quiesce())
-            peer.sendall(protocol.encode_rfb_credit_frame(1, sequence=4))
             request_header, request_payload = recv_frame(peer)
             self.assertEqual(request_payload, b"")
             self.assertTrue(protocol.is_rfb_data_header(request_header))
 
-            peer.sendall(protocol.encode_rfb_data_frame(b"", sequence=5))
+            peer.sendall(protocol.encode_rfb_data_frame(b"", sequence=4))
             wait_for(
                 lambda: item.state
                 is attachment.RfbAttachmentState.DRAINING,
@@ -677,6 +769,10 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
         )
 
         peer_a, worker_a, outcomes_a = start_active_session(wire_server)
+        wake_a = attachments[0].quiesce_wake_reader
+        self.assertIsNotNone(wake_a)
+        self.assertGreaterEqual(wake_a.fileno(), 0)
+
         peer_a.sendall(protocol.encode_rfb_credit_frame(4, sequence=2))
         recv_frame(peer_a)
         outcome_a = finish_wire(peer_a, worker_a, outcomes_a)
@@ -687,6 +783,8 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
             attachments[0].state,
             attachment.RfbAttachmentState.STOPPED,
         )
+        self.assertIsNone(attachments[0].quiesce_wake_reader)
+        self.assertEqual(wake_a.fileno(), -1)
 
         peer_b, worker_b, outcomes_b = start_active_session(wire_server)
         try:
@@ -698,6 +796,10 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
             )
             self.assertIsNone(attachments[1].relay)
             self.assertEqual(provider_factory.calls, 1)
+            wake_b = attachments[1].quiesce_wake_reader
+            self.assertIsNotNone(wake_b)
+            self.assertIsNot(wake_b, wake_a)
+            self.assertGreaterEqual(wake_b.fileno(), 0)
 
             peer_b.sendall(protocol.encode_rfb_credit_frame(4, sequence=2))
             recv_frame(peer_b)
@@ -744,6 +846,29 @@ class RfbAttachmentRepositoryBoundaryTests(unittest.TestCase):
         self.assertNotIn("provider_read_credit_limit", unit)
         self.assertNotIn("provider_write_capacity", unit)
         self.assertNotIn("max_data_payload", unit)
+
+    def test_quiesce_wake_has_no_second_wire_sender_or_timeout_polling(
+        self,
+    ) -> None:
+        attachment_source = (
+            REPO_ROOT / "pi/rfb_attachment.py"
+        ).read_text(encoding="utf-8")
+        wire_server = (
+            REPO_ROOT / "pi/wire_server.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("socket.socketpair()", attachment_source)
+        self.assertIn("writer.send(b\"Q\")", attachment_source)
+        self.assertNotIn("sendall(", attachment_source)
+        self.assertNotIn("next_send_sequence", attachment_source)
+        self.assertNotIn("encode_channel_frame", attachment_source)
+
+        self.assertIn("quiesce_wake = attachment.quiesce_wake_reader", wire_server)
+        self.assertIn("read_wait.append(quiesce_wake)", wire_server)
+        self.assertIn("attachment.acknowledge_quiesce_wake()", wire_server)
+        self.assertIn("self._flush_rfb_attachment_output()", wire_server)
+        self.assertNotIn("time.sleep(", wire_server)
+        self.assertNotIn("select.select(read_wait, write_wait, exception_wait,", wire_server)
 
     def test_wire_runtime_stager_tracks_attachment_without_live_mutation(
         self,
