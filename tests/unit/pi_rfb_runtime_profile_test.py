@@ -9,6 +9,24 @@ import unittest
 import pi_rfb_runtime_profile_test_legacy as legacy
 
 
+def test_r15_default_runtime_activation_uses_composition(self) -> None:
+    service = (
+        legacy.ROOT / "systemd/pi/ps-to-vnc-wire.service"
+    ).read_text(encoding="utf-8")
+    runtime = (legacy.ROOT / "pi/wire_runtime.py").read_text(encoding="utf-8")
+    wire_server = (legacy.ROOT / "pi/wire_server.py").read_text(encoding="utf-8")
+    app = (legacy.ROOT / "src/app.c").read_text(encoding="utf-8")
+
+    self.assertIn("/usr/lib/ps-to-vnc/wire_runtime.py", service)
+    self.assertIn("selected_rfb_flow_config()", runtime)
+    self.assertNotIn("rfb_runtime_profile", wire_server)
+    self.assertIn("pstvnc_config_rfb_runtime_profile_selected", app)
+    self.assertNotIn("return pstvnc_app_run_with_transport_config(NULL);", app)
+    for literal in ("32768", "8192", "16384", "5903"):
+        self.assertNotIn(literal, service)
+        self.assertNotIn(literal, runtime)
+
+
 def test_selected_default_is_lazy_and_fresh_for_each_wire_session(self) -> None:
     endpoints: list[tuple[str, int]] = []
     provider_peers: list[legacy.socket.socket] = []
@@ -122,6 +140,9 @@ def test_selected_default_is_lazy_and_fresh_for_each_wire_session(self) -> None:
                 pass
 
 
+legacy.CanonicalRfbRuntimeProfileTests.test_default_runtime_activation_remains_absent = (
+    test_r15_default_runtime_activation_uses_composition
+)
 legacy.R15ProductCompositionTests.test_selected_default_is_lazy_and_fresh_for_each_wire_session = (
     test_selected_default_is_lazy_and_fresh_for_each_wire_session
 )
