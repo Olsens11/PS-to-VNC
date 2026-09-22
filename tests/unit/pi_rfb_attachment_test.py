@@ -26,6 +26,16 @@ def assert_provider_failure_frame(
     )
 
 
+def wait_for_provider_failure_report_confirmation(item, label: str) -> None:
+    # sendall() completion and the immediately-following attachment-local report
+    # confirmation can land on adjacent host scheduling slices. The peer already
+    # receiving ERROR proves serialization; wait only for that local state edge.
+    legacy.wait_for(
+        lambda: not item.wants_provider_failure_report,
+        f"{label} report confirmation",
+    )
+
+
 def test_connect_failure_and_provider_eof_report_typed_fact_without_wire_failure(
     self,
 ) -> None:
@@ -59,7 +69,10 @@ def test_connect_failure_and_provider_eof_report_typed_fact_without_wire_failure
             failed_attachment.provider_failure,
             legacy.attachment.RfbProviderFailure.CONNECT,
         )
-        self.assertFalse(failed_attachment.wants_provider_failure_report)
+        wait_for_provider_failure_report_confirmation(
+            failed_attachment,
+            "connect failure",
+        )
         self.assertEqual(failed_attachment.stats.connect_failures, 1)
         self.assertTrue(worker.is_alive())
 
@@ -102,7 +115,10 @@ def test_connect_failure_and_provider_eof_report_typed_fact_without_wire_failure
             eof_attachment.provider_failure,
             legacy.attachment.RfbProviderFailure.READ,
         )
-        self.assertFalse(eof_attachment.wants_provider_failure_report)
+        wait_for_provider_failure_report_confirmation(
+            eof_attachment,
+            "provider EOF",
+        )
         self.assertTrue(worker.is_alive())
 
         # Late old-session channel-1 authority is contained by the dead
@@ -226,7 +242,10 @@ def test_out_of_order_marker_and_provider_write_failure_stay_rfb_local(
             item.provider_failure,
             legacy.attachment.RfbProviderFailure.WRITE,
         )
-        self.assertFalse(item.wants_provider_failure_report)
+        wait_for_provider_failure_report_confirmation(
+            item,
+            "provider write",
+        )
         self.assertEqual(item.stats.commit_markers_sent, 0)
         self.assertTrue(worker.is_alive())
 
