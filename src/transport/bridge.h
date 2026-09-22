@@ -2,10 +2,10 @@
  * File synopsis:
  * Defines Transport's single cross-component bridge. The bridge exposes the
  * product Wire establishment/availability, application-requested rider-runtime
- * lifecycle, logical RFB byte-stream/quiesce processes, optional logical
- * AUDIO/MPEG2 consumer seams, and exact MPEG generation-control relay operations
- * while keeping the physical PSTV descriptor, Pi session identity, and sole
- * physical-I/O runtime private to Transport.
+ * lifecycle, logical RFB byte-stream/quiesce/provider-terminal processes,
+ * optional logical AUDIO/MPEG2 consumer seams, and exact MPEG generation-
+ * control relay operations while keeping the physical PSTV descriptor, Pi
+ * session identity, and sole physical-I/O runtime private to Transport.
  *
  * The bridge does not parse RFB, invent configuration defaults, play PCM,
  * decode MPEG, decide media timing/presentation/generation policy, or perform
@@ -95,6 +95,15 @@ pstvnc_transport_result_t pstvnc_transport_rfb_write_exact(
     const pstvnc_transport_access_t *transport_access,
     const void *buffer,
     size_t count);
+/*
+ * Query the first typed provider-terminal fact for this exact access ticket.
+ * OK means reason is CONNECT/READ/WRITE. WOULD_BLOCK means the RFB provider is
+ * still nonterminal while the Wire runtime is live. FAILED/CLOSED/STOPPED are
+ * genuine Transport/Wire outcomes when no provider cause was latched first.
+ */
+pstvnc_transport_result_t pstvnc_transport_rfb_provider_failure(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_rfb_provider_failure_reason_t *reason);
 
 pstvnc_transport_result_t pstvnc_transport_audio_read_available(
     const pstvnc_transport_access_t *transport_access,
