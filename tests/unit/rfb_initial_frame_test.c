@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "rfb_session.h"
+#include "transport/protocol.h"
 
 static int failures = 0;
 
@@ -76,6 +77,17 @@ int pstvnc_rfb_bridge_write_exact(
     (void)transport_access;
     (void)buffer;
     (void)count;
+    return 0;
+}
+
+int pstvnc_rfb_bridge_provider_failure(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_rfb_provider_failure_reason_t *reason)
+{
+    (void)transport_access;
+    if (reason == NULL)
+        return -1;
+    *reason = PSTVNC_RFB_PROVIDER_FAILURE_NONE;
     return 0;
 }
 
