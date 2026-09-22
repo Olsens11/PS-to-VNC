@@ -8,7 +8,8 @@
  * Wire ACTIVE is deliberately independent from rider readiness. One established
  * physical lineage may remain idle at sequence 2/2 until a rider runtime is
  * explicitly opened; only then is the lineage transferred to the sole I/O
- * thread.
+ * thread. R16A exposes one ticket-scoped typed RFB provider-terminal fact while
+ * preserving physical Wire health as a separate Transport fact.
  * RFB safe-boundary choice, PCM playback, MPEG decoding, media-clock use,
  * exact-generation orchestration, and presentation remain outside this bridge.
  *
@@ -410,11 +411,10 @@ pstvnc_transport_result_t pstvnc_transport_rfb_poll_receive(
 {
     pstvnc_transport_result_t access_result =
         pstvnc_transport_bridge_access_result(transport_access);
+    int result;
 
     if (access_result != PSTVNC_TRANSPORT_OK)
         return access_result;
-
-    int result;
 
     result = pstvnc_transport_runtime_rfb_poll_receive(
         &pstvnc_transport_bridge_runtime);
@@ -445,6 +445,30 @@ pstvnc_transport_result_t pstvnc_transport_rfb_write_exact(
         return PSTVNC_TRANSPORT_OK;
 
     return pstvnc_transport_bridge_terminal_result();
+}
+
+pstvnc_transport_result_t pstvnc_transport_rfb_provider_failure(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_rfb_provider_failure_reason_t *reason)
+{
+    if (transport_access == NULL || reason == NULL ||
+        transport_access->opaque_ticket == 0u)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    /*
+     * Validate session lineage before looking at the latched cause, but do not
+     * call bridge_access_result(): a provider cause that arrived first remains
+     * queryable even if physical Wire later becomes terminal. A stale ticket is
+     * still fenced from every replacement runtime.
+     */
+    if (!pstvnc_transport_bridge_runtime_active ||
+        transport_access->opaque_ticket !=
+            pstvnc_transport_bridge_active_ticket)
+        return PSTVNC_TRANSPORT_CLOSED;
+
+    return pstvnc_transport_runtime_rfb_provider_failure(
+        &pstvnc_transport_bridge_runtime,
+        reason);
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_read_available(
@@ -669,11 +693,10 @@ pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(
 {
     pstvnc_transport_result_t access_result =
         pstvnc_transport_bridge_access_result(transport_access);
+    int requested;
 
     if (access_result != PSTVNC_TRANSPORT_OK)
         return access_result;
-
-    int requested;
 
     requested = pstvnc_transport_runtime_rfb_quiesce_requested(
         &pstvnc_transport_bridge_runtime);
