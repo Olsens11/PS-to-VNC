@@ -12,7 +12,8 @@ RfbFlowConfig; this module intentionally defines no product tuning defaults.
 After provider connection succeeds, ownership of that socket transfers exactly
 once into RfbRelay. The Wire connection owner remains the only PS2-facing
 recv/send and global sequence owner. This object owns only provider attachment
-state, RFB-local failure containment, and the ordered zero-marker lifecycle:
+state, first-specific provider failure containment/report readiness, and the
+ordered zero-marker lifecycle:
 
     REQUEST -> BOUNDARY -> COMMIT -> COMPLETE
 
@@ -20,8 +21,7 @@ At BOUNDARY new provider reads stop immediately. Already accepted
 PS2-to-provider bytes must drain before the provider is closed and COMMIT becomes
 sendable. COMPLETE stops only this RFB attachment; it does not end Wire.
 
-Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
-A003-PI-RFB-ATTACHMENT-QUIESCE-R13.
+Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
 """
 
 from __future__ import annotations
@@ -59,6 +59,14 @@ class RfbAttachmentState(Enum):
     WAIT_COMPLETE = "WAIT_COMPLETE"
     STOPPED = "STOPPED"
     FAILED = "FAILED"
+
+
+class RfbProviderFailure(Enum):
+    """First terminal provider mechanism cause retained for R16A reporting."""
+
+    CONNECT = protocol.RFB_PROVIDER_FAILURE_CONNECT
+    READ = protocol.RFB_PROVIDER_FAILURE_READ
+    WRITE = protocol.RFB_PROVIDER_FAILURE_WRITE
 
 
 @dataclass(frozen=True)
@@ -139,6 +147,8 @@ class RfbAttachment:
         self._pending_provider_read_credit = 0
         self._pending_initial_ps2_credit = 0
         self._closed = False
+        self.provider_failure: RfbProviderFailure | None = None
+        self._provider_failure_reported = False
 
         # request_quiesce() is the one intentional cross-thread seam. The
         # caller publishes RFB-local intent only; this private socketpair wakes
@@ -241,8 +251,33 @@ class RfbAttachment:
         return self.state is RfbAttachmentState.COMMIT_PENDING
 
     @property
+    def wants_provider_failure_report(self) -> bool:
+        """Expose one pending typed provider-terminal fact to the Wire owner."""
+
+        return (
+            self.state is RfbAttachmentState.FAILED
+            and self.provider_failure is not None
+            and not self._provider_failure_reported
+        )
+
+    @property
     def fully_stopped(self) -> bool:
         return self.state is RfbAttachmentState.STOPPED
+
+    def confirm_provider_failure_reported(
+        self,
+        reason: RfbProviderFailure,
+    ) -> bool:
+        """Confirm Wire serialization without clearing the latched local cause."""
+
+        if (
+            self.state is not RfbAttachmentState.FAILED
+            or self.provider_failure is not reason
+            or self._provider_failure_reported
+        ):
+            return False
+        self._provider_failure_reported = True
+        return True
 
     def _close_connecting_socket(self) -> None:
         provider = self._connecting_socket
@@ -271,10 +306,20 @@ class RfbAttachment:
                 except OSError:
                     pass
 
-    def _fail_local(self, *, connect_failure: bool = False) -> None:
+    def _fail_local(
+        self,
+        *,
+        connect_failure: bool = False,
+        provider_failure: RfbProviderFailure | None = None,
+    ) -> None:
         """Terminalize only this attachment and retire all provider I/O."""
 
         with self._quiesce_lock:
+            # The first specific provider cause is immutable. Reporting it later
+            # never erases the local terminal fact.
+            if provider_failure is not None and self.provider_failure is None:
+                self.provider_failure = provider_failure
+
             if self.state is RfbAttachmentState.FAILED:
                 return
 
@@ -314,7 +359,10 @@ class RfbAttachment:
                     provider.close()
                 except OSError:
                     pass
-            self._fail_local(connect_failure=True)
+            self._fail_local(
+                connect_failure=True,
+                provider_failure=RfbProviderFailure.CONNECT,
+            )
             return
 
         if result in (0, errno.EISCONN):
@@ -330,7 +378,10 @@ class RfbAttachment:
             provider.close()
         except OSError:
             pass
-        self._fail_local(connect_failure=True)
+        self._fail_local(
+            connect_failure=True,
+            provider_failure=RfbProviderFailure.CONNECT,
+        )
 
     def _compose_relay(self, provider: socket.socket) -> None:
         """Transfer a connected socket into exactly one configured R10 Relay."""
@@ -360,7 +411,10 @@ class RfbAttachment:
                 provider.close()
             except OSError:
                 pass
-            self._fail_local(connect_failure=True)
+            self._fail_local(
+                connect_failure=True,
+                provider_failure=RfbProviderFailure.CONNECT,
+            )
             return
 
         self._connecting_socket = None
@@ -426,19 +480,28 @@ class RfbAttachment:
 
         provider = self._connecting_socket
         if provider is None:
-            self._fail_local(connect_failure=True)
+            self._fail_local(
+                connect_failure=True,
+                provider_failure=RfbProviderFailure.CONNECT,
+            )
             return False
 
         try:
             error = provider.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
         except OSError:
-            self._fail_local(connect_failure=True)
+            self._fail_local(
+                connect_failure=True,
+                provider_failure=RfbProviderFailure.CONNECT,
+            )
             return False
 
         if error in _PENDING_CONNECT_ERRORS:
             return False
         if error not in (0, errno.EISCONN):
-            self._fail_local(connect_failure=True)
+            self._fail_local(
+                connect_failure=True,
+                provider_failure=RfbProviderFailure.CONNECT,
+            )
             return False
 
         self._compose_relay(provider)
@@ -499,7 +562,7 @@ class RfbAttachment:
 
         payload = self.relay.read_provider_ready()
         if self.relay.terminal:
-            self._fail_local()
+            self._fail_local(provider_failure=RfbProviderFailure.READ)
             return None
         return payload
 
@@ -511,7 +574,7 @@ class RfbAttachment:
 
         drained = self.relay.drain_provider_write_ready()
         if self.relay.terminal:
-            self._fail_local()
+            self._fail_local(provider_failure=RfbProviderFailure.WRITE)
             return 0
 
         if self.state is RfbAttachmentState.DRAINING:
