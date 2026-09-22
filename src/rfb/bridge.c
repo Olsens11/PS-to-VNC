@@ -1,8 +1,8 @@
 /*
  * File synopsis:
  * Implements RFB's logical byte-stream bridge over one opaque Transport access
- * ticket. RFB keeps exact I/O and quiesce vocabulary while Transport alone owns
- * Wire-session validity and stale-ticket rejection.
+ * ticket. RFB keeps exact I/O, typed provider-terminal and quiesce vocabulary
+ * while Transport alone owns Wire-session validity and stale-ticket rejection.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md;
  * docs/development/module-lifecycle.md.
@@ -46,6 +46,20 @@ int pstvnc_rfb_bridge_write_exact(
 {
     return pstvnc_transport_rfb_write_exact(
         transport_access, buffer, count) == PSTVNC_TRANSPORT_OK ? 0 : -1;
+}
+
+int pstvnc_rfb_bridge_provider_failure(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_rfb_provider_failure_reason_t *reason)
+{
+    pstvnc_transport_result_t result =
+        pstvnc_transport_rfb_provider_failure(transport_access, reason);
+
+    if (result == PSTVNC_TRANSPORT_OK)
+        return 1;
+    if (result == PSTVNC_TRANSPORT_WOULD_BLOCK)
+        return 0;
+    return -1;
 }
 
 int pstvnc_rfb_bridge_quiesce_requested(
