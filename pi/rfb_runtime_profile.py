@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Project the canonical current RFB profile onto the Pi R13 flow type.
-
+"""File synopsis:\nProjects the canonical current RFB profile onto the Pi R13 flow type.\n
 Selected numeric values are generated from src/config/rfb_runtime_profile.json.
 This module only constructs an RfbFlowConfig value when semantic RFB is ON. OFF
 returns no projection, so it cannot silently create an active attachment from a
