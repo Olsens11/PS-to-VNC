@@ -113,6 +113,7 @@ index after every shift.
 - `docs/ledge/LEDGE_RECONSTRUCTION_CONTRACT.md` — Reconstruction crew contract.
 - `docs/ledge/LEDGE_RECONSTRUCTION_LOG.md` — historical Reconstruction log.
 - `docs/ledge/LEDGE_RECONSTRUCTION_STATE.md` — Reconstruction state snapshot authority.
+- `docs/ledge/LEDGE_R16A_RFB_PROVIDER_FAILURE_CONTRACT.md` — R16A Reconstruction source contract for typed RFB-provider terminal reporting, its Q4 compatibility fence, ownership boundaries, and pending-Foreman-acceptance scope.
 - `docs/ledge/LEDGE_SEMANTIC_AUDIT.md` — ledge semantic-audit synthesis.
 - `docs/ledge/LEDGE_SIMPLIFICATION_REGISTER.md` — simplification disposition register.
 - `docs/ledge/LEDGE_VALIDATION_FINDINGS.md` — Validation finding register.
@@ -223,6 +224,7 @@ Development-system policy:
 - `docs/development/tooling.md`
 - `docs/development/lessons-learned.md`
 - `docs/development/module-lifecycle.md` — cross-Wire module lifecycle, complete-retirement, and Transport-owned communication-validity contract.
+- `docs/development/rfb-provider-failure.md` — R16A developer continuity for typed provider-terminal reporting, wait termination, Q4 compatibility, stale-state containment, and the no-recovery-policy boundary.
 - `docs/development/source-naming-and-symbols.md`
 - `docs/development/source-topology.md`
 - `docs/development/source-dictionary-validator.md`
