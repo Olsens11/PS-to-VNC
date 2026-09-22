@@ -16,6 +16,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run canonical host unit tests
         run: make -C tests unit
+      - name: Prove R16A PS2 RFB wait termination
+        run: |
+          cc -O2 -std=c99 -Wall -Wextra -Werror -pedantic \
+            -Isrc \
+            -Itests/unit/transport_host_stubs \
+            -pthread \
+            tests/unit/transport_rfb_provider_failure_test.c \
+            src/transport/runtime.c \
+            src/transport/quiesce.c \
+            src/transport/audio_channel.c \
+            src/transport/mpeg_channel.c \
+            src/transport/rfb_channel.c \
+            src/transport/protocol.c \
+            -o /tmp/transport_rfb_provider_failure_test
+          /tmp/transport_rfb_provider_failure_test
 
   project-check:
     runs-on: ubuntu-latest
