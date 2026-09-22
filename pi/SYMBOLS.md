@@ -452,3 +452,16 @@ in this directory.
 | project_rfb_flow_config | function | pi/rfb_runtime_profile.py | rfb_runtime_profile | file | Defines project_rfb_flow_config as a current clean-source function. | mechanically reconciled current clean source |
 | selected_rfb_flow_config | function | pi/rfb_runtime_profile.py | rfb_runtime_profile | file | Defines selected_rfb_flow_config as a current clean-source function. | mechanically reconciled current clean source |
 | mode | parameter | pi/rfb_runtime_profile.py | project_rfb_flow_config | local | Defines mode as a current clean-source parameter. | mechanically reconciled current clean source |
+| _make_attachment | function | pi/wire_runtime.py | wire_runtime | file | Defines _make_attachment as a current clean-source function. | mechanically reconciled current clean source |
+| build_product_wire_server | function | pi/wire_runtime.py | wire_runtime | file | Defines build_product_wire_server as a current clean-source function. | mechanically reconciled current clean source |
+| main | function | pi/wire_runtime.py | wire_runtime | file | Defines main as a current clean-source function. | mechanically reconciled current clean source |
+| selected_rfb_attachment_factory | function | pi/wire_runtime.py | wire_runtime | file | Defines selected_rfb_attachment_factory as a current clean-source function. | mechanically reconciled current clean source |
+| flow | parameter | pi/wire_runtime.py | _make_attachment | local | Defines flow as a current clean-source parameter. | mechanically reconciled current clean source |
+| listen_address | parameter | pi/wire_runtime.py | build_product_wire_server | local | Defines listen_address as a current clean-source parameter. | mechanically reconciled current clean source |
+| port | parameter | pi/wire_runtime.py | build_product_wire_server | local | Defines port as a current clean-source parameter. | mechanically reconciled current clean source |
+| attachment_factory | variable | pi/wire_runtime.py | build_product_wire_server | local | Defines attachment_factory as a current clean-source variable. | mechanically reconciled current clean source |
+| args | variable | pi/wire_runtime.py | main | local | Defines args as a current clean-source variable. | mechanically reconciled current clean source |
+| parser | variable | pi/wire_runtime.py | main | local | Defines parser as a current clean-source variable. | mechanically reconciled current clean source |
+| server | variable | pi/wire_runtime.py | main | local | Defines server as a current clean-source variable. | mechanically reconciled current clean source |
+| make_attachment | function | pi/wire_runtime.py | selected_rfb_attachment_factory | local | Defines make_attachment as a current clean-source function. | mechanically reconciled current clean source |
+| flow | variable | pi/wire_runtime.py | selected_rfb_attachment_factory | local | Defines flow as a current clean-source variable. | mechanically reconciled current clean source |

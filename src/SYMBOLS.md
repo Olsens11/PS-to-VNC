@@ -263,3 +263,4 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | presented_count | field | src/app_mpeg_frame.h | pstvnc_app_mpeg_frame_status | local | Defines presented_count as a current clean-source field. | mechanically reconciled current clean source |
 | run_generation | field | src/app_mpeg_frame.h | pstvnc_app_mpeg_frame_status | local | Defines run_generation as a current clean-source field. | mechanically reconciled current clean source |
 | scheduler_initialized | field | src/app_mpeg_frame.h | pstvnc_app_mpeg_frame_status | local | Defines scheduler_initialized as a current clean-source field. | mechanically reconciled current clean source |
+| transport_config | variable | src/app.c | pstvnc_app_run | local | Defines transport_config as a current clean-source variable. | mechanically reconciled current clean source |
