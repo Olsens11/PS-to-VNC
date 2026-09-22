@@ -36,6 +36,11 @@ static int physical_release_calls;
 static int read_result = 1;
 static int poll_result = 1;
 static int write_result = 1;
+static pstvnc_transport_result_t rfb_provider_failure_result =
+    PSTVNC_TRANSPORT_WOULD_BLOCK;
+static pstvnc_rfb_provider_failure_reason_t rfb_provider_failure_reason =
+    PSTVNC_RFB_PROVIDER_FAILURE_NONE;
+static int rfb_provider_failure_calls;
 static int rfb_read_calls;
 static int rfb_write_calls;
 static int audio_status_calls;
@@ -124,6 +129,9 @@ static void reset_fixture(void)
     read_result = 1;
     poll_result = 1;
     write_result = 1;
+    rfb_provider_failure_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
+    rfb_provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_NONE;
+    rfb_provider_failure_calls = 0;
     rfb_read_calls = 0;
     rfb_write_calls = 0;
     audio_status_calls = 0;
@@ -510,6 +518,18 @@ int pstvnc_transport_runtime_rfb_write_exact(
     return write_result;
 }
 
+pstvnc_transport_result_t pstvnc_transport_runtime_rfb_provider_failure(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_rfb_provider_failure_reason_t *reason)
+{
+    (void)runtime;
+    rfb_provider_failure_calls += 1;
+    if (reason == NULL)
+        return PSTVNC_TRANSPORT_INVALID;
+    *reason = rfb_provider_failure_reason;
+    return rfb_provider_failure_result;
+}
+
 pstvnc_transport_result_t pstvnc_transport_runtime_audio_read_available(
     pstvnc_transport_runtime_t *runtime,
     void *buffer,
@@ -823,6 +843,8 @@ static void test_fatal_abort_order_regression(void)
 static void test_rfb_result_mapping_regression(void)
 {
     pstvnc_transport_session_config_t config = make_config();
+    pstvnc_rfb_provider_failure_reason_t reason =
+        PSTVNC_RFB_PROVIDER_FAILURE_NONE;
     unsigned char byte = 0;
     int socket_fd = 31;
 
@@ -836,6 +858,20 @@ static void test_rfb_result_mapping_regression(void)
     CHECK(pstvnc_transport_rfb_read_exact(&current_access, &byte, 1u) == PSTVNC_TRANSPORT_OK);
     CHECK(pstvnc_transport_rfb_write_exact(&current_access, &byte, 1u) == PSTVNC_TRANSPORT_OK);
 
+    CHECK(pstvnc_transport_rfb_provider_failure(
+        &current_access, &reason) == PSTVNC_TRANSPORT_WOULD_BLOCK);
+    CHECK(reason == PSTVNC_RFB_PROVIDER_FAILURE_NONE);
+    CHECK(rfb_provider_failure_calls == 1);
+
+    rfb_provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_READ;
+    rfb_provider_failure_result = PSTVNC_TRANSPORT_OK;
+    CHECK(pstvnc_transport_rfb_provider_failure(
+        &current_access, &reason) == PSTVNC_TRANSPORT_OK);
+    CHECK(reason == PSTVNC_RFB_PROVIDER_FAILURE_READ);
+    CHECK(rfb_provider_failure_calls == 2);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_ACTIVE);
+
     poll_result = 0;
     CHECK(pstvnc_transport_rfb_poll_receive(&current_access) == PSTVNC_TRANSPORT_WOULD_BLOCK);
     poll_result = 1;
@@ -845,6 +881,9 @@ static void test_rfb_result_mapping_regression(void)
     observed_runtime->failed = 1;
     CHECK(pstvnc_transport_wire_availability() ==
         PSTVNC_TRANSPORT_WIRE_INACTIVE);
+    CHECK(pstvnc_transport_rfb_provider_failure(
+        &current_access, &reason) == PSTVNC_TRANSPORT_OK);
+    CHECK(reason == PSTVNC_RFB_PROVIDER_FAILURE_READ);
     CHECK(pstvnc_transport_rfb_read_exact(&current_access, &byte, 1u) ==
         PSTVNC_TRANSPORT_FAILED);
 
