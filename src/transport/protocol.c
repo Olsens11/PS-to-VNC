@@ -1,10 +1,11 @@
 /*
  * File synopsis:
  * Implements the backend-independent PSTV fixed-header encoder/decoder, exact
- * provisional Wire-establishment payload codecs, exact MPEG generation-control
- * codecs, and explicit frame-identity tests. This file deliberately contains
- * no socket, session allocator, queue, scheduler, prepared-generation state,
- * MPEG producer lifecycle, or PS2-specific policy.
+ * provisional Wire-establishment payload codecs, typed RFB provider-terminal
+ * codec, exact MPEG generation-control codecs, and explicit frame-identity
+ * tests. This file deliberately contains no socket, session allocator, queue,
+ * scheduler, prepared-generation state, MPEG producer lifecycle, or PS2-
+ * specific policy.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
  * LEDGE_AUDIT_A003_MPEG_GENERATION.md.
@@ -74,6 +75,13 @@ static int pstvnc_wire_not_accepted_reason_valid(uint32_t reason)
     return reason == (uint32_t)PSTVNC_WIRE_NOT_ACCEPTED_WIRE_VERSION ||
         reason == (uint32_t)PSTVNC_WIRE_NOT_ACCEPTED_PRODUCT_VERSION ||
         reason == (uint32_t)PSTVNC_WIRE_NOT_ACCEPTED_MALFORMED;
+}
+
+static int pstvnc_rfb_provider_failure_reason_valid(uint32_t reason)
+{
+    return reason == (uint32_t)PSTVNC_RFB_PROVIDER_FAILURE_CONNECT ||
+        reason == (uint32_t)PSTVNC_RFB_PROVIDER_FAILURE_READ ||
+        reason == (uint32_t)PSTVNC_RFB_PROVIDER_FAILURE_WRITE;
 }
 
 int pstvnc_wire_hello_payload_encode(
@@ -152,6 +160,31 @@ int pstvnc_wire_not_accepted_payload_decode(
 
     payload->reason = pstvnc_transport_read_be32(&input[0]);
     return pstvnc_wire_not_accepted_reason_valid(payload->reason);
+}
+
+int pstvnc_rfb_provider_failure_payload_encode(
+    uint8_t output[PSTVNC_RFB_PROVIDER_FAILURE_PAYLOAD_SIZE],
+    const pstvnc_rfb_provider_failure_payload_t *payload)
+{
+    if (output == NULL || payload == NULL ||
+        !pstvnc_rfb_provider_failure_reason_valid(payload->reason))
+        return 0;
+
+    pstvnc_transport_write_be32(&output[0], payload->reason);
+    return 1;
+}
+
+int pstvnc_rfb_provider_failure_payload_decode(
+    pstvnc_rfb_provider_failure_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size)
+{
+    if (payload == NULL || input == NULL ||
+        input_size != PSTVNC_RFB_PROVIDER_FAILURE_PAYLOAD_SIZE)
+        return 0;
+
+    payload->reason = pstvnc_transport_read_be32(&input[0]);
+    return pstvnc_rfb_provider_failure_reason_valid(payload->reason);
 }
 
 int pstvnc_mpeg_retire_payload_encode(
@@ -257,6 +290,16 @@ int pstvnc_transport_header_is_wire_not_accepted(
         header->channel == PSTVNC_TRANSPORT_CHANNEL_CONTROL &&
         header->flags == 0u &&
         header->payload_length == PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE;
+}
+
+int pstvnc_transport_header_is_rfb_provider_failure(
+    const pstvnc_transport_header_t *header)
+{
+    return header != NULL &&
+        header->kind == PSTVNC_TRANSPORT_FRAME_ERROR &&
+        header->channel == PSTVNC_TRANSPORT_CHANNEL_RFB &&
+        header->flags == 0u &&
+        header->payload_length == PSTVNC_RFB_PROVIDER_FAILURE_PAYLOAD_SIZE;
 }
 
 int pstvnc_transport_header_is_mpeg_data(
