@@ -1,18 +1,20 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0043
-RECORDED_AT=2026-09-21T22:23:32-04:00
+STATE_REVISION=0044
+RECORDED_AT=2026-09-21T23:52:00-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0042
-SUPERSEDES_FOREMAN_STATE_REVISION=0042
+BASED_ON_FOREMAN_STATE_REVISION=0043
+SUPERSEDES_FOREMAN_STATE_REVISION=0043
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
-BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0006
+BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0007
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
+
+Revision 0044 independently accepts A003-RFB-SHARED-RUNTIME-PROFILE-R14. One canonical Configuration-owned JSON record now deterministically generates the PS2 and Pi projections, preserves semantic ON/OFF without a second Wire-session identity, and leaves Wire/Q4/default-service/Application activation unchanged. The selected values retain CP2N/CP2J provenance but the new Pi provider-write-capacity projection and the +128-byte linked PS2 PT_LOAD remain unqualified. The next bounded dependency is ordinary RFB-only product activation through the existing Application and Pi Wire service composition, without retry/restart policy or Wire CONFIG delivery.
 
 Revision 0043 independently accepts the corrected A003-PI-RFB-ATTACHMENT-QUIESCE-R13 source and A003-PI-RFB-ATTACHMENT-QUIESCE-R13-CORRECTIVE-A closeout. The private per-session wake closes the Foreman-found traffic-dependent REQUEST defect while preserving the sole Wire sender, exact finite quiesce ordering, RFB-local provider failure, fresh-session fencing, and an establishment-only default daemon. The next dependency is deliberately configuration-only: create one canonical current RFB runtime profile and deterministic owner-specific projections for PS2 Transport and the Pi R13 attachment without changing Wire Protocol, auto-starting RFB, or duplicating independent tuning defaults.
 
@@ -195,7 +197,7 @@ the already-proven RFB safe scheduling boundary.
 
 ## Current Foreman phase
 
-`A003_R13_INTEGRATED__RFB_SHARED_RUNTIME_PROFILE_RECONSTRUCTION_ACTIVE__APPLICATION_RFB_ACTIVATION_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R14_INTEGRATED__RFB_ORDINARY_APPLICATION_ACTIVATION_RECONSTRUCTION_ACTIVE__RFB_FAILURE_RESTART_POLICY_DEPENDENCY_QUEUED__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 A004_P1_FOREMAN_ACCEPTED=YES
@@ -223,10 +225,12 @@ PI_RFB_ATTACHMENT_QUIESCE_PROVISIONAL=NO
 PI_RFB_ATTACHMENT_QUIESCE_FOREMAN_ACCEPTED=YES
 RFB_PROVIDER_LIFECYCLE=ATTACHMENT_QUIESCE_FOREMAN_ACCEPTED
 RFB_QUIESCE_WAKE_DEFECT=CLOSED
-RFB_SHARED_RUNTIME_PROFILE=RECONSTRUCTION_ACTIVE
-RFB_SESSION_COMPOSITION_CONFIG=SHARED_PROFILE_RECONSTRUCTION_ACTIVE
+RFB_SHARED_RUNTIME_PROFILE=FOREMAN_ACCEPTED
+RFB_SESSION_COMPOSITION_CONFIG=SHARED_PROFILE_FOREMAN_ACCEPTED
+APPLICATION_RFB_ACTIVATION=RECONSTRUCTION_ACTIVE
+RFB_FAILURE_RESTART_POLICY=DEPENDENCY_QUEUED
 PI_MPEG_CONTROL_PRODUCER_OWNER=DEPENDENCY_QUEUED
-APPLICATION_ACTIVATION=DEPENDENCY_QUEUED
+APPLICATION_ACTIVATION=RFB_ONLY_RECONSTRUCTION_ACTIVE
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 
@@ -4375,7 +4379,7 @@ must not claim the Pi projection hardware-qualified.
 ## Active bounded Reconstruction packet
 
 PACKET_ID=A003-RFB-SHARED-RUNTIME-PROFILE-R14
-PACKET_STATUS=ACTIVE
+PACKET_STATUS=COMPLETED_FOREMAN_ACCEPTED
 ROLE_KEY=reconstruction
 WORK_ITEM_KEY=a003-mpeg-generation
 WORKER_KEY=interactive
@@ -4603,4 +4607,351 @@ unchanged Wire/Q4 behavior, default-service and Application fail gates, strict
 profile-generation/dictionary/project evidence and all hardware non-claims.
 
 Do not execute R14 from the Foreman seat.
+
+## A003 R14 Foreman acceptance
+
+Live pickup authority was independently refreshed as:
+
+- assigning Foreman base
+  db36b13ff58840a64d844ef0d6c9da9635dbdb84;
+- final R14 pre-log authority
+  df1ad8a1f3d43c767756c1b596b898a4f0fff406;
+- immutable Reconstruction-log head
+  ac04f50f9a2ab5d53ca1242fb925c00c61a940db;
+- immutable Reconstruction log
+  docs/ledge/work-log/20260921T225956-0400__reconstruction__a003-mpeg-generation__interactive.md.
+
+The R14 pre-log range is linear, ahead by eleven commits and behind by zero.
+It changes Configuration/profile source and generated projections, Pi profile
+projection source, deterministic generation tooling/tests, clean build
+enrollment, topology/reference documentation and dictionaries. It does not
+change Wire Protocol, the Pi Wire server/runtime, the systemd Wire service or
+PS2 Application source.
+
+### Independent profile review
+
+Foreman independently confirms:
+
+- src/config/rfb_runtime_profile.json is the single selected machine-readable
+  RFB profile authority;
+- selected semantic mode is ON;
+- selected values are:
+  window 32768, credit batch 8192, flush-on-empty 1, credit-return 1,
+  receiver priority 63, receiver stack 16384 and max DATA payload 8192;
+- scripts/generate-rfb-runtime-profile.py validates the canonical schema and
+  deterministically renders both checked-in owner projections;
+- --check fails on stale generated artifacts and is enrolled in scripts/check.sh;
+- the C projection uses the existing pstvnc_transport_session_config_t and
+  derives both PS2 queue capacity and initial credit from the single window;
+- the Pi projection uses the existing R13 RfbFlowConfig and derives both
+  provider_read_credit_limit and provider_write_capacity from the same selected
+  window;
+- semantic OFF returns no active PS2 Transport projection and no Pi flow
+  projection rather than manufacturing a zero-valued running instance;
+- neither canonical nor generated profile artifacts contain a Wire/session ID;
+  Q4 remains sole Wire Session identity authority;
+- the Pi generated projection was correctly narrowed to mode/window/max-payload
+  only rather than copying PS2-only receiver/credit-policy constants;
+- the canonical record carries CP2N baseline provenance and explicitly marks the
+  new Pi provider-write-capacity projection as not hardware-qualified.
+
+At exact CP2N hardware source head
+7e047a9cb9dfef9283f66a80ccd865664f075c11, H1_RFB_ONLY inherits
+receiver_thread_priority=63, receiver_thread_stack_size=16384 and
+max_data_payload=8192 from the qualified base profile and overrides the RFB
+fields to queue/initial window 32768, batch 8192, flush-on-empty 1 and
+credit-return 1. The CP2N result records the live 32768/8192/63 RFB session and
+the exact source/ELF identity. R14 therefore preserves provenance without
+claiming those values are performance-optimal.
+
+Exact blob comparison from R14 base to immutable-log head proves unchanged:
+
+- pi/wire_protocol.py;
+- src/transport/protocol.c;
+- src/transport/protocol.h;
+- systemd/pi/ps-to-vnc-wire.service;
+- pi/wire_server.py;
+- src/app.c.
+
+The default Pi Wire service therefore remains establishment-only and
+pstvnc_app_run() remains fail-gated.
+
+### R14 acceptance criteria
+
+A003-R14-C1 SINGLE_CANONICAL_RFB_PROFILE_AUTHORITY — MET
+A003-R14-C2 CURRENT_RFB_ON_SEMANTICS — MET
+A003-R14-C3 EXACT_PS2_TRANSPORT_PROJECTION — MET
+A003-R14-C4 EXACT_PI_ATTACHMENT_PROJECTION — MET
+A003-R14-C5 NO_INDEPENDENT_DUPLICATE_DEFAULTS — MET
+A003-R14-C6 NO_DUPLICATE_WIRE_SESSION_IDENTITY — MET
+A003-R14-C7 RFB_OFF_IS_INERT_COMPOSITION — MET
+A003-R14-C8 WIRE_PROTOCOL_AND_Q4_UNCHANGED — MET
+A003-R14-C9 DEFAULT_SERVICES_REMAIN_INERT — MET
+A003-R14-C10 APPLICATION_REMAINS_FAIL_GATED — MET
+A003-R14-C11 STRICT_GENERATION_TEST_DOC_RECONCILIATION — MET
+A003-R14-C12 CLAIM_BOUNDARY_PRESERVED — MET
+
+FOREMAN_DISPOSITION=ACCEPT
+
+### R14 machine/build evidence
+
+Final pre-log workflow 35683895809 at
+df1ad8a1f3d43c767756c1b596b898a4f0fff406 completed SUCCESS on attempt 2.
+The exact final source tree passes:
+
+- config_rfb_runtime_profile_test;
+- pi_rfb_runtime_profile_test.py;
+- RFB_RUNTIME_PROFILE_GENERATED=PASS;
+- corrected R13 attachment tests;
+- Wire/Q4 tests;
+- Transport RFB/AUDIO/MPEG regressions;
+- SOURCE_DICTIONARIES=PASS;
+- SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS;
+- SOURCE_TOPOLOGY_CONTRACT=PASS;
+- SOURCE_DICTIONARY_PORTAL_SYNC=PASS;
+- PS_TO_VNC_PROJECT_CHECK=PASS;
+- CLEAN_PS2_COMPILE_CHECK=PASS;
+- ISSUE7_LINKED_BUILD=PASS;
+- LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS.
+
+The immutable-log-head workflow 35684065544 at
+ac04f50f9a2ab5d53ca1242fb925c00c61a940db completed SUCCESS on attempt 3
+without source changes. Earlier attempts hit two already-observed scheduler
+races in unchanged host tests: the R13 test could observe REQUEST on the peer
+before the sending thread executed its immediately-following local
+confirm_request_sent() transition, and a separate unchanged Transport runtime
+fixture can observe fake receive-call visibility before queue/activity
+publication. These are preserved as test-scheduling evidence, not hidden.
+
+R14 linked output changes the accepted-R13-base PT_LOAD by +128 bytes:
+
+- R13-base PT_LOAD bytes 484628,
+  SHA256 8604dec6302a028575e44df03c49026052a99bd5df858f3be68798b1bf958538;
+- R14 PT_LOAD bytes 484756,
+  SHA256 e13e4fa85635095a7ba8226620d37c4cd9956c2e3bd973959088476812e6e9ac.
+
+Reproducibility is proven. Hardware qualification is not.
+
+Evidence classification:
+
+SOURCE_COMPLETE=YES_WITHIN_R14
+HOST_TESTED=YES
+WIRE_PROTOCOL_CHANGED=NO
+Q4_CHANGED=NO
+DEFAULT_PI_RFB_ACTIVATION=NO
+PS2_APPLICATION_RFB_ACTIVATION=NO
+INDEPENDENT_VALIDATION_R14=NOT_RUN
+R14_PRODUCT_HARDWARE_QUALIFICATION=NOT_RUN_NOT_CLAIMED
+HARDWARE_QUALIFICATION_R14=PENDING
+
+## Foreman-owned architecture correction
+
+Architecture Overlay revision 0006 advanced its metadata but accidentally
+retained revision-0005's provisional opening paragraph. That is a Foreman-owned
+publication defect, not a Reconstruction defect. This Foreman shift corrects it
+in Overlay revision 0007 and records both actual R13 acceptance and accepted R14
+shared-profile authority. Historical revision 0006 remains immutable Git
+evidence of the publication mistake.
+
+## Active bounded Reconstruction packet
+
+PACKET_ID=A003-RFB-ORDINARY-APPLICATION-ACTIVATION-R15
+PACKET_STATUS=ACTIVE
+ROLE_KEY=reconstruction
+WORK_ITEM_KEY=a003-mpeg-generation
+WORKER_KEY=interactive
+EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
+USER_TERMINAL_POLICY=EXCEPTION_ONLY
+PI_LOCAL_USER_PROXY_REQUIRED=NO
+ASSIGNING_BASE_HEAD=REFRESH_CURRENT_LEDGE_HEAD_AT_WAKE
+FOREMAN_DECISION_BASE=ac04f50f9a2ab5d53ca1242fb925c00c61a940db
+
+### Objective
+
+Activate the already-reconstructed ordinary RFB-only product path through the
+normal product entrypoints on both peers using Q4, accepted R14 profile authority
+and accepted R13 provider attachment.
+
+R15 is the first source tranche in which the default product composition may
+actually select RFB. It is deliberately NOT retry/restart/recovery policy,
+Wire CONFIG delivery, AUDIO/MPEG activation or hardware qualification.
+
+### Required behavior
+
+1. PS2 no-argument pstvnc_app_run() must obtain the selected current RFB
+   Transport projection through src/config/rfb_runtime_profile.* and pass that
+   exact value into the existing pstvnc_app_run_with_transport_config() lifecycle.
+   It must not duplicate selected numeric literals in Application.
+2. If the selected RFB projection is absent/OFF/invalid, pstvnc_app_run() must
+   fail closed before IOP/network/socket/Application side effects. Do not invent
+   fallback Transport values.
+3. Preserve pstvnc_app_run_with_transport_config() as the explicit configured
+   lifecycle/test seam. Application remains lifecycle/orchestration owner rather
+   than Configuration becoming a god-object.
+4. Pi default product composition must consume
+   selected_rfb_flow_config(). Semantic ON must supply a fresh R13
+   RfbAttachment factory to the normal WireServer process; semantic OFF must
+   leave the server establishment-only.
+5. Every physical Wire connection that receives RFB composition must receive a
+   fresh attachment object/wake/Relay state. No attachment or provider socket may
+   be reused across Wire Sessions.
+6. Merely accepting TCP, reading HELLO, or publishing Wire ACTIVE must still NOT
+   connect X0tigervnc. The first valid post-Q4 nonzero channel-1 CREDIT remains
+   the only provider-start edge.
+7. With the selected current profile, the ordinary PS2 RFB initial CREDIT must
+   be 32768 and the Pi attachment flow must be
+   provider_read_credit_limit=32768,
+   provider_write_capacity=32768,
+   max_data_payload=8192. All values must come through R14 authority, not new
+   literals in Application/Wire-server composition.
+8. Provider selection remains exactly the R12 internal endpoint
+   127.0.0.1:5900. Never route product activation through development-only
+   127.0.0.1:5903 or resurrect direct 192.168.50.1:5900 as the mature product
+   provider path.
+9. The PS2 RFB parser/session must continue using its existing Transport-backed
+   bridge. Application must not regain a direct RFB socket or physical Wire
+   ownership.
+10. Q4 HELLO/ACCEPT/NOT_ACCEPTED bytes, Wire/product establishment versions,
+    sequence-1 establishment and ordinary sequence-2 start remain unchanged.
+    Do not add a CONFIG Wire frame in R15.
+11. Update scripts/pi/install-wire-runtime.sh so the now-required
+    pi/rfb_runtime_profile.py and pi/rfb_runtime_profile_generated.py are staged,
+    verified, syntax-checked and removed with exact bytes/modes alongside the
+    Wire runtime. Preserve its fail-closed inactive-service fence and prohibition
+    on daemon-reload/enable/disable/start/stop/restart/provider mutation.
+12. The tracked systemd Wire service should remain an ordinary supervised
+    process definition; do not hide selected numeric profile values in the unit
+    or command line.
+13. Preserve complete-stop-before-replacement ownership. Pi serve_connection()
+    must close the current attachment before the sequential server may own the
+    next session. On PS2, the current one-run Application lifecycle must still
+    abort/retire Transport before platform cleanup/return. Do not add reconnect
+    or restart in this packet.
+14. Provider connect failure/EOF/write failure remains RFB-local under R13.
+    R15 must not invent retry/backoff or claim complete product recovery from
+    those failures. The explicit RFB failure/restart policy is the next
+    dependency.
+15. Stabilize the known R13 host-only scheduling assertion without changing R13
+    product behavior: after the peer has received REQUEST, the test must wait
+    for the immediately-following WAIT_BOUNDARY local state transition rather
+    than assuming the sending thread was rescheduled before the peer reader.
+    Do not weaken the proof that REQUEST itself arrives without extra peer or
+    provider traffic, and do not add sleeps/timeouts to product source.
+16. Add deterministic host evidence for the actual selected composition:
+    - no-argument PS2 entry obtains and forwards the exact R14 config;
+    - OFF/projection failure has zero startup side effects;
+    - Pi selected ON creates fresh per-session attachment composition;
+    - idle/provisional/ACTIVE-without-CREDIT does not open provider;
+    - first selected-profile CREDIT performs one lazy provider connection and
+      preserves R10 flow behavior;
+    - Session B receives fresh attachment state;
+    - default product path contains no 5903/direct-provider bypass.
+17. Reconcile source dictionaries/topology/reference docs and Pi provisioning
+    docs for the newly activated ownership boundary and runtime files.
+18. Run strict project/dictionary/profile-generation, host, PS2 compile and
+    current-source linked-reproducibility gates. Record every PT_LOAD change
+    honestly as hardware-pending.
+
+### Acceptance criteria
+
+- A003-R15-C1 PS2_DEFAULT_ENTRY_CONSUMES_R14_PROFILE
+- A003-R15-C2 PI_DEFAULT_WIRE_PROCESS_COMPOSES_R13_FROM_R14
+- A003-R15-C3 LAZY_FIRST_CREDIT_PROVIDER_START_PRESERVED
+- A003-R15-C4 EXACT_SHARED_VALUES_NO_NEW_DEFAULTS
+- A003-R15-C5 R12_INTERNAL_PROVIDER_ONLY
+- A003-R15-C6 Q4_WIRE_PROTOCOL_UNCHANGED
+- A003-R15-C7 NO_DIRECT_RFB_OR_PHYSICAL_WIRE_BYPASS
+- A003-R15-C8 FRESH_ATTACHMENT_COMPLETE_STOP_PER_SESSION
+- A003-R15-C9 OFF_AND_INVALID_PROFILE_FAIL_INERT
+- A003-R15-C10 REPRODUCIBLE_PI_STAGING_NO_LIVE_MUTATION
+- A003-R15-C11 NO_RETRY_RECOVERY_OR_MEDIA_SCOPE_CREEP
+- A003-R15-C12 STABLE_TEST_DOC_BUILD_CLAIM_BOUNDARY
+
+All must be MET before Foreman acceptance.
+
+### Required evidence
+
+Return deterministic evidence proving at minimum:
+
+- exact no-argument PS2 entry call path from R14 selected profile to existing
+  configured Application lifecycle;
+- exact selected pstvnc_transport_session_config_t observed by Application tests;
+- zero platform/network/socket side effects when projection is absent;
+- exact Pi default-process composition from R14 selected flow to a fresh
+  RfbAttachment factory;
+- no provider connect before first post-Q4 RFB CREDIT;
+- exactly one provider connect at first selected-profile CREDIT;
+- no 5903 or mature direct-RFB bypass in product composition;
+- exact stager enrollment and modes for both R14 Pi profile files;
+- no live systemctl/display/provider mutation in staging;
+- R13 finite quiesce and Session-B freshness regressions remain green;
+- the known REQUEST/WAIT_BOUNDARY test race is stabilized at the test layer only;
+- pi/wire_protocol.py and src/transport/protocol.* remain byte-identical to R15
+  base;
+- no FRAME_CONFIG or establishment-version bump;
+- no reconnect/retry/backoff loop;
+- strict generated-profile verification, dictionaries, topology/project checks,
+  PS2 compile/link and reproducibility all pass;
+- new PT_LOAD identity and explicit hardware debt if PS2 linked bytes change.
+
+### Explicit non-goals
+
+Do not implement in R15:
+
+- RFB automatic retry/reconnect/backoff;
+- provider-failure -> PS2 restart policy;
+- multiple RFB runs inside one Wire Session;
+- Wire CONFIG delivery or CONFIG frame/version changes;
+- AUDIO Wire relay or playback activation;
+- Pi MPEG START/RETIRE control;
+- Pi MPEG producer/capture;
+- Application MPEG activation;
+- Q7 MPEG/RFB overlapped restoration;
+- live Pi service activation;
+- physical PS2 qualification.
+
+### Worker return
+
+Return exact PS2 and Pi activation ownership, selected-value flow, lazy provider
+edge, per-session retirement/freshness, stager changes, stabilized host evidence,
+unchanged Wire/Q4 identities, all non-claims, exact commits and exactly one
+immutable Reconstruction log using:
+
+- ROLE_KEY=reconstruction;
+- WORK_ITEM_KEY=a003-mpeg-generation;
+- WORKER_KEY=interactive.
+
+Stop after R15.
+
+## Deferred dependency graph after accepted R15
+
+1. reconstruct explicit RFB failure/stop/restart policy, including provider
+   failure visibility and complete-stop-before-restart, without rebinding dead
+   Wire/session authority;
+2. add Pi MPEG START/RETIRE control ownership behind the established Wire/rider
+   architecture;
+3. reconstruct Pi MPEG producer exact-run admission and one-way retirement;
+4. compose accepted MPEG runtime profile/calibration into Application activation;
+5. reconstruct current-Q7 retirement/failure, residual/credit finalization and
+   overlapped RFB restoration;
+6. integrate Wire-loss containment and repeated-run/repeated-session behavior;
+7. physically qualify the exact Pi Wire/internal-provider/Relay + PS2 product
+   path and final ELF.
+
+Foreman must re-evaluate returned R15 authority before authorizing item 1.
+
+## Hardware qualification debt
+
+HARDWARE_PENDING=R15 ordinary default RFB product activation and any new linked PS2 bytes; R14 shared-profile +128-byte PT_LOAD; corrected R13 provider attachment/quiesce and local request-wake; R12 internal X0tigervnc loopback endpoint staging/live demand activation; R11 selected native-provider source authority; R10 product bidirectional RFB Relay/credit mechanics; R9 product Q4 client; R8 Pi Wire service/no-carrier/listener lifecycle; explicit RFB failure/restart policy; reconstructed A003 R3-R7 MPEG runtime; MPEG repeated-run stale fencing; Wire-loss during MPEG; current-Q7 overlapped RFB restoration; A004 visible handoff; all-guns endurance; exact final product ELF
+
+## Foreman next pickup
+
+Consume A003-RFB-ORDINARY-APPLICATION-ACTIVATION-R15. Independently verify the
+actual no-argument PS2 and default Pi product paths consume only R14 authority,
+provider startup remains first-CREDIT-lazy and internal-only, no Wire/Q4 bytes
+change, each Wire Session owns fresh RFB state, staging is reproducible/inert,
+the known host assertion race is fixed only in test semantics, no retry/media
+scope appears, and all source/build claims remain bounded.
+
+Do not execute R15 from the Foreman seat.
 

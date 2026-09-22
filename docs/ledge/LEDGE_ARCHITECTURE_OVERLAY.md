@@ -1,11 +1,11 @@
 # Ledge All-Guns Architecture Overlay
 
 DOCUMENT=LEDGE_ARCHITECTURE_OVERLAY
-DOCUMENT_REVISION=0006
-RECORDED_AT=2026-09-21T22:23:32-04:00
+DOCUMENT_REVISION=0007
+RECORDED_AT=2026-09-21T23:52:00-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_DOCUMENT_REVISION=0005
-SUPERSEDES_DOCUMENT_REVISION=0005
+BASED_ON_DOCUMENT_REVISION=0006
+SUPERSEDES_DOCUMENT_REVISION=0006
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
 BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=ARCHITECTURE_POLICY_REVISION
@@ -14,11 +14,12 @@ BASE_ARCHITECTURE=docs/CLEAN_ARCHITECTURE.md:ARCHITECTURE_VERSION_1
 SCOPE=ledge/h1-all-guns
 
 This overlay is the current ledge amendment to the clean architecture. Revision
-0005 records the provisional R13 reconstructed mechanism for one session-scoped
-Pi RFB attachment and its finite quiesce lifecycle pending independent Foreman
-acceptance. Revision 0004 remains historical in Git; where its pre-R13
-attachment wording conflicts with this revision or
-`LEDGE_WIRE_RUNTIME_DECISIONS.md` revision 0011, the later authority governs.
+0007 corrects a Foreman publication defect in revision 0006: that revision
+advanced its metadata but accidentally retained revision-0005's provisional
+opening paragraph. Corrected R13 is independently Foreman-accepted. Revision
+0007 also records accepted R14 shared RFB runtime-profile authority. Historical
+revision 0006 remains Git evidence of the documentation mistake; it does not
+undo State 0043's R13 acceptance.
 
 ## Physical Wire ownership
 
@@ -146,6 +147,29 @@ flow profile, so R13 does not create unvalidated service auto-attachment,
 CONFIG delivery, Application RFB orchestration, AUDIO/MPEG ownership, or a new
 physical product connection. R13 is source/host/project/build authority, not a
 live Pi or physical qualification claim.
+
+As of accepted A003 R14, Configuration owns one canonical current RFB runtime
+profile and deterministic narrow projections for both peers. The selected
+semantic profile is RFB ON with one 32768-byte RFB window, 8192-byte credit
+batch, flush-on-empty and credit-return enabled, receiver priority 63, receiver
+stack 16384 bytes, and maximum DATA payload 8192 bytes. The PS2 projection uses
+the existing Transport session-config type. The Pi projection derives both R13
+provider-read credit limit and provider-write capacity from the same canonical
+32768-byte window and carries the same 8192-byte payload maximum.
+
+The profile owns selected values only. It owns no Wire Session identity, socket,
+runtime allocation, provider lifecycle, parser, retry or Application policy.
+Semantic OFF means absent RFB composition rather than a zero-valued running
+instance. Q4 remains sole Wire Session identity authority. R14 does not change
+Wire Protocol or establishment versions and does not itself activate the
+default Pi Wire service or PS2 Application.
+
+The selected values preserve the CP2J/CP2N hardware-qualified RFB-only baseline
+provenance, but equivalence of a new product projection is not transferred
+hardware qualification. In particular, the R13 Pi provider-write-capacity
+direction and the R14-linked PS2 bytes remain pending exact-product
+qualification.
+
 
 ## One physical-I/O execution context
 
