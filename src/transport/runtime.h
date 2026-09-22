@@ -3,8 +3,9 @@
  * Defines Transport's session-local runtime above the physical PSTV stream.
  * The runtime owns the sole physical-I/O thread plus synchronized logical RFB
  * and optional AUDIO/MPEG2 storage, independent per-channel flow-control/activity
- * rendezvous, one bounded MPEG RETIRE-completion control slot, and the receiver
- * completion event required before receiver-touched resources can be reclaimed.
+ * rendezvous, one typed RFB provider-terminal fact, one bounded MPEG RETIRE-
+ * completion control slot, and the receiver completion event required before
+ * receiver-touched resources can be reclaimed.
  *
  * This is an internal Transport boundary. It does not parse RFB, play PCM,
  * decode MPEG, decide product recovery/presentation policy, expose the physical
@@ -98,6 +99,14 @@ typedef struct pstvnc_transport_runtime {
      */
     uint32_t rfb_outbound_credit_bytes;
     int rfb_outbound_credit_wait_state;
+
+    /*
+     * First decoded channel-1 provider-terminal cause. NONE means the provider
+     * is not known terminal. The same RFB queue semaphore protects this fact so
+     * DATA-before-ERROR ordering, blocked-reader wake, and blocked-writer wake
+     * share one session-local authority. It dies when this runtime is released.
+     */
+    pstvnc_rfb_provider_failure_reason_t rfb_provider_failure_reason;
 
     /*
      * AUDIO and MPEG producer/terminal activity use identical three-state
@@ -245,6 +254,15 @@ int pstvnc_transport_runtime_rfb_write_exact(
     pstvnc_transport_runtime_t *runtime,
     const void *buffer,
     size_t count);
+
+/*
+ * Inspect the first typed RFB-provider terminal cause without changing Wire
+ * health. OK returns a specific reason, WOULD_BLOCK means no provider terminal
+ * fact is latched, and ordinary Transport terminal results remain distinct.
+ */
+pstvnc_transport_result_t pstvnc_transport_runtime_rfb_provider_failure(
+    pstvnc_transport_runtime_t *runtime,
+    pstvnc_rfb_provider_failure_reason_t *reason);
 
 /*
  * Logical AUDIO consumer seam. read_available() is nonblocking and bounded:
