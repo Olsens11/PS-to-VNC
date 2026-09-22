@@ -1,12 +1,250 @@
 #!/usr/bin/env python3
-"""Run the R13 attachment suite with R15's scheduling-stable wake assertion."""
+"""Run the R13 attachment suite with R15 wake and R16A failure assertions."""
 
 from __future__ import annotations
 
+import errno
 import threading
+import time
 import unittest
 
 import pi_rfb_attachment_test_legacy as legacy
+
+
+def assert_provider_failure_frame(
+    self,
+    peer,
+    expected_reason: int,
+) -> None:
+    header, payload = legacy.recv_frame(peer)
+    self.assertTrue(legacy.protocol.is_rfb_provider_failure_header(header))
+    self.assertFalse(legacy.protocol.is_rfb_data_header(header))
+    self.assertFalse(legacy.protocol.is_rfb_credit_header(header))
+    self.assertEqual(
+        legacy.protocol.decode_rfb_provider_failure_payload(payload),
+        expected_reason,
+    )
+
+
+def test_connect_failure_and_provider_eof_report_typed_fact_without_wire_failure(
+    self,
+) -> None:
+    refused_raw, refused_peer = legacy.socket.socketpair()
+    refused = legacy.ControlledConnectSocket(
+        refused_raw,
+        connect_result=errno.ECONNREFUSED,
+    )
+    failed_attachment = legacy.attachment.RfbAttachment(
+        legacy.flow(),
+        socket_factory=legacy.ProviderSocketFactory([refused]),
+    )
+    wire_server = legacy.server.WireServer(
+        session_ids=legacy.server.SessionIdAllocator(130),
+        rfb_attachment_factory=lambda: failed_attachment,
+    )
+    peer, worker, outcomes = legacy.start_active_session(wire_server)
+    try:
+        peer.sendall(legacy.protocol.encode_rfb_credit_frame(4, sequence=2))
+        assert_provider_failure_frame(
+            self,
+            peer,
+            legacy.protocol.RFB_PROVIDER_FAILURE_CONNECT,
+        )
+        legacy.wait_for(
+            lambda: failed_attachment.state
+            is legacy.attachment.RfbAttachmentState.FAILED,
+            "reported local connect failure",
+        )
+        self.assertEqual(
+            failed_attachment.provider_failure,
+            legacy.attachment.RfbProviderFailure.CONNECT,
+        )
+        self.assertFalse(failed_attachment.wants_provider_failure_report)
+        self.assertEqual(failed_attachment.stats.connect_failures, 1)
+        self.assertTrue(worker.is_alive())
+
+        outcome = legacy.finish_wire(peer, worker, outcomes)
+        self.assertTrue(outcome.accepted)
+        self.assertFalse(outcome.protocol_failed)
+    finally:
+        refused_peer.close()
+        if worker.is_alive():
+            worker.join(timeout=1.0)
+
+    raw, provider_peer = legacy.socket.socketpair()
+    controlled = legacy.ControlledConnectSocket(raw, connect_result=0)
+    eof_attachment = legacy.attachment.RfbAttachment(
+        legacy.flow(),
+        socket_factory=legacy.ProviderSocketFactory([controlled]),
+    )
+    wire_server = legacy.server.WireServer(
+        session_ids=legacy.server.SessionIdAllocator(131),
+        rfb_attachment_factory=lambda: eof_attachment,
+    )
+    peer, worker, outcomes = legacy.start_active_session(wire_server)
+    try:
+        peer.sendall(legacy.protocol.encode_rfb_credit_frame(4, sequence=2))
+        initial_header, _initial_payload = legacy.recv_frame(peer)
+        self.assertTrue(legacy.protocol.is_rfb_credit_header(initial_header))
+
+        provider_peer.close()
+        assert_provider_failure_frame(
+            self,
+            peer,
+            legacy.protocol.RFB_PROVIDER_FAILURE_READ,
+        )
+        legacy.wait_for(
+            lambda: eof_attachment.state
+            is legacy.attachment.RfbAttachmentState.FAILED,
+            "reported provider EOF failure",
+        )
+        self.assertEqual(
+            eof_attachment.provider_failure,
+            legacy.attachment.RfbProviderFailure.READ,
+        )
+        self.assertFalse(eof_attachment.wants_provider_failure_report)
+        self.assertTrue(worker.is_alive())
+
+        # Late old-session channel-1 authority is contained by the dead
+        # attachment. It neither causes a replacement connect nor emits a
+        # second terminal report.
+        peer.sendall(legacy.protocol.encode_rfb_credit_frame(1, sequence=3))
+        peer.settimeout(0.05)
+        with self.assertRaises(TimeoutError):
+            peer.recv(1)
+        peer.settimeout(None)
+        self.assertTrue(worker.is_alive())
+
+        outcome = legacy.finish_wire(peer, worker, outcomes)
+        self.assertTrue(outcome.accepted)
+        self.assertFalse(outcome.protocol_failed)
+    finally:
+        try:
+            provider_peer.close()
+        except OSError:
+            pass
+        if worker.is_alive():
+            worker.join(timeout=1.0)
+
+
+def test_out_of_order_marker_and_provider_write_failure_stay_rfb_local(
+    self,
+) -> None:
+    # A local lifecycle misuse is not a provider mechanism failure and therefore
+    # still produces no provider-terminal ERROR representation.
+    raw, provider_peer = legacy.socket.socketpair()
+    controlled = legacy.ControlledConnectSocket(raw, connect_result=0)
+    item = legacy.attachment.RfbAttachment(
+        legacy.flow(),
+        socket_factory=legacy.ProviderSocketFactory([controlled]),
+    )
+    wire_server = legacy.server.WireServer(
+        session_ids=legacy.server.SessionIdAllocator(150),
+        rfb_attachment_factory=lambda: item,
+    )
+    peer, worker, outcomes = legacy.start_active_session(wire_server)
+    try:
+        peer.sendall(legacy.protocol.encode_rfb_credit_frame(4, sequence=2))
+        legacy.recv_frame(peer)
+
+        peer.sendall(legacy.protocol.encode_rfb_data_frame(b"", sequence=3))
+        legacy.wait_for(
+            lambda: item.state is legacy.attachment.RfbAttachmentState.FAILED,
+            "out-of-order marker local failure",
+        )
+        self.assertIsNone(item.provider_failure)
+        self.assertFalse(item.wants_provider_failure_report)
+        self.assertTrue(worker.is_alive())
+
+        peer.settimeout(0.05)
+        with self.assertRaises(TimeoutError):
+            peer.recv(1)
+        peer.settimeout(None)
+
+        outcome = legacy.finish_wire(peer, worker, outcomes)
+        self.assertTrue(outcome.accepted)
+        self.assertFalse(outcome.protocol_failed)
+    finally:
+        provider_peer.close()
+        if worker.is_alive():
+            worker.join(timeout=1.0)
+
+    # A genuine provider write failure is distinguishable and crosses through
+    # the sole Wire owner as WRITE while the physical Wire session stays live.
+    raw, provider_peer = legacy.socket.socketpair()
+    legacy.fill_send_buffer(raw)
+    controlled = legacy.ControlledConnectSocket(raw, connect_result=0)
+    item = legacy.attachment.RfbAttachment(
+        legacy.flow(),
+        socket_factory=legacy.ProviderSocketFactory([controlled]),
+    )
+    wire_server = legacy.server.WireServer(
+        session_ids=legacy.server.SessionIdAllocator(151),
+        rfb_attachment_factory=lambda: item,
+    )
+    peer, worker, outcomes = legacy.start_active_session(wire_server)
+    try:
+        peer.sendall(legacy.protocol.encode_rfb_credit_frame(4, sequence=2))
+        legacy.recv_frame(peer)
+        peer.sendall(legacy.protocol.encode_rfb_data_frame(b"abcd", sequence=3))
+        legacy.wait_for(
+            lambda: item.relay is not None
+            and item.relay.queued_provider_write_bytes == 4,
+            "queued provider write before failure",
+        )
+
+        self.assertTrue(item.request_quiesce())
+        request_header, request_payload = legacy.recv_frame(peer)
+        self.assertEqual(request_payload, b"")
+        self.assertTrue(legacy.protocol.is_rfb_data_header(request_header))
+
+        peer.sendall(legacy.protocol.encode_rfb_data_frame(b"", sequence=4))
+        legacy.wait_for(
+            lambda: item.state is legacy.attachment.RfbAttachmentState.DRAINING,
+            "write-failure drain state",
+        )
+
+        controlled.fail_send = True
+        provider_peer.settimeout(1.0)
+        while item.state is legacy.attachment.RfbAttachmentState.DRAINING:
+            try:
+                provider_peer.recv(65536)
+            except TimeoutError:
+                break
+            time.sleep(0.001)
+
+        assert_provider_failure_frame(
+            self,
+            peer,
+            legacy.protocol.RFB_PROVIDER_FAILURE_WRITE,
+        )
+        legacy.wait_for(
+            lambda: item.state is legacy.attachment.RfbAttachmentState.FAILED,
+            "reported provider write failure",
+        )
+        self.assertEqual(
+            item.provider_failure,
+            legacy.attachment.RfbProviderFailure.WRITE,
+        )
+        self.assertFalse(item.wants_provider_failure_report)
+        self.assertEqual(item.stats.commit_markers_sent, 0)
+        self.assertTrue(worker.is_alive())
+
+        peer.settimeout(0.05)
+        with self.assertRaises(TimeoutError):
+            peer.recv(1)
+        peer.settimeout(None)
+
+        outcome = legacy.finish_wire(peer, worker, outcomes)
+        self.assertTrue(outcome.accepted)
+        self.assertFalse(outcome.protocol_failed)
+    finally:
+        try:
+            provider_peer.close()
+        except OSError:
+            pass
+        if worker.is_alive():
+            worker.join(timeout=1.0)
 
 
 def test_quiesce_request_wakes_idle_wire_without_peer_or_provider_traffic(
@@ -103,6 +341,12 @@ def test_quiesce_request_wakes_idle_wire_without_peer_or_provider_traffic(
             worker.join(timeout=1.0)
 
 
+legacy.RfbAttachmentIntegrationTests.test_connect_failure_and_provider_eof_are_rfb_local = (
+    test_connect_failure_and_provider_eof_report_typed_fact_without_wire_failure
+)
+legacy.RfbAttachmentIntegrationTests.test_out_of_order_marker_and_provider_write_failure_stay_rfb_local = (
+    test_out_of_order_marker_and_provider_write_failure_stay_rfb_local
+)
 legacy.RfbAttachmentIntegrationTests.test_quiesce_request_wakes_idle_wire_without_peer_or_provider_traffic = (
     test_quiesce_request_wakes_idle_wire_without_peer_or_provider_traffic
 )
