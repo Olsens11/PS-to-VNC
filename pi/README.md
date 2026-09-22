@@ -40,6 +40,14 @@ COMMIT, and treats COMPLETE as an RFB-attachment stop rather than a Wire-Session
 stop. One attachment is permanently session-scoped and is never rebound to a
 replacement Wire Session.
 
+The corrective R13 wake is also session-scoped. Each attachment owns one private
+nonblocking socketpair used only to interrupt the sole Wire owner's readiness
+wait after `request_quiesce()` publishes REQUEST intent. The requester never
+sends Wire bytes or advances Wire sequence; `WireConnectionOwner` drains the
+local wake and remains the only serializer of REQUEST. Both wake descriptors are
+retired on attachment stop/failure/session close, and a replacement Wire Session
+constructs fresh wake state.
+
 The ordinary installed `ps-to-vnc-wire.service` remains establishment-only:
 `serve_forever()` supplies no RFB attachment factory and no flow profile.
 R13 therefore adds mechanism and an explicit composition seam without inventing
