@@ -145,16 +145,6 @@ def test_r15_stager_enrolls_profile_and_composition_files(self) -> None:
         self.assertIn(path, installer)
     for symbol in (
         'verify_file 0644 "$RFB_PROFILE_GENERATED_SOURCE" "$RFB_PROFILE_GENERATED_DEST"',
-        'verify_file 0644 "$RFB_PROFILE_SOURCE" "$RFB_PROFILE_SOURCE"',
-    ):
-        # Retain the fixture structure below; this branch is never reached for
-        # the second sentinel and exists only to keep accidental local aliases
-        # from becoming product authority.
-        if symbol.endswith('$RFB_PROFILE_SOURCE"'):
-            continue
-        self.assertIn(symbol, installer)
-    for symbol in (
-        'verify_file 0644 "$RFB_PROFILE_GENERATED_SOURCE" "$RFB_PROFILE_GENERATED_DEST"',
         'verify_file 0644 "$RFB_PROFILE_SOURCE" "$RFB_PROFILE_DEST"',
         'verify_file 0644 "$RUNTIME_SOURCE" "$RUNTIME_DEST"',
     ):
