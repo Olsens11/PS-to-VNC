@@ -125,13 +125,21 @@ Zero-length channel-1 DATA now has the strict attachment-local lifecycle:
 
     REQUEST -> BOUNDARY -> COMMIT -> COMPLETE
 
-REQUEST is an explicit mechanism seam, not Application ON/OFF policy. Provider
-reads may continue after REQUEST but stop immediately when BOUNDARY is accepted.
-Already accepted provider writes then drain or fail locally; provider I/O is
-fully retired before COMMIT. No ordinary attachment DATA/CREDIT is emitted after
-COMMIT. COMPLETE stops only the attachment and leaves the containing Wire
-Session ACTIVE. Duplicate or out-of-order lifecycle markers fail at the
-smallest safe RFB scope.
+REQUEST is an explicit mechanism seam, not Application ON/OFF policy. The
+attachment owns one private per-session nonblocking wake socketpair so
+`request_quiesce()` can interrupt an otherwise-idle Wire-owner readiness wait
+without becoming a second Wire sender. The requester only publishes RFB-local
+intent and signals that wake; `WireConnectionOwner` drains it and remains the
+sole serializer of REQUEST and sole owner of Wire sequence. The wake state is
+retired with attachment stop/failure/session retirement and is never reused by a
+replacement Wire Session. No timeout-poll workaround is part of this mechanism.
+
+Provider reads may continue after REQUEST but stop immediately when BOUNDARY is
+accepted. Already accepted provider writes then drain or fail locally; provider
+I/O is fully retired before COMMIT. No ordinary attachment DATA/CREDIT is
+emitted after COMMIT. COMPLETE stops only the attachment and leaves the
+containing Wire Session ACTIVE. Duplicate or out-of-order lifecycle markers
+fail at the smallest safe RFB scope.
 
 The default installed Wire service still supplies no attachment factory or
 flow profile, so R13 does not create unvalidated service auto-attachment,
