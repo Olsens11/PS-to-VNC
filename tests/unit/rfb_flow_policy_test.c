@@ -7,6 +7,7 @@
 
 #include "flow_policy.h"
 #include "rfb_session.h"
+#include "transport/protocol.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -136,6 +137,17 @@ int pstvnc_rfb_bridge_write_exact(
     return 0;
 }
 
+int pstvnc_rfb_bridge_provider_failure(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_rfb_provider_failure_reason_t *reason)
+{
+    (void)transport_access;
+    if (reason == NULL)
+        return -1;
+    *reason = PSTVNC_RFB_PROVIDER_FAILURE_NONE;
+    return 0;
+}
+
 int pstvnc_rfb_bridge_quiesce_requested(
     const pstvnc_transport_access_t *transport_access)
 {
@@ -248,10 +260,6 @@ static void test_coalescing_and_distinct_later_interval(void)
     assert(pstvnc_rfb_flow_policy_next_request(&policy) ==
         PSTVNC_RFB_FLOW_REQUEST_FULL);
 
-    /*
-     * Another interval before recovery is sent coalesces into the one pending
-     * FULL obligation rather than manufacturing duplicates.
-     */
     assert(pstvnc_rfb_flow_policy_set_frozen(&policy, 1));
     assert(pstvnc_rfb_flow_policy_set_frozen(&policy, 0));
     assert(pstvnc_rfb_flow_policy_next_request(&policy) ==
@@ -261,10 +269,6 @@ static void test_coalescing_and_distinct_later_interval(void)
         &policy,
         PSTVNC_RFB_FLOW_REQUEST_FULL));
 
-    /*
-     * A later genuine interval after recovery work has advanced is distinct,
-     * even while the earlier FULL response is still outstanding.
-     */
     assert(pstvnc_rfb_flow_policy_set_frozen(&policy, 1));
     assert(pstvnc_rfb_flow_policy_set_frozen(&policy, 0));
 
@@ -336,11 +340,6 @@ static void test_inflight_freeze_completes_real_rfb_message(void)
         &framebuffer) ==
         PSTVNC_RFB_SESSION_RECEIVE_UPDATE);
 
-    /*
-     * The real parser has consumed one complete server message and advanced
-     * authoritative framebuffer truth. Policy completion therefore clears the
-     * outstanding request even though publication remains forbidden.
-     */
     assert(input_pos == input_size);
     assert(pixels[5] == changed[0]);
     assert(pixels[6] == changed[1]);
