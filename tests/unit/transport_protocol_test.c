@@ -116,7 +116,6 @@ static void test_decode_rejects_invalid_wire_contract(void)
     CHECK(!pstvnc_transport_header_decode(&header, wire));
 }
 
-
 static void test_wire_establishment_exact_codecs_and_frames(void)
 {
     pstvnc_transport_header_t header;
@@ -135,7 +134,7 @@ static void test_wire_establishment_exact_codecs_and_frames(void)
         0x00u, 0x00u, 0x00u, 0x01u,
         0x00u, 0x00u, 0x00u, 0x08u,
         0x00u, 0x00u, 0x00u, 0x01u,
-        0x00u, 0x00u, 0x00u, 0x01u
+        0x00u, 0x00u, 0x00u, 0x02u
     };
     static const uint8_t expected_accept[] = {
         0x50u, 0x53u, 0x54u, 0x56u,
@@ -151,6 +150,9 @@ static void test_wire_establishment_exact_codecs_and_frames(void)
         0x00u, 0x00u, 0x00u, 0x04u,
         0x00u, 0x00u, 0x00u, 0x02u
     };
+
+    CHECK(PSTVNC_TRANSPORT_VERSION == 1u);
+    CHECK(PSTVNC_WIRE_PRODUCT_ESTABLISHMENT_VERSION == 2u);
 
     memset(&header, 0, sizeof(header));
     hello.wire_version = PSTVNC_TRANSPORT_VERSION;
@@ -226,6 +228,63 @@ static void test_wire_establishment_exact_codecs_and_frames(void)
     CHECK(!pstvnc_transport_header_is_wire_hello(&header));
 }
 
+static void test_rfb_provider_failure_exact_codec_and_identity(void)
+{
+    pstvnc_rfb_provider_failure_payload_t input;
+    pstvnc_rfb_provider_failure_payload_t output;
+    pstvnc_transport_header_t header;
+    uint8_t payload[PSTVNC_RFB_PROVIDER_FAILURE_PAYLOAD_SIZE];
+    static const pstvnc_rfb_provider_failure_reason_t reasons[] = {
+        PSTVNC_RFB_PROVIDER_FAILURE_CONNECT,
+        PSTVNC_RFB_PROVIDER_FAILURE_READ,
+        PSTVNC_RFB_PROVIDER_FAILURE_WRITE
+    };
+    size_t index;
+
+    for (index = 0u; index < sizeof(reasons) / sizeof(reasons[0]); index++) {
+        input.reason = (uint32_t)reasons[index];
+        memset(&output, 0, sizeof(output));
+        CHECK(pstvnc_rfb_provider_failure_payload_encode(payload, &input));
+        CHECK(pstvnc_transport_read_be32(payload) == input.reason);
+        CHECK(pstvnc_rfb_provider_failure_payload_decode(
+            &output, payload, sizeof(payload)));
+        CHECK(output.reason == input.reason);
+    }
+
+    input.reason = (uint32_t)PSTVNC_RFB_PROVIDER_FAILURE_NONE;
+    CHECK(!pstvnc_rfb_provider_failure_payload_encode(payload, &input));
+    input.reason = 4u;
+    CHECK(!pstvnc_rfb_provider_failure_payload_encode(payload, &input));
+    pstvnc_transport_write_be32(payload, 0u);
+    CHECK(!pstvnc_rfb_provider_failure_payload_decode(
+        &output, payload, sizeof(payload)));
+    pstvnc_transport_write_be32(payload, 4u);
+    CHECK(!pstvnc_rfb_provider_failure_payload_decode(
+        &output, payload, sizeof(payload)));
+
+    memset(&header, 0, sizeof(header));
+    header.version = PSTVNC_TRANSPORT_VERSION;
+    header.kind = PSTVNC_TRANSPORT_FRAME_ERROR;
+    header.channel = PSTVNC_TRANSPORT_CHANNEL_RFB;
+    header.flags = 0u;
+    header.sequence = 2u;
+    header.payload_length = PSTVNC_RFB_PROVIDER_FAILURE_PAYLOAD_SIZE;
+    CHECK(pstvnc_transport_header_is_rfb_provider_failure(&header));
+
+    header.kind = PSTVNC_TRANSPORT_FRAME_DATA;
+    header.payload_length = 0u;
+    CHECK(!pstvnc_transport_header_is_rfb_provider_failure(&header));
+    CHECK(header.channel == PSTVNC_TRANSPORT_CHANNEL_RFB);
+    CHECK(header.payload_length == 0u);
+
+    header.kind = PSTVNC_TRANSPORT_FRAME_ERROR;
+    header.payload_length = PSTVNC_RFB_PROVIDER_FAILURE_PAYLOAD_SIZE;
+    header.flags = 1u;
+    CHECK(!pstvnc_transport_header_is_rfb_provider_failure(&header));
+    header.flags = 0u;
+    header.channel = PSTVNC_TRANSPORT_CHANNEL_CONTROL;
+    CHECK(!pstvnc_transport_header_is_rfb_provider_failure(&header));
+}
 
 static void test_rfb_data_credit_exact_wire_bytes(void)
 {
@@ -360,7 +419,6 @@ static void test_explicit_mpeg_frame_identity_ignores_payload_shape(void)
     header.flags = 0u;
     header.payload_length = sizeof(collision_payload);
 
-    /* Even START-shaped 44-byte bytes remain ordinary MPEG by frame identity. */
     CHECK(pstvnc_transport_header_is_mpeg_data(&header));
     CHECK(!pstvnc_transport_header_is_mpeg_start(&header));
     CHECK(!pstvnc_transport_header_is_mpeg_retire(&header));
@@ -384,6 +442,7 @@ int main(void)
     test_encode_rejects_invalid_contract();
     test_decode_rejects_invalid_wire_contract();
     test_wire_establishment_exact_codecs_and_frames();
+    test_rfb_provider_failure_exact_codec_and_identity();
     test_rfb_data_credit_exact_wire_bytes();
     test_mpeg_retire_exact_codec();
     test_mpeg_start_exact_codec();
