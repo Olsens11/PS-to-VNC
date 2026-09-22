@@ -80,6 +80,7 @@ SOURCES=(
     src/audio/audsrv_service.c
     src/audio/session.c
     src/config/profile.c
+    src/config/rfb_runtime_profile.c
     src/config/mpeg_runtime_profile.c
     src/config/text.c
     src/media/clock.c

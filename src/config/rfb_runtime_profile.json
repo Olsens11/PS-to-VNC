@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "profile_id": "current-rfb-only",
+  "rfb_mode": "ON",
+  "rfb_window_bytes": 32768,
+  "rfb_credit_batch_bytes": 8192,
+  "rfb_credit_flush_on_empty": true,
+  "rfb_credit_return_enabled": true,
+  "receiver_thread_priority": 63,
+  "receiver_thread_stack_size": 16384,
+  "max_data_payload": 8192,
+  "provenance": {
+    "baseline_checkpoint": "CP2N",
+    "baseline_result": "experiments/media-harness-h1/RFB_MUX_CP2N_HARDWARE_RESULT.md",
+    "starting_profile": "experiments/media-harness-h1/RFB_MUX_CP2J_FIRST_RFB_ONLY_CANDIDATE.md",
+    "qualification_scope": "historical RFB-only baseline direction and mechanism",
+    "pi_provider_write_capacity_hardware_qualified": false
+  }
+}

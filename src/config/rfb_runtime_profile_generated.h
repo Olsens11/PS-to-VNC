@@ -1,0 +1,24 @@
+/*
+ * GENERATED FILE - DO NOT EDIT.
+ * Source: src/config/rfb_runtime_profile.json
+ * Generator: scripts/generate-rfb-runtime-profile.py
+ *
+ * These are selected Configuration values only. They do not create a Wire
+ * Session, activate RFB, or own runtime lifecycle.
+ */
+
+#ifndef PSTVNC_CONFIG_RFB_RUNTIME_PROFILE_GENERATED_H
+#define PSTVNC_CONFIG_RFB_RUNTIME_PROFILE_GENERATED_H
+
+#include <stdint.h>
+
+#define PSTVNC_CONFIG_RFB_SELECTED_MODE_ON 1
+#define PSTVNC_CONFIG_RFB_WINDOW_BYTES UINT32_C(32768)
+#define PSTVNC_CONFIG_RFB_CREDIT_BATCH_BYTES UINT32_C(8192)
+#define PSTVNC_CONFIG_RFB_CREDIT_FLUSH_ON_EMPTY 1
+#define PSTVNC_CONFIG_RFB_CREDIT_RETURN_ENABLED 1
+#define PSTVNC_CONFIG_RFB_RECEIVER_THREAD_PRIORITY 63
+#define PSTVNC_CONFIG_RFB_RECEIVER_THREAD_STACK_SIZE UINT32_C(16384)
+#define PSTVNC_CONFIG_RFB_MAX_DATA_PAYLOAD UINT32_C(8192)
+
+#endif /* PSTVNC_CONFIG_RFB_RUNTIME_PROFILE_GENERATED_H */

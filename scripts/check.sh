@@ -10,6 +10,9 @@ DIR="$(
 "$DIR/docs-check.sh"
 "$DIR/continuity-check.sh"
 
+echo '===== RFB RUNTIME PROFILE GENERATION CHECK ====='
+python3 "$DIR/generate-rfb-runtime-profile.py" --check
+
 echo '===== WORK LOG CHECK ====='
 python3 "$DIR/work-log-check.py"
 

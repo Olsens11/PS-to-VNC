@@ -851,3 +851,32 @@ pi-native-rfb-provider-unit:
 
 pi-internal-rfb-provider-unit:
 	python3 $(PI_INTERNAL_RFB_PROVIDER_TEST)
+
+
+CONFIG_RFB_RUNTIME_PROFILE_TEST := .build/config_rfb_runtime_profile_test
+PI_RFB_RUNTIME_PROFILE_TEST := unit/pi_rfb_runtime_profile_test.py
+
+.PHONY: config-rfb-runtime-profile-unit pi-rfb-runtime-profile-unit rfb-runtime-profile-generation-unit
+unit: config-rfb-runtime-profile-unit pi-rfb-runtime-profile-unit rfb-runtime-profile-generation-unit
+
+config-rfb-runtime-profile-unit: $(CONFIG_RFB_RUNTIME_PROFILE_TEST)
+	./$(CONFIG_RFB_RUNTIME_PROFILE_TEST)
+
+$(CONFIG_RFB_RUNTIME_PROFILE_TEST): \
+	unit/config_rfb_runtime_profile_test.c \
+	../src/config/rfb_runtime_profile.c \
+	../src/config/rfb_runtime_profile.h \
+	../src/config/rfb_runtime_profile_generated.h \
+	../src/config/profile.h \
+	../src/transport/transport.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/config_rfb_runtime_profile_test.c \
+		../src/config/rfb_runtime_profile.c \
+		-o $(CONFIG_RFB_RUNTIME_PROFILE_TEST)
+
+pi-rfb-runtime-profile-unit:
+	python3 $(PI_RFB_RUNTIME_PROFILE_TEST)
+
+rfb-runtime-profile-generation-unit:
+	python3 ../scripts/generate-rfb-runtime-profile.py --check
