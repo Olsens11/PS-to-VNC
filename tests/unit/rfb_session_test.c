@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "rfb_session.h"
+#include "transport/protocol.h"
 
 static int failures = 0;
 
@@ -21,6 +22,7 @@ static size_t input_pos;
 static unsigned char output[1024];
 static size_t output_size;
 static int force_write_failure;
+static pstvnc_rfb_provider_failure_reason_t provider_failure_reason;
 
 static void script_reset(void)
 {
@@ -30,6 +32,7 @@ static void script_reset(void)
     input_pos = 0;
     output_size = 0;
     force_write_failure = 0;
+    provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_NONE;
 }
 
 static void append_input(
@@ -89,6 +92,18 @@ int pstvnc_rfb_bridge_write_exact(
     memcpy(&output[output_size], buffer, count);
     output_size += count;
     return 0;
+}
+
+int pstvnc_rfb_bridge_provider_failure(
+    const pstvnc_transport_access_t *transport_access,
+    pstvnc_rfb_provider_failure_reason_t *reason)
+{
+    (void)transport_access;
+    if (reason == NULL)
+        return -1;
+
+    *reason = provider_failure_reason;
+    return provider_failure_reason == PSTVNC_RFB_PROVIDER_FAILURE_NONE ? 0 : 1;
 }
 
 int pstvnc_rfb_bridge_quiesce_requested(
@@ -278,10 +293,6 @@ static void test_key_event_send(void)
     CHECK(session.state == PSTVNC_RFB_SESSION_READY);
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
 
-    /*
-     * Input publication before READY is rejected without emitting bytes and
-     * without manufacturing an unrelated session failure.
-     */
     script_reset();
     session.state = PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME;
 
@@ -290,37 +301,18 @@ static void test_key_event_send(void)
             &session,
             1,
             0x00000061u));
-
     CHECK(output_size == 0);
-    CHECK(
-        session.state ==
-        PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME);
+    CHECK(session.state == PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME);
+    CHECK(!pstvnc_rfb_session_send_key_event(NULL, 1, 0x00000061u));
 
-    CHECK(
-        !pstvnc_rfb_session_send_key_event(
-            NULL,
-            1,
-            0x00000061u));
-
-    /*
-     * Once an exact KeyEvent write is attempted, logical-stream failure is a
-     * real synchronized-session failure just like PointerEvent publication.
-     */
     script_reset();
     pstvnc_rfb_session_init(&session);
-
     session.state = PSTVNC_RFB_SESSION_READY;
     session.server_init.width = 704;
     session.server_init.height = 462;
-
     force_write_failure = 1;
 
-    CHECK(
-        !pstvnc_rfb_session_send_key_event(
-            &session,
-            1,
-            0x00000061u));
-
+    CHECK(!pstvnc_rfb_session_send_key_event(&session, 1, 0x00000061u));
     CHECK(output_size == 0);
     CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_IO);
@@ -343,81 +335,35 @@ static void test_pointer_event_send(void)
     session.server_init.width = 704;
     session.server_init.height = 462;
 
-    CHECK(
-        pstvnc_rfb_session_send_pointer_event(
-            &session,
-            PSTVNC_RFB_POINTER_BUTTON_RIGHT,
-            703,
-            461));
-
+    CHECK(pstvnc_rfb_session_send_pointer_event(
+        &session, PSTVNC_RFB_POINTER_BUTTON_RIGHT, 703, 461));
     CHECK(output_size == sizeof(expected));
     CHECK(memcmp(output, expected, sizeof(expected)) == 0);
     CHECK(session.state == PSTVNC_RFB_SESSION_READY);
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
 
-    /*
-     * Session geometry is the final wire-side guard. Invalid coordinates must
-     * produce no bytes and must not convert a healthy session into failure.
-     */
     script_reset();
-
-    CHECK(
-        !pstvnc_rfb_session_send_pointer_event(
-            &session,
-            0,
-            704,
-            461));
-
-    CHECK(
-        !pstvnc_rfb_session_send_pointer_event(
-            &session,
-            0,
-            703,
-            462));
-
+    CHECK(!pstvnc_rfb_session_send_pointer_event(&session, 0, 704, 461));
+    CHECK(!pstvnc_rfb_session_send_pointer_event(&session, 0, 703, 462));
     CHECK(output_size == 0);
     CHECK(session.state == PSTVNC_RFB_SESSION_READY);
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
 
     script_reset();
     session.state = PSTVNC_RFB_SESSION_AWAITING_FULL_FRAME;
-
-    CHECK(
-        !pstvnc_rfb_session_send_pointer_event(
-            &session,
-            0,
-            100,
-            100));
-
+    CHECK(!pstvnc_rfb_session_send_pointer_event(&session, 0, 100, 100));
     CHECK(output_size == 0);
+    CHECK(!pstvnc_rfb_session_send_pointer_event(NULL, 0, 0, 0));
 
-    CHECK(
-        !pstvnc_rfb_session_send_pointer_event(
-            NULL,
-            0,
-            0,
-            0));
-
-    /*
-     * A logical-stream failure is a session failure, matching the existing
-     * FramebufferUpdateRequest send contract.
-     */
     script_reset();
     pstvnc_rfb_session_init(&session);
-
     session.state = PSTVNC_RFB_SESSION_READY;
     session.server_init.width = 704;
     session.server_init.height = 462;
-
     force_write_failure = 1;
 
-    CHECK(
-        !pstvnc_rfb_session_send_pointer_event(
-            &session,
-            PSTVNC_RFB_POINTER_BUTTON_LEFT,
-            100,
-            100));
-
+    CHECK(!pstvnc_rfb_session_send_pointer_event(
+        &session, PSTVNC_RFB_POINTER_BUTTON_LEFT, 100, 100));
     CHECK(output_size == 0);
     CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_IO);
@@ -435,8 +381,7 @@ static void test_none_missing(void)
 
     CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
     CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
-    CHECK(session.error ==
-        PSTVNC_RFB_SESSION_ERROR_SECURITY_NONE_UNAVAILABLE);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_SECURITY_NONE_UNAVAILABLE);
     CHECK(output_size == 12);
 }
 
@@ -505,11 +450,35 @@ static void test_bad_version_and_logical_read_failure(void)
     CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_PROTOCOL_VERSION);
 
-    /* Empty scripted logical stream makes the bridge exact-read fail. */
     script_reset();
     CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
     CHECK(session.state == PSTVNC_RFB_SESSION_FAILED);
     CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_IO);
+}
+
+static void test_provider_failure_classification(void)
+{
+    pstvnc_rfb_session_t session;
+
+    script_reset();
+    provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_CONNECT;
+    CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_PROVIDER_CONNECT);
+
+    script_reset();
+    provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_READ;
+    CHECK(!pstvnc_rfb_session_start(&session, 704, 462));
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ);
+
+    script_reset();
+    pstvnc_rfb_session_init(&session);
+    session.state = PSTVNC_RFB_SESSION_READY;
+    session.server_init.width = 704;
+    session.server_init.height = 462;
+    force_write_failure = 1;
+    provider_failure_reason = PSTVNC_RFB_PROVIDER_FAILURE_WRITE;
+    CHECK(!pstvnc_rfb_session_request_update(&session, 1));
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_PROVIDER_WRITE);
 }
 
 int main(void)
@@ -523,6 +492,7 @@ int main(void)
     test_geometry_mismatch();
     test_long_name_consumed();
     test_bad_version_and_logical_read_failure();
+    test_provider_failure_classification();
 
     if (failures != 0) {
         fprintf(stderr, "rfb_session_test: %d failure(s)\n", failures);
