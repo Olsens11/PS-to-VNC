@@ -1,10 +1,11 @@
 /*
  * File synopsis:
  * Defines the shared PSTV transport wire-header representation, stable logical
- * channel identities, exact provisional Wire-establishment codecs, and exact
- * MPEG generation-control wire codecs. This file owns framing vocabulary only;
- * it does not own sockets, dispatch, queues, active-session policy, exact-
- * generation lifecycle state, media policy, or threading.
+ * channel identities, exact provisional Wire-establishment codecs, typed RFB
+ * provider-terminal reporting, and exact MPEG generation-control wire codecs.
+ * This file owns framing vocabulary only; it does not own sockets, dispatch,
+ * queues, active-session policy, exact-generation lifecycle state, media
+ * policy, or threading.
  *
  * Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
  * LEDGE_AUDIT_A003_MPEG_GENERATION.md.
@@ -22,10 +23,15 @@
 #define PSTVNC_TRANSPORT_MAX_PAYLOAD 8192u
 #define PSTVNC_TRANSPORT_CREDIT_PAYLOAD_SIZE 4u
 
-#define PSTVNC_WIRE_PRODUCT_ESTABLISHMENT_VERSION 1u
+/*
+ * Product-establishment version 2 is the Q4 compatibility fence for the R16A
+ * channel-1 ERROR semantic. Fixed header/Wire framing remains version 1.
+ */
+#define PSTVNC_WIRE_PRODUCT_ESTABLISHMENT_VERSION 2u
 #define PSTVNC_WIRE_HELLO_PAYLOAD_SIZE 8u
 #define PSTVNC_WIRE_ACCEPT_PAYLOAD_SIZE 4u
 #define PSTVNC_WIRE_NOT_ACCEPTED_PAYLOAD_SIZE 4u
+#define PSTVNC_RFB_PROVIDER_FAILURE_PAYLOAD_SIZE 4u
 
 #define PSTVNC_MPEG_GENERATION_CONTROL_VERSION 1u
 #define PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE 12u
@@ -81,6 +87,22 @@ typedef struct pstvnc_wire_not_accepted_payload {
     uint32_t reason;
 } pstvnc_wire_not_accepted_payload_t;
 
+/*
+ * R16A assigns the previously dormant ERROR=7 reservation on channel 1 to this
+ * exact one-word mechanism contract. READ covers provider EOF and recv/read
+ * failure; all values are RFB-local facts and do not imply Wire failure.
+ */
+typedef enum pstvnc_rfb_provider_failure_reason {
+    PSTVNC_RFB_PROVIDER_FAILURE_NONE = 0,
+    PSTVNC_RFB_PROVIDER_FAILURE_CONNECT = 1,
+    PSTVNC_RFB_PROVIDER_FAILURE_READ = 2,
+    PSTVNC_RFB_PROVIDER_FAILURE_WRITE = 3
+} pstvnc_rfb_provider_failure_reason_t;
+
+typedef struct pstvnc_rfb_provider_failure_payload {
+    uint32_t reason;
+} pstvnc_rfb_provider_failure_payload_t;
+
 typedef struct pstvnc_mpeg_retire_payload {
     uint32_t version;
     uint32_t session_id;
@@ -132,6 +154,14 @@ int pstvnc_wire_not_accepted_payload_decode(
     const uint8_t *input,
     size_t input_size);
 
+int pstvnc_rfb_provider_failure_payload_encode(
+    uint8_t output[PSTVNC_RFB_PROVIDER_FAILURE_PAYLOAD_SIZE],
+    const pstvnc_rfb_provider_failure_payload_t *payload);
+int pstvnc_rfb_provider_failure_payload_decode(
+    pstvnc_rfb_provider_failure_payload_t *payload,
+    const uint8_t *input,
+    size_t input_size);
+
 int pstvnc_mpeg_retire_payload_encode(
     uint8_t output[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE],
     const pstvnc_mpeg_retire_payload_t *payload);
@@ -152,6 +182,8 @@ int pstvnc_transport_header_is_wire_hello(
 int pstvnc_transport_header_is_wire_accept(
     const pstvnc_transport_header_t *header);
 int pstvnc_transport_header_is_wire_not_accepted(
+    const pstvnc_transport_header_t *header);
+int pstvnc_transport_header_is_rfb_provider_failure(
     const pstvnc_transport_header_t *header);
 
 int pstvnc_transport_header_is_mpeg_data(
