@@ -2,7 +2,8 @@
  * File synopsis:
  * Defines synchronized RFB session state, errors, bounded scratch storage, and
  * lifecycle over the logical RFB bridge while leaving Transport lifecycle and
- * application recovery policy with their owning components.
+ * application recovery policy with their owning components. Provider-terminal
+ * mechanism failures are typed independently from generic physical I/O failure.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "Shared Raw
  * server-message parser"; docs/CLEAN_ARCHITECTURE.md, "RFB client/session";
@@ -48,6 +49,9 @@ typedef enum pstvnc_rfb_session_receive_result {
 typedef enum pstvnc_rfb_session_error {
     PSTVNC_RFB_SESSION_ERROR_NONE = 0,
     PSTVNC_RFB_SESSION_ERROR_IO,
+    PSTVNC_RFB_SESSION_ERROR_PROVIDER_CONNECT,
+    PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ,
+    PSTVNC_RFB_SESSION_ERROR_PROVIDER_WRITE,
     PSTVNC_RFB_SESSION_ERROR_PROTOCOL_VERSION,
     PSTVNC_RFB_SESSION_ERROR_SERVER_REJECTED,
     PSTVNC_RFB_SESSION_ERROR_SECURITY_NONE_UNAVAILABLE,
