@@ -14,11 +14,11 @@ BASE_ARCHITECTURE=docs/CLEAN_ARCHITECTURE.md:ARCHITECTURE_VERSION_1
 SCOPE=ledge/h1-all-guns
 
 This overlay is the current ledge amendment to the clean architecture. Revision
-0005 adds the accepted R13 reconstruction mechanism for one session-scoped Pi
-RFB attachment and its finite quiesce lifecycle. Revision 0004 remains
-historical in Git; where its pre-R13 attachment wording conflicts with this
-revision or `LEDGE_WIRE_RUNTIME_DECISIONS.md` revision 0011, the later
-authority governs.
+0005 records the provisional R13 reconstructed mechanism for one session-scoped
+Pi RFB attachment and its finite quiesce lifecycle pending independent Foreman
+acceptance. Revision 0004 remains historical in Git; where its pre-R13
+attachment wording conflicts with this revision or
+`LEDGE_WIRE_RUNTIME_DECISIONS.md` revision 0011, the later authority governs.
 
 ## Physical Wire ownership
 
