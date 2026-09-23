@@ -94,6 +94,7 @@ SOURCES=(
     src/framebuffer/framebuffer.c
     src/rfb/bridge.c
     src/rfb/rfb_session.c
+    src/rfb/flow_policy.c
     src/display/display.c
     src/display/mpeg_frame.c
     src/display/mpeg_presentation.c

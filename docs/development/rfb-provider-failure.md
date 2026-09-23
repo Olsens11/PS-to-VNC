@@ -99,6 +99,13 @@ R16B does not change the R16A frame/Q4 compatibility representation, R13
 quiesce, the singular R14 flow profile, AUDIO/MPEG/CONFIG behavior, heartbeat
 policy, systemd/provider restart behavior, or direct-RFB fallback.
 
+R19 composes the already-accepted generic RFB flow policy into that ordinary
+Application attempt. Each successful replacement receives a newly initialized
+thawed flow-policy value only after its own startup full frame. The old attempt's
+outstanding request, freeze state, and one-shot FULL-refresh debt therefore die
+with the failed attempt just like its parser/framebuffer/input runtime state.
+Provider recovery still does not restart an RFB component in place.
+
 ## Evidence expectations
 
 Changes to this seam should preserve tests that separately prove:

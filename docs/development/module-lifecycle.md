@@ -108,6 +108,24 @@ Wire loss stops the current RFB instance. A replacement Wire Session uses the
 same ordinary RFB startup path. It does not resume, migrate, or rebind the dead
 instance.
 
+After the session's authoritative startup frame is complete, the Application
+owns one fresh attempt-local `pstvnc_rfb_flow_policy_t` and composes the
+accepted RFB flow policy at the complete-update/request scheduling boundary.
+That policy is the single authority for whether the next live request is HOLD,
+incremental, or full; request accounting advances only after successful RFB
+serialization, and completion accounting advances exactly once per completed
+live update.
+
+Remote framebuffer parsing and CPU-side truth continue even when the policy
+disallows remote visual publication. Application consults the same policy
+before publishing a dirty completed remote frame. The policy therefore controls
+request cadence and publication permission without becoming the parser,
+framebuffer, Transport, graphics, or local-UI owner.
+
+A provider/Wire replacement reconstructs this flow policy from its ordinary
+thawed initial state after the replacement startup frame. Outstanding request,
+freeze, and post-thaw full-refresh debt never migrate from the failed attempt.
+
 ### PCM/audio
 
 PCM/audio is expected to establish for each usable Wire Session according to
