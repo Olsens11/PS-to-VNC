@@ -4,8 +4,9 @@
  * deterministic private-runtime stubs. The fixture preserves established
  * RFB/AUDIO/session lifecycle proofs and covers A003 opt-in logical MPEG
  * opening, bounded consumer/status/activity, producer-completion publication,
- * exact generation-control relay result mapping, and stale-access fencing
- * without exposing physical descriptor authority or decoder policy.
+ * R20 owner-correct generation-control stamping/completion projection, and
+ * stale-access fencing without exposing physical descriptor/session authority
+ * or decoder policy.
  *
  * Context: LEDGE_FOREMAN_STATE revisions 0009 and 0012.
  */
@@ -1049,27 +1050,49 @@ static void test_mpeg_result_mapping(void)
 
 
 
-static void fill_bridge_start(pstvnc_mpeg_start_payload_t *start)
+static void fill_bridge_start_request(
+    pstvnc_transport_mpeg_start_request_t *request)
 {
-    memset(start, 0, sizeof(*start));
-    start->version = PSTVNC_MPEG_GENERATION_CONTROL_VERSION;
-    start->session_id = 0x10203040u;
-    start->generation = 7u;
-    start->base_width = 640u;
-    start->base_height = 448u;
-    start->suppression_width = 640u;
-    start->suppression_height = 448u;
+    memset(request, 0, sizeof(*request));
+    request->generation = 7u;
+    request->base_x = 16u;
+    request->base_y = 32u;
+    request->base_width = 640u;
+    request->base_height = 448u;
+    request->suppression_x = 8u;
+    request->suppression_y = 16u;
+    request->suppression_width = 656u;
+    request->suppression_height = 480u;
 }
 
-static void test_mpeg_control_relay_and_stale_access_fence(void)
+static void check_observed_start(
+    uint32_t expected_session_id,
+    const pstvnc_transport_mpeg_start_request_t *request)
 {
+    CHECK(observed_start.version == PSTVNC_MPEG_GENERATION_CONTROL_VERSION);
+    CHECK(observed_start.session_id == expected_session_id);
+    CHECK(observed_start.generation == request->generation);
+    CHECK(observed_start.base_x == request->base_x);
+    CHECK(observed_start.base_y == request->base_y);
+    CHECK(observed_start.base_width == request->base_width);
+    CHECK(observed_start.base_height == request->base_height);
+    CHECK(observed_start.suppression_x == request->suppression_x);
+    CHECK(observed_start.suppression_y == request->suppression_y);
+    CHECK(observed_start.suppression_width == request->suppression_width);
+    CHECK(observed_start.suppression_height == request->suppression_height);
+}
+
+static void test_mpeg_control_private_identity_and_stale_access_fence(void)
+{
+    const uint32_t session_a = 0x10203040u;
+    const uint32_t session_b = 0x55667788u;
     pstvnc_transport_session_config_t config = make_config();
     pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
     pstvnc_transport_access_t access_a;
     pstvnc_transport_access_t access_b;
-    pstvnc_mpeg_start_payload_t start;
-    pstvnc_mpeg_retire_payload_t retire;
-    pstvnc_mpeg_retire_payload_t completion;
+    pstvnc_transport_mpeg_start_request_t start;
+    pstvnc_transport_mpeg_retire_request_t retire;
+    pstvnc_transport_mpeg_retire_completion_t completion;
     int socket_fd = 80;
     int starts_before;
     int retires_before;
@@ -1078,12 +1101,20 @@ static void test_mpeg_control_relay_and_stale_access_fence(void)
     reset_fixture();
     memset(&access_a, 0, sizeof(access_a));
     memset(&access_b, 0, sizeof(access_b));
-    fill_bridge_start(&start);
     memset(&retire, 0, sizeof(retire));
-    retire.version = PSTVNC_MPEG_GENERATION_CONTROL_VERSION;
-    retire.session_id = start.session_id;
+    memset(&completion, 0, sizeof(completion));
+    fill_bridge_start_request(&start);
     retire.generation = start.generation;
 
+    /*
+     * These are the complete public RETIRE/completion representations. If Q4
+     * identity or wire version leaks upward, these size assertions change.
+     */
+    CHECK(sizeof(retire) == sizeof(uint32_t));
+    CHECK(sizeof(completion) == sizeof(uint32_t));
+    CHECK(sizeof(start) == 9u * sizeof(uint32_t));
+
+    establish_session_id = session_a;
     CHECK(pstvnc_transport_session_open_with_mpeg(
         &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
     CHECK(pstvnc_transport_access_acquire(&access_a) == PSTVNC_TRANSPORT_OK);
@@ -1091,14 +1122,15 @@ static void test_mpeg_control_relay_and_stale_access_fence(void)
     CHECK(pstvnc_transport_mpeg_send_start(
         &access_a, &start) == PSTVNC_TRANSPORT_OK);
     CHECK(mpeg_start_calls == 1);
-    CHECK(memcmp(&observed_start, &start, sizeof(start)) == 0);
+    check_observed_start(session_a, &start);
 
     CHECK(pstvnc_transport_mpeg_send_retire(
         &access_a, &retire) == PSTVNC_TRANSPORT_OK);
     CHECK(mpeg_retire_calls == 1);
-    CHECK(memcmp(&observed_retire, &retire, sizeof(retire)) == 0);
+    CHECK(observed_retire.version == PSTVNC_MPEG_GENERATION_CONTROL_VERSION);
+    CHECK(observed_retire.session_id == session_a);
+    CHECK(observed_retire.generation == retire.generation);
 
-    memset(&completion, 0, sizeof(completion));
     CHECK(pstvnc_transport_mpeg_take_retire_completion(
         &access_a, &completion) == PSTVNC_TRANSPORT_WOULD_BLOCK);
     CHECK(mpeg_take_calls == 1);
@@ -1106,6 +1138,7 @@ static void test_mpeg_control_relay_and_stale_access_fence(void)
     observed_runtime->receiver_done = 1;
     CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
 
+    establish_session_id = session_b;
     socket_fd = 81;
     CHECK(pstvnc_transport_session_open_with_mpeg(
         &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
@@ -1126,19 +1159,121 @@ static void test_mpeg_control_relay_and_stale_access_fence(void)
     CHECK(mpeg_retire_calls == retires_before);
     CHECK(mpeg_take_calls == takes_before);
 
-    available_completion = retire;
-    available_completion.generation = 8u;
+    /*
+     * Reusing caller-owned run meaning with the current B ticket can only stamp
+     * B's current private identity; there is no field in the request capable of
+     * carrying A's retired Q4 session ID.
+     */
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access_b, &start) == PSTVNC_TRANSPORT_OK);
+    CHECK(mpeg_start_calls == starts_before + 1);
+    check_observed_start(session_b, &start);
+
+    CHECK(pstvnc_transport_mpeg_send_retire(
+        &access_b, &retire) == PSTVNC_TRANSPORT_OK);
+    CHECK(mpeg_retire_calls == retires_before + 1);
+    CHECK(observed_retire.version == PSTVNC_MPEG_GENERATION_CONTROL_VERSION);
+    CHECK(observed_retire.session_id == session_b);
+    CHECK(observed_retire.generation == retire.generation);
+
+    available_completion.version = PSTVNC_MPEG_GENERATION_CONTROL_VERSION;
+    available_completion.session_id = session_a;
+    available_completion.generation = retire.generation;
     mpeg_take_result = PSTVNC_TRANSPORT_OK;
-    memset(&completion, 0, sizeof(completion));
+    completion.generation = 0u;
+    CHECK(pstvnc_transport_mpeg_take_retire_completion(
+        &access_b, &completion) == PSTVNC_TRANSPORT_FAILED);
+    CHECK(completion.generation == 0u);
+
+    available_completion.session_id = session_b;
+    available_completion.generation = retire.generation + 1u;
+    completion.generation = 0u;
     CHECK(pstvnc_transport_mpeg_take_retire_completion(
         &access_b, &completion) == PSTVNC_TRANSPORT_OK);
-    CHECK(mpeg_take_calls == takes_before + 1);
-    CHECK(memcmp(
-        &completion, &available_completion, sizeof(completion)) == 0);
+    CHECK(completion.generation == retire.generation + 1u);
+
+    available_completion.version =
+        PSTVNC_MPEG_GENERATION_CONTROL_VERSION + 1u;
+    completion.generation = 0u;
+    CHECK(pstvnc_transport_mpeg_take_retire_completion(
+        &access_b, &completion) == PSTVNC_TRANSPORT_FAILED);
+    CHECK(completion.generation == 0u);
 
     mpeg_start_result = PSTVNC_TRANSPORT_FAILED;
     CHECK(pstvnc_transport_mpeg_send_start(
         &access_b, &start) == PSTVNC_TRANSPORT_FAILED);
+
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+}
+
+static void test_mpeg_control_rejects_invalid_run_meaning_before_runtime(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    pstvnc_transport_access_t access;
+    pstvnc_transport_mpeg_start_request_t start;
+    pstvnc_transport_mpeg_retire_request_t retire;
+    int socket_fd = 82;
+    int start_calls_before;
+    int retire_calls_before;
+
+    reset_fixture();
+    memset(&access, 0, sizeof(access));
+    fill_bridge_start_request(&start);
+    retire.generation = start.generation;
+
+    CHECK(pstvnc_transport_session_open_with_mpeg(
+        &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&access) == PSTVNC_TRANSPORT_OK);
+
+    start_calls_before = mpeg_start_calls;
+    retire_calls_before = mpeg_retire_calls;
+
+    start.generation = 0u;
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access, &start) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(mpeg_start_calls == start_calls_before);
+    start.generation = 7u;
+
+    start.base_width = 0u;
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access, &start) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(mpeg_start_calls == start_calls_before);
+    start.base_width = 640u;
+
+    start.base_height = 447u;
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access, &start) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(mpeg_start_calls == start_calls_before);
+    start.base_height = 448u;
+
+    start.suppression_x = start.base_x + 1u;
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access, &start) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(mpeg_start_calls == start_calls_before);
+    fill_bridge_start_request(&start);
+
+    start.suppression_width = UINT32_MAX;
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access, &start) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(mpeg_start_calls == start_calls_before);
+    fill_bridge_start_request(&start);
+
+    retire.generation = 0u;
+    CHECK(pstvnc_transport_mpeg_send_retire(
+        &access, &retire) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(mpeg_retire_calls == retire_calls_before);
+
+    CHECK(pstvnc_transport_mpeg_send_start(
+        &access, NULL) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(pstvnc_transport_mpeg_send_retire(
+        &access, NULL) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(pstvnc_transport_mpeg_take_retire_completion(
+        &access, NULL) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(mpeg_start_calls == start_calls_before);
+    CHECK(mpeg_retire_calls == retire_calls_before);
+    CHECK(mpeg_take_calls == 0);
 
     observed_runtime->receiver_done = 1;
     CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
@@ -1359,7 +1494,8 @@ int main(void)
     test_rfb_result_mapping_regression();
     test_audio_result_mapping();
     test_mpeg_result_mapping();
-    test_mpeg_control_relay_and_stale_access_fence();
+    test_mpeg_control_private_identity_and_stale_access_fence();
+    test_mpeg_control_rejects_invalid_run_meaning_before_runtime();
     test_stale_access_cannot_cross_reconnect();
 
     if (failures != 0) {
