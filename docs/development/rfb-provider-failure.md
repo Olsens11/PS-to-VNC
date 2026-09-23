@@ -70,22 +70,34 @@ fact. Late state is never transferred into another attachment or Wire Session.
 A failed R13 attachment is never rebound. A later session gets fresh Transport,
 attachment, credit, wake, and failure state.
 
-## What belongs to later Application work
+## Application recovery after accepted R16A
 
-Do not add any of the following while working only on this seam:
+R16B consumes the accepted typed provider result at one explicit Application
+policy branch. CONNECT, READ/EOF, and WRITE remain distinct RFB-local causes,
+but the initial product policy for all three is the same:
 
-- reconnect or fresh-Q4 creation;
-- retry/backoff;
-- in-place provider restart;
-- systemd restart as failure protocol;
-- heartbeat/timeout authority;
-- automatic selection of direct-RFB fallback;
-- AUDIO/MPEG/CONFIG activation;
-- R14 flow-value retuning.
+1. leave the failed attempt's ordinary RFB/input admission path immediately;
+2. prove the attempt's input worker/runtime completely stopped;
+3. abort the containing Transport session through its owner seam so the sole
+   receiver is interrupted, observed complete, and released;
+4. admit a replacement only after both stop proofs succeed;
+5. run ordinary startup again with a fresh network connection, Q4 Wire Session,
+   Transport access, Pi attachment, RFB parser/session, framebuffer validity,
+   and input publication/runtime state.
 
-The Application may consume this typed RFB-local result only after Foreman
-independently accepts R16A and explicitly authorizes the downstream recovery
-packet.
+The failed attachment is never rebound and no component is restarted in place
+inside its still-live old attempt. The next attempt must independently reach the
+ordinary DESKTOP_READY/INPUT_READY boundary; successful teardown is not startup
+success.
+
+There is deliberately no success-by-delay in this policy. A sleep, retry count,
+timeout, or backoff interval is never retirement evidence. If input dormancy or
+Transport receiver/session retirement cannot be proven, Application fails
+closed and does not admit a replacement.
+
+R16B does not change the R16A frame/Q4 compatibility representation, R13
+quiesce, the singular R14 flow profile, AUDIO/MPEG/CONFIG behavior, heartbeat
+policy, systemd/provider restart behavior, or direct-RFB fallback.
 
 ## Evidence expectations
 
