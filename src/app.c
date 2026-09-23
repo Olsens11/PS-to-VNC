@@ -2,7 +2,7 @@
  * File synopsis:
  * Runs the application coordinator: ordered startup, Transport descriptor
  * adoption, logical RFB session service, semantic controller-input routing,
- * presentation, failure policy, and ownership-safe cleanup.
+ * presentation, typed RFB-provider recovery policy, and ownership-safe cleanup.
  *
  * Concrete Transport queue/credit/thread/payload values are never chosen here;
  * the configured entry point accepts one already-validated value from its
@@ -655,10 +655,6 @@ int pstvnc_app_run_with_transport_config(
     int input_runtime_ready = 0;
     int mouse_interpretation_suspended = 0;
 
-    /*
-     * Missing validated configuration is an authority failure, not an excuse to
-     * manufacture queue, credit, receiver-thread, or payload defaults.
-     */
     if (transport_config == NULL)
         return -1;
 
@@ -675,168 +671,243 @@ int pstvnc_app_run_with_transport_config(
         diagnostics_ready = 1;
 
     /*
-     * Application owns the freshly connected descriptor only until Transport
-     * successfully adopts it. pstvnc_transport_session_open() sets socket_fd to
-     * -1 on every post-adoption outcome, making the failure-path owner explicit.
+     * IOP/network/link, diagnostics, and an already-created graphics context are
+     * resident application ownership. Every pass below is one ordinary RFB
+     * attempt with fresh network, Transport/Q4, RFB, framebuffer and input
+     * authority. A typed provider failure is the only condition that re-enters
+     * this admission path.
      */
-    socket_fd = pstvnc_ps2_network_connect_pstv();
-    if (socket_fd < 0)
-        goto fail;
-
-    if (pstvnc_transport_session_open(
-            &socket_fd,
-            transport_config) != PSTVNC_TRANSPORT_OK)
-        goto fail;
-
-    transport_session_active = 1;
-
-    send_diagnostic_literal(
-        diagnostics_ready,
-        net_ready,
-        sizeof(net_ready) - 1u);
-
-    if (!pstvnc_framebuffer_init(
-            &framebuffer,
-            remote_pixels,
-            PSTVNC_DISPLAY_PIXEL_COUNT))
-        goto fail;
-
-    if (!pstvnc_framebuffer_set_geometry(
-            &framebuffer,
-            PSTVNC_DISPLAY_WIDTH,
-            PSTVNC_DISPLAY_HEIGHT))
-        goto fail;
-
-    if (pstvnc_ps2_graphics_init() < 0)
-        goto fail;
-
-    graphics_ready = 1;
-
-    send_diagnostic_literal(
-        diagnostics_ready,
-        gs_ready,
-        sizeof(gs_ready) - 1u);
-
-    pstvnc_local_controller_init(&local_controller);
-    pstvnc_local_ui_init(&local_ui);
-    pstvnc_osk_reset_for_open(&osk);
-    pstvnc_rfb_session_init(&session);
-
-    /* RFB receives only the already-open logical bridge, never socket_fd. */
-    if (!pstvnc_rfb_session_start(
-            &session,
-            PSTVNC_DISPLAY_WIDTH,
-            PSTVNC_DISPLAY_HEIGHT))
-        goto fail;
-
-    if (!pstvnc_rfb_session_receive_initial_frame(
-            &session,
-            &framebuffer))
-        goto fail;
-
-    if (!present_current_application_frame(
-            &framebuffer,
-            1,
-            &local_ui,
-            &osk))
-        goto fail;
-
-    send_diagnostic_literal(
-        diagnostics_ready,
-        desktop_ready,
-        sizeof(desktop_ready) - 1u);
-
-    if (pstvnc_input_runtime_init(
-            &input_runtime,
-            PSTVNC_DISPLAY_WIDTH,
-            PSTVNC_DISPLAY_HEIGHT,
-            PSTVNC_APP_CONTROLLER_PORT,
-            PSTVNC_APP_CONTROLLER_SLOT) < 0)
-        goto fail;
-
-    input_runtime_ready = 1;
-
-    published_pointer.cursor_x = PSTVNC_DISPLAY_WIDTH / 2u;
-    published_pointer.cursor_y = PSTVNC_DISPLAY_HEIGHT / 2u;
-    published_pointer.click_buttons = 0;
-
-    if (!pstvnc_rfb_session_send_pointer_event(
-            &session,
-            0,
-            (uint16_t)published_pointer.cursor_x,
-            (uint16_t)published_pointer.cursor_y))
-        goto fail;
-
-    if (pstvnc_input_runtime_start(&input_runtime) < 0)
-        goto fail;
-
-    send_diagnostic_literal(
-        diagnostics_ready,
-        input_ready,
-        sizeof(input_ready) - 1u);
-
-    if (!pstvnc_rfb_session_request_update(&session, 1))
-        goto fail;
-
     for (;;) {
-        pstvnc_rfb_session_receive_result_t receive_result;
+        socket_fd = -1;
+        transport_session_active = 0;
+        input_runtime_ready = 0;
+        mouse_interpretation_suspended = 0;
 
-        if (!service_semantic_input_events(
-                &input_runtime,
+        /*
+         * Application owns the freshly connected descriptor only until
+         * Transport successfully adopts it. Every replacement attempt obtains a
+         * new descriptor and therefore a new Q4 Wire Session; no old descriptor,
+         * access ticket, channel state or Pi attachment can be rebound here.
+         */
+        socket_fd = pstvnc_ps2_network_connect_pstv();
+        if (socket_fd < 0)
+            goto fail;
+
+        if (pstvnc_transport_session_open(
+                &socket_fd,
+                transport_config) != PSTVNC_TRANSPORT_OK)
+            goto fail;
+
+        transport_session_active = 1;
+
+        send_diagnostic_literal(
+            diagnostics_ready,
+            net_ready,
+            sizeof(net_ready) - 1u);
+
+        /*
+         * Reinitialize framebuffer authority for every attempt. A failed
+         * attempt's valid/dirty state is never inherited by the replacement
+         * RFB parser.
+         */
+        if (!pstvnc_framebuffer_init(
+                &framebuffer,
+                remote_pixels,
+                PSTVNC_DISPLAY_PIXEL_COUNT))
+            goto fail;
+
+        if (!pstvnc_framebuffer_set_geometry(
+                &framebuffer,
+                PSTVNC_DISPLAY_WIDTH,
+                PSTVNC_DISPLAY_HEIGHT))
+            goto fail;
+
+        /*
+         * Graphics is resident process state rather than RFB-attempt state.
+         * Keep a proven graphics owner alive across an ordinary provider
+         * replacement while every remote-authority owner below is rebuilt.
+         */
+        if (!graphics_ready) {
+            if (pstvnc_ps2_graphics_init() < 0)
+                goto fail;
+
+            graphics_ready = 1;
+
+            send_diagnostic_literal(
+                diagnostics_ready,
+                gs_ready,
+                sizeof(gs_ready) - 1u);
+        }
+
+        pstvnc_local_controller_init(&local_controller);
+        pstvnc_local_ui_init(&local_ui);
+        pstvnc_osk_reset_for_open(&osk);
+        pstvnc_rfb_session_init(&session);
+
+        if (!pstvnc_rfb_session_start(
                 &session,
-                &published_pointer,
-                &local_controller,
+                PSTVNC_DISPLAY_WIDTH,
+                PSTVNC_DISPLAY_HEIGHT))
+            goto attempt_failed;
+
+        if (!pstvnc_rfb_session_receive_initial_frame(
+                &session,
+                &framebuffer))
+            goto attempt_failed;
+
+        if (!present_current_application_frame(
+                &framebuffer,
+                1,
                 &local_ui,
-                &osk,
-                &mouse_interpretation_suspended))
+                &osk))
             goto fail;
 
-        if (pstvnc_local_ui_needs_present(&local_ui)) {
-            if (!present_current_application_frame(
-                    &framebuffer,
-                    0,
-                    &local_ui,
-                    &osk))
-                goto fail;
-        }
+        send_diagnostic_literal(
+            diagnostics_ready,
+            desktop_ready,
+            sizeof(desktop_ready) - 1u);
 
-        if (!resume_desktop_mouse_if_ready(
+        if (pstvnc_input_runtime_init(
                 &input_runtime,
-                &local_ui,
-                &mouse_interpretation_suspended))
+                PSTVNC_DISPLAY_WIDTH,
+                PSTVNC_DISPLAY_HEIGHT,
+                PSTVNC_APP_CONTROLLER_PORT,
+                PSTVNC_APP_CONTROLLER_SLOT) < 0)
             goto fail;
 
-        receive_result = pstvnc_rfb_session_try_receive_update(
-            &session,
-            &framebuffer);
+        input_runtime_ready = 1;
 
-        if (receive_result == PSTVNC_RFB_SESSION_RECEIVE_FAILED)
+        /*
+         * Published input authority is reconstructed, not inherited. Every
+         * attempt starts from a fresh neutral-center publication after fresh
+         * input-runtime initialization.
+         */
+        published_pointer.cursor_x = PSTVNC_DISPLAY_WIDTH / 2u;
+        published_pointer.cursor_y = PSTVNC_DISPLAY_HEIGHT / 2u;
+        published_pointer.click_buttons = 0;
+
+        if (!pstvnc_rfb_session_send_pointer_event(
+                &session,
+                0,
+                (uint16_t)published_pointer.cursor_x,
+                (uint16_t)published_pointer.cursor_y))
+            goto attempt_failed;
+
+        if (pstvnc_input_runtime_start(&input_runtime) < 0)
             goto fail;
 
-        if (receive_result == PSTVNC_RFB_SESSION_RECEIVE_IDLE) {
-            if (pstvnc_ps2_system_delay_us(
-                    PSTVNC_APP_IDLE_POLL_DELAY_US) < 0)
-                goto fail;
-            continue;
-        }
-
-        if (receive_result != PSTVNC_RFB_SESSION_RECEIVE_UPDATE)
-            goto fail;
-
-        if (!framebuffer.valid)
-            goto fail;
-
-        if (framebuffer.dirty) {
-            if (!present_current_application_frame(
-                    &framebuffer,
-                    1,
-                    &local_ui,
-                    &osk))
-                goto fail;
-        }
+        send_diagnostic_literal(
+            diagnostics_ready,
+            input_ready,
+            sizeof(input_ready) - 1u);
 
         if (!pstvnc_rfb_session_request_update(&session, 1))
+            goto attempt_failed;
+
+        for (;;) {
+            pstvnc_rfb_session_receive_result_t receive_result;
+
+            if (!service_semantic_input_events(
+                    &input_runtime,
+                    &session,
+                    &published_pointer,
+                    &local_controller,
+                    &local_ui,
+                    &osk,
+                    &mouse_interpretation_suspended))
+                goto attempt_failed;
+
+            if (pstvnc_local_ui_needs_present(&local_ui)) {
+                if (!present_current_application_frame(
+                        &framebuffer,
+                        0,
+                        &local_ui,
+                        &osk))
+                    goto fail;
+            }
+
+            if (!resume_desktop_mouse_if_ready(
+                    &input_runtime,
+                    &local_ui,
+                    &mouse_interpretation_suspended))
+                goto fail;
+
+            receive_result = pstvnc_rfb_session_try_receive_update(
+                &session,
+                &framebuffer);
+
+            if (receive_result == PSTVNC_RFB_SESSION_RECEIVE_FAILED)
+                goto attempt_failed;
+
+            if (receive_result == PSTVNC_RFB_SESSION_RECEIVE_IDLE) {
+                if (pstvnc_ps2_system_delay_us(
+                        PSTVNC_APP_IDLE_POLL_DELAY_US) < 0)
+                    goto fail;
+                continue;
+            }
+
+            if (receive_result != PSTVNC_RFB_SESSION_RECEIVE_UPDATE)
+                goto fail;
+
+            if (!framebuffer.valid)
+                goto fail;
+
+            if (framebuffer.dirty) {
+                if (!present_current_application_frame(
+                        &framebuffer,
+                        1,
+                        &local_ui,
+                        &osk))
+                    goto fail;
+            }
+
+            if (!pstvnc_rfb_session_request_update(&session, 1))
+                goto attempt_failed;
+        }
+
+attempt_failed:
+        /*
+         * This switch is the Application-owned R16B recovery-policy boundary.
+         * The three R16A provider-local causes remain typed facts even though
+         * the initial product policy deliberately treats them alike.
+         */
+        switch (session.error) {
+            case PSTVNC_RFB_SESSION_ERROR_PROVIDER_CONNECT:
+            case PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ:
+            case PSTVNC_RFB_SESSION_ERROR_PROVIDER_WRITE:
+                break;
+
+            default:
+                goto fail;
+        }
+
+        /*
+         * Reaching this branch closes failed-attempt admission immediately:
+         * no further input publication, update request, parser service, or
+         * other provider-bound ordinary-RFB work is admitted to this attempt.
+         *
+         * The owners themselves prove complete stop. Input shutdown must prove
+         * worker dormancy. Transport abort interrupts the sole receiver, proves
+         * its completion, releases the physical/runtime session, and fences the
+         * old access ticket. Any unproven owner blocks replacement admission.
+         */
+        if (input_runtime_ready &&
+            pstvnc_input_runtime_shutdown(&input_runtime) == 0)
+            input_runtime_ready = 0;
+
+        if (transport_session_active &&
+            pstvnc_transport_session_abort() == PSTVNC_TRANSPORT_OK)
+            transport_session_active = 0;
+
+        if (input_runtime_ready || transport_session_active)
             goto fail;
+
+        /*
+         * There is no success-by-delay and no in-place component restart. The
+         * next iteration uses ordinary startup and must independently reach its
+         * normal healthy boundary.
+         */
+        continue;
     }
 
 fail:
@@ -848,16 +919,9 @@ fail:
     if (input_runtime_ready)
         (void)pstvnc_input_runtime_shutdown(&input_runtime);
 
-    /*
-     * Once Transport adopted the physical descriptor, application never closes
-     * it directly. Fatal convergence is Transport-owned: interrupt its private
-     * physical receive, prove sole-receiver completion, then reclaim. The
-     * server-driven finite-RFB quiesce protocol remains a separate path.
-     */
     if (transport_session_active) {
         (void)pstvnc_transport_session_abort();
     } else if (socket_fd >= 0) {
-        /* Pre-adoption open failure leaves the connected descriptor caller-owned. */
         pstvnc_ps2_network_close(socket_fd);
     }
 
