@@ -1177,29 +1177,25 @@ static void test_mpeg_control_private_identity_and_stale_access_fence(void)
     CHECK(observed_retire.generation == retire.generation);
 
     available_completion.version = PSTVNC_MPEG_GENERATION_CONTROL_VERSION;
-    available_completion.session_id = session_a;
+    available_completion.session_id = session_b;
     available_completion.generation = retire.generation;
     mpeg_take_result = PSTVNC_TRANSPORT_OK;
     completion.generation = 0u;
     CHECK(pstvnc_transport_mpeg_take_retire_completion(
-        &access_b, &completion) == PSTVNC_TRANSPORT_FAILED);
-    CHECK(completion.generation == 0u);
-
-    available_completion.session_id = session_b;
-    available_completion.generation = retire.generation + 1u;
-    completion.generation = 0u;
-    CHECK(pstvnc_transport_mpeg_take_retire_completion(
         &access_b, &completion) == PSTVNC_TRANSPORT_OK);
-    CHECK(completion.generation == retire.generation + 1u);
+    CHECK(completion.generation == retire.generation);
 
-    available_completion.version =
-        PSTVNC_MPEG_GENERATION_CONTROL_VERSION + 1u;
+    /*
+     * A private-identity mismatch is impossible after real runtime
+     * correlation. If it is ever observed at the bridge anyway, fail the
+     * Transport session closed and never project the private fields upward.
+     */
+    available_completion.session_id = session_a;
     completion.generation = 0u;
     CHECK(pstvnc_transport_mpeg_take_retire_completion(
         &access_b, &completion) == PSTVNC_TRANSPORT_FAILED);
     CHECK(completion.generation == 0u);
-
-    mpeg_start_result = PSTVNC_TRANSPORT_FAILED;
+    CHECK(observed_runtime->failed == 1);
     CHECK(pstvnc_transport_mpeg_send_start(
         &access_b, &start) == PSTVNC_TRANSPORT_FAILED);
 

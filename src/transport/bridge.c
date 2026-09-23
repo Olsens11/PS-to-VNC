@@ -826,8 +826,15 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_take_retire_completion(
     if (wire_completion.version != PSTVNC_MPEG_GENERATION_CONTROL_VERSION ||
         wire_completion.session_id !=
             pstvnc_transport_bridge_private_session_id ||
-        wire_completion.generation == 0u)
+        wire_completion.generation == 0u) {
+        /*
+         * Runtime's exact RETIRE correlation should make this unreachable.
+         * If representation authority nevertheless disagrees here, the current
+         * Transport session is no longer trustworthy and must fail closed.
+         */
+        pstvnc_transport_bridge_runtime.failed = 1;
         return PSTVNC_TRANSPORT_FAILED;
+    }
 
     completion->generation = wire_completion.generation;
     return PSTVNC_TRANSPORT_OK;
