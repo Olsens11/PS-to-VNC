@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0049
-RECORDED_AT=2026-09-22T23:04:48-04:00
+STATE_REVISION=0050
+RECORDED_AT=2026-09-23T02:43:07-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0048
-SUPERSEDES_FOREMAN_STATE_REVISION=0048
+BASED_ON_FOREMAN_STATE_REVISION=0049
+SUPERSEDES_FOREMAN_STATE_REVISION=0049
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,29 +14,27 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0049 independently accepts `A003-PI-MPEG-CONTROL-PRODUCER-R17`
-at source authority `cc7dc1237957bfd288addc8379caae47e83bc5a6` and consumes its
-immutable Reconstruction closeout `8698890b4f839d5708e6cefc129c37608643e155`.
+Revision 0050 independently accepts `A003-MPEG-TRANSPORT-RUN-BOUNDARY-R18`
+at source authority `2e0589fd9fe531c5dfb7130df301b6f0eadd09fd` and consumes its
+immutable Reconstruction closeout `ce1d405bde73ee764408c2dddcc40d2f8cc6eccc`.
 
-The maintained Pi now has the exact dormant MPEG generation-control/producer
-mechanism required by the accepted PS2 START/RETIRE representation while
-`WireConnectionOwner` remains the only PS2-facing receive/send/sequence owner.
-R17 also projects the already-selected A003-R7 MPEG values from one canonical
-machine-readable Configuration record without retuning them or broadening
-CONFIG-on-Wire.
+PS2 Transport now owns the previously missing session-local MPEG run boundary:
+explicit clean open/abort, channel-4 DATA admission fencing, exact RETIRE
+completion correlation, residual discard, pending-plus-residual credit
+finalization, and clean same-session reuse. The final R18 correction also keeps
+one MPEG consumer transaction live across dequeue-to-credit-return and blocks
+new MPEG consumer/waiter activity while final credit is serialized.
 
-Independent review found the next dependency before Application MPEG activation:
-the PS2 Transport MPEG queue still lacks the accepted A003 old-run/new-run
-boundary. It can relay START/RETIRE and receive exact RETIRE completion, but it
-does not yet close channel-4 DATA admission on completion, discard residual
-old-run bytes, return withheld credit, clear finite-producer state, or reopen
-the same session-scoped queue only after finalization.
+Independent dependency review found that final MPEG orchestration should still
+not land directly in the current ordinary Application loop. The accepted A004
+RFB freeze/FULL-refresh policy exists as a tested mechanism, but `app.c` still
+bypasses it and directly issues one incremental request after every update.
+Revision 0050 therefore activates a narrow behavior-preserving Application
+composition packet that makes this existing RFB flow policy authoritative in
+the real ordinary loop before MPEG start/stop/calibration wiring is added.
 
-Revision 0049 therefore activates a bounded Transport-owned MPEG run-boundary
-packet before final Application orchestration.
-
-No reconstructed R17 Pi mechanism or current R16A/R16B PS2 recovery path is
-hardware-qualified by this state.
+R18 changes loadable PS2 bytes and is not hardware-qualified. R19 likewise
+carries no hardware-qualification claim.
 ## Temporal architecture reconciliation
 
 Wire Runtime Decisions revision 0011 and Architecture Overlay revision 0007
@@ -68,7 +66,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R16B_RFB_RECOVERY_ACCEPTED__R17_PI_MPEG_CONTROL_PRODUCER_FOREMAN_ACCEPTED__R18_MPEG_TRANSPORT_RUN_BOUNDARY_RECONSTRUCTION_ACTIVE__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R18_MPEG_TRANSPORT_RUN_BOUNDARY_FOREMAN_ACCEPTED__A004_RFB_FLOW_APPLICATION_COMPOSITION_R19_ACTIVE__MPEG_APPLICATION_TRANSACTION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -96,7 +94,8 @@ APPLICATION_RFB_ACTIVATION=FOREMAN_ACCEPTED
 RFB_PROVIDER_FAILURE_REPRESENTATION=FOREMAN_ACCEPTED
 RFB_FAILURE_RESTART_POLICY=FOREMAN_ACCEPTED
 PI_MPEG_CONTROL_PRODUCER_OWNER=FOREMAN_ACCEPTED
-MPEG_TRANSPORT_RUN_BOUNDARY=RECONSTRUCTION_ACTIVE
+MPEG_TRANSPORT_RUN_BOUNDARY=FOREMAN_ACCEPTED
+RFB_FLOW_APPLICATION_COMPOSITION=RECONSTRUCTION_ACTIVE
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
@@ -351,84 +350,149 @@ changed, but the loadable PT_LOAD fingerprint and byte count are exactly
 unchanged from accepted R16B. This is build identity only; R16B was already
 hardware-unqualified and no qualification is inferred for R17.
 
+## Accepted R18 authority
+
+PACKET_ID=A003-MPEG-TRANSPORT-RUN-BOUNDARY-R18
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0049
+ASSIGNING_FOREMAN_STATE_COMMIT=3718615a9cf9d07c3598ecab6fbaeba09e5751a3
+ASSIGNING_FOREMAN_LOG_COMMIT=95d7b77e431f0f0765491da79e75591aae6e0300
+RECONSTRUCTION_STARTING_COMMIT=95d7b77e431f0f0765491da79e75591aae6e0300
+R18_FINAL_SOURCE_COMMIT=2e0589fd9fe531c5dfb7130df301b6f0eadd09fd
+R18_RECONSTRUCTION_LOG_COMMIT=ce1d405bde73ee764408c2dddcc40d2f8cc6eccc
+R18_PRE_LOG_COMMIT_COUNT=17
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260922T234027-0400__reconstruction__a003-mpeg-generation__interactive.md`
+
+Independent Foreman review accepts all twelve R18 criteria:
+
+1. MPEG run admission opens only from a fully clean idle Transport state and
+   does not allocate product generation identity.
+2. Pre-START abort is permitted only while the opened boundary is still proven
+   pristine; dirty data/state cannot be laundered back into idle.
+3. Channel-4 DATA requires an explicit open, non-retiring, non-finalizing run
+   boundary; out-of-phase DATA fails the Wire runtime.
+4. Exact RETIRE completion is correlated to the submitted RETIRE payload and
+   atomically closes DATA admission under the MPEG queue lock before the
+   completion becomes observable to Application.
+5. Taking the completion clears only the bounded completion slot; the retirement
+   latch remains closed until explicit finalization.
+6. Residual queue discard returns an exact byte count and resets ring offsets
+   without claiming decoder consumption.
+7. Finalization combines already-withheld consumed-byte credit with residual
+   discarded bytes exactly once and sends that value only through Transport's
+   existing sole outbound path.
+8. Successful finalization clears old queue, producer-done, control-correlation,
+   activity, credit and retirement facts while reusing the same session-owned
+   allocation.
+9. A live MPEG activity waiter or dequeue-to-credit-return consumer transaction
+   blocks finalization. `mpeg_finalization_in_progress` blocks new MPEG
+   consumer/waiter/producer-done activity while final credit is in flight.
+10. N finalization followed by N+1 open admits only fresh successor bytes/state;
+    old residual, producer-done, completion, pending credit and activity facts
+    cannot be observed as N+1 authority.
+11. RFB, AUDIO, Q4, R16A/R16B, R17 Pi, exact START/RETIRE framing and MPEG
+    decoder/worker/presentation contracts remain unchanged.
+12. Final source and immutable-log heads pass canonical host, project, complete
+    strict dictionary, pinned PS2 compile/link and reproducibility evidence.
+
+The late R18 concurrency correction is part of accepted authority, not an
+optional follow-up. Earlier green checkpoints before `1406100933666b8a19f800ec7f0d90548b03d06b`
+are superseded by the final source authority above.
+
+R18_SOURCE_COMPLETE=YES
+R18_HOST_TESTED=YES
+R18_PROJECT_CHECK=PASS
+R18_STRICT_DICTIONARIES=PASS
+R18_PS2_COMPILE=PASS
+R18_PS2_LINK=PASS
+R18_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R18_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_35816881762_ATTEMPT_1
+R18_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_35817077825_ATTEMPT_1
+R18_INDEPENDENT_VALIDATION=NOT_RUN
+R18_OPERATOR_OBSERVED=NO
+R18_HARDWARE_QUALIFIED=NO
+
+R18 current linked identity is:
+
+`ELF_PRISTINE_SHA256=4d0bc02f6bc89f138acb53ddb7751fd9e91a300b9e7cbfd9bc7301920f08d1c4`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=e244769ef21dadd8a09e6fe65ec4b2201e0acd9beb52ae06180ab3d4f3a3a232`
+`PT_LOAD_BYTES=490516`
+
+That PT_LOAD differs from accepted R17 and therefore creates new exact-identity
+hardware debt. Build reproducibility does not qualify the new hardware-facing
+Transport source.
+
 ## Next dependency decision
 
-R17 closes the maintained Pi producer/control-owner gap, but current PS2
-Transport still lacks one A003-required session-local MPEG run boundary.
+The next missing mechanism is not another RFB protocol or Pi suppression path.
+A004 already established that the authoritative remote framebuffer may continue
+to update beneath an MPEG-owned suppression footprint. Visible suppression is
+Presentation ownership. The generic A004 P2 RFB flow policy separately owns
+global freeze/thaw, one outstanding request and one-shot post-thaw FULL debt for
+calibration and the accept-to-first-frame ownership gap.
 
-Current accepted Transport can:
+That accepted policy is implemented and host-tested in `src/rfb/flow_policy.*`,
+but the current ordinary Application loop still bypasses it:
 
-- open a session with logical MPEG storage and initial channel-4 credit;
-- consume DATA/channel4 into one bounded queue;
-- return credit for decoder-consumed bytes using `mpeg_credit_pending`;
-- publish finite producer completion;
-- relay exact START and RETIRE control;
-- receive and expose one exact Pi RETIRE completion.
+- after initial RFB setup it directly sends an incremental update request;
+- every completed update directly triggers another incremental request;
+- completed-update accounting is not connected to the P2 policy;
+- remote dirty-frame presentation is not gated by the P2 publication decision;
+- provider replacement therefore reconstructs no explicit Application-owned P2
+  flow state because none is yet composed into the ordinary loop.
 
-It cannot yet:
+Adding MPEG start/stop/calibration on top of that bypass would force one packet
+to change RFB request cadence/publication ownership and MPEG lifecycle at the
+same time. The smaller dependency is to make the already-accepted P2 policy the
+real ordinary-loop authority first, while remaining semantically thawed and
+preserving current behavior.
 
-- explicitly open one MPEG DATA-admission interval before START;
-- close channel-4 DATA admission atomically when RETIRE completion is accepted;
-- reject post-completion DATA as a protocol violation;
-- keep retirement latched after the completion value is taken;
-- discard residual old-run queue bytes after the local consumer has retired;
-- return the combined residual + already-withheld credit through the existing
-  Transport send owner;
-- clear old finite-producer/queue state and reopen admission for a later run.
+## Governing invariants for R19
 
-A003 and the qualified historical generation-boundary record require exactly
-those mechanics. The boundary is a session-scoped queue epoch, not a second
-socket, per-packet generation tag, generic module-generation system, or
-Transport-owned product activation policy.
-
-Therefore the smallest prerequisite before Application MPEG composition is a
-Transport-only run-boundary packet.
-
-## Governing invariants for R18
-
-1. Transport remains owner of physical Wire validity, channel-4 queue, credit
-   accounting and DATA admission mechanics; it does not own user activation,
-   calibration, MPEG region meaning, decoder/presentation policy, or Pi producer
-   lifecycle.
-2. One session-scoped MPEG queue is reused across runs. Do not add a second
-   queue, socket, receive owner, per-DATA generation field or generic global
-   module-generation manager.
-3. A higher owner explicitly opens the MPEG run boundary before START. Initial
-   open requires a clean idle MPEG channel: no residual bytes, no prior
-   producer-done state, no retirement latch and no withheld old-run credit.
-4. If START cannot be admitted/sent after opening, the higher owner can abort the
-   unopened/failed run boundary back to a proven clean state without claiming
-   producer retirement that did not occur.
-5. While a run boundary is open, ordinary channel-4 DATA remains accepted under
-   the existing bounded queue/credit rules.
-6. Acceptance of the exact Pi RETIRE completion atomically closes channel-4
-   DATA admission before the completion becomes visible to Application. Because
-   TCP/Wire order is singular, all earlier accepted N DATA is already consumed
-   or resident in N's queue at that point.
-7. Any channel-4 DATA received after exact RETIRE completion and before a later
-   explicit clean reopen is a protocol violation and fails the current Wire
-   runtime; it is never treated as N+1 data.
-8. Taking/observing the RETIRE completion does not reopen MPEG DATA admission.
-   Retirement remains latched until the higher owner has retired the exact local
-   MPEG consumer and explicitly finalizes Transport.
-9. Finalization runs only with no MPEG activity waiter/consumer still owning the
-   queue. Under the existing MPEG queue synchronization it discards all residual
-   bytes, resets queue/finite-producer state, and records discarded bytes as
-   discarded—not decoder-consumed.
-10. Finalization returns all owed selected-path MPEG credit exactly once through
-    Transport's existing sole outbound path: already-batched `mpeg_credit_pending`
-    plus residual discarded queue bytes. It must detect overflow/failure and
-    must not double-return bytes already credited during normal consumption.
-11. Only after successful residual/credit finalization may the retirement latch
-    clear and a fresh later MPEG run boundary open. Old queue, producer-done,
-    activity-wait and retirement state cannot leak into the successor run.
-12. R18 preserves RFB/AUDIO/Q4/R16A/R13/R14/R17 contracts, exact START/RETIRE
-    bytes, decoder/worker/presentation mechanisms and Application policy. It
-    adds no final composition and claims no hardware qualification.
+1. R19 composes the existing accepted `pstvnc_rfb_flow_policy_t`; it does not
+   redesign RFB parsing, Transport, Pi RFB attachment, Presentation or MPEG.
+2. One fresh flow-policy value belongs to one fresh ordinary RFB attempt. No
+   request-outstanding, freeze or FULL-refresh debt may cross provider/Wire
+   replacement.
+3. The initial authoritative full desktop acquired by RFB session startup remains
+   the existing handshake/startup mechanism. P2 governs only subsequent live
+   request cadence/publication.
+4. Every subsequent framebuffer update request is selected through
+   `pstvnc_rfb_flow_policy_next_request()`. Application must not independently
+   choose incremental/full behavior beside that authority.
+5. `HOLD` means no framebuffer request is sent. Inspection of next action never
+   consumes FULL debt.
+6. A successful RFB request send is recorded exactly once through
+   `pstvnc_rfb_flow_policy_record_request_sent()`. A failed send cannot be
+   converted into successful policy accounting.
+7. Every completed live framebuffer-update response is recorded exactly once
+   through `pstvnc_rfb_flow_policy_record_update_complete()` before a successor
+   request can be admitted.
+8. Remote framebuffer parsing/truth remains authoritative even when future
+   callers freeze publication. Application presents a completed dirty remote
+   frame only when `pstvnc_rfb_flow_policy_allows_remote_publication()` permits
+   it.
+9. R19 introduces no production freeze trigger. In the ordinary thawed path its
+   externally visible behavior remains one incremental request at a time and
+   normal dirty-frame presentation.
+10. Existing P2 tests remain authoritative for frozen->thawed FULL debt,
+    coalescing and in-flight completion while frozen. R19 must not duplicate or
+    reinterpret those semantics in Application.
+11. Existing R16B typed provider recovery remains intact: a replacement attempt
+    gets a fresh thawed flow policy only after old input/Transport owners prove
+    stop; generic RFB/Transport failure remains fatal under current policy.
+12. R19 does not open MPEG Transport, allocate run identity, enter MPEG
+    calibration, arm Presentation, start a decoder/worker, send MPEG START/
+    RETIRE, change Pi product source, activate AUDIO, or claim hardware
+    qualification.
 
 ## ACTIVE RECONSTRUCTION PACKET
 
-PACKET_ID=A003-MPEG-TRANSPORT-RUN-BOUNDARY-R18
+PACKET_ID=A004-RFB-FLOW-APPLICATION-COMPOSITION-R19
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a003-mpeg-generation
@@ -436,132 +500,134 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0049
-BASED_ON_ACCEPTED_R17_SOURCE=cc7dc1237957bfd288addc8379caae47e83bc5a6
-BASED_ON_R17_LOG=8698890b4f839d5708e6cefc129c37608643e155
+BASED_ON_FOREMAN_STATE_REVISION=0050
+BASED_ON_ACCEPTED_R18_SOURCE=2e0589fd9fe531c5dfb7130df301b6f0eadd09fd
+BASED_ON_R18_LOG=ce1d405bde73ee764408c2dddcc40d2f8cc6eccc
 
 ### Objective
 
-Implement the missing PS2 Transport-owned MPEG run boundary around the already
-accepted session-scoped channel-4 queue: explicit clean open/abort, immediate
-DATA-admission closure on exact RETIRE completion, residual/credit finalization
-after consumer retirement, and clean reopen for a successor run.
+Compose the already-accepted A004 P2 generic RFB flow policy into the real
+ordinary Application live loop so it becomes the single authority for
+post-startup request cadence, request completion accounting and remote visual
+publication permission. Preserve the current thawed RFB-only behavior.
 
-This packet supplies mechanism required by later Application orchestration. It
-does not activate MPEG in `app.c` and does not own decoder, Presentation, Pi
-producer or calibration policy.
+This packet deliberately stops before any MPEG/calibration freeze caller exists.
 
 ### Required behavior
 
-1. **Explicit clean open.** Expose the smallest public Transport bridge operation
-   that opens one MPEG DATA-admission interval only from a proven clean idle
-   channel state. Do not allocate product generation identity in Transport.
-2. **Pre-START abort.** Expose a bounded abort/reset path for an opened boundary
-   that has not reached a valid live transaction, proving no residual queue,
-   pending retirement or producer-done state is silently carried forward.
-3. **Admission-gated DATA.** MPEG DATA is accepted only while the run boundary is
-   open and not retirement-latched; invalid timing is a protocol failure.
-4. **Completion closes first.** Exact RETIRE completion acceptance closes DATA
-   admission under Transport authority before publishing/storing the completion
-   for the higher owner.
-5. **Completion observation is not reopen.** Taking the exact completion may
-   clear the one completion value slot but must leave the retirement boundary
-   closed/latched.
-6. **Residual discard primitive.** Add the owner-correct MPEG queue primitive
-   needed to discard all residual bytes atomically while preserving bounded
-   storage invariants. Residual discard is not decoder consumption.
-7. **Exact credit finalization.** Finalization returns residual bytes plus any
-   already-withheld MPEG credit exactly once through the existing Transport
-   outbound/sequence owner, respecting overflow/failure semantics.
-8. **Generation-local reset.** Successful finalization clears old queue offsets/
-   byte count, producer-done state, completion/retirement latch and generation-
-   local activity state required for safe reuse, without recreating the Wire
-   Session or MPEG queue allocation.
-9. **Safe consumer fence.** Finalization must fail closed if an MPEG activity
-   waiter or other Transport-visible consumer state proves the channel is still
-   in use; it may not delete/wake/reuse live synchronization ownership as a
-   shortcut.
-10. **Fresh successor.** After successful finalization, a later explicit open
-    admits a fresh run; tests must prove old residual bytes, producer-done,
-    completion, pending credit and activity state cannot appear in that run.
-11. **Preserve neighboring contracts.** No change to fixed Wire framing, exact
-    START/RETIRE payloads, RFB/AUDIO behavior, Pi R17 source, decoder safe-stop,
-    worker/compositor/presentation policy or R16B recovery.
-12. **Documentation/dictionaries/build evidence.** Update directly affected
-    Transport lifecycle docs/dictionaries and preserve focused host, canonical
-    project, strict dictionary, pinned PS2 compile/link and current-source
-    reproducibility evidence.
+1. **Fresh attempt-local flow state.** Initialize one thawed
+   `pstvnc_rfb_flow_policy_t` for every newly established RFB attempt after the
+   authoritative initial frame is obtained and before ordinary live requests.
+2. **Policy-selected request service.** Replace direct unconditional incremental
+   request calls with one small Application-local scheduling path that asks P2
+   for HOLD/INCREMENTAL/FULL and maps those decisions to the existing
+   `pstvnc_rfb_session_request_update()` API.
+3. **Record only successful sends.** Advance P2 request accounting only after the
+   matching RFB request serialization succeeds. Invalid policy/send sequencing
+   fails closed rather than silently repairing counters.
+4. **One outstanding response.** After a live UPDATE result, record completion
+   exactly once before any next request is considered.
+5. **Publication gate.** Keep parsing/framebuffer mutation independent from
+   visual publication. A dirty completed remote frame is presented only when P2
+   currently allows remote publication.
+6. **Ordinary semantics unchanged.** With no R19 freeze caller, the live product
+   still issues exactly one incremental request at a time and presents valid
+   dirty updates as before.
+7. **Idle/HOLD behavior.** IDLE receive and HOLD decisions must not consume
+   request debt, fabricate update completion, spin-send duplicate requests, or
+   alter provider-recovery semantics.
+8. **Fresh provider replacement.** R16B replacement attempts reconstruct fresh
+   thawed P2 state and cannot inherit outstanding/debt/freeze authority from the
+   failed attempt.
+9. **Preserve P2 mechanism authority.** Do not fork freeze/FULL/debt logic into
+   `app.c`; use the accepted RFB policy directly. Modify `flow_policy.*` only if
+   composition exposes a real defect in its existing public contract.
+10. **Preserve neighboring ownership.** RFB session remains parser/protocol
+    owner, Transport remains Wire owner, framebuffer remains remote truth,
+    graphics/local UI remain current presentation owners, and Application owns
+    only cross-domain composition.
+11. **No MPEG scope creep.** No MPEG run open/start/retire/finalize, worker/
+    decoder/backend, MPEG Presentation, calibration trigger/UI or Pi MPEG/RFB
+    product behavior is activated in R19.
+12. **Evidence and dictionaries.** Extend Application host regression coverage
+    for policy-driven request accounting/publication and provider replacement;
+    keep existing P2 tests green; run canonical project/dictionary/PS2 build
+    evidence and preserve exact identity if loadable bytes change.
 
 ### Acceptance criteria
 
-- A003-R18-C1 MPEG_RUN_BOUNDARY_OPENS_ONLY_FROM_CLEAN_IDLE_TRANSPORT
-- A003-R18-C2 PRE_START_ABORT_RESTORES_PROVEN_CLEAN_BOUNDARY
-- A003-R18-C3 MPEG_DATA_ADMISSION_REQUIRES_OPEN_NONRETIRING_RUN
-- A003-R18-C4 RETIRE_COMPLETION_ATOMICALLY_CLOSES_DATA_ADMISSION
-- A003-R18-C5 COMPLETION_TAKE_DOES_NOT_REOPEN_CHANNEL
-- A003-R18-C6 RESIDUAL_QUEUE_DISCARD_IS_ATOMIC_AND_NOT_CONSUMPTION
-- A003-R18-C7 RESIDUAL_PLUS_PENDING_CREDIT_RETURNED_EXACTLY_ONCE
-- A003-R18-C8 FINALIZATION_RESETS_OLD_RUN_TRANSPORT_STATE
-- A003-R18-C9 LIVE_WAITER_OR_UNPROVEN_CONSUMER_BLOCKS_FINALIZATION
-- A003-R18-C10 FRESH_SUCCESSOR_RUN_CANNOT_OBSERVE_OLD_RUN_STATE
-- A003-R18-C11 RFB_AUDIO_WIRE_R17_AND_MEDIA_OWNER_CONTRACTS_UNCHANGED
-- A003-R18-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A004-R19-C1 FRESH_RFB_ATTEMPT_OWNS_FRESH_THAWED_FLOW_POLICY
+- A004-R19-C2 LIVE_REQUESTS_ARE_SELECTED_ONLY_BY_P2_POLICY
+- A004-R19-C3 REQUEST_ACCOUNTING_ADVANCES_ONLY_AFTER_SUCCESSFUL_SEND
+- A004-R19-C4 COMPLETED_UPDATE_CLEARS_EXACT_OUTSTANDING_REQUEST_BEFORE_NEXT
+- A004-R19-C5 REMOTE_VISUAL_PUBLICATION_IS_GATED_BY_P2_POLICY
+- A004-R19-C6 ORDINARY_THAWED_INCREMENTAL_BEHAVIOR_IS_PRESERVED
+- A004-R19-C7 IDLE_OR_HOLD_DOES_NOT_FABRICATE_REQUEST_OR_COMPLETION
+- A004-R19-C8 PROVIDER_REPLACEMENT_CANNOT_INHERIT_FLOW_STATE
+- A004-R19-C9 P2_FULL_REFRESH_DEBT_SEMANTICS_REMAIN_SINGLE_AUTHORITY
+- A004-R19-C10 RFB_TRANSPORT_FRAMEBUFFER_PRESENTATION_OWNERSHIP_UNCHANGED
+- A004-R19-C11 NO_MPEG_CALIBRATION_AUDIO_PI_OR_FINAL_COMPOSITION_SCOPE_CREEP
+- A004-R19-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
-All twelve criteria must be MET for source acceptance. If current Transport
-synchronization cannot prove a safe finalization boundary without Application-
-owned knowledge not yet exposed, return a truthful BLOCKED record naming the
-missing seam instead of inventing timeout/sleep/diagnostic authority.
+All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-R18 must prove at least:
+R19 must prove at least:
 
-1. DATA before explicit run-open is rejected/fails the runtime;
-2. clean open from initial session state succeeds exactly once;
-3. duplicate open and open with dirty/residual/retirement state fail closed;
-4. pre-START abort returns to clean idle only when no run data/state exists;
-5. valid DATA remains bounded/credit-accounted while admission is open;
-6. exact RETIRE completion closes admission before higher-owner observation;
-7. DATA after completion is a protocol failure even after completion is taken;
-8. wrapped residual queue discard returns the exact discarded byte count;
-9. finalization combines pending consumed-credit debt plus residual discarded
-   bytes without duplicate return and emits that credit through the existing
-   sole Transport sender;
-10. producer-done/exhaustion and activity state from N do not survive finalize;
-11. N finalize -> N+1 open/read cycle contains only N+1 bytes/state;
-12. existing RFB/AUDIO, MPEG control relay, Q4 and R17-related contract tests
-    remain green.
+1. the first ordinary post-startup request is policy-selected incremental;
+2. a successful request creates exactly one outstanding policy obligation;
+3. a failed request does not record a successful P2 send;
+4. IDLE receive does not clear outstanding request accounting or send another
+   request;
+5. UPDATE completion clears exactly the outstanding obligation before the next
+   request is selected;
+6. ordinary thawed dirty UPDATE still presents once and then schedules the next
+   incremental request;
+7. ordinary clean UPDATE does not re-present but still completes/request-cycles
+   correctly;
+8. provider-local failure still closes the attempt before replacement and the
+   replacement starts with fresh thawed flow state;
+9. existing `rfb_flow_policy_test` FULL-debt/coalescing/frozen in-flight cases
+   remain green;
+10. existing Application R15/R16B lifecycle/input/recovery fixtures remain
+    green.
 
 ### Authorized source surface
 
-R18 may modify only the smallest justified subset of:
+R19 may modify only the smallest justified subset of:
 
-- `src/transport/mpeg_channel.c` / `.h`;
-- `src/transport/runtime.c` / `.h`;
-- `src/transport/bridge.c` / `.h`;
-- directly affected Transport MPEG unit/integration fixtures;
-- `src/transport/SYMBOLS.md`, directly affected development/architecture notes,
-  source dictionaries, compile/link manifests or check tooling as required.
+- `src/app.c` and, only if a real public declaration is needed, `src/app.h`;
+- `src/rfb/flow_policy.c` / `.h` only for a demonstrated composition-contract
+  defect, not redesign;
+- `tests/unit/app_test.c`, its current legacy fixture include,
+  `tests/unit/rfb_flow_policy_test.c`, and required test build enrollment;
+- directly affected Application/RFB dictionaries and development documentation;
+- compile/link/check manifests only as required by the source dependency.
 
-`src/app.c`, Pi product source, MPEG decoder/worker/PS2 backend, Display/
-Presentation, calibration/Input/UI, RFB product source and AUDIO product source
-are not authorized by R18.
+Pi product source, Transport product source, RFB parser/session mechanics, MPEG
+decoder/worker/backend, MPEG Presentation/compositor/frame consumer, calibration
+and local-controller product semantics, AUDIO product source and protocol bytes
+are not authorized by R19.
 
 ### Required checks before handoff
 
-Run focused MPEG Transport run-boundary tests, canonical host tests, project
-check, complete strict source-dictionary audit, pinned PS2 compile/link and
-current-source reproducibility. Preserve exact new ELF/PT_LOAD identity if
-loadable bytes change.
+Run focused Application/RFB flow tests, existing P2 flow-policy tests, canonical
+host tests, project check, complete strict source-dictionary audit, pinned PS2
+compile/link and current-source reproducibility. Preserve exact new ELF/PT_LOAD
+identity if loadable bytes change.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` following revision 0007, then stop and return the baton.
 
 ## Current hardware debt
 
-R17's Pi generation/producer mechanism is source/host/machine evidence only and
-has not been physically activated or qualified. R16A/R16B recovery remains
-hardware-unqualified. Any PT_LOAD change introduced by R18 creates new exact-
-identity hardware debt; unchanged PT_LOAD would not upgrade existing debt.
+R18 changed the current linked PS2 loadable image to
+`PT_LOAD_SHA256=e244769ef21dadd8a09e6fe65ec4b2201e0acd9beb52ae06180ab3d4f3a3a232`
+with `PT_LOAD_BYTES=490516`. This exact identity is repository-reproducible but
+not physically qualified. R17 Pi MPEG remains source/host/machine-only, and
+R16A/R16B recovery remains hardware-unqualified.
+
+Any loadable-byte change from R19 creates a newer exact hardware-debt identity.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
