@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0048
-RECORDED_AT=2026-09-22T21:22:00-04:00
+STATE_REVISION=0049
+RECORDED_AT=2026-09-22T23:04:48-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0047
-SUPERSEDES_FOREMAN_STATE_REVISION=0047
+BASED_ON_FOREMAN_STATE_REVISION=0048
+SUPERSEDES_FOREMAN_STATE_REVISION=0048
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,26 +14,29 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0048 independently accepts `A003-RFB-FAILURE-STOP-RESTART-POLICY-R16B`
-at source authority `3310568e6c35ef59d77ee6075f1f9ea5a561476e` and consumes its
-immutable Reconstruction closeout `856a1065f5941c5149518ffe2a322bc81fe91642`.
+Revision 0049 independently accepts `A003-PI-MPEG-CONTROL-PRODUCER-R17`
+at source authority `cc7dc1237957bfd288addc8379caae47e83bc5a6` and consumes its
+immutable Reconstruction closeout `8698890b4f839d5708e6cefc129c37608643e155`.
 
-Application now treats the accepted R16A CONNECT, READ/EOF and WRITE provider
-terminal causes as explicit recovery-policy inputs. A failed ordinary-RFB
-attempt admits no further provider-bound input/RFB work; replacement is allowed
-only after input shutdown proves worker dormancy and Transport abort proves the
-sole receiver/session retired. The replacement uses ordinary startup and fresh
-network/Q4/Transport/RFB/framebuffer/input authority. Generic physical/RFB I/O
-failure remains distinct and fatal under this bounded policy.
+The maintained Pi now has the exact dormant MPEG generation-control/producer
+mechanism required by the accepted PS2 START/RETIRE representation while
+`WireConnectionOwner` remains the only PS2-facing receive/send/sequence owner.
+R17 also projects the already-selected A003-R7 MPEG values from one canonical
+machine-readable Configuration record without retuning them or broadening
+CONFIG-on-Wire.
 
-The next dependency is not another RFB repair. Maintained PS2 source already
-contains the accepted MPEG START/RETIRE Transport relay and MPEG logical channel,
-while maintained Pi product source still explicitly contains no MPEG rider or
-producer. Revision 0048 therefore activates the bounded Pi-side MPEG
-generation-control/producer ownership packet before final Application MPEG
-orchestration.
+Independent review found the next dependency before Application MPEG activation:
+the PS2 Transport MPEG queue still lacks the accepted A003 old-run/new-run
+boundary. It can relay START/RETIRE and receive exact RETIRE completion, but it
+does not yet close channel-4 DATA admission on completion, discard residual
+old-run bytes, return withheld credit, clear finite-producer state, or reopen
+the same session-scoped queue only after finalization.
 
-No current-source hardware qualification is claimed by this state.
+Revision 0049 therefore activates a bounded Transport-owned MPEG run-boundary
+packet before final Application orchestration.
+
+No reconstructed R17 Pi mechanism or current R16A/R16B PS2 recovery path is
+hardware-qualified by this state.
 ## Temporal architecture reconciliation
 
 Wire Runtime Decisions revision 0011 and Architecture Overlay revision 0007
@@ -65,7 +68,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R15_INTEGRATED__R16A_PROVIDER_FAILURE_REPRESENTATION_ACCEPTED__R16B_RFB_RECOVERY_FOREMAN_ACCEPTED__PI_MPEG_CONTROL_PRODUCER_RECONSTRUCTION_ACTIVE__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R16B_RFB_RECOVERY_ACCEPTED__R17_PI_MPEG_CONTROL_PRODUCER_FOREMAN_ACCEPTED__R18_MPEG_TRANSPORT_RUN_BOUNDARY_RECONSTRUCTION_ACTIVE__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -92,7 +95,8 @@ RFB_SHARED_RUNTIME_PROFILE=FOREMAN_ACCEPTED
 APPLICATION_RFB_ACTIVATION=FOREMAN_ACCEPTED
 RFB_PROVIDER_FAILURE_REPRESENTATION=FOREMAN_ACCEPTED
 RFB_FAILURE_RESTART_POLICY=FOREMAN_ACCEPTED
-PI_MPEG_CONTROL_PRODUCER_OWNER=RECONSTRUCTION_ACTIVE
+PI_MPEG_CONTROL_PRODUCER_OWNER=FOREMAN_ACCEPTED
+MPEG_TRANSPORT_RUN_BOUNDARY=RECONSTRUCTION_ACTIVE
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
@@ -272,72 +276,159 @@ R16B changes linked current-source identity to:
 These are build/reproducibility facts only. Earlier physical qualification does
 not transfer to these changed bytes.
 
+## Accepted R17 authority
+
+PACKET_ID=A003-PI-MPEG-CONTROL-PRODUCER-R17
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0048
+ASSIGNING_FOREMAN_STATE_COMMIT=dade25f6c971584dacc7a039bc10961156654958
+ASSIGNING_FOREMAN_LOG_COMMIT=826d19dd08efe48db9731ed4713f30b15be0e4b8
+RECONSTRUCTION_STARTING_COMMIT=826d19dd08efe48db9731ed4713f30b15be0e4b8
+R17_FINAL_SOURCE_COMMIT=cc7dc1237957bfd288addc8379caae47e83bc5a6
+R17_RECONSTRUCTION_LOG_COMMIT=8698890b4f839d5708e6cefc129c37608643e155
+R17_PRE_LOG_COMMIT_COUNT=15
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260922T213555-0400__reconstruction__a003-mpeg-generation__interactive.md`
+
+Independent Foreman review accepts all twelve R17 criteria:
+
+1. Pi START/RETIRE codecs exactly mirror the accepted PS2 kind/channel/flags,
+   generation-control version and 44/12-byte big-endian payload contracts.
+2. START validates the active Q4 session identity, nonzero monotonically fresh
+   run fence, current injected desktop bounds, 16-pixel base dimensions and
+   suppression containment.
+3. One explicit Pi generation owner permits only one PREPARING/LIVE/RETIRING/
+   completion-pending run and rejects stale or mismatched authority.
+4. Exact base capture and distinct outer suppression preparation are established
+   before producer emission; inner matte remains PS2-local.
+5. One FFmpeg process/reader thread uses a Configuration-bounded condition
+   buffer; launch, premature EOF, reader and retirement failures fail closed.
+6. Channel-4 CREDIT is session-scoped capacity while generation-local emission
+   leases are exact-run fenced; all physical MPEG DATA remains serialized only
+   by `WireConnectionOwner` under the global Wire sequence.
+7. RETIRE moves LIVE to RETIRING before waiting for admitted send leases, so no
+   new emission can enter while retirement waits.
+8. RETIRE completion becomes serializable only after real producer/thread and
+   exact suppression preparation retirement; deadline expiration cannot create
+   success.
+9. N+1 receives fresh producer, capture plan, suppression and local buffer/lease
+   authority. The surviving credit balance is correctly Wire-session capacity,
+   not dead-generation identity.
+10. Existing Q4/R16A/R13/R14 RFB contracts and accepted PS2 MPEG Transport
+    source are unchanged; the R13 fixture/source-expression correction preserves
+    its existing sole-owner guard.
+11. R17 does not activate PS2 Application MPEG, decoder/presentation policy,
+    AUDIO, heartbeat, CONFIG delivery or final all-guns composition. The default
+    Pi runtime supplies no MPEG generation factory.
+12. Final source and immutable-log heads pass canonical host, project, complete
+    strict dictionary, pinned PS2 compile/link and reproducibility evidence.
+
+R17_SOURCE_COMPLETE=YES
+R17_HOST_TESTED=YES
+R17_FOCUSED_TESTS=12_PASS
+R17_PROJECT_CHECK=PASS
+R17_STRICT_DICTIONARIES=PASS
+R17_PS2_COMPILE=PASS
+R17_PS2_LINK=PASS
+R17_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R17_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_35808953320_ATTEMPT_2
+R17_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_35809286786_ATTEMPT_1
+R17_INDEPENDENT_VALIDATION=NOT_RUN
+R17_OPERATOR_OBSERVED=NO
+R17_HARDWARE_QUALIFIED=NO
+
+R17 current linked identity is:
+
+`ELF_PRISTINE_SHA256=615407bd6ce43722f6ead9ced75985d85bec18fa24e3e0f3a841c4af21894dfc`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=71846f590b0f46af905311d55a074e44ac1d514887dbdc7e87a5bd7472b18b3f`
+`PT_LOAD_BYTES=487188`
+
+The whole ELF hash changed because the Configuration source/projection inputs
+changed, but the loadable PT_LOAD fingerprint and byte count are exactly
+unchanged from accepted R16B. This is build identity only; R16B was already
+hardware-unqualified and no qualification is inferred for R17.
+
 ## Next dependency decision
 
-Current maintained PS2 authority already provides:
+R17 closes the maintained Pi producer/control-owner gap, but current PS2
+Transport still lacks one A003-required session-local MPEG run boundary.
 
-- exact MPEG START kind 11 on control channel 0, flags zero, 44-byte payload;
-- exact MPEG RETIRE kind 10 on control channel 0, flags zero, 12-byte payload;
-- MPEG generation-control version 1 and big-endian payload codecs;
-- logical MPEG DATA on channel 4;
-- MPEG queue/credit/activity state and initial channel-4 credit;
-- exact RETIRE-completion reception through Transport;
-- the accepted Configuration-owned MPEG runtime profile.
+Current accepted Transport can:
 
-Maintained Pi product source still explicitly excludes MPEG control, MPEG DATA
-scheduling and an MPEG producer. Historical H1 code proves useful mechanisms
-(exact prepared generation, exact capture geometry, one producer, bounded
-buffering, generation-specific emission leases and retirement ordering), but
-that experimental class/process structure is reference evidence, not a merge
-target.
+- open a session with logical MPEG storage and initial channel-4 credit;
+- consume DATA/channel4 into one bounded queue;
+- return credit for decoder-consumed bytes using `mpeg_credit_pending`;
+- publish finite producer completion;
+- relay exact START and RETIRE control;
+- receive and expose one exact Pi RETIRE completion.
 
-The smallest dependency before final Application orchestration is therefore a
-maintained Pi-side exact-generation owner that consumes the already-accepted PS2
-control representation and relays producer bytes through the existing sole Wire
-owner. It must preserve one physical connection and must not invent a second
-session/generation protocol.
+It cannot yet:
 
-## Governing invariants for R17
+- explicitly open one MPEG DATA-admission interval before START;
+- close channel-4 DATA admission atomically when RETIRE completion is accepted;
+- reject post-completion DATA as a protocol violation;
+- keep retirement latched after the completion value is taken;
+- discard residual old-run queue bytes after the local consumer has retired;
+- return the combined residual + already-withheld credit through the existing
+  Transport send owner;
+- clear old finite-producer/queue state and reopen admission for a later run.
 
-1. `WireConnectionOwner` remains the sole Pi physical receive/send/sequence
-   owner. MPEG producer/control code never reads or writes the PS2-facing socket.
-2. Current PS2 MPEG START/RETIRE bytes are authority. R17 mirrors them exactly;
-   it does not revive older experimental START-as-DATA representations or add a
-   new generation tag to every MPEG DATA frame.
-3. START is exact active-Wire-session and exact nonzero-generation state. One
-   generation may be prepared/live/retiring at a time; stale or mismatched
-   session/generation control fails at the smallest safe scope.
-4. The accepted base rectangle is the Pi capture rectangle. Suppression is the
-   exact generation-specific outer footprint. Inner matte remains PS2-local and
-   is never sent to or reconstructed by the Pi.
-5. Producer emission starts only after exact-generation capture/suppression
-   preparation succeeds and only while channel-4 credit permits. Pi memory must
-   remain bounded; lack of credit is backpressure, not permission to accumulate
-   an unbounded encoded stream.
-6. Every MPEG DATA frame is serialized by the existing sole Wire owner and
-   consumes only channel-4 credit. RFB credit/state remains independent.
-7. Retirement closes new generation-N emission admission first, waits for any
-   already-admitted physical-send lease to finish, then retires capture/
-   suppression/producer ownership. RETIRE completion is emitted only after that
-   exact Pi retirement proof succeeds.
-8. A stuck or failed producer may fail closed; a timeout may detect failure but
-   must never be treated as proof that live ownership retired successfully.
-9. The dead generation is never rebound. Generation N+1 receives fresh producer,
-   capture/suppression and local queue/buffer authority after N is fully retired.
-10. Existing Q4/R16A/R16B RFB recovery, R13 quiesce, R14 RFB values and accepted
-    PS2 MPEG Transport/decoder/presentation mechanisms remain unchanged.
-11. R17 does not perform final PS2 Application MPEG activation, calibration UI
-    policy, first-frame ownership promotion, decoder/presentation orchestration,
-    AUDIO activation, heartbeat or final all-guns composition.
-12. A003/A004 exact-generation geometry/profile facts remain singular authority.
-    If Pi encoding requires a value not presently available without duplicating
-    or inventing product tuning, Reconstruction must introduce the smallest
-    owner-correct projection from accepted Configuration authority or return
-    BLOCKED; it may not silently copy laboratory knobs.
+A003 and the qualified historical generation-boundary record require exactly
+those mechanics. The boundary is a session-scoped queue epoch, not a second
+socket, per-packet generation tag, generic module-generation system, or
+Transport-owned product activation policy.
+
+Therefore the smallest prerequisite before Application MPEG composition is a
+Transport-only run-boundary packet.
+
+## Governing invariants for R18
+
+1. Transport remains owner of physical Wire validity, channel-4 queue, credit
+   accounting and DATA admission mechanics; it does not own user activation,
+   calibration, MPEG region meaning, decoder/presentation policy, or Pi producer
+   lifecycle.
+2. One session-scoped MPEG queue is reused across runs. Do not add a second
+   queue, socket, receive owner, per-DATA generation field or generic global
+   module-generation manager.
+3. A higher owner explicitly opens the MPEG run boundary before START. Initial
+   open requires a clean idle MPEG channel: no residual bytes, no prior
+   producer-done state, no retirement latch and no withheld old-run credit.
+4. If START cannot be admitted/sent after opening, the higher owner can abort the
+   unopened/failed run boundary back to a proven clean state without claiming
+   producer retirement that did not occur.
+5. While a run boundary is open, ordinary channel-4 DATA remains accepted under
+   the existing bounded queue/credit rules.
+6. Acceptance of the exact Pi RETIRE completion atomically closes channel-4
+   DATA admission before the completion becomes visible to Application. Because
+   TCP/Wire order is singular, all earlier accepted N DATA is already consumed
+   or resident in N's queue at that point.
+7. Any channel-4 DATA received after exact RETIRE completion and before a later
+   explicit clean reopen is a protocol violation and fails the current Wire
+   runtime; it is never treated as N+1 data.
+8. Taking/observing the RETIRE completion does not reopen MPEG DATA admission.
+   Retirement remains latched until the higher owner has retired the exact local
+   MPEG consumer and explicitly finalizes Transport.
+9. Finalization runs only with no MPEG activity waiter/consumer still owning the
+   queue. Under the existing MPEG queue synchronization it discards all residual
+   bytes, resets queue/finite-producer state, and records discarded bytes as
+   discarded—not decoder-consumed.
+10. Finalization returns all owed selected-path MPEG credit exactly once through
+    Transport's existing sole outbound path: already-batched `mpeg_credit_pending`
+    plus residual discarded queue bytes. It must detect overflow/failure and
+    must not double-return bytes already credited during normal consumption.
+11. Only after successful residual/credit finalization may the retirement latch
+    clear and a fresh later MPEG run boundary open. Old queue, producer-done,
+    activity-wait and retirement state cannot leak into the successor run.
+12. R18 preserves RFB/AUDIO/Q4/R16A/R13/R14/R17 contracts, exact START/RETIRE
+    bytes, decoder/worker/presentation mechanisms and Application policy. It
+    adds no final composition and claims no hardware qualification.
 
 ## ACTIVE RECONSTRUCTION PACKET
 
-PACKET_ID=A003-PI-MPEG-CONTROL-PRODUCER-R17
+PACKET_ID=A003-MPEG-TRANSPORT-RUN-BOUNDARY-R18
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a003-mpeg-generation
@@ -345,146 +436,132 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0048
-BASED_ON_ACCEPTED_R16B_SOURCE=3310568e6c35ef59d77ee6075f1f9ea5a561476e
-BASED_ON_R16B_LOG=856a1065f5941c5149518ffe2a322bc81fe91642
+BASED_ON_FOREMAN_STATE_REVISION=0049
+BASED_ON_ACCEPTED_R17_SOURCE=cc7dc1237957bfd288addc8379caae47e83bc5a6
+BASED_ON_R17_LOG=8698890b4f839d5708e6cefc129c37608643e155
 
 ### Objective
 
-Reconstruct the smallest maintained Pi-side MPEG generation-control and producer
-boundary required by the already-accepted PS2 MPEG Transport relay. The Pi must
-decode/validate exact START, prepare one exact generation, own its bounded
-capture/encoder lifetime, emit MPEG DATA only through channel 4 under Transport
-credit and sole-Wire serialization, and complete exact RETIRE only after the
-generation's Pi-owned capture/suppression/producer work is proven retired.
+Implement the missing PS2 Transport-owned MPEG run boundary around the already
+accepted session-scoped channel-4 queue: explicit clean open/abort, immediate
+DATA-admission closure on exact RETIRE completion, residual/credit finalization
+after consumer retirement, and clean reopen for a successor run.
 
-This packet productizes the missing Pi mechanism only. It does not wire final
-Application MPEG policy or claim presentation/decoder hardware qualification.
+This packet supplies mechanism required by later Application orchestration. It
+does not activate MPEG in `app.c` and does not own decoder, Presentation, Pi
+producer or calibration policy.
 
 ### Required behavior
 
-1. **Exact symmetric control codec.** Add/complete maintained Pi protocol support
-   for the current PS2 START/RETIRE representations exactly: kind 11/10, control
-   channel 0, zero flags, generation-control version 1, 44/12-byte big-endian
-   payloads. Malformed or wrong-envelope control is rejected.
-2. **Session/generation validation.** START must match the active authoritative
-   Q4 session identity, use a nonzero fresh generation, and pass exact geometry
-   bounds/alignment/containment checks against injected/current desktop geometry.
-3. **One exact prepared/live owner.** Only one generation may be prepared/live/
-   retiring. Duplicate, older, mismatched-session or otherwise stale START/
-   RETIRE cannot replace current authority.
-4. **Exact capture/suppression preparation.** Derive capture from START base
-   geometry and suppression from START outer geometry. Preparation must finish
-   before emission admission opens; failed preparation leaves no falsely-live
-   generation.
-5. **Bounded producer ownership.** Launch/own one generation-scoped producer with
-   bounded buffering/backpressure and explicit stop/retirement outcome. Preserve
-   exact producer failure rather than converting it into successful EOF.
-6. **Channel-4 credit and sole-owner send.** Accept MPEG credit only for channel
-   4; producer code publishes bytes to the Wire owner rather than sending
-   physically. The Wire owner allocates global sequence and sends DATA/channel4
-   in bounded fragments no larger than accepted Wire payload limits.
-7. **Exact emission lease/fence.** New generation-N emission closes atomically
-   when retirement begins. RETIRE waits for every already-admitted N send lease
-   to finish before producer/capture retirement and completion publication.
-8. **Retirement completion means real Pi retirement.** RETIRE completion echoes
-   the exact accepted version/session/generation only after producer, capture and
-   generation-specific suppression are no longer live. Failure to prove that
-   state fails closed and emits no false completion.
-9. **Fresh repeated generation.** After successful retirement, a later fresh
-   generation can start with new producer/capture/suppression/buffer authority;
-   old local bytes, leases, credit bookkeeping or status cannot contaminate it.
-10. **Preserve other riders/contracts.** Existing RFB attachment, R16A ERROR, R13
-    quiesce, Q4 compatibility and singular R14 profile behavior remain intact;
-    MPEG activity does not create a second physical owner or cross-rider credit.
-11. **No final-orchestration expansion.** Do not activate PS2 MPEG worker/
-    decoder/presentation policy, calibration acceptance, first-frame ownership,
-    AUDIO, CONFIG delivery, heartbeat, direct-RFB fallback, or all-guns
-    Application orchestration.
-12. **Document maintained ownership.** Update Pi README/symbol dictionaries and
-    the smallest directly affected architecture/development record so exact
-    producer/control/retirement ownership is recoverable without H1 history.
+1. **Explicit clean open.** Expose the smallest public Transport bridge operation
+   that opens one MPEG DATA-admission interval only from a proven clean idle
+   channel state. Do not allocate product generation identity in Transport.
+2. **Pre-START abort.** Expose a bounded abort/reset path for an opened boundary
+   that has not reached a valid live transaction, proving no residual queue,
+   pending retirement or producer-done state is silently carried forward.
+3. **Admission-gated DATA.** MPEG DATA is accepted only while the run boundary is
+   open and not retirement-latched; invalid timing is a protocol failure.
+4. **Completion closes first.** Exact RETIRE completion acceptance closes DATA
+   admission under Transport authority before publishing/storing the completion
+   for the higher owner.
+5. **Completion observation is not reopen.** Taking the exact completion may
+   clear the one completion value slot but must leave the retirement boundary
+   closed/latched.
+6. **Residual discard primitive.** Add the owner-correct MPEG queue primitive
+   needed to discard all residual bytes atomically while preserving bounded
+   storage invariants. Residual discard is not decoder consumption.
+7. **Exact credit finalization.** Finalization returns residual bytes plus any
+   already-withheld MPEG credit exactly once through the existing Transport
+   outbound/sequence owner, respecting overflow/failure semantics.
+8. **Generation-local reset.** Successful finalization clears old queue offsets/
+   byte count, producer-done state, completion/retirement latch and generation-
+   local activity state required for safe reuse, without recreating the Wire
+   Session or MPEG queue allocation.
+9. **Safe consumer fence.** Finalization must fail closed if an MPEG activity
+   waiter or other Transport-visible consumer state proves the channel is still
+   in use; it may not delete/wake/reuse live synchronization ownership as a
+   shortcut.
+10. **Fresh successor.** After successful finalization, a later explicit open
+    admits a fresh run; tests must prove old residual bytes, producer-done,
+    completion, pending credit and activity state cannot appear in that run.
+11. **Preserve neighboring contracts.** No change to fixed Wire framing, exact
+    START/RETIRE payloads, RFB/AUDIO behavior, Pi R17 source, decoder safe-stop,
+    worker/compositor/presentation policy or R16B recovery.
+12. **Documentation/dictionaries/build evidence.** Update directly affected
+    Transport lifecycle docs/dictionaries and preserve focused host, canonical
+    project, strict dictionary, pinned PS2 compile/link and current-source
+    reproducibility evidence.
 
 ### Acceptance criteria
 
-- A003-R17-C1 PI_MPEG_CONTROL_CODEC_EXACTLY_MATCHES_ACCEPTED_PS2
-- A003-R17-C2 START_VALIDATES_ACTIVE_SESSION_GENERATION_AND_GEOMETRY
-- A003-R17-C3 ONE_EXACT_GENERATION_OWNER_STALE_CONTROL_REJECTED
-- A003-R17-C4 CAPTURE_AND_SUPPRESSION_PREPARED_FOR_EXACT_GENERATION
-- A003-R17-C5 PRODUCER_LIFETIME_AND_BUFFERING_BOUNDED_FAIL_CLOSED
-- A003-R17-C6 CHANNEL4_CREDIT_AND_SOLE_WIRE_SERIALIZATION_PRESERVED
-- A003-R17-C7 RETIRE_CLOSES_ADMISSION_AND_DRAINS_INFLIGHT_SEND_LEASES
-- A003-R17-C8 RETIRE_COMPLETION_ONLY_AFTER_REAL_PI_RETIREMENT
-- A003-R17-C9 REPEATED_GENERATION_USES_FRESH_AUTHORITY_NO_STALE_REBIND
-- A003-R17-C10 RFB_Q4_R16A_R13_R14_AND_PS2_MPEG_CONTRACTS_UNCHANGED
-- A003-R17-C11 NO_APPLICATION_PRESENTATION_AUDIO_HEARTBEAT_OR_FINAL_SCOPE_CREEP
-- A003-R17-C12 HOST_PROJECT_DICTIONARY_AND_BUILD_EVIDENCE_GREEN
+- A003-R18-C1 MPEG_RUN_BOUNDARY_OPENS_ONLY_FROM_CLEAN_IDLE_TRANSPORT
+- A003-R18-C2 PRE_START_ABORT_RESTORES_PROVEN_CLEAN_BOUNDARY
+- A003-R18-C3 MPEG_DATA_ADMISSION_REQUIRES_OPEN_NONRETIRING_RUN
+- A003-R18-C4 RETIRE_COMPLETION_ATOMICALLY_CLOSES_DATA_ADMISSION
+- A003-R18-C5 COMPLETION_TAKE_DOES_NOT_REOPEN_CHANNEL
+- A003-R18-C6 RESIDUAL_QUEUE_DISCARD_IS_ATOMIC_AND_NOT_CONSUMPTION
+- A003-R18-C7 RESIDUAL_PLUS_PENDING_CREDIT_RETURNED_EXACTLY_ONCE
+- A003-R18-C8 FINALIZATION_RESETS_OLD_RUN_TRANSPORT_STATE
+- A003-R18-C9 LIVE_WAITER_OR_UNPROVEN_CONSUMER_BLOCKS_FINALIZATION
+- A003-R18-C10 FRESH_SUCCESSOR_RUN_CANNOT_OBSERVE_OLD_RUN_STATE
+- A003-R18-C11 RFB_AUDIO_WIRE_R17_AND_MEDIA_OWNER_CONTRACTS_UNCHANGED
+- A003-R18-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
-All twelve criteria must be MET for source acceptance. A truthful BLOCKED result
-is permitted if current Configuration/desktop/suppression owner seams cannot
-supply a required fact without inventing duplicate authority; identify the exact
-missing interface rather than importing H1 scaffolding or hard-coding an
-unowned value.
+All twelve criteria must be MET for source acceptance. If current Transport
+synchronization cannot prove a safe finalization boundary without Application-
+owned knowledge not yet exposed, return a truthful BLOCKED record naming the
+missing seam instead of inventing timeout/sleep/diagnostic authority.
 
-### Required evidence
+### Required deterministic evidence
 
-R17 must preserve deterministic evidence for at least:
+R18 must prove at least:
 
-1. byte-for-byte Pi/PS2 START and RETIRE codec symmetry plus malformed cases;
-2. active-session mismatch, zero/stale/repeated generation, geometry alignment,
-   bounds and suppression-containment rejection;
-3. exactly one prepared/live/retiring generation and no replacement while live;
-4. capture base geometry distinct from outer suppression geometry;
-5. producer launch failure and producer retirement failure remaining fail-closed;
-6. initial/returned channel-4 credit bounding DATA emission and independent RFB
-   credit behavior;
-7. sole Wire send/sequence ownership for MPEG DATA and RETIRE completion;
-8. retirement racing an in-flight emission lease, proving completion orders
-   strictly after that lease and real producer cleanup;
-9. no RETIRE completion on unproven/stuck producer retirement;
-10. generation N retirement followed by clean N+1 startup with no stale bytes,
-    lease, credit, suppression or producer identity reused;
-11. unchanged Q4/RFB/R13/R14 and current PS2 MPEG control tests;
-12. canonical host tests, project check, complete strict dictionaries and
-    pinned PS2 compile/link/current-source reproducibility if PS2/build inputs
-    change.
+1. DATA before explicit run-open is rejected/fails the runtime;
+2. clean open from initial session state succeeds exactly once;
+3. duplicate open and open with dirty/residual/retirement state fail closed;
+4. pre-START abort returns to clean idle only when no run data/state exists;
+5. valid DATA remains bounded/credit-accounted while admission is open;
+6. exact RETIRE completion closes admission before higher-owner observation;
+7. DATA after completion is a protocol failure even after completion is taken;
+8. wrapped residual queue discard returns the exact discarded byte count;
+9. finalization combines pending consumed-credit debt plus residual discarded
+   bytes without duplicate return and emits that credit through the existing
+   sole Transport sender;
+10. producer-done/exhaustion and activity state from N do not survive finalize;
+11. N finalize -> N+1 open/read cycle contains only N+1 bytes/state;
+12. existing RFB/AUDIO, MPEG control relay, Q4 and R17-related contract tests
+    remain green.
 
 ### Authorized source surface
 
-R17 may modify only the smallest justified subset of:
+R18 may modify only the smallest justified subset of:
 
-- `pi/wire_protocol.py`;
-- `pi/wire_server.py` and/or `pi/wire_runtime.py` for sole-owner MPEG dispatch,
-  credit and serialization mechanics;
-- new maintained `pi/` MPEG generation/producer/capture-suppression source files
-  when a separate responsibility is genuinely earned;
-- `pi/README.md` and `pi/SYMBOLS.md`;
-- directly affected Pi/protocol/integration fixtures;
-- directly affected development/architecture documentation and dictionary/
-  topology/build tooling;
-- Configuration projection source/tooling only if required to expose an already-
-  accepted MPEG value to the Pi without duplicating authority. Selected values
-  may not be retuned and CONFIG-on-Wire may not be broadened.
+- `src/transport/mpeg_channel.c` / `.h`;
+- `src/transport/runtime.c` / `.h`;
+- `src/transport/bridge.c` / `.h`;
+- directly affected Transport MPEG unit/integration fixtures;
+- `src/transport/SYMBOLS.md`, directly affected development/architecture notes,
+  source dictionaries, compile/link manifests or check tooling as required.
 
-PS2 Application, MPEG decoder/worker/backend, Display/Presentation, Input/UI,
-RFB product source, AUDIO product source, R13/R14 semantics and final all-guns
-orchestration are not authorized by R17.
+`src/app.c`, Pi product source, MPEG decoder/worker/PS2 backend, Display/
+Presentation, calibration/Input/UI, RFB product source and AUDIO product source
+are not authorized by R18.
 
 ### Required checks before handoff
 
-Run the canonical host tests and project check, complete strict source-dictionary
-audit, focused Pi MPEG protocol/generation tests, and pinned PS2 compile/link/
-current-source reproducibility whenever linked/build-input bytes change. Preserve
-exact linked identity/PT_LOAD evidence for any changed PS2 bytes.
+Run focused MPEG Transport run-boundary tests, canonical host tests, project
+check, complete strict source-dictionary audit, pinned PS2 compile/link and
+current-source reproducibility. Preserve exact new ELF/PT_LOAD identity if
+loadable bytes change.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` following revision 0007, then stop and return the baton.
 
 ## Current hardware debt
 
-R16B's current linked bytes and R16A/R16B recovery behavior remain hardware
-unqualified. R17 Pi source will likewise begin as source/host/machine evidence
-only. Historical H1 producer/generation hardware results are mechanism
-provenance, not qualification transfer to reconstructed Pi product source.
+R17's Pi generation/producer mechanism is source/host/machine evidence only and
+has not been physically activated or qualified. R16A/R16B recovery remains
+hardware-unqualified. Any PT_LOAD change introduced by R18 creates new exact-
+identity hardware debt; unchanged PT_LOAD would not upgrade existing debt.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
