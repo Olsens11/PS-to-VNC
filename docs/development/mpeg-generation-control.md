@@ -136,9 +136,14 @@ still latched.
 ### Completion and DATA ordering
 
 Exact RETIRE completion closes DATA admission under the MPEG queue lock **before**
-the completion value is published into the control slot. Taking that completion
-clears only the one value slot; it does not reopen admission or clear the
-retirement latch.
+the completion value is published into the control slot. Transport retains the
+exact submitted RETIRE payload only as transaction-correlation evidence; the
+decoded completion must match that payload exactly before it can close
+admission. This does not allocate or interpret MPEG generation identity in
+Transport.
+
+Taking that completion clears only the one value slot; it does not reopen
+admission or clear the retirement latch.
 
 Consequently, DATA arriving after completion is a protocol failure even if the
 higher owner has already taken the completion. A later run cannot open until
@@ -166,6 +171,15 @@ The higher MPEG/Application owner remains responsible for proving decoder/worker
 retirement before requesting finalization. Transport does not invent a decoder
 stop token or timeout. It does, however, refuse finalization while its own
 protected MPEG activity-wait state proves a live waiter still owns the channel.
+
+A successful MPEG read remains a Transport-visible consumer transaction until
+its consumed-byte credit bookkeeping and any resulting physical CREDIT send
+finish. Finalization also refuses while that transaction is active. Once
+finalization starts, Transport refuses new MPEG reads/status snapshots/activity
+waits/producer-done publication until the old-run reset and credit return are
+complete. This closes the race in which a late consumer could otherwise create
+new old-run state while finalization temporarily releases the queue lock to use
+the sole physical sender.
 
 Successful finalization resets residual queue state, producer-done, pending
 credit, completion/retirement facts, activity sequence and START/RETIRE
