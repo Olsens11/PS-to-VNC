@@ -213,6 +213,13 @@ Transport may use an opaque access object, runtime identity, capability, epoch,
 pointer identity, or another internal mechanism that preserves the same
 invariant.
 
+For MPEG generation control, this rule is now explicit at the public bridge.
+The higher owner supplies only generation/geometry meaning; Transport stamps its
+current private Q4 Wire session identity and control-version representation
+below the bridge. RETIRE completion is fully correlated while private and is
+projected upward only as the completed generation. Modules therefore never need
+a public Wire-session-ID accessor merely to perform exact-session MPEG control.
+
 ## A Transport ticket is never transferable
 
 Once Transport admits an operation under Wire Session A, that operation belongs

@@ -192,3 +192,57 @@ Application activation policy.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-MPEG-TRANSPORT-RUN-BOUNDARY-R18`.
+
+
+## R20 Transport-private Wire identity binding
+
+R20 changes the **public Transport bridge seam**, not the accepted MPEG wire
+representation.
+
+Above Transport, callers now express only run-owned meaning:
+
+- START request: nonzero generation plus base/suppression rectangles;
+- RETIRE request: nonzero generation;
+- RETIRE completion: exact completed generation.
+
+The public values deliberately have no Wire `session_id` and no
+generation-control protocol version. Pi still allocates the nonzero Q4 session
+identity, and PS2 Transport remains its sole owner after ACCEPT.
+
+When a current access ticket submits START or RETIRE, the bridge stamps:
+
+- `PSTVNC_MPEG_GENERATION_CONTROL_VERSION`;
+- the current private Q4 session identity;
+- the caller-owned generation/geometry.
+
+It then passes the unchanged full wire payload to the private runtime. Runtime
+continues to retain and compare the full submitted RETIRE transaction, so
+generation/session/version correlation remains below the bridge.
+
+Completion projection is deliberately one-way. The runtime yields the full
+wire completion internally; the bridge verifies its private version/session
+authority and publishes only the generation above Transport. An impossible
+private-identity contradiction makes the current runtime terminal rather than
+leaking or repairing identity upward.
+
+R20 also validates only geometry facts that Transport can know without stealing
+Display/calibration authority: nonzero generation, 16-pixel-aligned nonempty
+base dimensions, nonempty overflow-safe rectangles, and suppression containment.
+Desktop bounds and selected MPEG profile limits remain with their existing
+higher/Pi owners.
+
+A replacement Wire Session therefore receives a new private Q4 identity while
+the higher-level request type remains reusable run meaning. A stale access
+ticket cannot submit anything; a current ticket always stamps the current
+session's identity. No public session-ID accessor exists.
+
+The fixed control bytes remain unchanged:
+
+- START: kind 11, channel 0, flags 0, 44-byte version-1 payload;
+- RETIRE: kind 10, channel 0, flags 0, 12-byte version-1 payload.
+
+R18 run-open/retirement/finalization and R17 Pi exact-session/generation
+validation remain unchanged.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-MPEG-PRIVATE-SESSION-BINDING-R20`.
