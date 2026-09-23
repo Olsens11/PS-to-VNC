@@ -1,9 +1,10 @@
 /*
  * File synopsis:
- * Runs the established Application host fixture plus R15 default-entry and
- * R16B provider-failure recovery assertions. The frozen legacy body remains the
- * broad lifecycle/input/cleanup regression fixture; this wrapper adds bounded
- * scripting for fresh-attempt recovery without changing lower-layer mechanics.
+ * Runs the established Application host fixture plus R15 default-entry, R16B
+ * provider-failure recovery, and R19 P2-flow composition assertions. The frozen
+ * legacy body remains the broad lifecycle/input/cleanup regression fixture;
+ * this wrapper adds bounded scripting for fresh-attempt recovery and for the
+ * public RFB-flow policy seam without changing lower-layer mechanisms.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
  * A003-RFB-ORDINARY-APPLICATION-ACTIVATION-R15.
@@ -363,6 +364,212 @@ static void test_r15_selected_profile_reaches_existing_lifecycle_exactly(void)
     CHECK(observed_transport_config.max_data_payload == 8192u);
 }
 
+static void test_r19_thawed_dirty_update_completes_presents_and_reschedules(void)
+{
+    int first_next;
+    int first_request;
+    int first_record;
+    int receive;
+    int completion;
+    int publication;
+    int second_next;
+    int second_request;
+
+    reset_script();
+
+    request_results[0] = 1;
+    request_results[1] = 0;
+    request_result_count = 2u;
+
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_UPDATE;
+    try_receive_valid[0] = 1;
+    try_receive_dirty[0] = 1;
+    try_receive_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(flow_init_calls == 1u);
+    CHECK(flow_next_calls == 2u);
+    CHECK(flow_record_sent_calls == 1u);
+    CHECK(flow_update_complete_calls == 1u);
+    CHECK(flow_publication_query_calls == 1u);
+    CHECK(request_calls == 2u);
+    CHECK(request_incremental[0] == 1);
+    CHECK(request_incremental[1] == 1);
+    CHECK(flow_recorded_requests[0] ==
+        PSTVNC_RFB_FLOW_REQUEST_INCREMENTAL);
+    CHECK(present_call_count == 2u);
+
+    first_next = nth_event_index(EV_FLOW_NEXT_REQUEST, 0u);
+    first_request = nth_event_index(EV_REQUEST_UPDATE, 0u);
+    first_record = nth_event_index(EV_FLOW_RECORD_SENT, 0u);
+    receive = nth_event_index(EV_TRY_RECEIVE, 0u);
+    completion = nth_event_index(EV_FLOW_UPDATE_COMPLETE, 0u);
+    publication = nth_event_index(EV_FLOW_PUBLICATION_QUERY, 0u);
+    second_next = nth_event_index(EV_FLOW_NEXT_REQUEST, 1u);
+    second_request = nth_event_index(EV_REQUEST_UPDATE, 1u);
+
+    CHECK(first_next < first_request);
+    CHECK(first_request < first_record);
+    CHECK(first_record < receive);
+    CHECK(receive < completion);
+    CHECK(completion < publication);
+    CHECK(publication < second_next);
+    CHECK(second_next < second_request);
+}
+
+static void test_r19_failed_send_never_records_policy_send(void)
+{
+    reset_script();
+
+    request_results[0] = 0;
+    request_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(flow_init_calls == 1u);
+    CHECK(flow_next_calls == 1u);
+    CHECK(request_calls == 1u);
+    CHECK(flow_record_sent_calls == 0u);
+    CHECK(flow_update_complete_calls == 0u);
+    CHECK(try_receive_calls == 0u);
+}
+
+static void test_r19_idle_preserves_outstanding_without_reschedule(void)
+{
+    reset_script();
+
+    request_results[0] = 1;
+    request_result_count = 1u;
+
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_IDLE;
+    try_receive_results[1] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_result_count = 2u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(flow_init_calls == 1u);
+    CHECK(flow_next_calls == 1u);
+    CHECK(flow_record_sent_calls == 1u);
+    CHECK(flow_update_complete_calls == 0u);
+    CHECK(request_calls == 1u);
+    CHECK(idle_delay_calls == 1u);
+}
+
+static void test_r19_hold_is_no_send_no_accounting(void)
+{
+    reset_script();
+
+    flow_next_script[0] = PSTVNC_RFB_FLOW_REQUEST_HOLD;
+    flow_next_script_count = 1u;
+
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_IDLE;
+    try_receive_results[1] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_result_count = 2u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(flow_init_calls == 1u);
+    CHECK(flow_next_calls == 1u);
+    CHECK(request_calls == 0u);
+    CHECK(flow_record_sent_calls == 0u);
+    CHECK(flow_update_complete_calls == 0u);
+    CHECK(idle_delay_calls == 1u);
+}
+
+static void test_r19_full_policy_decision_maps_to_nonincremental_request(void)
+{
+    reset_script();
+
+    flow_next_script[0] = PSTVNC_RFB_FLOW_REQUEST_FULL;
+    flow_next_script_count = 1u;
+    request_results[0] = 1;
+    request_result_count = 1u;
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(flow_next_calls == 1u);
+    CHECK(request_calls == 1u);
+    CHECK(request_incremental[0] == 0);
+    CHECK(flow_record_sent_calls == 1u);
+    CHECK(flow_recorded_requests[0] == PSTVNC_RFB_FLOW_REQUEST_FULL);
+}
+
+static void test_r19_publication_gate_suppresses_dirty_remote_present(void)
+{
+    reset_script();
+
+    flow_publication_allowed = 0;
+    request_results[0] = 1;
+    request_results[1] = 0;
+    request_result_count = 2u;
+
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_UPDATE;
+    try_receive_valid[0] = 1;
+    try_receive_dirty[0] = 1;
+    try_receive_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(flow_update_complete_calls == 1u);
+    CHECK(flow_publication_query_calls == 1u);
+    CHECK(request_calls == 2u);
+    CHECK(present_call_count == 1u);
+    CHECK(event_occurrences(EV_DISPLAY_PREPARE) == 1u);
+}
+
+static void test_r19_provider_replacement_reinitializes_flow_policy(void)
+{
+    size_t i;
+
+    reset_script();
+    script_fresh_connections(2u);
+
+    request_results[0] = 1;
+    request_results[1] = 1;
+    request_result_count = 2u;
+
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[0] = PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ;
+    try_receive_results[1] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[1] = PSTVNC_RFB_SESSION_ERROR_IO;
+    try_receive_result_count = 2u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(flow_init_calls == 2u);
+    CHECK(flow_next_calls == 2u);
+    CHECK(flow_record_sent_calls == 2u);
+    CHECK(request_calls == 2u);
+
+    for (i = 0u; i < 2u; i++) {
+        CHECK(flow_init_snapshot_frozen[i] == 0u);
+        CHECK(flow_init_snapshot_outstanding[i] == 0u);
+        CHECK(flow_init_snapshot_full_pending[i] == 0u);
+        CHECK(flow_recorded_requests[i] ==
+            PSTVNC_RFB_FLOW_REQUEST_INCREMENTAL);
+        CHECK(request_incremental[i] == 1);
+    }
+}
+
+static void test_r19_policy_accounting_rejection_fails_before_receive(void)
+{
+    reset_script();
+
+    flow_record_sent_allowed = 0;
+    request_results[0] = 1;
+    request_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(request_calls == 1u);
+    CHECK(flow_record_sent_calls == 1u);
+    CHECK(try_receive_calls == 0u);
+    CHECK(diagnostic_occurrences_of("PSTVNC_STAGE FATAL") == 1u);
+}
+
 int main(void)
 {
     int legacy_result;
@@ -383,11 +590,20 @@ int main(void)
     test_r16b_unproven_input_stop_blocks_replacement();
     test_r16b_unproven_transport_stop_blocks_replacement();
 
+    test_r19_thawed_dirty_update_completes_presents_and_reschedules();
+    test_r19_failed_send_never_records_policy_send();
+    test_r19_idle_preserves_outstanding_without_reschedule();
+    test_r19_hold_is_no_send_no_accounting();
+    test_r19_full_policy_decision_maps_to_nonincremental_request();
+    test_r19_publication_gate_suppresses_dirty_remote_present();
+    test_r19_provider_replacement_reinitializes_flow_policy();
+    test_r19_policy_accounting_rejection_fails_before_receive();
+
     if (failures != 0) {
-        fprintf(stderr, "app R15/R16B tests: %d failure(s)\n", failures);
+        fprintf(stderr, "app R15/R16B/R19 tests: %d failure(s)\n", failures);
         return 1;
     }
 
-    printf("app R15/R16B tests: PASS\n");
+    printf("app R15/R16B/R19 tests: PASS\n");
     return 0;
 }

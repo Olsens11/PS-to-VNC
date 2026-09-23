@@ -27,6 +27,7 @@
 #include "platform/ps2_system.h"
 #include "rfb.h"
 #include "rfb_session.h"
+#include "rfb/flow_policy.h"
 #include "transport/bridge.h"
 
 static int failures;
@@ -64,7 +65,12 @@ typedef enum event_id {
     EV_POINTER_SEND,
     EV_KEY_SEND,
     EV_INPUT_START,
+    EV_FLOW_INIT,
+    EV_FLOW_NEXT_REQUEST,
     EV_REQUEST_UPDATE,
+    EV_FLOW_RECORD_SENT,
+    EV_FLOW_UPDATE_COMPLETE,
+    EV_FLOW_PUBLICATION_QUERY,
     EV_INPUT_POP,
     EV_TRY_RECEIVE,
     EV_IDLE_DELAY,
@@ -157,9 +163,24 @@ static int idle_delay_result;
 static size_t idle_delay_calls;
 
 static int request_results[16];
+static int request_incremental[16];
 static pstvnc_rfb_session_error_t request_errors[16];
 static size_t request_result_count;
 static size_t request_calls;
+
+static pstvnc_rfb_flow_request_t flow_next_script[32];
+static size_t flow_next_script_count;
+static size_t flow_next_calls;
+static size_t flow_init_calls;
+static size_t flow_record_sent_calls;
+static size_t flow_update_complete_calls;
+static size_t flow_publication_query_calls;
+static int flow_record_sent_allowed;
+static int flow_publication_allowed;
+static pstvnc_rfb_flow_request_t flow_recorded_requests[32];
+static unsigned int flow_init_snapshot_frozen[16];
+static unsigned int flow_init_snapshot_outstanding[16];
+static unsigned int flow_init_snapshot_full_pending[16];
 
 static pstvnc_rfb_session_receive_result_t
     try_receive_results[16];
@@ -209,7 +230,13 @@ static void reset_script(void)
     memset(session_start_results, 0, sizeof(session_start_results));
     memset(session_start_errors, 0, sizeof(session_start_errors));
     memset(request_results, 0, sizeof(request_results));
+    memset(request_incremental, 0, sizeof(request_incremental));
     memset(request_errors, 0, sizeof(request_errors));
+    memset(flow_next_script, 0, sizeof(flow_next_script));
+    memset(flow_recorded_requests, 0, sizeof(flow_recorded_requests));
+    memset(flow_init_snapshot_frozen, 0, sizeof(flow_init_snapshot_frozen));
+    memset(flow_init_snapshot_outstanding, 0, sizeof(flow_init_snapshot_outstanding));
+    memset(flow_init_snapshot_full_pending, 0, sizeof(flow_init_snapshot_full_pending));
     memset(try_receive_results, 0, sizeof(try_receive_results));
     memset(try_receive_errors, 0, sizeof(try_receive_errors));
     memset(try_receive_valid, 0, sizeof(try_receive_valid));
@@ -278,6 +305,15 @@ static void reset_script(void)
     request_results[0] = 0;
     request_result_count = 1;
     request_calls = 0;
+
+    flow_next_script_count = 0u;
+    flow_next_calls = 0u;
+    flow_init_calls = 0u;
+    flow_record_sent_calls = 0u;
+    flow_update_complete_calls = 0u;
+    flow_publication_query_calls = 0u;
+    flow_record_sent_allowed = 1;
+    flow_publication_allowed = 1;
 
     try_receive_result_count = 0;
     try_receive_calls = 0;
@@ -553,6 +589,128 @@ void pstvnc_ps2_graphics_shutdown(void)
     log_event(EV_GRAPHICS_SHUTDOWN);
 }
 
+static pstvnc_rfb_flow_request_t mock_flow_next_without_event(
+    const pstvnc_rfb_flow_policy_t *policy)
+{
+    if (policy == NULL || policy->frozen || policy->request_outstanding)
+        return PSTVNC_RFB_FLOW_REQUEST_HOLD;
+    if (policy->full_refresh_pending)
+        return PSTVNC_RFB_FLOW_REQUEST_FULL;
+    return PSTVNC_RFB_FLOW_REQUEST_INCREMENTAL;
+}
+
+void pstvnc_rfb_flow_policy_init(
+    pstvnc_rfb_flow_policy_t *policy)
+{
+    log_event(EV_FLOW_INIT);
+    CHECK(policy != NULL);
+
+    if (policy == NULL)
+        return;
+
+    memset(policy, 0, sizeof(*policy));
+
+    if (flow_init_calls <
+        sizeof(flow_init_snapshot_frozen) /
+        sizeof(flow_init_snapshot_frozen[0])) {
+        flow_init_snapshot_frozen[flow_init_calls] = policy->frozen;
+        flow_init_snapshot_outstanding[flow_init_calls] =
+            policy->request_outstanding;
+        flow_init_snapshot_full_pending[flow_init_calls] =
+            policy->full_refresh_pending;
+    }
+
+    flow_init_calls++;
+}
+
+int pstvnc_rfb_flow_policy_set_frozen(
+    pstvnc_rfb_flow_policy_t *policy,
+    int frozen)
+{
+    if (policy == NULL || (frozen != 0 && frozen != 1))
+        return 0;
+    policy->frozen = (unsigned int)frozen;
+    return 1;
+}
+
+pstvnc_rfb_flow_request_t pstvnc_rfb_flow_policy_next_request(
+    const pstvnc_rfb_flow_policy_t *policy)
+{
+    pstvnc_rfb_flow_request_t result;
+
+    log_event(EV_FLOW_NEXT_REQUEST);
+
+    if (flow_next_calls < flow_next_script_count)
+        result = flow_next_script[flow_next_calls];
+    else
+        result = mock_flow_next_without_event(policy);
+
+    flow_next_calls++;
+    return result;
+}
+
+int pstvnc_rfb_flow_policy_record_request_sent(
+    pstvnc_rfb_flow_policy_t *policy,
+    pstvnc_rfb_flow_request_t request)
+{
+    pstvnc_rfb_flow_request_t expected;
+
+    log_event(EV_FLOW_RECORD_SENT);
+    CHECK(flow_record_sent_calls <
+        sizeof(flow_recorded_requests) /
+        sizeof(flow_recorded_requests[0]));
+
+    if (flow_record_sent_calls <
+        sizeof(flow_recorded_requests) /
+        sizeof(flow_recorded_requests[0]))
+        flow_recorded_requests[flow_record_sent_calls] = request;
+
+    flow_record_sent_calls++;
+
+    if (!flow_record_sent_allowed || policy == NULL)
+        return 0;
+
+    expected = mock_flow_next_without_event(policy);
+    if (request == PSTVNC_RFB_FLOW_REQUEST_HOLD ||
+        request != expected)
+        return 0;
+
+    if (request == PSTVNC_RFB_FLOW_REQUEST_FULL)
+        policy->full_refresh_pending = 0u;
+
+    policy->request_outstanding = 1u;
+    return 1;
+}
+
+int pstvnc_rfb_flow_policy_record_update_complete(
+    pstvnc_rfb_flow_policy_t *policy)
+{
+    log_event(EV_FLOW_UPDATE_COMPLETE);
+    flow_update_complete_calls++;
+
+    if (policy == NULL || !policy->request_outstanding)
+        return 0;
+
+    policy->request_outstanding = 0u;
+    return 1;
+}
+
+int pstvnc_rfb_flow_policy_has_outstanding_request(
+    const pstvnc_rfb_flow_policy_t *policy)
+{
+    return policy != NULL && policy->request_outstanding;
+}
+
+int pstvnc_rfb_flow_policy_allows_remote_publication(
+    const pstvnc_rfb_flow_policy_t *policy)
+{
+    log_event(EV_FLOW_PUBLICATION_QUERY);
+    flow_publication_query_calls++;
+    return policy != NULL &&
+        !policy->frozen &&
+        flow_publication_allowed;
+}
+
 void pstvnc_rfb_session_init(
     pstvnc_rfb_session_t *session)
 {
@@ -681,8 +839,15 @@ int pstvnc_rfb_session_request_update(
     size_t index = request_calls;
     int result = 0;
 
-    CHECK(incremental != 0);
     log_event(EV_REQUEST_UPDATE);
+
+    CHECK(index <
+        sizeof(request_incremental) /
+        sizeof(request_incremental[0]));
+    if (index <
+        sizeof(request_incremental) /
+        sizeof(request_incremental[0]))
+        request_incremental[index] = incremental;
 
     if (index < request_result_count)
         result = request_results[index];
