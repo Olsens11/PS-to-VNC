@@ -264,3 +264,9 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | run_generation | field | src/app_mpeg_frame.h | pstvnc_app_mpeg_frame_status | local | Defines run_generation as a current clean-source field. | mechanically reconciled current clean source |
 | scheduler_initialized | field | src/app_mpeg_frame.h | pstvnc_app_mpeg_frame_status | local | Defines scheduler_initialized as a current clean-source field. | mechanically reconciled current clean source |
 | transport_config | variable | src/app.c | pstvnc_app_run | local | Defines transport_config as a current clean-source variable. | mechanically reconciled current clean source |
+| service_rfb_flow_request | function | src/app.c | app | file | Defines service_rfb_flow_request as a current clean-source function. | mechanically reconciled current clean source |
+| rfb_flow_policy | variable | src/app.c | pstvnc_app_run_with_transport_config | local | Defines rfb_flow_policy as a current clean-source variable. | mechanically reconciled current clean source |
+| flow_policy | parameter | src/app.c | service_rfb_flow_request | local | Defines flow_policy as a current clean-source parameter. | mechanically reconciled current clean source |
+| session | parameter | src/app.c | service_rfb_flow_request | local | Defines session as a current clean-source parameter. | mechanically reconciled current clean source |
+| incremental | variable | src/app.c | service_rfb_flow_request | local | Defines incremental as a current clean-source variable. | mechanically reconciled current clean source |
+| request | variable | src/app.c | service_rfb_flow_request | local | Defines request as a current clean-source variable. | mechanically reconciled current clean source |
