@@ -360,6 +360,47 @@ def test_quiesce_request_wakes_idle_wire_without_peer_or_provider_traffic(
             worker.join(timeout=1.0)
 
 
+def test_replacement_wire_session_allocates_fresh_attachment(self) -> None:
+    attachments: list[legacy.attachment.RfbAttachment] = []
+    provider_factory = legacy.ProviderSocketFactory([])
+
+    def make_attachment() -> legacy.attachment.RfbAttachment:
+        item = legacy.attachment.RfbAttachment(
+            legacy.flow(),
+            socket_factory=provider_factory,
+        )
+        attachments.append(item)
+        return item
+
+    wire_server = legacy.server.WireServer(
+        session_ids=legacy.server.SessionIdAllocator(170),
+        rfb_attachment_factory=make_attachment,
+    )
+
+    peer_a, worker_a, outcomes_a = legacy.start_active_session(wire_server)
+    try:
+        self.assertEqual(len(attachments), 1)
+        outcome_a = legacy.finish_wire(peer_a, worker_a, outcomes_a)
+        self.assertTrue(outcome_a.accepted)
+        self.assertEqual(outcome_a.session_id, 170)
+    finally:
+        if worker_a.is_alive():
+            worker_a.join(timeout=1.0)
+
+    peer_b, worker_b, outcomes_b = legacy.start_active_session(wire_server)
+    try:
+        self.assertEqual(len(attachments), 2)
+        self.assertIsNot(attachments[0], attachments[1])
+        outcome_b = legacy.finish_wire(peer_b, worker_b, outcomes_b)
+        self.assertTrue(outcome_b.accepted)
+        self.assertEqual(outcome_b.session_id, 171)
+    finally:
+        if worker_b.is_alive():
+            worker_b.join(timeout=1.0)
+
+    self.assertEqual(provider_factory.calls, 0)
+
+
 legacy.RfbAttachmentIntegrationTests.test_connect_failure_and_provider_eof_are_rfb_local = (
     test_connect_failure_and_provider_eof_report_typed_fact_without_wire_failure
 )
@@ -368,6 +409,9 @@ legacy.RfbAttachmentIntegrationTests.test_out_of_order_marker_and_provider_write
 )
 legacy.RfbAttachmentIntegrationTests.test_quiesce_request_wakes_idle_wire_without_peer_or_provider_traffic = (
     test_quiesce_request_wakes_idle_wire_without_peer_or_provider_traffic
+)
+legacy.RfbAttachmentIntegrationTests.test_replacement_wire_session_allocates_fresh_attachment = (
+    test_replacement_wire_session_allocates_fresh_attachment
 )
 
 
