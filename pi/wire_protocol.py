@@ -4,10 +4,10 @@ Defines the Raspberry Pi product-side PSTV Wire framing and provisional
 establishment representation shared conceptually with src/transport/protocol.*.
 
 This module owns bytes only: fixed headers, HELLO, ACCEPT, NOT_ACCEPTED, exact
-RFB DATA/CREDIT/provider-terminal framing, envelope classification, and
-unsigned-field validation. It owns no sockets, listener/session lifecycle,
-rider dispatch, MPEG producer state, RFB provider lifecycle, reconnect policy,
-or systemd behavior.
+RFB DATA/CREDIT/provider-terminal framing, exact MPEG START/RETIRE/DATA/CREDIT
+framing, envelope classification, and unsigned-field validation. It owns no
+sockets, listener/session lifecycle, rider dispatch, MPEG producer state, RFB
+provider lifecycle, reconnect policy, or systemd behavior.
 
 Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
 """
@@ -33,11 +33,14 @@ FRAME_HELLO = 1
 FRAME_DATA = 3
 FRAME_CREDIT = 4
 FRAME_ERROR = 7
+FRAME_MPEG_RETIRE = 10
+FRAME_MPEG_START = 11
 FRAME_ACCEPT = 12
 FRAME_NOT_ACCEPTED = 13
 
 CHANNEL_CONTROL = 0
 CHANNEL_RFB = 1
+CHANNEL_MPEG2 = 4
 
 # HELLO carries two independent compatibility words. Fixed framing and the
 # existing Wire mechanics remain version 1. Product-establishment version 2 is
@@ -52,6 +55,9 @@ HELLO = struct.Struct(">II")
 ONE_WORD = struct.Struct(">I")
 CREDIT = ONE_WORD
 RFB_PROVIDER_FAILURE = ONE_WORD
+MPEG_RETIRE = struct.Struct(">III")
+MPEG_START = struct.Struct(">11I")
+MPEG_GENERATION_CONTROL_VERSION = 1
 
 REJECT_WIRE_VERSION = 1
 REJECT_PRODUCT_VERSION = 2
@@ -79,6 +85,26 @@ class WireHeader:
     flags: int
     sequence: int
     payload_length: int
+
+
+@dataclass(frozen=True)
+class MpegRetireControl:
+    session_id: int
+    generation: int
+
+
+@dataclass(frozen=True)
+class MpegStartControl:
+    session_id: int
+    generation: int
+    base_x: int
+    base_y: int
+    base_width: int
+    base_height: int
+    suppression_x: int
+    suppression_y: int
+    suppression_width: int
+    suppression_height: int
 
 
 def _require_u32(value: int, name: str) -> None:
@@ -279,6 +305,143 @@ def encode_rfb_data_frame(payload: bytes, sequence: int) -> bytes:
     )
 
 
+def encode_mpeg_credit_payload(amount: int) -> bytes:
+    _require_u32(amount, "MPEG credit")
+    if amount == 0:
+        raise WireProtocolError("MPEG credit must be nonzero")
+    return CREDIT.pack(amount)
+
+
+def decode_mpeg_credit_payload(payload: bytes) -> int:
+    if len(payload) != CREDIT.size:
+        raise WireProtocolError("MPEG CREDIT payload must be exactly 4 bytes")
+    amount = CREDIT.unpack(payload)[0]
+    if amount == 0:
+        raise WireProtocolError("MPEG credit must be nonzero")
+    return amount
+
+
+def encode_mpeg_credit_frame(amount: int, sequence: int) -> bytes:
+    return encode_channel_frame(
+        FRAME_CREDIT,
+        CHANNEL_MPEG2,
+        sequence,
+        encode_mpeg_credit_payload(amount),
+    )
+
+
+def encode_mpeg_data_frame(payload: bytes, sequence: int) -> bytes:
+    if not payload:
+        raise WireProtocolError("MPEG DATA payload must be non-empty")
+    if len(payload) > MAX_PAYLOAD_BYTES:
+        raise WireProtocolError("MPEG DATA payload exceeds product Wire maximum")
+    return encode_channel_frame(
+        FRAME_DATA,
+        CHANNEL_MPEG2,
+        sequence,
+        payload,
+    )
+
+
+def encode_mpeg_retire_payload(control: MpegRetireControl) -> bytes:
+    _require_u32(control.session_id, "MPEG RETIRE session_id")
+    _require_u32(control.generation, "MPEG RETIRE generation")
+    return MPEG_RETIRE.pack(
+        MPEG_GENERATION_CONTROL_VERSION,
+        control.session_id,
+        control.generation,
+    )
+
+
+def decode_mpeg_retire_payload(payload: bytes) -> MpegRetireControl:
+    if len(payload) != MPEG_RETIRE.size:
+        raise WireProtocolError("MPEG RETIRE payload must be exactly 12 bytes")
+    version, session_id, generation = MPEG_RETIRE.unpack(payload)
+    if version != MPEG_GENERATION_CONTROL_VERSION:
+        raise WireProtocolError("unsupported MPEG RETIRE control version")
+    return MpegRetireControl(
+        session_id=session_id,
+        generation=generation,
+    )
+
+
+def encode_mpeg_retire_frame(
+    control: MpegRetireControl,
+    sequence: int,
+) -> bytes:
+    return encode_channel_frame(
+        FRAME_MPEG_RETIRE,
+        CHANNEL_CONTROL,
+        sequence,
+        encode_mpeg_retire_payload(control),
+    )
+
+
+def encode_mpeg_start_payload(control: MpegStartControl) -> bytes:
+    values = (
+        control.session_id,
+        control.generation,
+        control.base_x,
+        control.base_y,
+        control.base_width,
+        control.base_height,
+        control.suppression_x,
+        control.suppression_y,
+        control.suppression_width,
+        control.suppression_height,
+    )
+    names = (
+        "session_id",
+        "generation",
+        "base_x",
+        "base_y",
+        "base_width",
+        "base_height",
+        "suppression_x",
+        "suppression_y",
+        "suppression_width",
+        "suppression_height",
+    )
+    for name, value in zip(names, values):
+        _require_u32(value, f"MPEG START {name}")
+    return MPEG_START.pack(
+        MPEG_GENERATION_CONTROL_VERSION,
+        *values,
+    )
+
+
+def decode_mpeg_start_payload(payload: bytes) -> MpegStartControl:
+    if len(payload) != MPEG_START.size:
+        raise WireProtocolError("MPEG START payload must be exactly 44 bytes")
+    words = MPEG_START.unpack(payload)
+    if words[0] != MPEG_GENERATION_CONTROL_VERSION:
+        raise WireProtocolError("unsupported MPEG START control version")
+    return MpegStartControl(
+        session_id=words[1],
+        generation=words[2],
+        base_x=words[3],
+        base_y=words[4],
+        base_width=words[5],
+        base_height=words[6],
+        suppression_x=words[7],
+        suppression_y=words[8],
+        suppression_width=words[9],
+        suppression_height=words[10],
+    )
+
+
+def encode_mpeg_start_frame(
+    control: MpegStartControl,
+    sequence: int,
+) -> bytes:
+    return encode_channel_frame(
+        FRAME_MPEG_START,
+        CHANNEL_CONTROL,
+        sequence,
+        encode_mpeg_start_payload(control),
+    )
+
+
 def _require_rfb_provider_failure_reason(reason: int) -> None:
     if reason not in (
         RFB_PROVIDER_FAILURE_CONNECT,
@@ -338,6 +501,43 @@ def is_rfb_provider_failure_header(header: WireHeader) -> bool:
         and header.channel == CHANNEL_RFB
         and header.flags == 0
         and header.payload_length == RFB_PROVIDER_FAILURE.size
+    )
+
+
+def is_mpeg_credit_header(header: WireHeader) -> bool:
+    return (
+        header.kind == FRAME_CREDIT
+        and header.channel == CHANNEL_MPEG2
+        and header.flags == 0
+        and header.payload_length == CREDIT.size
+    )
+
+
+def is_mpeg_data_header(header: WireHeader) -> bool:
+    return (
+        header.kind == FRAME_DATA
+        and header.channel == CHANNEL_MPEG2
+        and header.flags == 0
+        and header.payload_length != 0
+        and header.payload_length <= MAX_PAYLOAD_BYTES
+    )
+
+
+def is_mpeg_retire_header(header: WireHeader) -> bool:
+    return (
+        header.kind == FRAME_MPEG_RETIRE
+        and header.channel == CHANNEL_CONTROL
+        and header.flags == 0
+        and header.payload_length == MPEG_RETIRE.size
+    )
+
+
+def is_mpeg_start_header(header: WireHeader) -> bool:
+    return (
+        header.kind == FRAME_MPEG_START
+        and header.channel == CHANNEL_CONTROL
+        and header.flags == 0
+        and header.payload_length == MPEG_START.size
     )
 
 
