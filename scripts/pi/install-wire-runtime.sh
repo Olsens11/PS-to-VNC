@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # File synopsis:
 # Stage, verify, or remove the tracked PS-to-VNC product Wire runtime, selected
-# RFB profile projections, composed product entrypoint, and ordinary systemd
+# RFB/MPEG profile projections, MPEG generation mechanism, composed product
+# entrypoint, and ordinary systemd
 # service definition.
 #
 # This tool copies only exact tracked bytes. It never reloads the systemd
@@ -26,6 +27,9 @@ RFB_RELAY_SOURCE="$REPO_ROOT/pi/rfb_relay.py"
 RFB_ATTACHMENT_SOURCE="$REPO_ROOT/pi/rfb_attachment.py"
 RFB_PROFILE_GENERATED_SOURCE="$REPO_ROOT/pi/rfb_runtime_profile_generated.py"
 RFB_PROFILE_SOURCE="$REPO_ROOT/pi/rfb_runtime_profile.py"
+MPEG_PROFILE_GENERATED_SOURCE="$REPO_ROOT/pi/mpeg_runtime_profile_generated.py"
+MPEG_PROFILE_SOURCE="$REPO_ROOT/pi/mpeg_runtime_profile.py"
+MPEG_GENERATION_SOURCE="$REPO_ROOT/pi/mpeg_generation.py"
 SERVER_SOURCE="$REPO_ROOT/pi/wire_server.py"
 RUNTIME_SOURCE="$REPO_ROOT/pi/wire_runtime.py"
 UNIT_SOURCE="$REPO_ROOT/systemd/pi/ps-to-vnc-wire.service"
@@ -35,6 +39,9 @@ RFB_RELAY_DEST='/usr/lib/ps-to-vnc/rfb_relay.py'
 RFB_ATTACHMENT_DEST='/usr/lib/ps-to-vnc/rfb_attachment.py'
 RFB_PROFILE_GENERATED_DEST='/usr/lib/ps-to-vnc/rfb_runtime_profile_generated.py'
 RFB_PROFILE_DEST='/usr/lib/ps-to-vnc/rfb_runtime_profile.py'
+MPEG_PROFILE_GENERATED_DEST='/usr/lib/ps-to-vnc/mpeg_runtime_profile_generated.py'
+MPEG_PROFILE_DEST='/usr/lib/ps-to-vnc/mpeg_runtime_profile.py'
+MPEG_GENERATION_DEST='/usr/lib/ps-to-vnc/mpeg_generation.py'
 SERVER_DEST='/usr/lib/ps-to-vnc/wire_server.py'
 RUNTIME_DEST='/usr/lib/ps-to-vnc/wire_runtime.py'
 UNIT_DEST='/etc/systemd/system/ps-to-vnc-wire.service'
@@ -82,6 +89,9 @@ require_sources()
         "$RFB_ATTACHMENT_SOURCE" \
         "$RFB_PROFILE_GENERATED_SOURCE" \
         "$RFB_PROFILE_SOURCE" \
+        "$MPEG_PROFILE_GENERATED_SOURCE" \
+        "$MPEG_PROFILE_SOURCE" \
+        "$MPEG_GENERATION_SOURCE" \
         "$SERVER_SOURCE" \
         "$RUNTIME_SOURCE" \
         "$UNIT_SOURCE"
@@ -117,6 +127,9 @@ require_sources()
         "$RFB_ATTACHMENT_SOURCE" \
         "$RFB_PROFILE_GENERATED_SOURCE" \
         "$RFB_PROFILE_SOURCE" \
+        "$MPEG_PROFILE_GENERATED_SOURCE" \
+        "$MPEG_PROFILE_SOURCE" \
+        "$MPEG_GENERATION_SOURCE" \
         "$SERVER_SOURCE" \
         "$RUNTIME_SOURCE" <<'__PS2VNC_WIRE_SYNTAX_EOF__'
 from pathlib import Path
@@ -225,6 +238,9 @@ stage_candidate()
     assert_safe_target "$RFB_ATTACHMENT_SOURCE" "$RFB_ATTACHMENT_DEST"
     assert_safe_target "$RFB_PROFILE_GENERATED_SOURCE" "$RFB_PROFILE_GENERATED_DEST"
     assert_safe_target "$RFB_PROFILE_SOURCE" "$RFB_PROFILE_DEST"
+    assert_safe_target "$MPEG_PROFILE_GENERATED_SOURCE" "$MPEG_PROFILE_GENERATED_DEST"
+    assert_safe_target "$MPEG_PROFILE_SOURCE" "$MPEG_PROFILE_DEST"
+    assert_safe_target "$MPEG_GENERATION_SOURCE" "$MPEG_GENERATION_DEST"
     assert_safe_target "$SERVER_SOURCE" "$SERVER_DEST"
     assert_safe_target "$RUNTIME_SOURCE" "$RUNTIME_DEST"
     assert_safe_target "$UNIT_SOURCE" "$UNIT_DEST"
@@ -234,6 +250,9 @@ stage_candidate()
     install_file 0644 "$RFB_ATTACHMENT_SOURCE" "$RFB_ATTACHMENT_DEST"
     install_file 0644 "$RFB_PROFILE_GENERATED_SOURCE" "$RFB_PROFILE_GENERATED_DEST"
     install_file 0644 "$RFB_PROFILE_SOURCE" "$RFB_PROFILE_DEST"
+    install_file 0644 "$MPEG_PROFILE_GENERATED_SOURCE" "$MPEG_PROFILE_GENERATED_DEST"
+    install_file 0644 "$MPEG_PROFILE_SOURCE" "$MPEG_PROFILE_DEST"
+    install_file 0644 "$MPEG_GENERATION_SOURCE" "$MPEG_GENERATION_DEST"
     install_file 0755 "$SERVER_SOURCE" "$SERVER_DEST"
     install_file 0644 "$RUNTIME_SOURCE" "$RUNTIME_DEST"
     install_file 0644 "$UNIT_SOURCE" "$UNIT_DEST"
@@ -257,6 +276,9 @@ verify_candidate()
     verify_file 0644 "$RFB_ATTACHMENT_SOURCE" "$RFB_ATTACHMENT_DEST"
     verify_file 0644 "$RFB_PROFILE_GENERATED_SOURCE" "$RFB_PROFILE_GENERATED_DEST"
     verify_file 0644 "$RFB_PROFILE_SOURCE" "$RFB_PROFILE_DEST"
+    verify_file 0644 "$MPEG_PROFILE_GENERATED_SOURCE" "$MPEG_PROFILE_GENERATED_DEST"
+    verify_file 0644 "$MPEG_PROFILE_SOURCE" "$MPEG_PROFILE_DEST"
+    verify_file 0644 "$MPEG_GENERATION_SOURCE" "$MPEG_GENERATION_DEST"
     verify_file 0755 "$SERVER_SOURCE" "$SERVER_DEST"
     verify_file 0644 "$RUNTIME_SOURCE" "$RUNTIME_DEST"
     verify_file 0644 "$UNIT_SOURCE" "$UNIT_DEST"
@@ -294,6 +316,9 @@ $RFB_RELAY_SOURCE|$RFB_RELAY_DEST
 $RFB_ATTACHMENT_SOURCE|$RFB_ATTACHMENT_DEST
 $RFB_PROFILE_GENERATED_SOURCE|$RFB_PROFILE_GENERATED_DEST
 $RFB_PROFILE_SOURCE|$RFB_PROFILE_DEST
+$MPEG_PROFILE_GENERATED_SOURCE|$MPEG_PROFILE_GENERATED_DEST
+$MPEG_PROFILE_SOURCE|$MPEG_PROFILE_DEST
+$MPEG_GENERATION_SOURCE|$MPEG_GENERATION_DEST
 $SERVER_SOURCE|$SERVER_DEST
 $RUNTIME_SOURCE|$RUNTIME_DEST
 $UNIT_SOURCE|$UNIT_DEST

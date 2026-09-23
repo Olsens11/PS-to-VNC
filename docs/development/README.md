@@ -99,6 +99,10 @@ For RFB provider-terminal mechanism work, also read:
 
     rfb-provider-failure.md
 
+For exact Pi MPEG generation-control/producer lifecycle work, also read:
+
+    mpeg-generation-control.md
+
 That companion note records the R16A compatibility boundary, typed channel-local
 failure seam, waiter termination behavior, stale-state rules, and the explicit
 line between Transport/RFB mechanism and later Application recovery policy.

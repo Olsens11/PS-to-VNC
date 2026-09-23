@@ -11,14 +11,14 @@ runtime code. It is distinct from:
 - `scripts/pi/`, which is provisioning/staging/development tooling;
 - `experiments/`, which is evidence and apparatus rather than product runtime.
 
-Current R15 ownership:
+Current maintained Pi ownership through R17:
 
-- `wire_protocol.py` — exact product Wire framing, Q4 establishment, and exact
-  logical RFB DATA/CREDIT representation;
+- `wire_protocol.py` — exact product Wire framing/Q4 establishment, RFB
+  representation, and the symmetric R17 MPEG START/RETIRE/DATA/CREDIT bytes;
 - `wire_server.py` — persistent Pi listener, provisional establishment,
   process-local session IDs, the sole accepted physical Wire recv/send and
   sequence owner, plus optional composition of one explicitly supplied
-  session-scoped RFB attachment;
+  session-scoped RFB attachment and optional exact-generation MPEG owner;
 - `wire_runtime.py` — R15 ordinary product composition. It consumes the R14
   selected RFB flow and supplies `WireServer` with a factory that creates one
   fresh R13 attachment per physical Wire connection. Semantic OFF supplies no
@@ -34,6 +34,13 @@ Current R15 ownership:
   REQUEST -> BOUNDARY -> COMMIT -> COMPLETE retirement;
 - `rfb_runtime_profile.py` and `rfb_runtime_profile_generated.py` — R14 narrow
   Pi projection of the single canonical selected RFB profile;
+- `mpeg_runtime_profile.py` and `mpeg_runtime_profile_generated.py` — R17
+  narrow Pi projection of Configuration's already-selected A003 MPEG limits and
+  frame rate; it adds no independent Pi tuning;
+- `mpeg_generation.py` — R17 exact-generation START/RETIRE owner, capture-plan
+  builder, suppression-footprint preparation, bounded FFmpeg stdout owner,
+  session-scoped channel-4 credit bookkeeping, and emission/retirement fence.
+  It never reads or writes the PS2-facing socket;
 - `SYMBOLS.md` — local clean product symbol authority.
 
 An attachment is inert when constructed. The first exact nonzero channel-1
@@ -97,9 +104,9 @@ first valid nonzero RFB CREDIT remains the only provider-connect edge.
 
 `WireServer.serve_connection()` closes the current attachment before its
 sequential listener may own a replacement connection, so a later Session B gets
-fresh attachment, wake, Relay, credit, and quiesce state. R15 adds no provider
-retry/backoff, no multi-run restart policy, no Wire CONFIG frame, and no
-AUDIO/MPEG activation.
+fresh attachment, wake, Relay, credit, and quiesce state. R15 adds no provider retry/backoff, no multi-run restart policy, and no Wire
+CONFIG frame. R17 later adds the dormant MPEG mechanism seam described below;
+the ordinary `wire_runtime.py` composition still does not activate it.
 
 `scripts/pi/install-wire-runtime.sh` stages, verifies, syntax-checks, and removes
 the R14 Pi profile projection files plus the R15 composition runtime alongside
@@ -113,3 +120,49 @@ packet.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-RFB-ORDINARY-APPLICATION-ACTIVATION-R15`.
+
+
+## R17 Pi MPEG generation-control and producer mechanism
+
+R17 mirrors the accepted PS2 MPEG control ABI exactly: START is kind 11 on
+control channel 0 with a 44-byte version-1 payload, RETIRE is kind 10 on control
+channel 0 with a 12-byte version-1 payload, and encoded MPEG DATA uses channel 4.
+The fixed PSTV header remains version 1 and Q4 product establishment remains
+version 2.
+
+`MpegGenerationController` owns one nonzero generation at a time under one
+already-ACTIVE Wire Session. START must match that session, advance the local
+generation monotonically, and describe a 16-pixel-aligned base capture rectangle
+inside current injected desktop geometry. The outer suppression rectangle is
+validated separately and must contain the base. Inner matte remains PS2-local.
+
+The controller prepares an exact capture command and exact suppression footprint
+before opening emission admission. `BufferedMpegProducer` owns one FFmpeg
+process, reader thread, and Configuration-bounded stdout buffer. R17 deliberately
+does not copy historical H1 bitrate/GOP/VBV tuning: only values already selected
+by A003 Configuration are projected from
+`src/config/mpeg_runtime_profile.json`.
+
+Channel-4 CREDIT is Wire-Session authority, matching the accepted PS2 Transport
+model that grants the initial MPEG window once and returns consumed/discarded
+bytes. Generation-local bytes, producer identity, suppression state and emission
+leases never transfer to a successor generation. Every physical MPEG frame still
+passes through `WireConnectionOwner`, which owns global sequence allocation and
+the only PS2-facing send call.
+
+RETIRE first closes new generation emission, waits for any already-admitted
+local send lease to leave the physical-send call, then requires real producer
+process/thread retirement and exact suppression-footprint retirement. A timeout
+can detect failure but can never manufacture retirement success. Only after
+those proofs does the Wire owner serialize the exact RETIRE completion and let
+the controller return to IDLE.
+
+R17 stages these maintained modules because `wire_server.py` imports the
+mechanism, but the default `wire_runtime.py` supplies no MPEG generation
+factory. Final PS2 Application MPEG activation, RFB suppression-policy binding,
+first-frame/presentation ownership, AUDIO, heartbeat and final all-guns
+composition remain outside R17.
+
+Context: `docs/development/mpeg-generation-control.md`;
+`docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-PI-MPEG-CONTROL-PRODUCER-R17`.
