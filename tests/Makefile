@@ -836,9 +836,10 @@ PI_WIRE_SERVER_TEST := unit/pi_wire_server_test.py
 PI_RFB_ATTACHMENT_TEST := unit/pi_rfb_attachment_test.py
 PI_NATIVE_RFB_PROVIDER_TEST := unit/pi_native_rfb_provider_test.py
 PI_INTERNAL_RFB_PROVIDER_TEST := unit/pi_internal_rfb_provider_test.py
+PI_MPEG_GENERATION_TEST := unit/pi_mpeg_generation_test.py
 
-.PHONY: pi-wire-server-unit pi-rfb-attachment-unit pi-native-rfb-provider-unit pi-internal-rfb-provider-unit
-unit: pi-wire-server-unit pi-rfb-attachment-unit pi-native-rfb-provider-unit pi-internal-rfb-provider-unit
+.PHONY: pi-wire-server-unit pi-rfb-attachment-unit pi-native-rfb-provider-unit pi-internal-rfb-provider-unit pi-mpeg-generation-unit
+unit: pi-wire-server-unit pi-rfb-attachment-unit pi-native-rfb-provider-unit pi-internal-rfb-provider-unit pi-mpeg-generation-unit
 
 pi-wire-server-unit:
 	python3 $(PI_WIRE_SERVER_TEST)
@@ -851,6 +852,9 @@ pi-native-rfb-provider-unit:
 
 pi-internal-rfb-provider-unit:
 	python3 $(PI_INTERNAL_RFB_PROVIDER_TEST)
+
+pi-mpeg-generation-unit:
+	python3 $(PI_MPEG_GENERATION_TEST)
 
 
 CONFIG_RFB_RUNTIME_PROFILE_TEST := .build/config_rfb_runtime_profile_test
