@@ -155,10 +155,21 @@ typedef struct pstvnc_transport_runtime {
     volatile uint32_t rfb_quiesce_complete_sent;
 
     /*
-     * One decoded Pi RETIRE completion may wait for the higher Application
-     * owner. The dedicated semaphore separates this control handoff from MPEG
-     * media bytes and from decoder producer-done semantics.
+     * MPEG run-boundary facts are protected by mpeg_queue_semaphore_id. They
+     * do not allocate product generation identity: they only fence whether this
+     * session-scoped channel may admit DATA, whether START/RETIRE were submitted
+     * for the current run, and whether finalization is still in progress.
+     *
+     * RETIRE completion itself remains in the dedicated control slot below. A
+     * completion closes DATA admission under the queue lock before becoming
+     * observable through that slot. Taking the slot never reopens admission.
      */
+    int mpeg_run_open;
+    int mpeg_start_submitted;
+    int mpeg_retire_submitted;
+    int mpeg_retirement_latched;
+    int mpeg_finalization_in_progress;
+
     pstvnc_mpeg_retire_payload_t mpeg_retire_completion;
     int mpeg_retire_completion_pending;
 
@@ -308,6 +319,21 @@ int pstvnc_transport_runtime_mpeg_wait_activity(
     pstvnc_transport_runtime_t *runtime,
     uint32_t *activity_sequence);
 int pstvnc_transport_runtime_mpeg_mark_producer_done(
+    pstvnc_transport_runtime_t *runtime);
+
+/*
+ * One session-local MPEG run boundary. open() is the only DATA-admission edge.
+ * abort_pre_start() is valid only before START submission and only from proven
+ * clean state. finalize() is valid only after exact RETIRE completion has been
+ * taken and no Transport-visible MPEG activity waiter remains; it discards old
+ * residual bytes, returns exact owed credit once, resets run-local state, and
+ * leaves the session-scoped queue allocation ready for a later open().
+ */
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_open(
+    pstvnc_transport_runtime_t *runtime);
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_abort_pre_start(
+    pstvnc_transport_runtime_t *runtime);
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_finalize(
     pstvnc_transport_runtime_t *runtime);
 
 /*

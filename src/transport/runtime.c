@@ -12,8 +12,9 @@
  *
  * RFB parser consumption/quiesce, provider-terminal mechanism state, AUDIO's
  * audited finite marker, MPEG's explicit producer-completion fact, exact MPEG
- * generation-control envelope relay, outbound logical RFB fragmentation, and
- * receiver completion remain Transport-owned. RFB parsing, PCM playback, MPEG
+ * run-admission/retirement/finalization boundary and generation-control envelope
+ * relay, outbound logical RFB fragmentation, and receiver completion remain
+ * Transport-owned. RFB parsing, PCM playback, MPEG
  * decoding, common-clock/presentation policy, active-generation business
  * meaning, and product recovery remain outside this file.
  *
@@ -711,6 +712,13 @@ static int pstvnc_transport_runtime_accept_mpeg_frame(
     if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0)
         return 0;
 
+    if (!runtime->mpeg_run_open ||
+        runtime->mpeg_retirement_latched ||
+        runtime->mpeg_finalization_in_progress) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        return 0;
+    }
+
     accepted = pstvnc_transport_mpeg_channel_commit_data(
         &runtime->mpeg_channel,
         runtime->receiver_payload,
@@ -749,8 +757,30 @@ static int pstvnc_transport_runtime_accept_mpeg_retire_completion(
             header->payload_length))
         return 0;
 
-    if (WaitSema(runtime->mpeg_control_semaphore_id) < 0)
+    /*
+     * Queue lock is the DATA-admission authority. Close it before acquiring the
+     * completion slot so no higher owner can observe RETIRE completion while a
+     * later channel-4 DATA frame is still admissible.
+     */
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0)
         return 0;
+
+    if (!runtime->mpeg_run_open ||
+        !runtime->mpeg_start_submitted ||
+        !runtime->mpeg_retire_submitted ||
+        runtime->mpeg_retirement_latched ||
+        runtime->mpeg_finalization_in_progress) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        return 0;
+    }
+
+    runtime->mpeg_run_open = 0;
+    runtime->mpeg_retirement_latched = 1;
+
+    if (WaitSema(runtime->mpeg_control_semaphore_id) < 0) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        return 0;
+    }
 
     if (!runtime->mpeg_retire_completion_pending) {
         runtime->mpeg_retire_completion = completion;
@@ -758,7 +788,12 @@ static int pstvnc_transport_runtime_accept_mpeg_retire_completion(
         accepted = 1;
     }
 
-    if (SignalSema(runtime->mpeg_control_semaphore_id) < 0)
+    if (SignalSema(runtime->mpeg_control_semaphore_id) < 0) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        return 0;
+    }
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0)
         return 0;
 
     return accepted;
@@ -2084,6 +2119,244 @@ int pstvnc_transport_runtime_mpeg_mark_producer_done(
         signal_waiter);
 }
 
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_open(
+    pstvnc_transport_runtime_t *runtime)
+{
+    pstvnc_transport_result_t result = PSTVNC_TRANSPORT_INVALID;
+
+    if (runtime == NULL || !runtime->initialized || !runtime->mpeg_enabled)
+        return PSTVNC_TRANSPORT_INVALID;
+    if (runtime->failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (runtime->receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    if (runtime->stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (WaitSema(runtime->mpeg_control_semaphore_id) < 0) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (!runtime->mpeg_run_open &&
+        !runtime->mpeg_start_submitted &&
+        !runtime->mpeg_retire_submitted &&
+        !runtime->mpeg_retirement_latched &&
+        !runtime->mpeg_finalization_in_progress &&
+        !runtime->mpeg_retire_completion_pending &&
+        runtime->mpeg_credit_pending == 0u &&
+        runtime->mpeg_activity_sequence == 0u &&
+        runtime->mpeg_activity_wait_armed == 0 &&
+        pstvnc_transport_mpeg_channel_available(&runtime->mpeg_channel) == 0u &&
+        !pstvnc_transport_mpeg_channel_producer_done(&runtime->mpeg_channel)) {
+        runtime->mpeg_run_open = 1;
+        result = PSTVNC_TRANSPORT_OK;
+    }
+
+    if (SignalSema(runtime->mpeg_control_semaphore_id) < 0) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    return result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_abort_pre_start(
+    pstvnc_transport_runtime_t *runtime)
+{
+    pstvnc_transport_result_t result = PSTVNC_TRANSPORT_INVALID;
+
+    if (runtime == NULL || !runtime->initialized || !runtime->mpeg_enabled)
+        return PSTVNC_TRANSPORT_INVALID;
+    if (runtime->failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (runtime->receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    if (runtime->stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (WaitSema(runtime->mpeg_control_semaphore_id) < 0) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (runtime->mpeg_run_open &&
+        !runtime->mpeg_start_submitted &&
+        !runtime->mpeg_retire_submitted &&
+        !runtime->mpeg_retirement_latched &&
+        !runtime->mpeg_finalization_in_progress &&
+        !runtime->mpeg_retire_completion_pending &&
+        runtime->mpeg_credit_pending == 0u &&
+        runtime->mpeg_activity_sequence == 0u &&
+        runtime->mpeg_activity_wait_armed == 0 &&
+        pstvnc_transport_mpeg_channel_available(&runtime->mpeg_channel) == 0u &&
+        !pstvnc_transport_mpeg_channel_producer_done(&runtime->mpeg_channel) &&
+        pstvnc_transport_mpeg_channel_reset_run_state(
+            &runtime->mpeg_channel) == 0) {
+        runtime->mpeg_run_open = 0;
+        result = PSTVNC_TRANSPORT_OK;
+    }
+
+    if (SignalSema(runtime->mpeg_control_semaphore_id) < 0) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    return result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_finalize(
+    pstvnc_transport_runtime_t *runtime)
+{
+    size_t discarded;
+    uint32_t credit_amount = 0u;
+
+    if (runtime == NULL || !runtime->initialized || !runtime->mpeg_enabled)
+        return PSTVNC_TRANSPORT_INVALID;
+    if (runtime->failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (runtime->receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    if (runtime->stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (WaitSema(runtime->mpeg_control_semaphore_id) < 0) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    /*
+     * Completion must already have been consumed by the higher owner, and every
+     * MPEG activity waiter must have returned through its protected state. The
+     * caller owns decoder/worker retirement; Transport refuses only the live
+     * synchronization ownership it can actually observe.
+     */
+    if (runtime->mpeg_run_open ||
+        !runtime->mpeg_start_submitted ||
+        !runtime->mpeg_retire_submitted ||
+        !runtime->mpeg_retirement_latched ||
+        runtime->mpeg_finalization_in_progress ||
+        runtime->mpeg_retire_completion_pending ||
+        runtime->mpeg_activity_wait_armed != 0) {
+        (void)SignalSema(runtime->mpeg_control_semaphore_id);
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        return PSTVNC_TRANSPORT_WOULD_BLOCK;
+    }
+
+    discarded = pstvnc_transport_mpeg_channel_discard_all(
+        &runtime->mpeg_channel);
+    if (discarded > UINT32_MAX ||
+        (runtime->mpeg_credit_return_enabled &&
+         runtime->mpeg_credit_pending > UINT32_MAX - (uint32_t)discarded)) {
+        (void)SignalSema(runtime->mpeg_control_semaphore_id);
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (runtime->mpeg_credit_return_enabled)
+        credit_amount = runtime->mpeg_credit_pending + (uint32_t)discarded;
+    runtime->mpeg_credit_pending = 0u;
+
+    if (pstvnc_transport_mpeg_channel_reset_run_state(
+            &runtime->mpeg_channel) != 0) {
+        (void)SignalSema(runtime->mpeg_control_semaphore_id);
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    runtime->mpeg_finalization_in_progress = 1;
+
+    if (SignalSema(runtime->mpeg_control_semaphore_id) < 0 ||
+        SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    /*
+     * Do not hold the MPEG queue lock while waiting for the sole physical I/O
+     * owner to serialize returned credit. A post-completion DATA frame must be
+     * able to acquire the lock, observe closed admission, and fail the session
+     * rather than deadlocking finalization against that same I/O owner.
+     */
+    if (credit_amount != 0u &&
+        !pstvnc_transport_runtime_send_credit(
+            runtime,
+            PSTVNC_TRANSPORT_CHANNEL_MPEG2,
+            credit_amount)) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (runtime->failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (runtime->receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    if (runtime->stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (runtime->failed || runtime->receiver_done || runtime->stop_requested ||
+        !runtime->mpeg_finalization_in_progress ||
+        !runtime->mpeg_retirement_latched) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        return runtime->failed
+            ? PSTVNC_TRANSPORT_FAILED
+            : (runtime->receiver_done
+                ? PSTVNC_TRANSPORT_CLOSED
+                : PSTVNC_TRANSPORT_STOPPED);
+    }
+
+    runtime->mpeg_activity_sequence = 0u;
+    runtime->mpeg_run_open = 0;
+    runtime->mpeg_start_submitted = 0;
+    runtime->mpeg_retire_submitted = 0;
+    runtime->mpeg_retirement_latched = 0;
+    runtime->mpeg_finalization_in_progress = 0;
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    return PSTVNC_TRANSPORT_OK;
+}
+
 static pstvnc_transport_result_t pstvnc_transport_runtime_control_failure(
     const pstvnc_transport_runtime_t *runtime)
 {
@@ -2109,6 +2382,35 @@ pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_send_start(
         !pstvnc_mpeg_start_payload_encode(payload, start))
         return PSTVNC_TRANSPORT_INVALID;
 
+    if (runtime->failed || runtime->receiver_done || runtime->stop_requested)
+        return pstvnc_transport_runtime_control_failure(runtime);
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (!runtime->mpeg_run_open ||
+        runtime->mpeg_start_submitted ||
+        runtime->mpeg_retire_submitted ||
+        runtime->mpeg_retirement_latched ||
+        runtime->mpeg_finalization_in_progress) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        return PSTVNC_TRANSPORT_INVALID;
+    }
+
+    /*
+     * Admission of START to the sole outbound path is the local transaction
+     * edge. If physical submission later fails, Transport is terminal and this
+     * state is never recycled into a successor run.
+     */
+    runtime->mpeg_start_submitted = 1;
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
     if (pstvnc_transport_runtime_submit_frame(
             runtime,
             PSTVNC_TRANSPORT_FRAME_MPEG_START,
@@ -2131,6 +2433,30 @@ pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_send_retire(
         !runtime->initialized || !runtime->mpeg_enabled ||
         !pstvnc_mpeg_retire_payload_encode(payload, retire))
         return PSTVNC_TRANSPORT_INVALID;
+
+    if (runtime->failed || runtime->receiver_done || runtime->stop_requested)
+        return pstvnc_transport_runtime_control_failure(runtime);
+
+    if (WaitSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (!runtime->mpeg_run_open ||
+        !runtime->mpeg_start_submitted ||
+        runtime->mpeg_retire_submitted ||
+        runtime->mpeg_retirement_latched ||
+        runtime->mpeg_finalization_in_progress) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        return PSTVNC_TRANSPORT_INVALID;
+    }
+
+    runtime->mpeg_retire_submitted = 1;
+
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
 
     if (pstvnc_transport_runtime_submit_frame(
             runtime,
