@@ -54,6 +54,12 @@ static pstvnc_transport_result_t mpeg_status_result = PSTVNC_TRANSPORT_OK;
 static int mpeg_snapshot_result = 1;
 static int mpeg_wait_result = 1;
 static int mpeg_done_result = 1;
+static pstvnc_transport_result_t mpeg_run_open_result = PSTVNC_TRANSPORT_OK;
+static pstvnc_transport_result_t mpeg_run_abort_result = PSTVNC_TRANSPORT_OK;
+static pstvnc_transport_result_t mpeg_run_finalize_result = PSTVNC_TRANSPORT_OK;
+static int mpeg_run_open_calls;
+static int mpeg_run_abort_calls;
+static int mpeg_run_finalize_calls;
 static pstvnc_transport_result_t mpeg_start_result = PSTVNC_TRANSPORT_OK;
 static pstvnc_transport_result_t mpeg_retire_result = PSTVNC_TRANSPORT_OK;
 static pstvnc_transport_result_t mpeg_take_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
@@ -145,6 +151,12 @@ static void reset_fixture(void)
     mpeg_snapshot_result = 1;
     mpeg_wait_result = 1;
     mpeg_done_result = 1;
+    mpeg_run_open_result = PSTVNC_TRANSPORT_OK;
+    mpeg_run_abort_result = PSTVNC_TRANSPORT_OK;
+    mpeg_run_finalize_result = PSTVNC_TRANSPORT_OK;
+    mpeg_run_open_calls = 0;
+    mpeg_run_abort_calls = 0;
+    mpeg_run_finalize_calls = 0;
     mpeg_start_result = PSTVNC_TRANSPORT_OK;
     mpeg_retire_result = PSTVNC_TRANSPORT_OK;
     mpeg_take_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
@@ -626,6 +638,30 @@ int pstvnc_transport_runtime_mpeg_wait_activity(
     return mpeg_wait_result;
 }
 
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_open(
+    pstvnc_transport_runtime_t *runtime)
+{
+    (void)runtime;
+    mpeg_run_open_calls++;
+    return mpeg_run_open_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_abort_pre_start(
+    pstvnc_transport_runtime_t *runtime)
+{
+    (void)runtime;
+    mpeg_run_abort_calls++;
+    return mpeg_run_abort_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_finalize(
+    pstvnc_transport_runtime_t *runtime)
+{
+    (void)runtime;
+    mpeg_run_finalize_calls++;
+    return mpeg_run_finalize_result;
+}
+
 int pstvnc_transport_runtime_mpeg_mark_producer_done(
     pstvnc_transport_runtime_t *runtime)
 {
@@ -962,6 +998,25 @@ static void test_mpeg_result_mapping(void)
         &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
     CHECK(pstvnc_transport_access_acquire(&current_access) ==
         PSTVNC_TRANSPORT_OK);
+
+    CHECK(pstvnc_transport_mpeg_run_open(&current_access) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(mpeg_run_open_calls == 1);
+    CHECK(pstvnc_transport_mpeg_run_abort_pre_start(&current_access) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(mpeg_run_abort_calls == 1);
+    CHECK(pstvnc_transport_mpeg_run_open(&current_access) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(mpeg_run_open_calls == 2);
+    CHECK(pstvnc_transport_mpeg_run_finalize(&current_access) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(mpeg_run_finalize_calls == 1);
+
+    mpeg_run_open_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
+    CHECK(pstvnc_transport_mpeg_run_open(&current_access) ==
+        PSTVNC_TRANSPORT_WOULD_BLOCK);
+    CHECK(mpeg_run_open_calls == 3);
+    mpeg_run_open_result = PSTVNC_TRANSPORT_OK;
 
     CHECK(pstvnc_transport_mpeg_read_available(&current_access,
         bytes, sizeof(bytes), &count) == PSTVNC_TRANSPORT_OK);
