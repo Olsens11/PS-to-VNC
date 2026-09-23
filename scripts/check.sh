@@ -13,6 +13,9 @@ DIR="$(
 echo '===== RFB RUNTIME PROFILE GENERATION CHECK ====='
 python3 "$DIR/generate-rfb-runtime-profile.py" --check
 
+echo '===== MPEG RUNTIME PROFILE GENERATION CHECK ====='
+python3 "$DIR/generate-mpeg-runtime-profile.py" --check
+
 echo '===== WORK LOG CHECK ====='
 python3 "$DIR/work-log-check.py"
 

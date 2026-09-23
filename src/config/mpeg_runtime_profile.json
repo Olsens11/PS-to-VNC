@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "profile_id": "current-mpeg",
+  "transport": {
+    "queue_capacity": 524288,
+    "initial_credit_bytes": 524288,
+    "credit_batch_bytes": 8192,
+    "credit_flush_on_empty": true,
+    "credit_return_enabled": true
+  },
+  "decoder": {
+    "max_width": 704,
+    "max_height": 480,
+    "bytes_per_pixel": 2,
+    "feed_payload_capacity": 2048,
+    "transfer_alignment": 16,
+    "buffer_alignment": 64
+  },
+  "worker": {
+    "worker_stack_bytes": 65536,
+    "worker_priority": 67
+  },
+  "ps2_worker_runtime": {
+    "join_poll_delay_us": 1000,
+    "join_poll_max_count": 3000
+  },
+  "scheduler": {
+    "fps_numerator": 30000,
+    "fps_denominator": 1001,
+    "drop_enabled": false,
+    "drop_threshold_milliframes": 0
+  },
+  "provenance": {
+    "source_stage": "A003-MPEG-RUNTIME-PROFILE-AUTHORITY-R7",
+    "qualification_scope": "selected clean MPEG runtime values; reconstructed Pi producer remains hardware-unqualified"
+  }
+}
