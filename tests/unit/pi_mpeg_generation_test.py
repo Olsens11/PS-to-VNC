@@ -92,6 +92,15 @@ class ProducerFactory:
         return item
 
 
+def wait_for(predicate, description: str, timeout: float = 1.0) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if predicate():
+            return
+        time.sleep(0.001)
+    raise AssertionError(f"timed out waiting for {description}")
+
+
 def start_control(
     session_id: int = 41,
     generation: int = 1,
@@ -503,9 +512,12 @@ class MpegWireIntegrationTests(unittest.TestCase):
                     generation=9,
                 ),
             )
-            self.assertIs(
-                controllers[0].state,
-                mpeg.MpegGenerationState.IDLE,
+            # Receipt of completion proves Wire serialization. The owner's
+            # immediately-following local confirmation may run on the next host
+            # scheduling slice, so observe that explicit state rather than race it.
+            wait_for(
+                lambda: controllers[0].state is mpeg.MpegGenerationState.IDLE,
+                "post-completion generation IDLE publication",
             )
             self.assertEqual(factories[0].items[0].retire_calls, 1)
         finally:
