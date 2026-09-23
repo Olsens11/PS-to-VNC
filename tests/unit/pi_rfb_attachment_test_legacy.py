@@ -570,9 +570,14 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
             self.assertTrue(protocol.is_rfb_data_header(request_header))
             self.assertEqual(request_header.sequence, 4)
             self.assertEqual(request_payload, b"")
-            self.assertEqual(
-                item.state,
-                attachment.RfbAttachmentState.WAIT_BOUNDARY,
+            # Receiving REQUEST proves serialization. The sender's
+            # immediately-following local WAIT_BOUNDARY publication may run on
+            # the next host scheduling slice, so observe that explicit owner
+            # state instead of racing it with an immediate assertion.
+            wait_for(
+                lambda: item.state
+                is attachment.RfbAttachmentState.WAIT_BOUNDARY,
+                "REQUEST sender local WAIT_BOUNDARY transition",
             )
 
             peer.sendall(protocol.encode_rfb_data_frame(b"", sequence=4))
