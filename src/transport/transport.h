@@ -91,4 +91,31 @@ typedef struct pstvnc_transport_mpeg_channel_config {
     int credit_return_enabled;
 } pstvnc_transport_mpeg_channel_config_t;
 
+/*
+ * R20 owner-correct MPEG generation-control values.
+ *
+ * These values intentionally contain only run meaning owned above Transport.
+ * Wire session identity and generation-control protocol version are private
+ * Transport representation and are stamped below the bridge.
+ */
+typedef struct pstvnc_transport_mpeg_start_request {
+    uint32_t generation;
+    uint32_t base_x;
+    uint32_t base_y;
+    uint32_t base_width;
+    uint32_t base_height;
+    uint32_t suppression_x;
+    uint32_t suppression_y;
+    uint32_t suppression_width;
+    uint32_t suppression_height;
+} pstvnc_transport_mpeg_start_request_t;
+
+typedef struct pstvnc_transport_mpeg_retire_request {
+    uint32_t generation;
+} pstvnc_transport_mpeg_retire_request_t;
+
+typedef struct pstvnc_transport_mpeg_retire_completion {
+    uint32_t generation;
+} pstvnc_transport_mpeg_retire_completion_t;
+
 #endif

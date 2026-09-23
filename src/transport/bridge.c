@@ -11,7 +11,9 @@
  * thread. R16A exposes one ticket-scoped typed RFB provider-terminal fact while
  * preserving physical Wire health as a separate Transport fact.
  * RFB safe-boundary choice, PCM playback, MPEG decoding, media-clock use,
- * exact-generation orchestration, and presentation remain outside this bridge.
+ * generation allocation/geometry choice, exact-generation orchestration, and
+ * presentation remain outside this bridge. R20 stamps only Transport-private
+ * Wire identity/version representation onto caller-owned MPEG run meaning.
  *
  * Context: docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md; docs/ledge/
  * LEDGE_AUDIT_A001_TRANSPORT_RFB.md; docs/ledge/
@@ -682,49 +684,153 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(
     return pstvnc_transport_bridge_terminal_result();
 }
 
+static int pstvnc_transport_mpeg_rectangle_end(
+    uint32_t origin,
+    uint32_t extent,
+    uint32_t *end)
+{
+    if (end == NULL || extent == 0u || origin > UINT32_MAX - extent)
+        return 0;
+
+    *end = origin + extent;
+    return 1;
+}
+
+static int pstvnc_transport_mpeg_start_request_valid(
+    const pstvnc_transport_mpeg_start_request_t *request)
+{
+    uint32_t base_right;
+    uint32_t base_bottom;
+    uint32_t suppression_right;
+    uint32_t suppression_bottom;
+
+    if (request == NULL ||
+        request->generation == 0u ||
+        request->base_width < 16u ||
+        request->base_height < 16u ||
+        (request->base_width % 16u) != 0u ||
+        (request->base_height % 16u) != 0u)
+        return 0;
+
+    if (!pstvnc_transport_mpeg_rectangle_end(
+            request->base_x,
+            request->base_width,
+            &base_right) ||
+        !pstvnc_transport_mpeg_rectangle_end(
+            request->base_y,
+            request->base_height,
+            &base_bottom) ||
+        !pstvnc_transport_mpeg_rectangle_end(
+            request->suppression_x,
+            request->suppression_width,
+            &suppression_right) ||
+        !pstvnc_transport_mpeg_rectangle_end(
+            request->suppression_y,
+            request->suppression_height,
+            &suppression_bottom))
+        return 0;
+
+    return request->suppression_x <= request->base_x &&
+        request->suppression_y <= request->base_y &&
+        suppression_right >= base_right &&
+        suppression_bottom >= base_bottom;
+}
+
 pstvnc_transport_result_t pstvnc_transport_mpeg_send_start(
     const pstvnc_transport_access_t *transport_access,
-    const pstvnc_mpeg_start_payload_t *start)
+    const pstvnc_transport_mpeg_start_request_t *request)
 {
     pstvnc_transport_result_t access_result =
         pstvnc_transport_bridge_access_result(transport_access);
+    pstvnc_mpeg_start_payload_t start;
 
     if (access_result != PSTVNC_TRANSPORT_OK)
         return access_result;
 
+    if (!pstvnc_transport_mpeg_start_request_valid(request) ||
+        !pstvnc_transport_bridge_wire_active ||
+        pstvnc_transport_bridge_private_session_id == 0u)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    start.version = PSTVNC_MPEG_GENERATION_CONTROL_VERSION;
+    start.session_id = pstvnc_transport_bridge_private_session_id;
+    start.generation = request->generation;
+    start.base_x = request->base_x;
+    start.base_y = request->base_y;
+    start.base_width = request->base_width;
+    start.base_height = request->base_height;
+    start.suppression_x = request->suppression_x;
+    start.suppression_y = request->suppression_y;
+    start.suppression_width = request->suppression_width;
+    start.suppression_height = request->suppression_height;
+
     return pstvnc_transport_runtime_mpeg_send_start(
         &pstvnc_transport_bridge_runtime,
-        start);
+        &start);
 }
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_send_retire(
     const pstvnc_transport_access_t *transport_access,
-    const pstvnc_mpeg_retire_payload_t *retire)
+    const pstvnc_transport_mpeg_retire_request_t *request)
 {
     pstvnc_transport_result_t access_result =
         pstvnc_transport_bridge_access_result(transport_access);
+    pstvnc_mpeg_retire_payload_t retire;
 
     if (access_result != PSTVNC_TRANSPORT_OK)
         return access_result;
 
+    if (request == NULL ||
+        request->generation == 0u ||
+        !pstvnc_transport_bridge_wire_active ||
+        pstvnc_transport_bridge_private_session_id == 0u)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    retire.version = PSTVNC_MPEG_GENERATION_CONTROL_VERSION;
+    retire.session_id = pstvnc_transport_bridge_private_session_id;
+    retire.generation = request->generation;
+
     return pstvnc_transport_runtime_mpeg_send_retire(
         &pstvnc_transport_bridge_runtime,
-        retire);
+        &retire);
 }
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_take_retire_completion(
     const pstvnc_transport_access_t *transport_access,
-    pstvnc_mpeg_retire_payload_t *completion)
+    pstvnc_transport_mpeg_retire_completion_t *completion)
 {
     pstvnc_transport_result_t access_result =
         pstvnc_transport_bridge_access_result(transport_access);
+    pstvnc_mpeg_retire_payload_t wire_completion;
+    pstvnc_transport_result_t result;
 
     if (access_result != PSTVNC_TRANSPORT_OK)
         return access_result;
 
-    return pstvnc_transport_runtime_mpeg_take_retire_completion(
+    if (completion == NULL ||
+        !pstvnc_transport_bridge_wire_active ||
+        pstvnc_transport_bridge_private_session_id == 0u)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    result = pstvnc_transport_runtime_mpeg_take_retire_completion(
         &pstvnc_transport_bridge_runtime,
-        completion);
+        &wire_completion);
+    if (result != PSTVNC_TRANSPORT_OK)
+        return result;
+
+    /*
+     * Runtime already performs exact full-payload correlation. Revalidate the
+     * Transport-private representation before projecting only caller-owned
+     * generation meaning above the bridge.
+     */
+    if (wire_completion.version != PSTVNC_MPEG_GENERATION_CONTROL_VERSION ||
+        wire_completion.session_id !=
+            pstvnc_transport_bridge_private_session_id ||
+        wire_completion.generation == 0u)
+        return PSTVNC_TRANSPORT_FAILED;
+
+    completion->generation = wire_completion.generation;
+    return PSTVNC_TRANSPORT_OK;
 }
 
 pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(

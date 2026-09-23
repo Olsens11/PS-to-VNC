@@ -4,9 +4,9 @@
  * product Wire establishment/availability, application-requested rider-runtime
  * lifecycle, logical RFB byte-stream/quiesce/provider-terminal processes,
  * optional logical AUDIO/MPEG2 consumer seams, exact MPEG Transport run-
- * boundary operations, and generation-control relay operations while keeping
- * the physical PSTV descriptor, Pi
- * session identity, and sole physical-I/O runtime private to Transport.
+ * boundary operations, and owner-correct generation-control requests while
+ * keeping the physical PSTV descriptor, Pi session identity, generation-control
+ * wire version, and sole physical-I/O runtime private to Transport.
  *
  * The bridge does not parse RFB, invent configuration defaults, play PCM,
  * decode MPEG, decide media timing/presentation/generation policy, or perform
@@ -157,15 +157,20 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_run_finalize(
 pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(
     const pstvnc_transport_access_t *transport_access);
 
+/*
+ * R20 generation-control seam. Callers provide only run-owned meaning.
+ * Transport stamps the current private Wire session identity and protocol
+ * control version into the unchanged wire payload below this boundary.
+ */
 pstvnc_transport_result_t pstvnc_transport_mpeg_send_start(
     const pstvnc_transport_access_t *transport_access,
-    const pstvnc_mpeg_start_payload_t *start);
+    const pstvnc_transport_mpeg_start_request_t *request);
 pstvnc_transport_result_t pstvnc_transport_mpeg_send_retire(
     const pstvnc_transport_access_t *transport_access,
-    const pstvnc_mpeg_retire_payload_t *retire);
+    const pstvnc_transport_mpeg_retire_request_t *request);
 pstvnc_transport_result_t pstvnc_transport_mpeg_take_retire_completion(
     const pstvnc_transport_access_t *transport_access,
-    pstvnc_mpeg_retire_payload_t *completion);
+    pstvnc_transport_mpeg_retire_completion_t *completion);
 
 pstvnc_transport_result_t pstvnc_transport_rfb_quiesce_requested(
     const pstvnc_transport_access_t *transport_access);
