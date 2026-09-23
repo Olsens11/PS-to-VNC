@@ -101,7 +101,14 @@ static int wait_link_result;
 static int diagnostics_init_result;
 static int graphics_init_result;
 static int connect_result;
+static int connect_results[16];
+static size_t connect_result_count;
+static size_t connect_calls;
 static int session_start_result;
+static int session_start_results[16];
+static pstvnc_rfb_session_error_t session_start_errors[16];
+static size_t session_start_result_count;
+static size_t session_start_calls;
 static int initial_frame_result;
 static int display_prepare_result;
 static int present_result;
@@ -112,6 +119,7 @@ static pstvnc_transport_result_t transport_abort_result;
 static size_t transport_open_calls;
 static size_t transport_abort_calls;
 static pstvnc_transport_session_config_t observed_transport_config;
+static int transport_open_socket_fds[16];
 
 static const pstvnc_transport_session_config_t test_transport_config = {
     101u,
@@ -149,12 +157,14 @@ static int idle_delay_result;
 static size_t idle_delay_calls;
 
 static int request_results[16];
+static pstvnc_rfb_session_error_t request_errors[16];
 static size_t request_result_count;
 static size_t request_calls;
 
 static pstvnc_rfb_session_receive_result_t
     try_receive_results[16];
 
+static pstvnc_rfb_session_error_t try_receive_errors[16];
 static int try_receive_valid[16];
 static int try_receive_dirty[16];
 static size_t try_receive_result_count;
@@ -195,8 +205,13 @@ static void reset_script(void)
 {
     memset(events, 0, sizeof(events));
     memset(diagnostics, 0, sizeof(diagnostics));
+    memset(connect_results, 0, sizeof(connect_results));
+    memset(session_start_results, 0, sizeof(session_start_results));
+    memset(session_start_errors, 0, sizeof(session_start_errors));
     memset(request_results, 0, sizeof(request_results));
+    memset(request_errors, 0, sizeof(request_errors));
     memset(try_receive_results, 0, sizeof(try_receive_results));
+    memset(try_receive_errors, 0, sizeof(try_receive_errors));
     memset(try_receive_valid, 0, sizeof(try_receive_valid));
     memset(try_receive_dirty, 0, sizeof(try_receive_dirty));
     memset(input_events, 0, sizeof(input_events));
@@ -206,6 +221,7 @@ static void reset_script(void)
     memset(key_send_results, 0, sizeof(key_send_results));
     memset(key_calls, 0, sizeof(key_calls));
     memset(&observed_transport_config, 0, sizeof(observed_transport_config));
+    memset(transport_open_socket_fds, 0, sizeof(transport_open_socket_fds));
     memset(
         present_overlay_visible,
         0,
@@ -224,12 +240,16 @@ static void reset_script(void)
     diagnostics_init_result = 0;
     graphics_init_result = 0;
     connect_result = 7;
+    connect_result_count = 0u;
+    connect_calls = 0u;
     transport_open_result = PSTVNC_TRANSPORT_OK;
     transport_open_adopts = 1;
     transport_abort_result = PSTVNC_TRANSPORT_OK;
     transport_open_calls = 0u;
     transport_abort_calls = 0u;
     session_start_result = 1;
+    session_start_result_count = 0u;
+    session_start_calls = 0u;
     initial_frame_result = 1;
     display_prepare_result = 1;
     present_result = 0;
@@ -354,8 +374,15 @@ int pstvnc_ps2_network_wait_link(void)
 
 int pstvnc_ps2_network_connect_pstv(void)
 {
+    int result = connect_result;
+
     log_event(EV_CONNECT_PSTV);
-    return connect_result;
+
+    if (connect_calls < connect_result_count)
+        result = connect_results[connect_calls];
+
+    connect_calls++;
+    return result;
 }
 
 void pstvnc_ps2_network_close(int socket_fd)
@@ -375,6 +402,12 @@ pstvnc_transport_result_t pstvnc_transport_session_open(
     CHECK(config != NULL);
     if (config != NULL)
         observed_transport_config = *config;
+
+    if (transport_open_calls <=
+        sizeof(transport_open_socket_fds) /
+        sizeof(transport_open_socket_fds[0]) &&
+        socket_fd != NULL)
+        transport_open_socket_fds[transport_open_calls - 1u] = *socket_fd;
 
     if (socket_fd != NULL &&
         (transport_open_result == PSTVNC_TRANSPORT_OK ||
@@ -532,15 +565,29 @@ int pstvnc_rfb_session_start(
     uint16_t expected_width,
     uint16_t expected_height)
 {
+    int result = session_start_result;
+    pstvnc_rfb_session_error_t error = PSTVNC_RFB_SESSION_ERROR_NONE;
+
     log_event(EV_SESSION_START);
 
-    if (session_start_result) {
-        session->state = PSTVNC_RFB_SESSION_READY;
-        session->server_init.width = expected_width;
-        session->server_init.height = expected_height;
+    if (session_start_calls < session_start_result_count) {
+        result = session_start_results[session_start_calls];
+        error = session_start_errors[session_start_calls];
     }
 
-    return session_start_result;
+    session_start_calls++;
+
+    if (result) {
+        session->state = PSTVNC_RFB_SESSION_READY;
+        session->error = PSTVNC_RFB_SESSION_ERROR_NONE;
+        session->server_init.width = expected_width;
+        session->server_init.height = expected_height;
+    } else {
+        session->state = PSTVNC_RFB_SESSION_FAILED;
+        session->error = error;
+    }
+
+    return result;
 }
 
 int pstvnc_rfb_session_receive_initial_frame(
@@ -631,15 +678,22 @@ int pstvnc_rfb_session_request_update(
     pstvnc_rfb_session_t *session,
     int incremental)
 {
+    size_t index = request_calls;
     int result = 0;
-
-    (void)session;
 
     CHECK(incremental != 0);
     log_event(EV_REQUEST_UPDATE);
 
-    if (request_calls < request_result_count)
-        result = request_results[request_calls];
+    if (index < request_result_count)
+        result = request_results[index];
+
+    if (!result &&
+        session != NULL &&
+        index < request_result_count &&
+        request_errors[index] != PSTVNC_RFB_SESSION_ERROR_NONE) {
+        session->state = PSTVNC_RFB_SESSION_FAILED;
+        session->error = request_errors[index];
+    }
 
     request_calls++;
     return result;
@@ -669,6 +723,13 @@ pstvnc_rfb_session_try_receive_update(
 
             framebuffer->dirty =
                 try_receive_dirty[index];
+        } else if (
+            result == PSTVNC_RFB_SESSION_RECEIVE_FAILED &&
+            session != NULL &&
+            try_receive_errors[index] != PSTVNC_RFB_SESSION_ERROR_NONE) {
+
+            session->state = PSTVNC_RFB_SESSION_FAILED;
+            session->error = try_receive_errors[index];
         }
     }
 
