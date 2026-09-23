@@ -2298,8 +2298,12 @@ pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_run_finalize(
 
     runtime->mpeg_finalization_in_progress = 1;
 
-    if (SignalSema(runtime->mpeg_control_semaphore_id) < 0 ||
-        SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
+    if (SignalSema(runtime->mpeg_control_semaphore_id) < 0) {
+        (void)SignalSema(runtime->mpeg_queue_semaphore_id);
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+    if (SignalSema(runtime->mpeg_queue_semaphore_id) < 0) {
         runtime->failed = 1;
         return PSTVNC_TRANSPORT_FAILED;
     }
