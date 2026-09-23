@@ -1,8 +1,9 @@
 /*
  * File synopsis:
  * Runs the application coordinator: ordered startup, Transport descriptor
- * adoption, logical RFB session service, semantic controller-input routing,
- * presentation, typed RFB-provider recovery policy, and ownership-safe cleanup.
+ * adoption, logical RFB session service, P2-governed live request/publication
+ * flow, semantic controller-input routing, presentation, typed RFB-provider
+ * recovery policy, and ownership-safe cleanup.
  *
  * Concrete Transport queue/credit/thread/payload values are never chosen here;
  * the configured entry point accepts one already-validated value from its
@@ -30,6 +31,7 @@
 #include "platform/ps2_network.h"
 #include "platform/ps2_system.h"
 #include "rfb_session.h"
+#include "rfb/flow_policy.h"
 #include "transport/bridge.h"
 
 #define PSTVNC_APP_CONTROLLER_PORT       0
@@ -286,6 +288,52 @@ static int present_current_application_frame(
     }
 
     return 1;
+}
+
+/*
+ * Service exactly the request P2 currently permits at the ordinary live
+ * scheduling boundary. Inspection is non-mutating; policy accounting advances
+ * only after the RFB owner confirms serialization succeeded.
+ *
+ * HOLD is a successful no-op. A send failure preserves the RFB session's typed
+ * error for the existing Application recovery classifier. If policy accounting
+ * rejects a request after serialization, fail closed rather than inventing
+ * repaired debt: the wire request is real and the local authority is invalid.
+ */
+static int service_rfb_flow_request(
+    pstvnc_rfb_session_t *session,
+    pstvnc_rfb_flow_policy_t *flow_policy)
+{
+    pstvnc_rfb_flow_request_t request;
+    int incremental;
+
+    if (session == NULL || flow_policy == NULL)
+        return 0;
+
+    request = pstvnc_rfb_flow_policy_next_request(flow_policy);
+
+    switch (request) {
+        case PSTVNC_RFB_FLOW_REQUEST_HOLD:
+            return 1;
+
+        case PSTVNC_RFB_FLOW_REQUEST_INCREMENTAL:
+            incremental = 1;
+            break;
+
+        case PSTVNC_RFB_FLOW_REQUEST_FULL:
+            incremental = 0;
+            break;
+
+        default:
+            return 0;
+    }
+
+    if (!pstvnc_rfb_session_request_update(session, incremental))
+        return 0;
+
+    return pstvnc_rfb_flow_policy_record_request_sent(
+        flow_policy,
+        request);
 }
 
 static int neutralize_published_pointer_for_local_foreground(
@@ -646,6 +694,7 @@ int pstvnc_app_run_with_transport_config(
     pstvnc_local_ui_t local_ui;
     pstvnc_osk_t osk;
     pstvnc_rfb_session_t session;
+    pstvnc_rfb_flow_policy_t rfb_flow_policy;
     app_published_pointer_state_t published_pointer;
 
     int socket_fd = -1;
@@ -755,6 +804,13 @@ int pstvnc_app_run_with_transport_config(
                 &framebuffer))
             goto attempt_failed;
 
+        /*
+         * The startup full frame is the existing RFB-session authority. P2
+         * begins only after that proof and is attempt-local: provider/Wire
+         * replacement must never inherit outstanding/freeze/FULL debt.
+         */
+        pstvnc_rfb_flow_policy_init(&rfb_flow_policy);
+
         if (!present_current_application_frame(
                 &framebuffer,
                 1,
@@ -801,7 +857,7 @@ int pstvnc_app_run_with_transport_config(
             input_ready,
             sizeof(input_ready) - 1u);
 
-        if (!pstvnc_rfb_session_request_update(&session, 1))
+        if (!service_rfb_flow_request(&session, &rfb_flow_policy))
             goto attempt_failed;
 
         for (;;) {
@@ -849,10 +905,27 @@ int pstvnc_app_run_with_transport_config(
             if (receive_result != PSTVNC_RFB_SESSION_RECEIVE_UPDATE)
                 goto fail;
 
+            /*
+             * The parser has completed exactly one live update response.
+             * Retire that one P2 obligation before considering presentation or
+             * any successor request. IDLE never reaches this accounting edge.
+             */
+            if (!pstvnc_rfb_flow_policy_record_update_complete(
+                    &rfb_flow_policy))
+                goto fail;
+
             if (!framebuffer.valid)
                 goto fail;
 
-            if (framebuffer.dirty) {
+            /*
+             * Remote framebuffer truth already advanced in the RFB owner.
+             * Publication is a separate Application composition decision.
+             * R19 has no production freeze caller, so ordinary behavior remains
+             * thawed while the accepted P2 gate is now authoritative.
+             */
+            if (framebuffer.dirty &&
+                pstvnc_rfb_flow_policy_allows_remote_publication(
+                    &rfb_flow_policy)) {
                 if (!present_current_application_frame(
                         &framebuffer,
                         1,
@@ -861,7 +934,7 @@ int pstvnc_app_run_with_transport_config(
                     goto fail;
             }
 
-            if (!pstvnc_rfb_session_request_update(&session, 1))
+            if (!service_rfb_flow_request(&session, &rfb_flow_policy))
                 goto attempt_failed;
         }
 

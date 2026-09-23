@@ -49,6 +49,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/framebuffer.o \
 	$(BUILD_DIR)/rfb_bridge.o \
 	$(BUILD_DIR)/rfb_session.o \
+	$(BUILD_DIR)/rfb_flow_policy.o \
 	$(BUILD_DIR)/display.o \
 	$(BUILD_DIR)/mpeg_frame.o \
 	$(BUILD_DIR)/mpeg_presentation.o \
@@ -103,7 +104,7 @@ $(EE_BIN): $(PS2IP_LIB) $(EE_OBJS) | $(BUILD_DIR)
 $(BUILD_DIR)/main.o: src/main.c src/app.h src/platform/ps2_system.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics/diagnostics.h src/display/display.h src/framebuffer/framebuffer.h src/input/input.h src/input/input_runtime.h src/ui/local_ui_presentation.h src/ui/local_ui.h src/ui/osk.h src/ui/osk_render.h src/input/mouse.h src/input/pad.h src/rfb/rfb_session.h src/transport/bridge.h src/transport/transport.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h src/input/controller.h src/ui/local_controller.h | $(BUILD_DIR)
+$(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics/diagnostics.h src/display/display.h src/framebuffer/framebuffer.h src/input/input.h src/input/input_runtime.h src/ui/local_ui_presentation.h src/ui/local_ui.h src/ui/osk.h src/ui/osk_render.h src/input/mouse.h src/input/pad.h src/rfb/rfb_session.h src/rfb/flow_policy.h src/transport/bridge.h src/transport/transport.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h src/input/controller.h src/ui/local_controller.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/app_mpeg_frame.o: src/app_mpeg_frame.c src/app_mpeg_frame.h src/mpeg/worker.h src/display/mpeg_frame.h src/display/mpeg_presentation.h src/display/mpeg_scheduler.h src/display/mpeg_compositor.h src/media/clock.h | $(BUILD_DIR)
@@ -167,6 +168,9 @@ $(BUILD_DIR)/rfb_bridge.o: src/rfb/bridge.c src/rfb/bridge.h src/transport/bridg
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/rfb_session.o: src/rfb/rfb_session.c src/rfb/rfb_session.h src/rfb/rfb.h src/rfb/bridge.h src/framebuffer/framebuffer.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/rfb_flow_policy.o: src/rfb/flow_policy.c src/rfb/flow_policy.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/display.o: src/display/display.c src/display/display.h src/framebuffer/framebuffer.h | $(BUILD_DIR)

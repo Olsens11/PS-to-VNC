@@ -326,6 +326,7 @@ $(BUILD_DIR)/app_test: \
 	../src/platform/ps2_system.h \
 	../src/rfb/rfb.h \
 	../src/rfb/rfb_session.h \
+	../src/rfb/flow_policy.h \
 	../src/transport/transport.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-Isupport \
