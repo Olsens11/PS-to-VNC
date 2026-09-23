@@ -4,8 +4,9 @@
  * stream plus pthread-backed PS2 kernel shims prove that channel-4 DATA is
  * dispatched by the same sole receiver as RFB/AUDIO, has independent bounded
  * queue/credit/activity state, wakes event waiters without timer polling, keeps
- * real producer exhaustion distinct from Transport stop/failure, and relays
- * exact START/RETIRE control without reclassifying MPEG DATA.
+ * real producer exhaustion distinct from Transport stop/failure, relays exact
+ * START/RETIRE control, and proves R18's explicit open/retire/finalize/reopen
+ * boundary without reclassifying MPEG DATA.
  */
 
 #include "transport/runtime.h"
@@ -617,6 +618,8 @@ static void test_interleaved_channels_credit_and_event_wake(void)
     CHECK(pstvnc_transport_runtime_initialize_with_audio_mpeg(
         &runtime, 50, &base, &audio, &mpeg) == 1);
     CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
     CHECK(find_credit(PSTVNC_TRANSPORT_CHANNEL_RFB, 8u));
     CHECK(find_credit(PSTVNC_TRANSPORT_CHANNEL_AUDIO, 12u));
     CHECK(find_credit(PSTVNC_TRANSPORT_CHANNEL_MPEG2, 16u));
@@ -711,6 +714,8 @@ static void test_zero_length_mpeg_is_not_eof(void)
     CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
         &runtime, 51, &base, &mpeg) == 1);
     CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
     push_frame(PSTVNC_TRANSPORT_FRAME_DATA,
         PSTVNC_TRANSPORT_CHANNEL_MPEG2, NULL, 0u);
     wait_for_frames(1);
@@ -742,6 +747,8 @@ static void test_queue_overflow_preserves_committed_bytes_then_failure(void)
     CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
         &runtime, 52, &base, &mpeg) == 1);
     CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
     push_frame(PSTVNC_TRANSPORT_FRAME_DATA,
         PSTVNC_TRANSPORT_CHANNEL_MPEG2, first, sizeof(first));
     push_frame(PSTVNC_TRANSPORT_FRAME_DATA,
@@ -817,6 +824,8 @@ static void test_generation_control_relay_and_pure_mpeg_data(void)
     CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
     clear_sends();
 
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
     CHECK(pstvnc_transport_runtime_mpeg_send_start(
         &runtime, &start) == PSTVNC_TRANSPORT_OK);
     CHECK(g_send_count == 1);
@@ -865,6 +874,20 @@ static void test_generation_control_relay_and_pure_mpeg_data(void)
     CHECK(memcmp(&completion, &retire, sizeof(retire)) == 0);
     CHECK(pstvnc_transport_runtime_mpeg_take_retire_completion(
         &runtime, &completion) == PSTVNC_TRANSPORT_WOULD_BLOCK);
+    CHECK(runtime.mpeg_run_open == 0);
+    CHECK(runtime.mpeg_retirement_latched == 1);
+
+    CHECK(pstvnc_transport_runtime_mpeg_run_finalize(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    CHECK(runtime.mpeg_retirement_latched == 0);
+    CHECK(runtime.mpeg_start_submitted == 0);
+    CHECK(runtime.mpeg_retire_submitted == 0);
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+
+    start.generation += 1u;
+    CHECK(pstvnc_transport_runtime_mpeg_send_start(
+        &runtime, &start) == PSTVNC_TRANSPORT_OK);
 
     CHECK(pstvnc_mpeg_start_payload_encode(start_wire, &start));
     push_frame(
@@ -977,6 +1000,7 @@ static void test_generation_control_completion_slot_never_overwrites(void)
         make_retire_payload(0x01020304u, 5u);
     pstvnc_mpeg_retire_payload_t second =
         make_retire_payload(0x01020304u, 6u);
+    pstvnc_mpeg_start_payload_t start;
     uint8_t first_wire[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE];
     uint8_t second_wire[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE];
 
@@ -986,6 +1010,15 @@ static void test_generation_control_completion_slot_never_overwrites(void)
     CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
         &runtime, 63, &base, &mpeg) == 1);
     CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+    fill_start_payload(&start);
+    start.session_id = first.session_id;
+    start.generation = first.generation;
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_runtime_mpeg_send_start(
+        &runtime, &start) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_runtime_mpeg_send_retire(
+        &runtime, &first) == PSTVNC_TRANSPORT_OK);
 
     push_frame(
         PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE,
@@ -1011,6 +1044,326 @@ static void test_generation_control_completion_slot_never_overwrites(void)
     CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
 }
 
+static int count_credit_sends(uint8_t channel, uint32_t amount)
+{
+    int index;
+    int count = 0;
+
+    for (index = 0; index < g_send_count; ++index) {
+        uint32_t decoded = 0u;
+
+        if (g_sends[index].kind != PSTVNC_TRANSPORT_FRAME_CREDIT ||
+            g_sends[index].channel != channel ||
+            g_sends[index].payload_length != 4u)
+            continue;
+
+        decoded =
+            ((uint32_t)g_sends[index].payload[0] << 24) |
+            ((uint32_t)g_sends[index].payload[1] << 16) |
+            ((uint32_t)g_sends[index].payload[2] << 8) |
+            (uint32_t)g_sends[index].payload[3];
+        if (decoded == amount)
+            count++;
+    }
+
+    return count;
+}
+
+static void test_mpeg_data_requires_explicit_run_open(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t base = make_base_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    const uint8_t byte = 0x41u;
+
+    reset_fake_world();
+    CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
+        &runtime, 64, &base, &mpeg) == 1);
+    CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+
+    push_frame(PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_MPEG2, &byte, 1u);
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+    CHECK(runtime.failed == 1);
+    CHECK(pstvnc_transport_mpeg_channel_available(
+        &runtime.mpeg_channel) == 0u);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+}
+
+static void test_mpeg_clean_open_abort_and_dirty_abort_rejection(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t base = make_base_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    const uint8_t byte = 0x52u;
+
+    reset_fake_world();
+    CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
+        &runtime, 65, &base, &mpeg) == 1);
+    CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    CHECK(runtime.mpeg_run_open == 1);
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(pstvnc_transport_runtime_mpeg_run_abort_pre_start(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    CHECK(runtime.mpeg_run_open == 0);
+    CHECK(runtime.mpeg_activity_sequence == 0u);
+    CHECK(runtime.mpeg_credit_pending == 0u);
+    CHECK(pstvnc_transport_mpeg_channel_available(
+        &runtime.mpeg_channel) == 0u);
+    CHECK(!pstvnc_transport_mpeg_channel_producer_done(
+        &runtime.mpeg_channel));
+
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    push_frame(PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_MPEG2, &byte, 1u);
+    wait_for_frames(1);
+    CHECK(runtime.failed == 0);
+    CHECK(pstvnc_transport_runtime_mpeg_run_abort_pre_start(
+        &runtime) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(pstvnc_transport_mpeg_channel_available(
+        &runtime.mpeg_channel) == 1u);
+    finish_runtime(&runtime);
+}
+
+static void test_mpeg_wrapped_residual_discard_is_not_consumption(void)
+{
+    pstvnc_transport_mpeg_channel_t channel;
+    uint8_t storage[8];
+    const uint8_t first[] = {1u, 2u, 3u, 4u, 5u, 6u};
+    const uint8_t second[] = {7u, 8u, 9u, 10u};
+    uint8_t readback[4];
+
+    memset(storage, 0, sizeof(storage));
+    memset(&channel, 0, sizeof(channel));
+    CHECK(pstvnc_transport_mpeg_channel_initialize(
+        &channel, storage, sizeof(storage)) == 0);
+    CHECK(pstvnc_transport_mpeg_channel_commit_data(
+        &channel, first, sizeof(first)) == 0);
+    CHECK(pstvnc_transport_mpeg_channel_read_available(
+        &channel, readback, sizeof(readback)) == sizeof(readback));
+    CHECK(channel.read_offset == 4u);
+    CHECK(pstvnc_transport_mpeg_channel_commit_data(
+        &channel, second, sizeof(second)) == 0);
+    CHECK(channel.byte_count == 6u);
+    CHECK(pstvnc_transport_mpeg_channel_mark_producer_done(
+        &channel) == 0);
+
+    CHECK(pstvnc_transport_mpeg_channel_discard_all(&channel) == 6u);
+    CHECK(channel.byte_count == 0u);
+    CHECK(channel.read_offset == 0u);
+    CHECK(pstvnc_transport_mpeg_channel_producer_done(&channel));
+    CHECK(pstvnc_transport_mpeg_channel_reset_run_state(&channel) == 0);
+    CHECK(!pstvnc_transport_mpeg_channel_producer_done(&channel));
+}
+
+static void test_mpeg_retire_finalize_credit_and_fresh_successor(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t base = make_base_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    pstvnc_mpeg_start_payload_t start;
+    pstvnc_mpeg_retire_payload_t retire;
+    pstvnc_mpeg_retire_payload_t completion;
+    uint8_t retire_wire[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE];
+    const uint8_t old_bytes[] = {1u, 2u, 3u, 4u, 5u, 6u};
+    const uint8_t new_bytes[] = {9u, 10u};
+    uint8_t readback[8];
+    size_t count = 0u;
+    size_t available = 99u;
+    int producer_done = 0;
+    int sends_after_finalize;
+
+    reset_fake_world();
+    base.max_data_payload = 8u;
+    mpeg.queue_capacity = 8u;
+    mpeg.initial_credit_bytes = 8u;
+    mpeg.credit_batch_bytes = 8u;
+    mpeg.credit_flush_on_empty = 0;
+    fill_start_payload(&start);
+    retire = make_retire_payload(start.session_id, start.generation);
+
+    CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
+        &runtime, 66, &base, &mpeg) == 1);
+    CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+    clear_sends();
+
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_runtime_mpeg_send_start(
+        &runtime, &start) == PSTVNC_TRANSPORT_OK);
+
+    push_frame(PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_MPEG2, old_bytes, sizeof(old_bytes));
+    wait_for_frames(1);
+    CHECK(runtime.failed == 0);
+
+    CHECK(pstvnc_transport_runtime_mpeg_read_available(
+        &runtime, readback, 2u, &count) == PSTVNC_TRANSPORT_OK);
+    CHECK(count == 2u && readback[0] == 1u && readback[1] == 2u);
+    CHECK(runtime.mpeg_credit_pending == 2u);
+    CHECK(count_credit_sends(PSTVNC_TRANSPORT_CHANNEL_MPEG2, 2u) == 0);
+    CHECK(pstvnc_transport_runtime_mpeg_mark_producer_done(&runtime) == 1);
+
+    CHECK(pstvnc_transport_runtime_mpeg_send_retire(
+        &runtime, &retire) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_mpeg_retire_payload_encode(retire_wire, &retire));
+    push_frame(PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL, retire_wire, sizeof(retire_wire));
+    wait_for_frames(2);
+
+    CHECK(runtime.failed == 0);
+    CHECK(runtime.mpeg_run_open == 0);
+    CHECK(runtime.mpeg_retirement_latched == 1);
+    CHECK(runtime.mpeg_retire_completion_pending == 1);
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_INVALID);
+
+    memset(&completion, 0, sizeof(completion));
+    CHECK(pstvnc_transport_runtime_mpeg_take_retire_completion(
+        &runtime, &completion) == PSTVNC_TRANSPORT_OK);
+    CHECK(memcmp(&completion, &retire, sizeof(retire)) == 0);
+    CHECK(runtime.mpeg_retirement_latched == 1);
+    CHECK(runtime.mpeg_run_open == 0);
+
+    CHECK(pstvnc_transport_runtime_mpeg_run_finalize(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    CHECK(count_credit_sends(PSTVNC_TRANSPORT_CHANNEL_MPEG2, 6u) == 1);
+    sends_after_finalize = g_send_count;
+    CHECK(runtime.mpeg_credit_pending == 0u);
+    CHECK(runtime.mpeg_activity_sequence == 0u);
+    CHECK(runtime.mpeg_run_open == 0);
+    CHECK(runtime.mpeg_start_submitted == 0);
+    CHECK(runtime.mpeg_retire_submitted == 0);
+    CHECK(runtime.mpeg_retirement_latched == 0);
+    CHECK(runtime.mpeg_finalization_in_progress == 0);
+    CHECK(pstvnc_transport_runtime_mpeg_status(
+        &runtime, &available, &producer_done) == PSTVNC_TRANSPORT_OK);
+    CHECK(available == 0u && producer_done == 0);
+
+    CHECK(pstvnc_transport_runtime_mpeg_run_finalize(
+        &runtime) == PSTVNC_TRANSPORT_WOULD_BLOCK);
+    CHECK(g_send_count == sends_after_finalize);
+
+    start.generation += 1u;
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_runtime_mpeg_send_start(
+        &runtime, &start) == PSTVNC_TRANSPORT_OK);
+    push_frame(PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_MPEG2, new_bytes, sizeof(new_bytes));
+    wait_for_frames(3);
+
+    memset(readback, 0, sizeof(readback));
+    count = 0u;
+    CHECK(pstvnc_transport_runtime_mpeg_read_available(
+        &runtime, readback, sizeof(readback), &count) == PSTVNC_TRANSPORT_OK);
+    CHECK(count == sizeof(new_bytes));
+    CHECK(memcmp(readback, new_bytes, sizeof(new_bytes)) == 0);
+    CHECK(pstvnc_transport_runtime_mpeg_status(
+        &runtime, &available, &producer_done) == PSTVNC_TRANSPORT_OK);
+    CHECK(available == 0u && producer_done == 0);
+    finish_runtime(&runtime);
+}
+
+static void test_mpeg_post_completion_data_fails_even_after_take(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t base = make_base_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    pstvnc_mpeg_start_payload_t start;
+    pstvnc_mpeg_retire_payload_t retire;
+    pstvnc_mpeg_retire_payload_t completion;
+    uint8_t retire_wire[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE];
+    const uint8_t byte = 0x7au;
+
+    reset_fake_world();
+    fill_start_payload(&start);
+    retire = make_retire_payload(start.session_id, start.generation);
+    CHECK(pstvnc_mpeg_retire_payload_encode(retire_wire, &retire));
+    CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
+        &runtime, 67, &base, &mpeg) == 1);
+    CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_runtime_mpeg_send_start(
+        &runtime, &start) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_runtime_mpeg_send_retire(
+        &runtime, &retire) == PSTVNC_TRANSPORT_OK);
+
+    push_frame(PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL, retire_wire, sizeof(retire_wire));
+    wait_for_frames(1);
+    CHECK(runtime.mpeg_run_open == 0);
+    CHECK(runtime.mpeg_retirement_latched == 1);
+    CHECK(pstvnc_transport_runtime_mpeg_take_retire_completion(
+        &runtime, &completion) == PSTVNC_TRANSPORT_OK);
+    CHECK(runtime.mpeg_retirement_latched == 1);
+
+    push_frame(PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_MPEG2, &byte, 1u);
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+    CHECK(runtime.failed == 1);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+}
+
+static void test_mpeg_live_waiter_blocks_run_finalization(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t base = make_base_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    pstvnc_mpeg_start_payload_t start;
+    pstvnc_mpeg_retire_payload_t retire;
+    pstvnc_mpeg_retire_payload_t completion;
+    uint8_t retire_wire[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE];
+    pthread_t waiter_thread;
+    waiter_context_t waiter;
+    uint32_t sequence = 0u;
+
+    reset_fake_world();
+    fill_start_payload(&start);
+    retire = make_retire_payload(start.session_id, start.generation);
+    CHECK(pstvnc_mpeg_retire_payload_encode(retire_wire, &retire));
+    CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
+        &runtime, 68, &base, &mpeg) == 1);
+    CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+    CHECK(pstvnc_transport_runtime_mpeg_run_open(
+        &runtime) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_runtime_mpeg_send_start(
+        &runtime, &start) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_runtime_mpeg_send_retire(
+        &runtime, &retire) == PSTVNC_TRANSPORT_OK);
+
+    push_frame(PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE,
+        PSTVNC_TRANSPORT_CHANNEL_CONTROL, retire_wire, sizeof(retire_wire));
+    wait_for_frames(1);
+    CHECK(pstvnc_transport_runtime_mpeg_take_retire_completion(
+        &runtime, &completion) == PSTVNC_TRANSPORT_OK);
+
+    CHECK(pstvnc_transport_runtime_mpeg_activity_snapshot(
+        &runtime, &sequence) == 1);
+    memset(&waiter, 0, sizeof(waiter));
+    waiter.runtime = &runtime;
+    waiter.sequence = sequence;
+    CHECK(pthread_create(&waiter_thread, NULL, mpeg_waiter, &waiter) == 0);
+    wait_until_mpeg_waiter_armed(&runtime);
+
+    CHECK(pstvnc_transport_runtime_mpeg_run_finalize(
+        &runtime) == PSTVNC_TRANSPORT_WOULD_BLOCK);
+    CHECK(runtime.mpeg_retirement_latched == 1);
+    CHECK(runtime.mpeg_finalization_in_progress == 0);
+
+    CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 1);
+    CHECK(pthread_join(waiter_thread, NULL) == 0);
+    CHECK(waiter.result == 1);
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+}
+
 int main(void)
 {
     test_interleaved_channels_credit_and_event_wake();
@@ -1020,6 +1373,12 @@ int main(void)
     test_generation_control_relay_and_pure_mpeg_data();
     test_generation_control_rejects_malformed_and_inbound_start();
     test_generation_control_completion_slot_never_overwrites();
+    test_mpeg_data_requires_explicit_run_open();
+    test_mpeg_clean_open_abort_and_dirty_abort_rejection();
+    test_mpeg_wrapped_residual_discard_is_not_consumption();
+    test_mpeg_retire_finalize_credit_and_fresh_successor();
+    test_mpeg_post_completion_data_fails_even_after_take();
+    test_mpeg_live_waiter_blocks_run_finalization();
 
     if (failures != 0) {
         fprintf(stderr, "%d Transport MPEG test(s) failed\n", failures);
