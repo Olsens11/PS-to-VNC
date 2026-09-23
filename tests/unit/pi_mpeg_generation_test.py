@@ -60,6 +60,44 @@ class FakeProducer:
         return not self.retire_fails
 
 
+class BlockingStdout:
+    def __init__(self, first_chunk: bytes) -> None:
+        self.first_chunk = first_chunk
+        self.release = threading.Event()
+
+    def read(self, _maximum: int) -> bytes:
+        if self.first_chunk:
+            result = self.first_chunk
+            self.first_chunk = b""
+            return result
+        self.release.wait(timeout=1.0)
+        return b""
+
+
+class FakeProcess:
+    def __init__(self, first_chunk: bytes) -> None:
+        self.stdout = BlockingStdout(first_chunk)
+        self.returncode: int | None = None
+
+    def poll(self) -> int | None:
+        return self.returncode
+
+    def terminate(self) -> None:
+        self.returncode = -15
+        self.stdout.release.set()
+
+    def kill(self) -> None:
+        self.returncode = -9
+        self.stdout.release.set()
+
+    def wait(self, timeout: float | None = None) -> int:
+        if self.returncode is None:
+            if not self.stdout.release.wait(timeout=timeout):
+                raise subprocess.TimeoutExpired("fake-ffmpeg", timeout)
+        assert self.returncode is not None
+        return self.returncode
+
+
 class ProducerFactory:
     def __init__(
         self,
@@ -358,6 +396,17 @@ class MpegGenerationTests(unittest.TestCase):
         controller.start_exact(start_control(generation=2))
         self.assertIsNot(factory.items[0], factory.items[1])
         self.assertEqual(controller.suppression.generation, 2)
+        fresh_lease = controller.begin_emission(4)
+        self.assertIsNotNone(fresh_lease)
+        assert fresh_lease is not None
+        # Generation 1 retired with "efgh" still buffered. Generation 2 must
+        # therefore begin from its own producer bytes, not that stale remainder.
+        self.assertEqual(fresh_lease.payload, b"abcd")
+        controller.finish_emission(fresh_lease)
+        second = controller.retire_exact(
+            protocol.MpegRetireControl(session_id=41, generation=2)
+        )
+        controller.confirm_retire_completion(second)
         with self.assertRaises(mpeg.MpegGenerationError):
             controller.start_exact(start_control(generation=1))
         controller.close()
@@ -441,6 +490,43 @@ class MpegGenerationTests(unittest.TestCase):
             mpeg.MpegGenerationState.RETIRED_PENDING_COMPLETION,
         )
         failed.close()
+
+    def test_buffered_producer_never_exceeds_configured_capacity(self) -> None:
+        profile = mpeg_runtime_profile.selected_mpeg_producer_profile()
+        plan = mpeg.prepare_capture_plan(
+            start_control(),
+            active_session_id=41,
+            desktop_width=704,
+            desktop_height=462,
+            display=":0",
+            profile=profile,
+        )
+        fake_process = FakeProcess(b"0123456789ab")
+        producer = mpeg.BufferedMpegProducer(
+            plan,
+            8,
+            lambda: None,
+            popen=lambda *_args, **_kwargs: fake_process,
+        )
+        wait_for(lambda: producer.available == 8, "bounded producer fill")
+        self.assertLessEqual(producer.available, 8)
+        self.assertEqual(producer.take(4), b"0123")
+        wait_for(lambda: producer.available == 8, "bounded producer refill")
+        self.assertLessEqual(producer.available, 8)
+        producer.retire(1.0)
+
+    def test_stager_tracks_r17_without_activating_final_composition(self) -> None:
+        installer = (
+            ROOT / "scripts/pi/install-wire-runtime.sh"
+        ).read_text(encoding="utf-8")
+        for path in (
+            "/usr/lib/ps-to-vnc/mpeg_runtime_profile_generated.py",
+            "/usr/lib/ps-to-vnc/mpeg_runtime_profile.py",
+            "/usr/lib/ps-to-vnc/mpeg_generation.py",
+        ):
+            self.assertIn(path, installer)
+        runtime = (ROOT / "pi/wire_runtime.py").read_text(encoding="utf-8")
+        self.assertNotIn("mpeg_generation_factory", runtime)
 
     def test_channel_credit_is_bounded_independently(self) -> None:
         controller, _ = make_controller()

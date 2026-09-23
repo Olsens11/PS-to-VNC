@@ -254,14 +254,14 @@ class BufferedMpegProducer:
                 bufsize=0,
                 start_new_session=True,
             )
-        except BaseException as exc:
+        except Exception as exc:
             raise MpegGenerationError(
                 f"failed to launch MPEG generation {plan.generation}"
             ) from exc
         if self.process.stdout is None:
             try:
                 self.process.terminate()
-            except BaseException:
+            except Exception:
                 pass
             raise MpegGenerationError("MPEG producer has no stdout pipe")
 
@@ -294,7 +294,7 @@ class BufferedMpegProducer:
                         offset += len(part)
                         self._condition.notify_all()
                     self._notify_activity()
-        except BaseException as exc:
+        except Exception as exc:
             with self._condition:
                 self._error = exc
                 self._condition.notify_all()
@@ -505,11 +505,11 @@ class MpegGenerationController:
             )
             if producer is None:
                 raise MpegGenerationError("MPEG producer factory returned no producer")
-        except BaseException:
+        except Exception:
             try:
                 if self.suppression.generation == control.generation:
                     self.suppression.retire_exact(control.generation)
-            except BaseException:
+            except Exception:
                 pass
             with self._condition:
                 self.state = MpegGenerationState.FAILED
@@ -553,7 +553,7 @@ class MpegGenerationController:
 
         try:
             payload = producer.take(budget)
-        except BaseException:
+        except Exception:
             with self._condition:
                 self._in_flight -= 1
                 self.state = MpegGenerationState.FAILED
@@ -631,7 +631,7 @@ class MpegGenerationController:
         try:
             producer.retire(remaining)
             self.suppression.retire_exact(control.generation)
-        except BaseException:
+        except Exception:
             with self._condition:
                 self.state = MpegGenerationState.FAILED
                 self._condition.notify_all()
