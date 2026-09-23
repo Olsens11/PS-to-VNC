@@ -576,6 +576,7 @@ class MpegGenerationController:
         return MpegEmissionLease(generation=generation, payload=payload)
 
     def finish_emission(self, lease: MpegEmissionLease) -> None:
+        notify_more = False
         with self._condition:
             if (
                 lease.generation <= 0
@@ -584,7 +585,16 @@ class MpegGenerationController:
             ):
                 raise MpegGenerationError("MPEG emission lease mismatch")
             self._in_flight -= 1
+            producer = self.producer
+            notify_more = (
+                self.state is MpegGenerationState.LIVE
+                and self.credit_bytes > 0
+                and producer is not None
+                and int(getattr(producer, "available", 0)) > 0
+            )
             self._condition.notify_all()
+        if notify_more:
+            self._notify_activity()
 
     def retire_exact(
         self,

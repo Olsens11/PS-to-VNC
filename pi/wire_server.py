@@ -11,16 +11,14 @@ retires that connection before the persistent owner accepts another.
 
 R13 composes one explicit session-scoped RFB attachment mechanism while
 preserving this object as the sole PS2-facing Wire recv/send and global sequence
-owner. The attachment lazily connects only after first valid RFB CREDIT, owns
-provider/quiesce state, and composes the provider-neutral R10 Relay only after
-local connection succeeds. R16A also serializes the attachment's first typed
-provider-terminal fact through this same sole owner; reporting it does not end
-the Wire Session.
+owner. R17 optionally composes one exact-generation MPEG owner under the same
+physical loop: START/RETIRE/CREDIT are received here, while MPEG DATA is emitted
+only by this owner's ordinary global-sequence send path.
 
-With no explicit attachment factory the installed service remains the R8
-establishment-only server. The server still owns no flow-profile defaults,
-Application RFB start/restart policy, AUDIO/MPEG/CONFIG rider, MPEG producer,
-heartbeat, or custom restart loop.
+With no explicit rider factories the server remains establishment-only. Rider
+mechanisms own their local lifecycle; this server still owns no selected profile
+defaults, Application policy, AUDIO/CONFIG rider, heartbeat, or custom restart
+loop.
 
 Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
 """
@@ -35,6 +33,7 @@ import socket
 import sys
 from typing import Callable
 
+import mpeg_generation as mpeg
 import rfb_attachment as rfb_attach
 import wire_protocol as protocol
 
@@ -135,10 +134,12 @@ class WireConnectionOwner:
         connection: socket.socket,
         session_ids: SessionIdAllocator,
         rfb_attachment: rfb_attach.RfbAttachment | None = None,
+        mpeg_generation: mpeg.MpegGenerationController | None = None,
     ) -> None:
         self._connection = connection
         self._session_ids = session_ids
         self._rfb_attachment = rfb_attachment
+        self._mpeg_generation = mpeg_generation
         self.state = WireSessionState.PROVISIONAL
         self.session_id: int | None = None
         self.next_receive_sequence = 1
@@ -321,6 +322,69 @@ class WireConnectionOwner:
 
         return False
 
+    def attach_mpeg_generation(
+        self,
+        generation: mpeg.MpegGenerationController,
+    ) -> None:
+        if (
+            self.state is not WireSessionState.ACTIVE
+            or self.session_id is None
+            or self._mpeg_generation is not None
+            or generation.session_id != self.session_id
+        ):
+            raise RuntimeError("MPEG generation owner does not match active Wire")
+        self._mpeg_generation = generation
+
+    def _handle_mpeg_frame(
+        self,
+        header: protocol.WireHeader,
+        payload: bytes,
+    ) -> bool:
+        generation = self._mpeg_generation
+        if generation is None:
+            return False
+
+        if protocol.is_mpeg_credit_header(header):
+            generation.add_credit(protocol.decode_mpeg_credit_payload(payload))
+            return True
+
+        if protocol.is_mpeg_start_header(header):
+            generation.start_exact(protocol.decode_mpeg_start_payload(payload))
+            return True
+
+        if protocol.is_mpeg_retire_header(header):
+            control = protocol.decode_mpeg_retire_payload(payload)
+            completion = generation.retire_exact(control)
+            self._send_active_frame(
+                protocol.FRAME_MPEG_RETIRE,
+                protocol.CHANNEL_CONTROL,
+                protocol.encode_mpeg_retire_payload(completion),
+            )
+            generation.confirm_retire_completion(completion)
+            return True
+
+        return False
+
+    def _flush_mpeg_generation_output(self) -> None:
+        generation = self._mpeg_generation
+        if generation is None:
+            return
+
+        lease = generation.begin_emission(protocol.MAX_PAYLOAD_BYTES)
+        if lease is None:
+            return
+        try:
+            self._send_active_frame(
+                protocol.FRAME_DATA,
+                protocol.CHANNEL_MPEG2,
+                lease.payload,
+            )
+        finally:
+            # sendall() returning or raising ends this local physical-send call.
+            # A failure makes the Wire Session terminal; finishing the local lease
+            # is not a claim that failed physical bytes were delivered.
+            generation.finish_emission(lease)
+
     def _flush_rfb_attachment_output(self) -> None:
         """Serialize attachment output through the sole physical Wire owner."""
 
@@ -368,43 +432,57 @@ class WireConnectionOwner:
             if not attachment.confirm_provider_failure_reported(reason):
                 raise RuntimeError("provider failure report confirmation failed")
 
-    def _wait_with_rfb_attachment(self) -> WireSessionOutcome:
-        """Drive one lazy provider attachment without surrendering Wire I/O."""
+    def _wait_with_riders(self) -> WireSessionOutcome:
+        """Drive configured riders while retaining sole physical Wire I/O."""
 
         attachment = self._rfb_attachment
-        if attachment is None:
-            raise RuntimeError("RFB attachment is not configured")
+        generation = self._mpeg_generation
+        if attachment is None and generation is None:
+            raise RuntimeError("no Wire rider is configured")
 
         while True:
             try:
                 self._flush_rfb_attachment_output()
-            except OSError:
+            except (OSError, RuntimeError):
                 return self._finish(
                     accepted=True,
                     rejection_reason=None,
                     protocol_failed=True,
                 )
 
-            connecting = attachment.connecting_socket
-            provider = attachment.provider_socket
-            quiesce_wake = attachment.quiesce_wake_reader
+            connecting = (
+                attachment.connecting_socket if attachment is not None else None
+            )
+            provider = attachment.provider_socket if attachment is not None else None
+            quiesce_wake = (
+                attachment.quiesce_wake_reader if attachment is not None else None
+            )
+            mpeg_wake = (
+                generation.activity_reader if generation is not None else None
+            )
 
             read_wait = [self._connection]
             write_wait: list[socket.socket] = []
             exception_wait: list[socket.socket] = []
 
-            # The wake descriptor carries no Wire bytes. It only interrupts the
-            # owner's blocking readiness wait so this same owner can observe the
-            # attachment-local REQUEST_PENDING state and serialize REQUEST.
             if quiesce_wake is not None:
                 read_wait.append(quiesce_wake)
-
+            if mpeg_wake is not None:
+                read_wait.append(mpeg_wake)
             if connecting is not None:
                 write_wait.append(connecting)
                 exception_wait.append(connecting)
-            if provider is not None and attachment.wants_provider_read:
+            if (
+                attachment is not None
+                and provider is not None
+                and attachment.wants_provider_read
+            ):
                 read_wait.append(provider)
-            if provider is not None and attachment.wants_provider_write:
+            if (
+                attachment is not None
+                and provider is not None
+                and attachment.wants_provider_write
+            ):
                 write_wait.append(provider)
 
             try:
@@ -420,24 +498,31 @@ class WireConnectionOwner:
                     protocol_failed=True,
                 )
 
-            if quiesce_wake is not None and quiesce_wake in readable:
-                # Drain/acknowledge only the local notification edge. The
-                # requesting thread never receives Wire authority; REQUEST still
-                # leaves exclusively through _flush_rfb_attachment_output().
+            if (
+                attachment is not None
+                and quiesce_wake is not None
+                and quiesce_wake in readable
+            ):
                 attachment.acknowledge_quiesce_wake()
                 try:
                     self._flush_rfb_attachment_output()
-                except OSError:
+                except (OSError, RuntimeError):
                     return self._finish(
                         accepted=True,
                         rejection_reason=None,
                         protocol_failed=True,
                     )
 
+            # Prefer an already-readable physical frame over producer output.
+            # In particular, an exact RETIRE request closes generation emission
+            # admission before a simultaneous local producer wake can send more.
             if self._connection in readable:
                 try:
                     header, payload = self._read_active_frame()
-                    if not self._handle_rfb_frame(header, payload):
+                    handled = self._handle_rfb_frame(header, payload)
+                    if not handled:
+                        handled = self._handle_mpeg_frame(header, payload)
+                    if not handled:
                         raise protocol.WireProtocolError(
                             "unsupported active Wire frame"
                         )
@@ -447,7 +532,12 @@ class WireConnectionOwner:
                         rejection_reason=None,
                         protocol_failed=False,
                     )
-                except (OSError, protocol.WireProtocolError):
+                except (
+                    OSError,
+                    RuntimeError,
+                    mpeg.MpegGenerationError,
+                    protocol.WireProtocolError,
+                ):
                     return self._finish(
                         accepted=True,
                         rejection_reason=None,
@@ -455,13 +545,30 @@ class WireConnectionOwner:
                     )
 
             if (
-                connecting is not None
+                generation is not None
+                and mpeg_wake is not None
+                and mpeg_wake in readable
+            ):
+                generation.acknowledge_activity()
+                try:
+                    self._flush_mpeg_generation_output()
+                except (OSError, mpeg.MpegGenerationError):
+                    return self._finish(
+                        accepted=True,
+                        rejection_reason=None,
+                        protocol_failed=True,
+                    )
+
+            if (
+                attachment is not None
+                and connecting is not None
                 and (connecting in writable or connecting in exceptional)
             ):
                 attachment.finish_connect_ready()
 
             if (
-                provider is not None
+                attachment is not None
+                and provider is not None
                 and provider in writable
                 and attachment.wants_provider_write
             ):
@@ -482,7 +589,8 @@ class WireConnectionOwner:
                     attachment.confirm_credit_sent(drained)
 
             if (
-                provider is not None
+                attachment is not None
+                and provider is not None
                 and provider in readable
                 and attachment.wants_provider_read
             ):
@@ -505,8 +613,8 @@ class WireConnectionOwner:
         if self.state is not WireSessionState.ACTIVE or self.session_id is None:
             raise RuntimeError("Wire Session is not ACTIVE")
 
-        if self._rfb_attachment is not None:
-            return self._wait_with_rfb_attachment()
+        if self._rfb_attachment is not None or self._mpeg_generation is not None:
+            return self._wait_with_riders()
 
         # With no explicitly injected rider the installed service remains
         # establishment-only. An ACTIVE session may be completely idle forever;
@@ -540,6 +648,9 @@ class WireConnectionOwner:
         # server closes the socket or accepts another peer. The historical
         # session_id is returned only as evidence; it is not reusable authority.
         session_id = self.session_id
+        if self._mpeg_generation is not None:
+            if not self._mpeg_generation.close():
+                protocol_failed = True
         self.state = WireSessionState.INACTIVE
         return WireSessionOutcome(
             accepted=accepted,
@@ -562,6 +673,9 @@ class WireServer:
         rfb_attachment_factory: Callable[
             [], rfb_attach.RfbAttachment
         ] | None = None,
+        mpeg_generation_factory: Callable[
+            [int], mpeg.MpegGenerationController
+        ] | None = None,
     ) -> None:
         if not listen_address:
             raise ValueError("listen_address must be non-empty")
@@ -571,6 +685,7 @@ class WireServer:
         self.port = port
         self.session_ids = session_ids or SessionIdAllocator()
         self.rfb_attachment_factory = rfb_attachment_factory
+        self.mpeg_generation_factory = mpeg_generation_factory
 
     def serve_connection(
         self,
@@ -589,6 +704,19 @@ class WireServer:
         try:
             outcome = owner.establish()
             if outcome.accepted:
+                if (
+                    self.mpeg_generation_factory is not None
+                    and outcome.session_id is not None
+                ):
+                    try:
+                        generation = self.mpeg_generation_factory(outcome.session_id)
+                        owner.attach_mpeg_generation(generation)
+                    except (RuntimeError, ValueError, mpeg.MpegGenerationError):
+                        return owner._finish(
+                            accepted=True,
+                            rejection_reason=None,
+                            protocol_failed=True,
+                        )
                 outcome = owner.wait_until_session_end()
             return outcome
         finally:
