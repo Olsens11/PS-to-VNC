@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0047
-RECORDED_AT=2026-09-22T15:43:20-04:00
+STATE_REVISION=0048
+RECORDED_AT=2026-09-22T21:22:00-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0046
-SUPERSEDES_FOREMAN_STATE_REVISION=0046
+BASED_ON_FOREMAN_STATE_REVISION=0047
+SUPERSEDES_FOREMAN_STATE_REVISION=0047
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,22 +14,26 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0047 independently accepts the completed
-`A003-RFB-PROVIDER-FAILURE-REPRESENTATION-R16A` source baton and activates the
-bounded downstream recovery packet `A003-RFB-FAILURE-STOP-RESTART-POLICY-R16B`.
-R16A supplies the missing typed RFB-provider terminal fact that caused original
-R16 to stop truthfully `BLOCKED`: Pi provider CONNECT, READ/EOF, and WRITE
-failure can now cross the existing Wire owner seam to PS2 without falsely
-turning the still-healthy physical Wire Session into a Transport failure.
+Revision 0048 independently accepts `A003-RFB-FAILURE-STOP-RESTART-POLICY-R16B`
+at source authority `3310568e6c35ef59d77ee6075f1f9ea5a561476e` and consumes its
+immutable Reconstruction closeout `856a1065f5941c5149518ffe2a322bc81fe91642`.
 
-The original R16 remains historically `BLOCKED_FOREMAN_CONFIRMED`; revision 0047
-does not rewrite that outcome into completion. R16A is the accepted prerequisite
-that resolves its representation blocker. R16B owns the remaining Application
-failure-convergence, complete-stop-before-restart, and fresh-authority recovery
-work.
+Application now treats the accepted R16A CONNECT, READ/EOF and WRITE provider
+terminal causes as explicit recovery-policy inputs. A failed ordinary-RFB
+attempt admits no further provider-bound input/RFB work; replacement is allowed
+only after input shutdown proves worker dormancy and Transport abort proves the
+sole receiver/session retired. The replacement uses ordinary startup and fresh
+network/Q4/Transport/RFB/framebuffer/input authority. Generic physical/RFB I/O
+failure remains distinct and fatal under this bounded policy.
+
+The next dependency is not another RFB repair. Maintained PS2 source already
+contains the accepted MPEG START/RETIRE Transport relay and MPEG logical channel,
+while maintained Pi product source still explicitly contains no MPEG rider or
+producer. Revision 0048 therefore activates the bounded Pi-side MPEG
+generation-control/producer ownership packet before final Application MPEG
+orchestration.
 
 No current-source hardware qualification is claimed by this state.
-
 ## Temporal architecture reconciliation
 
 Wire Runtime Decisions revision 0011 and Architecture Overlay revision 0007
@@ -61,7 +65,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R15_INTEGRATED__R16_BLOCKER_CONFIRMED__R16A_PROVIDER_FAILURE_REPRESENTATION_FOREMAN_ACCEPTED__R16B_RFB_FAILURE_STOP_RESTART_POLICY_RECONSTRUCTION_ACTIVE__PI_MPEG_CONTROL_PRODUCER_DEPENDENCY_QUEUED__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
+`A003_R15_INTEGRATED__R16A_PROVIDER_FAILURE_REPRESENTATION_ACCEPTED__R16B_RFB_RECOVERY_FOREMAN_ACCEPTED__PI_MPEG_CONTROL_PRODUCER_RECONSTRUCTION_ACTIVE__FINAL_APPLICATION_ORCHESTRATION_DEPENDENCY_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -84,17 +88,13 @@ PI_RFB_WIRE_RELAY_CORE_FOREMAN_ACCEPTED=YES
 PI_NATIVE_RFB_PROVIDER_AUTHORITY_FOREMAN_ACCEPTED=YES
 PI_RFB_INTERNAL_PROVIDER_ENDPOINT_FOREMAN_ACCEPTED=YES
 PI_RFB_ATTACHMENT_QUIESCE_FOREMAN_ACCEPTED=YES
-RFB_QUIESCE_WAKE_DEFECT=CLOSED
 RFB_SHARED_RUNTIME_PROFILE=FOREMAN_ACCEPTED
-RFB_SESSION_COMPOSITION_CONFIG=SHARED_PROFILE_FOREMAN_ACCEPTED
 APPLICATION_RFB_ACTIVATION=FOREMAN_ACCEPTED
-APPLICATION_ACTIVATION=RFB_ONLY_FOREMAN_ACCEPTED
 RFB_PROVIDER_FAILURE_REPRESENTATION=FOREMAN_ACCEPTED
-RFB_FAILURE_RESTART_POLICY=RECONSTRUCTION_ACTIVE
-PI_MPEG_CONTROL_PRODUCER_OWNER=DEPENDENCY_QUEUED
+RFB_FAILURE_RESTART_POLICY=FOREMAN_ACCEPTED
+PI_MPEG_CONTROL_PRODUCER_OWNER=RECONSTRUCTION_ACTIVE
 A003_APPLICATION_ORCHESTRATION=DEPENDENCY_QUEUED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
-
 ## Accepted R16A authority
 
 PACKET_ID=A003-RFB-PROVIDER-FAILURE-REPRESENTATION-R16A
@@ -203,49 +203,141 @@ R16A_HARDWARE_QUALIFIED=NO
 The new linked identity is reproducible evidence only. It does not inherit
 hardware qualification from earlier H1/checkpoint or RFB-only ELFs.
 
-## Governing invariants for R16B
+## Accepted R16B authority
 
-1. Application owns product recovery policy. RFB, Transport and the Pi attachment
-   expose mechanism/domain facts and retirement operations; none may silently
-   acquire retry/reconnect/restart policy.
-2. The accepted R16A provider-terminal representation is frozen for R16B.
-   Header/framing version 1, Q4 product compatibility 2, ERROR=7/channel-1/4-byte
-   reason semantics and malformed-frame rules must not be redesigned here.
-3. Provider failure remains distinct from physical Wire failure. Application may
-   deliberately choose teardown as policy, but mechanism must not falsify which
-   domain actually failed.
-4. Once a typed provider-terminal fact reaches Application, the failed ordinary
-   RFB attempt admits no new RFB/input work and converges monotonically toward
-   stop.
-5. Complete stop is an observed owner-state fact, not elapsed time. Input,
-   current RFB use, Transport receive/runtime ownership, the current physical
-   descriptor/session, and all attempt-scoped authority must reach their proper
-   retirement boundaries before replacement authority is admitted.
-6. The dead R13 Pi attachment is never rebound. Recovery that needs ordinary RFB
-   again must acquire a fresh attachment through fresh accepted authority.
-7. If the old Wire/Application session is retired to recover RFB, restoration
-   uses a fresh network connection and fresh Q4 Wire Session identity. The old
-   session identity is never relabeled as the new attempt.
-8. No stale Transport access ticket, channel credit, sequence state, provider
-   descriptor, private wake descriptor, RFB parser/session state, framebuffer
-   validity, published input state or input-worker state may become authority for
-   the replacement attempt.
-9. A successfully completed stop does not imply successful restart. A fresh
-   connect/Q4/attachment/RFB startup must independently succeed before ordinary
-   RFB is healthy again.
-10. Delays/backoff may only pace explicit recovery operations; no timeout, sleep,
-    poll count or retry count is proof that an old owner retired or a new owner
-    became healthy.
-11. Existing R13 finite quiesce semantics and the singular selected R14
-    32768/8192/16384/63 profile remain unchanged. R16B must not duplicate or
-    retune those values.
-12. No AUDIO, MPEG, CONFIG-on-Wire, heartbeat/liveness, direct-RFB fallback or
-    final all-guns orchestration is authorized by this packet.
-13. Current-source host/build evidence is not PS2 hardware qualification.
+PACKET_ID=A003-RFB-FAILURE-STOP-RESTART-POLICY-R16B
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0047
+ASSIGNING_FOREMAN_COMMIT=ee0fd512175036a6e931c05701867a3b2069b9ec
+ASSIGNING_FOREMAN_LOG_COMMIT=353f51c248235a9d6c1c1e5d7078de21dc6d1a74
+RECONSTRUCTION_STARTING_COMMIT=353f51c248235a9d6c1c1e5d7078de21dc6d1a74
+R16B_FINAL_SOURCE_COMMIT=3310568e6c35ef59d77ee6075f1f9ea5a561476e
+R16B_RECONSTRUCTION_LOG_COMMIT=856a1065f5941c5149518ffe2a322bc81fe91642
+R16B_PRE_LOG_COMMIT_COUNT=8
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260922T204600-0400__reconstruction__a003-mpeg-generation__interactive.md`
+
+Independent Foreman review accepts all twelve R16B criteria:
+
+1. CONNECT, READ/EOF and WRITE provider-terminal causes reach an explicit
+   Application-owned recovery branch without becoming physical-Wire failure.
+2. Once that typed failure is observed, the failed attempt admits no further
+   controller/keyboard/mouse publication, RFB update request or parser service.
+3. Input shutdown must return its owner-proven completion result and Transport
+   abort must retire the sole receiver/session before replacement admission.
+4. Failure of either retirement proof blocks replacement and converges to the
+   ordinary fatal path rather than force-deleting or relabeling live ownership.
+5. Each replacement uses a newly connected descriptor and ordinary Q4/Transport
+   startup; canonical Transport fencing keeps stale access from a dead Wire
+   Session out of the successor.
+6. RFB session/parser state, framebuffer validity, input runtime and published
+   neutral pointer authority are freshly initialized on each attempt.
+7. Pi tests prove successive Wire Sessions allocate distinct session identities
+   and distinct R13 attachment objects rather than rebinding the failed one.
+8. Generic RFB/physical I/O failure remains separate from the three typed
+   provider-local causes and does not enter provider recovery.
+9. No retry delay, backoff, timeout-as-success or in-place component restart was
+   added. Successful retirement only permits another ordinary startup attempt.
+10. R16A provider-terminal bytes/Q4 compatibility, R13 finite quiesce and R14
+    selected RFB values are unchanged. The two R13 fixture edits only wait for
+    explicit owner-state publication after already-observed serialized markers.
+11. No AUDIO, MPEG, CONFIG-on-Wire, heartbeat, direct-RFB fallback or final
+    all-guns orchestration product source entered R16B.
+12. Exact final source and immutable-log heads are green under canonical host,
+    project, strict-dictionary, pinned PS2 compile/link and reproducibility
+    evidence.
+
+R16B_SOURCE_COMPLETE=YES
+R16B_HOST_TESTED=YES
+R16B_PROJECT_CHECK=PASS
+R16B_STRICT_DICTIONARIES=PASS
+R16B_PS2_COMPILE=PASS
+R16B_PS2_LINK=PASS
+R16B_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R16B_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_35804891365
+R16B_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_35805083590
+R16B_INDEPENDENT_VALIDATION=NOT_RUN
+R16B_OPERATOR_OBSERVED=NO
+R16B_HARDWARE_QUALIFIED=NO
+
+R16B changes linked current-source identity to:
+
+`ELF_PRISTINE_SHA256=9b98aaa5b5239eec42545d111e7d32cedb418273fe4092f3deb5d8bd6690c40c`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=71846f590b0f46af905311d55a074e44ac1d514887dbdc7e87a5bd7472b18b3f`
+`PT_LOAD_BYTES=487188`
+
+These are build/reproducibility facts only. Earlier physical qualification does
+not transfer to these changed bytes.
+
+## Next dependency decision
+
+Current maintained PS2 authority already provides:
+
+- exact MPEG START kind 11 on control channel 0, flags zero, 44-byte payload;
+- exact MPEG RETIRE kind 10 on control channel 0, flags zero, 12-byte payload;
+- MPEG generation-control version 1 and big-endian payload codecs;
+- logical MPEG DATA on channel 4;
+- MPEG queue/credit/activity state and initial channel-4 credit;
+- exact RETIRE-completion reception through Transport;
+- the accepted Configuration-owned MPEG runtime profile.
+
+Maintained Pi product source still explicitly excludes MPEG control, MPEG DATA
+scheduling and an MPEG producer. Historical H1 code proves useful mechanisms
+(exact prepared generation, exact capture geometry, one producer, bounded
+buffering, generation-specific emission leases and retirement ordering), but
+that experimental class/process structure is reference evidence, not a merge
+target.
+
+The smallest dependency before final Application orchestration is therefore a
+maintained Pi-side exact-generation owner that consumes the already-accepted PS2
+control representation and relays producer bytes through the existing sole Wire
+owner. It must preserve one physical connection and must not invent a second
+session/generation protocol.
+
+## Governing invariants for R17
+
+1. `WireConnectionOwner` remains the sole Pi physical receive/send/sequence
+   owner. MPEG producer/control code never reads or writes the PS2-facing socket.
+2. Current PS2 MPEG START/RETIRE bytes are authority. R17 mirrors them exactly;
+   it does not revive older experimental START-as-DATA representations or add a
+   new generation tag to every MPEG DATA frame.
+3. START is exact active-Wire-session and exact nonzero-generation state. One
+   generation may be prepared/live/retiring at a time; stale or mismatched
+   session/generation control fails at the smallest safe scope.
+4. The accepted base rectangle is the Pi capture rectangle. Suppression is the
+   exact generation-specific outer footprint. Inner matte remains PS2-local and
+   is never sent to or reconstructed by the Pi.
+5. Producer emission starts only after exact-generation capture/suppression
+   preparation succeeds and only while channel-4 credit permits. Pi memory must
+   remain bounded; lack of credit is backpressure, not permission to accumulate
+   an unbounded encoded stream.
+6. Every MPEG DATA frame is serialized by the existing sole Wire owner and
+   consumes only channel-4 credit. RFB credit/state remains independent.
+7. Retirement closes new generation-N emission admission first, waits for any
+   already-admitted physical-send lease to finish, then retires capture/
+   suppression/producer ownership. RETIRE completion is emitted only after that
+   exact Pi retirement proof succeeds.
+8. A stuck or failed producer may fail closed; a timeout may detect failure but
+   must never be treated as proof that live ownership retired successfully.
+9. The dead generation is never rebound. Generation N+1 receives fresh producer,
+   capture/suppression and local queue/buffer authority after N is fully retired.
+10. Existing Q4/R16A/R16B RFB recovery, R13 quiesce, R14 RFB values and accepted
+    PS2 MPEG Transport/decoder/presentation mechanisms remain unchanged.
+11. R17 does not perform final PS2 Application MPEG activation, calibration UI
+    policy, first-frame ownership promotion, decoder/presentation orchestration,
+    AUDIO activation, heartbeat or final all-guns composition.
+12. A003/A004 exact-generation geometry/profile facts remain singular authority.
+    If Pi encoding requires a value not presently available without duplicating
+    or inventing product tuning, Reconstruction must introduce the smallest
+    owner-correct projection from accepted Configuration authority or return
+    BLOCKED; it may not silently copy laboratory knobs.
 
 ## ACTIVE RECONSTRUCTION PACKET
 
-PACKET_ID=A003-RFB-FAILURE-STOP-RESTART-POLICY-R16B
+PACKET_ID=A003-PI-MPEG-CONTROL-PRODUCER-R17
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a003-mpeg-generation
@@ -253,166 +345,146 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0047
-BASED_ON_ACCEPTED_R16A_SOURCE=961ad59d82b1c865b9d330a7dd9cdc1ed1e32528
-BASED_ON_R16A_LOG=a307de050c015a46548647b45ac9f145b8ba8e71
+BASED_ON_FOREMAN_STATE_REVISION=0048
+BASED_ON_ACCEPTED_R16B_SOURCE=3310568e6c35ef59d77ee6075f1f9ea5a561476e
+BASED_ON_R16B_LOG=856a1065f5941c5149518ffe2a322bc81fe91642
 
 ### Objective
 
-Complete the recovery-policy work that original R16 could not lawfully perform
-before R16A existed. Make the accepted typed RFB-provider terminal cause reach an
-explicit Application-owned recovery decision, stop the failed ordinary-RFB
-attempt completely, and restore ordinary RFB only through fresh session-scoped
-authority with no stale-state reuse.
+Reconstruct the smallest maintained Pi-side MPEG generation-control and producer
+boundary required by the already-accepted PS2 MPEG Transport relay. The Pi must
+decode/validate exact START, prepare one exact generation, own its bounded
+capture/encoder lifetime, emit MPEG DATA only through channel 4 under Transport
+credit and sole-Wire serialization, and complete exact RETIRE only after the
+generation's Pi-owned capture/suppression/producer work is proven retired.
 
-R16B is an Application recovery/lifecycle packet. It is not permission to alter
-the accepted R16A Wire contract, R13 quiesce mechanism, R14 tuning, media
-activation, or final all-guns orchestration.
+This packet productizes the missing Pi mechanism only. It does not wire final
+Application MPEG policy or claim presentation/decoder hardware qualification.
 
 ### Required behavior
 
-1. **Application observes the typed terminal cause.** CONNECT, READ/EOF and WRITE
-   provider terminal results exposed by accepted R16A must reach an explicit
-   Application recovery-policy branch. Do not turn them back into an anonymous
-   physical-I/O failure merely to reuse an old fatal path.
-2. **Close admission immediately for the failed attempt.** After Application has
-   the terminal RFB fact, no new controller/keyboard/mouse publication, RFB
-   update request, or other provider-bound ordinary-RFB work may be admitted to
-   that failed attempt.
-3. **Converge monotonically to complete stop.** Drive the attempt's actual owners
-   through their documented shutdown/release boundaries. Do not restart a failed
-   subcomponent inside its still-live old attempt as a shortcut.
-4. **Prove input retirement.** Any input worker/runtime belonging to the failed
-   attempt must be shut down to its owned completion boundary before a later
-   attempt can publish fresh input authority.
-5. **Prove Transport/session retirement.** If recovery retires the containing
-   Wire session, Application must use the existing Transport owner seam so the
-   sole receiver is interrupted, proven complete, and released before a new
-   physical/Q4 session is admitted. Application never directly races Transport
-   for descriptor ownership.
-6. **Fresh authority on restoration.** A recovery attempt must acquire a fresh
-   network connection, fresh accepted Q4 session identity, fresh Transport
-   runtime/access authority, fresh Pi R13 attachment/factory result, freshly
-   initialized RFB parser/session state, fresh framebuffer validity, and fresh
-   input-runtime/publication state as applicable to that attempt.
-7. **No dead-authority rebind.** Never relabel/reuse the failed attachment, old
-   Q4 identity, old Transport ticket/credit/sequence state, old provider/wake
-   descriptors, old parser state, old framebuffer validity or old input-worker
-   state as replacement authority.
-8. **Keep failure domains truthful.** Provider-local terminal cause and genuine
-   physical Wire/Transport failure remain distinguishable mechanism facts even
-   if Application chooses a common outer teardown operation for both. R16B must
-   not weaken R16A's `runtime->failed` distinction.
-9. **Restart success requires fresh proof.** Do not report restored ordinary RFB
-   until the new attempt has independently completed the required connect/Q4/RFB
-   startup and reached the same ordinary healthy boundary used by normal startup.
-10. **No success by delay.** A delay/backoff may pace retry attempts if the clean
-    Application policy genuinely needs one, but it cannot prove retirement,
-    provider health, Wire acceptance, or successful RFB startup. Do not use a
-    timeout to force-delete a possibly-live owner.
-11. **Preserve accepted lower-layer contracts.** R16A ERROR/Q4 compatibility,
-    R13 finite quiesce, one physical Wire owner and the selected R14 profile stay
-    byte-for-byte/semantically unchanged except for test fixtures that must
-    observe them. Do not introduce another protocol marker/version or copy the
-    selected tuning literals into recovery policy.
-12. **No media scope.** Do not activate AUDIO, MPEG START/RETIRE, Pi MPEG
-    production, decoder/presentation recovery, CONFIG delivery, heartbeat, or
-    final orchestration.
-13. **Stable repeated-attempt evidence.** Tests must prove at least one complete
-    typed-provider-failure -> stop -> fresh-attempt -> ordinary-RFB-success cycle
-    and a repeated cycle or equivalent deterministic fixture demonstrating stale
-    attempt authority cannot contaminate the next attempt.
-14. **Keep docs/dictionaries/build boundary current.** Update directly affected
-    lifecycle/development documentation and symbol dictionaries, and preserve
-    canonical host/project/dictionary/PS2 compile/link evidence for linked source
-    changes.
+1. **Exact symmetric control codec.** Add/complete maintained Pi protocol support
+   for the current PS2 START/RETIRE representations exactly: kind 11/10, control
+   channel 0, zero flags, generation-control version 1, 44/12-byte big-endian
+   payloads. Malformed or wrong-envelope control is rejected.
+2. **Session/generation validation.** START must match the active authoritative
+   Q4 session identity, use a nonzero fresh generation, and pass exact geometry
+   bounds/alignment/containment checks against injected/current desktop geometry.
+3. **One exact prepared/live owner.** Only one generation may be prepared/live/
+   retiring. Duplicate, older, mismatched-session or otherwise stale START/
+   RETIRE cannot replace current authority.
+4. **Exact capture/suppression preparation.** Derive capture from START base
+   geometry and suppression from START outer geometry. Preparation must finish
+   before emission admission opens; failed preparation leaves no falsely-live
+   generation.
+5. **Bounded producer ownership.** Launch/own one generation-scoped producer with
+   bounded buffering/backpressure and explicit stop/retirement outcome. Preserve
+   exact producer failure rather than converting it into successful EOF.
+6. **Channel-4 credit and sole-owner send.** Accept MPEG credit only for channel
+   4; producer code publishes bytes to the Wire owner rather than sending
+   physically. The Wire owner allocates global sequence and sends DATA/channel4
+   in bounded fragments no larger than accepted Wire payload limits.
+7. **Exact emission lease/fence.** New generation-N emission closes atomically
+   when retirement begins. RETIRE waits for every already-admitted N send lease
+   to finish before producer/capture retirement and completion publication.
+8. **Retirement completion means real Pi retirement.** RETIRE completion echoes
+   the exact accepted version/session/generation only after producer, capture and
+   generation-specific suppression are no longer live. Failure to prove that
+   state fails closed and emits no false completion.
+9. **Fresh repeated generation.** After successful retirement, a later fresh
+   generation can start with new producer/capture/suppression/buffer authority;
+   old local bytes, leases, credit bookkeeping or status cannot contaminate it.
+10. **Preserve other riders/contracts.** Existing RFB attachment, R16A ERROR, R13
+    quiesce, Q4 compatibility and singular R14 profile behavior remain intact;
+    MPEG activity does not create a second physical owner or cross-rider credit.
+11. **No final-orchestration expansion.** Do not activate PS2 MPEG worker/
+    decoder/presentation policy, calibration acceptance, first-frame ownership,
+    AUDIO, CONFIG delivery, heartbeat, direct-RFB fallback, or all-guns
+    Application orchestration.
+12. **Document maintained ownership.** Update Pi README/symbol dictionaries and
+    the smallest directly affected architecture/development record so exact
+    producer/control/retirement ownership is recoverable without H1 history.
 
 ### Acceptance criteria
 
-- A003-R16B-C1 TYPED_PROVIDER_FAILURE_REACHES_APPLICATION_POLICY
-- A003-R16B-C2 FAILED_ATTEMPT_ADMISSION_CLOSES_BEFORE_TEARDOWN
-- A003-R16B-C3 INPUT_RFB_TRANSPORT_COMPLETE_STOP_PROVEN
-- A003-R16B-C4 DEAD_ATTEMPT_AUTHORITY_NEVER_REBOUND
-- A003-R16B-C5 RESTORATION_USES_FRESH_NETWORK_Q4_TRANSPORT_AND_ATTACHMENT_AUTHORITY
-- A003-R16B-C6 RFB_FRAMEBUFFER_INPUT_STATE_FRESH_ON_RESTART
-- A003-R16B-C7 STALE_TICKET_CREDIT_SEQUENCE_PROVIDER_WAKE_AND_INPUT_STATE_CONTAINED
-- A003-R16B-C8 PHYSICAL_WIRE_FAILURE_REMAINS_DISTINCT_FROM_PROVIDER_FAILURE
-- A003-R16B-C9 NO_SUCCESS_BY_DELAY_OR_IMPLICIT_COMPONENT_RESTART
-- A003-R16B-C10 R16A_R13_R14_LOWER_LAYER_CONTRACTS_UNCHANGED
-- A003-R16B-C11 NO_MEDIA_PROTOCOL_HEARTBEAT_OR_RETUNE_SCOPE_CREEP
-- A003-R16B-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A003-R17-C1 PI_MPEG_CONTROL_CODEC_EXACTLY_MATCHES_ACCEPTED_PS2
+- A003-R17-C2 START_VALIDATES_ACTIVE_SESSION_GENERATION_AND_GEOMETRY
+- A003-R17-C3 ONE_EXACT_GENERATION_OWNER_STALE_CONTROL_REJECTED
+- A003-R17-C4 CAPTURE_AND_SUPPRESSION_PREPARED_FOR_EXACT_GENERATION
+- A003-R17-C5 PRODUCER_LIFETIME_AND_BUFFERING_BOUNDED_FAIL_CLOSED
+- A003-R17-C6 CHANNEL4_CREDIT_AND_SOLE_WIRE_SERIALIZATION_PRESERVED
+- A003-R17-C7 RETIRE_CLOSES_ADMISSION_AND_DRAINS_INFLIGHT_SEND_LEASES
+- A003-R17-C8 RETIRE_COMPLETION_ONLY_AFTER_REAL_PI_RETIREMENT
+- A003-R17-C9 REPEATED_GENERATION_USES_FRESH_AUTHORITY_NO_STALE_REBIND
+- A003-R17-C10 RFB_Q4_R16A_R13_R14_AND_PS2_MPEG_CONTRACTS_UNCHANGED
+- A003-R17-C11 NO_APPLICATION_PRESENTATION_AUDIO_HEARTBEAT_OR_FINAL_SCOPE_CREEP
+- A003-R17-C12 HOST_PROJECT_DICTIONARY_AND_BUILD_EVIDENCE_GREEN
 
-All twelve criteria must be MET for source acceptance. If current owner seams
-cannot prove complete stop/fresh authority without adding a missing bounded
-lifecycle interface, Reconstruction may add the smallest packet-local interface
-within Application/RFB/Transport ownership or return `BLOCKED` with the exact
-conflicting authority. It must not hide uncertainty behind sleeps, forced owner
-deletion, or protocol redesign.
+All twelve criteria must be MET for source acceptance. A truthful BLOCKED result
+is permitted if current Configuration/desktop/suppression owner seams cannot
+supply a required fact without inventing duplicate authority; identify the exact
+missing interface rather than importing H1 scaffolding or hard-coding an
+unowned value.
 
 ### Required evidence
 
-R16B must preserve deterministic executable/source evidence that distinguishes
-at least:
+R17 must preserve deterministic evidence for at least:
 
-1. all three accepted typed provider causes reaching the Application policy seam;
-2. no new ordinary-RFB/input admission after the terminal cause is observed;
-3. input-worker shutdown completion before replacement input authority;
-4. Transport sole-receiver/session shutdown completion before fresh Q4 authority;
-5. old versus new Q4 session identity and old versus new attempt-scoped
-   Transport/RFB/input state;
-6. fresh Pi attachment/factory allocation for the replacement Wire Session,
-   using existing accepted R15/R13 authority or a direct regression fixture;
-7. stale old access/credit/sequence/provider/wake/parser/framebuffer/input state
-   being rejected, unreachable, or otherwise incapable of contaminating the new
-   attempt;
-8. provider-local failure remaining distinct from genuine physical Wire failure;
-9. fresh ordinary-RFB startup success after complete retirement;
-10. at least one repeated recovery cycle or equivalent deterministic
-    generation/attempt-fencing proof;
-11. unchanged R16A exact representation/Q4-v2 compatibility, unchanged R13
-    quiesce semantics and singular R14 selected profile;
-12. canonical host tests, project check, strict dictionaries and pinned PS2
-    compile/link/current-source reproducibility for the exact final source.
+1. byte-for-byte Pi/PS2 START and RETIRE codec symmetry plus malformed cases;
+2. active-session mismatch, zero/stale/repeated generation, geometry alignment,
+   bounds and suppression-containment rejection;
+3. exactly one prepared/live/retiring generation and no replacement while live;
+4. capture base geometry distinct from outer suppression geometry;
+5. producer launch failure and producer retirement failure remaining fail-closed;
+6. initial/returned channel-4 credit bounding DATA emission and independent RFB
+   credit behavior;
+7. sole Wire send/sequence ownership for MPEG DATA and RETIRE completion;
+8. retirement racing an in-flight emission lease, proving completion orders
+   strictly after that lease and real producer cleanup;
+9. no RETIRE completion on unproven/stuck producer retirement;
+10. generation N retirement followed by clean N+1 startup with no stale bytes,
+    lease, credit, suppression or producer identity reused;
+11. unchanged Q4/RFB/R13/R14 and current PS2 MPEG control tests;
+12. canonical host tests, project check, complete strict dictionaries and
+    pinned PS2 compile/link/current-source reproducibility if PS2/build inputs
+    change.
 
 ### Authorized source surface
 
-R16B may modify only the smallest justified subset of:
+R17 may modify only the smallest justified subset of:
 
-- `src/app.c` / `src/app.h`;
-- `src/rfb/rfb_session.c` / `src/rfb/rfb_session.h` only if Application needs a
-  narrow public lifecycle/status seam not already exposed by R16A;
-- `src/rfb/bridge.c` / `src/rfb/bridge.h` only for the same narrow public seam;
-- `src/transport/bridge.c` / `src/transport/bridge.h` and
-  `src/transport/runtime.c` / `src/transport/runtime.h` only if a missing
-  explicit stop/status boundary is proven necessary for Application-owned
-  complete-stop evidence; do not alter accepted R16A protocol mechanics;
-- directly affected Application/RFB/Transport test fixtures;
-- directly affected source-symbol dictionaries and lifecycle/development docs;
-- Pi test fixtures only where needed to prove existing fresh-per-Wire-session
-  attachment authority; Pi product RFB/Wire mechanism is not open for redesign.
+- `pi/wire_protocol.py`;
+- `pi/wire_server.py` and/or `pi/wire_runtime.py` for sole-owner MPEG dispatch,
+  credit and serialization mechanics;
+- new maintained `pi/` MPEG generation/producer/capture-suppression source files
+  when a separate responsibility is genuinely earned;
+- `pi/README.md` and `pi/SYMBOLS.md`;
+- directly affected Pi/protocol/integration fixtures;
+- directly affected development/architecture documentation and dictionary/
+  topology/build tooling;
+- Configuration projection source/tooling only if required to expose an already-
+  accepted MPEG value to the Pi without duplicating authority. Selected values
+  may not be retuned and CONFIG-on-Wire may not be broadened.
 
-A need to change `pi/wire_protocol.py`, `src/transport/protocol.*`, R13 quiesce
-bytes, R14 selected values, AUDIO/MPEG product source, or final orchestration is
-outside this packet and requires a new Foreman decision.
+PS2 Application, MPEG decoder/worker/backend, Display/Presentation, Input/UI,
+RFB product source, AUDIO product source, R13/R14 semantics and final all-guns
+orchestration are not authorized by R17.
 
 ### Required checks before handoff
 
-Run the repository's canonical host tests and project check, the complete strict
-dictionary audit, and pinned PS2 compile/link/current-source reproducibility when
-linked source changes. Preserve exact new linked identity/PT_LOAD evidence if
-bytes change.
+Run the canonical host tests and project check, complete strict source-dictionary
+audit, focused Pi MPEG protocol/generation tests, and pinned PS2 compile/link/
+current-source reproducibility whenever linked/build-input bytes change. Preserve
+exact linked identity/PT_LOAD evidence for any changed PS2 bytes.
 
-At shift end, emit exactly one immutable Reconstruction work log under
-`docs/ledge/work-log/` following revision 0007 of its governing contract. Return
-the baton only after that record exists.
+At shift end emit exactly one immutable Reconstruction record under
+`docs/ledge/work-log/` following revision 0007, then stop and return the baton.
 
 ## Current hardware debt
 
-R16A source/build acceptance does not qualify its new linked PS2 bytes, Q4-v2
-compatibility, provider-terminal behavior, or any future R16B recovery behavior
-on physical hardware. Existing earlier hardware evidence remains historical
-provenance for the exact binaries/workloads that produced it.
+R16B's current linked bytes and R16A/R16B recovery behavior remain hardware
+unqualified. R17 Pi source will likewise begin as source/host/machine evidence
+only. Historical H1 producer/generation hardware results are mechanism
+provenance, not qualification transfer to reconstructed Pi product source.
 
-Current source may continue under this debt because
-`HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO`; no later state may silently upgrade
-CI, compile, link or reproducibility evidence into `HARDWARE_QUALIFIED`.
+HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
