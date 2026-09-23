@@ -21,6 +21,7 @@ import mpeg_runtime_profile_generated as generated
 
 @dataclass(frozen=True)
 class MpegProducerProfile:
+    channel_window_bytes: int
     buffer_capacity: int
     max_width: int
     max_height: int
@@ -32,6 +33,7 @@ def selected_mpeg_producer_profile() -> MpegProducerProfile:
     """Return the one Configuration-owned Pi producer projection."""
 
     values = MpegProducerProfile(
+        channel_window_bytes=generated.MPEG_CHANNEL_WINDOW_BYTES,
         buffer_capacity=generated.MPEG_PRODUCER_BUFFER_BYTES,
         max_width=generated.MPEG_MAX_WIDTH,
         max_height=generated.MPEG_MAX_HEIGHT,
@@ -39,7 +41,8 @@ def selected_mpeg_producer_profile() -> MpegProducerProfile:
         fps_denominator=generated.MPEG_FPS_DENOMINATOR,
     )
     if (
-        values.buffer_capacity <= 0
+        values.channel_window_bytes <= 0
+        or values.buffer_capacity <= 0
         or values.max_width <= 0
         or values.max_height <= 0
         or values.max_width > 0xFFFF

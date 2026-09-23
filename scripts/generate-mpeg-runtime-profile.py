@@ -193,12 +193,14 @@ accepted capture maximums, and the selected MPEG presentation frame rate. Wire
 credit remains dynamic protocol authority and is not manufactured here.
 """
 
+MPEG_CHANNEL_WINDOW_BYTES = {window}
 MPEG_PRODUCER_BUFFER_BYTES = {queue}
 MPEG_MAX_WIDTH = {max_width}
 MPEG_MAX_HEIGHT = {max_height}
 MPEG_FPS_NUMERATOR = {fps_num}
 MPEG_FPS_DENOMINATOR = {fps_den}
 '''.format(
+        window=t["initial_credit_bytes"],
         queue=t["queue_capacity"],
         max_width=d["max_width"],
         max_height=d["max_height"],

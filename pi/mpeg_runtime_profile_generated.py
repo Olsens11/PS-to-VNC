@@ -8,6 +8,7 @@ accepted capture maximums, and the selected MPEG presentation frame rate. Wire
 credit remains dynamic protocol authority and is not manufactured here.
 """
 
+MPEG_CHANNEL_WINDOW_BYTES = 524288
 MPEG_PRODUCER_BUFFER_BYTES = 524288
 MPEG_MAX_WIDTH = 704
 MPEG_MAX_HEIGHT = 480
