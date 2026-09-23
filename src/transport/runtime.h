@@ -169,6 +169,16 @@ typedef struct pstvnc_transport_runtime {
     int mpeg_retire_submitted;
     int mpeg_retirement_latched;
     int mpeg_finalization_in_progress;
+    int mpeg_consumer_active;
+
+    /*
+     * Transaction-correlation evidence only. Transport does not allocate or
+     * interpret generation identity; it preserves the exact submitted RETIRE
+     * payload so only that transaction's echoed completion can close DATA
+     * admission for this run.
+     */
+    pstvnc_mpeg_retire_payload_t mpeg_expected_retire_completion;
+    int mpeg_expected_retire_completion_valid;
 
     pstvnc_mpeg_retire_payload_t mpeg_retire_completion;
     int mpeg_retire_completion_pending;
