@@ -106,3 +106,75 @@ drain, no timeout-as-success, fresh successor authority, and sole-Wire
 serialization. Canonical project/dictionary/PS2 build checks remain required.
 
 These are source/machine facts, not physical PS2/Pi qualification.
+
+## R18 PS2 Transport run boundary
+
+R18 adds the complementary PS2-side **Transport** mechanism required to reuse
+the already-allocated channel-4 queue safely across successive MPEG runs within
+one Wire Session. It does not move generation identity or Application policy
+into Transport.
+
+The public Transport bridge now exposes three run-boundary operations:
+
+- `pstvnc_transport_mpeg_run_open()` — opens one DATA-admission interval only
+  from clean idle Transport state;
+- `pstvnc_transport_mpeg_run_abort_pre_start()` — closes an opened boundary
+  before START only when no run bytes, credit debt, completion, producer-done or
+  activity ownership exists;
+- `pstvnc_transport_mpeg_run_finalize()` — after exact RETIRE completion has
+  been taken and the higher owner has retired its consumer, discards residual
+  old-run bytes, returns all owed channel-4 credit once through the existing sole
+  Transport sender, clears run-local state and leaves the queue allocation ready
+  for a later explicit open.
+
+Transport does not allocate a generation number for these operations. The
+existing START/RETIRE payload continues to carry the owning MPEG generation
+identity; the Transport facts only describe whether this session-scoped queue is
+currently allowed to admit channel-4 DATA and whether retirement/finalization is
+still latched.
+
+### Completion and DATA ordering
+
+Exact RETIRE completion closes DATA admission under the MPEG queue lock **before**
+the completion value is published into the control slot. Taking that completion
+clears only the one value slot; it does not reopen admission or clear the
+retirement latch.
+
+Consequently, DATA arriving after completion is a protocol failure even if the
+higher owner has already taken the completion. A later run cannot open until
+finalization succeeds.
+
+### Residual bytes and session-scoped credit
+
+Residual discard is deliberately different from decoder consumption.
+`pstvnc_transport_mpeg_channel_discard_all()` returns the exact queued byte
+count and resets ring offsets without claiming those bytes were decoded.
+
+The initial MPEG credit window remains Wire-session scoped. Normal decoder reads
+may leave consumed-byte credit withheld below the configured batch threshold.
+At run finalization Transport combines that pending consumed-credit debt with the
+exact residual-discard count and returns the sum once through its ordinary
+outbound CREDIT path. No new initial-credit grant is minted when a successor run
+opens.
+
+This is what lets one session-scoped channel window survive run transitions
+without allowing old-run queue capacity or bytes to leak into N+1.
+
+### Consumer fence and fresh reuse
+
+The higher MPEG/Application owner remains responsible for proving decoder/worker
+retirement before requesting finalization. Transport does not invent a decoder
+stop token or timeout. It does, however, refuse finalization while its own
+protected MPEG activity-wait state proves a live waiter still owns the channel.
+
+Successful finalization resets residual queue state, producer-done, pending
+credit, completion/retirement facts, activity sequence and START/RETIRE
+submission facts. The same bounded queue allocation is then reusable only
+through a fresh explicit run-open. No old run state is rebound to the successor.
+
+R18 changes no fixed PSTV framing, START/RETIRE bytes, Pi R17 producer
+mechanism, RFB/AUDIO policy, MPEG decoder/worker/presentation ownership, or
+Application activation policy.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-MPEG-TRANSPORT-RUN-BOUNDARY-R18`.

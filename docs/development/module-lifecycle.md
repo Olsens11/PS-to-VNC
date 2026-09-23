@@ -150,6 +150,20 @@ Wire loss stops the current MPEG instance.
 When a replacement Wire Session becomes active, MPEG remains stopped until its
 own start condition is satisfied again.
 
+Within one usable Wire Session, the session-scoped Transport MPEG queue may
+serve multiple non-overlapping MPEG runs. R18 makes that reuse explicit:
+Application/MPEG policy requests a clean Transport run-open before START,
+Transport closes DATA admission when exact RETIRE completion arrives, and the
+higher owner requests finalization only after its local consumer is genuinely
+retired. Finalization discards old residual bytes, returns the corresponding
+session-scoped credit, and resets only Transport-owned run-local state before a
+later run may open.
+
+This boundary does **not** make Transport the MPEG lifecycle owner. Transport
+owns DATA validity and queue/credit reuse; the MPEG/Application owners still
+decide when a run starts, when their decoder/worker has stopped, and whether a
+successor run should exist.
+
 This generalizes: Transport availability does not own module behavior.
 
 ## Transport owns cross-Wire transaction validity
