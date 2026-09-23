@@ -1,8 +1,10 @@
 /*
  * File synopsis:
  * Implements Transport's bounded logical MPEG2 ring and one-shot finite-producer
- * state. Storage mutation is deliberately synchronization-agnostic: the
- * Transport runtime serializes producer/consumer access and owns credit/event
+ * state, including the owner-correct residual-discard/reset primitives required
+ * to reuse the same session-scoped allocation across exact MPEG runs. Storage
+ * mutation is deliberately synchronization-agnostic: the Transport runtime
+ * serializes producer/consumer/finalization access and owns credit/event
  * semantics.
  *
  * Local decoder cancellation is intentionally absent here. A decoder stop must
@@ -117,4 +119,30 @@ int pstvnc_transport_mpeg_channel_producer_done(
     const pstvnc_transport_mpeg_channel_t *channel)
 {
     return channel != NULL && channel->producer_done != 0;
+}
+
+
+size_t pstvnc_transport_mpeg_channel_discard_all(
+    pstvnc_transport_mpeg_channel_t *channel)
+{
+    size_t discarded;
+
+    if (channel == NULL)
+        return 0u;
+
+    discarded = channel->byte_count;
+    channel->read_offset = 0u;
+    channel->byte_count = 0u;
+    return discarded;
+}
+
+int pstvnc_transport_mpeg_channel_reset_run_state(
+    pstvnc_transport_mpeg_channel_t *channel)
+{
+    if (channel == NULL || channel->byte_count != 0u)
+        return -1;
+
+    channel->read_offset = 0u;
+    channel->producer_done = 0;
+    return 0;
 }

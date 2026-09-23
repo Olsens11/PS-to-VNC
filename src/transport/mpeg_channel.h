@@ -2,8 +2,9 @@
  * File synopsis:
  * Defines Transport's session-local logical MPEG2 byte queue. Complete non-empty
  * channel-4 DATA is buffered here; finite-producer completion is a separate
- * Transport-owned fact published only by the future exact retirement/control
- * owner after its wire fence is proven.
+ * Transport-owned fact. Exact-run finalization may atomically discard residual
+ * bytes and reset producer/offset state only through the runtime-owned
+ * synchronization boundary.
  *
  * This storage owner does not invent a wire EOF marker, observe local decoder
  * stop, own physical receive, or perform decoder/DMA policy. Runtime
@@ -45,5 +46,15 @@ size_t pstvnc_transport_mpeg_channel_available(
     const pstvnc_transport_mpeg_channel_t *channel);
 int pstvnc_transport_mpeg_channel_producer_done(
     const pstvnc_transport_mpeg_channel_t *channel);
+
+/*
+ * Run-finalization helpers. discard_all() returns the exact residual byte count
+ * and resets ring offsets; it does not claim decoder consumption or touch the
+ * producer fact. reset_run_state() is legal only after the queue is empty.
+ */
+size_t pstvnc_transport_mpeg_channel_discard_all(
+    pstvnc_transport_mpeg_channel_t *channel);
+int pstvnc_transport_mpeg_channel_reset_run_state(
+    pstvnc_transport_mpeg_channel_t *channel);
 
 #endif
