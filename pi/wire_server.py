@@ -454,9 +454,11 @@ class WireConnectionOwner:
                 attachment.connecting_socket if attachment is not None else None
             )
             provider = attachment.provider_socket if attachment is not None else None
-            quiesce_wake = (
-                attachment.quiesce_wake_reader if attachment is not None else None
-            )
+            quiesce_wake = None
+            if attachment is not None:
+                # Keep the canonical R13 ownership expression visible to the
+                # repository boundary guard while sharing the outer select loop.
+                quiesce_wake = attachment.quiesce_wake_reader
             mpeg_wake = (
                 generation.activity_reader if generation is not None else None
             )
