@@ -614,9 +614,13 @@ class RfbAttachmentIntegrationTests(unittest.TestCase):
             self.assertTrue(controlled.closed)
             self.assertTrue(item.relay.closed)
             self.assertEqual(item.stats.provider_retirements, 1)
-            self.assertEqual(
-                item.state,
-                attachment.RfbAttachmentState.WAIT_COMPLETE,
+            # As with REQUEST, receiving COMMIT proves serialization before
+            # the sender thread necessarily publishes its adjacent local
+            # WAIT_COMPLETE state on this host scheduling slice.
+            wait_for(
+                lambda: item.state
+                is attachment.RfbAttachmentState.WAIT_COMPLETE,
+                "COMMIT sender local WAIT_COMPLETE transition",
             )
 
             peer.settimeout(0.05)
