@@ -627,6 +627,45 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_wait_activity(
     return pstvnc_transport_bridge_terminal_result();
 }
 
+pstvnc_transport_result_t pstvnc_transport_mpeg_run_open(
+    const pstvnc_transport_access_t *transport_access)
+{
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    return pstvnc_transport_runtime_mpeg_run_open(
+        &pstvnc_transport_bridge_runtime);
+}
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_run_abort_pre_start(
+    const pstvnc_transport_access_t *transport_access)
+{
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    return pstvnc_transport_runtime_mpeg_run_abort_pre_start(
+        &pstvnc_transport_bridge_runtime);
+}
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_run_finalize(
+    const pstvnc_transport_access_t *transport_access)
+{
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    return pstvnc_transport_runtime_mpeg_run_finalize(
+        &pstvnc_transport_bridge_runtime);
+}
+
 pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(
     const pstvnc_transport_access_t *transport_access)
 {

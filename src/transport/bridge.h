@@ -3,8 +3,9 @@
  * Defines Transport's single cross-component bridge. The bridge exposes the
  * product Wire establishment/availability, application-requested rider-runtime
  * lifecycle, logical RFB byte-stream/quiesce/provider-terminal processes,
- * optional logical AUDIO/MPEG2 consumer seams, and exact MPEG generation-
- * control relay operations while keeping the physical PSTV descriptor, Pi
+ * optional logical AUDIO/MPEG2 consumer seams, exact MPEG Transport run-
+ * boundary operations, and generation-control relay operations while keeping
+ * the physical PSTV descriptor, Pi
  * session identity, and sole physical-I/O runtime private to Transport.
  *
  * The bridge does not parse RFB, invent configuration defaults, play PCM,
@@ -136,6 +137,18 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_activity_snapshot(
 pstvnc_transport_result_t pstvnc_transport_mpeg_wait_activity(
     const pstvnc_transport_access_t *transport_access,
     uint32_t *activity_sequence);
+
+/*
+ * Transport-owned session-local MPEG run boundary. These calls do not allocate
+ * generation identity or decide Application/decoder policy.
+ */
+pstvnc_transport_result_t pstvnc_transport_mpeg_run_open(
+    const pstvnc_transport_access_t *transport_access);
+pstvnc_transport_result_t pstvnc_transport_mpeg_run_abort_pre_start(
+    const pstvnc_transport_access_t *transport_access);
+pstvnc_transport_result_t pstvnc_transport_mpeg_run_finalize(
+    const pstvnc_transport_access_t *transport_access);
+
 /*
  * Publish real finite MPEG producer completion after a higher owner has proven
  * the ordered producer fence. This is not decoder cancellation and does not
