@@ -1370,45 +1370,65 @@ static void test_mpeg_live_waiter_blocks_run_finalization(void)
 
 static void test_mpeg_retire_completion_must_match_submitted_transaction(void)
 {
-    pstvnc_transport_runtime_t runtime;
-    pstvnc_transport_session_config_t base = make_base_config();
-    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
-    pstvnc_mpeg_start_payload_t start;
-    pstvnc_mpeg_retire_payload_t retire;
-    pstvnc_mpeg_retire_payload_t wrong_completion;
-    uint8_t wrong_wire[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE];
+    int mismatch_case;
 
-    reset_fake_world();
-    fill_start_payload(&start);
-    retire = make_retire_payload(start.session_id, start.generation);
-    wrong_completion = retire;
-    wrong_completion.generation += 1u;
-    CHECK(pstvnc_mpeg_retire_payload_encode(
-        wrong_wire, &wrong_completion));
+    for (mismatch_case = 0; mismatch_case < 3; mismatch_case++) {
+        pstvnc_transport_runtime_t runtime;
+        pstvnc_transport_session_config_t base = make_base_config();
+        pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+        pstvnc_mpeg_start_payload_t start;
+        pstvnc_mpeg_retire_payload_t retire;
+        pstvnc_mpeg_retire_payload_t wrong_completion;
+        uint8_t wrong_wire[PSTVNC_MPEG_RETIRE_PAYLOAD_SIZE];
 
-    CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
-        &runtime, 69, &base, &mpeg) == 1);
-    CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
-    CHECK(pstvnc_transport_runtime_mpeg_run_open(
-        &runtime) == PSTVNC_TRANSPORT_OK);
-    CHECK(pstvnc_transport_runtime_mpeg_send_start(
-        &runtime, &start) == PSTVNC_TRANSPORT_OK);
-    CHECK(pstvnc_transport_runtime_mpeg_send_retire(
-        &runtime, &retire) == PSTVNC_TRANSPORT_OK);
+        reset_fake_world();
+        fill_start_payload(&start);
+        retire = make_retire_payload(start.session_id, start.generation);
+        wrong_completion = retire;
 
-    push_frame(PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE,
-        PSTVNC_TRANSPORT_CHANNEL_CONTROL, wrong_wire, sizeof(wrong_wire));
-    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
-    CHECK(runtime.failed == 1);
-    CHECK(runtime.mpeg_run_open == 1);
-    CHECK(runtime.mpeg_retirement_latched == 0);
-    CHECK(runtime.mpeg_retire_completion_pending == 0);
-    CHECK(runtime.mpeg_expected_retire_completion_valid == 1);
-    CHECK(memcmp(
-        &runtime.mpeg_expected_retire_completion,
-        &retire,
-        sizeof(retire)) == 0);
-    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+        if (mismatch_case == 0) {
+            wrong_completion.generation += 1u;
+            CHECK(pstvnc_mpeg_retire_payload_encode(
+                wrong_wire, &wrong_completion));
+        } else if (mismatch_case == 1) {
+            wrong_completion.session_id += 1u;
+            CHECK(pstvnc_mpeg_retire_payload_encode(
+                wrong_wire, &wrong_completion));
+        } else {
+            CHECK(pstvnc_mpeg_retire_payload_encode(
+                wrong_wire, &wrong_completion));
+            pstvnc_transport_write_be32(
+                &wrong_wire[0],
+                PSTVNC_MPEG_GENERATION_CONTROL_VERSION + 1u);
+        }
+
+        CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
+            &runtime, 69 + mismatch_case, &base, &mpeg) == 1);
+        CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+        CHECK(pstvnc_transport_runtime_mpeg_run_open(
+            &runtime) == PSTVNC_TRANSPORT_OK);
+        CHECK(pstvnc_transport_runtime_mpeg_send_start(
+            &runtime, &start) == PSTVNC_TRANSPORT_OK);
+        CHECK(pstvnc_transport_runtime_mpeg_send_retire(
+            &runtime, &retire) == PSTVNC_TRANSPORT_OK);
+
+        push_frame(
+            PSTVNC_TRANSPORT_FRAME_MPEG_RETIRE,
+            PSTVNC_TRANSPORT_CHANNEL_CONTROL,
+            wrong_wire,
+            sizeof(wrong_wire));
+        CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+        CHECK(runtime.failed == 1);
+        CHECK(runtime.mpeg_run_open == 1);
+        CHECK(runtime.mpeg_retirement_latched == 0);
+        CHECK(runtime.mpeg_retire_completion_pending == 0);
+        CHECK(runtime.mpeg_expected_retire_completion_valid == 1);
+        CHECK(memcmp(
+            &runtime.mpeg_expected_retire_completion,
+            &retire,
+            sizeof(retire)) == 0);
+        CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+    }
 }
 
 static void test_mpeg_finalization_fences_late_consumer_operations(void)
