@@ -174,7 +174,117 @@ static void pstvnc_transport_runtime_reset_identifiers(
     runtime->outbound_slot_semaphore_id = -1;
     runtime->outbound_ready_semaphore_id = -1;
     runtime->outbound_done_semaphore_id = -1;
+    runtime->outbound_submitter_drain_semaphore_id = -1;
     runtime->receiver_thread_id = -1;
+}
+
+static void pstvnc_transport_runtime_restore_interrupts(int prior_state)
+{
+    if (prior_state != 0)
+        (void)EIntr();
+}
+
+static int pstvnc_transport_runtime_register_outbound_submitter(
+    pstvnc_transport_runtime_t *runtime)
+{
+    int prior_state;
+
+    prior_state = DIntr();
+
+    /*
+     * This is the atomic admission boundary. A caller either becomes part of
+     * the pre-terminal drain set here, before any outbound semaphore touch, or
+     * observes terminality and returns without entering the rendezvous.
+     */
+    if (runtime->receiver_done ||
+        runtime->failed ||
+        runtime->stop_requested ||
+        runtime->outbound_submitter_count == UINT32_MAX) {
+        pstvnc_transport_runtime_restore_interrupts(prior_state);
+        return 0;
+    }
+
+    runtime->outbound_submitter_count++;
+    pstvnc_transport_runtime_restore_interrupts(prior_state);
+    return 1;
+}
+
+static int pstvnc_transport_runtime_unregister_outbound_submitter(
+    pstvnc_transport_runtime_t *runtime)
+{
+    int prior_state;
+    int signal_drain = 0;
+
+    prior_state = DIntr();
+
+    if (runtime->outbound_submitter_count == 0u) {
+        pstvnc_transport_runtime_restore_interrupts(prior_state);
+        runtime->failed = 1;
+        return 0;
+    }
+
+    runtime->outbound_submitter_count--;
+    if (runtime->outbound_submitter_count == 0u &&
+        runtime->outbound_submitter_drain_waiting)
+        signal_drain = 1;
+
+    pstvnc_transport_runtime_restore_interrupts(prior_state);
+
+    if (signal_drain &&
+        SignalSema(runtime->outbound_submitter_drain_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    return 1;
+}
+
+static void pstvnc_transport_runtime_close_outbound_admission(
+    pstvnc_transport_runtime_t *runtime)
+{
+    int prior_state = DIntr();
+
+    /*
+     * receiver_done remains the early terminal/admission-closing fact. Publish
+     * it in the same nonblocking critical section used by submitter
+     * registration so no caller can cross from unregistered to registered
+     * after terminality becomes authoritative.
+     */
+    runtime->receiver_done = 1;
+
+    pstvnc_transport_runtime_restore_interrupts(prior_state);
+}
+
+static int pstvnc_transport_runtime_wait_outbound_submitters_drained(
+    pstvnc_transport_runtime_t *runtime)
+{
+    int prior_state;
+    int wait_for_drain;
+
+    prior_state = DIntr();
+    wait_for_drain = runtime->outbound_submitter_count != 0u;
+    runtime->outbound_submitter_drain_waiting = wait_for_drain;
+    pstvnc_transport_runtime_restore_interrupts(prior_state);
+
+    if (!wait_for_drain)
+        return 1;
+
+    if (WaitSema(runtime->outbound_submitter_drain_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    prior_state = DIntr();
+    wait_for_drain = runtime->outbound_submitter_count != 0u;
+    runtime->outbound_submitter_drain_waiting = 0;
+    pstvnc_transport_runtime_restore_interrupts(prior_state);
+
+    if (wait_for_drain) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    return 1;
 }
 
 int pstvnc_transport_runtime_submit_frame(
@@ -185,29 +295,29 @@ int pstvnc_transport_runtime_submit_frame(
     const void *payload,
     size_t payload_length)
 {
-    int result;
+    int result = 0;
+    int slot_owned = 0;
 
     if (runtime == NULL ||
         (payload_length != 0u && payload == NULL) ||
         payload_length > PSTVNC_TRANSPORT_MAX_PAYLOAD ||
         !runtime->initialized ||
-        !runtime->receiver_thread_started ||
-        runtime->receiver_done ||
-        runtime->failed ||
-        runtime->stop_requested)
+        !runtime->receiver_thread_started)
+        return 0;
+
+    if (!pstvnc_transport_runtime_register_outbound_submitter(runtime))
         return 0;
 
     if (WaitSema(runtime->outbound_slot_semaphore_id) < 0) {
         runtime->failed = 1;
-        return 0;
+        goto submitter_done;
     }
+    slot_owned = 1;
 
     if (runtime->receiver_done ||
         runtime->failed ||
-        runtime->stop_requested) {
-        (void)SignalSema(runtime->outbound_slot_semaphore_id);
-        return 0;
-    }
+        runtime->stop_requested)
+        goto slot_done;
 
     memset(&runtime->outbound_work, 0, sizeof(runtime->outbound_work));
     runtime->outbound_work.kind = kind;
@@ -230,29 +340,37 @@ int pstvnc_transport_runtime_submit_frame(
         runtime->failed ||
         runtime->stop_requested) {
         runtime->outbound_pending = 0;
-        (void)SignalSema(runtime->outbound_slot_semaphore_id);
-        return 0;
+        goto slot_done;
     }
 
     if (SignalSema(runtime->outbound_ready_semaphore_id) < 0) {
         runtime->outbound_pending = 0;
         runtime->failed = 1;
-        (void)SignalSema(runtime->outbound_slot_semaphore_id);
-        return 0;
+        goto slot_done;
     }
 
     if (WaitSema(runtime->outbound_done_semaphore_id) < 0) {
         runtime->failed = 1;
-        (void)SignalSema(runtime->outbound_slot_semaphore_id);
-        return 0;
+        goto slot_done;
     }
 
     result = runtime->outbound_work.result;
 
-    if (SignalSema(runtime->outbound_slot_semaphore_id) < 0) {
+slot_done:
+    if (slot_owned &&
+        SignalSema(runtime->outbound_slot_semaphore_id) < 0) {
         runtime->failed = 1;
-        return 0;
+        result = 0;
     }
+
+submitter_done:
+    /*
+     * This decrement is intentionally after the final outbound-semaphore touch.
+     * A receiver completion that observes a zero count can therefore authorize
+     * deletion of slot/ready/done resources without racing this caller.
+     */
+    if (!pstvnc_transport_runtime_unregister_outbound_submitter(runtime))
+        result = 0;
 
     return result;
 }
@@ -971,10 +1089,11 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
     }
 
     /*
-     * Publish terminality before resolving a possibly racing outbound submitter.
-     * submit_frame() rechecks this field after publishing outbound_pending.
+     * Close outbound admission atomically before resolving a possibly racing
+     * pending item. Every caller that crossed admission earlier is already
+     * counted and must fully leave the outbound rendezvous before completion.
      */
-    runtime->receiver_done = 1;
+    pstvnc_transport_runtime_close_outbound_admission(runtime);
     pstvnc_transport_runtime_fail_pending_outbound(runtime);
 
     /*
@@ -999,6 +1118,15 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
 
     (void)pstvnc_transport_runtime_publish_audio_terminal(runtime);
     (void)pstvnc_transport_runtime_publish_mpeg_terminal(runtime);
+
+    /*
+     * R20C proved the I/O owner's own terminal work. R20D extends that no-touch
+     * edge to every submitter admitted before terminality: completion cannot be
+     * published while any such caller may still touch outbound work or one of
+     * the outbound rendezvous semaphores.
+     */
+    if (!pstvnc_transport_runtime_wait_outbound_submitters_drained(runtime))
+        runtime->failed = 1;
 
     if (runtime->receiver_done_semaphore_id >= 0 &&
         SignalSema(runtime->receiver_done_semaphore_id) < 0)
@@ -1125,6 +1253,11 @@ static int pstvnc_transport_runtime_initialize_internal(
     if (runtime->outbound_done_semaphore_id < 0)
         goto fail;
 
+    runtime->outbound_submitter_drain_semaphore_id =
+        pstvnc_transport_runtime_create_semaphore(0, 1);
+    if (runtime->outbound_submitter_drain_semaphore_id < 0)
+        goto fail;
+
     runtime->receiver_stack =
         (unsigned char *)pstvnc_transport_runtime_allocate_aligned16(
             (size_t)config->receiver_thread_stack_size,
@@ -1176,6 +1309,8 @@ static int pstvnc_transport_runtime_initialize_internal(
     return 1;
 
 fail:
+    if (runtime->outbound_submitter_drain_semaphore_id >= 0)
+        (void)DeleteSema(runtime->outbound_submitter_drain_semaphore_id);
     if (runtime->outbound_done_semaphore_id >= 0)
         (void)DeleteSema(runtime->outbound_done_semaphore_id);
     if (runtime->outbound_ready_semaphore_id >= 0)
@@ -2739,6 +2874,9 @@ int pstvnc_transport_runtime_release(
         runtime->receiver_thread_started = 0;
     }
 
+    if (runtime->outbound_submitter_drain_semaphore_id >= 0 &&
+        DeleteSema(runtime->outbound_submitter_drain_semaphore_id) < 0)
+        result = 0;
     if (runtime->outbound_done_semaphore_id >= 0 &&
         DeleteSema(runtime->outbound_done_semaphore_id) < 0)
         result = 0;

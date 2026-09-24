@@ -14,6 +14,8 @@
 #ifndef PSTVNC_TEST_TRANSPORT_HOST_KERNEL_H
 #define PSTVNC_TEST_TRANSPORT_HOST_KERNEL_H
 
+#include <pthread.h>
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
@@ -47,6 +49,26 @@ int CreateSema(ee_sema_t *semaphore);
 int DeleteSema(int semaphore_id);
 int WaitSema(int semaphore_id);
 int SignalSema(int semaphore_id);
+
+/*
+ * Host model of the EE's short interrupt-disabled critical section. Product
+ * runtime never blocks while this lock is held; it only protects admission/
+ * count publication that must be atomic with receiver terminality.
+ */
+static pthread_mutex_t pstvnc_test_interrupt_mutex =
+    PTHREAD_MUTEX_INITIALIZER;
+
+static inline int DIntr(void)
+{
+    (void)pthread_mutex_lock(&pstvnc_test_interrupt_mutex);
+    return 1;
+}
+
+static inline int EIntr(void)
+{
+    (void)pthread_mutex_unlock(&pstvnc_test_interrupt_mutex);
+    return 0;
+}
 
 int CreateThread(ee_thread_t *thread);
 int StartThread(int thread_id, void *argument);

@@ -76,6 +76,7 @@ typedef struct pstvnc_transport_runtime {
     int outbound_slot_semaphore_id;
     int outbound_ready_semaphore_id;
     int outbound_done_semaphore_id;
+    int outbound_submitter_drain_semaphore_id;
 
     int receiver_thread_id;
 
@@ -87,6 +88,22 @@ typedef struct pstvnc_transport_runtime {
     volatile int stop_requested;
     volatile int failed;
     volatile int outbound_pending;
+
+    /*
+     * R20D outbound lifetime fence.
+     *
+     * Admission/count transitions are protected by a tiny EE interrupt-disabled
+     * critical section: no blocking kernel operation occurs while interrupts
+     * are disabled. A submitter increments before touching any outbound
+     * rendezvous semaphore and decrements only after its final such touch.
+     * receiver_done atomically closes admission against that registration.
+     *
+     * The receiver is the sole drain waiter. When terminality closes with one
+     * or more registered submitters, the last departure signals the dedicated
+     * drain semaphore. That drain is part of receiver completion authority.
+     */
+    volatile uint32_t outbound_submitter_count;
+    volatile int outbound_submitter_drain_waiting;
 
     /* RFB producer activity is protected by rfb_queue_semaphore_id. */
     uint32_t activity_sequence;
