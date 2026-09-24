@@ -4,8 +4,8 @@
  * The runtime owns the sole physical-I/O thread plus synchronized logical RFB
  * and optional AUDIO/MPEG2 storage, independent per-channel flow-control/activity
  * rendezvous, one typed RFB provider-terminal fact, one bounded MPEG RETIRE-
- * completion control slot, and the receiver completion event required before
- * receiver-touched resources can be reclaimed.
+ * completion control slot, and the receiver/outbound-submitter completion
+ * fences required before Transport rendezvous resources can be reclaimed.
  *
  * This is an internal Transport boundary. It does not parse RFB, play PCM,
  * decode MPEG, decide product recovery/presentation policy, expose the physical

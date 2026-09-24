@@ -281,14 +281,34 @@ thread slot.
 
 The receiver completion event is the no-touch ownership fence. It is published
 only after the I/O owner has resolved any pending outbound submission, awakened
-an RFB writer blocked on provider credit, published terminal RFB activity, and
-published terminal AUDIO/MPEG activity for every enabled rider.
+an RFB writer blocked on provider credit, published terminal RFB activity,
+published terminal AUDIO/MPEG activity for every enabled rider, **and every
+outbound submitter admitted before terminality has finished its final outbound
+rendezvous touch**.
+
+R20D makes outbound admission and drain explicit. A caller atomically registers
+before touching the outbound slot/ready/done semaphores. Early receiver
+terminality atomically closes that registration boundary. A caller that already
+registered remains part of the drain whether it currently owns the one outbound
+slot or is queued behind it; a caller that arrives after terminality never
+touches the outbound rendezvous. Signaling `outbound_done` resolves the current
+item but is not submitter completion—the submitter remains live until it has
+consumed the result, released the slot, and unregistered.
+
+The registration/count transition and terminal admission closure use only a
+short nonblocking EE interrupt-disabled critical section. No semaphore wait,
+physical I/O, or domain work occurs with interrupts disabled. When registered
+submitters remain, the receiver waits on one private drain event; the last
+registered caller signals that event only after its final outbound-semaphore
+touch.
 
 `pstvnc_transport_runtime_wait_receiver_done()` and resource release both
-synchronize through that completion event even when the earlier terminal flag is
-already visible. The binary completion token is restored after observation so
-the completed fence remains available to a later waiter or retry rather than
-becoming a one-consumer diagnostic pulse.
+synchronize through the final receiver completion event even when the earlier
+terminal flag is already visible. The binary completion token is restored after
+observation so the completed fence remains available to a later waiter or retry
+rather than becoming a one-consumer diagnostic pulse. Therefore deletion of the
+outbound slot/ready/done/drain semaphores is authorized only after both the R20C
+I/O-owner terminal work and the R20D submitter drain are complete.
 
 Only after that fence may release inspect kernel thread status or, if the kernel
 still reports the already-no-touch owner RUNNING, force it to DORMANT before
