@@ -29,6 +29,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/main.o \
 	$(BUILD_DIR)/app.o \
 	$(BUILD_DIR)/app_mpeg_frame.o \
+	$(BUILD_DIR)/app_mpeg_run.o \
 	$(BUILD_DIR)/audio_playback.o \
 	$(BUILD_DIR)/audio_audsrv_service.o \
 	$(BUILD_DIR)/audio_session.o \
@@ -108,6 +109,9 @@ $(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics/diagnostics.h src/displa
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/app_mpeg_frame.o: src/app_mpeg_frame.c src/app_mpeg_frame.h src/mpeg/worker.h src/display/mpeg_frame.h src/display/mpeg_presentation.h src/display/mpeg_scheduler.h src/display/mpeg_compositor.h src/media/clock.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/app_mpeg_run.o: src/app_mpeg_run.c src/app_mpeg_run.h src/app_mpeg_frame.h src/config/mpeg_runtime_profile.h src/display/mpeg_presentation.h src/media/clock.h src/mpeg/ps2_decoder_backend.h src/mpeg/ps2_worker_runtime.h src/mpeg/worker.h src/rfb/flow_policy.h src/transport/bridge.h src/transport/transport.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/audio_playback.o: src/audio/playback.c src/audio/playback.h src/config/profile.h src/transport/bridge.h | $(BUILD_DIR)

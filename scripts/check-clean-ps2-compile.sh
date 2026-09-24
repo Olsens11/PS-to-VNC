@@ -76,6 +76,7 @@ SOURCES=(
     src/main.c
     src/app.c
     src/app_mpeg_frame.c
+    src/app_mpeg_run.c
     src/audio/playback.c
     src/audio/audsrv_service.c
     src/audio/session.c

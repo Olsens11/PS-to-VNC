@@ -26,7 +26,8 @@ unit: \
 	$(BUILD_DIR)/controller_event_test \
 	$(BUILD_DIR)/local_controller_test \
 	$(BUILD_DIR)/osk_direct_test \
-	$(BUILD_DIR)/app_test
+	$(BUILD_DIR)/app_test \
+	$(BUILD_DIR)/app_mpeg_run_test
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/video_mode_test
 	./$(BUILD_DIR)/rfb_wire_test
@@ -47,6 +48,7 @@ unit: \
 	./$(BUILD_DIR)/local_controller_test
 	./$(BUILD_DIR)/osk_direct_test
 	./$(BUILD_DIR)/app_test
+	./$(BUILD_DIR)/app_mpeg_run_test
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -339,6 +341,26 @@ $(BUILD_DIR)/app_test: \
 		../src/ui/local_ui_presentation.c \
 		../src/ui/osk.c \
 		../src/ui/osk_render.c \
+		-o $@
+
+$(BUILD_DIR)/app_mpeg_run_test: \
+	unit/app_mpeg_run_test.c \
+	../src/app_mpeg_run.c \
+	../src/app_mpeg_run.h \
+	../src/app_mpeg_frame.h \
+	../src/config/mpeg_runtime_profile.h \
+	../src/display/mpeg_presentation.h \
+	../src/media/clock.h \
+	../src/mpeg/ps2_decoder_backend.h \
+	../src/mpeg/ps2_worker_runtime.h \
+	../src/mpeg/worker.h \
+	../src/rfb/flow_policy.h \
+	../src/transport/bridge.h \
+	../src/transport/transport.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/app_mpeg_run_test.c \
+		../src/app_mpeg_run.c \
 		-o $@
 
 clean:
