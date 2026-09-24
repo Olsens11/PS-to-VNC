@@ -271,6 +271,34 @@ is rejected before it can affect B.
 The module need only interpret the terminal Transport condition as a reason to
 stop its current instance. It does not need to know the Wire Session number.
 
+### Receiver terminality is not reclaim completion
+
+The sole Transport physical-I/O owner deliberately publishes an early terminal
+fact before it finishes terminal dispatch. That early fact closes admission so
+a racing domain operation cannot enter a dying Wire Session, but it is not
+permission to reclaim the owner's stack, queues, semaphores, physical stream, or
+thread slot.
+
+The receiver completion event is the no-touch ownership fence. It is published
+only after the I/O owner has resolved any pending outbound submission, awakened
+an RFB writer blocked on provider credit, published terminal RFB activity, and
+published terminal AUDIO/MPEG activity for every enabled rider.
+
+`pstvnc_transport_runtime_wait_receiver_done()` and resource release both
+synchronize through that completion event even when the earlier terminal flag is
+already visible. The binary completion token is restored after observation so
+the completed fence remains available to a later waiter or retry rather than
+becoming a one-consumer diagnostic pulse.
+
+Only after that fence may release inspect kernel thread status or, if the kernel
+still reports the already-no-touch owner RUNNING, force it to DORMANT before
+deleting the thread. A failed pre-reclaim kernel-status query preserves all
+Transport ownership for a later retry. Timeouts, sleeps, or favorable scheduling
+are not completion proof.
+
+This is the R20C correction to the A001 lifecycle contract; it changes no Wire
+bytes, logical-rider semantics, or module start/stop policy.
+
 ## Transport fencing does not replace module retirement
 
 Transport and module lifecycle defend different boundaries.
