@@ -1665,11 +1665,12 @@ static void test_receiver_completion_event_is_real_no_touch_fence(void)
     wait_for_wait_readable_barrier();
 
     /*
-     * Hold a direct Transport submitter after it has published outbound_pending
-     * but before outbound-ready notification. The receiver must resolve that
-     * admitted slot on terminal exit before publishing completion.
+     * Admit a direct Transport submitter while the I/O owner is held inside the
+     * current readiness pass. The ready token may publish normally; the owner
+     * cannot consume it until after this same readiness pass handles the queued
+     * terminal frame. This leaves the submitter genuinely blocked on
+     * outbound_done without artificially preventing its R20D drain progress.
      */
-    set_outbound_ready_signal_blocked(1);
     memset(&outbound_submit, 0, sizeof(outbound_submit));
     outbound_submit.runtime = &runtime;
     outbound_submit.result = -1;
@@ -1678,8 +1679,9 @@ static void test_receiver_completion_event_is_real_no_touch_fence(void)
         NULL,
         outbound_submit_test_thread,
         &outbound_submit) == 0);
-    wait_for_outbound_ready_signal_barrier();
+    wait_for_semaphore_waiters(outbound_done_semaphore_id, 1);
     CHECK(runtime.outbound_pending == 1);
+    CHECK(runtime.outbound_submitter_count == 1u);
 
     /*
      * Hold the I/O owner at the exact final completion publication. An invalid
@@ -1718,8 +1720,7 @@ static void test_receiver_completion_event_is_real_no_touch_fence(void)
     CHECK(runtime.audio_activity_wait_armed == 0);
     CHECK(runtime.mpeg_activity_wait_armed == 0);
 
-    /* The racing outbound submitter was failed before completion publication. */
-    set_outbound_ready_signal_blocked(0);
+    /* The racing outbound submitter was failed and drained before completion. */
     CHECK(pthread_join(outbound_submit_thread, NULL) == 0);
     CHECK(outbound_submit.result == 0);
     CHECK(runtime.outbound_pending == 0);
