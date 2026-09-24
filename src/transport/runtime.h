@@ -32,6 +32,17 @@
 
 typedef pstvnc_transport_session_config_t pstvnc_transport_runtime_config_t;
 
+/*
+ * Private receiver-terminal outcome. The completion semaphore is a terminal
+ * outcome rendezvous; only PROVEN authorizes resource reclaim. FAILED is
+ * intentionally irreversible for the lifetime of this runtime.
+ */
+typedef enum pstvnc_transport_receiver_completion_outcome {
+    PSTVNC_TRANSPORT_RECEIVER_COMPLETION_PENDING = 0,
+    PSTVNC_TRANSPORT_RECEIVER_COMPLETION_PROVEN = 1,
+    PSTVNC_TRANSPORT_RECEIVER_COMPLETION_FAILED = 2
+} pstvnc_transport_receiver_completion_outcome_t;
+
 typedef struct pstvnc_transport_outbound_work {
     uint8_t kind;
     uint8_t channel;
@@ -88,6 +99,8 @@ typedef struct pstvnc_transport_runtime {
     volatile int stop_requested;
     volatile int failed;
     volatile int outbound_pending;
+    volatile pstvnc_transport_receiver_completion_outcome_t
+        receiver_completion_outcome;
 
     /*
      * R20D outbound lifetime fence.
@@ -101,6 +114,11 @@ typedef struct pstvnc_transport_runtime {
      * The receiver is the sole drain waiter. When terminality closes with one
      * or more registered submitters, the last departure signals the dedicated
      * drain semaphore. That drain is part of receiver completion authority.
+     *
+     * R20E makes that authority explicit: receiver_completion_outcome becomes
+     * PROVEN only after this drain succeeds. A wait failure or contradictory
+     * wake latches FAILED, which may wake observers but can never authorize
+     * release/reclaim or fresh runtime reuse.
      */
     volatile uint32_t outbound_submitter_count;
     volatile int outbound_submitter_drain_waiting;

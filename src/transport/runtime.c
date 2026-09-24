@@ -270,6 +270,9 @@ static int pstvnc_transport_runtime_wait_outbound_submitters_drained(
         return 1;
 
     if (WaitSema(runtime->outbound_submitter_drain_semaphore_id) < 0) {
+        prior_state = DIntr();
+        runtime->outbound_submitter_drain_waiting = 0;
+        pstvnc_transport_runtime_restore_interrupts(prior_state);
         runtime->failed = 1;
         return 0;
     }
@@ -1121,16 +1124,26 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
 
     /*
      * R20C proved the I/O owner's own terminal work. R20D extends that no-touch
-     * edge to every submitter admitted before terminality: completion cannot be
-     * published while any such caller may still touch outbound work or one of
-     * the outbound rendezvous semaphores.
+     * edge to every submitter admitted before terminality. R20E makes the
+     * result explicit: the completion event may wake observers for either
+     * PROVEN or FAILED terminal outcome, but only a successful drain may ever
+     * publish reclaim authority.
      */
-    if (!pstvnc_transport_runtime_wait_outbound_submitters_drained(runtime))
+    if (pstvnc_transport_runtime_wait_outbound_submitters_drained(runtime)) {
+        runtime->receiver_completion_outcome =
+            PSTVNC_TRANSPORT_RECEIVER_COMPLETION_PROVEN;
+    } else {
+        runtime->receiver_completion_outcome =
+            PSTVNC_TRANSPORT_RECEIVER_COMPLETION_FAILED;
         runtime->failed = 1;
+    }
 
     if (runtime->receiver_done_semaphore_id >= 0 &&
-        SignalSema(runtime->receiver_done_semaphore_id) < 0)
+        SignalSema(runtime->receiver_done_semaphore_id) < 0) {
+        runtime->receiver_completion_outcome =
+            PSTVNC_TRANSPORT_RECEIVER_COMPLETION_FAILED;
         runtime->failed = 1;
+    }
 
     ExitThread();
 }
@@ -2730,23 +2743,41 @@ pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_take_retire_completion(
 static int pstvnc_transport_runtime_pass_receiver_completion_fence(
     pstvnc_transport_runtime_t *runtime)
 {
+    pstvnc_transport_receiver_completion_outcome_t outcome;
+
     /*
      * receiver_done closes admission early so racing domain work cannot enter a
      * dying Wire session. It is deliberately not reclaim authority.
      *
-     * The receiver-done semaphore is published only after the sole physical-I/O
-     * owner has resolved pending outbound work and completed every enabled
-     * logical-owner terminal wake/publication. Treat that binary token as a
-     * latched completion rendezvous: consume it to prove the no-touch edge, then
-     * restore it so wait_receiver_done(), release(), or a later retry can all
-     * observe the same completed ownership fence without racing one another.
+     * The receiver-done semaphore is a latched terminal-outcome rendezvous.
+     * R20E separates wake from proof: FAILED may be signaled so waiters return
+     * instead of hanging, but only PROVEN can authorize reclaim. A failed
+     * outcome is irreversible for this runtime and repeated observation cannot
+     * upgrade it into proof.
      */
+    if (runtime->receiver_completion_outcome ==
+        PSTVNC_TRANSPORT_RECEIVER_COMPLETION_FAILED)
+        return 0;
+
     if (WaitSema(runtime->receiver_done_semaphore_id) < 0) {
+        runtime->receiver_completion_outcome =
+            PSTVNC_TRANSPORT_RECEIVER_COMPLETION_FAILED;
         runtime->failed = 1;
         return 0;
     }
 
+    outcome = runtime->receiver_completion_outcome;
+
     if (SignalSema(runtime->receiver_done_semaphore_id) < 0) {
+        runtime->receiver_completion_outcome =
+            PSTVNC_TRANSPORT_RECEIVER_COMPLETION_FAILED;
+        runtime->failed = 1;
+        return 0;
+    }
+
+    if (outcome != PSTVNC_TRANSPORT_RECEIVER_COMPLETION_PROVEN) {
+        runtime->receiver_completion_outcome =
+            PSTVNC_TRANSPORT_RECEIVER_COMPLETION_FAILED;
         runtime->failed = 1;
         return 0;
     }
