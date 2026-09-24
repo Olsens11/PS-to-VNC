@@ -2592,6 +2592,33 @@ pstvnc_transport_result_t pstvnc_transport_runtime_mpeg_take_retire_completion(
     return result;
 }
 
+static int pstvnc_transport_runtime_pass_receiver_completion_fence(
+    pstvnc_transport_runtime_t *runtime)
+{
+    /*
+     * receiver_done closes admission early so racing domain work cannot enter a
+     * dying Wire session. It is deliberately not reclaim authority.
+     *
+     * The receiver-done semaphore is published only after the sole physical-I/O
+     * owner has resolved pending outbound work and completed every enabled
+     * logical-owner terminal wake/publication. Treat that binary token as a
+     * latched completion rendezvous: consume it to prove the no-touch edge, then
+     * restore it so wait_receiver_done(), release(), or a later retry can all
+     * observe the same completed ownership fence without racing one another.
+     */
+    if (WaitSema(runtime->receiver_done_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    if (SignalSema(runtime->receiver_done_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return 0;
+    }
+
+    return runtime->receiver_done != 0;
+}
+
 int pstvnc_transport_runtime_wait_receiver_done(
     pstvnc_transport_runtime_t *runtime)
 {
@@ -2599,15 +2626,7 @@ int pstvnc_transport_runtime_wait_receiver_done(
         !runtime->receiver_thread_started)
         return 0;
 
-    if (runtime->receiver_done)
-        return 1;
-
-    if (WaitSema(runtime->receiver_done_semaphore_id) < 0) {
-        runtime->failed = 1;
-        return 0;
-    }
-
-    return runtime->receiver_done != 0;
+    return pstvnc_transport_runtime_pass_receiver_completion_fence(runtime);
 }
 
 static int pstvnc_transport_runtime_media_waiter_live(
@@ -2647,14 +2666,25 @@ int pstvnc_transport_runtime_release(
     if (runtime == NULL || !runtime->initialized)
         return 0;
 
-    if (runtime->receiver_thread_started && !runtime->receiver_done)
-        return 0;
+    if (runtime->receiver_thread_started) {
+        /*
+         * Preserve release's nonblocking response while the owner is not even
+         * terminal yet. Once early terminality is visible, synchronize through
+         * the real completion event before touching waiter state, kernel thread
+         * state, semaphores, queues, stack storage, or the physical stream.
+         */
+        if (!runtime->receiver_done)
+            return 0;
+
+        if (!pstvnc_transport_runtime_pass_receiver_completion_fence(runtime))
+            return 0;
+    }
 
     /*
-     * Once receiver_done is visible, new media waiters return terminally before
-     * arming. A nonzero protected wait state can therefore only belong to an
-     * already-existing waiter that still owns its rendezvous. Preserve all
-     * waiter-visible resources and let the caller retry after it returns.
+     * Only the completion fence above makes these waiter resources reclaimable.
+     * A nonzero protected wait state belongs to a waiter that still owns its
+     * rendezvous. Preserve all waiter-visible resources and let the caller retry
+     * after it returns.
      */
     if (WaitSema(runtime->rfb_queue_semaphore_id) < 0)
         return 0;
