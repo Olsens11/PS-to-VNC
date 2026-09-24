@@ -1,8 +1,8 @@
 /*
- * R21 focused host proof for the trigger-agnostic Application MPEG run-start
- * transaction. Lower owners are represented only through their accepted public
- * seams so this fixture can prove Application ordering, generation allocation,
- * geometry mapping, reverse-order unwind and the irreversible START boundary.
+ * R21/R22 focused host proof for the trigger-agnostic Application MPEG run
+ * coordinator. Lower owners are represented only through their accepted public
+ * seams so this fixture can prove start ordering/generation authority and R22's
+ * exact P7 live-service composition without duplicating lower-owner mechanics.
  */
 
 #include <limits.h>
@@ -27,6 +27,8 @@ typedef enum test_event {
     EV_PRESENTATION_SNAPSHOT,
     EV_CONSUMER_INIT,
     EV_START,
+    EV_CONSUMER_SERVICE,
+    EV_CONSUMER_STATUS,
     EV_PRESENTATION_ABORT,
     EV_WORKER_STOP,
     EV_WORKER_JOIN,
@@ -51,6 +53,10 @@ static int worker_start_retains_partial;
 static int presentation_arm_result;
 static int presentation_snapshot_result;
 static pstvnc_app_mpeg_frame_result_t consumer_init_result;
+static pstvnc_app_mpeg_frame_result_t consumer_service_result;
+static pstvnc_app_mpeg_frame_service_result_t consumer_service_detail;
+static int consumer_service_promotes_presentation;
+static int consumer_service_faults_consumer;
 static pstvnc_transport_result_t start_result;
 static int presentation_abort_result;
 static pstvnc_mpeg_worker_result_t worker_stop_result;
@@ -138,6 +144,11 @@ static void reset_fixture(void)
     presentation_arm_result = 1;
     presentation_snapshot_result = 1;
     consumer_init_result = PSTVNC_APP_MPEG_FRAME_OK;
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_IDLE;
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_IDLE;
+    consumer_service_promotes_presentation = 0;
+    consumer_service_faults_consumer = 0;
     start_result = PSTVNC_TRANSPORT_OK;
     presentation_abort_result = 1;
     worker_stop_result = PSTVNC_MPEG_WORKER_OK;
@@ -436,6 +447,82 @@ pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_init(
     consumer->scheduler_profile = *scheduler_profile;
     consumer->run_generation = generation;
     consumer->initialized = 1;
+    return PSTVNC_APP_MPEG_FRAME_OK;
+}
+
+pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_service(
+    pstvnc_app_mpeg_frame_consumer_t *consumer,
+    uint32_t generation,
+    uint64_t current_tick,
+    pstvnc_app_mpeg_frame_service_result_t *result)
+{
+    (void)current_tick;
+
+    CHECK(consumer != NULL);
+    CHECK(result != NULL);
+    CHECK(consumer->run_generation == generation);
+    record_event(EV_CONSUMER_SERVICE);
+
+    *result = consumer_service_detail;
+    result->result = consumer_service_result;
+
+    consumer->claim_outstanding = !!result->claim_outstanding;
+    if (consumer->claim_outstanding)
+        consumer->held_frame.picture.picture_ordinal =
+            result->picture_ordinal;
+    else
+        memset(&consumer->held_frame, 0, sizeof(consumer->held_frame));
+
+    if (consumer_service_result == PSTVNC_APP_MPEG_FRAME_PRESENTED ||
+        consumer_service_result == PSTVNC_APP_MPEG_FRAME_DROPPED)
+        consumer->last_consumed_ordinal = result->picture_ordinal;
+
+    if (consumer_service_result == PSTVNC_APP_MPEG_FRAME_PRESENTED)
+        consumer->presented_count += 1u;
+    if (consumer_service_result == PSTVNC_APP_MPEG_FRAME_DROPPED)
+        consumer->dropped_count += 1u;
+
+    if (consumer_service_promotes_presentation) {
+        consumer->presentation->state =
+            PSTVNC_MPEG_PRESENTATION_MPEG_OWNED;
+        consumer->presentation->run_generation = generation;
+        consumer->presentation->snapshot_valid = 1u;
+        consumer->scheduler_initialized = 1;
+    }
+
+    if (consumer_service_faults_consumer)
+        consumer->faulted = 1;
+
+    return consumer_service_result;
+}
+
+pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_status(
+    const pstvnc_app_mpeg_frame_consumer_t *consumer,
+    uint32_t generation,
+    pstvnc_app_mpeg_frame_status_t *status)
+{
+    CHECK(consumer != NULL);
+    CHECK(status != NULL);
+    record_event(EV_CONSUMER_STATUS);
+
+    if (consumer == NULL || status == NULL)
+        return PSTVNC_APP_MPEG_FRAME_INVALID;
+    if (!consumer->initialized)
+        return PSTVNC_APP_MPEG_FRAME_INVALID;
+    if (consumer->run_generation != generation)
+        return PSTVNC_APP_MPEG_FRAME_WRONG_GENERATION;
+
+    memset(status, 0, sizeof(*status));
+    status->run_generation = consumer->run_generation;
+    status->last_consumed_ordinal = consumer->last_consumed_ordinal;
+    status->presented_count = consumer->presented_count;
+    status->dropped_count = consumer->dropped_count;
+    status->scheduler_initialized = consumer->scheduler_initialized;
+    status->claim_outstanding = consumer->claim_outstanding;
+    status->faulted = consumer->faulted;
+    if (consumer->claim_outstanding)
+        status->held_ordinal =
+            consumer->held_frame.picture.picture_ordinal;
     return PSTVNC_APP_MPEG_FRAME_OK;
 }
 
@@ -802,6 +889,424 @@ static void test_start_failure_is_irreversible_and_never_prestart_aborts(void)
     CHECK(event_index(EV_RUNTIME_RELEASE) < 0);
 }
 
+
+static void start_live_test_run(
+    pstvnc_app_mpeg_run_t *run,
+    pstvnc_rfb_flow_policy_t *policy,
+    pstvnc_transport_access_t *access,
+    pstvnc_mpeg_presentation_t *presentation,
+    pstvnc_media_clock_t *clock)
+{
+    pstvnc_mpeg_presentation_geometry_t geometry = valid_geometry();
+
+    init_inputs(run, policy, access, presentation, clock);
+    CHECK(pstvnc_app_mpeg_run_start(
+        run,
+        &geometry,
+        policy,
+        access,
+        presentation,
+        clock) == PSTVNC_APP_MPEG_RUN_OK);
+    reset_attempt_observation();
+}
+
+static void configure_first_presented(void)
+{
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_PRESENTED;
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_PRESENTED;
+    consumer_service_detail.picture_ordinal = 1u;
+    consumer_service_detail.compositor_effects.synchronized = 1u;
+    consumer_service_detail.compositor_effects.first_frame_promoted = 1u;
+    consumer_service_promotes_presentation = 1;
+}
+
+static void promote_live_test_run(
+    pstvnc_app_mpeg_run_t *run)
+{
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    configure_first_presented();
+    CHECK(pstvnc_app_mpeg_run_service(
+        run,
+        1000u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(run->state == PSTVNC_APP_MPEG_RUN_MPEG_OWNED);
+    reset_attempt_observation();
+}
+
+static void test_service_rejects_without_successful_start(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    reset_fixture();
+    pstvnc_app_mpeg_run_init(&run);
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        0u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_NOT_LIVE);
+    CHECK(event_index(EV_CONSUMER_SERVICE) < 0);
+
+    run.state = PSTVNC_APP_MPEG_RUN_FAULTED;
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        0u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED);
+    CHECK(event_index(EV_CONSUMER_SERVICE) < 0);
+
+    run.state = PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME;
+    run.current_generation = 1u;
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        0u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.session_teardown_required == 1);
+    CHECK(event_index(EV_CONSUMER_SERVICE) < 0);
+}
+
+static void test_pre_first_idle_preserves_exact_wait(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+    pstvnc_app_mpeg_run_status_t status;
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        500u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_IDLE);
+    CHECK(!service_result.worker_finished);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME);
+    CHECK(run.current_generation == 1u);
+    CHECK(run.session_teardown_required == 0);
+    CHECK(presentation.state ==
+        PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME);
+    CHECK(presentation.run_generation == 1u);
+    CHECK(event_index(EV_CONSUMER_SERVICE) >= 0);
+    CHECK(event_index(EV_CONSUMER_STATUS) >= 0);
+    CHECK(event_index(EV_PRESENTATION_ABORT) < 0);
+    CHECK(event_index(EV_WORKER_STOP) < 0);
+    CHECK(event_index(EV_ABORT) < 0);
+
+    CHECK(pstvnc_app_mpeg_run_status(&run, &status) ==
+        PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(status.state ==
+        PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME);
+    CHECK(status.current_generation == 1u);
+}
+
+static void test_first_presented_promotes_only_after_exact_p7_p3_proof(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+    pstvnc_app_mpeg_run_status_t status;
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    configure_first_presented();
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        1000u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_PRESENTED);
+    CHECK(service_result.picture_ordinal == 1u);
+    CHECK(service_result.compositor_effects.synchronized);
+    CHECK(service_result.compositor_effects.first_frame_promoted);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_MPEG_OWNED);
+    CHECK(run.current_generation == 1u);
+    CHECK(run.session_teardown_required == 0);
+    CHECK(presentation.state == PSTVNC_MPEG_PRESENTATION_MPEG_OWNED);
+    CHECK(presentation.run_generation == 1u);
+
+    CHECK(pstvnc_app_mpeg_run_status(&run, &status) ==
+        PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(status.state == PSTVNC_APP_MPEG_RUN_MPEG_OWNED);
+    CHECK(status.current_generation == 1u);
+}
+
+static void test_first_presented_requires_exact_promotion(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    configure_first_presented();
+    consumer_service_detail.compositor_effects.first_frame_promoted = 0u;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        1000u,
+        &service_result) ==
+        PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.session_teardown_required == 1);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_PRESENTED);
+    CHECK(!service_result.compositor_effects.first_frame_promoted);
+    CHECK(run.frame_consumer.initialized);
+    CHECK(event_index(EV_WORKER_STOP) < 0);
+    CHECK(event_index(EV_PRESENTATION_ABORT) < 0);
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    configure_first_presented();
+    consumer_service_promotes_presentation = 0;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        1000u,
+        &service_result) ==
+        PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.session_teardown_required == 1);
+    CHECK(presentation.state ==
+        PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME);
+}
+
+static void test_post_first_live_outcomes_preserve_authority(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    promote_live_test_run(&run);
+
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_WAIT;
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_WAIT;
+    consumer_service_detail.picture_ordinal = 2u;
+    consumer_service_detail.deadline_tick = 2222u;
+    consumer_service_detail.claim_outstanding = 1;
+    consumer_service_promotes_presentation = 0;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        1100u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_MPEG_OWNED);
+    CHECK(run.current_generation == 1u);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_WAIT);
+    CHECK(service_result.picture_ordinal == 2u);
+    CHECK(service_result.deadline_tick == 2222u);
+    CHECK(service_result.claim_outstanding);
+    CHECK(run.frame_consumer.claim_outstanding);
+    CHECK(run.frame_consumer.held_frame.picture.picture_ordinal == 2u);
+
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_PRESENTED;
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_PRESENTED;
+    consumer_service_detail.picture_ordinal = 2u;
+    consumer_service_detail.compositor_effects.synchronized = 1u;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        2222u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_MPEG_OWNED);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_PRESENTED);
+    CHECK(!service_result.compositor_effects.first_frame_promoted);
+
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_DROPPED;
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_DROPPED;
+    consumer_service_detail.picture_ordinal = 3u;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        3333u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_MPEG_OWNED);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_DROPPED);
+
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_IDLE;
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_IDLE;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        4444u,
+        &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_MPEG_OWNED);
+    CHECK(run.current_generation == 1u);
+    CHECK(presentation.state == PSTVNC_MPEG_PRESENTATION_MPEG_OWNED);
+}
+
+static void test_unexpected_worker_finish_faults_before_and_after_promotion(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    consumer_service_detail.worker_finished = 1;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        500u,
+        &service_result) ==
+        PSTVNC_APP_MPEG_RUN_UNEXPECTED_WORKER_FINISH);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.session_teardown_required == 1);
+    CHECK(service_result.worker_finished);
+    CHECK(run.frame_consumer.initialized);
+    CHECK(event_index(EV_WORKER_STOP) < 0);
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    promote_live_test_run(&run);
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_IDLE;
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_IDLE;
+    consumer_service_detail.worker_finished = 1;
+    consumer_service_promotes_presentation = 0;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        1500u,
+        &service_result) ==
+        PSTVNC_APP_MPEG_RUN_UNEXPECTED_WORKER_FINISH);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.current_generation == 1u);
+    CHECK(run.session_teardown_required == 1);
+}
+
+static void test_negative_p7_results_fault_without_erasing_evidence(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+    int value;
+
+    for (value = PSTVNC_APP_MPEG_FRAME_INVALID;
+         value >= PSTVNC_APP_MPEG_FRAME_FAULTED;
+         value--) {
+        reset_fixture();
+        start_live_test_run(
+            &run, &policy, &access, &presentation, &clock);
+
+        memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+        consumer_service_result =
+            (pstvnc_app_mpeg_frame_result_t)value;
+        consumer_service_detail.result =
+            (pstvnc_app_mpeg_frame_result_t)value;
+        consumer_service_detail.picture_ordinal = 77u;
+        consumer_service_detail.claim_outstanding = 1;
+        consumer_service_detail.worker_stop_result =
+            PSTVNC_MPEG_WORKER_SYNC_FAILED;
+
+        CHECK(pstvnc_app_mpeg_run_service(
+            &run,
+            700u,
+            &service_result) ==
+            PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_FAILED);
+        CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+        CHECK(run.session_teardown_required == 1);
+        CHECK(run.current_generation == 1u);
+        CHECK(run.frame_consumer.initialized);
+        CHECK(run.frame_consumer.run_generation == 1u);
+        CHECK(run.frame_consumer.claim_outstanding);
+        CHECK(service_result.result ==
+            (pstvnc_app_mpeg_frame_result_t)value);
+        CHECK(service_result.picture_ordinal == 77u);
+        CHECK(service_result.claim_outstanding);
+        CHECK(service_result.worker_stop_result ==
+            PSTVNC_MPEG_WORKER_SYNC_FAILED);
+        CHECK(event_index(EV_PRESENTATION_ABORT) < 0);
+        CHECK(event_index(EV_WORKER_STOP) < 0);
+        CHECK(event_index(EV_ABORT) < 0);
+    }
+}
+
+static void test_generation_and_state_contradictions_fail_closed(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    run.frame_consumer.run_generation = 2u;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        800u,
+        &service_result) ==
+        PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.session_teardown_required == 1);
+    CHECK(event_index(EV_CONSUMER_SERVICE) < 0);
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    presentation.state = PSTVNC_MPEG_PRESENTATION_MPEG_OWNED;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        800u,
+        &service_result) ==
+        PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.current_generation == 1u);
+    CHECK(event_index(EV_CONSUMER_SERVICE) < 0);
+
+    reset_fixture();
+    start_live_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    consumer_service_faults_consumer = 1;
+
+    CHECK(pstvnc_app_mpeg_run_service(
+        &run,
+        800u,
+        &service_result) ==
+        PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.frame_consumer.faulted);
+    CHECK(run.frame_consumer.initialized);
+}
+
 int main(void)
 {
     test_success_orders_all_owners_and_maps_exact_geometry();
@@ -811,6 +1316,15 @@ int main(void)
     test_every_prestart_failure_unwinds_without_start();
     test_cleanup_failure_faults_and_blocks_retry();
     test_start_failure_is_irreversible_and_never_prestart_aborts();
+
+    test_service_rejects_without_successful_start();
+    test_pre_first_idle_preserves_exact_wait();
+    test_first_presented_promotes_only_after_exact_p7_p3_proof();
+    test_first_presented_requires_exact_promotion();
+    test_post_first_live_outcomes_preserve_authority();
+    test_unexpected_worker_finish_faults_before_and_after_promotion();
+    test_negative_p7_results_fault_without_erasing_evidence();
+    test_generation_and_state_contradictions_fail_closed();
 
     if (failures != 0) {
         fprintf(stderr, "app_mpeg_run_test: %d failure(s)\n", failures);

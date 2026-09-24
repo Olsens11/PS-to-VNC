@@ -1,16 +1,17 @@
 /*
  * File synopsis:
- * Defines R21's Application-owned, trigger-agnostic MPEG run-start transaction.
- * One session-scoped coordinator allocates nonzero monotonically increasing run
- * generations and composes already-accepted RFB protection, Transport run
- * admission, PS2 MPEG execution owners, Presentation and frame-consumer seams.
+ * Defines the R21/R22 Application-owned, trigger-agnostic MPEG run coordinator.
+ * One session-scoped owner allocates nonzero monotonically increasing run
+ * generations, composes the accepted R21 start transaction, and services that
+ * exact live generation only through the already-accepted P7 frame consumer.
  *
- * START is the final irreversible action. This module does not choose a product
- * trigger, freeze/thaw RFB, service MPEG frames, retire a started run, activate
- * the Pi MPEG product runtime, or modify ordinary Application lifecycle policy.
+ * Application records WAIT_FIRST_FRAME versus MPEG_OWNED run authority but does
+ * not duplicate P7 frame mechanics, arm the media clock, retire the run, choose
+ * a product trigger, thaw/reveal RFB, or activate the Pi MPEG product runtime.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
- * A003-APPLICATION-MPEG-RUN-START-R21.
+ * A003-APPLICATION-MPEG-RUN-START-R21 and
+ * A003-APPLICATION-MPEG-LIVE-SERVICE-R22.
  */
 
 #ifndef PSTVNC_APP_MPEG_RUN_H
@@ -31,6 +32,7 @@
 typedef enum pstvnc_app_mpeg_run_state {
     PSTVNC_APP_MPEG_RUN_IDLE = 0,
     PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME,
+    PSTVNC_APP_MPEG_RUN_MPEG_OWNED,
     PSTVNC_APP_MPEG_RUN_FAULTED
 } pstvnc_app_mpeg_run_state_t;
 
@@ -54,7 +56,13 @@ typedef enum pstvnc_app_mpeg_run_result {
     PSTVNC_APP_MPEG_RUN_FRAME_CONSUMER_INIT_FAILED = -15,
     PSTVNC_APP_MPEG_RUN_START_FAILED = -16,
     PSTVNC_APP_MPEG_RUN_CLEANUP_FAILED = -17,
-    PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED = -18
+    PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED = -18,
+
+    PSTVNC_APP_MPEG_RUN_NOT_LIVE = -19,
+    PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID = -20,
+    PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_FAILED = -21,
+    PSTVNC_APP_MPEG_RUN_UNEXPECTED_WORKER_FINISH = -22,
+    PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION = -23
 } pstvnc_app_mpeg_run_result_t;
 
 typedef struct pstvnc_app_mpeg_run_status {
@@ -113,6 +121,19 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_start(
     const pstvnc_transport_access_t *transport_access,
     pstvnc_mpeg_presentation_t *presentation,
     pstvnc_media_clock_t *media_clock);
+
+/*
+ * Service one nonblocking P7 frame-consumer step for the exact current run.
+ *
+ * Detailed P7 result/evidence is returned unchanged for caller policy. R22 may
+ * advance WAIT_FIRST_FRAME to MPEG_OWNED only after exact synchronized P7/P3
+ * confirmation. Any live contradiction faults the run and requires outer
+ * teardown; this operation performs no retirement or cleanup.
+ */
+pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_service(
+    pstvnc_app_mpeg_run_t *run,
+    uint64_t current_tick,
+    pstvnc_app_mpeg_frame_service_result_t *service_result);
 
 /* Read Application-owned run/generation state without advancing lifecycle. */
 pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_status(

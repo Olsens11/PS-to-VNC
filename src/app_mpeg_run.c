@@ -1,17 +1,18 @@
 /*
  * File synopsis:
- * Implements R21's Application-owned MPEG run-start composition transaction.
- * It validates one resolved geometry/profile snapshot, requires pre-existing
- * RFB publication protection, opens one clean Transport MPEG run, constructs
- * fresh PS2 execution owners, arms Presentation/P7, then sends START last.
+ * Implements the R21/R22 Application-owned MPEG run coordinator. R21 validates
+ * one resolved geometry/profile snapshot, builds fresh execution owners, arms
+ * Presentation/P7 and sends START last. R22 then services that exact live run
+ * only by composing the existing P7 consumer and independently confirming P3.
  *
- * Every pre-START failure attempts reverse-order retirement. A cleanup failure
- * faults the coordinator instead of claiming IDLE. Once START is invoked, even
- * a non-OK result is treated as irreversible and requires outer session
- * teardown; pre-START abort is never used after that boundary.
+ * Pre-START cleanup remains R21-only. After START, service failures never
+ * retire or clear lower owners: Application faults, preserves P7/P3 evidence
+ * and requires outer teardown. P7/compositor remain sole owners of physical
+ * first-frame synchronization, media-clock arm and P3 promotion.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
- * A003-APPLICATION-MPEG-RUN-START-R21.
+ * A003-APPLICATION-MPEG-RUN-START-R21 and
+ * A003-APPLICATION-MPEG-LIVE-SERVICE-R22.
  */
 
 #include "app_mpeg_run.h"
@@ -149,6 +150,78 @@ static void pstvnc_app_mpeg_run_fault(
     run->state = PSTVNC_APP_MPEG_RUN_FAULTED;
     run->last_result = result;
     run->session_teardown_required = 1;
+}
+
+static pstvnc_app_mpeg_run_result_t
+pstvnc_app_mpeg_run_fail_live(
+    pstvnc_app_mpeg_run_t *run,
+    pstvnc_app_mpeg_run_result_t result)
+{
+    /*
+     * R22 has no cleanup authority. Preserve every lower-owner object and all
+     * embedded P7 evidence exactly as observed; outer teardown owns recovery.
+     */
+    pstvnc_app_mpeg_run_fault(run, result);
+    return result;
+}
+
+static int pstvnc_app_mpeg_run_live_owners_valid(
+    const pstvnc_app_mpeg_run_t *run)
+{
+    return run != NULL &&
+        run->current_generation != 0u &&
+        run->transport_run_open &&
+        run->worker_runtime_owned &&
+        run->worker_started &&
+        run->presentation_armed &&
+        run->frame_consumer_initialized &&
+        run->start_invoked &&
+        run->presentation != NULL &&
+        run->rfb_flow_policy != NULL &&
+        run->media_clock != NULL &&
+        run->frame_consumer.initialized &&
+        run->frame_consumer.run_generation == run->current_generation &&
+        run->frame_consumer.worker == &run->worker &&
+        run->frame_consumer.presentation == run->presentation &&
+        run->frame_consumer.clock == run->media_clock;
+}
+
+static int pstvnc_app_mpeg_run_presentation_matches(
+    const pstvnc_app_mpeg_run_t *run,
+    pstvnc_mpeg_presentation_state_t expected_state)
+{
+    pstvnc_mpeg_presentation_geometry_t geometry;
+    uint32_t generation = 0u;
+
+    if (run == NULL ||
+        run->presentation == NULL ||
+        pstvnc_mpeg_presentation_state(run->presentation) != expected_state ||
+        !pstvnc_mpeg_presentation_snapshot(
+            run->presentation,
+            &geometry,
+            &generation))
+        return 0;
+
+    (void)geometry;
+    return generation == run->current_generation;
+}
+
+static int pstvnc_app_mpeg_run_service_claim_matches(
+    const pstvnc_app_mpeg_frame_service_result_t *service_result,
+    const pstvnc_app_mpeg_frame_status_t *frame_status)
+{
+    if (service_result == NULL || frame_status == NULL)
+        return 0;
+
+    if (!!service_result->claim_outstanding !=
+        !!frame_status->claim_outstanding)
+        return 0;
+
+    if (!service_result->claim_outstanding)
+        return 1;
+
+    return service_result->picture_ordinal != 0u &&
+        frame_status->held_ordinal == service_result->picture_ordinal;
 }
 
 static int pstvnc_app_mpeg_run_unwind_pre_start(
@@ -481,6 +554,178 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_start(
     }
 
     run->state = PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME;
+    run->last_result = PSTVNC_APP_MPEG_RUN_OK;
+    return PSTVNC_APP_MPEG_RUN_OK;
+}
+
+pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_service(
+    pstvnc_app_mpeg_run_t *run,
+    uint64_t current_tick,
+    pstvnc_app_mpeg_frame_service_result_t *service_result)
+{
+    pstvnc_app_mpeg_run_state_t entry_state;
+    pstvnc_app_mpeg_frame_result_t frame_result;
+    pstvnc_app_mpeg_frame_result_t status_result;
+    pstvnc_app_mpeg_frame_status_t frame_status;
+
+    if (service_result == NULL)
+        return PSTVNC_APP_MPEG_RUN_INVALID;
+
+    memset(service_result, 0, sizeof(*service_result));
+    service_result->result = PSTVNC_APP_MPEG_FRAME_INVALID;
+
+    if (run == NULL)
+        return PSTVNC_APP_MPEG_RUN_INVALID;
+
+    if (run->state == PSTVNC_APP_MPEG_RUN_FAULTED)
+        return PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED;
+
+    if (run->state != PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME &&
+        run->state != PSTVNC_APP_MPEG_RUN_MPEG_OWNED)
+        return PSTVNC_APP_MPEG_RUN_NOT_LIVE;
+
+    entry_state = run->state;
+
+    if (!pstvnc_app_mpeg_run_live_owners_valid(run))
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID);
+
+    if (entry_state == PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME) {
+        if (!pstvnc_app_mpeg_run_presentation_matches(
+                run,
+                PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME))
+            return pstvnc_app_mpeg_run_fail_live(
+                run,
+                PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID);
+    } else if (!pstvnc_app_mpeg_run_presentation_matches(
+            run,
+            PSTVNC_MPEG_PRESENTATION_MPEG_OWNED)) {
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID);
+    }
+
+    frame_result = pstvnc_app_mpeg_frame_consumer_service(
+        &run->frame_consumer,
+        run->current_generation,
+        current_tick,
+        service_result);
+
+    if (frame_result != service_result->result)
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+
+    if (frame_result < PSTVNC_APP_MPEG_FRAME_OK)
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_FAILED);
+
+    if (service_result->worker_finished)
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_UNEXPECTED_WORKER_FINISH);
+
+    memset(&frame_status, 0, sizeof(frame_status));
+    status_result = pstvnc_app_mpeg_frame_consumer_status(
+        &run->frame_consumer,
+        run->current_generation,
+        &frame_status);
+
+    if (status_result != PSTVNC_APP_MPEG_FRAME_OK ||
+        frame_status.run_generation != run->current_generation ||
+        frame_status.faulted)
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID);
+
+    if (!pstvnc_app_mpeg_run_service_claim_matches(
+            service_result,
+            &frame_status))
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+
+    if (entry_state == PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME) {
+        if (frame_result == PSTVNC_APP_MPEG_FRAME_IDLE) {
+            if (frame_status.last_consumed_ordinal != 0u ||
+                frame_status.scheduler_initialized ||
+                frame_status.claim_outstanding ||
+                !pstvnc_app_mpeg_run_presentation_matches(
+                    run,
+                    PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME))
+                return pstvnc_app_mpeg_run_fail_live(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+
+            run->last_result = PSTVNC_APP_MPEG_RUN_OK;
+            return PSTVNC_APP_MPEG_RUN_OK;
+        }
+
+        if (frame_result != PSTVNC_APP_MPEG_FRAME_PRESENTED ||
+            service_result->picture_ordinal != 1u ||
+            service_result->claim_outstanding ||
+            !service_result->compositor_effects.synchronized ||
+            !service_result->compositor_effects.first_frame_promoted ||
+            frame_status.last_consumed_ordinal != 1u ||
+            !frame_status.scheduler_initialized ||
+            !pstvnc_app_mpeg_run_presentation_matches(
+                run,
+                PSTVNC_MPEG_PRESENTATION_MPEG_OWNED))
+            return pstvnc_app_mpeg_run_fail_live(
+                run,
+                PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+
+        run->state = PSTVNC_APP_MPEG_RUN_MPEG_OWNED;
+        run->last_result = PSTVNC_APP_MPEG_RUN_OK;
+        return PSTVNC_APP_MPEG_RUN_OK;
+    }
+
+    if (!pstvnc_app_mpeg_run_presentation_matches(
+            run,
+            PSTVNC_MPEG_PRESENTATION_MPEG_OWNED))
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID);
+
+    switch (frame_result) {
+        case PSTVNC_APP_MPEG_FRAME_IDLE:
+            if (service_result->claim_outstanding)
+                return pstvnc_app_mpeg_run_fail_live(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+            break;
+
+        case PSTVNC_APP_MPEG_FRAME_WAIT:
+            if (!service_result->claim_outstanding)
+                return pstvnc_app_mpeg_run_fail_live(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+            break;
+
+        case PSTVNC_APP_MPEG_FRAME_PRESENTED:
+            if (service_result->claim_outstanding ||
+                !service_result->compositor_effects.synchronized ||
+                service_result->compositor_effects.first_frame_promoted)
+                return pstvnc_app_mpeg_run_fail_live(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+            break;
+
+        case PSTVNC_APP_MPEG_FRAME_DROPPED:
+            if (service_result->claim_outstanding)
+                return pstvnc_app_mpeg_run_fail_live(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+            break;
+
+        default:
+            return pstvnc_app_mpeg_run_fail_live(
+                run,
+                PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
+    }
+
     run->last_result = PSTVNC_APP_MPEG_RUN_OK;
     return PSTVNC_APP_MPEG_RUN_OK;
 }

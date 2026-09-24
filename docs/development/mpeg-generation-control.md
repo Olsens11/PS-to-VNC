@@ -289,3 +289,38 @@ unchanged.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-APPLICATION-MPEG-RUN-START-R21`.
+
+
+## R22 Application live-service composition
+
+R22 extends the trigger-agnostic R21 coordinator with one explicit
+`MPEG_OWNED` Application state and one nonblocking live-service operation.
+The operation delegates frame work exclusively to the existing P7 consumer for
+the coordinator's exact current generation and returns P7's detailed service
+result unchanged for later main-loop policy.
+
+Before the first synchronized frame, benign P7 `IDLE` with an unfinished
+worker preserves `STARTED_WAIT_FIRST_FRAME`. Application advances to
+`MPEG_OWNED` only when P7 reports a successful first `PRESENTED` result whose
+effects prove synchronization and first-frame promotion, while P3 independently
+reports `MPEG_OWNED` for the same exact generation.
+
+P7/compositor remain sole owners of physical synchronization, shared media-clock
+arm and P3 first-frame promotion. Application does not recreate those actions.
+
+After promotion, P7 `IDLE`, `WAIT`, `PRESENTED` and `DROPPED` are ordinary
+live outcomes. The wrapper preserves P7's exact WAIT claim/deadline and keeps
+the same Application generation/state. Unexpected worker completion, negative
+P7 service, a faulted P7 status, wrong generation or impossible P3/Application
+state faults the run and requires outer teardown.
+
+R22 deliberately performs no direct cleanup on live-service failure: it does
+not clear P7, abort Presentation, stop/join/release the MPEG worker, release the
+runtime, send RETIRE, finalize Transport, thaw/reveal RFB or manufacture
+retirement success. Lower-owner evidence remains intact for later failure/
+retirement orchestration.
+
+Ordinary `src/app.c` and Pi MPEG product activation remain unchanged.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-APPLICATION-MPEG-LIVE-SERVICE-R22`.
