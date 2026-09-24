@@ -1770,6 +1770,10 @@ static void test_fatal_stop_completion_precedes_reclaim_and_fresh_session(void)
     CHECK(runtime.stop_requested == 0);
     CHECK(runtime.receiver_done == 0);
     CHECK(runtime.failed == 0);
+    CHECK(runtime.receiver_thread_started == 0);
+    CHECK(runtime.receiver_thread_id == -1);
+    CHECK(runtime.receiver_done_semaphore_id > 0);
+    CHECK(fake_semaphores[runtime.receiver_done_semaphore_id].count == 0);
     CHECK(runtime.rfb_quiesce_request_received == 0u);
     CHECK(runtime.rfb_quiesce_boundary_sent == 0u);
     CHECK(runtime.rfb_quiesce_commit_received == 0u);
