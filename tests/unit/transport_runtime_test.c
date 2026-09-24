@@ -89,6 +89,8 @@ typedef struct fake_semaphore {
 static fake_semaphore_t fake_semaphores[MAX_FAKE_SEMAS];
 static int create_sema_calls;
 static int create_sema_fail_on_call;
+static int wait_sema_fail_id = -1;
+static int wait_sema_fail_remaining;
 static int receiver_done_semaphore_id = -1;
 static int outbound_slot_semaphore_id = -1;
 static int outbound_ready_semaphore_id = -1;
@@ -236,6 +238,12 @@ int WaitSema(int semaphore_id)
         outbound_submitter_drain_wait_calls++;
         pthread_cond_broadcast(&completion_fence_condition);
         pthread_mutex_unlock(&completion_fence_mutex);
+    }
+
+    if (semaphore_id == wait_sema_fail_id &&
+        wait_sema_fail_remaining > 0) {
+        wait_sema_fail_remaining--;
+        return -1;
     }
 
     semaphore = &fake_semaphores[semaphore_id];
@@ -517,6 +525,8 @@ static void reset_fixture(void)
     destroy_unused_host_state();
     create_sema_calls = 0;
     create_sema_fail_on_call = 0;
+    wait_sema_fail_id = -1;
+    wait_sema_fail_remaining = 0;
     receiver_done_semaphore_id = -1;
     outbound_slot_semaphore_id = -1;
     outbound_ready_semaphore_id = -1;
@@ -1854,6 +1864,185 @@ static void test_outbound_submitter_drain_fences_active_and_queued_callers(void)
         event_index(EVENT_DELETE_THREAD));
 }
 
+static void assert_r20e_failed_completion_preserves_ownership(
+    pstvnc_transport_runtime_t *runtime,
+    uint8_t *queue_before,
+    void *stack_before)
+{
+    CHECK(runtime->receiver_completion_outcome ==
+        PSTVNC_TRANSPORT_RECEIVER_COMPLETION_FAILED);
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(runtime) == 0);
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(runtime) == 0);
+    CHECK(pstvnc_transport_runtime_release(runtime) == 0);
+    CHECK(pstvnc_transport_runtime_release(runtime) == 0);
+    CHECK(event_index(EVENT_REFER_THREAD) < 0);
+    CHECK(terminate_thread_calls == 0);
+    CHECK(delete_thread_calls == 0);
+    CHECK(physical_release_calls == 0);
+    CHECK(runtime->initialized == 1);
+    CHECK(runtime->rfb_queue_storage == queue_before);
+    CHECK(runtime->receiver_stack_allocation == stack_before);
+    CHECK(fake_semaphores[receiver_done_semaphore_id].used);
+    CHECK(fake_semaphores[outbound_slot_semaphore_id].used);
+    CHECK(fake_semaphores[outbound_ready_semaphore_id].used);
+    CHECK(fake_semaphores[outbound_done_semaphore_id].used);
+    CHECK(fake_semaphores[outbound_submitter_drain_semaphore_id].used);
+}
+
+static void test_outbound_drain_wait_failure_is_permanently_nonreclaiming(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t config = make_config();
+    runtime_call_test_context_t active_submit;
+    pthread_t active_thread;
+    uint8_t *queue_before;
+    void *stack_before;
+    int receiver_thread_id;
+
+    reset_fixture();
+    initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
+    clear_send_records();
+
+    queue_before = runtime.rfb_queue_storage;
+    stack_before = runtime.receiver_stack_allocation;
+    receiver_thread_id = runtime.receiver_thread_id;
+
+    set_wait_readable_blocked(1);
+    wait_for_wait_readable_barrier();
+
+    memset(&active_submit, 0, sizeof(active_submit));
+    active_submit.runtime = &runtime;
+    active_submit.result = -1;
+    CHECK(pthread_create(
+        &active_thread, NULL, outbound_submit_test_thread, &active_submit) == 0);
+    wait_for_semaphore_waiters(outbound_done_semaphore_id, 1);
+    CHECK(runtime.outbound_submitter_count == 1u);
+    CHECK(runtime.outbound_pending == 1);
+
+    /*
+     * Keep the submitter registered after terminal outbound-done resolution so
+     * the receiver must use the private drain wait. Then make that exact wait
+     * operation fail once.
+     */
+    set_outbound_slot_signal_blocked(1);
+    wait_sema_fail_id = outbound_submitter_drain_semaphore_id;
+    wait_sema_fail_remaining = 1;
+
+    push_rx_frame(
+        PSTVNC_TRANSPORT_FRAME_CREDIT,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        NULL,
+        0u);
+    set_wait_readable_blocked(0);
+
+    wait_for_outbound_slot_signal_barrier();
+    wait_for_outbound_submitter_drain_wait_calls(1);
+    wait_for_receiver_done_signal_barrier();
+
+    CHECK(wait_sema_fail_remaining == 0);
+    CHECK(runtime.receiver_done == 1);
+    CHECK(runtime.failed == 1);
+    CHECK(runtime.outbound_submitter_count == 1u);
+    CHECK(runtime.outbound_submitter_drain_waiting == 0);
+    assert_r20e_failed_completion_preserves_ownership(
+        &runtime, queue_before, stack_before);
+
+    /*
+     * Even if the stranded submitter later finishes truthfully and the count
+     * becomes zero, the failed completion outcome is irreversible and cannot be
+     * upgraded by repeated observation.
+     */
+    set_outbound_slot_signal_blocked(0);
+    CHECK(pthread_join(active_thread, NULL) == 0);
+    CHECK(active_submit.result == 0);
+    CHECK(runtime.outbound_submitter_count == 0u);
+    assert_r20e_failed_completion_preserves_ownership(
+        &runtime, queue_before, stack_before);
+
+    CHECK(pthread_join(
+        fake_threads[receiver_thread_id].handle, NULL) == 0);
+    fake_threads[receiver_thread_id].started = 0;
+}
+
+static void test_outbound_drain_false_wake_is_permanently_nonreclaiming(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t config = make_config();
+    runtime_call_test_context_t active_submit;
+    pthread_t active_thread;
+    uint8_t *queue_before;
+    void *stack_before;
+    int receiver_thread_id;
+
+    reset_fixture();
+    initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
+    clear_send_records();
+
+    queue_before = runtime.rfb_queue_storage;
+    stack_before = runtime.receiver_stack_allocation;
+    receiver_thread_id = runtime.receiver_thread_id;
+
+    set_wait_readable_blocked(1);
+    wait_for_wait_readable_barrier();
+
+    memset(&active_submit, 0, sizeof(active_submit));
+    active_submit.runtime = &runtime;
+    active_submit.result = -1;
+    CHECK(pthread_create(
+        &active_thread, NULL, outbound_submit_test_thread, &active_submit) == 0);
+    wait_for_semaphore_waiters(outbound_done_semaphore_id, 1);
+    CHECK(runtime.outbound_submitter_count == 1u);
+
+    /*
+     * Seed an impossible drain token while the registered submitter is still
+     * live, then hold that caller after its terminal outbound-done wake. The
+     * receiver consumes the token but must reject the still-nonzero protected
+     * count as contradiction rather than reclaim proof.
+     */
+    CHECK(SignalSema(outbound_submitter_drain_semaphore_id) == 0);
+    CHECK(semaphore_count(outbound_submitter_drain_semaphore_id) == 1);
+    set_outbound_slot_signal_blocked(1);
+
+    push_rx_frame(
+        PSTVNC_TRANSPORT_FRAME_CREDIT,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        NULL,
+        0u);
+    set_wait_readable_blocked(0);
+
+    wait_for_outbound_slot_signal_barrier();
+    wait_for_outbound_submitter_drain_wait_calls(1);
+    wait_for_receiver_done_signal_barrier();
+
+    CHECK(runtime.receiver_done == 1);
+    CHECK(runtime.failed == 1);
+    CHECK(runtime.outbound_submitter_count == 1u);
+    CHECK(runtime.outbound_submitter_drain_waiting == 0);
+    CHECK(semaphore_count(outbound_submitter_drain_semaphore_id) == 0);
+    assert_r20e_failed_completion_preserves_ownership(
+        &runtime, queue_before, stack_before);
+
+    set_outbound_slot_signal_blocked(0);
+    CHECK(pthread_join(active_thread, NULL) == 0);
+    CHECK(active_submit.result == 0);
+    CHECK(runtime.outbound_submitter_count == 0u);
+
+    /*
+     * Count zero after the contradiction is too late. No later wait/release may
+     * convert the failed outcome into fresh-session authority.
+     */
+    assert_r20e_failed_completion_preserves_ownership(
+        &runtime, queue_before, stack_before);
+
+    CHECK(pthread_join(
+        fake_threads[receiver_thread_id].handle, NULL) == 0);
+    fake_threads[receiver_thread_id].started = 0;
+}
+
 static void test_release_waits_for_receiver_completion_before_reclaim(void)
 {
     pstvnc_transport_runtime_t runtime;
@@ -1990,6 +2179,8 @@ static void test_fatal_stop_completion_precedes_reclaim_and_fresh_session(void)
         runtime.outbound_submitter_drain_semaphore_id].count == 0);
     CHECK(runtime.outbound_submitter_count == 0u);
     CHECK(runtime.outbound_submitter_drain_waiting == 0);
+    CHECK(runtime.receiver_completion_outcome ==
+        PSTVNC_TRANSPORT_RECEIVER_COMPLETION_PENDING);
     CHECK(runtime.rfb_quiesce_request_received == 0u);
     CHECK(runtime.rfb_quiesce_boundary_sent == 0u);
     CHECK(runtime.rfb_quiesce_commit_received == 0u);
@@ -2011,6 +2202,8 @@ int main(void)
     test_finite_quiesce_order_is_distinct_from_fatal_abort();
     test_receiver_completion_event_is_real_no_touch_fence();
     test_outbound_submitter_drain_fences_active_and_queued_callers();
+    test_outbound_drain_wait_failure_is_permanently_nonreclaiming();
+    test_outbound_drain_false_wake_is_permanently_nonreclaiming();
     test_release_waits_for_receiver_completion_before_reclaim();
     test_fatal_stop_completion_precedes_reclaim_and_fresh_session();
 
