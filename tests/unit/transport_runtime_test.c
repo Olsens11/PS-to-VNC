@@ -89,10 +89,29 @@ static fake_semaphore_t fake_semaphores[MAX_FAKE_SEMAS];
 static int create_sema_calls;
 static int create_sema_fail_on_call;
 static int receiver_done_semaphore_id = -1;
+static int outbound_ready_semaphore_id = -1;
 static int rfb_outbound_credit_wait_semaphore_id = -1;
+static int audio_activity_wait_semaphore_id = -1;
+static int mpeg_activity_wait_semaphore_id = -1;
 static int rfb_outbound_credit_wait_calls;
+static int audio_activity_wait_calls;
+static int mpeg_activity_wait_calls;
+
+/*
+ * R20C host-only barriers make the receiver's final completion edge
+ * deterministic. They never alter product source or use sleeps/timeouts.
+ */
+static int receiver_done_signal_blocked;
+static int receiver_done_signal_entered;
+static int receiver_done_wait_calls;
+static int outbound_ready_signal_blocked;
+static int outbound_ready_signal_entered;
+static pthread_mutex_t completion_fence_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t completion_fence_condition = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t rfb_credit_wait_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t rfb_credit_wait_condition = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t media_wait_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t media_wait_condition = PTHREAD_COND_INITIALIZER;
 
 typedef struct fake_thread {
     int used;
@@ -180,11 +199,29 @@ int WaitSema(int semaphore_id)
         !fake_semaphores[semaphore_id].used)
         return -1;
 
+    if (semaphore_id == receiver_done_semaphore_id) {
+        pthread_mutex_lock(&completion_fence_mutex);
+        receiver_done_wait_calls++;
+        pthread_cond_broadcast(&completion_fence_condition);
+        pthread_mutex_unlock(&completion_fence_mutex);
+    }
+
     if (semaphore_id == rfb_outbound_credit_wait_semaphore_id) {
         pthread_mutex_lock(&rfb_credit_wait_mutex);
         rfb_outbound_credit_wait_calls++;
         pthread_cond_broadcast(&rfb_credit_wait_condition);
         pthread_mutex_unlock(&rfb_credit_wait_mutex);
+    }
+
+    if (semaphore_id == audio_activity_wait_semaphore_id ||
+        semaphore_id == mpeg_activity_wait_semaphore_id) {
+        pthread_mutex_lock(&media_wait_mutex);
+        if (semaphore_id == audio_activity_wait_semaphore_id)
+            audio_activity_wait_calls++;
+        else
+            mpeg_activity_wait_calls++;
+        pthread_cond_broadcast(&media_wait_condition);
+        pthread_mutex_unlock(&media_wait_mutex);
     }
 
     semaphore = &fake_semaphores[semaphore_id];
@@ -204,8 +241,30 @@ int SignalSema(int semaphore_id)
         !fake_semaphores[semaphore_id].used)
         return -1;
 
-    if (semaphore_id == receiver_done_semaphore_id)
+    if (semaphore_id == outbound_ready_semaphore_id) {
+        pthread_mutex_lock(&completion_fence_mutex);
+        if (outbound_ready_signal_blocked) {
+            outbound_ready_signal_entered = 1;
+            pthread_cond_broadcast(&completion_fence_condition);
+            while (outbound_ready_signal_blocked)
+                pthread_cond_wait(
+                    &completion_fence_condition,
+                    &completion_fence_mutex);
+        }
+        pthread_mutex_unlock(&completion_fence_mutex);
+    }
+
+    if (semaphore_id == receiver_done_semaphore_id) {
+        pthread_mutex_lock(&completion_fence_mutex);
+        receiver_done_signal_entered = 1;
+        pthread_cond_broadcast(&completion_fence_condition);
+        while (receiver_done_signal_blocked)
+            pthread_cond_wait(
+                &completion_fence_condition,
+                &completion_fence_mutex);
+        pthread_mutex_unlock(&completion_fence_mutex);
         record_event(EVENT_RECEIVER_DONE_SIGNAL);
+    }
 
     semaphore = &fake_semaphores[semaphore_id];
     pthread_mutex_lock(&semaphore->mutex);
@@ -439,10 +498,27 @@ static void reset_fixture(void)
     create_sema_calls = 0;
     create_sema_fail_on_call = 0;
     receiver_done_semaphore_id = -1;
+    outbound_ready_semaphore_id = -1;
     rfb_outbound_credit_wait_semaphore_id = -1;
+    audio_activity_wait_semaphore_id = -1;
+    mpeg_activity_wait_semaphore_id = -1;
+
+    pthread_mutex_lock(&completion_fence_mutex);
+    receiver_done_signal_blocked = 0;
+    receiver_done_signal_entered = 0;
+    receiver_done_wait_calls = 0;
+    outbound_ready_signal_blocked = 0;
+    outbound_ready_signal_entered = 0;
+    pthread_mutex_unlock(&completion_fence_mutex);
+
     pthread_mutex_lock(&rfb_credit_wait_mutex);
     rfb_outbound_credit_wait_calls = 0;
     pthread_mutex_unlock(&rfb_credit_wait_mutex);
+
+    pthread_mutex_lock(&media_wait_mutex);
+    audio_activity_wait_calls = 0;
+    mpeg_activity_wait_calls = 0;
+    pthread_mutex_unlock(&media_wait_mutex);
     create_thread_calls = 0;
     create_thread_fail = 0;
     start_thread_fail = 0;
@@ -640,6 +716,32 @@ static pstvnc_transport_session_config_t make_config(void)
     return config;
 }
 
+static pstvnc_transport_audio_channel_config_t make_audio_config(void)
+{
+    pstvnc_transport_audio_channel_config_t config;
+
+    memset(&config, 0, sizeof(config));
+    config.queue_capacity = 16u;
+    config.initial_credit_bytes = 8u;
+    config.credit_batch_bytes = 4u;
+    config.credit_flush_on_empty = 1;
+    config.credit_return_enabled = 1;
+    return config;
+}
+
+static pstvnc_transport_mpeg_channel_config_t make_mpeg_config(void)
+{
+    pstvnc_transport_mpeg_channel_config_t config;
+
+    memset(&config, 0, sizeof(config));
+    config.queue_capacity = 16u;
+    config.initial_credit_bytes = 8u;
+    config.credit_batch_bytes = 4u;
+    config.credit_flush_on_empty = 1;
+    config.credit_return_enabled = 1;
+    return config;
+}
+
 static void push_rx_frame(
     uint8_t kind,
     uint8_t channel,
@@ -699,6 +801,63 @@ static void wait_for_rfb_credit_wait_calls(int target)
     pthread_mutex_unlock(&rfb_credit_wait_mutex);
 }
 
+static void wait_for_media_wait_calls(int audio_target, int mpeg_target)
+{
+    pthread_mutex_lock(&media_wait_mutex);
+    while (audio_activity_wait_calls < audio_target ||
+           mpeg_activity_wait_calls < mpeg_target)
+        pthread_cond_wait(&media_wait_condition, &media_wait_mutex);
+    pthread_mutex_unlock(&media_wait_mutex);
+}
+
+static void wait_for_receiver_done_signal_barrier(void)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    while (!receiver_done_signal_entered)
+        pthread_cond_wait(
+            &completion_fence_condition,
+            &completion_fence_mutex);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void wait_for_receiver_done_wait_calls(int target)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    while (receiver_done_wait_calls < target)
+        pthread_cond_wait(
+            &completion_fence_condition,
+            &completion_fence_mutex);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void wait_for_outbound_ready_signal_barrier(void)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    while (!outbound_ready_signal_entered)
+        pthread_cond_wait(
+            &completion_fence_condition,
+            &completion_fence_mutex);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void set_receiver_done_signal_blocked(int blocked)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    receiver_done_signal_blocked = blocked;
+    if (!blocked)
+        pthread_cond_broadcast(&completion_fence_condition);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void set_outbound_ready_signal_blocked(int blocked)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    outbound_ready_signal_blocked = blocked;
+    if (!blocked)
+        pthread_cond_broadcast(&completion_fence_condition);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
 static uint32_t credit_record_amount(size_t index)
 {
     CHECK(index < send_record_count);
@@ -707,16 +866,40 @@ static uint32_t credit_record_amount(size_t index)
     return pstvnc_transport_read_be32(send_records[index].payload);
 }
 
+static void capture_runtime_test_semaphores(
+    const pstvnc_transport_runtime_t *runtime)
+{
+    receiver_done_semaphore_id = runtime->receiver_done_semaphore_id;
+    outbound_ready_semaphore_id = runtime->outbound_ready_semaphore_id;
+    rfb_outbound_credit_wait_semaphore_id =
+        runtime->rfb_outbound_credit_semaphore_id;
+    audio_activity_wait_semaphore_id = runtime->audio_activity_semaphore_id;
+    mpeg_activity_wait_semaphore_id = runtime->mpeg_activity_semaphore_id;
+}
+
 static void initialize_runtime(
     pstvnc_transport_runtime_t *runtime,
     const pstvnc_transport_session_config_t *config)
 {
     memset(runtime, 0xa5, sizeof(*runtime));
     CHECK(pstvnc_transport_runtime_initialize(runtime, 91, config) == 1);
-    receiver_done_semaphore_id = runtime->receiver_done_semaphore_id;
-    rfb_outbound_credit_wait_semaphore_id =
-        runtime->rfb_outbound_credit_semaphore_id;
+    capture_runtime_test_semaphores(runtime);
     CHECK(runtime->initialized == 1);
+}
+
+static void initialize_media_runtime(
+    pstvnc_transport_runtime_t *runtime,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_audio_channel_config_t *audio,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg)
+{
+    memset(runtime, 0xa5, sizeof(*runtime));
+    CHECK(pstvnc_transport_runtime_initialize_with_audio_mpeg(
+        runtime, 91, config, audio, mpeg) == 1);
+    capture_runtime_test_semaphores(runtime);
+    CHECK(runtime->initialized == 1);
+    CHECK(runtime->audio_enabled == 1);
+    CHECK(runtime->mpeg_enabled == 1);
 }
 
 static void start_runtime(pstvnc_transport_runtime_t *runtime)
@@ -1009,6 +1192,18 @@ typedef struct rfb_writer_test_context {
     int result;
 } rfb_writer_test_context_t;
 
+typedef struct runtime_call_test_context {
+    pstvnc_transport_runtime_t *runtime;
+    int result;
+} runtime_call_test_context_t;
+
+typedef struct media_waiter_test_context {
+    pstvnc_transport_runtime_t *runtime;
+    uint32_t activity_sequence;
+    int use_mpeg;
+    int result;
+} media_waiter_test_context_t;
+
 static void *rfb_writer_test_thread(void *opaque)
 {
     rfb_writer_test_context_t *context =
@@ -1018,6 +1213,59 @@ static void *rfb_writer_test_thread(void *opaque)
         context->runtime,
         context->payload,
         context->payload_length);
+    return NULL;
+}
+
+static void *outbound_submit_test_thread(void *opaque)
+{
+    static const uint8_t payload[] = { 0x5au };
+    runtime_call_test_context_t *context =
+        (runtime_call_test_context_t *)opaque;
+
+    context->result = pstvnc_transport_runtime_submit_frame(
+        context->runtime,
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        payload,
+        sizeof(payload));
+    return NULL;
+}
+
+static void *receiver_done_wait_test_thread(void *opaque)
+{
+    runtime_call_test_context_t *context =
+        (runtime_call_test_context_t *)opaque;
+
+    context->result =
+        pstvnc_transport_runtime_wait_receiver_done(context->runtime);
+    return NULL;
+}
+
+static void *runtime_release_test_thread(void *opaque)
+{
+    runtime_call_test_context_t *context =
+        (runtime_call_test_context_t *)opaque;
+
+    context->result = pstvnc_transport_runtime_release(context->runtime);
+    return NULL;
+}
+
+static void *media_waiter_test_thread(void *opaque)
+{
+    media_waiter_test_context_t *context =
+        (media_waiter_test_context_t *)opaque;
+
+    if (context->use_mpeg) {
+        context->result = pstvnc_transport_runtime_mpeg_wait_activity(
+            context->runtime,
+            &context->activity_sequence);
+    } else {
+        context->result = pstvnc_transport_runtime_audio_wait_activity(
+            context->runtime,
+            &context->activity_sequence);
+    }
+
     return NULL;
 }
 
@@ -1210,6 +1458,194 @@ static void test_finite_quiesce_order_is_distinct_from_fatal_abort(void)
     CHECK(physical_shutdown_calls == 1);
 }
 
+static void test_receiver_completion_event_is_real_no_touch_fence(void)
+{
+    static const uint8_t writer_payload[] = { 0xa5u };
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_audio_channel_config_t audio = make_audio_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    rfb_writer_test_context_t rfb_writer;
+    media_waiter_test_context_t audio_waiter;
+    media_waiter_test_context_t mpeg_waiter;
+    runtime_call_test_context_t outbound_submit;
+    runtime_call_test_context_t completion_wait;
+    pthread_t rfb_writer_thread;
+    pthread_t audio_waiter_thread;
+    pthread_t mpeg_waiter_thread;
+    pthread_t outbound_submit_thread;
+    pthread_t completion_wait_thread;
+
+    reset_fixture();
+    config.rfb_initial_credit_bytes = 0u;
+    initialize_media_runtime(&runtime, &config, &audio, &mpeg);
+    start_runtime(&runtime);
+
+    memset(&audio_waiter, 0, sizeof(audio_waiter));
+    audio_waiter.runtime = &runtime;
+    CHECK(pstvnc_transport_runtime_audio_activity_snapshot(
+        &runtime, &audio_waiter.activity_sequence) == 1);
+
+    memset(&mpeg_waiter, 0, sizeof(mpeg_waiter));
+    mpeg_waiter.runtime = &runtime;
+    mpeg_waiter.use_mpeg = 1;
+    CHECK(pstvnc_transport_runtime_mpeg_activity_snapshot(
+        &runtime, &mpeg_waiter.activity_sequence) == 1);
+
+    CHECK(pthread_create(
+        &audio_waiter_thread, NULL, media_waiter_test_thread, &audio_waiter)
+        == 0);
+    CHECK(pthread_create(
+        &mpeg_waiter_thread, NULL, media_waiter_test_thread, &mpeg_waiter)
+        == 0);
+    wait_for_media_wait_calls(1, 1);
+
+    memset(&rfb_writer, 0, sizeof(rfb_writer));
+    rfb_writer.runtime = &runtime;
+    rfb_writer.payload = writer_payload;
+    rfb_writer.payload_length = sizeof(writer_payload);
+    rfb_writer.result = -1;
+    CHECK(pthread_create(
+        &rfb_writer_thread, NULL, rfb_writer_test_thread, &rfb_writer) == 0);
+    wait_for_rfb_credit_wait_calls(1);
+
+    /*
+     * Hold a direct Transport submitter after it has published outbound_pending
+     * but before outbound-ready notification. The receiver must resolve that
+     * admitted slot on terminal exit before publishing completion.
+     */
+    set_outbound_ready_signal_blocked(1);
+    memset(&outbound_submit, 0, sizeof(outbound_submit));
+    outbound_submit.runtime = &runtime;
+    outbound_submit.result = -1;
+    CHECK(pthread_create(
+        &outbound_submit_thread,
+        NULL,
+        outbound_submit_test_thread,
+        &outbound_submit) == 0);
+    wait_for_outbound_ready_signal_barrier();
+    CHECK(runtime.outbound_pending == 1);
+
+    /*
+     * Hold the I/O owner at the exact final completion publication. An invalid
+     * frame closes admission and drives terminal dispatch without request_stop()
+     * pre-waking the logical media owners.
+     */
+    set_receiver_done_signal_blocked(1);
+    push_rx_frame(
+        PSTVNC_TRANSPORT_FRAME_CREDIT,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        NULL,
+        0u);
+    wait_for_receiver_done_signal_barrier();
+
+    CHECK(runtime.receiver_done == 1);
+    CHECK(runtime.failed == 1);
+    CHECK(runtime.outbound_pending == 0);
+    CHECK(event_index(EVENT_RECEIVER_DONE_SIGNAL) < 0);
+    CHECK(terminate_thread_calls == 0);
+    CHECK(delete_thread_calls == 0);
+    CHECK(physical_release_calls == 0);
+
+    /*
+     * Every logical waiter must have been made terminal before the receiver is
+     * allowed to publish reclaim completion.
+     */
+    CHECK(pthread_join(rfb_writer_thread, NULL) == 0);
+    CHECK(rfb_writer.result == 0);
+    CHECK(pthread_join(audio_waiter_thread, NULL) == 0);
+    CHECK(audio_waiter.result == 1);
+    CHECK(pthread_join(mpeg_waiter_thread, NULL) == 0);
+    CHECK(mpeg_waiter.result == 1);
+    CHECK(runtime.rfb_outbound_credit_wait_state == 0);
+    CHECK(runtime.audio_activity_wait_armed == 0);
+    CHECK(runtime.mpeg_activity_wait_armed == 0);
+
+    /* The racing outbound submitter was failed before completion publication. */
+    set_outbound_ready_signal_blocked(0);
+    CHECK(pthread_join(outbound_submit_thread, NULL) == 0);
+    CHECK(outbound_submit.result == 0);
+    CHECK(runtime.outbound_pending == 0);
+    CHECK(event_index(EVENT_RECEIVER_DONE_SIGNAL) < 0);
+
+    /*
+     * Even though early receiver_done is already visible, wait_receiver_done()
+     * must block on the final ownership event.
+     */
+    memset(&completion_wait, 0, sizeof(completion_wait));
+    completion_wait.runtime = &runtime;
+    completion_wait.result = -1;
+    CHECK(pthread_create(
+        &completion_wait_thread,
+        NULL,
+        receiver_done_wait_test_thread,
+        &completion_wait) == 0);
+    wait_for_receiver_done_wait_calls(1);
+    CHECK(event_index(EVENT_RECEIVER_DONE_SIGNAL) < 0);
+    CHECK(runtime.rfb_queue_storage != NULL);
+    CHECK(runtime.receiver_stack_allocation != NULL);
+    CHECK(physical_release_calls == 0);
+
+    set_receiver_done_signal_blocked(0);
+    CHECK(pthread_join(completion_wait_thread, NULL) == 0);
+    CHECK(completion_wait.result == 1);
+    CHECK(event_index(EVENT_RECEIVER_DONE_SIGNAL) >= 0);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+}
+
+static void test_release_waits_for_receiver_completion_before_reclaim(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t config = make_config();
+    runtime_call_test_context_t release_call;
+    pthread_t release_thread;
+
+    reset_fixture();
+    initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
+
+    set_receiver_done_signal_blocked(1);
+    CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 1);
+    wait_for_receiver_done_signal_barrier();
+    CHECK(runtime.receiver_done == 1);
+    CHECK(event_index(EVENT_RECEIVER_DONE_SIGNAL) < 0);
+
+    /*
+     * release() sees early terminality but must itself rendezvous on the final
+     * completion event before it can inspect/force/delete the thread or reclaim
+     * any Transport-owned storage.
+     */
+    force_first_refer_running = 1;
+    memset(&release_call, 0, sizeof(release_call));
+    release_call.runtime = &runtime;
+    release_call.result = -1;
+    CHECK(pthread_create(
+        &release_thread, NULL, runtime_release_test_thread, &release_call)
+        == 0);
+    wait_for_receiver_done_wait_calls(1);
+
+    CHECK(event_index(EVENT_RECEIVER_DONE_SIGNAL) < 0);
+    CHECK(event_index(EVENT_REFER_THREAD) < 0);
+    CHECK(terminate_thread_calls == 0);
+    CHECK(delete_thread_calls == 0);
+    CHECK(physical_release_calls == 0);
+    CHECK(runtime.rfb_queue_storage != NULL);
+    CHECK(runtime.receiver_stack_allocation != NULL);
+
+    set_receiver_done_signal_blocked(0);
+    CHECK(pthread_join(release_thread, NULL) == 0);
+    CHECK(release_call.result == 1);
+    CHECK(terminate_thread_calls == 1);
+    CHECK(event_index(EVENT_RECEIVER_DONE_SIGNAL) >= 0);
+    CHECK(event_index(EVENT_TERMINATE_THREAD) >
+        event_index(EVENT_RECEIVER_DONE_SIGNAL));
+    CHECK(event_index(EVENT_DELETE_THREAD) >
+        event_index(EVENT_RECEIVER_DONE_SIGNAL));
+    CHECK(event_index(EVENT_PHYSICAL_RELEASE) >
+        event_index(EVENT_DELETE_THREAD));
+}
+
 static void test_fatal_stop_completion_precedes_reclaim_and_fresh_session(void)
 {
     pstvnc_transport_runtime_t runtime;
@@ -1304,6 +1740,8 @@ int main(void)
     test_outbound_fragmentation_and_failure_propagation();
     test_outbound_rfb_waits_for_partial_pi_credit();
     test_finite_quiesce_order_is_distinct_from_fatal_abort();
+    test_receiver_completion_event_is_real_no_touch_fence();
+    test_release_waits_for_receiver_completion_before_reclaim();
     test_fatal_stop_completion_precedes_reclaim_and_fresh_session();
 
     reset_fixture();
