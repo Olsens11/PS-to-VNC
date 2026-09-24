@@ -81,6 +81,7 @@ typedef struct fake_semaphore {
     int used;
     int count;
     int maximum;
+    int waiters;
     pthread_mutex_t mutex;
     pthread_cond_t condition;
 } fake_semaphore_t;
@@ -89,7 +90,10 @@ static fake_semaphore_t fake_semaphores[MAX_FAKE_SEMAS];
 static int create_sema_calls;
 static int create_sema_fail_on_call;
 static int receiver_done_semaphore_id = -1;
+static int outbound_slot_semaphore_id = -1;
 static int outbound_ready_semaphore_id = -1;
+static int outbound_done_semaphore_id = -1;
+static int outbound_submitter_drain_semaphore_id = -1;
 static int rfb_outbound_credit_wait_semaphore_id = -1;
 static int audio_activity_wait_semaphore_id = -1;
 static int mpeg_activity_wait_semaphore_id = -1;
@@ -104,8 +108,11 @@ static int mpeg_activity_wait_calls;
 static int receiver_done_signal_blocked;
 static int receiver_done_signal_entered;
 static int receiver_done_wait_calls;
+static int outbound_submitter_drain_wait_calls;
 static int outbound_ready_signal_blocked;
 static int outbound_ready_signal_entered;
+static int outbound_slot_signal_blocked;
+static int outbound_slot_signal_entered;
 static int wait_readable_blocked;
 static int wait_readable_entered;
 static pthread_mutex_t completion_fence_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -226,10 +233,23 @@ int WaitSema(int semaphore_id)
         pthread_mutex_unlock(&media_wait_mutex);
     }
 
+    if (semaphore_id == outbound_submitter_drain_semaphore_id) {
+        pthread_mutex_lock(&completion_fence_mutex);
+        outbound_submitter_drain_wait_calls++;
+        pthread_cond_broadcast(&completion_fence_condition);
+        pthread_mutex_unlock(&completion_fence_mutex);
+    }
+
     semaphore = &fake_semaphores[semaphore_id];
     pthread_mutex_lock(&semaphore->mutex);
-    while (semaphore->count == 0)
-        pthread_cond_wait(&semaphore->condition, &semaphore->mutex);
+    if (semaphore->count == 0) {
+        semaphore->waiters++;
+        pthread_cond_broadcast(&semaphore->condition);
+        while (semaphore->count == 0)
+            pthread_cond_wait(&semaphore->condition, &semaphore->mutex);
+        semaphore->waiters--;
+        pthread_cond_broadcast(&semaphore->condition);
+    }
     semaphore->count--;
     pthread_mutex_unlock(&semaphore->mutex);
     return 0;
@@ -249,6 +269,19 @@ int SignalSema(int semaphore_id)
             outbound_ready_signal_entered = 1;
             pthread_cond_broadcast(&completion_fence_condition);
             while (outbound_ready_signal_blocked)
+                pthread_cond_wait(
+                    &completion_fence_condition,
+                    &completion_fence_mutex);
+        }
+        pthread_mutex_unlock(&completion_fence_mutex);
+    }
+
+    if (semaphore_id == outbound_slot_semaphore_id) {
+        pthread_mutex_lock(&completion_fence_mutex);
+        if (outbound_slot_signal_blocked) {
+            outbound_slot_signal_entered = 1;
+            pthread_cond_broadcast(&completion_fence_condition);
+            while (outbound_slot_signal_blocked)
                 pthread_cond_wait(
                     &completion_fence_condition,
                     &completion_fence_mutex);
@@ -500,7 +533,10 @@ static void reset_fixture(void)
     create_sema_calls = 0;
     create_sema_fail_on_call = 0;
     receiver_done_semaphore_id = -1;
+    outbound_slot_semaphore_id = -1;
     outbound_ready_semaphore_id = -1;
+    outbound_done_semaphore_id = -1;
+    outbound_submitter_drain_semaphore_id = -1;
     rfb_outbound_credit_wait_semaphore_id = -1;
     audio_activity_wait_semaphore_id = -1;
     mpeg_activity_wait_semaphore_id = -1;
@@ -509,8 +545,11 @@ static void reset_fixture(void)
     receiver_done_signal_blocked = 0;
     receiver_done_signal_entered = 0;
     receiver_done_wait_calls = 0;
+    outbound_submitter_drain_wait_calls = 0;
     outbound_ready_signal_blocked = 0;
     outbound_ready_signal_entered = 0;
+    outbound_slot_signal_blocked = 0;
+    outbound_slot_signal_entered = 0;
     wait_readable_blocked = 0;
     wait_readable_entered = 0;
     pthread_mutex_unlock(&completion_fence_mutex);
@@ -861,6 +900,61 @@ static void wait_for_outbound_ready_signal_barrier(void)
     pthread_mutex_unlock(&completion_fence_mutex);
 }
 
+static void wait_for_outbound_slot_signal_barrier(void)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    while (!outbound_slot_signal_entered)
+        pthread_cond_wait(
+            &completion_fence_condition,
+            &completion_fence_mutex);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void wait_for_outbound_submitter_drain_wait_calls(int target)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    while (outbound_submitter_drain_wait_calls < target)
+        pthread_cond_wait(
+            &completion_fence_condition,
+            &completion_fence_mutex);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void wait_for_semaphore_waiters(int semaphore_id, int target)
+{
+    fake_semaphore_t *semaphore = &fake_semaphores[semaphore_id];
+
+    CHECK(semaphore_id > 0 && semaphore_id < MAX_FAKE_SEMAS);
+    pthread_mutex_lock(&semaphore->mutex);
+    while (semaphore->waiters < target)
+        pthread_cond_wait(&semaphore->condition, &semaphore->mutex);
+    pthread_mutex_unlock(&semaphore->mutex);
+}
+
+static int semaphore_count(int semaphore_id)
+{
+    fake_semaphore_t *semaphore = &fake_semaphores[semaphore_id];
+    int count;
+
+    CHECK(semaphore_id > 0 && semaphore_id < MAX_FAKE_SEMAS);
+    pthread_mutex_lock(&semaphore->mutex);
+    count = semaphore->count;
+    pthread_mutex_unlock(&semaphore->mutex);
+    return count;
+}
+
+static int semaphore_waiters(int semaphore_id)
+{
+    fake_semaphore_t *semaphore = &fake_semaphores[semaphore_id];
+    int waiters;
+
+    CHECK(semaphore_id > 0 && semaphore_id < MAX_FAKE_SEMAS);
+    pthread_mutex_lock(&semaphore->mutex);
+    waiters = semaphore->waiters;
+    pthread_mutex_unlock(&semaphore->mutex);
+    return waiters;
+}
+
 static void wait_for_wait_readable_barrier(void)
 {
     pthread_mutex_lock(&completion_fence_mutex);
@@ -898,6 +992,15 @@ static void set_outbound_ready_signal_blocked(int blocked)
     pthread_mutex_unlock(&completion_fence_mutex);
 }
 
+static void set_outbound_slot_signal_blocked(int blocked)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    outbound_slot_signal_blocked = blocked;
+    if (!blocked)
+        pthread_cond_broadcast(&completion_fence_condition);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
 static uint32_t credit_record_amount(size_t index)
 {
     CHECK(index < send_record_count);
@@ -910,7 +1013,11 @@ static void capture_runtime_test_semaphores(
     const pstvnc_transport_runtime_t *runtime)
 {
     receiver_done_semaphore_id = runtime->receiver_done_semaphore_id;
+    outbound_slot_semaphore_id = runtime->outbound_slot_semaphore_id;
     outbound_ready_semaphore_id = runtime->outbound_ready_semaphore_id;
+    outbound_done_semaphore_id = runtime->outbound_done_semaphore_id;
+    outbound_submitter_drain_semaphore_id =
+        runtime->outbound_submitter_drain_semaphore_id;
     rfb_outbound_credit_wait_semaphore_id =
         runtime->rfb_outbound_credit_semaphore_id;
     audio_activity_wait_semaphore_id = runtime->audio_activity_semaphore_id;
@@ -1643,6 +1750,145 @@ static void test_receiver_completion_event_is_real_no_touch_fence(void)
     CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
 }
 
+static void test_outbound_submitter_drain_fences_active_and_queued_callers(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t config = make_config();
+    runtime_call_test_context_t active_submit;
+    runtime_call_test_context_t queued_submit;
+    runtime_call_test_context_t release_call;
+    pthread_t active_thread;
+    pthread_t queued_thread;
+    pthread_t release_thread;
+    int ready_count_before_postterminal;
+
+    reset_fixture();
+    initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
+    clear_send_records();
+
+    /*
+     * Hold the sole I/O owner inside readiness so one submitter can own the
+     * outbound slot and a second can register then queue behind that slot before
+     * terminality closes admission.
+     */
+    set_wait_readable_blocked(1);
+    wait_for_wait_readable_barrier();
+
+    memset(&active_submit, 0, sizeof(active_submit));
+    active_submit.runtime = &runtime;
+    active_submit.result = -1;
+    CHECK(pthread_create(
+        &active_thread, NULL, outbound_submit_test_thread, &active_submit) == 0);
+    wait_for_semaphore_waiters(outbound_done_semaphore_id, 1);
+    CHECK(runtime.outbound_pending == 1);
+    CHECK(runtime.outbound_submitter_count == 1u);
+
+    memset(&queued_submit, 0, sizeof(queued_submit));
+    queued_submit.runtime = &runtime;
+    queued_submit.result = -1;
+    CHECK(pthread_create(
+        &queued_thread, NULL, outbound_submit_test_thread, &queued_submit) == 0);
+    wait_for_semaphore_waiters(outbound_slot_semaphore_id, 1);
+    CHECK(runtime.outbound_submitter_count == 2u);
+
+    /*
+     * Hold the active caller after its terminal outbound-done wake at its final
+     * slot release. This is precisely the R20C gap: done resolution is not yet
+     * submitter completion.
+     */
+    set_outbound_slot_signal_blocked(1);
+    set_receiver_done_signal_blocked(1);
+    push_rx_frame(
+        PSTVNC_TRANSPORT_FRAME_CREDIT,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        NULL,
+        0u);
+    set_wait_readable_blocked(0);
+
+    wait_for_outbound_slot_signal_barrier();
+    wait_for_outbound_submitter_drain_wait_calls(1);
+
+    CHECK(runtime.receiver_done == 1);
+    CHECK(runtime.failed == 1);
+    CHECK(runtime.outbound_pending == 0);
+    CHECK(runtime.outbound_submitter_count == 2u);
+    CHECK(runtime.outbound_submitter_drain_waiting == 1);
+    CHECK(semaphore_waiters(outbound_slot_semaphore_id) == 1);
+    CHECK(event_index(EVENT_RECEIVER_DONE_SIGNAL) < 0);
+
+    /*
+     * release() is allowed to observe early terminality but must remain blocked
+     * on final receiver completion while either registered submitter can still
+     * touch the outbound rendezvous.
+     */
+    memset(&release_call, 0, sizeof(release_call));
+    release_call.runtime = &runtime;
+    release_call.result = -1;
+    force_first_refer_running = 1;
+    CHECK(pthread_create(
+        &release_thread, NULL, runtime_release_test_thread, &release_call) == 0);
+    wait_for_receiver_done_wait_calls(1);
+    CHECK(event_index(EVENT_REFER_THREAD) < 0);
+    CHECK(delete_thread_calls == 0);
+    CHECK(physical_release_calls == 0);
+    CHECK(fake_semaphores[outbound_slot_semaphore_id].used);
+    CHECK(fake_semaphores[outbound_ready_semaphore_id].used);
+    CHECK(fake_semaphores[outbound_done_semaphore_id].used);
+    CHECK(fake_semaphores[outbound_submitter_drain_semaphore_id].used);
+
+    /*
+     * Let the active caller make its final slot touch. The queued caller must
+     * then acquire the slot, observe terminality, release it and unregister.
+     * Only the second departure can reduce the drain set to zero.
+     */
+    set_outbound_slot_signal_blocked(0);
+    wait_for_receiver_done_signal_barrier();
+
+    CHECK(runtime.outbound_submitter_count == 0u);
+    CHECK(runtime.outbound_submitter_drain_waiting == 0);
+    CHECK(semaphore_waiters(outbound_slot_semaphore_id) == 0);
+    CHECK(semaphore_count(outbound_slot_semaphore_id) == 1);
+
+    CHECK(pthread_join(active_thread, NULL) == 0);
+    CHECK(active_submit.result == 0);
+    CHECK(pthread_join(queued_thread, NULL) == 0);
+    CHECK(queued_submit.result == 0);
+
+    /*
+     * A caller beginning after early terminality is not registered and never
+     * enters slot/ready/done ownership. Snapshot the ready token: the rejected
+     * call must not consume or publish another outbound-ready event.
+     */
+    ready_count_before_postterminal =
+        semaphore_count(outbound_ready_semaphore_id);
+    CHECK(pstvnc_transport_runtime_submit_frame(
+        &runtime,
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        "x",
+        1u) == 0);
+    CHECK(runtime.outbound_submitter_count == 0u);
+    CHECK(semaphore_waiters(outbound_slot_semaphore_id) == 0);
+    CHECK(semaphore_count(outbound_slot_semaphore_id) == 1);
+    CHECK(semaphore_count(outbound_ready_semaphore_id) ==
+        ready_count_before_postterminal);
+
+    set_receiver_done_signal_blocked(0);
+    CHECK(pthread_join(release_thread, NULL) == 0);
+    CHECK(release_call.result == 1);
+    CHECK(terminate_thread_calls == 1);
+    CHECK(event_index(EVENT_RECEIVER_DONE_SIGNAL) >= 0);
+    CHECK(event_index(EVENT_TERMINATE_THREAD) >
+        event_index(EVENT_RECEIVER_DONE_SIGNAL));
+    CHECK(event_index(EVENT_DELETE_THREAD) >
+        event_index(EVENT_RECEIVER_DONE_SIGNAL));
+    CHECK(event_index(EVENT_PHYSICAL_RELEASE) >
+        event_index(EVENT_DELETE_THREAD));
+}
+
 static void test_release_waits_for_receiver_completion_before_reclaim(void)
 {
     pstvnc_transport_runtime_t runtime;
@@ -1774,6 +2020,11 @@ static void test_fatal_stop_completion_precedes_reclaim_and_fresh_session(void)
     CHECK(runtime.receiver_thread_id == -1);
     CHECK(runtime.receiver_done_semaphore_id > 0);
     CHECK(fake_semaphores[runtime.receiver_done_semaphore_id].count == 0);
+    CHECK(runtime.outbound_submitter_drain_semaphore_id > 0);
+    CHECK(fake_semaphores[
+        runtime.outbound_submitter_drain_semaphore_id].count == 0);
+    CHECK(runtime.outbound_submitter_count == 0u);
+    CHECK(runtime.outbound_submitter_drain_waiting == 0);
     CHECK(runtime.rfb_quiesce_request_received == 0u);
     CHECK(runtime.rfb_quiesce_boundary_sent == 0u);
     CHECK(runtime.rfb_quiesce_commit_received == 0u);
@@ -1794,6 +2045,7 @@ int main(void)
     test_outbound_rfb_waits_for_partial_pi_credit();
     test_finite_quiesce_order_is_distinct_from_fatal_abort();
     test_receiver_completion_event_is_real_no_touch_fence();
+    test_outbound_submitter_drain_fences_active_and_queued_callers();
     test_release_waits_for_receiver_completion_before_reclaim();
     test_fatal_stop_completion_precedes_reclaim_and_fresh_session();
 
