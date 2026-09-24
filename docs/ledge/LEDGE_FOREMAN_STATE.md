@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0056
-RECORDED_AT=2026-09-24T13:08:52-04:00
+STATE_REVISION=0057
+RECORDED_AT=2026-09-24T15:00:41-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0055
-SUPERSEDES_FOREMAN_STATE_REVISION=0055
+BASED_ON_FOREMAN_STATE_REVISION=0056
+SUPERSEDES_FOREMAN_STATE_REVISION=0056
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,31 +14,31 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0056 independently accepts the cumulative A001 Transport reclaim
-correction through `A001-TRANSPORT-DRAIN-FAIL-CLOSED-R20E` at final source
-`316ad217bef229c9ca0134b9b922a213cb5af247` and immutable Reconstruction
-closeout `5357e7ed422bb402f187a2887ad0e67bcc710e4a`.
+Revision 0057 independently accepts `A003-APPLICATION-MPEG-RUN-START-R21` at
+final source authority `fc8bb2652d94d8163e1e5b375e33c9e37b73017b` and
+consumes immutable Reconstruction closeout
+`964d1cfa8db8c834d9ee32a1541c42ffb1aace70`.
 
-R20E closes the final failure-path gap left after R20C/R20D. Receiver
-completion is now a private terminal-outcome rendezvous with explicit
-`PENDING`, `PROVEN`, and irreversible `FAILED` state. Only `PROVEN` may
-authorize `wait_receiver_done()` success or release/reclaim; a drain wait
-failure or contradictory wake can wake observers but can never become reclaim
-authority or fresh-session authority.
+R21 establishes the trigger-agnostic Application-owned MPEG start transaction:
+fresh nonzero monotonic run generation, exact accepted geometry/profile
+composition, required pre-existing P2 protection, R18 run-open, fresh R5/R3/R4
+execution owners, P3 WAIT_FIRST_FRAME, P7 frame-consumer readiness, and R20
+START as the final irreversible startup action.
 
-With the cumulative R20C I/O-owner no-touch fence, R20D active/queued
-outbound-submitter drain, and R20E fail-closed outcome now independently
-accepted at one exact source authority, the A001 blocker that prevented R21 is
-cleared.
+Independent dependency review does not advance directly to retirement. A
+successful R21 run stops at `STARTED_WAIT_FIRST_FRAME`. P7 already owns the
+mechanism that presents the first synchronized frame, arms the shared media
+epoch through the compositor, promotes P3 to MPEG_OWNED, and services later
+scheduled/drop frames; however, the new Application run owner has no
+owner-correct service API/state transition that consumes those P7 facts.
 
-Revision 0056 therefore reactivates the original trigger-agnostic
-`A003-APPLICATION-MPEG-RUN-START-R21` packet from State 0052 without changing
-its product scope or acceptance semantics. R21 remains a support transaction
-only; ordinary `app.c` activation, Pi MPEG product activation, and calibration
-trigger selection remain deferred.
+Revision 0057 therefore activates one narrow trigger-agnostic live-service
+packet before retirement. It composes the already-accepted P7 service through
+the R21 run owner, records the exact first-frame ownership transition, and
+fails closed on unexpected worker/service termination. It does not add product
+invocation or retirement.
 
-R20E changes PS2 loadable bytes and is not hardware-qualified. R21 carries no
-hardware-qualification claim.
+R21 changes PS2 loadable bytes and is not hardware-qualified.
 ## Temporal architecture reconciliation
 
 Wire Runtime Decisions revision 0011 and Architecture Overlay revision 0007
@@ -70,7 +70,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A001_R20C_R20D_R20E_TRANSPORT_RECLAIM_FENCE_FOREMAN_ACCEPTED__A003_R21_APPLICATION_MPEG_RUN_START_ACTIVE__RETIREMENT_AND_ORDINARY_ACTIVATION_DEFERRED`
+`A003_R21_APPLICATION_MPEG_RUN_START_FOREMAN_ACCEPTED__A003_R22_APPLICATION_MPEG_LIVE_SERVICE_ACTIVE__RETIREMENT_AND_ORDINARY_ACTIVATION_DEFERRED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -104,7 +104,8 @@ MPEG_PRIVATE_SESSION_BINDING=FOREMAN_ACCEPTED
 TRANSPORT_RECEIVER_COMPLETION_FENCE=FOREMAN_ACCEPTED_AT_R20E_AUTHORITY
 TRANSPORT_OUTBOUND_SUBMITTER_DRAIN=FOREMAN_ACCEPTED_AT_R20E_AUTHORITY
 TRANSPORT_DRAIN_FAILURE_FENCE=FOREMAN_ACCEPTED
-APPLICATION_MPEG_RUN_START=RECONSTRUCTION_ACTIVE
+APPLICATION_MPEG_RUN_START=FOREMAN_ACCEPTED
+APPLICATION_MPEG_LIVE_SERVICE=RECONSTRUCTION_ACTIVE
 APPLICATION_MPEG_RETIREMENT=DEPENDENCY_QUEUED
 ORDINARY_MPEG_PRODUCT_ACTIVATION=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
@@ -649,23 +650,147 @@ This exact loadable image differs from accepted R20 and therefore becomes the
 new current exact hardware-debt identity. Repository evidence does not
 physically qualify it.
 
-## R21 reactivation decision
+## Accepted R21 authority
 
-State 0052 already defined the smallest safe MPEG next dependency after R20:
-a trigger-agnostic Application-owned run-start transaction. State 0053 queued
-that packet only because exact-head validation exposed the A001 reclaim race.
+PACKET_ID=A003-APPLICATION-MPEG-RUN-START-R21
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0056
+ASSIGNING_FOREMAN_STATE_COMMIT=ff0bdf1adcf28aa810a03ff1bfb9e4177d86d7dd
+ASSIGNING_FOREMAN_LOG_COMMIT=05f8dd5cbcacbc46510f2d04f229e593def6601b
+RECONSTRUCTION_STARTING_COMMIT=05f8dd5cbcacbc46510f2d04f229e593def6601b
+R21_FINAL_SOURCE_COMMIT=fc8bb2652d94d8163e1e5b375e33c9e37b73017b
+R21_RECONSTRUCTION_LOG_COMMIT=964d1cfa8db8c834d9ee32a1541c42ffb1aace70
+R21_PRE_LOG_COMMIT_COUNT=7
 
-R20C/R20D/R20E now close that blocker. No intervening authority changed the R21
-Application semantics, component dependencies, or scope. State 0056 therefore
-reactivates the original R21 packet rather than redesigning or expanding it.
+The required immutable Reconstruction record is:
 
-R21 must still stop before product invocation. It does not choose a calibration
-gesture, modify ordinary `app.c`, activate Pi MPEG production, perform frame
-service/retirement, thaw/reveal RFB, or activate AUDIO.
+`docs/ledge/work-log/20260924T131021-0400__reconstruction__a003-mpeg-generation__interactive.md`
+
+Independent Foreman review accepts all twelve R21 criteria:
+
+1. One coordinator instance owns a monotonically increasing nonzero generation
+   sequence; allocation is never rolled back after an admitted attempt and
+   UINT32 exhaustion faults without wrap.
+2. One already-resolved base/inner/suppression geometry value is validated
+   before activation, including nonempty rectangles, macroblock-sized base,
+   symmetric inner inset, suppression containment and selected decoder-profile
+   maximum dimensions.
+3. P3 is armed with the full geometry; R20 START is built only from the retained
+   exact P3 snapshot and carries base/suppression but not the inner matte.
+4. R21 requires P2 already to deny remote publication and never freezes or
+   thaws P2 itself.
+5. R18 run-open occurs before worker consumer activity and is pre-START-aborted
+   only when the START invocation boundary has not been crossed.
+6. Fresh R5 runtime, R3 backend operations and R4 worker are composed for the
+   exact allocated generation using the selected R7 profile.
+7. P3 WAIT_FIRST_FRAME and P7 consumer initialization both complete before
+   START may be invoked.
+8. START is the final startup action. Successful START leaves exact
+   `STARTED_WAIT_FIRST_FRAME` run authority.
+9. Every pre-START failure either proves reverse-order release through P3/R4/R5/
+   R18 or faults the coordinator when cleanup cannot be proven.
+10. Once START is invoked, even a non-OK result faults and requires outer
+    session teardown; pre-START abort/local cleanup is never used after that
+    irreversible boundary.
+11. R21 does not service frames, retire the run, thaw/reveal RFB, activate Pi
+    MPEG product behavior, select a UI/controller trigger, modify ordinary
+    `src/app.c`, or alter AUDIO/lower-owner product semantics.
+12. Final source and immutable-log heads pass canonical host/project/strict
+    dictionary/pinned PS2 compile/link/current-source reproducibility evidence.
+
+R21_SOURCE_COMPLETE=YES
+R21_FOREMAN_ACCEPTED=YES
+R21_HOST_TESTED=YES
+R21_PROJECT_CHECK=PASS
+R21_STRICT_DICTIONARIES=PASS
+R21_PS2_COMPILE=PASS
+R21_PS2_LINK=PASS
+R21_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R21_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36035059916_ATTEMPT_1
+R21_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36035354181_ATTEMPT_1
+R21_INDEPENDENT_VALIDATION=NOT_RUN
+R21_OPERATOR_OBSERVED=NO
+R21_HARDWARE_QUALIFIED=NO
+
+Host evidence at both exact final authorities includes
+`app_mpeg_run_test: PASS` together with the existing Transport runtime/MPEG,
+P2, Pi R17 and ordinary Application R15/R16B/R19 regressions.
+
+Accepted R21 linked identity:
+
+`ELF_PRISTINE_SHA256=82ea220b084d50a857957f68950c10e8e7eab6a23e4857ab923e61f713c03ac8`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=910597af49fe2121ab730a2db82aa4259177256156062853bd2a008f0d4d6045`
+`PT_LOAD_BYTES=494996`
+`LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`
+
+This exact loadable image differs from accepted R20E and therefore becomes the
+new current hardware-debt identity. Repository reproducibility does not
+physically qualify it.
+
+## Next dependency decision
+
+R21 intentionally leaves the successful run in
+`PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME` with one initialized P7 frame
+consumer and a live exact-generation worker.
+
+The accepted P7 mechanism already owns the actual main-thread frame service:
+
+- it claims exact-generation worker frames;
+- first frame performs synchronized physical MPEG presentation, arms the
+  common media epoch at that exact boundary, and promotes P3 to MPEG_OWNED;
+- later frames use the accepted absolute scheduler/drop policy;
+- WAIT retains the exact claim and deadline without blocking the main loop;
+- mapping/scheduler/compositor/release failures contain the borrow and request
+  exact worker stop where possible.
+
+However, R21's Application run owner currently exposes no service operation and
+its run state cannot record the first-frame promotion. Jumping directly to
+retirement would force a later caller either to reach into the coordinator's
+`frame_consumer` field directly or to infer live ownership only from lower
+component state. That would weaken the coherent Application transaction R21
+just established.
+
+The smallest next dependency is therefore to compose P7 service through the
+R21 run owner and make the first synchronized promotion a truthful Application
+run-state transition. Retirement remains a separate following packet.
+
+## Governing invariants for R22
+
+1. R22 uses the already-accepted P7 consumer directly; it does not fork frame
+   claim/mapping/scheduler/compositor mechanics into `app_mpeg_run.*`.
+2. Live service is valid only for the exact current nonzero run generation in
+   STARTED_WAIT_FIRST_FRAME or MPEG_OWNED Application state.
+3. Before first-frame promotion, P3 must remain exact-generation
+   WAIT_FIRST_FRAME. A benign P7 IDLE with an unfinished worker leaves the
+   Application state unchanged.
+4. The first successful P7 PRESENTED result may transition Application state to
+   MPEG_OWNED only when P3 now confirms exact-generation MPEG_OWNED and the
+   P7 result proves the synchronized first-frame promotion.
+5. Application does not arm the media clock. P7/compositor remain sole owners
+   of first physical synchronization, clock arm and P3 promotion.
+6. In MPEG_OWNED state, benign P7 IDLE/WAIT/PRESENTED/DROPPED results preserve
+   exact run identity. WAIT retains the lower P7 claim/deadline exactly.
+7. An observed worker-finished fact while no Application stop/retirement has
+   been requested is unexpected termination under A003 and must fail the run
+   closed; it is not normal completion or retirement proof.
+8. Any negative/faulted P7 service result or impossible P3/generation/state
+   contradiction faults the Application run and requires outer teardown. R22
+   must preserve lower-owner claim/worker evidence rather than memset or
+   manufacture cleanup.
+9. R22 performs no run retirement: no P3 begin/seal/reveal, no R20 RETIRE, no
+   producer-done mark, no R4 stop/join/release, no R5 release, no R18 finalize,
+   and no P2 thaw/FULL-refresh scheduling.
+10. R22 does not choose a calibration/input trigger or modify ordinary
+    `pstvnc_app_run*()` to start/service MPEG.
+11. Pi product runtime remains dormant; RFB/AUDIO/Transport/MPEG/Display private
+    mechanisms and fixed Wire bytes remain unchanged.
+12. Existing R21 start evidence and P7 focused tests remain authoritative and
+    green; R22 adds only Application-state/service composition evidence.
 
 ## ACTIVE RECONSTRUCTION PACKET
 
-PACKET_ID=A003-APPLICATION-MPEG-RUN-START-R21
+PACKET_ID=A003-APPLICATION-MPEG-LIVE-SERVICE-R22
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a003-mpeg-generation
@@ -673,153 +798,134 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0056
-BASED_ON_ACCEPTED_R20_SOURCE=3e39753b1b3bce9fe187748deb7eeb4d6201151c
-BASED_ON_R20_LOG=0a81114fb1c8691fb677fed343cd45bfbae24487
+BASED_ON_FOREMAN_STATE_REVISION=0057
+BASED_ON_ACCEPTED_R21_SOURCE=fc8bb2652d94d8163e1e5b375e33c9e37b73017b
+BASED_ON_R21_LOG=964d1cfa8db8c834d9ee32a1541c42ffb1aace70
 BASED_ON_ACCEPTED_TRANSPORT_RECLAIM_SOURCE=316ad217bef229c9ca0134b9b922a213cb5af247
-BASED_ON_R20E_LOG=5357e7ed422bb402f187a2887ad0e67bcc710e4a
 
 ### Objective
 
-Implement one trigger-agnostic Application-owned MPEG run-start transaction that
-binds accepted calibration geometry and selected MPEG mechanism policy to the
-accepted Transport/worker/Presentation/frame-consumer seams, allocates exact
-session-local generation identity, and makes START the final irreversible
-startup action.
+Add one trigger-agnostic Application run-service operation that consumes the
+already-initialized P7 frame consumer owned by an R21 run, records the exact
+first synchronized transition into MPEG-owned Application state, preserves
+benign live P7 outcomes, and fails closed on unexpected live-service/worker
+termination.
 
-Do not wire this transaction into the ordinary Application loop in R21.
+Do not perform retirement or ordinary product activation in R22.
 
 ### Required behavior
 
-1. **Application run owner.** Add the smallest coherent Application-owned run
-   state/process representation. A new root `src/app_mpeg_run.*` pair is
-   permitted because `src/` is the Application coordinator responsibility and
-   this is cross-domain Application orchestration, not a new feature domain.
-2. **Fresh session-local identity.** Initialization establishes idle run state
-   and monotonic nonzero generation allocation. No generation may be reused
-   after allocation, including a locally failed pre-START attempt; wrap/exhaustion
-   fails closed.
-3. **Accepted geometry mapping.** Consume one resolved calibration geometry
-   value. Map base/inner/suppression exactly into P3 Presentation geometry and
-   map only base/suppression into the R20 START request. Prove signed/nonempty/
-   containment/alignment/profile-bound validity before activation.
-4. **Existing protection required.** Refuse startup unless the supplied P2 flow
-   policy currently denies remote publication. Do not set or clear the freeze
-   in R21.
-5. **Transport access/run-open.** Require current caller-supplied Transport
-   access and open one clean R18 run before the MPEG worker can consume channel
-   state.
-6. **Fresh MPEG execution owners.** Initialize one fresh R5 PS2 worker runtime,
-   obtain its decoder/worker operation tables, initialize one fresh R3 PS2
-   decoder backend, obtain platform operations, and start one R4 worker with
-   the allocated generation and selected R7 decoder/worker/runtime policy.
-7. **Presentation/frame consumer.** Arm P3 WAIT_FIRST_FRAME with the exact same
-   generation/geometry, then initialize P7 frame consumer against that worker,
-   Presentation, caller-owned media clock and selected scheduler profile.
-8. **START last.** Only after all prior steps succeed may R21 submit the R20
-   semantic START request. Successful submission establishes one
-   `STARTED_WAIT_FIRST_FRAME` transaction state.
-9. **Pre-START unwind.** For every injected failure before START invocation,
-   unwind in reverse ownership order. Release any P7 claim/state that needs no
-   separate ownership; abort pending Presentation if armed; request/verify
-   worker stop/join/outcome/release as required; release R5 runtime resources;
-   abort R18 run-open. Report cleanup failure distinctly and leave the owner
-   faulted rather than claiming idle.
-10. **START-attempt failure fence.** If the START call itself returns non-OK,
-    mark the transaction/session as faulted/teardown-required. Do not use
-    `pstvnc_transport_mpeg_run_abort_pre_start()` after START invocation merely
-    because the call returned failure.
-11. **No downstream lifecycle scope.** Do not service frames, thaw P2, begin
-    Presentation retirement, send RETIRE, mark producer done, stop/join a live
-    successful worker, finalize Transport, schedule FULL refresh, reveal RFB,
-    or activate the Pi product runtime.
-12. **No product trigger/ordinary activation.** Do not modify ordinary
-    `pstvnc_app_run*()` behavior to invoke R21 and do not choose a controller/
-    keyboard/UI gesture for MPEG calibration/start.
+1. **Explicit live state.** Extend the R21 run state with the minimum truthful
+   MPEG_OWNED state needed after the first synchronized frame. Do not create a
+   second generation owner or duplicate P3 state.
+2. **One run-service API.** Add one small Application-owned service operation
+   that invokes `pstvnc_app_mpeg_frame_consumer_service()` for the coordinator's
+   exact current generation and returns/preserves the detailed P7 service
+   result needed by the future main loop.
+3. **Pre-first benign idle.** In STARTED_WAIT_FIRST_FRAME, IDLE with
+   `worker_finished == 0` remains waiting; no state, RFB or Transport lifecycle
+   side effect occurs.
+4. **Exact first-frame promotion.** A first-frame PRESENTED result transitions
+   the run to MPEG_OWNED only after verifying P3 is MPEG_OWNED for the exact
+   current generation and the returned compositor effects identify the
+   synchronized first-frame promotion.
+5. **Clock ownership unchanged.** Do not call media-clock arm APIs from R22;
+   accept only the P7/compositor-owned first-sync facts.
+6. **Post-first benign service.** In MPEG_OWNED, IDLE/WAIT/PRESENTED/DROPPED
+   remain ordinary live outcomes. Preserve WAIT claim/deadline and P7
+   accounting unchanged.
+7. **Unexpected worker exit.** If a benign-looking IDLE reports
+   `worker_finished`, fault the coordinator and require teardown; do not infer
+   normal EOF, RETIRE completion, or safe reuse.
+8. **Service failure containment.** Any negative P7 result, P7 fault status,
+   impossible first-frame result, wrong generation or unexpected Presentation
+   state faults the coordinator with `session_teardown_required=1` while
+   preserving the P7/worker ownership evidence for later teardown.
+9. **No direct lower-owner cleanup.** R22 service failure does not clear the P7
+   consumer, abort Presentation, stop/join/release worker/runtime or abort/
+   finalize Transport. Later failure/retirement orchestration owns cleanup.
+10. **State/status truth.** The existing run status surface reports the new
+    live state and retained exact generation without inferring retirement.
+11. **No activation scope creep.** `src/app.c`, Input/UI/calibration product
+    triggers, Pi MPEG product composition, RFB thaw/refresh, AUDIO and protocol
+    bytes remain untouched.
+12. **Evidence/dictionaries.** Add deterministic service-state tests and keep
+    R21/P7 plus canonical project/dictionary/PS2 build evidence green.
 
 ### Acceptance criteria
 
-- A003-R21-C1 APPLICATION_OWNS_MONOTONIC_SESSION_LOCAL_RUN_GENERATION
-- A003-R21-C2 ACCEPTED_GEOMETRY_HAS_ONE_BASE_INNER_SUPPRESSION_AUTHORITY
-- A003-R21-C3 START_BASE_AND_SUPPRESSION_MATCH_PRESENTATION_SNAPSHOT_EXACTLY
-- A003-R21-C4 EXISTING_RFB_PROTECTION_IS_REQUIRED_NOT_STOLEN_OR_RELEASED
-- A003-R21-C5 R18_RUN_OPEN_PRECEDES_MPEG_WORKER_CONSUMER_ACTIVITY
-- A003-R21-C6 FRESH_R5_R3_R4_EXECUTION_OWNERS_BIND_EXACT_GENERATION
-- A003-R21-C7 P3_WAIT_FIRST_FRAME_AND_P7_CONSUMER_READY_BEFORE_START
-- A003-R21-C8 START_IS_FINAL_IRREVERSIBLE_STARTUP_ACTION
-- A003-R21-C9 EVERY_PRE_START_FAILURE_PROVES_REVERSE_ORDER_UNWIND_OR_FAULTS
-- A003-R21-C10 START_ATTEMPT_FAILURE_NEVER_FALSELY_USES_PRE_START_ABORT
-- A003-R21-C11 NO_RETIREMENT_PI_TRIGGER_AUDIO_OR_ORDINARY_APP_SCOPE_CREEP
-- A003-R21-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A003-R22-C1 RUN_OWNER_HAS_ONE_EXPLICIT_MPEG_OWNED_LIVE_STATE
+- A003-R22-C2 LIVE_SERVICE_USES_ONLY_EXISTING_EXACT_GENERATION_P7_CONSUMER
+- A003-R22-C3 PRE_FIRST_IDLE_PRESERVES_WAIT_FIRST_FRAME_WITHOUT_SIDE_EFFECT
+- A003-R22-C4 FIRST_PRESENTED_FRAME_EXACTLY_PROMOTES_RUN_AFTER_P3_CONFIRMATION
+- A003-R22-C5 MEDIA_CLOCK_AND_PHYSICAL_FIRST_SYNC_OWNERSHIP_REMAINS_P7_DISPLAY
+- A003-R22-C6 MPEG_OWNED_IDLE_WAIT_PRESENTED_DROPPED_PRESERVE_LIVE_AUTHORITY
+- A003-R22-C7 UNEXPECTED_WORKER_FINISH_IS_FAILURE_NOT_NORMAL_RETIREMENT
+- A003-R22-C8 P7_OR_STATE_CONTRADICTION_FAULTS_WITHOUT_ERASING_OWNER_EVIDENCE
+- A003-R22-C9 NO_RETIREMENT_STOP_FINALIZE_THAW_OR_REVEAL_SCOPE
+- A003-R22-C10 RUN_STATUS_REMAINS_EXACT_GENERATION_AND_STATE_AUTHORITY
+- A003-R22-C11 NO_ORDINARY_APP_PI_INPUT_AUDIO_OR_PROTOCOL_SCOPE_CREEP
+- A003-R22-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
 All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-R21 must prove at least:
+R22 must prove at least:
 
-1. fresh coordinator starts idle with generation 0/current-none and allocates
-   generations 1,2,... without reuse across pre-START failed attempts;
-2. UINT32 exhaustion fails closed and never wraps to zero;
-3. invalid/unprotected geometry or thawed P2 fails before Transport run-open;
-4. exact base/suppression values observed by R20 START equal the P3 snapshot;
-5. inner matte reaches Presentation but not START;
-6. run-open precedes worker start; worker start precedes Presentation/P7 ready;
-   START is after all of them;
-7. failures at run-open, runtime init/ops, backend ops, worker start,
-   Presentation arm and P7 init produce the required reverse-order cleanup and
-   no START invocation;
-8. cleanup failure leaves explicit faulted state and does not permit another
-   start on the same coordinator;
-9. START success leaves exact generation in WAIT_FIRST_FRAME-ready state with
-   no retirement/thaw/reveal side effect;
-10. START invocation failure performs no pre-START abort and requires outer
-    session teardown;
-11. existing P2, P3, P7, R18, R20 and worker/runtime/backend focused tests
-    remain green;
-12. ordinary Application R15/R16B/R19 tests remain unchanged/green, proving
-    R21 is not yet product-invoked.
+1. service from IDLE/FAULTED or without a successful R21 run is rejected before
+   P7 service;
+2. STARTED_WAIT_FIRST_FRAME + P7 IDLE/unfinished remains exactly waiting;
+3. exact first P7 PRESENTED with synchronized+first-frame-promoted effects and
+   exact P3 MPEG_OWNED advances run state once to MPEG_OWNED;
+4. a claimed first PRESENTED result lacking exact promotion/P3 state faults
+   rather than advancing run state;
+5. post-first P7 WAIT preserves the exact claim/deadline and MPEG_OWNED state;
+6. post-first PRESENTED and DROPPED preserve state and pass through P7 result;
+7. P7 IDLE with worker_finished faults both before and after first-frame
+   promotion;
+8. each negative P7 result class used by the focused fixture causes Application
+   fault/teardown without clearing the embedded consumer/worker evidence;
+9. wrong-generation or impossible P3 state is fail-closed;
+10. existing `app_mpeg_frame` P7 tests and R21 start tests remain green.
 
 ### Authorized source surface
 
-R21 may modify only the smallest justified subset of:
+R22 may modify only the smallest justified subset of:
 
-- new `src/app_mpeg_run.c` / `.h` Application-coordinator support files;
-- directly required Application test/build enrollment, preferably a focused
-  `tests/unit/app_mpeg_run_test.c` rather than expanding legacy `app_test`;
-- `src/SYMBOLS.md`, generated dictionaries and directly affected development
-  documentation;
-- compile/link/check manifests required to compile/link the new Application
-  coordinator source.
+- `src/app_mpeg_run.c` / `.h`;
+- `tests/unit/app_mpeg_run_test.c` or one focused companion R22 Application test;
+- directly affected root Application dictionaries/documentation;
+- build/check manifests only if genuinely required by the source/test change.
 
-Existing `src/app_mpeg_frame.*`, RFB P2, Presentation/Display, calibration,
-MPEG worker/backend/runtime, Transport, Configuration and Pi product source may
-not be modified unless a concrete integration-contract defect is demonstrated;
-if such a defect is found, stop and return BLOCKED rather than broadening R21.
-
-`src/app.c` ordinary lifecycle behavior is not authorized for R21.
+`src/app_mpeg_frame.*`, Display/Presentation/compositor/scheduler, MPEG
+worker/backend/runtime, Transport, RFB flow policy, Configuration, Pi product
+source, AUDIO product source, Input/UI/calibration and ordinary `src/app.c` are
+not authorized. If direct composition exposes a concrete defect in an accepted
+lower-owner contract, stop and return BLOCKED rather than broadening R22.
 
 ### Required checks before handoff
 
-Run focused R21 host tests plus existing P2/P3/P7/R18/R20/worker/runtime/backend
-regressions, canonical host tests, project check, complete strict dictionary
-audit, pinned PS2 compile/link and current-source reproducibility. Preserve exact
-new ELF/PT_LOAD identity if loadable bytes change.
+Run focused R21/R22 Application tests, existing P7 frame-consumer tests,
+P2/P3/R18/R20/Transport reclaim and worker/runtime/backend regressions,
+canonical host tests, project check, complete strict dictionary audit, pinned
+PS2 compile/link and current-source reproducibility. Preserve exact new
+ELF/PT_LOAD identity if loadable bytes change.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` following revision 0007, then stop and return the baton.
 
 ## Current hardware debt
 
-Accepted current PS2 loadable authority is the cumulative R20E correction:
+Accepted current PS2 loadable authority is R21:
 
-`PT_LOAD_SHA256=c280849d1310b0a530daa77da736f22b0eae175a0adbdc43a0cb856c3c560adc`
-`PT_LOAD_BYTES=492308`
+`PT_LOAD_SHA256=910597af49fe2121ab730a2db82aa4259177256156062853bd2a008f0d4d6045`
+`PT_LOAD_BYTES=494996`
 
 This exact identity is repository-reproducible but not physically qualified.
-R20 and all earlier reconstructed hardware-facing identities remain historical
-evidence at their respective source authorities.
+R20E and earlier hardware-facing identities remain historical evidence at
+their respective source authorities.
 
-Any loadable-byte change from R21 creates a newer exact hardware-debt identity.
+Any loadable-byte change from R22 creates a newer exact hardware-debt identity.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
