@@ -109,8 +109,6 @@ static int receiver_done_signal_blocked;
 static int receiver_done_signal_entered;
 static int receiver_done_wait_calls;
 static int outbound_submitter_drain_wait_calls;
-static int outbound_ready_signal_blocked;
-static int outbound_ready_signal_entered;
 static int outbound_slot_signal_blocked;
 static int outbound_slot_signal_entered;
 static int wait_readable_blocked;
@@ -262,19 +260,6 @@ int SignalSema(int semaphore_id)
     if (semaphore_id <= 0 || semaphore_id >= MAX_FAKE_SEMAS ||
         !fake_semaphores[semaphore_id].used)
         return -1;
-
-    if (semaphore_id == outbound_ready_semaphore_id) {
-        pthread_mutex_lock(&completion_fence_mutex);
-        if (outbound_ready_signal_blocked) {
-            outbound_ready_signal_entered = 1;
-            pthread_cond_broadcast(&completion_fence_condition);
-            while (outbound_ready_signal_blocked)
-                pthread_cond_wait(
-                    &completion_fence_condition,
-                    &completion_fence_mutex);
-        }
-        pthread_mutex_unlock(&completion_fence_mutex);
-    }
 
     if (semaphore_id == outbound_slot_semaphore_id) {
         pthread_mutex_lock(&completion_fence_mutex);
@@ -546,8 +531,6 @@ static void reset_fixture(void)
     receiver_done_signal_entered = 0;
     receiver_done_wait_calls = 0;
     outbound_submitter_drain_wait_calls = 0;
-    outbound_ready_signal_blocked = 0;
-    outbound_ready_signal_entered = 0;
     outbound_slot_signal_blocked = 0;
     outbound_slot_signal_entered = 0;
     wait_readable_blocked = 0;
@@ -890,16 +873,6 @@ static void wait_for_receiver_done_wait_calls(int target)
     pthread_mutex_unlock(&completion_fence_mutex);
 }
 
-static void wait_for_outbound_ready_signal_barrier(void)
-{
-    pthread_mutex_lock(&completion_fence_mutex);
-    while (!outbound_ready_signal_entered)
-        pthread_cond_wait(
-            &completion_fence_condition,
-            &completion_fence_mutex);
-    pthread_mutex_unlock(&completion_fence_mutex);
-}
-
 static void wait_for_outbound_slot_signal_barrier(void)
 {
     pthread_mutex_lock(&completion_fence_mutex);
@@ -978,15 +951,6 @@ static void set_receiver_done_signal_blocked(int blocked)
 {
     pthread_mutex_lock(&completion_fence_mutex);
     receiver_done_signal_blocked = blocked;
-    if (!blocked)
-        pthread_cond_broadcast(&completion_fence_condition);
-    pthread_mutex_unlock(&completion_fence_mutex);
-}
-
-static void set_outbound_ready_signal_blocked(int blocked)
-{
-    pthread_mutex_lock(&completion_fence_mutex);
-    outbound_ready_signal_blocked = blocked;
     if (!blocked)
         pthread_cond_broadcast(&completion_fence_condition);
     pthread_mutex_unlock(&completion_fence_mutex);
