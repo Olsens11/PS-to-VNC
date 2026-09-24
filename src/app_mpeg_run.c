@@ -309,7 +309,7 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_start(
         return PSTVNC_APP_MPEG_RUN_INVALID;
 
     if (run->state == PSTVNC_APP_MPEG_RUN_FAULTED)
-        return PSTVNC_APP_MPEG_RUN_FAULTED;
+        return PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED;
 
     if (run->state != PSTVNC_APP_MPEG_RUN_IDLE ||
         run->current_generation != 0u)

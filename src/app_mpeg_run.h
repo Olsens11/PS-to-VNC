@@ -54,7 +54,7 @@ typedef enum pstvnc_app_mpeg_run_result {
     PSTVNC_APP_MPEG_RUN_FRAME_CONSUMER_INIT_FAILED = -15,
     PSTVNC_APP_MPEG_RUN_START_FAILED = -16,
     PSTVNC_APP_MPEG_RUN_CLEANUP_FAILED = -17,
-    PSTVNC_APP_MPEG_RUN_FAULTED = -18
+    PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED = -18
 } pstvnc_app_mpeg_run_result_t;
 
 typedef struct pstvnc_app_mpeg_run_status {

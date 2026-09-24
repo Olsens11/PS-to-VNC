@@ -122,8 +122,10 @@ static void reset_fixture(void)
     selected_profile.worker.worker_priority = 60;
     selected_profile.ps2_worker_runtime.join_poll_delay_us = 1000u;
     selected_profile.ps2_worker_runtime.join_poll_max_count = 10u;
-    selected_profile.scheduler.frame_duration_ticks = 3000u;
-    selected_profile.scheduler.late_drop_ticks = 6000u;
+    selected_profile.scheduler.fps_numerator = 30000u;
+    selected_profile.scheduler.fps_denominator = 1001u;
+    selected_profile.scheduler.drop_enabled = 1;
+    selected_profile.scheduler.drop_threshold_milliframes = 1500u;
 
     publication_allowed = 0;
     open_result = PSTVNC_TRANSPORT_OK;
@@ -768,7 +770,7 @@ static void test_cleanup_failure_faults_and_blocks_retry(void)
     reset_attempt_observation();
     CHECK(pstvnc_app_mpeg_run_start(
         &run, &geometry, &policy, &access, &presentation, &clock) ==
-        PSTVNC_APP_MPEG_RUN_FAULTED);
+        PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED);
     CHECK(event_count == 0u);
 }
 
