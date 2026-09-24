@@ -304,11 +304,21 @@ touch.
 
 `pstvnc_transport_runtime_wait_receiver_done()` and resource release both
 synchronize through the final receiver completion event even when the earlier
-terminal flag is already visible. The binary completion token is restored after
-observation so the completed fence remains available to a later waiter or retry
-rather than becoming a one-consumer diagnostic pulse. Therefore deletion of the
-outbound slot/ready/done/drain semaphores is authorized only after both the R20C
-I/O-owner terminal work and the R20D submitter drain are complete.
+terminal flag is already visible. R20E separates **wake** from **reclaim
+proof**: the private event is a terminal-outcome rendezvous, while a private
+completion outcome records `PENDING`, `PROVEN`, or irreversible `FAILED`.
+
+Only `PROVEN` authorizes reclaim. A drain-wait failure or a wake whose protected
+submitter count is still nonzero records `FAILED`; observers may be awakened so
+they can return failure instead of hanging, but repeated observation, later count
+zero, or retry cannot upgrade that failed runtime into reclaim authority. The
+latched event is restored after successful observation so a proven fence remains
+available to later wait/release attempts.
+
+Therefore deletion of the outbound slot/ready/done/drain semaphores is
+authorized only after both the R20C I/O-owner terminal work and the R20D
+submitter drain have been explicitly proven. An unproven drain leaves the
+runtime permanently owned and unreclaimed.
 
 Only after that fence may release inspect kernel thread status or, if the kernel
 still reports the already-no-touch owner RUNNING, force it to DORMANT before
