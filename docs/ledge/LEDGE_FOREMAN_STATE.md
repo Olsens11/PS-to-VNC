@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0053
-RECORDED_AT=2026-09-24T00:25:56-04:00
+STATE_REVISION=0054
+RECORDED_AT=2026-09-24T07:58:40-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0052
-SUPERSEDES_FOREMAN_STATE_REVISION=0052
+BASED_ON_FOREMAN_STATE_REVISION=0053
+SUPERSEDES_FOREMAN_STATE_REVISION=0053
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,32 +14,33 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0053 preserves Foreman acceptance of
-`A003-MPEG-PRIVATE-SESSION-BINDING-R20` at source authority
-`3e39753b1b3bce9fe187748deb7eeb4d6201151c` and its immutable
-Reconstruction closeout `0a81114fb1c8691fb677fed343cd45bfbae24487`.
+Revision 0054 independently reviews the returned
+`A001-TRANSPORT-RECEIVER-COMPLETION-FENCE-R20C` candidate at final source
+`4194ed70ef8f5758d3c958e1d9bf182a8e2dd4b3` and immutable Reconstruction
+closeout `3fac8afb2d403f2b96171dfadc3386c8c57da347`.
 
-Revision 0052 initially activated the trigger-agnostic R21 Application MPEG
-run-start packet. Exact-head validation then exposed a reproducible pre-existing
-A001 Transport lifecycle race in the sole physical-I/O owner completion fence.
-The documentation-only State-0052 head failed `host-unit` twice on the same two
-receiver-completion ordering assertions while project check, strict dictionaries,
-PS2 compile and PS2 link/reproducibility remained green.
+R20C correctly separates early receiver terminality from the receiver thread's
+final no-touch edge and prevents release from terminating/deleting that I/O
+owner before its pending-outbound resolution and logical RFB/AUDIO/MPEG terminal
+publication are complete.
 
-Independent source/test/history review confirms the failure is semantic rather
-than merely an unsynchronized witness: `receiver_done` becomes visible before
-the I/O owner finishes pending-outbound resolution, RFB waiter wake, logical
-owner terminal publication and the receiver-done semaphore signal. The release
-path still treats that early flag as the old quiescent point and may terminate/
-delete the thread while those terminal operations are still pending.
+Foreman review nevertheless finds one remaining reclaim race not covered by the
+returned implementation: failing a pending outbound transaction signals its
+submitting caller, but the caller still touches `outbound_work` and
+`outbound_slot_semaphore_id` after that wake. The receiver may publish its final
+completion semaphore before that submitter has returned from the outbound
+rendezvous. `release()` may then delete the outbound semaphores while the
+submitter is still using them. A second caller that passed admission before
+terminality may also already be queued on the outbound slot.
 
-Revision 0053 therefore queues R21 and activates one bounded A001 corrective
-packet. The fix must restore a truthful receiver completion rendezvous before
-any Application MPEG start/rollback work is allowed to depend on Transport
-teardown.
+The R20C host proof masks this product gap by explicitly joining the outbound
+submitter before releasing the receiver-completion test barrier. Product source
+contains no equivalent submitter-drain rendezvous.
 
-R20 remains hardware-unqualified. The corrective packet carries no hardware-
-qualification claim.
+Revision 0054 therefore does not Foreman-accept R20C. R21 remains queued and the
+architecture blocker narrows to an outbound-submitter drain fence. One bounded
+A001 corrective packet must make receiver completion reclaim-authoritative for
+both the I/O owner and all pre-terminal outbound submitters.
 ## Temporal architecture reconciliation
 
 Wire Runtime Decisions revision 0011 and Architecture Overlay revision 0007
@@ -71,9 +72,9 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R20_MPEG_PRIVATE_SESSION_BINDING_FOREMAN_ACCEPTED__A001_TRANSPORT_RECEIVER_COMPLETION_FENCE_R20C_ACTIVE__A003_APPLICATION_MPEG_RUN_START_R21_QUEUED`
+`A003_R20_MPEG_PRIVATE_SESSION_BINDING_FOREMAN_ACCEPTED__A001_R20C_RECEIVER_FENCE_CORRECT_BUT_OUTBOUND_SUBMITTER_DRAIN_INCOMPLETE__A001_R20D_ACTIVE__A003_R21_QUEUED`
 
-ARCHITECTURE_BLOCKER=TRANSPORT_RECEIVER_COMPLETION_FENCE
+ARCHITECTURE_BLOCKER=TRANSPORT_OUTBOUND_SUBMITTER_DRAIN_FENCE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
 A004_P1_FOREMAN_ACCEPTED=YES
 A004_P2_FOREMAN_ACCEPTED=YES
@@ -102,7 +103,8 @@ PI_MPEG_CONTROL_PRODUCER_OWNER=FOREMAN_ACCEPTED
 MPEG_TRANSPORT_RUN_BOUNDARY=FOREMAN_ACCEPTED
 RFB_FLOW_APPLICATION_COMPOSITION=FOREMAN_ACCEPTED
 MPEG_PRIVATE_SESSION_BINDING=FOREMAN_ACCEPTED
-TRANSPORT_RECEIVER_COMPLETION_FENCE=RECONSTRUCTION_ACTIVE
+TRANSPORT_RECEIVER_COMPLETION_FENCE=CORRECTION_REQUIRED
+TRANSPORT_OUTBOUND_SUBMITTER_DRAIN=RECONSTRUCTION_ACTIVE
 APPLICATION_MPEG_RUN_START=DEPENDENCY_QUEUED
 APPLICATION_MPEG_RETIREMENT=DEPENDENCY_QUEUED
 ORDINARY_MPEG_PRODUCT_ACTIVATION=DEFERRED
@@ -569,115 +571,163 @@ This PT_LOAD differs from accepted R19 and therefore creates the current exact
 hardware-debt identity. Repository reproducibility does not physically qualify
 that image.
 
-## Post-State-0052 validation finding
+## R20C Foreman review
 
-State 0052 was documentation-only and retained the exact accepted R20 product
-source. Its Actions run was `35955243662`.
+PACKET_ID=A001-TRANSPORT-RECEIVER-COMPLETION-FENCE-R20C
+PACKET_STATUS=FOREMAN_NOT_ACCEPTED_CORRECTION_REQUIRED
+ASSIGNING_FOREMAN_STATE_REVISION=0053
+ASSIGNING_FOREMAN_STATE_COMMIT=27be6d8f5cf753617912a8e4c4284d720534d919
+ASSIGNING_FOREMAN_LOG_COMMIT=003306d399c22f2a02625a867a512c225931a87a
+RECONSTRUCTION_STARTING_COMMIT=003306d399c22f2a02625a867a512c225931a87a
+R20C_FINAL_SOURCE_COMMIT=4194ed70ef8f5758d3c958e1d9bf182a8e2dd4b3
+R20C_RECONSTRUCTION_LOG_COMMIT=3fac8afb2d403f2b96171dfadc3386c8c57da347
+R20C_PRE_LOG_COMMIT_COUNT=8
 
-Attempt 1:
+The required immutable Reconstruction record is:
 
-- project-check — PASS;
-- dictionary-long — PASS;
-- ps2-compile — PASS;
-- ps2-link/current-source reproducibility — PASS;
-- host-unit — FAIL.
+`docs/ledge/work-log/20260924T061735-0400__reconstruction__a003-mpeg-generation__interactive.md`
 
-The only host failures were:
+R20C correctly fixes the originally discovered receiver-thread race:
 
-`unit/transport_runtime_test.c:1273` —
-`EVENT_TERMINATE_THREAD` was not observed after `EVENT_RECEIVER_DONE_SIGNAL`;
+- `receiver_done` remains an early admission-closing fact;
+- the receiver completion semaphore is signaled only after the sole physical-I/O
+  owner resolves the currently pending outbound item and publishes terminal
+  RFB/AUDIO/MPEG wake state;
+- `wait_receiver_done()` consumes/restores that completion token instead of
+  short-circuiting on early `receiver_done`;
+- `release()` must pass the completion token before inspecting or forcing the
+  receiver thread and before reclaiming queues, semaphores, stack or stream;
+- deterministic barriers prove release cannot terminate/delete the receiver
+  while that receiver is held before final completion publication;
+- failed socket shutdown convergence, retryable `ReferThreadStatus` failure and
+  fresh-runtime reset behavior remain covered.
 
-`unit/transport_runtime_test.c:1275` —
-`EVENT_DELETE_THREAD` was not observed after `EVENT_RECEIVER_DONE_SIGNAL`.
+However, receiver completion is still not a complete Transport-resource
+no-touch fence.
 
-Foreman reran the failed host job on the same exact SHA. Attempt 2 reproduced
-the identical two failures. This is therefore current branch-head evidence, not
-a one-off runner failure.
+### Remaining outbound-submitter race
 
-R20's own exact source/log heads remain accepted because both previously passed
-their canonical host evidence. The later finding records a latent A001 defect
-discovered by subsequent validation; it does not retroactively manufacture a
-green claim for State 0052.
+`pstvnc_transport_runtime_submit_frame()` owns
+`outbound_slot_semaphore_id` from entry at the serialized outbound slot until
+after it wakes from `outbound_done_semaphore_id`, reads
+`outbound_work.result`, and signals `outbound_slot_semaphore_id` on return.
 
-## Root-cause reconciliation
+On terminal receiver exit, `pstvnc_transport_runtime_fail_pending_outbound()`
+sets the pending result and signals `outbound_done_semaphore_id`, but does not
+wait for the submitting caller to finish that return path.
 
-The original A001 dormant-before-reclaim design treated `receiver_done` as a
-quiescent point from which a still-RUNNING kernel thread could safely be
-terminated before stack/semaphore reclaim.
+A valid product interleaving is therefore:
 
-The later sole-physical-I/O-owner refactor added mandatory terminal work after
-`receiver_done = 1`:
+1. submitter A owns the outbound slot, publishes one pending item, and waits on
+   outbound-done;
+2. receiver publishes early terminality, fails the pending item, and signals
+   outbound-done;
+3. before submitter A runs again, receiver completes logical terminal wake work
+   and signals the receiver-completion semaphore;
+4. release passes that receiver fence and may delete outbound-done/ready/slot
+   semaphores;
+5. submitter A resumes, reads the result and attempts to signal the now-reclaimed
+   outbound-slot semaphore.
 
-- fail or resolve a racing outbound submission;
-- wake an RFB writer blocked on Pi-granted credit;
-- publish terminal RFB activity;
-- publish AUDIO terminal activity when enabled;
-- publish MPEG terminal activity when enabled;
-- signal `receiver_done_semaphore_id`;
-- then execute `ExitThread()`.
+A second submitter B can make the ownership gap stronger: B may have passed the
+initial terminal admission check before step 2 and already be blocked in
+`WaitSema(outbound_slot_semaphore_id)`. Receiver completion currently carries no
+proof that such pre-terminal queued submitters have exited.
 
-`pstvnc_transport_runtime_wait_receiver_done()` currently returns immediately
-when it merely observes `receiver_done`, without necessarily consuming the
-completion semaphore. `pstvnc_transport_runtime_release()` likewise allows
-reclaim once that flag is visible, and if `ReferThreadStatus()` still reports
-RUNNING it calls `TerminateThread()` under the obsolete assumption that no
-Transport/session memory remains touchable.
+The returned host test does not prove this impossible. In
+`test_receiver_completion_event_is_real_no_touch_fence()` it explicitly calls
+`pthread_join(outbound_submit_thread, NULL)` while the receiver is held at the
+test-only completion-signal barrier. Only after that join does the test release
+the receiver completion barrier. That external test choreography manufactures
+the desired submitter-before-completion ordering; product source has no matching
+rendezvous.
 
-That assumption is now false. A releaser may terminate the I/O owner between
-early terminal-flag publication and its later waiter/owner wake/completion
-sequence. The existing deterministic host fixture is correctly detecting that
-ordering violation.
+### R20C criterion disposition
 
-A001 authority remains controlling: teardown may not race a receiver still
-inside its terminal dispatch/signal ownership path, and diagnostic timing or a
-generic delay may not stand in for the ownership fence.
+A001-R20C-C1 EARLY_TERMINAL_STATE_IS_NOT_RECLAIM_COMPLETION_AUTHORITY — MET
+A001-R20C-C2 WAIT_RECEIVER_DONE_SYNCHRONIZES_AFTER_ALL_TERMINAL_OWNER_WORK — MET_FOR_RECEIVER_OWNER_ONLY
+A001-R20C-C3 RELEASE_CANNOT_TERMINATE_OR_DELETE_BEFORE_COMPLETION_FENCE — MET_FOR_RECEIVER_OWNER_ONLY
+A001-R20C-C4 PENDING_OUTBOUND_AND_LOGICAL_TERMINAL_WAKES_PRECEDE_RECLAIM — NOT_MET_AS_COMPLETE_TRANSACTION_DRAIN
+A001-R20C-C5 FAILED_SOCKET_SHUTDOWN_STILL_CONVERGES_WITHOUT_TIMEOUT_SUCCESS — MET
+A001-R20C-C6 PRE_RECLAIM_KERNEL_STATUS_FAILURE_PRESERVES_RETRYABLE_OWNERSHIP — MET
+A001-R20C-C7 STACK_SEMAPHORES_QUEUES_AND_STREAM_RECLAIM_ONLY_AFTER_NO_TOUCH_PROOF — NOT_MET
+A001-R20C-C8 FRESH_RUNTIME_REUSE_CANNOT_INHERIT_COMPLETION_AUTHORITY — NOT_PROVEN_WHILE_SUBMITTER_CAN_OUTLIVE_RELEASE
+A001-R20C-C9 DETERMINISTIC_BARRIER_PROVES_PRE_COMPLETION_RACE_IS_CLOSED — NOT_MET_FOR_OUTBOUND_SUBMITTER
+A001-R20C-C10 RFB_AUDIO_MPEG_AND_SINGLE_IO_OWNER_CONTRACTS_UNCHANGED — MET
+A001-R20C-C11 NO_APPLICATION_PI_MEDIA_PRESENTATION_OR_PROTOCOL_SCOPE_CREEP — MET
+A001-R20C-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN — MET
+
+Because all twelve criteria were required, R20C is not Foreman-accepted.
+
+### R20C machine evidence retained without promotion
+
+Final R20C source run `35987788623` attempt 1 — SUCCESS.
+Immutable-log-head run `35988159385` attempt 1 — SUCCESS.
+
+Both exact heads passed canonical host, project, complete strict dictionaries,
+pinned PS2 compile/link and current-source reproducibility. Green machine
+evidence does not override the uncovered ownership interleaving.
+
+R20C candidate linked identity is:
+
+`ELF_PRISTINE_SHA256=28965b2409074a034e491d316f1474c214d2fb2fe6167f2c366b7c25fa706f91`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=840eed441700a074719db0ac2353d5b0c381ce38b05cafba75d224c897c85ecd`
+`PT_LOAD_BYTES=491540`
+
+This is current branch loadable identity but is not accepted or physically
+qualified authority.
 
 ## Corrective dependency decision
 
-R21 requires trustworthy Transport unwind for every pre-START failure. It must
-not be implemented on top of a teardown primitive that can report completion
-before the sole physical-I/O owner has finished its terminal publication work.
+R21 remains unsafe to execute while Transport can reclaim an outbound
+rendezvous from beneath a pre-terminal submitting caller. The existing R20C
+receiver completion work should be preserved, not reverted; the next packet
+extends that completion meaning to include a real outbound-submitter drain.
 
-R21 therefore returns to `DEPENDENCY_QUEUED`. The next bounded packet repairs
-only the A001 receiver-completion/reclaim contract. Once independently accepted,
-Foreman may reactivate the already-designed trigger-agnostic R21 packet without
-changing its MPEG semantics.
+The correction must cover both:
 
-## Governing invariants for R20C
+- the currently active submitter that has been signaled through outbound-done
+  but has not yet completed its slot/result/semaphore return path; and
+- any caller that crossed admission before terminality and is already queued
+  waiting to enter the outbound slot.
 
-1. Transport may publish an early terminal/admission-closing fact if needed to
-   reject new work, but that fact is not reclaim-completion authority.
-2. `wait_receiver_done()` may report success only after the sole physical-I/O
-   owner has completed every terminal operation that can touch session-owned
-   queues, semaphores, outbound rendezvous, waiter state or logical-owner wake
-   state.
-3. A release path must never terminate or delete a thread merely because an
-   early terminal flag became visible.
-4. Any safe forced transition from RUNNING to DORMANT is permitted only after a
-   separately proven quiescent/completion fence at which the I/O owner can touch
-   no reclaimable Transport/session resource again.
-5. Pending outbound resolution and RFB/AUDIO/MPEG terminal publication occur
-   before reclaim authorization.
-6. The receiver-done semaphore/event remains an ownership rendezvous, not a
-   diagnostic witness that can be skipped by observing an earlier flag.
-7. A failed physical socket shutdown may still converge through the accepted
-   bounded readiness loop observing `stop_requested`; no second interrupt or
-   timer-derived success is required merely for correctness.
-8. Pre-reclaim kernel-status/ReferThread failure remains retryable and preserves
-   all owned memory, semaphores, physical stream and thread authority.
-9. Stack, semaphores, queues and physical stream are reclaimed only after the
-   I/O owner is proven unable to access them.
-10. Fresh-session reuse resets all terminal/completion/thread authority and
-    cannot inherit an old owner's completion token.
-11. RFB quiesce, outbound credit gating, AUDIO/MPEG waiter wake, R18/R20 MPEG
-    semantics, physical I/O single ownership and fixed Wire bytes remain
-    unchanged.
-12. The corrective proof must be deterministic and synchronization-driven; no
-    sleeps, race-luck retries or generic timeout may be used as acceptance.
+No test-only join, sleep, favorable priority assumption, or generic timeout may
+stand in for the product drain fence.
+
+## Governing invariants for R20D
+
+1. Early `receiver_done` continues to close new outbound admission before final
+   Transport reclaim completion.
+2. Receiver completion is reclaim-authoritative only when the sole I/O owner
+   has finished its R20C terminal work **and** every outbound submitter that
+   crossed pre-terminal admission can no longer touch outbound work or any
+   outbound rendezvous semaphore.
+3. Signaling `outbound_done_semaphore_id` resolves an item but is not by itself
+   proof that the submitting caller has completed its return path.
+4. A submitter already blocked on `outbound_slot_semaphore_id` before terminality
+   must be allowed/fenced to observe terminal state and leave safely; it may not
+   remain asleep on a semaphore that release can delete.
+5. No submitter first entering after early terminality may join the drain set or
+   touch outbound semaphores.
+6. `release()` may delete outbound-done/ready/slot resources only after the
+   outbound drain is proven complete.
+7. The drain proof must preserve the synchronous one-item outbound queue and
+   sole physical-I/O send ownership; no caller may send directly.
+8. R20C receiver pending-item failure and RFB/AUDIO/MPEG terminal publication
+   ordering remain intact and precede final receiver completion.
+9. Failed socket shutdown and pre-reclaim kernel-status failure remain
+   fail-closed/retryable with ownership preserved.
+10. Fresh runtime reuse has no stale receiver-completion or outbound-submitter
+    drain authority.
+11. No timeout, delay, scheduling priority assumption, or test-only join may be
+    a correctness condition.
+12. R18/R20 MPEG semantics, RFB/AUDIO behavior, fixed Wire bytes and all
+    neighboring component ownership remain unchanged.
 
 ## ACTIVE RECONSTRUCTION PACKET
 
-PACKET_ID=A001-TRANSPORT-RECEIVER-COMPLETION-FENCE-R20C
+PACKET_ID=A001-TRANSPORT-OUTBOUND-SUBMITTER-DRAIN-R20D
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a003-mpeg-generation
@@ -685,127 +735,128 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0053
+BASED_ON_FOREMAN_STATE_REVISION=0054
+BASED_ON_R20C_CANDIDATE_SOURCE=4194ed70ef8f5758d3c958e1d9bf182a8e2dd4b3
+BASED_ON_R20C_LOG=3fac8afb2d403f2b96171dfadc3386c8c57da347
 BASED_ON_ACCEPTED_R20_SOURCE=3e39753b1b3bce9fe187748deb7eeb4d6201151c
-DISCOVERY_STATE_0052=f90d69c62612400cf2c72d8a922e6cef21c13359
-DISCOVERY_CI_RUN=35955243662_ATTEMPTS_1_AND_2
 
 ### Objective
 
-Restore a truthful A001 sole-I/O-owner completion fence so a caller cannot
-observe receiver completion or reclaim/terminate receiver-owned resources until
-all terminal publication/wakeup work is complete.
+Complete the A001 teardown ownership fence by proving that all outbound
+submitters admitted before terminality have fully left the outbound rendezvous
+before receiver completion becomes reclaim-authoritative.
 
-This is a lifecycle correction only. Do not execute R21 MPEG run-start work in
-this packet.
+Preserve the valid R20C receiver-completion correction. Do not execute R21.
 
 ### Required behavior
 
-1. **Separate terminal admission from reclaim completion.** Preserve whatever
-   early terminal state is required to reject new sends/reads, but do not let
-   that early state satisfy the public receiver-completion wait or release
-   authority unless it truly occurs after all terminal owner work.
-2. **Completion rendezvous is authoritative.** Make
-   `pstvnc_transport_runtime_wait_receiver_done()` synchronize with a completion
-   edge that occurs only after pending outbound resolution and all enabled
-   RFB/AUDIO/MPEG terminal wake/publication work is finished.
-3. **No pre-fence forced termination.** `pstvnc_transport_runtime_release()`
-   must not call `TerminateThread()` or `DeleteThread()` while the owner might
-   still execute terminal Transport code. If a post-fence RUNNING->DORMANT
-   assist remains necessary, prove that the fence guarantees no later access.
-4. **Reclaim only after no-touch proof.** Dynamic stack, queue storage,
-   semaphores, physical stream and thread slot are retained on every
-   unproven-completion path.
-5. **Preserve failed-shutdown convergence.** The current bounded socket
-   readiness loop must still observe `stop_requested` and allow a failed
-   `shutdown_io` call to converge without a correctness timeout.
-6. **Preserve retryability.** Injected `ReferThreadStatus` or equivalent
-   pre-reclaim failure leaves runtime initialized and retryable without partial
-   resource destruction.
-7. **Fresh-session safety.** After successful release, one reused runtime object
-   initializes with no stale completion token, thread state, stop/failure fact,
-   outbound state or logical waiter state.
-8. **Deterministic race proof.** Extend the host fixture with an explicit
-   barrier/rendezvous capable of holding the I/O owner after early terminality
-   but before final completion publication. Prove wait/release cannot succeed
-   or reclaim while held, then can complete after the barrier is released.
-9. **Ordering proof.** Deterministically prove completion publication precedes
-   any permitted TerminateThread/DeleteThread and physical release, without
-   relying on scheduling luck.
-10. **Neighboring regressions.** Keep sole receiver/send ownership, pending
-    outbound wake, RFB credit writer wake, AUDIO/MPEG terminal waiters, finite
-    RFB quiesce and repeated-session tests green.
-11. **No MPEG/Application scope creep.** Do not modify R20 semantic MPEG control
-    types, R21 files/packet, `app.c`, Pi source, Presentation, calibration,
-    MPEG decoder/worker/backend, AUDIO product behavior or protocol bytes.
-12. **Evidence/dictionaries.** Run focused Transport lifecycle tests plus the
-    canonical host, project, complete strict dictionary and pinned PS2
-    compile/link/reproducibility evidence; preserve exact identity if loadable
-    bytes change.
+1. **Track the whole submit transaction.** Define one private lifecycle fact or
+   equivalent synchronization mechanism that covers a caller from the point it
+   can become dependent on outbound rendezvous resources until its final
+   outbound-work/semaphore touch is complete.
+2. **Admission closes before drain.** Once receiver terminality is published,
+   no new caller may enter outbound rendezvous ownership. A caller that already
+   crossed the pre-terminal boundary must remain part of the drain proof.
+3. **Current pending caller drains.** Terminal pending-item failure must wake the
+   current submitter and receiver completion must wait until that caller has
+   consumed its result and completed the slot/rendezvous release path.
+4. **Queued callers drain.** Deterministically handle callers already queued on
+   the outbound slot when terminality closes. They must wake/enter far enough to
+   observe terminality and leave all outbound-semaphore ownership, or an
+   equivalent product mechanism must prove they can no longer touch reclaimed
+   resources.
+5. **Receiver completion includes drain.** The final receiver-completion token
+   introduced by R20C may be published only after R20C terminal owner work and
+   the complete outbound-submitter drain are both true.
+6. **Release remains simple consumer of proof.** `release()` may rely on that
+   final completion fence; it must not race-delete outbound semaphores or add a
+   scheduling-luck workaround.
+7. **Multiple observers remain safe.** Preserve the latched/reobservable R20C
+   completion behavior for `wait_receiver_done()`, `release()` and retry paths.
+8. **Preserve outbound semantics.** Keep one-item synchronous serialization,
+   explicit backpressure, one physical sender, pending-result propagation and
+   terminal failure semantics.
+9. **Preserve retry/fresh reuse.** A failed pre-reclaim kernel operation keeps
+   all drain/completion resources valid for retry; successful fresh runtime
+   initialization carries no stale submitter count/token/waiter authority.
+10. **No false drain by diagnostics.** Counters/events may witness behavior but
+    correctness must derive from product synchronization, not logging, sleeps
+    or host-only joins.
+11. **No scope creep.** Do not modify Application/R21, Pi, protocol bytes, RFB
+    parser/session/flow policy, AUDIO product policy, MPEG worker/backend/
+    Presentation/calibration or Configuration product behavior.
+12. **Evidence/dictionaries.** Add deterministic active-and-queued submitter
+    race tests, retain R20C receiver tests, and pass canonical host/project/
+    strict-dictionary/pinned-PS2 compile/link/reproducibility evidence.
 
 ### Acceptance criteria
 
-- A001-R20C-C1 EARLY_TERMINAL_STATE_IS_NOT_RECLAIM_COMPLETION_AUTHORITY
-- A001-R20C-C2 WAIT_RECEIVER_DONE_SYNCHRONIZES_AFTER_ALL_TERMINAL_OWNER_WORK
-- A001-R20C-C3 RELEASE_CANNOT_TERMINATE_OR_DELETE_BEFORE_COMPLETION_FENCE
-- A001-R20C-C4 PENDING_OUTBOUND_AND_LOGICAL_TERMINAL_WAKES_PRECEDE_RECLAIM
-- A001-R20C-C5 FAILED_SOCKET_SHUTDOWN_STILL_CONVERGES_WITHOUT_TIMEOUT_SUCCESS
-- A001-R20C-C6 PRE_RECLAIM_KERNEL_STATUS_FAILURE_PRESERVES_RETRYABLE_OWNERSHIP
-- A001-R20C-C7 STACK_SEMAPHORES_QUEUES_AND_STREAM_RECLAIM_ONLY_AFTER_NO_TOUCH_PROOF
-- A001-R20C-C8 FRESH_RUNTIME_REUSE_CANNOT_INHERIT_COMPLETION_AUTHORITY
-- A001-R20C-C9 DETERMINISTIC_BARRIER_PROVES_PRE_COMPLETION_RACE_IS_CLOSED
-- A001-R20C-C10 RFB_AUDIO_MPEG_AND_SINGLE_IO_OWNER_CONTRACTS_UNCHANGED
-- A001-R20C-C11 NO_APPLICATION_PI_MEDIA_PRESENTATION_OR_PROTOCOL_SCOPE_CREEP
-- A001-R20C-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A001-R20D-C1 PRETERMINAL_SUBMITTER_LIFETIME_IS_EXPLICITLY_DRAINED
+- A001-R20D-C2 TERMINALITY_PREVENTS_NEW_OUTBOUND_RENDEZVOUS_ADMISSION
+- A001-R20D-C3 OUTBOUND_DONE_SIGNAL_IS_NOT_MISTAKEN_FOR_SUBMITTER_COMPLETION
+- A001-R20D-C4 ACTIVE_SUBMITTER_EXITS_BEFORE_RECEIVER_COMPLETION
+- A001-R20D-C5 QUEUED_OUTBOUND_SLOT_WAITERS_CANNOT_OUTLIVE_COMPLETION
+- A001-R20D-C6 RELEASE_CANNOT_DELETE_OUTBOUND_SEMAPHORES_BEFORE_DRAIN
+- A001-R20D-C7 R20C_RECEIVER_NO_TOUCH_AND_LOGICAL_TERMINAL_ORDERING_PRESERVED
+- A001-R20D-C8 OUTBOUND_SERIALIZATION_BACKPRESSURE_AND_SOLE_SENDER_UNCHANGED
+- A001-R20D-C9 FAILED_SHUTDOWN_RETRY_AND_FRESH_RUNTIME_REUSE_REMAIN_SAFE
+- A001-R20D-C10 DETERMINISTIC_BARRIERS_PROVE_ACTIVE_AND_QUEUED_RACES_CLOSED
+- A001-R20D-C11 NO_APPLICATION_PI_MEDIA_PRESENTATION_OR_PROTOCOL_SCOPE_CREEP
+- A001-R20D-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
 All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-R20C must prove at least:
+R20D must prove at least:
 
-1. while the receiver is deliberately held after terminal admission closes but
-   before final completion publication, `wait_receiver_done` has not completed;
-2. release while that pre-completion barrier is held cannot reclaim, terminate
-   or delete the I/O owner;
-3. a racing pending outbound submitter is resolved before completion becomes
-   reclaim-authoritative;
-4. RFB outbound-credit waiter plus enabled AUDIO/MPEG activity waiters are made
-   terminal before completion is reclaim-authoritative;
-5. releasing the barrier permits completion wait to return and then permits
-   safe release;
-6. if a post-fence kernel thread still reports RUNNING, any retained forced
-   dormancy operation occurs only after the completion event in deterministic
-   event order;
-7. injected first `ReferThreadStatus` failure preserves all ownership and a
-   later retry succeeds;
-8. failed `shutdown_io` still converges through the bounded I/O loop;
-9. a fresh runtime/session has no stale done token or old thread state;
-10. existing Transport runtime, bridge, protocol, R18 MPEG, R20 identity and Pi
-    R17 generation regressions remain green.
+1. hold one active submitter after outbound-done wake but before its final
+   outbound-slot release; allow the receiver to finish every other R20C terminal
+   operation and prove receiver completion is still unpublished;
+2. release that active submitter and prove final completion may then publish;
+3. place a second caller behind the occupied outbound slot **before** terminality
+   closes, then prove neither that queued caller nor the active caller can
+   outlive final completion or touch reclaimed semaphores;
+4. prove a caller beginning after early terminality returns without entering
+   outbound rendezvous ownership;
+5. while active/queued submitter drain is intentionally held, prove
+   `wait_receiver_done()`/release cannot authorize outbound semaphore deletion;
+6. after drain and completion, prove any retained post-fence
+   TerminateThread/DeleteThread and physical release remain ordered after the
+   completion event;
+7. retain the R20C pending-outbound, RFB credit waiter and AUDIO/MPEG terminal
+   waiter proof;
+8. retain failed-shutdown convergence and retryable first
+   `ReferThreadStatus()` failure;
+9. prove fresh runtime reuse resets both receiver completion and all new
+   submitter-drain authority;
+10. run the focused synchronization fixture repeatedly without source/delay/
+    timeout changes and keep all neighboring Transport/R18/R20/Pi R17 tests
+    green.
 
 ### Authorized source surface
 
-R20C may modify only the smallest justified subset of:
+R20D may modify only the smallest justified subset of:
 
-- `src/transport/runtime.c` / `.h`;
-- `tests/unit/transport_runtime_test.c` and Transport host stubs only if needed
-  for the deterministic completion barrier;
+- `src/transport/runtime.c` / `.h` for private lifecycle/drain state;
+- `tests/unit/transport_runtime_test.c` and existing Transport host stubs needed
+  for deterministic submitter barriers;
 - directly affected Transport lifecycle documentation/dictionaries;
 - compile/link/check manifests only if required by a real source dependency.
 
-`src/app.c`, any R21 Application support source, `src/app_mpeg_frame.*`, Pi
-product source, RFB parser/session, MPEG decoder/worker/backend, Presentation/
-Display, calibration/Input/UI, AUDIO product source, Configuration product
-source and protocol wire representation are not authorized.
+`src/app.c`, any R21 Application support, `src/app_mpeg_frame.*`, Pi product
+source, RFB parser/session/flow-policy product source, MPEG decoder/worker/
+backend, Display/Presentation, calibration/Input/UI, AUDIO product policy,
+Configuration product source and protocol wire representation are not
+authorized.
 
 ### Required checks before handoff
 
-Run the focused fatal-stop/completion/reclaim fixture repeatedly enough to prove
-deterministic synchronization (not race luck), all canonical host tests, project
-check, complete strict dictionary audit, pinned PS2 compile/link and current-
-source reproducibility. Preserve exact new ELF/PT_LOAD identity if loadable
-bytes change.
+Run the focused R20C/R20D completion/outbound-drain fixture repeatedly enough
+to prove synchronization rather than race luck, all canonical host tests,
+project check, complete strict dictionary audit, pinned PS2 compile/link and
+current-source reproducibility. Preserve exact new ELF/PT_LOAD identity if
+loadable bytes change.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` following revision 0007, then stop and return the baton.
@@ -813,18 +864,25 @@ At shift end emit exactly one immutable Reconstruction record under
 ## Queued R21 authority
 
 `A003-APPLICATION-MPEG-RUN-START-R21` remains the intended next MPEG dependency
-from State 0052, but it is not currently authorized for execution. Reconstruction
-must not implement it during R20C. Foreman will independently decide whether to
-reactivate it after the Transport completion fence is accepted.
+from State 0052, but it is not authorized for execution. Its trigger-agnostic
+Application semantics remain unchanged by this review. Foreman will decide
+whether to reactivate it only after a complete Transport reclaim fence is
+independently accepted.
 
 ## Current hardware debt
 
-Accepted R20 loadable identity remains:
+Last Foreman-accepted product identity remains accepted R20:
 
 `PT_LOAD_SHA256=9bdb07b04ed9265ac430bc3816e5e9c29cdad3273ff9149c4e786b5605ba771e`
 `PT_LOAD_BYTES=491540`
 
-That exact identity is repository-reproducible but not physically qualified.
-Any loadable-byte change from R20C creates a newer exact hardware-debt identity.
+Current branch R20C candidate identity is:
+
+`PT_LOAD_SHA256=840eed441700a074719db0ac2353d5b0c381ce38b05cafba75d224c897c85ecd`
+`PT_LOAD_BYTES=491540`
+
+The R20C identity is repository-reproducible but not Foreman-accepted or
+physically qualified. Any loadable-byte change from R20D creates a newer
+provisional exact hardware-debt identity.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
