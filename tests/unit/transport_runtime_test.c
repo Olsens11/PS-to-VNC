@@ -106,6 +106,8 @@ static int receiver_done_signal_entered;
 static int receiver_done_wait_calls;
 static int outbound_ready_signal_blocked;
 static int outbound_ready_signal_entered;
+static int wait_readable_blocked;
+static int wait_readable_entered;
 static pthread_mutex_t completion_fence_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t completion_fence_condition = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t rfb_credit_wait_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -509,6 +511,8 @@ static void reset_fixture(void)
     receiver_done_wait_calls = 0;
     outbound_ready_signal_blocked = 0;
     outbound_ready_signal_entered = 0;
+    wait_readable_blocked = 0;
+    wait_readable_entered = 0;
     pthread_mutex_unlock(&completion_fence_mutex);
 
     pthread_mutex_lock(&rfb_credit_wait_mutex);
@@ -661,6 +665,23 @@ int pstvnc_transport_physical_stream_wait_readable(
 
     (void)timeout_us;
     CHECK(stream != NULL);
+
+    /*
+     * Host-only R20C rendezvous: when armed, hold the sole I/O owner inside
+     * this readiness pass before it samples inbound state. Tests can then make
+     * outbound work pending and queue a terminal inbound frame without allowing
+     * the owner to loop back and service outbound first.
+     */
+    pthread_mutex_lock(&completion_fence_mutex);
+    if (wait_readable_blocked) {
+        wait_readable_entered = 1;
+        pthread_cond_broadcast(&completion_fence_condition);
+        while (wait_readable_blocked)
+            pthread_cond_wait(
+                &completion_fence_condition,
+                &completion_fence_mutex);
+    }
+    pthread_mutex_unlock(&completion_fence_mutex);
 
     pthread_mutex_lock(&rx_mutex);
     readable =
@@ -837,6 +858,25 @@ static void wait_for_outbound_ready_signal_barrier(void)
         pthread_cond_wait(
             &completion_fence_condition,
             &completion_fence_mutex);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void wait_for_wait_readable_barrier(void)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    while (!wait_readable_entered)
+        pthread_cond_wait(
+            &completion_fence_condition,
+            &completion_fence_mutex);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void set_wait_readable_blocked(int blocked)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    wait_readable_blocked = blocked;
+    if (!blocked)
+        pthread_cond_broadcast(&completion_fence_condition);
     pthread_mutex_unlock(&completion_fence_mutex);
 }
 
@@ -1510,6 +1550,14 @@ static void test_receiver_completion_event_is_real_no_touch_fence(void)
     wait_for_rfb_credit_wait_calls(1);
 
     /*
+     * First hold the owner inside one readiness pass. That prevents the host
+     * loop from seeing outbound_pending at its top and consuming/awaiting the
+     * deliberately withheld ready token before the terminal frame is admitted.
+     */
+    set_wait_readable_blocked(1);
+    wait_for_wait_readable_barrier();
+
+    /*
      * Hold a direct Transport submitter after it has published outbound_pending
      * but before outbound-ready notification. The receiver must resolve that
      * admitted slot on terminal exit before publishing completion.
@@ -1538,6 +1586,7 @@ static void test_receiver_completion_event_is_real_no_touch_fence(void)
         0u,
         NULL,
         0u);
+    set_wait_readable_blocked(0);
     wait_for_receiver_done_signal_barrier();
 
     CHECK(runtime.receiver_done == 1);
