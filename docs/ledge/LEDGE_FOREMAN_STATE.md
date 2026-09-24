@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0057
-RECORDED_AT=2026-09-24T15:00:41-04:00
+STATE_REVISION=0058
+RECORDED_AT=2026-09-24T18:53:18-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0056
-SUPERSEDES_FOREMAN_STATE_REVISION=0056
+BASED_ON_FOREMAN_STATE_REVISION=0057
+SUPERSEDES_FOREMAN_STATE_REVISION=0057
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,31 +14,30 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0057 independently accepts `A003-APPLICATION-MPEG-RUN-START-R21` at
-final source authority `fc8bb2652d94d8163e1e5b375e33c9e37b73017b` and
+Revision 0058 independently accepts `A003-APPLICATION-MPEG-LIVE-SERVICE-R22`
+at final source authority `345e726effee8f01d1be71938e8f09efde030c0b` and
 consumes immutable Reconstruction closeout
-`964d1cfa8db8c834d9ee32a1541c42ffb1aace70`.
+`00015df0ef2c3a249e0d707b1f8218e3c43f95aa`.
 
-R21 establishes the trigger-agnostic Application-owned MPEG start transaction:
-fresh nonzero monotonic run generation, exact accepted geometry/profile
-composition, required pre-existing P2 protection, R18 run-open, fresh R5/R3/R4
-execution owners, P3 WAIT_FIRST_FRAME, P7 frame-consumer readiness, and R20
-START as the final irreversible startup action.
+R22 establishes the missing trigger-agnostic Application live-service seam on
+top of accepted R21/P7/P3 authority. The run owner now records exact
+`STARTED_WAIT_FIRST_FRAME` versus `MPEG_OWNED` state, delegates all frame
+mechanics to the existing exact-generation P7 consumer, requires synchronized
+first-frame/P3 proof before promotion, preserves benign post-first
+IDLE/WAIT/PRESENTED/DROPPED outcomes, and fails closed on unexpected worker or
+lower-owner contradictions without performing cleanup it does not own.
 
-Independent dependency review does not advance directly to retirement. A
-successful R21 run stops at `STARTED_WAIT_FIRST_FRAME`. P7 already owns the
-mechanism that presents the first synchronized frame, arms the shared media
-epoch through the compositor, promotes P3 to MPEG_OWNED, and services later
-scheduled/drop frames; however, the new Application run owner has no
-owner-correct service API/state transition that consumes those P7 facts.
+The next dependency is the normal retirement safe-stop/drain path. It is kept
+separate from RFB restoration/reveal: first close the exact Pi generation,
+continue accepted P7 service while already-admitted data drains, establish the
+finite producer fence, prove natural worker completion, reclaim R4/R5 and the
+R18 Transport run, and stop with the retained MPEG presentation still visible
+and P2 still frozen. A later packet will own thaw/FULL-refresh/restoration and
+synchronized reveal.
 
-Revision 0057 therefore activates one narrow trigger-agnostic live-service
-packet before retirement. It composes the already-accepted P7 service through
-the R21 run owner, records the exact first-frame ownership transition, and
-fails closed on unexpected worker/service termination. It does not add product
-invocation or retirement.
+R22 changes PS2 loadable bytes. Its exact reproducible identity is recorded
+below and is not hardware-qualified.
 
-R21 changes PS2 loadable bytes and is not hardware-qualified.
 ## Temporal architecture reconciliation
 
 Wire Runtime Decisions revision 0011 and Architecture Overlay revision 0007
@@ -70,7 +69,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R21_APPLICATION_MPEG_RUN_START_FOREMAN_ACCEPTED__A003_R22_APPLICATION_MPEG_LIVE_SERVICE_ACTIVE__RETIREMENT_AND_ORDINARY_ACTIVATION_DEFERRED`
+`A003_R22_APPLICATION_MPEG_LIVE_SERVICE_FOREMAN_ACCEPTED__A003_R23_APPLICATION_MPEG_RETIREMENT_DRAIN_ACTIVE__RFB_RESTORE_AND_ORDINARY_ACTIVATION_DEFERRED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -105,8 +104,8 @@ TRANSPORT_RECEIVER_COMPLETION_FENCE=FOREMAN_ACCEPTED_AT_R20E_AUTHORITY
 TRANSPORT_OUTBOUND_SUBMITTER_DRAIN=FOREMAN_ACCEPTED_AT_R20E_AUTHORITY
 TRANSPORT_DRAIN_FAILURE_FENCE=FOREMAN_ACCEPTED
 APPLICATION_MPEG_RUN_START=FOREMAN_ACCEPTED
-APPLICATION_MPEG_LIVE_SERVICE=RECONSTRUCTION_ACTIVE
-APPLICATION_MPEG_RETIREMENT=DEPENDENCY_QUEUED
+APPLICATION_MPEG_LIVE_SERVICE=FOREMAN_ACCEPTED
+APPLICATION_MPEG_RETIREMENT=RECONSTRUCTION_ACTIVE
 ORDINARY_MPEG_PRODUCT_ACTIVATION=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
@@ -788,9 +787,99 @@ run-state transition. Retirement remains a separate following packet.
 12. Existing R21 start evidence and P7 focused tests remain authoritative and
     green; R22 adds only Application-state/service composition evidence.
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R22 authority
 
 PACKET_ID=A003-APPLICATION-MPEG-LIVE-SERVICE-R22
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0057
+ASSIGNING_FOREMAN_STATE_COMMIT=6b0e06c99f950a3e1f145c38321b5fd0828b3802
+ASSIGNING_FOREMAN_LOG_COMMIT=07b9dc4ec91c2947b7da62164bda6f214ab5b78e
+RECONSTRUCTION_STARTING_COMMIT=07b9dc4ec91c2947b7da62164bda6f214ab5b78e
+R22_FINAL_SOURCE_COMMIT=345e726effee8f01d1be71938e8f09efde030c0b
+R22_RECONSTRUCTION_LOG_COMMIT=00015df0ef2c3a249e0d707b1f8218e3c43f95aa
+R22_PRE_LOG_COMMIT_COUNT=4
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260924T164702-0400__reconstruction__a003-mpeg-generation__interactive.md`
+
+Independent Foreman review accepts all twelve R22 criteria:
+
+A003-R22-C1=MET
+A003-R22-C2=MET
+A003-R22-C3=MET
+A003-R22-C4=MET
+A003-R22-C5=MET
+A003-R22-C6=MET
+A003-R22-C7=MET
+A003-R22-C8=MET
+A003-R22-C9=MET
+A003-R22-C10=MET
+A003-R22-C11=MET
+A003-R22-C12=MET
+
+Independent findings:
+
+1. The run owner exposes exactly one new `MPEG_OWNED` state and one
+   `pstvnc_app_mpeg_run_service()` operation; generation allocation and
+   lower-owner mechanics are unchanged.
+2. The service invokes only the existing P7 consumer for
+   `run->current_generation`; first-frame promotion requires exact P7
+   synchronized/first-frame effects plus an independent exact-generation P3
+   MPEG_OWNED snapshot.
+3. Before first frame, unfinished P7 IDLE preserves WAIT_FIRST_FRAME. After
+   promotion, IDLE/WAIT/PRESENTED/DROPPED preserve Application live authority
+   and the detailed P7 result, including WAIT claim/deadline evidence.
+4. Unexpected worker completion, negative P7 results, faulted P7 status,
+   generation mismatch, impossible P3 state, or result/status contradictions
+   fault the run and require outer session teardown.
+5. The live failure path performs no P3 abort, worker stop/join/release, R5
+   release, RETIRE, Transport finalize, P2 thaw, or reveal. Lower-owner evidence
+   remains intact.
+6. The behavioral diff is confined to `src/app_mpeg_run.*`, its focused unit
+   fixture, and directly affected documentation/dictionaries. Ordinary
+   `src/app.c`, P7, Display, MPEG worker/runtime/backend, Transport, Pi, AUDIO,
+   Input/UI and protocol bytes are unchanged.
+
+Exact machine evidence at final source authority
+`345e726effee8f01d1be71938e8f09efde030c0b` is GitHub Actions run
+`36058496825`, attempt 1:
+
+- host-unit — PASS, including `app_mpeg_run_test: PASS`,
+  `APP_MPEG_FRAME_TEST=PASS`, Presentation/scheduler/compositor/worker,
+  Transport runtime/MPEG and RFB-flow regressions;
+- project-check — PASS, including source topology and work-log checks;
+- dictionary-long — PASS with `SOURCE_DICTIONARIES=PASS`;
+- ps2-compile — PASS with `CLEAN_PS2_COMPILE_CHECK=PASS`;
+- ps2-link/current-source reproducibility — PASS.
+
+R22_SOURCE_COMPLETE=YES
+R22_FOREMAN_ACCEPTED=YES
+R22_HOST_TESTED=YES
+R22_PROJECT_CHECK=PASS
+R22_STRICT_DICTIONARIES=PASS
+R22_PS2_COMPILE=PASS
+R22_PS2_LINK=PASS
+R22_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R22_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36058496825_ATTEMPT_1
+R22_INDEPENDENT_VALIDATION=NOT_RUN
+R22_OPERATOR_OBSERVED=NO
+R22_HARDWARE_QUALIFIED=NO
+
+Accepted R22 linked identity:
+
+`ELF_PRISTINE_SHA256=71412c76f5f748913b1f8247e6e1c18c5e4a4ffe7e8a89da98f65c6f343ab5d1`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=543f14c376e4a35b95cebaaa54de44a409c6ec0ebe247c9b63d34b7358beace8`
+`PT_LOAD_BYTES=496404`
+`PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74`
+
+This differs from accepted R21 loadable bytes and is current exact
+hardware-debt identity only.
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a003-mpeg-generation
@@ -798,134 +887,161 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0057
-BASED_ON_ACCEPTED_R21_SOURCE=fc8bb2652d94d8163e1e5b375e33c9e37b73017b
-BASED_ON_R21_LOG=964d1cfa8db8c834d9ee32a1541c42ffb1aace70
+BASED_ON_FOREMAN_STATE_REVISION=0058
+BASED_ON_ACCEPTED_R22_SOURCE=345e726effee8f01d1be71938e8f09efde030c0b
+BASED_ON_R22_LOG=00015df0ef2c3a249e0d707b1f8218e3c43f95aa
 BASED_ON_ACCEPTED_TRANSPORT_RECLAIM_SOURCE=316ad217bef229c9ca0134b9b922a213cb5af247
 
 ### Objective
 
-Add one trigger-agnostic Application run-service operation that consumes the
-already-initialized P7 frame consumer owned by an R21 run, records the exact
-first synchronized transition into MPEG-owned Application state, preserves
-benign live P7 outcomes, and fails closed on unexpected live-service/worker
-termination.
+Add one trigger-agnostic Application-owned retirement safe-stop/drain
+transaction for an exact R22 MPEG_OWNED run.
 
-Do not perform retirement or ordinary product activation in R22.
+R23 must close the exact Pi producer generation through the accepted R20 RETIRE
+seam, continue the accepted P7 consumer while already-admitted MPEG data drains,
+publish producer completion only after exact RETIRE completion, prove natural
+R4 worker completion, reclaim the R4/R5 execution owners and finalize the R18
+Transport run. It must then stop at a truthful restoration-pending state while
+P3 still retains the MPEG composite and P2 remains frozen.
+
+Do not thaw/refresh/reveal RFB and do not activate ordinary product flow in R23.
 
 ### Required behavior
 
-1. **Explicit live state.** Extend the R21 run state with the minimum truthful
-   MPEG_OWNED state needed after the first synchronized frame. Do not create a
-   second generation owner or duplicate P3 state.
-2. **One run-service API.** Add one small Application-owned service operation
-   that invokes `pstvnc_app_mpeg_frame_consumer_service()` for the coordinator's
-   exact current generation and returns/preserves the detailed P7 service
-   result needed by the future main loop.
-3. **Pre-first benign idle.** In STARTED_WAIT_FIRST_FRAME, IDLE with
-   `worker_finished == 0` remains waiting; no state, RFB or Transport lifecycle
-   side effect occurs.
-4. **Exact first-frame promotion.** A first-frame PRESENTED result transitions
-   the run to MPEG_OWNED only after verifying P3 is MPEG_OWNED for the exact
-   current generation and the returned compositor effects identify the
-   synchronized first-frame promotion.
-5. **Clock ownership unchanged.** Do not call media-clock arm APIs from R22;
-   accept only the P7/compositor-owned first-sync facts.
-6. **Post-first benign service.** In MPEG_OWNED, IDLE/WAIT/PRESENTED/DROPPED
-   remain ordinary live outcomes. Preserve WAIT claim/deadline and P7
-   accounting unchanged.
-7. **Unexpected worker exit.** If a benign-looking IDLE reports
-   `worker_finished`, fault the coordinator and require teardown; do not infer
-   normal EOF, RETIRE completion, or safe reuse.
-8. **Service failure containment.** Any negative P7 result, P7 fault status,
-   impossible first-frame result, wrong generation or unexpected Presentation
-   state faults the coordinator with `session_teardown_required=1` while
-   preserving the P7/worker ownership evidence for later teardown.
-9. **No direct lower-owner cleanup.** R22 service failure does not clear the P7
-   consumer, abort Presentation, stop/join/release worker/runtime or abort/
-   finalize Transport. Later failure/retirement orchestration owns cleanup.
-10. **State/status truth.** The existing run status surface reports the new
-    live state and retained exact generation without inferring retirement.
-11. **No activation scope creep.** `src/app.c`, Input/UI/calibration product
-    triggers, Pi MPEG product composition, RFB thaw/refresh, AUDIO and protocol
-    bytes remain untouched.
-12. **Evidence/dictionaries.** Add deterministic service-state tests and keep
-    R21/P7 plus canonical project/dictionary/PS2 build evidence green.
+1. **Exact retirement admission.** Retirement begins only from one healthy
+   `MPEG_OWNED` Application run whose exact generation is simultaneously
+   owned by P3/P7 and whose R18/R4/R5 owners remain live. IDLE,
+   WAIT_FIRST_FRAME, FAULTED, duplicate-retirement and fabricated owner states
+   reject or fail closed without manufacturing cleanup.
+2. **Visible retirement precedes producer close.** Move P3 from MPEG_OWNED to
+   RETIRING for the exact generation before invoking RETIRE. This keeps the
+   retained MPEG/mattes visible and permits accepted P7 drain service.
+3. **Exactly one R20 RETIRE.** Serialize one RETIRE for the current generation
+   through the accepted private-session Transport seam. Once that invocation
+   boundary is crossed, failure is teardown-required and may not be converted
+   back to live MPEG_OWNED or IDLE.
+4. **Nonblocking drain service.** While retirement is active, continue using
+   only the existing P7 consumer in P3 RETIRING. IDLE/WAIT/PRESENTED/DROPPED
+   remain ordinary drain outcomes while their exact claim/deadline/accounting
+   facts stay coherent.
+5. **Exact completion fence.** `WOULD_BLOCK` from RETIRE-completion take is
+   benign pending state. Only an exact current-generation completion is
+   accepted. Wrong generation, duplicate/impossible completion or Transport
+   failure faults the run.
+6. **Producer-done ordering.** Call
+   `pstvnc_transport_mpeg_mark_producer_done()` exactly once and only after
+   the exact RETIRE completion has been taken. Worker completion observed before
+   that producer fence is failure, not clean retirement.
+7. **Natural decoder/worker completion.** After producer-done, continue P7 drain
+   until the worker reports finished with no P7 claim outstanding. Clean
+   retirement does not request Application-owned worker stop. Then require exact
+   worker join and a `COMPLETED` outcome for the current generation; STOPPED,
+   FAILED, wrong-generation or unprovable outcome faults.
+8. **Execution-owner reclaim.** Only after exact clean join/outcome, retire the
+   now-empty P7 value, release the R4 worker, then release the R5 PS2 worker
+   runtime. Failed reclaim leaves truthful retained ownership/fault evidence and
+   requires outer teardown.
+9. **R18 finalization last.** Invoke
+   `pstvnc_transport_mpeg_run_finalize()` only after RETIRE completion was
+   taken, producer-done was published, P7 has no claim, and R4/R5 consumer
+   ownership is retired. Successful finalization clears only Transport's
+   accepted old-run state/credit debt; it does not allocate or start a successor.
+10. **Truthful restoration-pending endpoint.** On success, record an explicit
+    Application state meaning the MPEG execution/Transport run is retired but
+    visual/RFB restoration is still pending. Preserve the exact generation and
+    require P3 to remain RETIRING with its snapshot intact and P2 to remain
+    frozen.
+11. **No restoration or product activation.** R23 performs no P3 seal/reveal,
+    no synchronized no-MPEG reveal, no P2 thaw, no FULL-refresh request/debt
+    completion, no ordinary `src/app.c` trigger/service wiring, no Pi product
+    factory activation, and no AUDIO/Input/UI/calibration/protocol changes.
+12. **Evidence/dictionaries.** Add deterministic retirement-order/state/failure
+    tests while retaining R21/R22/P7/P3/R18/R20/R4/R5 regressions and canonical
+    project/dictionary/PS2 build evidence green.
 
 ### Acceptance criteria
 
-- A003-R22-C1 RUN_OWNER_HAS_ONE_EXPLICIT_MPEG_OWNED_LIVE_STATE
-- A003-R22-C2 LIVE_SERVICE_USES_ONLY_EXISTING_EXACT_GENERATION_P7_CONSUMER
-- A003-R22-C3 PRE_FIRST_IDLE_PRESERVES_WAIT_FIRST_FRAME_WITHOUT_SIDE_EFFECT
-- A003-R22-C4 FIRST_PRESENTED_FRAME_EXACTLY_PROMOTES_RUN_AFTER_P3_CONFIRMATION
-- A003-R22-C5 MEDIA_CLOCK_AND_PHYSICAL_FIRST_SYNC_OWNERSHIP_REMAINS_P7_DISPLAY
-- A003-R22-C6 MPEG_OWNED_IDLE_WAIT_PRESENTED_DROPPED_PRESERVE_LIVE_AUTHORITY
-- A003-R22-C7 UNEXPECTED_WORKER_FINISH_IS_FAILURE_NOT_NORMAL_RETIREMENT
-- A003-R22-C8 P7_OR_STATE_CONTRADICTION_FAULTS_WITHOUT_ERASING_OWNER_EVIDENCE
-- A003-R22-C9 NO_RETIREMENT_STOP_FINALIZE_THAW_OR_REVEAL_SCOPE
-- A003-R22-C10 RUN_STATUS_REMAINS_EXACT_GENERATION_AND_STATE_AUTHORITY
-- A003-R22-C11 NO_ORDINARY_APP_PI_INPUT_AUDIO_OR_PROTOCOL_SCOPE_CREEP
-- A003-R22-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A003-R23-C1 RETIREMENT_ADMISSION_REQUIRES_EXACT_HEALTHY_MPEG_OWNED_RUN
+- A003-R23-C2 P3_RETIRING_PRECEDES_RETIRE_AND_PRESERVES_VISIBLE_DRAIN
+- A003-R23-C3 EXACTLY_ONE_CURRENT_GENERATION_RETIRE_CROSSES_IRREVERSIBLE_BOUNDARY
+- A003-R23-C4 RETIRING_DRAIN_USES_ONLY_EXISTING_P7_AND_PRESERVES_WAIT_CLAIM
+- A003-R23-C5 RETIRE_COMPLETION_WOULD_BLOCK_IS_PENDING_AND_EXACT_COMPLETION_IS_FENCED
+- A003-R23-C6 PRODUCER_DONE_OCCURS_ONLY_AFTER_EXACT_RETIRE_COMPLETION
+- A003-R23-C7 CLEAN_WORKER_COMPLETION_IS_POST_FENCE_NATURAL_JOINED_COMPLETED_OUTCOME
+- A003-R23-C8 P7_R4_R5_RECLAIM_REQUIRES_NO_OUTSTANDING_BORROW
+- A003-R23-C9 R18_FINALIZE_IS_LAST_EXECUTION_RECLAIM_STEP
+- A003-R23-C10 SUCCESS_ENDS_RESTORE_PENDING_WITH_P3_RETAINED_AND_P2_FROZEN
+- A003-R23-C11 NO_THAW_FULL_REFRESH_REVEAL_PRODUCT_OR_LOWER_OWNER_SCOPE_CREEP
+- A003-R23-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
 All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-R22 must prove at least:
+R23 must prove at least:
 
-1. service from IDLE/FAULTED or without a successful R21 run is rejected before
-   P7 service;
-2. STARTED_WAIT_FIRST_FRAME + P7 IDLE/unfinished remains exactly waiting;
-3. exact first P7 PRESENTED with synchronized+first-frame-promoted effects and
-   exact P3 MPEG_OWNED advances run state once to MPEG_OWNED;
-4. a claimed first PRESENTED result lacking exact promotion/P3 state faults
-   rather than advancing run state;
-5. post-first P7 WAIT preserves the exact claim/deadline and MPEG_OWNED state;
-6. post-first PRESENTED and DROPPED preserve state and pass through P7 result;
-7. P7 IDLE with worker_finished faults both before and after first-frame
-   promotion;
-8. each negative P7 result class used by the focused fixture causes Application
-   fault/teardown without clearing the embedded consumer/worker evidence;
-9. wrong-generation or impossible P3 state is fail-closed;
-10. existing `app_mpeg_frame` P7 tests and R21 start tests remain green.
+1. begin-retirement rejects IDLE/WAIT_FIRST_FRAME/FAULTED and fabricated owner
+   states before sending RETIRE;
+2. exact MPEG_OWNED begin changes P3 to RETIRING before one current-generation
+   RETIRE and records the irreversible boundary;
+3. a RETIRE send failure faults/teardown-requires without reverting P3 or
+   pretending the run is reusable;
+4. pending RETIRE completion plus P7 IDLE/WAIT/PRESENTED/DROPPED preserves exact
+   retiring state and P7 result/claim/deadline;
+5. completion WOULD_BLOCK is benign, while wrong-generation/duplicate/failure is
+   fail-closed;
+6. producer-done is impossible before exact completion and is emitted exactly
+   once after it;
+7. worker_finished before producer-done faults; after producer-done it is
+   accepted only with exact P7 no-claim/status proof;
+8. clean join requires exact-generation COMPLETED outcome; STOPPED/FAILED/join
+   failure is not clean retirement;
+9. worker/runtime release ordering precedes Transport finalize, and any reclaim
+   failure preserves truthful fault/ownership evidence;
+10. successful endpoint has Transport run closed, worker/runtime no longer
+    owned, current generation retained, P3 still RETIRING, and P2 still frozen;
+11. no P3 seal/reveal or P2 thaw/FULL-refresh action occurs;
+12. existing R21/R22 start/live-service tests and lower-owner regressions remain
+    green.
 
 ### Authorized source surface
 
-R22 may modify only the smallest justified subset of:
+R23 may modify only the smallest justified subset of:
 
 - `src/app_mpeg_run.c` / `.h`;
-- `tests/unit/app_mpeg_run_test.c` or one focused companion R22 Application test;
-- directly affected root Application dictionaries/documentation;
+- `tests/unit/app_mpeg_run_test.c` or one focused companion R23 Application
+  fixture;
+- directly affected Application retirement documentation/dictionaries;
 - build/check manifests only if genuinely required by the source/test change.
 
-`src/app_mpeg_frame.*`, Display/Presentation/compositor/scheduler, MPEG
-worker/backend/runtime, Transport, RFB flow policy, Configuration, Pi product
-source, AUDIO product source, Input/UI/calibration and ordinary `src/app.c` are
-not authorized. If direct composition exposes a concrete defect in an accepted
-lower-owner contract, stop and return BLOCKED rather than broadening R22.
+Display/Presentation/P7/compositor/scheduler, MPEG worker/backend/runtime,
+Transport, RFB flow policy, Configuration, Pi product source, AUDIO,
+Input/UI/calibration, protocol bytes and ordinary `src/app.c` are not
+authorized. If composition exposes a concrete accepted lower-owner defect,
+return BLOCKED rather than broadening R23.
 
 ### Required checks before handoff
 
-Run focused R21/R22 Application tests, existing P7 frame-consumer tests,
-P2/P3/R18/R20/Transport reclaim and worker/runtime/backend regressions,
-canonical host tests, project check, complete strict dictionary audit, pinned
-PS2 compile/link and current-source reproducibility. Preserve exact new
-ELF/PT_LOAD identity if loadable bytes change.
+Run focused R21/R22/R23 Application tests plus existing P7, P3, R18/R20,
+worker/runtime/backend, RFB-flow and ordinary Application regressions; canonical
+host tests; project check; complete strict dictionary audit; pinned PS2
+compile/link and current-source reproducibility. Preserve exact new ELF/PT_LOAD
+identity if loadable bytes change.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` following revision 0007, then stop and return the baton.
 
 ## Current hardware debt
 
-Accepted current PS2 loadable authority is R21:
+Accepted current PS2 loadable authority is R22:
 
-`PT_LOAD_SHA256=910597af49fe2121ab730a2db82aa4259177256156062853bd2a008f0d4d6045`
-`PT_LOAD_BYTES=494996`
+`PT_LOAD_SHA256=543f14c376e4a35b95cebaaa54de44a409c6ec0ebe247c9b63d34b7358beace8`
+`PT_LOAD_BYTES=496404`
 
 This exact identity is repository-reproducible but not physically qualified.
-R20E and earlier hardware-facing identities remain historical evidence at
-their respective source authorities.
+R21 and earlier hardware-facing identities remain historical evidence at their
+respective source authorities.
 
-Any loadable-byte change from R22 creates a newer exact hardware-debt identity.
+Any loadable-byte change from R23 creates a newer exact hardware-debt identity.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
