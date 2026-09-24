@@ -59,11 +59,17 @@ Current clean C/H files directly in `src/` are restricted to:
     src/app.h
     src/app_mpeg_frame.c
     src/app_mpeg_frame.h
+    src/app_mpeg_run.c
+    src/app_mpeg_run.h
 
 `app_mpeg_frame.{c,h}` was admitted at the Application root during A004 P7
 because it is deliberately a cross-domain main-thread coordinator between the
-MPEG worker and Display presentation mechanisms. It owns neither domain's
-private mechanism and does not justify a new top-level source directory.
+MPEG worker and Display presentation mechanisms. R21 similarly admits
+`app_mpeg_run.{c,h}` as the trigger-agnostic Application transaction that
+orders already-owned RFB protection, Transport MPEG run admission, decoder/
+worker execution, Presentation and frame-consumer preparation before START.
+Neither file family owns the private mechanisms it composes, and neither
+justifies a new top-level source directory.
 
 
 The PS2 application root dictionary is:

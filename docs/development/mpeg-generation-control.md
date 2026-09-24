@@ -246,3 +246,46 @@ validation remain unchanged.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-MPEG-PRIVATE-SESSION-BINDING-R20`.
+
+
+## R21 Application run-start transaction
+
+R21 adds a trigger-agnostic Application-owned start transaction without
+activating MPEG in the ordinary product loop.
+
+One session-scoped coordinator owns only cross-domain ordering and the monotonic
+nonzero MPEG run generation. It consumes the selected R7 MPEG profile, one
+already-resolved P3 geometry value, an already-frozen P2 flow policy, current
+Transport access, Presentation state, and the session media clock.
+
+The successful ordering is:
+
+1. validate profile/geometry and existing RFB publication protection;
+2. allocate a fresh never-reused generation;
+3. open one clean R18 Transport MPEG run;
+4. create the fresh R5 PS2 worker runtime and operation tables;
+5. create the fresh R3 decoder backend operation table;
+6. start the R4 worker for that exact generation;
+7. arm P3 Presentation in WAIT_FIRST_FRAME and verify its immutable snapshot;
+8. initialize the P7 frame consumer for that same worker/generation/snapshot;
+9. serialize R20 START as the final startup action.
+
+START contains the exact base and suppression rectangles from the retained P3
+snapshot. The inner matte remains Presentation-only and is never serialized.
+
+Any failure before START attempts reverse-order retirement. Returning to IDLE is
+legal only when all acquired owners are proven released and R18 pre-START abort
+succeeds. If cleanup cannot be proven, the coordinator faults and requires outer
+session teardown.
+
+Calling START is deliberately the irreversible boundary. A non-OK START result
+cannot prove that no bytes escaped, so the coordinator faults and must not call
+the R18 pre-START abort path.
+
+R21 does not choose a user gesture, freeze or thaw RFB, service MPEG frames,
+perform retirement, send RETIRE, mark producer completion, finalize Transport,
+reveal RFB, or enable the Pi MPEG product path. Ordinary `src/app.c` remains
+unchanged.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-APPLICATION-MPEG-RUN-START-R21`.

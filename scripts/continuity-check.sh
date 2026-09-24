@@ -463,6 +463,8 @@ ROOT_SOURCE_ALLOWLIST = {
     "src/app.h",
     "src/app_mpeg_frame.c",
     "src/app_mpeg_frame.h",
+    "src/app_mpeg_run.c",
+    "src/app_mpeg_run.h",
 }
 
 SOURCE_SUFFIXES = {
