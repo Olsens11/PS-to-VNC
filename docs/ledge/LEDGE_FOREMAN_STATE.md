@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0052
-RECORDED_AT=2026-09-24T00:13:00-04:00
+STATE_REVISION=0053
+RECORDED_AT=2026-09-24T00:25:56-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0051
-SUPERSEDES_FOREMAN_STATE_REVISION=0051
+BASED_ON_FOREMAN_STATE_REVISION=0052
+SUPERSEDES_FOREMAN_STATE_REVISION=0052
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,27 +14,32 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0052 independently accepts `A003-MPEG-PRIVATE-SESSION-BINDING-R20`
-at source authority `3e39753b1b3bce9fe187748deb7eeb4d6201151c` and consumes its
-immutable Reconstruction closeout `0a81114fb1c8691fb677fed343cd45bfbae24487`.
+Revision 0053 preserves Foreman acceptance of
+`A003-MPEG-PRIVATE-SESSION-BINDING-R20` at source authority
+`3e39753b1b3bce9fe187748deb7eeb4d6201151c` and its immutable
+Reconstruction closeout `0a81114fb1c8691fb677fed343cd45bfbae24487`.
 
-Transport now keeps Q4 Wire identity and MPEG control-version representation
-below its public bridge. Higher owners express only exact generation/geometry
-meaning, while Transport stamps the current private session identity and keeps
-full RETIRE correlation private before projecting only completed generation.
+Revision 0052 initially activated the trigger-agnostic R21 Application MPEG
+run-start packet. Exact-head validation then exposed a reproducible pre-existing
+A001 Transport lifecycle race in the sole physical-I/O owner completion fence.
+The documentation-only State-0052 head failed `host-unit` twice on the same two
+receiver-completion ordering assertions while project check, strict dictionaries,
+PS2 compile and PS2 link/reproducibility remained green.
 
-Independent dependency review found that ordinary `app.c` still cannot safely
-activate MPEG yet: the maintained Pi runtime composes RFB only, the historical
-physical calibration trigger is explicitly discarded, and no Application owner
-yet sequences an exact local run from accepted geometry through worker,
-Presentation, frame-consumer and START readiness.
+Independent source/test/history review confirms the failure is semantic rather
+than merely an unsynchronized witness: `receiver_done` becomes visible before
+the I/O owner finishes pending-outbound resolution, RFB waiter wake, logical
+owner terminal publication and the receiver-done semaphore signal. The release
+path still treats that early flag as the old quiescent point and may terminate/
+delete the thread while those terminal operations are still pending.
 
-Revision 0052 therefore activates a trigger-agnostic Application run-start
-transaction packet. It creates no product trigger and is not wired into the
-ordinary Application loop until retirement/restoration is separately accepted.
+Revision 0053 therefore queues R21 and activates one bounded A001 corrective
+packet. The fix must restore a truthful receiver completion rendezvous before
+any Application MPEG start/rollback work is allowed to depend on Transport
+teardown.
 
-R20 changes loadable PS2 bytes and is not hardware-qualified. R21 likewise
-carries no hardware-qualification claim.
+R20 remains hardware-unqualified. The corrective packet carries no hardware-
+qualification claim.
 ## Temporal architecture reconciliation
 
 Wire Runtime Decisions revision 0011 and Architecture Overlay revision 0007
@@ -66,9 +71,9 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R20_MPEG_PRIVATE_SESSION_BINDING_FOREMAN_ACCEPTED__A003_APPLICATION_MPEG_RUN_START_R21_ACTIVE__RETIREMENT_AND_PRODUCT_ACTIVATION_DEFERRED`
+`A003_R20_MPEG_PRIVATE_SESSION_BINDING_FOREMAN_ACCEPTED__A001_TRANSPORT_RECEIVER_COMPLETION_FENCE_R20C_ACTIVE__A003_APPLICATION_MPEG_RUN_START_R21_QUEUED`
 
-ARCHITECTURE_BLOCKER=NONE
+ARCHITECTURE_BLOCKER=TRANSPORT_RECEIVER_COMPLETION_FENCE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
 A004_P1_FOREMAN_ACCEPTED=YES
 A004_P2_FOREMAN_ACCEPTED=YES
@@ -97,7 +102,8 @@ PI_MPEG_CONTROL_PRODUCER_OWNER=FOREMAN_ACCEPTED
 MPEG_TRANSPORT_RUN_BOUNDARY=FOREMAN_ACCEPTED
 RFB_FLOW_APPLICATION_COMPOSITION=FOREMAN_ACCEPTED
 MPEG_PRIVATE_SESSION_BINDING=FOREMAN_ACCEPTED
-APPLICATION_MPEG_RUN_START=RECONSTRUCTION_ACTIVE
+TRANSPORT_RECEIVER_COMPLETION_FENCE=RECONSTRUCTION_ACTIVE
+APPLICATION_MPEG_RUN_START=DEPENDENCY_QUEUED
 APPLICATION_MPEG_RETIREMENT=DEPENDENCY_QUEUED
 ORDINARY_MPEG_PRODUCT_ACTIVATION=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
@@ -563,80 +569,115 @@ This PT_LOAD differs from accepted R19 and therefore creates the current exact
 hardware-debt identity. Repository reproducibility does not physically qualify
 that image.
 
-## Next dependency decision
+## Post-State-0052 validation finding
 
-R20 removes the last Transport-identity leak, but ordinary MPEG product
-activation is still not the next bounded step.
+State 0052 was documentation-only and retained the exact accepted R20 product
+source. Its Actions run was `35955243662`.
 
-Current dependency facts:
+Attempt 1:
 
-- `app.c` opens an RFB-only Transport runtime; channel-4 product activation is
-  not yet composed there;
-- `pi/wire_runtime.py` intentionally composes only the RFB attachment; R17's
-  MPEG generation controller remains dormant unless a factory is injected;
-- the Pi MPEG controller requires product composition values such as active
-  desktop/display and retirement policy that are not yet selected by current
-  ordinary Pi runtime authority;
-- A005 explicitly discards the historical START+SELECT calibration chord as a
-  product binding, so Foreman will not invent a replacement physical trigger;
-- accepted A003/A004 mechanisms already provide worker/backend/runtime,
-  Presentation, frame consumer, RFB flow policy, selected MPEG profile and
-  Transport run/control seams.
+- project-check — PASS;
+- dictionary-long — PASS;
+- ps2-compile — PASS;
+- ps2-link/current-source reproducibility — PASS;
+- host-unit — FAIL.
 
-The smallest coherent next dependency is therefore a trigger-agnostic
-Application-owned run-start process. It accepts already-resolved calibration
-geometry and already-existing session/component authorities, allocates one
-session-local exact generation, proves every local start prerequisite, and
-submits START only after all reversible local setup is complete.
+The only host failures were:
 
-R21 is deliberately not invoked by ordinary `app.c`. A successful R21 start
-would establish a live run that still needs separately reconstructed
-retirement/restoration. Product activation must wait until that complement and
-Pi runtime composition are both accepted.
+`unit/transport_runtime_test.c:1273` —
+`EVENT_TERMINATE_THREAD` was not observed after `EVENT_RECEIVER_DONE_SIGNAL`;
 
-## Governing invariants for R21
+`unit/transport_runtime_test.c:1275` —
+`EVENT_DELETE_THREAD` was not observed after `EVENT_RECEIVER_DONE_SIGNAL`.
 
-1. Application owns exact run generation identity; Transport, MPEG worker,
-   Presentation and Pi consume but do not allocate it.
-2. One R21 coordinator instance belongs to one current MPEG-capable Transport
-   session/attempt. Generation values are monotonically increasing nonzero
-   uint32 values within that owner; allocated attempt identities are never
-   reused, and exhaustion fails closed instead of wrapping.
-3. R21 receives one already-resolved `pstvnc_mpeg_calibration_geometry_t` or
-   equivalently narrow accepted geometry value. It does not edit calibration
-   and must not create a second geometry authority.
-4. The exact same base rectangle reaches Presentation and Transport START; the
-   exact same suppression rectangle reaches both. Inner matte remains
-   Presentation-only and never enters START.
-5. Geometry must fit selected decoder/profile bounds before worker/START
-   activation. R21 must not move Pi desktop bounds or calibration policy into
-   Transport.
-6. The caller's RFB P2 state must already deny remote publication before the
-   start transaction can proceed. R21 does not invent a physical calibration
-   trigger or silently steal/release another owner's freeze obligation.
-7. Successful startup orders reversible local prerequisites before START:
-   Transport clean run-open; fresh PS2 worker runtime/backend operations;
-   exact-generation worker start; Presentation WAIT_FIRST_FRAME arm; P7 frame
-   consumer initialization; then exact START as the final irreversible action.
-8. Before START is attempted, any failure must unwind only owners actually
-   acquired, prove worker/thread/resource retirement where applicable, abort
-   Presentation WAIT_FIRST_FRAME if armed, and call Transport pre-START abort.
-   A failed unwind is fatal/faulted authority, never a successful rollback.
-9. Once START submission is attempted, a non-success result may represent
-   uncertain physical exposure. R21 must not call pre-START abort and claim a
-   clean reusable run; it records fault/session-teardown-required state.
-10. First physical frame promotion, P2 thaw, live frame service, RETIRE, worker
-    stop/join/release, Transport finalization, FULL restoration and reveal are
-    outside R21 and remain later Application lifecycle work.
-11. R21 does not change Pi product source/runtime composition, ordinary `app.c`
-    behavior, AUDIO, protocol bytes, RFB parser/session, calibration input
-    bindings, Presentation internals, worker internals or Transport internals.
-12. The new process must be directly host-testable with deterministic owner
-    failure injection and preserve canonical project/dictionary/PS2 evidence.
+Foreman reran the failed host job on the same exact SHA. Attempt 2 reproduced
+the identical two failures. This is therefore current branch-head evidence, not
+a one-off runner failure.
+
+R20's own exact source/log heads remain accepted because both previously passed
+their canonical host evidence. The later finding records a latent A001 defect
+discovered by subsequent validation; it does not retroactively manufacture a
+green claim for State 0052.
+
+## Root-cause reconciliation
+
+The original A001 dormant-before-reclaim design treated `receiver_done` as a
+quiescent point from which a still-RUNNING kernel thread could safely be
+terminated before stack/semaphore reclaim.
+
+The later sole-physical-I/O-owner refactor added mandatory terminal work after
+`receiver_done = 1`:
+
+- fail or resolve a racing outbound submission;
+- wake an RFB writer blocked on Pi-granted credit;
+- publish terminal RFB activity;
+- publish AUDIO terminal activity when enabled;
+- publish MPEG terminal activity when enabled;
+- signal `receiver_done_semaphore_id`;
+- then execute `ExitThread()`.
+
+`pstvnc_transport_runtime_wait_receiver_done()` currently returns immediately
+when it merely observes `receiver_done`, without necessarily consuming the
+completion semaphore. `pstvnc_transport_runtime_release()` likewise allows
+reclaim once that flag is visible, and if `ReferThreadStatus()` still reports
+RUNNING it calls `TerminateThread()` under the obsolete assumption that no
+Transport/session memory remains touchable.
+
+That assumption is now false. A releaser may terminate the I/O owner between
+early terminal-flag publication and its later waiter/owner wake/completion
+sequence. The existing deterministic host fixture is correctly detecting that
+ordering violation.
+
+A001 authority remains controlling: teardown may not race a receiver still
+inside its terminal dispatch/signal ownership path, and diagnostic timing or a
+generic delay may not stand in for the ownership fence.
+
+## Corrective dependency decision
+
+R21 requires trustworthy Transport unwind for every pre-START failure. It must
+not be implemented on top of a teardown primitive that can report completion
+before the sole physical-I/O owner has finished its terminal publication work.
+
+R21 therefore returns to `DEPENDENCY_QUEUED`. The next bounded packet repairs
+only the A001 receiver-completion/reclaim contract. Once independently accepted,
+Foreman may reactivate the already-designed trigger-agnostic R21 packet without
+changing its MPEG semantics.
+
+## Governing invariants for R20C
+
+1. Transport may publish an early terminal/admission-closing fact if needed to
+   reject new work, but that fact is not reclaim-completion authority.
+2. `wait_receiver_done()` may report success only after the sole physical-I/O
+   owner has completed every terminal operation that can touch session-owned
+   queues, semaphores, outbound rendezvous, waiter state or logical-owner wake
+   state.
+3. A release path must never terminate or delete a thread merely because an
+   early terminal flag became visible.
+4. Any safe forced transition from RUNNING to DORMANT is permitted only after a
+   separately proven quiescent/completion fence at which the I/O owner can touch
+   no reclaimable Transport/session resource again.
+5. Pending outbound resolution and RFB/AUDIO/MPEG terminal publication occur
+   before reclaim authorization.
+6. The receiver-done semaphore/event remains an ownership rendezvous, not a
+   diagnostic witness that can be skipped by observing an earlier flag.
+7. A failed physical socket shutdown may still converge through the accepted
+   bounded readiness loop observing `stop_requested`; no second interrupt or
+   timer-derived success is required merely for correctness.
+8. Pre-reclaim kernel-status/ReferThread failure remains retryable and preserves
+   all owned memory, semaphores, physical stream and thread authority.
+9. Stack, semaphores, queues and physical stream are reclaimed only after the
+   I/O owner is proven unable to access them.
+10. Fresh-session reuse resets all terminal/completion/thread authority and
+    cannot inherit an old owner's completion token.
+11. RFB quiesce, outbound credit gating, AUDIO/MPEG waiter wake, R18/R20 MPEG
+    semantics, physical I/O single ownership and fixed Wire bytes remain
+    unchanged.
+12. The corrective proof must be deterministic and synchronization-driven; no
+    sleeps, race-luck retries or generic timeout may be used as acceptance.
 
 ## ACTIVE RECONSTRUCTION PACKET
 
-PACKET_ID=A003-APPLICATION-MPEG-RUN-START-R21
+PACKET_ID=A001-TRANSPORT-RECEIVER-COMPLETION-FENCE-R20C
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a003-mpeg-generation
@@ -644,148 +685,146 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0052
+BASED_ON_FOREMAN_STATE_REVISION=0053
 BASED_ON_ACCEPTED_R20_SOURCE=3e39753b1b3bce9fe187748deb7eeb4d6201151c
-BASED_ON_R20_LOG=0a81114fb1c8691fb677fed343cd45bfbae24487
+DISCOVERY_STATE_0052=f90d69c62612400cf2c72d8a922e6cef21c13359
+DISCOVERY_CI_RUN=35955243662_ATTEMPTS_1_AND_2
 
 ### Objective
 
-Implement one trigger-agnostic Application-owned MPEG run-start transaction that
-binds accepted calibration geometry and selected MPEG mechanism policy to the
-accepted Transport/worker/Presentation/frame-consumer seams, allocates exact
-session-local generation identity, and makes START the final irreversible
-startup action.
+Restore a truthful A001 sole-I/O-owner completion fence so a caller cannot
+observe receiver completion or reclaim/terminate receiver-owned resources until
+all terminal publication/wakeup work is complete.
 
-Do not wire this transaction into the ordinary Application loop in R21.
+This is a lifecycle correction only. Do not execute R21 MPEG run-start work in
+this packet.
 
 ### Required behavior
 
-1. **Application run owner.** Add the smallest coherent Application-owned run
-   state/process representation. A new root `src/app_mpeg_run.*` pair is
-   permitted because `src/` is the Application coordinator responsibility and
-   this is cross-domain Application orchestration, not a new feature domain.
-2. **Fresh session-local identity.** Initialization establishes idle run state
-   and monotonic nonzero generation allocation. No generation may be reused
-   after allocation, including a locally failed pre-START attempt; wrap/exhaustion
-   fails closed.
-3. **Accepted geometry mapping.** Consume one resolved calibration geometry
-   value. Map base/inner/suppression exactly into P3 Presentation geometry and
-   map only base/suppression into the R20 START request. Prove signed/nonempty/
-   containment/alignment/profile-bound validity before activation.
-4. **Existing protection required.** Refuse startup unless the supplied P2 flow
-   policy currently denies remote publication. Do not set or clear the freeze
-   in R21.
-5. **Transport access/run-open.** Require current caller-supplied Transport
-   access and open one clean R18 run before the MPEG worker can consume channel
-   state.
-6. **Fresh MPEG execution owners.** Initialize one fresh R5 PS2 worker runtime,
-   obtain its decoder/worker operation tables, initialize one fresh R3 PS2
-   decoder backend, obtain platform operations, and start one R4 worker with
-   the allocated generation and selected R7 decoder/worker/runtime policy.
-7. **Presentation/frame consumer.** Arm P3 WAIT_FIRST_FRAME with the exact same
-   generation/geometry, then initialize P7 frame consumer against that worker,
-   Presentation, caller-owned media clock and selected scheduler profile.
-8. **START last.** Only after all prior steps succeed may R21 submit the R20
-   semantic START request. Successful submission establishes one
-   `STARTED_WAIT_FIRST_FRAME` transaction state.
-9. **Pre-START unwind.** For every injected failure before START invocation,
-   unwind in reverse ownership order. Release any P7 claim/state that needs no
-   separate ownership; abort pending Presentation if armed; request/verify
-   worker stop/join/outcome/release as required; release R5 runtime resources;
-   abort R18 run-open. Report cleanup failure distinctly and leave the owner
-   faulted rather than claiming idle.
-10. **START-attempt failure fence.** If the START call itself returns non-OK,
-    mark the transaction/session as faulted/teardown-required. Do not use
-    `pstvnc_transport_mpeg_run_abort_pre_start()` after START invocation merely
-    because the call returned failure.
-11. **No downstream lifecycle scope.** Do not service frames, thaw P2, begin
-    Presentation retirement, send RETIRE, mark producer done, stop/join a live
-    successful worker, finalize Transport, schedule FULL refresh, reveal RFB,
-    or activate the Pi product runtime.
-12. **No product trigger/ordinary activation.** Do not modify ordinary
-    `pstvnc_app_run*()` behavior to invoke R21 and do not choose a controller/
-    keyboard/UI gesture for MPEG calibration/start.
+1. **Separate terminal admission from reclaim completion.** Preserve whatever
+   early terminal state is required to reject new sends/reads, but do not let
+   that early state satisfy the public receiver-completion wait or release
+   authority unless it truly occurs after all terminal owner work.
+2. **Completion rendezvous is authoritative.** Make
+   `pstvnc_transport_runtime_wait_receiver_done()` synchronize with a completion
+   edge that occurs only after pending outbound resolution and all enabled
+   RFB/AUDIO/MPEG terminal wake/publication work is finished.
+3. **No pre-fence forced termination.** `pstvnc_transport_runtime_release()`
+   must not call `TerminateThread()` or `DeleteThread()` while the owner might
+   still execute terminal Transport code. If a post-fence RUNNING->DORMANT
+   assist remains necessary, prove that the fence guarantees no later access.
+4. **Reclaim only after no-touch proof.** Dynamic stack, queue storage,
+   semaphores, physical stream and thread slot are retained on every
+   unproven-completion path.
+5. **Preserve failed-shutdown convergence.** The current bounded socket
+   readiness loop must still observe `stop_requested` and allow a failed
+   `shutdown_io` call to converge without a correctness timeout.
+6. **Preserve retryability.** Injected `ReferThreadStatus` or equivalent
+   pre-reclaim failure leaves runtime initialized and retryable without partial
+   resource destruction.
+7. **Fresh-session safety.** After successful release, one reused runtime object
+   initializes with no stale completion token, thread state, stop/failure fact,
+   outbound state or logical waiter state.
+8. **Deterministic race proof.** Extend the host fixture with an explicit
+   barrier/rendezvous capable of holding the I/O owner after early terminality
+   but before final completion publication. Prove wait/release cannot succeed
+   or reclaim while held, then can complete after the barrier is released.
+9. **Ordering proof.** Deterministically prove completion publication precedes
+   any permitted TerminateThread/DeleteThread and physical release, without
+   relying on scheduling luck.
+10. **Neighboring regressions.** Keep sole receiver/send ownership, pending
+    outbound wake, RFB credit writer wake, AUDIO/MPEG terminal waiters, finite
+    RFB quiesce and repeated-session tests green.
+11. **No MPEG/Application scope creep.** Do not modify R20 semantic MPEG control
+    types, R21 files/packet, `app.c`, Pi source, Presentation, calibration,
+    MPEG decoder/worker/backend, AUDIO product behavior or protocol bytes.
+12. **Evidence/dictionaries.** Run focused Transport lifecycle tests plus the
+    canonical host, project, complete strict dictionary and pinned PS2
+    compile/link/reproducibility evidence; preserve exact identity if loadable
+    bytes change.
 
 ### Acceptance criteria
 
-- A003-R21-C1 APPLICATION_OWNS_MONOTONIC_SESSION_LOCAL_RUN_GENERATION
-- A003-R21-C2 ACCEPTED_GEOMETRY_HAS_ONE_BASE_INNER_SUPPRESSION_AUTHORITY
-- A003-R21-C3 START_BASE_AND_SUPPRESSION_MATCH_PRESENTATION_SNAPSHOT_EXACTLY
-- A003-R21-C4 EXISTING_RFB_PROTECTION_IS_REQUIRED_NOT_STOLEN_OR_RELEASED
-- A003-R21-C5 R18_RUN_OPEN_PRECEDES_MPEG_WORKER_CONSUMER_ACTIVITY
-- A003-R21-C6 FRESH_R5_R3_R4_EXECUTION_OWNERS_BIND_EXACT_GENERATION
-- A003-R21-C7 P3_WAIT_FIRST_FRAME_AND_P7_CONSUMER_READY_BEFORE_START
-- A003-R21-C8 START_IS_FINAL_IRREVERSIBLE_STARTUP_ACTION
-- A003-R21-C9 EVERY_PRE_START_FAILURE_PROVES_REVERSE_ORDER_UNWIND_OR_FAULTS
-- A003-R21-C10 START_ATTEMPT_FAILURE_NEVER_FALSELY_USES_PRE_START_ABORT
-- A003-R21-C11 NO_RETIREMENT_PI_TRIGGER_AUDIO_OR_ORDINARY_APP_SCOPE_CREEP
-- A003-R21-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A001-R20C-C1 EARLY_TERMINAL_STATE_IS_NOT_RECLAIM_COMPLETION_AUTHORITY
+- A001-R20C-C2 WAIT_RECEIVER_DONE_SYNCHRONIZES_AFTER_ALL_TERMINAL_OWNER_WORK
+- A001-R20C-C3 RELEASE_CANNOT_TERMINATE_OR_DELETE_BEFORE_COMPLETION_FENCE
+- A001-R20C-C4 PENDING_OUTBOUND_AND_LOGICAL_TERMINAL_WAKES_PRECEDE_RECLAIM
+- A001-R20C-C5 FAILED_SOCKET_SHUTDOWN_STILL_CONVERGES_WITHOUT_TIMEOUT_SUCCESS
+- A001-R20C-C6 PRE_RECLAIM_KERNEL_STATUS_FAILURE_PRESERVES_RETRYABLE_OWNERSHIP
+- A001-R20C-C7 STACK_SEMAPHORES_QUEUES_AND_STREAM_RECLAIM_ONLY_AFTER_NO_TOUCH_PROOF
+- A001-R20C-C8 FRESH_RUNTIME_REUSE_CANNOT_INHERIT_COMPLETION_AUTHORITY
+- A001-R20C-C9 DETERMINISTIC_BARRIER_PROVES_PRE_COMPLETION_RACE_IS_CLOSED
+- A001-R20C-C10 RFB_AUDIO_MPEG_AND_SINGLE_IO_OWNER_CONTRACTS_UNCHANGED
+- A001-R20C-C11 NO_APPLICATION_PI_MEDIA_PRESENTATION_OR_PROTOCOL_SCOPE_CREEP
+- A001-R20C-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
 All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-R21 must prove at least:
+R20C must prove at least:
 
-1. fresh coordinator starts idle with generation 0/current-none and allocates
-   generations 1,2,... without reuse across pre-START failed attempts;
-2. UINT32 exhaustion fails closed and never wraps to zero;
-3. invalid/unprotected geometry or thawed P2 fails before Transport run-open;
-4. exact base/suppression values observed by R20 START equal the P3 snapshot;
-5. inner matte reaches Presentation but not START;
-6. run-open precedes worker start; worker start precedes Presentation/P7 ready;
-   START is after all of them;
-7. failures at run-open, runtime init/ops, backend ops, worker start,
-   Presentation arm and P7 init produce the required reverse-order cleanup and
-   no START invocation;
-8. cleanup failure leaves explicit faulted state and does not permit another
-   start on the same coordinator;
-9. START success leaves exact generation in WAIT_FIRST_FRAME-ready state with
-   no retirement/thaw/reveal side effect;
-10. START invocation failure performs no pre-START abort and requires outer
-    session teardown;
-11. existing P2, P3, P7, R18, R20 and worker/runtime/backend focused tests
-    remain green;
-12. ordinary Application R15/R16B/R19 tests remain unchanged/green, proving
-    R21 is not yet product-invoked.
+1. while the receiver is deliberately held after terminal admission closes but
+   before final completion publication, `wait_receiver_done` has not completed;
+2. release while that pre-completion barrier is held cannot reclaim, terminate
+   or delete the I/O owner;
+3. a racing pending outbound submitter is resolved before completion becomes
+   reclaim-authoritative;
+4. RFB outbound-credit waiter plus enabled AUDIO/MPEG activity waiters are made
+   terminal before completion is reclaim-authoritative;
+5. releasing the barrier permits completion wait to return and then permits
+   safe release;
+6. if a post-fence kernel thread still reports RUNNING, any retained forced
+   dormancy operation occurs only after the completion event in deterministic
+   event order;
+7. injected first `ReferThreadStatus` failure preserves all ownership and a
+   later retry succeeds;
+8. failed `shutdown_io` still converges through the bounded I/O loop;
+9. a fresh runtime/session has no stale done token or old thread state;
+10. existing Transport runtime, bridge, protocol, R18 MPEG, R20 identity and Pi
+    R17 generation regressions remain green.
 
 ### Authorized source surface
 
-R21 may modify only the smallest justified subset of:
+R20C may modify only the smallest justified subset of:
 
-- new `src/app_mpeg_run.c` / `.h` Application-coordinator support files;
-- directly required Application test/build enrollment, preferably a focused
-  `tests/unit/app_mpeg_run_test.c` rather than expanding legacy `app_test`;
-- `src/SYMBOLS.md`, generated dictionaries and directly affected development
-  documentation;
-- compile/link/check manifests required to compile/link the new Application
-  coordinator source.
+- `src/transport/runtime.c` / `.h`;
+- `tests/unit/transport_runtime_test.c` and Transport host stubs only if needed
+  for the deterministic completion barrier;
+- directly affected Transport lifecycle documentation/dictionaries;
+- compile/link/check manifests only if required by a real source dependency.
 
-Existing `src/app_mpeg_frame.*`, RFB P2, Presentation/Display, calibration,
-MPEG worker/backend/runtime, Transport, Configuration and Pi product source may
-not be modified unless a concrete integration-contract defect is demonstrated;
-if such a defect is found, stop and return BLOCKED rather than broadening R21.
-
-`src/app.c` ordinary lifecycle behavior is not authorized for R21.
+`src/app.c`, any R21 Application support source, `src/app_mpeg_frame.*`, Pi
+product source, RFB parser/session, MPEG decoder/worker/backend, Presentation/
+Display, calibration/Input/UI, AUDIO product source, Configuration product
+source and protocol wire representation are not authorized.
 
 ### Required checks before handoff
 
-Run focused R21 host tests plus existing P2/P3/P7/R18/R20/worker/runtime/backend
-regressions, canonical host tests, project check, complete strict dictionary
-audit, pinned PS2 compile/link and current-source reproducibility. Preserve exact
-new ELF/PT_LOAD identity if loadable bytes change.
+Run the focused fatal-stop/completion/reclaim fixture repeatedly enough to prove
+deterministic synchronization (not race luck), all canonical host tests, project
+check, complete strict dictionary audit, pinned PS2 compile/link and current-
+source reproducibility. Preserve exact new ELF/PT_LOAD identity if loadable
+bytes change.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` following revision 0007, then stop and return the baton.
 
+## Queued R21 authority
+
+`A003-APPLICATION-MPEG-RUN-START-R21` remains the intended next MPEG dependency
+from State 0052, but it is not currently authorized for execution. Reconstruction
+must not implement it during R20C. Foreman will independently decide whether to
+reactivate it after the Transport completion fence is accepted.
+
 ## Current hardware debt
 
-R20 changed the current linked PS2 loadable image to
-`PT_LOAD_SHA256=9bdb07b04ed9265ac430bc3816e5e9c29cdad3273ff9149c4e786b5605ba771e`
-with `PT_LOAD_BYTES=491540`. This exact identity is repository-reproducible but
-not physically qualified. R19/R18 and earlier reconstructed hardware-facing
-work remain unqualified at their respective identities.
+Accepted R20 loadable identity remains:
 
-Any loadable-byte change from R21 creates a newer exact hardware-debt identity.
+`PT_LOAD_SHA256=9bdb07b04ed9265ac430bc3816e5e9c29cdad3273ff9149c4e786b5605ba771e`
+`PT_LOAD_BYTES=491540`
+
+That exact identity is repository-reproducible but not physically qualified.
+Any loadable-byte change from R20C creates a newer exact hardware-debt identity.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
