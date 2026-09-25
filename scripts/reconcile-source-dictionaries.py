@@ -32,6 +32,7 @@ TARGET_DIRECTORIES = (
     Path("src/config"),
     Path("src/display"),
     Path("src/input"),
+    Path("src/management"),
     Path("src/media"),
     Path("src/mpeg"),
     Path("src/platform"),
