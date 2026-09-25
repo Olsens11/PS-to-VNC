@@ -1,11 +1,13 @@
 /*
  * File synopsis:
  * Owns qualified PS2 Ethernet startup, fixed private-link configuration, and
- * creation/closure of caller-owned PSTV TCP descriptors before Transport
- * adoption. Physical receive/send mechanics after adoption belong to Transport.
+ * creation/closure of caller-owned TCP descriptors for fixed product endpoints.
+ * Physical PSTV I/O after Transport adoption remains exclusively Transport-owned;
+ * separate management descriptors never participate in Transport adoption.
  *
  * Context: docs/reconstruction/ISSUE7_MINIMAL_CORE.md, "PS2 system and
- * private-Ethernet platform seam"; docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md.
+ * private-Ethernet platform seam"; docs/ledge/LEDGE_ARCHITECTURE_OVERLAY.md;
+ * docs/ledge/LEDGE_FOREMAN_STATE.md, R31.
  */
 
 #include <kernel.h>
@@ -44,6 +46,37 @@ static int link_is_up(void)
         0,
         NULL,
         0) == NETMAN_NETIF_ETH_LINK_STATE_UP;
+}
+
+static int ps2_network_connect_server(
+    const char *server_ip,
+    unsigned short server_port)
+{
+    int socket_fd;
+    struct sockaddr_in server;
+
+    if (server_ip == NULL || server_port == 0u)
+        return -1;
+
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd < 0)
+        return -1;
+
+    memset(&server, 0, sizeof(server));
+    server.sin_len = sizeof(server);
+    server.sin_family = AF_INET;
+    server.sin_port = htons(server_port);
+    server.sin_addr.s_addr = inet_addr(server_ip);
+
+    if (connect(
+            socket_fd,
+            (struct sockaddr *)&server,
+            sizeof(server)) < 0) {
+        close(socket_fd);
+        return -1;
+    }
+
+    return socket_fd;
 }
 
 int pstvnc_ps2_network_init(void)
@@ -109,28 +142,16 @@ int pstvnc_ps2_network_wait_link(void)
 
 int pstvnc_ps2_network_connect_pstv(void)
 {
-    int socket_fd;
-    struct sockaddr_in server;
+    return ps2_network_connect_server(
+        PSTVNC_PS2_PSTV_SERVER_IP,
+        PSTVNC_PS2_PSTV_SERVER_PORT);
+}
 
-    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket_fd < 0)
-        return -1;
-
-    memset(&server, 0, sizeof(server));
-    server.sin_len = sizeof(server);
-    server.sin_family = AF_INET;
-    server.sin_port = htons(PSTVNC_PS2_PSTV_SERVER_PORT);
-    server.sin_addr.s_addr = inet_addr(PSTVNC_PS2_PSTV_SERVER_IP);
-
-    if (connect(
-            socket_fd,
-            (struct sockaddr *)&server,
-            sizeof(server)) < 0) {
-        close(socket_fd);
-        return -1;
-    }
-
-    return socket_fd;
+int pstvnc_ps2_network_connect_management(void)
+{
+    return ps2_network_connect_server(
+        PSTVNC_PS2_MANAGEMENT_SERVER_IP,
+        PSTVNC_PS2_MANAGEMENT_SERVER_PORT);
 }
 
 void pstvnc_ps2_network_close(int socket_fd)
