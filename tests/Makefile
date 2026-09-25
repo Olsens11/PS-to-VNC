@@ -709,6 +709,28 @@ $(MPEG_CALIBRATION_TEST): \
 		../src/ui/mpeg_calibration.c \
 		-o $(MPEG_CALIBRATION_TEST)
 
+MPEG_CALIBRATION_MANUAL_TEST := .build/mpeg_calibration_manual_test
+
+.PHONY: mpeg-calibration-manual-unit
+unit: mpeg-calibration-manual-unit
+
+mpeg-calibration-manual-unit: $(MPEG_CALIBRATION_MANUAL_TEST)
+	./$(MPEG_CALIBRATION_MANUAL_TEST)
+
+$(MPEG_CALIBRATION_MANUAL_TEST): \
+	unit/mpeg_calibration_manual_test.c \
+	../src/ui/mpeg_calibration_manual.c \
+	../src/ui/mpeg_calibration_manual.h \
+	../src/ui/mpeg_calibration.c \
+	../src/ui/mpeg_calibration.h \
+	../src/input/controller.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/mpeg_calibration_manual_test.c \
+		../src/ui/mpeg_calibration_manual.c \
+		../src/ui/mpeg_calibration.c \
+		-o $(MPEG_CALIBRATION_MANUAL_TEST)
+
 RFB_FLOW_POLICY_TEST := .build/rfb_flow_policy_test
 
 .PHONY: rfb-flow-policy-unit
