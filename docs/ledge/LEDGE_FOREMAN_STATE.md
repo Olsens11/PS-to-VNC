@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0067
-RECORDED_AT=2026-09-25T13:00:43-04:00
+STATE_REVISION=0068
+RECORDED_AT=2026-09-25T15:20:17-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0066
-SUPERSEDES_FOREMAN_STATE_REVISION=0066
+BASED_ON_FOREMAN_STATE_REVISION=0067
+SUPERSEDES_FOREMAN_STATE_REVISION=0067
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,45 +14,40 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0067 independently accepts
-`A003-APPLICATION-MPEG-SESSION-FOUNDATION-R27` at final source authority
-`b126b749c2d3b3182c9b562973614106e98f0edb` and consumes immutable
-Reconstruction closeout `41688117e7dd1f5283a687d08c26acf605afa3b1`.
+Revision 0068 independently accepts
+`A005-SEMANTIC-PRODUCT-ACTION-BINDING-CORE-R28` at final source authority
+`c9df08288689d47eb85c889b8c95c7a4741a48a9` and consumes immutable
+Reconstruction closeout `22aea289ba06d744387913bc1809c60ba32800a8`.
 
-R27 makes the ordinary PS2 session MPEG-capable without beginning MPEG
-execution. Product entry resolves selected RFB, MPEG and media-clock profile
-authority before platform startup. Each physical attempt opens exactly one
-Transport runtime with the accepted MPEG channel, then creates one fresh R26
-PS2 synchronization binding and one clean unarmed A002 media clock. RFB
-provider-local replacement proves input dormancy, retires the exact clock
-binding, retires Transport and only then admits a fresh physical session.
+R28 reconstructs the clean Input-owned semantic action/binding core without
+selecting or executing a product binding. It defines typed action, trigger and
+context values; caller-supplied immutable bindings; qualified B4A
+settle/release/hold/context/latch arbitration; and an ordinary
+`PSTVNC_INPUT_EVENT_PRODUCT_ACTION` FIFO payload. Its only current semantic
+product action is `MPEG_CALIBRATION`.
 
-R27 never arms the media clock, opens an MPEG run, sends START/RETIRE, creates a
-decoder/worker, mutates Presentation, enters P9/P10, activates AUDIO or changes
-Pi/Wire protocol behavior. It changes PS2 linked bytes, so its exact reproducible
-PT_LOAD becomes the newest PS2 hardware-debt identity; no physical qualification
-is inherited.
+Independent review confirms that R28 contains no compiled MPEG-calibration
+button mask, no START+SELECT / 750 ms product adapter, no live Input-runtime
+wiring, no Application P9/P10 routing and no UI/RFB/MPEG/media-clock/Transport/
+AUDIO/Pi effect. Exact source CI is green. R28 changes linked PS2 bytes, so its
+reproducible PT_LOAD becomes the newest hardware-debt identity.
 
-The next dependency is now the semantic product-action boundary required by
-A005/B07/B10. The accepted MPEG calibration/run stack is intentionally
-trigger-agnostic, and A005 explicitly discards H1's held START+SELECT 750 ms
-gesture as a product binding. The clean product therefore must not jump from raw
-controller facts directly into P9 merely because the historical harness did so.
+The next dependency stays inside A005 Input ownership. The clean architecture
+requires the controller thread to own live binding recognition and publish only
+semantic events; Application remains the sole product-effect owner. R28 is still
+pure/dormant, while current `input_runtime` publishes sparse controller facts
+outside mouse suspension. SETTLE and HOLD recognition therefore cannot be
+correctly moved to Application over that sparse queue: the resolver must observe
+every trustworthy physical poll inside Input ownership.
 
-B07/B10 provide the durable shape: Input owns gesture/hotkey recognition and
-publishes logical actions; bindings are typed by button mask, semantic action,
-trigger kind (SETTLE/RELEASE/HOLD) and context (DESKTOP/GLOBAL); Application
-routes the resulting meaning. Historical B4A additionally proves exact-mask
-settling, growing/shrinking chord arbitration, release arming, hold extension,
-latching until complete release and no desktop-context acquisition merely
-because foreground changed while buttons remained held.
-
-R28 reconstructs that small platform-neutral semantic binding core and adds the
-current MPEG_CALIBRATION product action to the ordinary input event vocabulary.
-It accepts caller-supplied binding values and deliberately publishes no built-in
-physical MPEG-calibration mapping. Human-readable binding selection/persistence,
-Application routing into P9/P10, and full MPEG run servicing remain later
-packets.
+R29 composes the accepted R28 resolver into `input_runtime` as an optional,
+caller-configured semantic producer. It preserves zero-binding behavior,
+requires an explicit Application-owned DESKTOP eligibility fact rather than
+reading UI/Application internals, evaluates every trustworthy physical sample,
+and publishes a resolved product action into the existing ordinary FIFO before
+same-sample controller/mouse work. The controller worker still executes no
+product effect. Physical MPEG-calibration binding selection and Application
+routing remain deferred.
 
 ## Temporal architecture reconciliation
 
@@ -85,7 +80,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R27_APPLICATION_MPEG_SESSION_FOUNDATION_FOREMAN_ACCEPTED__A005_R28_SEMANTIC_PRODUCT_BINDING_CORE_ACTIVE__MPEG_ACTION_SELECTION_AND_ROUTING_DEFERRED`
+`A005_R28_SEMANTIC_PRODUCT_BINDING_CORE_FOREMAN_ACCEPTED__A005_R29_INPUT_RUNTIME_PRODUCT_ACTION_PUBLICATION_ACTIVE__PHYSICAL_BINDING_AND_APPLICATION_ROUTING_DEFERRED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -130,10 +125,11 @@ APPLICATION_MPEG_PROTECTED_START_HANDOFF=FOREMAN_ACCEPTED
 PI_MPEG_ORDINARY_PRODUCT_COMPOSITION=FOREMAN_ACCEPTED
 PS2_MEDIA_CLOCK_PRODUCT_BINDING=FOREMAN_ACCEPTED
 APPLICATION_MPEG_SESSION_FOUNDATION=FOREMAN_ACCEPTED
-SEMANTIC_PRODUCT_ACTION_BINDING_CORE=RECONSTRUCTION_ACTIVE
+SEMANTIC_PRODUCT_ACTION_BINDING_CORE=FOREMAN_ACCEPTED
+INPUT_RUNTIME_PRODUCT_ACTION_PUBLICATION=RECONSTRUCTION_ACTIVE
 MPEG_CALIBRATION_BINDING_SELECTION=DEFERRED
 MPEG_CALIBRATION_ACTION_ROUTING=DEFERRED
-MPEG_CALIBRATION_PRODUCT_BINDING=SEMANTIC_ACTION_REQUIRED_DEFERRED
+MPEG_CALIBRATION_PRODUCT_BINDING=SEMANTIC_ACTION_CORE_ACCEPTED__PHYSICAL_SELECTION_DEFERRED
 ORDINARY_MPEG_PRODUCT_ACTIVATION=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
@@ -1935,9 +1931,135 @@ R27_HARDWARE_QUALIFIED=NO
 R27_HARDWARE_PENDING=YES
 R27_LOCAL_WORKTREE_STATUS=NOT_OBSERVABLE
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R28 semantic product-action binding-core authority
 
 PACKET_ID=A005-SEMANTIC-PRODUCT-ACTION-BINDING-CORE-R28
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0067
+ASSIGNING_FOREMAN_STATE_COMMIT=bf26fc0b10435b355a6e97445d04a8a8368028ed
+ASSIGNING_FOREMAN_LOG_COMMIT=dd771a86c0922f7c4f4b5a4ebc333e16d496f293
+RECONSTRUCTION_STARTING_COMMIT=dd771a86c0922f7c4f4b5a4ebc333e16d496f293
+R28_FINAL_SOURCE_COMMIT=c9df08288689d47eb85c889b8c95c7a4741a48a9
+R28_RECONSTRUCTION_LOG_COMMIT=22aea289ba06d744387913bc1809c60ba32800a8
+R28_PRE_LOG_COMMIT_COUNT=7
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260925T144549-0400__reconstruction__a005-interaction-input__interactive.md`
+
+### R28 criterion disposition
+
+A005-R28-C1=MET
+A005-R28-C2=MET
+A005-R28-C3=MET
+A005-R28-C4=MET
+A005-R28-C5=MET
+A005-R28-C6=MET
+A005-R28-C7=MET
+A005-R28-C8=MET
+A005-R28-C9=MET
+A005-R28-C10=MET
+A005-R28-C11=MET
+A005-R28-C12=MET
+
+Independent Foreman findings:
+
+1. `pstvnc_product_action_t` is Input-owned semantic meaning only and currently
+   admits exactly `MPEG_CALIBRATION` beyond NONE.
+2. Each caller-supplied binding explicitly carries project button mask, semantic
+   action, SETTLE/RELEASE/HOLD trigger and DESKTOP/GLOBAL context.
+3. Resolver initialization accepts an explicit zero-binding configuration and
+   rejects null non-empty sets, invalid fields, out-of-range button bits and
+   duplicate exact masks, including cross-context ambiguity.
+4. No compiled/default binding table exists. The maintained Input action source
+   contains no START/SELECT product bit and no 750000-us H1 adapter.
+5. Exact relevant-mask changes reset settle/hold progress. RELEASE arms only on
+   legitimate growth into its exact mask, growth cancels an existing arm, and
+   later shrink cannot manufacture a subset arm.
+6. SETTLE uses the qualified 8-poll threshold, extends to 18 when an eligible
+   HOLD strict superset exists, and HOLD uses the qualified 120-poll completion
+   count after settle admission.
+7. Any fired SETTLE/HOLD or partially released RELEASE gesture latches until
+   complete relevant-button release, preventing same-gesture subset leakage.
+8. DESKTOP provenance is monotonic within one gesture: it must begin in desktop
+   and remain eligible through resolution. Foreground change cannot acquire or
+   reacquire DESKTOP authority mid-gesture.
+9. `connection_epoch_started` resets pending resolver history before the new
+   physical epoch is interpreted.
+10. `PSTVNC_INPUT_EVENT_PRODUCT_ACTION` validates semantic action payloads and
+    preserves the existing bounded FIFO copy/order/wrap/discard contract.
+11. R28 does not touch live `input_runtime`, Application, UI, RFB, MPEG,
+    media clock, Transport, AUDIO, Pi, binding-config parsing or urgent-control
+    behavior.
+12. The R28 source boundary and changed-path set remain inside the assigned
+    Input/test/docs/build surface.
+
+### Exact R28 machine evidence
+
+At exact final source authority
+`c9df08288689d47eb85c889b8c95c7a4741a48a9`, GitHub Actions run
+`36177342038`, attempt 1, completed SUCCESS. The run object independently
+identifies exact head SHA `c9df08288689d47eb85c889b8c95c7a4741a48a9`,
+branch `ledge/h1-all-guns`, push event and title
+`test: verify final R28 semantic product action authority`.
+
+Observed focused/cross-domain evidence includes:
+
+- `PRODUCT_ACTION_SOURCE_TEST=PASS`;
+- `PRODUCT_ACTION_TEST=PASS`;
+- `PRODUCT_ACTION_EVENT_TEST=PASS`;
+- `INPUT_TEST=PASS`;
+- `CONTROLLER_EVENT_TEST=PASS`;
+- `LOCAL_CONTROLLER_TEST=PASS`;
+- `APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST=PASS`;
+- `APP_MPEG_CALIBRATION_TEST=PASS`;
+- `APP_MPEG_ACTIVATION_TEST=PASS`;
+- `app R15/R16B/R19/R27 tests: PASS`;
+- `app_mpeg_run_test: PASS`;
+- `MEDIA_CLOCK_PRODUCT_BINDING_TEST=PASS`;
+- `transport_mpeg_test: PASS`;
+- R25 Pi MPEG product composition: 9 tests, OK.
+
+Observed repository/build evidence includes:
+
+- `SOURCE_TOPOLOGY_CONTRACT=PASS`;
+- `WORK_LOG_CHECK=PASS records=218 grandfathered=9 format_compat=2 stamp_compat=1`;
+- `SOURCE_DICTIONARIES=PASS`;
+- `PS_TO_VNC_PROJECT_CHECK=PASS`;
+- pinned PS2 compile explicitly compiled current
+  `src/input/input.c` and `src/input/product_action.c`;
+- `CLEAN_PS2_COMPILE_CHECK=PASS`;
+- `ISSUE7_LINKED_BUILD=PASS`;
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+
+Exact linked identity:
+
+`ELF_PRISTINE_SHA256=954e0cf8ff435e9e948afc5ace3251108d5736957bf45273f86bbdd274e5698f`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=2281d0d06b62635dfb829512c7c51c10cf1bfd3c6f96169db677bb034b952876`
+`PT_LOAD_BYTES=515732`
+`PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74`
+
+This differs from accepted R27 and is current new PS2 hardware debt.
+
+R28_SOURCE_COMPLETE=YES
+R28_HOST_TESTED=PASS
+R28_PROJECT_CHECK=PASS
+R28_STRICT_DICTIONARIES=PASS
+R28_PS2_COMPILE=PASS
+R28_PS2_LINK=PASS
+R28_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R28_PS2_PT_LOAD_CHANGED=YES
+R28_MACHINE_EVIDENCE=GITHUB_ACTIONS
+R28_INDEPENDENT_VALIDATION=NOT_RUN
+R28_OPERATOR_OBSERVED=NO
+R28_HARDWARE_QUALIFIED=NO
+R28_HARDWARE_PENDING=YES
+R28_LOCAL_WORKTREE_STATUS=NOT_OBSERVABLE
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A005-INPUT-RUNTIME-PRODUCT-ACTION-PUBLICATION-R29
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a005-interaction-input
@@ -1945,183 +2067,191 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0067
-BASED_ON_ACCEPTED_R27_SOURCE=b126b749c2d3b3182c9b562973614106e98f0edb
-BASED_ON_R27_LOG=41688117e7dd1f5283a687d08c26acf605afa3b1
+BASED_ON_FOREMAN_STATE_REVISION=0068
+BASED_ON_ACCEPTED_R28_SOURCE=c9df08288689d47eb85c889b8c95c7a4741a48a9
+BASED_ON_R28_LOG=22aea289ba06d744387913bc1809c60ba32800a8
 BASED_ON_A005_AUDIT_REVISION=0001
-BASED_ON_B07_B09_AUDIT=REBUILD_READY
-BASED_ON_B10_B11_AUDIT=REBUILD_READY
-HISTORICAL_B4A_HOTKEY_AUTHORITY=working/b4a/ps2vnc_runtime_core.inc
-H1_TEMPORARY_ENTRY_AUTHORITY=experiments/media-harness-h1/mpeg_presentation_calibration/h1_mpeg_calibration_entry_hold.c
+BASED_ON_CLEAN_ARCHITECTURE=REBUILD_READY
+PHYSICAL_MPEG_CALIBRATION_BINDING_SELECTED=NO
+APPLICATION_PRODUCT_ACTION_ROUTING=DEFERRED
 
 ### Objective
 
-Reconstruct the clean Input-owned semantic product-action binding core required
-before MPEG CALIBRATION can be entered from ordinary product input.
+Compose the accepted R28 semantic product-action resolver into the existing
+Input runtime so live trustworthy controller polling can publish configured
+semantic product actions through the ordinary Input FIFO.
 
-R28 preserves the evidence-supported typed binding model:
+R29 is an Input-owner packet only. It must preserve the architecture rule:
 
-- physical button mask;
-- semantic product action;
-- trigger kind: SETTLE, RELEASE or HOLD;
-- context: DESKTOP or GLOBAL.
+`controller thread -> semantic event queue -> Application`
 
-It also preserves the important B4A arbitration invariants: exact-mask
-stability, growth/shrink distinction, release arming only from legitimate exact
-mask acquisition, hold-extension protection for subset chords, latching after a
-fired action until complete relevant-button release, and prevention of
-desktop-only actions from becoming eligible merely because UI context changed
-while their buttons remained held.
+The controller worker may recognize and publish meaning; it must not execute the
+meaning.
 
-R28 adds the current product semantic action
-`MPEG_CALIBRATION` and a corresponding ordinary semantic input-event payload,
-but it deliberately selects **no physical button/chord binding** for that
-action. The H1 held START+SELECT 750 ms adapter remains forensic evidence only
-and must not be copied into product binding policy.
+R29 remains binding-policy-neutral. It accepts only explicit caller-supplied
+binding values, and a zero-binding runtime must preserve current behavior
+exactly. No physical MPEG CALIBRATION gesture is selected by this packet.
 
 ### Required behavior
 
-1. **Stable semantic vocabulary.** Define a small Input-owned product-action
-   value type with at least NONE and MPEG_CALIBRATION. Product action values are
-   meaning, not controller masks, UI commands, RFB messages or callbacks.
-2. **Typed binding value.** Define one explicit binding value containing button
-   mask, product action, trigger kind and context. SETTLE/RELEASE/HOLD and
-   DESKTOP/GLOBAL are named stable values; invalid/zero/unknown fields reject.
-3. **Caller-supplied binding authority only.** The resolver consumes an explicit
-   caller-supplied immutable binding set or copied validated values. R28 must
-   contain no compiled default binding for MPEG_CALIBRATION and no START+SELECT
-   special case.
-4. **Exact-mask session ownership.** Recognition uses only the relevant physical
-   button mask from trustworthy `pstvnc_controller_state_t` samples. Changing
-   the exact candidate mask resets pending settle/hold state rather than
-   inheriting elapsed progress across a different chord.
-5. **Growth/shrink release safety.** RELEASE may arm only after arriving at its
-   exact binding mask through legitimate growth from the current gesture
-   session. Pure growth beyond an armed release cancels that release. Shrinking
-   from a larger chord must never manufacture a subset release action.
-6. **Settle/hold arbitration.** Preserve the proven B4A policy constants and
-   subset-extension rule needed to prevent a shorter SETTLE chord from firing
-   while the same physical gesture can still grow into an eligible HOLD chord.
-   HOLD completion fires only after its full stable duration.
-7. **Post-fire latch.** Once a semantic action fires, no subset/alternate action
-   may fire from the same physical gesture. Resolver remains latched until all
-   buttons participating in its binding universe are physically released.
-8. **Context provenance.** A DESKTOP binding is eligible only when its gesture
-   session began in DESKTOP and remains product-admissible as DESKTOP at the
-   firing boundary. A gesture begun under another foreground cannot become a
-   desktop product action merely because foreground later changes. GLOBAL
-   remains separately representable but R28 executes no global product effect.
-9. **Ordinary event representation.** Extend the existing semantic input event
-   vocabulary with one typed product-action event carrying only the semantic
-   action. FIFO validation/copy/discard behavior must remain exact for all
-   existing event families.
-10. **No execution/policy selection.** R28 does not route MPEG_CALIBRATION into
-    P9/P10, choose a physical binding, parse/save human-readable binding config,
-    mutate local UI, suspend input, touch RFB, open/start MPEG, arm the media
-    clock, or create an urgent-control mailbox.
-11. **Historical H1 adapter discarded.** No 750 ms constant, START+SELECT
-    detector, H1 entry-hold state, or experiment-local interaction coordinator
-    is imported into clean product source. Tests may reference forensic
-    semantics only to prove the discard boundary.
-12. **Evidence.** Deterministic resolver/event tests plus existing input queue,
-    input-runtime, controller/UI, R27 Application, P9/P10/R21-R26 and canonical
-    host/project/dictionary/PS2 compile/link/current-source checks remain green.
+1. **Optional caller binding attachment.** One input-runtime instance can be
+   configured, before worker start, with the accepted R28 immutable binding set.
+   Zero bindings is valid and means product-action recognition is disabled.
+   Invalid binding authority must fail before worker activation.
+2. **Resolver ownership is runtime-local.** Each input-runtime/session owns one
+   fresh resolver history. No resolver/chord state is process-global, shared
+   between sessions or inherited across runtime reinitialization.
+3. **Every trustworthy poll feeds recognition.** When bindings exist, the
+   controller worker services R28 on every trustworthy physical controller
+   sample, including stable held samples with no pressed/released edge.
+   Existing sparse CONTROLLER_STATE publication is not allowed to redefine the
+   8/18/120 physical-poll timing.
+4. **Explicit product-context input.** DESKTOP eligibility comes from one narrow
+   caller/Application-owned runtime context fact. Input must not inspect
+   `local_ui`, Application globals or product state. The context value must be
+   live-changeable without introducing a callback framework or second owner of
+   UI state.
+5. **Context/provenance stays R28-owned.** The runtime passes the explicit
+   current DESKTOP eligibility into R28 exactly once per trustworthy observed
+   sample. GLOBAL recognition remains R28 semantics; Input does not decide
+   whether executing a GLOBAL action is product-safe.
+6. **Semantic event precedes same-sample ordinary work.** If R28 resolves one
+   action, the worker enqueues exactly one
+   `PSTVNC_INPUT_EVENT_PRODUCT_ACTION` before any CONTROLLER_STATE or
+   MOUSE_UPDATE generated from that same physical sample. It performs no
+   product effect itself. This ordering is the future Application first-refusal
+   boundary.
+7. **No silent publication loss.** Resolver contradiction/error, queue wait/
+   signal failure, or inability to enqueue the resolved action is a fail-closed
+   Input-worker failure. A resolved action may not be silently dropped while
+   later same-sample input continues.
+8. **Existing controller/mouse behavior is preserved.** When no product action
+   resolves, current controller-state sparsity, mouse interpretation,
+   physical-loss behavior and activity notification remain unchanged. A
+   zero-binding runtime is behaviorally identical to pre-R29 Input.
+9. **Ownership boundaries invalidate stale gesture history.** Runtime start owns
+   fresh resolver state. The existing hard libpad handoff/return boundary must
+   not permit pre-handoff settle/hold/release/latch history to become a
+   post-handoff action. Physical connection-epoch reset continues to invalidate
+   pending R28 history. Ordinary mouse-interpretation suspension does not itself
+   transfer libpad ownership and must not invent a second gesture owner.
+10. **Ordinary queue only.** Product-action publication uses the existing
+    semaphore-protected ordinary event FIFO and existing activity-notify wake.
+    R29 creates no urgent mailbox and no parallel product-action queue.
+11. **No binding/product effect selection.** R29 contains no static/default
+    product binding, START+SELECT adapter, 750 ms entry constant, P9/P10 call,
+    Application route, UI mutation, RFB write, media-clock arm, MPEG start,
+    Transport/Pi/AUDIO behavior or Configuration parser/persistence.
+12. **Evidence.** Deterministic Input-runtime composition tests plus R28 resolver/
+    FIFO tests, existing input/pad/controller/local-UI and R27/P9/P10/R21-R26
+    regressions, project/dictionary checks and pinned PS2 compile/link/current-
+    source reproducibility remain green.
 
 ### Acceptance criteria
 
-- A005-R28-C1 PRODUCT_ACTION_VOCABULARY_IS_TYPED_AND_SEMANTIC
-- A005-R28-C2 BINDING_VALUE_HAS_EXPLICIT_MASK_ACTION_TRIGGER_CONTEXT
-- A005-R28-C3 MPEG_CALIBRATION_HAS_NO_COMPILED_PHYSICAL_BINDING
-- A005-R28-C4 EXACT_MASK_CHANGE_RESETS_PENDING_GESTURE_PROGRESS
-- A005-R28-C5 RELEASE_ARMING_CANNOT_BE_MANUFACTURED_BY_SHRINKING_CHORD
-- A005-R28-C6 SETTLE_HOLD_EXTENSION_PREVENTS_SUBSET_PREEMPTION
-- A005-R28-C7 FIRED_ACTION_LATCHES_UNTIL_COMPLETE_RELEVANT_RELEASE
-- A005-R28-C8 DESKTOP_CONTEXT_CANNOT_BE_ACQUIRED_MID_GESTURE
-- A005-R28-C9 ORDINARY_INPUT_FIFO_CARRIES_TYPED_PRODUCT_ACTION_WITHOUT_REGRESSIONS
-- A005-R28-C10 NO_APPLICATION_CONFIG_UI_RFB_MPEG_OR_URGENT_MAILBOX_SCOPE_CREEP
-- A005-R28-C11 H1_START_SELECT_750MS_ADAPTER_REMAINS_DISCARDED
-- A005-R28-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A005-R29-C1 OPTIONAL_CALLER_BINDINGS_VALIDATE_BEFORE_WORKER_START
+- A005-R29-C2 RESOLVER_HISTORY_IS_FRESH_INPUT_RUNTIME_OWNERSHIP
+- A005-R29-C3 EVERY_TRUSTWORTHY_PHYSICAL_SAMPLE_DRIVES_RESOLVER_TIMING
+- A005-R29-C4 DESKTOP_ELIGIBILITY_IS_EXPLICIT_CALLER_FACT_NOT_UI_REACH_THROUGH
+- A005-R29-C5 R28_CONTEXT_PROVENANCE_REMAINS_SINGLE_RECOGNITION_AUTHORITY
+- A005-R29-C6 PRODUCT_ACTION_EVENT_PRECEDES_SAME_SAMPLE_CONTROLLER_MOUSE_WORK
+- A005-R29-C7 RESOLVED_ACTION_PUBLICATION_FAILURE_IS_FAIL_CLOSED
+- A005-R29-C8 ZERO_BINDING_AND_NONFIRING_PATHS_PRESERVE_EXISTING_INPUT_BEHAVIOR
+- A005-R29-C9 HARD_HANDOFF_AND_CONNECTION_EPOCH_CANNOT_LEAK_GESTURE_HISTORY
+- A005-R29-C10 EXISTING_ORDINARY_FIFO_AND_ACTIVITY_WAKE_ARE_THE_ONLY_PUBLICATION_PATH
+- A005-R29-C11 NO_PHYSICAL_BINDING_APPLICATION_CONFIG_UI_RFB_MPEG_OR_MAILBOX_SCOPE_CREEP
+- A005-R29-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
 All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-R28 must prove at least:
+R29 must prove at least:
 
-1. binding validation rejects zero/unknown masks, NONE/unknown actions,
-   unknown trigger/context and duplicate/ambiguous exact binding definitions;
-2. an injected caller-supplied MPEG_CALIBRATION binding can resolve to exactly
-   one semantic action without any product side effect;
-3. clean source contains no built-in MPEG_CALIBRATION mask and no START+SELECT
-   or 750000-us product constant;
-4. exact-mask changes reset settle/hold progress;
-5. RELEASE fires only from a legitimately armed exact mask broken by release;
-   growth cancels it and later shrink from a superset cannot synthesize it;
-6. SETTLE subset of an eligible HOLD waits through the historical extension
-   boundary instead of firing early, while a non-extendable SETTLE resolves at
-   the normal stable boundary;
-7. HOLD fires once only at its full stable threshold and then latches;
-8. after any fired action, shrinking/altering held buttons emits nothing until
-   every relevant button is released and a new gesture session begins;
-9. a DESKTOP gesture begun outside desktop emits nothing if context later
-   becomes desktop without full release/restart; context loss before fire also
-   prevents desktop action;
-10. `PSTVNC_INPUT_EVENT_PRODUCT_ACTION` validates, FIFO-enqueues, copies,
-    wraps and discards without changing CONTROLLER_STATE/MOUSE_UPDATE/
-    KEYBOARD_TAP behavior;
-11. source scans prove no P9/P10/R21 call, no media-clock arm, no Transport/RFB/
-    UI mutation, no binding-config parser/persistence and no urgent mailbox;
-12. canonical host/project/strict-dictionary/PS2 compile/link/current-source
-    reproducibility pass, with exact linked identity recorded if bytes change.
+1. zero bindings configure successfully and produce byte-for-byte/behaviorally
+   ordinary controller+mouse event ordering for equivalent sample sequences;
+2. invalid non-empty R28 binding authority is rejected before the controller
+   worker can start;
+3. a caller-injected SETTLE binding observes stable no-edge physical polls and
+   fires at the accepted physical-poll threshold even though ordinary
+   CONTROLLER_STATE would otherwise be sparse;
+4. caller-injected HOLD/RELEASE cases preserve R28 timing/arming/latch semantics
+   through the runtime composition rather than reimplementing them;
+5. DESKTOP eligibility can be changed through a narrow Input API/fact without
+   Input including or reading Application/UI state; the resolver preserves
+   begin/loss/no-reacquisition semantics;
+6. one resolved action is enqueued before controller/mouse work from the same
+   sample, and no product side effect occurs in the worker;
+7. injected queue failure after resolution records worker failure and prevents
+   later same-sample publication;
+8. zero bindings and non-firing configured bindings preserve existing physical
+   continuity, mouse suspension, controller-state publication and mouse-update
+   behavior;
+9. hard pad handoff/return and connection-epoch boundaries clear or reset stale
+   product-gesture history so held pre-boundary state cannot resolve afterward
+   as a continuation;
+10. activity notification observes already-published semantic queue work and no
+    urgent/parallel queue is introduced;
+11. source scans prove no built-in MPEG_CALIBRATION mask, no START+SELECT/750 ms
+    adapter, no Application/UI/RFB/MPEG/media-clock/Transport/AUDIO/Pi/config
+    effect or reach-through;
+12. canonical host tests, project check, strict dictionaries, pinned PS2
+    compile/link and current-source reproducibility pass, with exact linked
+    identity recorded if bytes change.
 
 ### Authorized source surface
 
-R28 may modify only the smallest justified subset of:
+R29 may modify only the smallest justified subset of:
 
-- `src/input/` for the semantic product-action/binding value and pure
-  platform-neutral resolver;
-- `src/input/input.{c,h}` for the ordinary semantic event envelope;
-- focused Input host tests;
-- build/check enrollment for new maintained Input source;
-- Input/root dictionaries and directly affected input/binding documentation.
+- `src/input/input_runtime.c`;
+- `src/input/input_runtime.h`;
+- `src/input/product_action.c/.h` only if a narrow reset/status seam is
+  genuinely required for runtime ownership;
+- focused Input-runtime/product-action tests and necessary host stubs;
+- build/check enrollment;
+- directly affected Input dictionaries and development documentation.
 
 Do not modify:
 
 - ordinary `src/app.c` / `src/app.h`;
-- `src/input/input_runtime.*` producer lifecycle unless a compile-only type
-  accommodation is genuinely required; do not wire the resolver into the live
-  producer in R28;
-- `src/ui/local_controller.*` or other UI mappings;
-- P8/P9/P10/R21-R27 implementation;
-- media clock, Presentation, MPEG, RFB, Transport, AUDIO or Pi source;
-- `src/config/text.*` or add binding persistence/selection;
+- local UI / local-controller product routing;
+- Configuration parser or persistent binding selection;
+- P8/P9/P10/R21-R28 Application/MPEG implementation;
+- RFB, Transport, media clock, MPEG, AUDIO or Pi product source;
 - H1 forensic source.
 
-If an accepted lower-owner seam defect blocks R28, return BLOCKED with exact
-evidence rather than widening scope.
+If the existing Input-runtime/platform seam prevents deterministic proof, the
+worker may add the smallest test seam inside Input ownership. It must not create
+a generalized callback/DI framework or a second runtime owner.
+
+If an accepted lower-owner defect is exposed, return BLOCKED with exact evidence
+rather than widening scope.
 
 ### Explicit non-goals
 
-R28 does not:
+R29 does not:
 
-- choose which controller chord invokes MPEG CALIBRATION;
+- choose a physical MPEG CALIBRATION chord;
+- install a product default binding;
 - reproduce START+SELECT;
-- route a semantic action into P9;
+- route MPEG_CALIBRATION into P9/P10;
 - start/service/retire/reveal MPEG;
 - activate AUDIO;
+- parse/save human-readable bindings;
+- add binding-editor UI;
 - create the urgent-control mailbox;
-- implement human-readable binding persistence or its future local UI;
 - perform hardware qualification.
 
 ### Required checks before handoff
 
-Run focused binding-resolver and ordinary input-event/FIFO tests; existing
-input-runtime/pad/controller/local-controller regressions; R27 Application
-session-foundation tests; P9/P10/R21-R26 MPEG/calibration regressions; R25 Pi
-composition regression; canonical host tests; project check; complete strict
-dictionary audit; pinned PS2 compile/link and current-source reproducibility.
+Run focused Input-runtime/R28 publication tests; existing Input FIFO, pad,
+controller/local-controller, mouse/suspension/handoff regressions; R27
+Application session-foundation tests; P9/P10/R21-R26 MPEG/calibration
+regressions; R25 Pi composition regression; canonical host tests; project check;
+complete strict dictionary audit; pinned PS2 compile/link and current-source
+reproducibility.
 
-If R28 changes linked PS2 bytes, record the exact new ELF/PT_LOAD identity and
+If R29 changes linked PS2 bytes, record the exact new ELF/PT_LOAD identity and
 classify it hardware-pending.
 
 At shift end emit exactly one immutable Reconstruction record under
@@ -2135,11 +2265,11 @@ Then stop and return the baton.
 
 ## Current hardware debt
 
-Current fully Foreman-accepted PS2 loadable authority is R27:
+Current fully Foreman-accepted PS2 loadable authority is R28:
 
-`ELF_PRISTINE_SHA256=7f5decc9f09b32d1060f18eca1462bcb189cc3ce96297fd5b3435ba448288d2c`
-`PT_LOAD_SHA256=30c8d9d1db9106f51c8de56c88e68cf3d6181d98cfd8ff4d402ce24a6c94c13d`
-`PT_LOAD_BYTES=513940`
+`ELF_PRISTINE_SHA256=954e0cf8ff435e9e948afc5ace3251108d5736957bf45273f86bbdd274e5698f`
+`PT_LOAD_SHA256=2281d0d06b62635dfb829512c7c51c10cf1bfd3c6f96169db677bb034b952876`
+`PT_LOAD_BYTES=515732`
 
 It is repository-reproducible and not physically hardware-qualified.
 
@@ -2147,8 +2277,8 @@ Accepted R25 maintained Pi product/runtime source remains at
 `60b7759fb78d5f555a589b9ce8cb58ce96096945`; no Pi operator/hardware
 qualification is claimed.
 
-R28 may add linked Input product-action/binding code and therefore may create a
-new PS2 PT_LOAD identity. The worker must report exact build identity rather
-than infer it from source reachability.
+R29 may change linked Input-runtime code and therefore may create a new PS2
+PT_LOAD identity. The worker must report exact build identity rather than infer
+it from source reachability.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
