@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """File synopsis:
 Composes the ordinary Raspberry Pi product Wire process from accepted narrow
-owners without taking Wire or RFB mechanism ownership.
+owners without taking Wire, RFB, or MPEG mechanism ownership.
 
-The selected R14 RFB profile is resolved before the listener is constructed.
-Semantic ON supplies WireServer with a factory that creates a fresh R13
-RfbAttachment for each sequential Wire connection. Semantic OFF supplies no
-factory, leaving Wire establishment-only. RfbAttachment construction is inert:
-the R12 internal provider at 127.0.0.1:5900 is still contacted only when the
-first valid post-Q4 nonzero channel-1 CREDIT reaches that attachment.
+The selected R14 RFB profile supplies one fresh R13 attachment factory. R25 adds
+one fresh exact-session R17 MPEG-generation factory using the selected Pi MPEG
+composition profile plus the existing Configuration-owned producer profile.
+Both factories remain inert until WireServer crosses their accepted lifecycle
+edges: RFB provider contact still begins only on valid post-Q4 RFB CREDIT, and
+FFmpeg producer creation still begins only on exact R17 START.
 
 This composition layer owns no selected numeric tuning literals, Wire Session
-identity, physical I/O, provider retry/recovery policy, CONFIG delivery, AUDIO,
-or MPEG lifecycle.
+identity, physical I/O, provider retry/recovery policy, generation mechanics,
+CONFIG delivery, AUDIO, or PS2 product-trigger policy.
 
 Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
-A003-RFB-ORDINARY-APPLICATION-ACTIVATION-R15.
+A003-RFB-ORDINARY-APPLICATION-ACTIVATION-R15;
+A003-PI-MPEG-ORDINARY-PRODUCT-COMPOSITION-R25.
 """
 
 from __future__ import annotations
@@ -24,6 +25,9 @@ import argparse
 import sys
 from typing import Callable
 
+import mpeg_generation as mpeg
+import mpeg_product_profile
+import mpeg_runtime_profile
 import rfb_attachment as rfb_attach
 import rfb_runtime_profile
 import wire_server
@@ -52,6 +56,41 @@ def selected_rfb_attachment_factory() -> (
     return make_attachment
 
 
+def _make_mpeg_generation(
+    session_id: int,
+    composition: mpeg_product_profile.MpegProductCompositionProfile,
+    producer_profile: mpeg_runtime_profile.MpegProducerProfile,
+) -> mpeg.MpegGenerationController:
+    """Create one fresh R17 owner bound to exact accepted Wire authority."""
+
+    return mpeg.MpegGenerationController(
+        session_id=session_id,
+        desktop_width=composition.desktop_width,
+        desktop_height=composition.desktop_height,
+        display=composition.display,
+        retirement_timeout_seconds=composition.retirement_timeout_seconds,
+        profile=producer_profile,
+    )
+
+
+def selected_mpeg_generation_factory() -> (
+    Callable[[int], mpeg.MpegGenerationController]
+):
+    """Project selected product facts into a fresh exact-session R17 factory."""
+
+    composition = mpeg_product_profile.selected_mpeg_product_profile()
+    producer_profile = mpeg_runtime_profile.selected_mpeg_producer_profile()
+
+    def make_generation(session_id: int) -> mpeg.MpegGenerationController:
+        return _make_mpeg_generation(
+            session_id,
+            composition,
+            producer_profile,
+        )
+
+    return make_generation
+
+
 def build_product_wire_server(
     listen_address: str = wire_server.DEFAULT_LISTEN_ADDRESS,
     port: int = wire_server.DEFAULT_LISTEN_PORT,
@@ -59,10 +98,12 @@ def build_product_wire_server(
     """Build the ordinary supervised product server before any listener opens."""
 
     attachment_factory = selected_rfb_attachment_factory()
+    mpeg_generation_factory = selected_mpeg_generation_factory()
     return wire_server.WireServer(
         listen_address,
         port,
         rfb_attachment_factory=attachment_factory,
+        mpeg_generation_factory=mpeg_generation_factory,
     )
 
 
