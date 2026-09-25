@@ -86,12 +86,24 @@ connection-close body atomically as raw bytes. It does not parse R30, install
 R29 bindings, participate in PSTV Transport adoption, choose startup/recovery
 policy, persist settings, or route any product effect.
 
+R32 adds `app_product_bindings.{c,h}` at the Application root because
+fetch/parse/fallback sequencing is explicitly cross-domain product
+orchestration rather than Management or Configuration mechanism. The helper
+acquires one bounded raw document through R31, parses the exact returned bytes
+through R30, and publishes one resident desired typed snapshot or an explicit
+zero-binding fallback. Ordinary `app.c` performs that acquisition exactly once
+after private-link readiness and before the first PSTV attempt, so R16B provider
+replacement reuses the same snapshot. R32 deliberately does not install that
+snapshot into Input and does not route PRODUCT_ACTION or enter MPEG activation.
+
 
 Current clean C/H files directly in `src/` are restricted to:
 
     src/main.c
     src/app.c
     src/app.h
+    src/app_product_bindings.c
+    src/app_product_bindings.h
     src/app_mpeg_activation.c
     src/app_mpeg_activation.h
     src/app_mpeg_calibration.c
@@ -118,8 +130,11 @@ transaction; it owns no generation counter or lower mechanism. R27 keeps
 ordinary session-foundation composition in `app.c`: the root Application
 selects RFB/MPEG/media-clock profiles, opens one MPEG-capable Transport session,
 and owns the fresh session clock-binding lifetime while leaving semantic MPEG
-activation to the dedicated P9/P10/R21-R24 coordinators. None of these
-Application coordinators justifies a new top-level source directory.
+activation to the dedicated P9/P10/R21-R24 coordinators. R32 admits
+`app_product_bindings.{c,h}` because one-shot Management-to-Configuration
+composition plus the resident fallback decision is Application policy and is
+independently host-testable. None of these Application coordinators justifies a
+new top-level source directory.
 
 
 The PS2 application root dictionary is:
