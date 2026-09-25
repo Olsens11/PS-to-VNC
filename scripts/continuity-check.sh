@@ -462,6 +462,8 @@ ROOT_SOURCE_ALLOWLIST = {
     "src/main.c",
     "src/app.c",
     "src/app.h",
+    "src/app_product_bindings.c",
+    "src/app_product_bindings.h",
     "src/app_mpeg_activation.c",
     "src/app_mpeg_activation.h",
     "src/app_mpeg_calibration.c",
