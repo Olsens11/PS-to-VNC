@@ -217,7 +217,7 @@ $(BUILD_DIR)/product_action.o: src/input/product_action.c src/input/product_acti
 $(BUILD_DIR)/mouse.o: src/input/mouse.c src/input/mouse.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/input_runtime.o: src/input/input_runtime.c src/input/input_runtime.h src/input/input.h src/input/controller.h src/input/mouse.h src/input/pad.h | $(BUILD_DIR)
+$(BUILD_DIR)/input_runtime.o: src/input/input_runtime.c src/input/input_runtime.h src/input/input.h src/input/product_action.h src/input/controller.h src/input/mouse.h src/input/pad.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/keyboard.o: src/input/keyboard.c src/input/keyboard.h | $(BUILD_DIR)

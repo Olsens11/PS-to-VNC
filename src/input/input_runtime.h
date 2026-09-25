@@ -16,7 +16,9 @@
  *   - the explicit libpad ownership-handoff request/acknowledgement seam.
  *
  * This interface does not serialize RFB, touch the VNC socket, own UI/display
- * state, interpret general keyboard/hotkey meaning, or execute product actions.
+ * state, interpret general keyboard meaning, or execute product actions.
+ * R29 optionally recognizes caller-configured R28 product bindings from every
+ * trustworthy physical sample and publishes only the resulting semantic event.
  * Application/main remains responsible for consuming semantic events and
  * routing their cross-domain effects.
  *
@@ -64,6 +66,7 @@
 typedef enum pstvnc_input_runtime_error {
     PSTVNC_INPUT_RUNTIME_ERROR_NONE = 0,
     PSTVNC_INPUT_RUNTIME_ERROR_PAD_POLL,
+    PSTVNC_INPUT_RUNTIME_ERROR_PRODUCT_ACTION_RESOLVE,
     PSTVNC_INPUT_RUNTIME_ERROR_MOUSE_UPDATE,
     PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_WAIT,
     PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_FULL,
@@ -91,6 +94,21 @@ typedef struct pstvnc_input_runtime {
     pstvnc_pad_t pad;
     pstvnc_mouse_t mouse;
     pstvnc_input_queue_t event_queue;
+
+    /*
+     * Optional R28 semantic binding authority and runtime-local history.
+     *
+     * The resolver stores only a caller-owned immutable binding pointer. R29
+     * owns the history inside this runtime; no gesture state is process-global
+     * or shared between physical sessions.
+     */
+    pstvnc_product_action_resolver_t product_action_resolver;
+
+    /*
+     * Live Application-owned admission fact consumed exactly once per
+     * trustworthy physical sample. Input never infers this from UI state.
+     */
+    volatile int product_action_desktop_eligible;
 
     int event_queue_sema_id;
     int controller_thread_id;
@@ -193,6 +211,30 @@ int pstvnc_input_runtime_set_activity_notify(
     pstvnc_input_runtime_t *runtime,
     pstvnc_input_runtime_activity_notify_fn notify,
     void *notify_context);
+
+/*
+ * Validate and attach the immutable caller-owned R28 binding set before worker
+ * activation. count==0 is valid and disables recognition.
+ *
+ * The caller must keep non-empty binding storage unchanged and alive through
+ * the runtime's worker lifetime. Invalid authority fails closed and leaves the
+ * resolver unusable until a later valid pre-start configuration is supplied.
+ */
+int pstvnc_input_runtime_set_product_action_bindings(
+    pstvnc_input_runtime_t *runtime,
+    const pstvnc_product_action_binding_t *bindings,
+    size_t binding_count);
+
+/*
+ * Publish current DESKTOP product-action eligibility.
+ *
+ * This fact is deliberately live-changeable while the worker runs. R28 remains
+ * the sole owner of begin/loss/no-reacquisition context provenance; this API
+ * merely supplies the caller's current 0/1 admission fact.
+ */
+int pstvnc_input_runtime_set_product_action_desktop_eligible(
+    pstvnc_input_runtime_t *runtime,
+    int desktop_eligible);
 
 int pstvnc_input_runtime_start(
     pstvnc_input_runtime_t *runtime);

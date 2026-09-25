@@ -3,13 +3,16 @@
  * Implements the PS2 controller/input runtime owner.
  *
  * The dedicated EE worker polls one direct-libpad endpoint at the historically
- * qualified approximately-60-Hz cadence, maps the currently earned Issue #38
- * controller gestures into mouse-domain facts, advances the pure mouse state
- * machine, and publishes complete typed semantic events into a semaphore-
- * protected FIFO.
+ * qualified approximately-60-Hz cadence, feeds every trustworthy physical
+ * sample through the optional R28 semantic product-action resolver, maps the
+ * existing Issue #38 mouse-domain facts, advances the pure mouse state machine,
+ * and publishes complete typed semantic events into one semaphore-protected
+ * FIFO.
  *
- * The worker never serializes RFB, never touches the VNC socket, never mutates
- * GS/display state, and never executes product actions. Those effects remain
+ * Product-action recognition is caller-configured and disabled by default.
+ * The worker may publish semantic meaning but never executes that meaning. It
+ * never serializes RFB, touches the VNC socket, mutates GS/display state, reads
+ * UI/Application state, or performs a product action. Those effects remain
  * application/main-thread responsibilities.
  *
  * The implementation also owns two hard physical-continuity boundaries:
@@ -89,6 +92,32 @@ static void input_runtime_record_worker_error(
      */
     if (runtime->worker_error == PSTVNC_INPUT_RUNTIME_ERROR_NONE)
         runtime->worker_error = error;
+}
+
+
+static int input_runtime_reset_product_action_resolver(
+    pstvnc_input_runtime_t *runtime)
+{
+    const pstvnc_product_action_binding_t *bindings;
+    size_t binding_count;
+
+    if (
+        runtime == NULL ||
+        !runtime->product_action_resolver.initialized)
+        return 0;
+
+    /*
+     * The binding array is caller-owned immutable authority. Re-running R28
+     * initialization clears all gesture/settle/hold/release/latch history while
+     * preserving only that already-selected binding value set.
+     */
+    bindings = runtime->product_action_resolver.bindings;
+    binding_count = runtime->product_action_resolver.binding_count;
+
+    return pstvnc_product_action_resolver_init(
+        &runtime->product_action_resolver,
+        bindings,
+        binding_count);
 }
 
 static uint16_t input_runtime_mouse_directions_from_pad(
@@ -224,6 +253,52 @@ static uint16_t input_runtime_map_native_buttons(
     return project_buttons;
 }
 
+static int input_runtime_publish_product_action(
+    pstvnc_input_runtime_t *runtime,
+    pstvnc_product_action_t action)
+{
+    pstvnc_input_event_t event;
+    int pushed;
+
+    if (
+        runtime == NULL ||
+        !pstvnc_product_action_is_valid(action))
+        return 0;
+
+    memset(&event, 0, sizeof(event));
+
+    event.type = PSTVNC_INPUT_EVENT_PRODUCT_ACTION;
+    event.payload.product_action = action;
+
+    if (WaitSema(runtime->event_queue_sema_id) < 0) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_WAIT);
+        return 0;
+    }
+
+    pushed =
+        pstvnc_input_queue_push(
+            &runtime->event_queue,
+            &event);
+
+    if (SignalSema(runtime->event_queue_sema_id) < 0) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_SIGNAL);
+        return 0;
+    }
+
+    if (!pushed) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_FULL);
+        return 0;
+    }
+
+    return 1;
+}
+
 static int input_runtime_publish_controller_state(
     pstvnc_input_runtime_t *runtime,
     const pstvnc_controller_state_t *controller_state)
@@ -344,12 +419,12 @@ static int input_runtime_process_pad_sample(
     pstvnc_mouse_update_t mouse_update;
 
     /*
-     * Publish trustworthy controller state before any mouse interpretation from
-     * the same physical sample.
+     * Build one project-owned physical fact from this trustworthy libpad
+     * sample. R29 first offers that exact fact to R28 when bindings exist.
      *
-     * Main can therefore consume a foreground-transition fact, establish the
-     * synchronized mouse-suspension boundary, and cause any still-queued
-     * same-sample pointer work to be discarded before remote publication.
+     * A resolved semantic product action is queued before controller/mouse work
+     * from the same sample. Application/main therefore gets a future
+     * first-refusal boundary without the controller worker executing the action.
      */
     memset(&controller_state, 0, sizeof(controller_state));
 
@@ -368,6 +443,37 @@ static int input_runtime_process_pad_sample(
     controller_state.connection_epoch_started =
         runtime->physical_sample_active ? 0 : 1;
 
+    if (runtime->product_action_resolver.binding_count != 0u) {
+        pstvnc_product_action_t action =
+            PSTVNC_PRODUCT_ACTION_NONE;
+        int resolve_result =
+            pstvnc_product_action_resolver_observe(
+                &runtime->product_action_resolver,
+                &controller_state,
+                runtime->product_action_desktop_eligible,
+                &action);
+
+        if (resolve_result < 0) {
+            input_runtime_record_worker_error(
+                runtime,
+                PSTVNC_INPUT_RUNTIME_ERROR_PRODUCT_ACTION_RESOLVE);
+            return 0;
+        }
+
+        if (
+            resolve_result > 0 &&
+            !input_runtime_publish_product_action(
+                runtime,
+                action))
+            return 0;
+    }
+
+    /*
+     * Controller-state publication retains its established sparse policy, but
+     * only after product-action recognition has consumed this same trustworthy
+     * sample. Stable no-edge polls can therefore advance SETTLE/HOLD timing
+     * without becoming new CONTROLLER_STATE events.
+     */
     if (!input_runtime_publish_controller_state(
             runtime,
             &controller_state))
@@ -417,6 +523,18 @@ static int input_runtime_handle_physical_loss(
 
     if (!runtime->physical_sample_active)
         return 1;
+
+    /*
+     * Physical continuity is also the R28 gesture-history boundary. Clear it
+     * immediately; the next trustworthy connection-epoch sample will establish
+     * a new gesture from zero rather than continue pre-loss timing/arming.
+     */
+    if (!input_runtime_reset_product_action_resolver(runtime)) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_PRODUCT_ACTION_RESOLVE);
+        return 0;
+    }
 
     /*
      * Application/main owns the frozen mouse interpreter during an acknowledged
@@ -535,6 +653,18 @@ static int input_runtime_enter_pad_handoff(
         input_runtime_record_worker_error(
             runtime,
             PSTVNC_INPUT_RUNTIME_ERROR_QUEUE_SIGNAL);
+        return 0;
+    }
+
+    /*
+     * A hard libpad ownership transfer is also a hard semantic-gesture
+     * boundary. No pre-handoff settle/hold/release/latch state may resume when
+     * the controller worker later regains the device.
+     */
+    if (!input_runtime_reset_product_action_resolver(runtime)) {
+        input_runtime_record_worker_error(
+            runtime,
+            PSTVNC_INPUT_RUNTIME_ERROR_PRODUCT_ACTION_RESOLVE);
         return 0;
     }
 
@@ -792,6 +922,19 @@ int pstvnc_input_runtime_init(
     runtime->event_queue_sema_id = -1;
     runtime->controller_thread_id = -1;
 
+    /*
+     * Zero bindings is the product-default R29 state and is behaviorally
+     * equivalent to the pre-R29 runtime. A later caller may replace this
+     * immutable binding authority before worker start.
+     */
+    if (!pstvnc_product_action_resolver_init(
+            &runtime->product_action_resolver,
+            NULL,
+            0u))
+        return -1;
+
+    runtime->product_action_desktop_eligible = 0;
+
     if (!pstvnc_mouse_init(
             &runtime->mouse,
             width,
@@ -849,6 +992,53 @@ int pstvnc_input_runtime_set_activity_notify(
     return 0;
 }
 
+
+int pstvnc_input_runtime_set_product_action_bindings(
+    pstvnc_input_runtime_t *runtime,
+    const pstvnc_product_action_binding_t *bindings,
+    size_t binding_count)
+{
+    if (
+        runtime == NULL ||
+        !runtime->initialized ||
+        runtime->controller_thread_started)
+        return -1;
+
+    /*
+     * Zero bindings explicitly disables recognition. Normalize the stored
+     * pointer so disabled runtimes carry no meaningless caller address.
+     */
+    if (binding_count == 0u)
+        bindings = NULL;
+
+    return pstvnc_product_action_resolver_init(
+        &runtime->product_action_resolver,
+        bindings,
+        binding_count)
+        ? 0
+        : -1;
+}
+
+int pstvnc_input_runtime_set_product_action_desktop_eligible(
+    pstvnc_input_runtime_t *runtime,
+    int desktop_eligible)
+{
+    if (
+        runtime == NULL ||
+        !runtime->initialized ||
+        (desktop_eligible != 0 && desktop_eligible != 1))
+        return -1;
+
+    /*
+     * Application owns this one admission fact. The controller worker reads
+     * the current complete integer once for each trustworthy sample; Input does
+     * not reach through to UI/Application state or install a callback owner.
+     */
+    runtime->product_action_desktop_eligible =
+        desktop_eligible;
+    return 0;
+}
+
 int pstvnc_input_runtime_start(
     pstvnc_input_runtime_t *runtime)
 {
@@ -856,8 +1046,17 @@ int pstvnc_input_runtime_start(
 
     if (runtime == NULL ||
         !runtime->initialized ||
+        !runtime->product_action_resolver.initialized ||
         runtime->controller_thread_started ||
         runtime->controller_thread_id >= 0)
+        return -1;
+
+    /*
+     * Revalidate the caller-owned immutable binding set at the worker-start
+     * boundary and clear all resolver history. If the caller violated the
+     * immutability contract before start, activation fails before CreateThread.
+     */
+    if (!input_runtime_reset_product_action_resolver(runtime))
         return -1;
 
     runtime->stop_requested = 0;
