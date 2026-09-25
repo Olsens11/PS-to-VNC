@@ -23,6 +23,8 @@ unit: \
 	$(BUILD_DIR)/osk_render_test \
 	$(BUILD_DIR)/local_ui_presentation_test \
 	$(BUILD_DIR)/input_test \
+	$(BUILD_DIR)/product_action_test \
+	$(BUILD_DIR)/product_action_event_test \
 	$(BUILD_DIR)/controller_event_test \
 	$(BUILD_DIR)/local_controller_test \
 	$(BUILD_DIR)/osk_direct_test \
@@ -44,6 +46,8 @@ unit: \
 	./$(BUILD_DIR)/osk_render_test
 	./$(BUILD_DIR)/local_ui_presentation_test
 	./$(BUILD_DIR)/input_test
+	./$(BUILD_DIR)/product_action_test
+	./$(BUILD_DIR)/product_action_event_test
 	./$(BUILD_DIR)/controller_event_test
 	./$(BUILD_DIR)/local_controller_test
 	./$(BUILD_DIR)/osk_direct_test
@@ -255,17 +259,46 @@ $(BUILD_DIR)/input_test: \
 	unit/input_test.c \
 	../src/input/input.c \
 	../src/input/input.h \
+	../src/input/product_action.c \
+	../src/input/product_action.h \
 	../src/input/mouse.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
 		-I../src \
 		unit/input_test.c \
 		../src/input/input.c \
+		../src/input/product_action.c \
+		-o $@
+
+$(BUILD_DIR)/product_action_test: \
+	unit/product_action_test.c \
+	../src/input/product_action.c \
+	../src/input/product_action.h \
+	../src/input/controller.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/product_action_test.c \
+		../src/input/product_action.c \
+		-o $@
+
+$(BUILD_DIR)/product_action_event_test: \
+	unit/product_action_event_test.c \
+	../src/input/input.c \
+	../src/input/input.h \
+	../src/input/product_action.c \
+	../src/input/product_action.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/product_action_event_test.c \
+		../src/input/input.c \
+		../src/input/product_action.c \
 		-o $@
 
 $(BUILD_DIR)/controller_event_test: \
 	unit/controller_event_test.c \
 	../src/input/input.c \
 	../src/input/input.h \
+	../src/input/product_action.c \
+	../src/input/product_action.h \
 	../src/input/controller.h \
 	../src/input/mouse.h \
 	../src/input/keyboard.h | $(BUILD_DIR)
@@ -273,6 +306,7 @@ $(BUILD_DIR)/controller_event_test: \
 		-I../src \
 		unit/controller_event_test.c \
 		../src/input/input.c \
+		../src/input/product_action.c \
 		-o $@
 
 $(BUILD_DIR)/local_controller_test: \
@@ -382,6 +416,15 @@ unit: app-mpeg-session-foundation-source-unit
 app-mpeg-session-foundation-source-unit:
 	python3 $(APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST)
 
+
+
+PRODUCT_ACTION_SOURCE_TEST := unit/product_action_source_test.py
+
+.PHONY: product-action-source-unit
+unit: product-action-source-unit
+
+product-action-source-unit:
+	python3 $(PRODUCT_ACTION_SOURCE_TEST)
 
 GEOMETRY_TEST := .build/video_geometry_test
 
