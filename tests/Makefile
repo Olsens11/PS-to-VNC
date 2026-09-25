@@ -10,6 +10,7 @@ unit: \
 	$(BUILD_DIR)/config_text_test \
 	$(BUILD_DIR)/config_product_action_bindings_test \
 	$(BUILD_DIR)/management_config_get_test \
+	$(BUILD_DIR)/app_product_bindings_test \
 	$(BUILD_DIR)/video_mode_test \
 	$(BUILD_DIR)/rfb_wire_test \
 	$(BUILD_DIR)/framebuffer_test \
@@ -36,6 +37,7 @@ unit: \
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/config_product_action_bindings_test
 	./$(BUILD_DIR)/management_config_get_test
+	./$(BUILD_DIR)/app_product_bindings_test
 	./$(BUILD_DIR)/video_mode_test
 	./$(BUILD_DIR)/rfb_wire_test
 	./$(BUILD_DIR)/framebuffer_test
@@ -101,6 +103,27 @@ $(BUILD_DIR)/management_config_get_test: \
 		../src/management/config_get.c \
 		-Wl,--wrap=send \
 		-Wl,--wrap=recv \
+		-o $@
+
+$(BUILD_DIR)/app_product_bindings_test: \
+	unit/app_product_bindings_test.c \
+	../src/app_product_bindings.c \
+	../src/app_product_bindings.h \
+	../src/config/product_action_bindings.c \
+	../src/config/product_action_bindings.h \
+	../src/config/text.c \
+	../src/config/text.h \
+	../src/input/product_action.c \
+	../src/input/product_action.h \
+	../src/input/controller.h \
+	../src/management/config_get.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/app_product_bindings_test.c \
+		../src/app_product_bindings.c \
+		../src/config/product_action_bindings.c \
+		../src/config/text.c \
+		../src/input/product_action.c \
 		-o $@
 
 $(BUILD_DIR)/video_mode_test: \
@@ -396,6 +419,7 @@ $(BUILD_DIR)/app_test: \
 	support/libpad.h \
 	../src/app.c \
 	../src/app.h \
+	../src/app_product_bindings.h \
 	../src/diagnostics/diagnostics.h \
 	../src/display/display.h \
 	../src/framebuffer/framebuffer.h \
@@ -465,6 +489,15 @@ $(BUILD_DIR)/app_mpeg_run_test: \
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+
+APP_PRODUCT_BINDINGS_SOURCE_TEST := unit/app_product_bindings_source_test.py
+
+.PHONY: app-product-bindings-source-unit
+unit: app-product-bindings-source-unit
+
+app-product-bindings-source-unit:
+	python3 $(APP_PRODUCT_BINDINGS_SOURCE_TEST)
 
 
 APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST := unit/app_mpeg_session_foundation_source_test.py
