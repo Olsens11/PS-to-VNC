@@ -75,6 +75,7 @@ COMMON_FLAGS=(
 SOURCES=(
     src/main.c
     src/app.c
+    src/app_mpeg_calibration.c
     src/app_mpeg_frame.c
     src/app_mpeg_run.c
     src/audio/playback.c
@@ -111,6 +112,8 @@ SOURCES=(
     src/ui/osk.c
     src/ui/osk_render.c
     src/ui/local_ui_presentation.c
+    src/ui/mpeg_calibration.c
+    src/ui/mpeg_calibration_manual.c
     src/transport/protocol.c
     src/transport/physical_stream.c
     src/transport/rfb_channel.c

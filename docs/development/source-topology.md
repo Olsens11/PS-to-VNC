@@ -57,6 +57,8 @@ Current clean C/H files directly in `src/` are restricted to:
     src/main.c
     src/app.c
     src/app.h
+    src/app_mpeg_calibration.c
+    src/app_mpeg_calibration.h
     src/app_mpeg_frame.c
     src/app_mpeg_frame.h
     src/app_mpeg_run.c
@@ -68,8 +70,12 @@ MPEG worker and Display presentation mechanisms. R21 similarly admits
 `app_mpeg_run.{c,h}` as the trigger-agnostic Application transaction that
 orders already-owned RFB protection, Transport MPEG run admission, decoder/
 worker execution, Presentation and frame-consumer preparation before START.
-Neither file family owns the private mechanisms it composes, and neither
-justifies a new top-level source directory.
+A004 P9 adds `app_mpeg_calibration.{c,h}` at the same Application root because
+manual MPEG calibration foreground safety is inherently cross-domain: it orders
+P2 protection, input suspension/pointer reconciliation, P8 UI ownership,
+Platform desktop presentation and a protected handoff value for later MPEG
+start without taking any of those private mechanisms. None of these Application
+coordinators justifies a new top-level source directory.
 
 
 The PS2 application root dictionary is:

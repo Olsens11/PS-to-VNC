@@ -530,3 +530,74 @@ region value without depending on this manual controller adapter.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A004-MPEG-CALIBRATION-MANUAL-REGION-SOURCE-P8`.
+
+
+## P9 Application-owned manual calibration foreground
+
+A004 P9 composes the accepted manual MPEG CALIBRATION region source into one
+trigger-agnostic Application-owned foreground transaction. It deliberately does
+not select a permanent controller chord and does not start MPEG.
+
+Admission is exact and RFB-only: the local UI must be ordinary DESKTOP with no
+transition quarantine, P3 must be RFB_ONLY with no retained run snapshot, P2
+must be thawed, P8 must be inactive, and the Application calibration
+coordinator must be idle.
+
+After admission the ordering is fixed:
+
+1. freeze P2;
+2. suspend mouse interpretation while physical controller polling remains live;
+3. if a successfully-published remote click is held, serialize a button-up at
+   the exact published cursor and only then record the published click state as
+   neutral;
+4. rebase the suspended mouse interpreter to that exact neutral published
+   state;
+5. copy the caller-supplied last physically presented ordinary CT16 desktop into
+   dedicated caller-owned frozen storage;
+6. begin P8;
+7. raster visible P8 EDIT/REVIEW state into a distinct work surface and present
+   that surface through the ordinary Platform desktop seam.
+
+The authoritative RFB framebuffer is neither used nor mutated as calibration
+drawing storage. The frozen snapshot is immutable for the transaction.
+
+P8 controller samples remain exclusively calibration-owned while P1 owns EDIT,
+REVIEW or release quarantine. The Application coordinator reports the
+consumption fact for later ordinary-main-loop integration; it does not alter
+local-controller/OSK routing mechanisms.
+
+On P8's one-shot accepted edge, P9 resolves the copied accepted region through
+`pstvnc_mpeg_calibration_resolve_geometry()` and copies the resulting base,
+inner-content and suppression rectangles field-for-field into
+`pstvnc_mpeg_presentation_geometry_t`. P9 performs no independent geometry or
+suppression arithmetic.
+
+Accept and cancel both remain protected while release quarantine is pending.
+Only after P8 proves complete release does P9 physically present the exact
+frozen ordinary desktop. Mouse interpretation resumes only after that successful
+restore.
+
+The endpoints then diverge:
+
+- cancel thaws P2 exactly once and returns reusable idle; the existing P2
+  frozen-to-thawed transition creates the normal one-shot FULL-refresh debt,
+  which may remain HOLD while an older request is still outstanding;
+- accept keeps P2 frozen and P3 RFB_ONLY while retaining exact resolved geometry
+  in explicit ACCEPTED_PROTECTED state. No MPEG run has started.
+
+Reading/copying protected accepted geometry has no protection side effect. A
+separate explicit abort operation may abandon ACCEPTED_PROTECTED without
+starting MPEG; it thaws P2 exactly once, preserves normal FULL-refresh debt,
+clears retained protected geometry and returns idle.
+
+Any failure after P2 freeze fails closed. P9 does not silently thaw or resume
+uncertain input ownership after pointer serialization, rebase, raster or
+Platform-presentation failure.
+
+P9 remains separate from DESKTOP CALIBRATION and does not modify ordinary
+`src/app.c`, call any `pstvnc_app_mpeg_run_*` operation, mutate P3, start a
+decoder/worker, persist Pi configuration, alter Transport/Wire semantics or own
+any lower-component mechanism.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A004-APPLICATION-MPEG-CALIBRATION-FOREGROUND-P9`.

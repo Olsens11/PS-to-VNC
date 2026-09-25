@@ -28,6 +28,7 @@ EXTRA_EE_OBJS ?=
 EE_OBJS = \
 	$(BUILD_DIR)/main.o \
 	$(BUILD_DIR)/app.o \
+	$(BUILD_DIR)/app_mpeg_calibration.o \
 	$(BUILD_DIR)/app_mpeg_frame.o \
 	$(BUILD_DIR)/app_mpeg_run.o \
 	$(BUILD_DIR)/audio_playback.o \
@@ -66,6 +67,8 @@ EE_OBJS = \
 	$(BUILD_DIR)/osk.o \
 	$(BUILD_DIR)/osk_render.o \
 	$(BUILD_DIR)/local_ui_presentation.o \
+	$(BUILD_DIR)/mpeg_calibration.o \
+	$(BUILD_DIR)/mpeg_calibration_manual.o \
 	$(BUILD_DIR)/transport_protocol.o \
 	$(BUILD_DIR)/transport_physical_stream.o \
 	$(BUILD_DIR)/transport_rfb_channel.o \
@@ -106,6 +109,9 @@ $(BUILD_DIR)/main.o: src/main.c src/app.h src/platform/ps2_system.h | $(BUILD_DI
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics/diagnostics.h src/display/display.h src/framebuffer/framebuffer.h src/input/input.h src/input/input_runtime.h src/ui/local_ui_presentation.h src/ui/local_ui.h src/ui/osk.h src/ui/osk_render.h src/input/mouse.h src/input/pad.h src/rfb/rfb_session.h src/rfb/flow_policy.h src/transport/bridge.h src/transport/transport.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h src/input/controller.h src/ui/local_controller.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/app_mpeg_calibration.o: src/app_mpeg_calibration.c src/app_mpeg_calibration.h src/ui/mpeg_calibration_manual.h src/ui/mpeg_calibration.h src/rfb/flow_policy.h src/rfb/rfb_session.h src/input/input_runtime.h src/ui/local_ui.h src/display/mpeg_presentation.h src/platform/ps2_graphics.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/app_mpeg_frame.o: src/app_mpeg_frame.c src/app_mpeg_frame.h src/mpeg/worker.h src/display/mpeg_frame.h src/display/mpeg_presentation.h src/display/mpeg_scheduler.h src/display/mpeg_compositor.h src/media/clock.h | $(BUILD_DIR)
@@ -220,6 +226,12 @@ $(BUILD_DIR)/osk_render.o: src/ui/osk_render.c src/ui/osk_render.h src/ui/osk.h 
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/local_ui_presentation.o: src/ui/local_ui_presentation.c src/ui/local_ui_presentation.h src/ui/local_ui.h src/ui/osk.h src/ui/osk_render.h src/display/display.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/mpeg_calibration.o: src/ui/mpeg_calibration.c src/ui/mpeg_calibration.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/mpeg_calibration_manual.o: src/ui/mpeg_calibration_manual.c src/ui/mpeg_calibration_manual.h src/ui/mpeg_calibration.h src/input/controller.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/transport_protocol.o: src/transport/protocol.c src/transport/protocol.h | $(BUILD_DIR)
