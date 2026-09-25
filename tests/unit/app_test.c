@@ -16,6 +16,7 @@
 
 #include "config/media_clock_profile.h"
 #include "config/mpeg_runtime_profile.h"
+#include "app_product_bindings.h"
 
 static int selected_projection_available;
 static size_t selected_projection_calls;
@@ -28,6 +29,11 @@ static pstvnc_config_mpeg_runtime_profile_t selected_mpeg_profile;
 static size_t selected_media_clock_profile_calls;
 static size_t selected_media_clock_profile_event_count;
 static pstvnc_config_media_clock_profile_t selected_media_clock_profile;
+
+static size_t product_bindings_acquire_calls;
+static size_t product_bindings_acquire_event_count;
+static pstvnc_app_product_bindings_snapshot_t product_bindings_stub_snapshot;
+static int product_bindings_acquire_result;
 
 int pstvnc_config_rfb_runtime_profile_selected(
     pstvnc_transport_session_config_t *transport_config)
@@ -58,6 +64,19 @@ pstvnc_config_media_clock_profile_selected(void)
     return selected_media_clock_profile;
 }
 
+int pstvnc_app_product_bindings_acquire(
+    pstvnc_app_product_bindings_snapshot_t *snapshot)
+{
+    product_bindings_acquire_calls++;
+    product_bindings_acquire_event_count = event_count;
+
+    if (!product_bindings_acquire_result || snapshot == NULL)
+        return 0;
+
+    *snapshot = product_bindings_stub_snapshot;
+    return 1;
+}
+
 static void reset_selected_projection(void)
 {
     selected_projection_available = 0;
@@ -73,6 +92,13 @@ static void reset_selected_projection(void)
     selected_media_clock_profile_calls = 0u;
     selected_media_clock_profile_event_count = 0u;
     memset(&selected_media_clock_profile, 0, sizeof(selected_media_clock_profile));
+
+    product_bindings_acquire_calls = 0u;
+    product_bindings_acquire_event_count = 0u;
+    memset(&product_bindings_stub_snapshot, 0, sizeof(product_bindings_stub_snapshot));
+    product_bindings_stub_snapshot.status =
+        PSTVNC_APP_PRODUCT_BINDINGS_STATUS_VALID;
+    product_bindings_acquire_result = 1;
 }
 
 static int nth_event_index(event_id_t event, size_t occurrence)
@@ -438,6 +464,79 @@ static void test_r15_selected_profile_reaches_existing_lifecycle_exactly(void)
     CHECK(observed_mpeg_transport_config.credit_flush_on_empty == 1);
     CHECK(observed_mpeg_transport_config.credit_return_enabled == 1);
     CHECK(media_binding_init_calls == 0u);
+}
+
+static void test_r32_acquisition_occurs_once_after_link_before_first_pstv(void)
+{
+    int wait_link;
+    int first_connect;
+
+    reset_script();
+    reset_selected_projection();
+    transport_open_result = PSTVNC_TRANSPORT_FAILED;
+    transport_open_adopts = 0;
+
+    CHECK(run_configured_app() == -1);
+
+    wait_link = nth_event_index(EV_WAIT_LINK, 0u);
+    first_connect = nth_event_index(EV_CONNECT_PSTV, 0u);
+
+    CHECK(product_bindings_acquire_calls == 1u);
+    CHECK(wait_link >= 0);
+    CHECK(first_connect >= 0);
+    CHECK(product_bindings_acquire_event_count == (size_t)(wait_link + 1));
+    CHECK((int)product_bindings_acquire_event_count <= first_connect);
+}
+
+static void test_r32_provider_replacement_reuses_resident_snapshot(void)
+{
+    pstvnc_app_product_bindings_snapshot_t original_snapshot;
+
+    reset_script();
+    reset_selected_projection();
+    script_fresh_connections(2u);
+
+    product_bindings_stub_snapshot.status =
+        PSTVNC_APP_PRODUCT_BINDINGS_STATUS_VALID;
+    product_bindings_stub_snapshot.desired.binding_count = 1u;
+    product_bindings_stub_snapshot.desired.bindings[0].button_mask =
+        PSTVNC_CONTROLLER_BUTTON_L2 | PSTVNC_CONTROLLER_BUTTON_TRIANGLE;
+    product_bindings_stub_snapshot.desired.bindings[0].action =
+        PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION;
+    product_bindings_stub_snapshot.desired.bindings[0].trigger =
+        PSTVNC_PRODUCT_ACTION_TRIGGER_RELEASE;
+    product_bindings_stub_snapshot.desired.bindings[0].context =
+        PSTVNC_PRODUCT_ACTION_CONTEXT_GLOBAL;
+    original_snapshot = product_bindings_stub_snapshot;
+
+    request_results[0] = 1;
+    request_results[1] = 1;
+    request_result_count = 2u;
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[0] = PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ;
+    try_receive_results[1] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[1] = PSTVNC_RFB_SESSION_ERROR_IO;
+    try_receive_result_count = 2u;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(connect_calls == 2u);
+    CHECK(product_bindings_acquire_calls == 1u);
+    CHECK(memcmp(
+        &product_bindings_stub_snapshot,
+        &original_snapshot,
+        sizeof(original_snapshot)) == 0);
+}
+
+static void test_r32_acquisition_internal_failure_is_resident_fatal(void)
+{
+    reset_script();
+    reset_selected_projection();
+    product_bindings_acquire_result = 0;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(product_bindings_acquire_calls == 1u);
+    CHECK(connect_calls == 0u);
+    CHECK(transport_open_calls == 0u);
 }
 
 static void test_r19_thawed_dirty_update_completes_presents_and_reschedules(void)
@@ -819,6 +918,10 @@ int main(void)
     test_r27_mpeg_profile_failure_precedes_all_startup();
     test_r15_selected_profile_reaches_existing_lifecycle_exactly();
 
+    test_r32_acquisition_occurs_once_after_link_before_first_pstv();
+    test_r32_provider_replacement_reuses_resident_snapshot();
+    test_r32_acquisition_internal_failure_is_resident_fatal();
+
     test_r27_session_foundation_is_fresh_unarmed_and_mpeg_capable();
     test_r27_provider_replacement_retires_clock_before_transport();
     test_r27_binding_release_failure_blocks_replacement();
@@ -844,10 +947,10 @@ int main(void)
     test_r19_policy_accounting_rejection_fails_before_receive();
 
     if (failures != 0) {
-        fprintf(stderr, "app R15/R16B/R19/R27 tests: %d failure(s)\n", failures);
+        fprintf(stderr, "app R15/R16B/R19/R27/R32 tests: %d failure(s)\n", failures);
         return 1;
     }
 
-    printf("app R15/R16B/R19/R27 tests: PASS\n");
+    printf("app R15/R16B/R19/R27/R32 tests: PASS\n");
     return 0;
 }
