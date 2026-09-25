@@ -225,6 +225,7 @@ Development-system policy:
 - `docs/development/lessons-learned.md`
 - `docs/development/module-lifecycle.md` — cross-Wire module lifecycle, complete-retirement, and Transport-owned communication-validity contract.
 - `docs/development/mpeg-generation-control.md` — R17 Pi exact-generation MPEG START/RETIRE, bounded producer, channel-4 credit, sole-Wire serialization, and retirement-proof contract.
+- `docs/development/media-clock-product-binding.md` — R26 selected A002 media-clock profile and session-scoped PS2 synchronization/time binding.
 - `docs/development/rfb-provider-failure.md` — R16A developer continuity for typed provider-terminal reporting, wait termination, Q4 compatibility, stale-state containment, and the no-recovery-policy boundary.
 - `docs/development/source-naming-and-symbols.md`
 - `docs/development/source-topology.md`
