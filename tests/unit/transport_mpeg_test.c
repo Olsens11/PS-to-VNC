@@ -1431,6 +1431,52 @@ static void test_mpeg_retire_completion_must_match_submitted_transaction(void)
     }
 }
 
+static void test_terminal_release_retains_live_mpeg_waiter_storage(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t base = make_base_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    int queue_semaphore;
+    int activity_semaphore;
+
+    reset_fake_world();
+    CHECK(pstvnc_transport_runtime_initialize_with_mpeg(
+        &runtime, 72, &base, &mpeg) == 1);
+    CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+
+    CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 1);
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+    CHECK(runtime.receiver_completion_outcome ==
+        PSTVNC_TRANSPORT_RECEIVER_COMPLETION_PROVEN);
+
+    queue_semaphore = runtime.mpeg_queue_semaphore_id;
+    activity_semaphore = runtime.mpeg_activity_semaphore_id;
+    CHECK(queue_semaphore >= 0);
+    CHECK(activity_semaphore >= 0);
+
+    /*
+     * State 2 is the audited "wake token published, waiter has not yet
+     * returned through the protected queue state" ownership fence. Final
+     * release must preserve every runtime resource while that owner is live.
+     */
+    CHECK(WaitSema(runtime.mpeg_queue_semaphore_id) == 0);
+    runtime.mpeg_activity_wait_armed = 2;
+    CHECK(SignalSema(runtime.mpeg_queue_semaphore_id) == 0);
+
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 0);
+    CHECK(runtime.initialized);
+    CHECK(runtime.mpeg_queue_semaphore_id == queue_semaphore);
+    CHECK(runtime.mpeg_activity_semaphore_id == activity_semaphore);
+    CHECK(runtime.mpeg_activity_wait_armed == 2);
+
+    CHECK(WaitSema(runtime.mpeg_queue_semaphore_id) == 0);
+    runtime.mpeg_activity_wait_armed = 0;
+    CHECK(SignalSema(runtime.mpeg_queue_semaphore_id) == 0);
+
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+    CHECK(!runtime.initialized);
+}
+
 static void test_mpeg_finalization_fences_late_consumer_operations(void)
 {
     pstvnc_transport_runtime_t runtime;
@@ -1541,6 +1587,7 @@ int main(void)
     test_mpeg_post_completion_data_fails_even_after_take();
     test_mpeg_live_waiter_blocks_run_finalization();
     test_mpeg_retire_completion_must_match_submitted_transaction();
+    test_terminal_release_retains_live_mpeg_waiter_storage();
     test_mpeg_finalization_fences_late_consumer_operations();
     test_mpeg_active_consumer_transaction_blocks_finalize();
 
