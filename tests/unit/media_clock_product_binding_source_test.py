@@ -76,14 +76,21 @@ require(
     "R26 tick rate must remain the kBUSCLK domain",
 )
 
-# Ordinary Application composition is deliberately deferred by the packet.
-for deferred_name in (
-    "media_clock_profile_selected",
-    "ps2_media_clock_binding",
+# R27 later composes this accepted R26 authority into ordinary session startup.
+# Preserve R26's mechanism boundary while requiring the newer authorized caller.
+for composed_name in (
+    "pstvnc_config_media_clock_profile_selected",
+    "pstvnc_ps2_media_clock_binding_init",
+    "pstvnc_media_clock_init",
 ):
     require(
-        deferred_name not in app_code,
-        f"ordinary app.c prematurely consumes R26 authority: {deferred_name}",
+        composed_name in app_code,
+        f"R27 ordinary app.c must consume accepted R26 authority: {composed_name}",
     )
+
+require(
+    re.search(r"\bpstvnc_media_clock_arm\s*\(", app_code) is None,
+    "ordinary app.c must not arm the R26/A002 media clock before semantic MPEG entry",
+)
 
 print("MEDIA_CLOCK_PRODUCT_BINDING_SOURCE_TEST=PASS")
