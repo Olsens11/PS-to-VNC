@@ -45,6 +45,7 @@ The current clean-generation directories are:
 | `src/display/` | platform-neutral display/presentation conversion |
 | `src/framebuffer/` | authoritative CPU-side remote desktop image |
 | `src/input/` | controller facts, libpad-facing project use, semantic input, caller-supplied product-action binding resolution, keyboard, mouse |
+| `src/management/` | bounded PS2-side Pi management protocol clients; read-only config retrieval begins the clean owner without Configuration parsing or product policy |
 | `src/media/` | session-scoped common media epoch, signed/saturating deadline math, synchronization contract, and host-testable wait boundary |
 | `src/mpeg/` | session-scoped MPEG decoder resource/call ownership, explicit feed and sequence bounds, safe-stop lifetime fencing, and payload-versus-transfer accounting |
 | `src/platform/` | genuinely PS2-specific system, network, graphics, and session-scoped media-clock synchronization/time mechanisms |
@@ -75,6 +76,15 @@ and context tokens into one validated caller-owned binding and formats that
 typed value canonically. Missing recognized binding text remains an explicit
 zero-binding model; Configuration selects no physical default, installs no
 Input runtime binding, performs no persistence, and routes no product effect.
+
+R31 establishes `src/management/` as the clean management owner with
+`config_get.{c,h}`. It opens one separate caller-owned TCP connection through
+the Platform network seam to the fixed private Pi management endpoint, sends
+only the exact read-only `GET /ps2vnc.conf HTTP/1.0` request, accepts bounded
+HTTP/1.0 or HTTP/1.1 status-200 responses, and publishes the exact
+connection-close body atomically as raw bytes. It does not parse R30, install
+R29 bindings, participate in PSTV Transport adoption, choose startup/recovery
+policy, persist settings, or route any product effect.
 
 
 Current clean C/H files directly in `src/` are restricted to:
