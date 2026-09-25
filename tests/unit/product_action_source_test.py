@@ -65,7 +65,7 @@ for forbidden in (
     require(forbidden not in all_code, f"R28 cross-domain scope creep: {forbidden}")
 
 require(
-    "PSTVNC_INPUT_EVENT_PRODUCT_ACTION" in input_code + input_header,
+    "PSTVNC_INPUT_EVENT_PRODUCT_ACTION" in input_source + input_header,
     "typed PRODUCT_ACTION event is missing",
 )
 require(
