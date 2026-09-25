@@ -944,6 +944,7 @@ app-mpeg-calibration-unit: $(APP_MPEG_CALIBRATION_TEST)
 
 $(APP_MPEG_CALIBRATION_TEST): \
 	unit/app_mpeg_calibration_test.c \
+	support/libpad.h \
 	../src/app_mpeg_calibration.c \
 	../src/app_mpeg_calibration.h \
 	../src/ui/mpeg_calibration_manual.h \
@@ -955,6 +956,7 @@ $(APP_MPEG_CALIBRATION_TEST): \
 	../src/display/mpeg_presentation.h \
 	../src/platform/ps2_graphics.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Isupport \
 		-I../src \
 		unit/app_mpeg_calibration_test.c \
 		../src/app_mpeg_calibration.c \
