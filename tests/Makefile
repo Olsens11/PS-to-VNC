@@ -349,6 +349,7 @@ $(BUILD_DIR)/app_mpeg_run_test: \
 	../src/app_mpeg_run.h \
 	../src/app_mpeg_frame.h \
 	../src/config/mpeg_runtime_profile.h \
+	../src/display/mpeg_compositor.h \
 	../src/display/mpeg_presentation.h \
 	../src/media/clock.h \
 	../src/mpeg/ps2_decoder_backend.h \
