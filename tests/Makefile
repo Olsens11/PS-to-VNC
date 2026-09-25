@@ -25,6 +25,7 @@ unit: \
 	$(BUILD_DIR)/input_test \
 	$(BUILD_DIR)/product_action_test \
 	$(BUILD_DIR)/product_action_event_test \
+	$(BUILD_DIR)/input_runtime_product_action_test \
 	$(BUILD_DIR)/controller_event_test \
 	$(BUILD_DIR)/local_controller_test \
 	$(BUILD_DIR)/osk_direct_test \
@@ -48,6 +49,7 @@ unit: \
 	./$(BUILD_DIR)/input_test
 	./$(BUILD_DIR)/product_action_test
 	./$(BUILD_DIR)/product_action_event_test
+	./$(BUILD_DIR)/input_runtime_product_action_test
 	./$(BUILD_DIR)/controller_event_test
 	./$(BUILD_DIR)/local_controller_test
 	./$(BUILD_DIR)/osk_direct_test
@@ -293,6 +295,29 @@ $(BUILD_DIR)/product_action_event_test: \
 		../src/input/product_action.c \
 		-o $@
 
+$(BUILD_DIR)/input_runtime_product_action_test: \
+	unit/input_runtime_product_action_test.c \
+	unit/input_runtime_product_action_host_stubs/kernel.h \
+	unit/input_runtime_product_action_host_stubs/delaythread.h \
+	unit/input_runtime_product_action_host_stubs/libpad.h \
+	../src/input/input_runtime.c \
+	../src/input/input_runtime.h \
+	../src/input/input.c \
+	../src/input/input.h \
+	../src/input/product_action.c \
+	../src/input/product_action.h \
+	../src/input/mouse.c \
+	../src/input/mouse.h \
+	../src/input/pad.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Iunit/input_runtime_product_action_host_stubs \
+		-I../src \
+		unit/input_runtime_product_action_test.c \
+		../src/input/input.c \
+		../src/input/product_action.c \
+		../src/input/mouse.c \
+		-o $@
+
 $(BUILD_DIR)/controller_event_test: \
 	unit/controller_event_test.c \
 	../src/input/input.c \
@@ -425,6 +450,15 @@ unit: product-action-source-unit
 
 product-action-source-unit:
 	python3 $(PRODUCT_ACTION_SOURCE_TEST)
+
+
+INPUT_RUNTIME_PRODUCT_ACTION_SOURCE_TEST := unit/input_runtime_product_action_source_test.py
+
+.PHONY: input-runtime-product-action-source-unit
+unit: input-runtime-product-action-source-unit
+
+input-runtime-product-action-source-unit:
+	python3 $(INPUT_RUNTIME_PRODUCT_ACTION_SOURCE_TEST)
 
 GEOMETRY_TEST := .build/video_geometry_test
 
