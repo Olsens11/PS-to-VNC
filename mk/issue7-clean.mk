@@ -41,6 +41,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/config_media_clock_profile.o \
 	$(BUILD_DIR)/config_text.o \
 	$(BUILD_DIR)/config_product_action_bindings.o \
+	$(BUILD_DIR)/management_config_get.o \
 	$(BUILD_DIR)/media_clock.o \
 	$(BUILD_DIR)/mpeg_decoder.o \
 	$(BUILD_DIR)/mpeg_worker.o \
@@ -93,7 +94,7 @@ EE_OBJS = \
 
 EE_OBJS += $(EXTRA_EE_OBJS)
 
-EE_INCS = -I$(SMS_INC) -Isrc -Isrc/audio -Isrc/config -Isrc/media -Isrc/mpeg -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
+EE_INCS = -I$(SMS_INC) -Isrc -Isrc/audio -Isrc/config -Isrc/management -Isrc/media -Isrc/mpeg -Isrc/input -Isrc/ui -Isrc/rfb -Isrc/framebuffer -Isrc/display -Isrc/diagnostics -Isrc/platform -Isrc/transport -I$(GSKIT)/include
 EE_LIBS = -L$(GSKIT)/lib -lgskit -ldmakit -ldma -lnetman -lpad -laudsrv $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
 
 .PHONY: all clean
@@ -153,6 +154,9 @@ $(BUILD_DIR)/config_text.o: src/config/text.c src/config/text.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/config_product_action_bindings.o: src/config/product_action_bindings.c src/config/product_action_bindings.h src/config/text.h src/input/product_action.h src/input/controller.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/management_config_get.o: src/management/config_get.c src/management/config_get.h src/platform/ps2_network.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/media_clock.o: src/media/clock.c src/media/clock.h src/config/profile.h | $(BUILD_DIR)
