@@ -59,8 +59,14 @@ DESKTOP/GLOBAL context. The resolver accepts only caller-supplied binding
 values and contains no default product mapping. It recognizes semantic intent
 only; Application/UI/RFB/MPEG/media-clock effects remain outside Input.
 `PSTVNC_INPUT_EVENT_PRODUCT_ACTION` is the ordinary FIFO representation for
-that resolved semantic intent. R28 deliberately does not wire the resolver into
-the live input worker yet.
+that resolved semantic intent.
+
+R29 composes that pure resolver into the existing `input_runtime`. One runtime
+owns one fresh resolver history, observes every trustworthy physical poll when
+bindings are present, consumes only an explicit caller-owned DESKTOP-eligibility
+fact, and publishes a resolved action through the same ordinary FIFO before
+same-sample controller/mouse work. Zero bindings remain the default. Input still
+selects no physical MPEG-calibration mapping and executes no product effect.
 
 
 Current clean C/H files directly in `src/` are restricted to:

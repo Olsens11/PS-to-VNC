@@ -88,8 +88,9 @@ it that:
 
 These are architecture and continuity requirements rather than optional style.
 
-For the Input-owned semantic product-action vocabulary and caller-supplied
-binding/arbitration contract, also read:
+For the Input-owned semantic product-action vocabulary, caller-supplied
+binding/arbitration contract, and R29 live Input-runtime publication boundary,
+also read:
 
     semantic-product-actions.md
 

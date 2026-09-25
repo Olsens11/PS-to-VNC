@@ -4,7 +4,7 @@ DIRECTORY=src/input
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns the controller/input responsibility family: stable physical controller facts, direct libpad acquisition, semantic input-event transport, caller-supplied semantic product-action binding/arbitration, controller runtime ownership, remote-mouse response policy, and semantic keyboard events. Product-action recognition is pure Input meaning only; physical product mappings and cross-domain effects are not compiled into this owner.
+This directory owns the controller/input responsibility family: stable physical controller facts, direct libpad acquisition, semantic input-event transport, caller-supplied semantic product-action binding/arbitration, live per-runtime product-action recognition/publication, controller runtime ownership, remote-mouse response policy, and semantic keyboard events. Product-action recognition observes every trustworthy physical poll when explicitly configured and publishes only through the ordinary Input FIFO; physical product mappings and cross-domain effects are not compiled into this owner.
 
 The inventory below covers clean-generation symbols defined directly in this directory.
 
