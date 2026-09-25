@@ -135,6 +135,7 @@ jobs:
             src/config/SYMBOLS.md \
             src/display/SYMBOLS.md \
             src/input/SYMBOLS.md \
+            src/management/SYMBOLS.md \
             src/media/SYMBOLS.md \
             src/mpeg/SYMBOLS.md \
             src/platform/SYMBOLS.md \
