@@ -11,7 +11,7 @@ runtime code. It is distinct from:
 - `scripts/pi/`, which is provisioning/staging/development tooling;
 - `experiments/`, which is evidence and apparatus rather than product runtime.
 
-Current maintained Pi ownership through R17:
+Current maintained Pi ownership through R25:
 
 - `wire_protocol.py` — exact product Wire framing/Q4 establishment, RFB
   representation, and the symmetric R17 MPEG START/RETIRE/DATA/CREDIT bytes;
@@ -19,10 +19,10 @@ Current maintained Pi ownership through R17:
   process-local session IDs, the sole accepted physical Wire recv/send and
   sequence owner, plus optional composition of one explicitly supplied
   session-scoped RFB attachment and optional exact-generation MPEG owner;
-- `wire_runtime.py` — R15 ordinary product composition. It consumes the R14
-  selected RFB flow and supplies `WireServer` with a factory that creates one
-  fresh R13 attachment per physical Wire connection. Semantic OFF supplies no
-  factory, so the same server remains establishment-only;
+- `wire_runtime.py` — ordinary product composition. R15 consumes the R14
+  selected RFB flow and supplies one fresh R13 attachment factory; R25 also
+  supplies one fresh exact-session R17 MPEG-generation factory after resolving
+  the selected Pi MPEG product profile and existing producer profile;
 - `rfb_relay.py` — the accepted R10 provider-neutral bounded raw-RFB courier.
   It owns only a supplied connected provider socket, RFB credit, and one finite
   PS2->provider queue; it never reads from or writes to the PS2-facing Wire
@@ -37,6 +37,9 @@ Current maintained Pi ownership through R17:
 - `mpeg_runtime_profile.py` and `mpeg_runtime_profile_generated.py` — R17
   narrow Pi projection of Configuration's already-selected A003 MPEG limits and
   frame rate; it adds no independent Pi tuning;
+- `mpeg_product_profile.py` — R25 composition-only product authority for
+  native display `:0`, exact 704x462 desktop bounds and the grounded 8.0-second
+  retirement deadline; it owns none of R17's channel/buffer/frame-rate tuning;
 - `mpeg_generation.py` — R17 exact-generation START/RETIRE owner, capture-plan
   builder, suppression-footprint preparation, bounded FFmpeg stdout owner,
   session-scoped channel-4 credit bookkeeping, and emission/retirement fence.
@@ -157,12 +160,52 @@ can detect failure but can never manufacture retirement success. Only after
 those proofs does the Wire owner serialize the exact RETIRE completion and let
 the controller return to IDLE.
 
-R17 stages these maintained modules because `wire_server.py` imports the
-mechanism, but the default `wire_runtime.py` supplies no MPEG generation
-factory. Final PS2 Application MPEG activation, RFB suppression-policy binding,
-first-frame/presentation ownership, AUDIO, heartbeat and final all-guns
-composition remain outside R17.
+At the R17 acceptance point these maintained modules were staged while the
+ordinary `wire_runtime.py` deliberately supplied no MPEG generation factory.
+R25 later activates that already-accepted factory seam without changing R17
+mechanisms. PS2 permanent trigger/main-loop activation, active-MPEG
+recalibration, AUDIO, heartbeat and final all-guns composition remain outside
+R17/R25.
 
 Context: `docs/development/mpeg-generation-control.md`;
 `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-PI-MPEG-CONTROL-PRODUCER-R17`.
+
+
+## R25 ordinary MPEG product composition
+
+R25 adds one narrow `mpeg_product_profile.py` authority and uses it only from
+ordinary `wire_runtime.py` to construct the accepted R17 owner after exact Q4
+ACTIVE.
+
+The selected composition values are:
+
+- display `:0`;
+- desktop `704x462`;
+- retirement deadline `8.0` seconds.
+
+The deadline is grounded in the frozen H1 exact-generation producer default at
+forensic commit `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`; it is a failure
+deadline, never a success condition. Existing R17 Configuration-owned producer
+profile values are unchanged.
+
+Both RFB and MPEG factories are now present in the ordinary composed server.
+RFB remains lazy on its own CREDIT edge. The MPEG controller is created only
+after Q4 ACTIVE, and its producer remains absent until exact START. CREDIT by
+itself only records Wire-session channel capacity.
+
+One Wire Session receives one fresh MPEG controller and may run successive
+generations through that controller's monotonic high-water fence. The next Wire
+Session receives a distinct controller. All channel-4 DATA and RETIRE-completion
+frames still flow only through `WireConnectionOwner`.
+
+Session finish requires `MpegGenerationController.close()` to prove local
+retirement. A close/factory failure makes that physical session failed rather
+than causing an in-place rebind or RFB-only fallback.
+
+R25 host tests use fake producer ownership only. They do not launch real FFmpeg,
+touch the live provider/display, or mutate systemd state. PS2 ordinary MPEG
+trigger/main-loop activation remains deferred.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-PI-MPEG-ORDINARY-PRODUCT-COMPOSITION-R25`.

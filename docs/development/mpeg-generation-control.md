@@ -670,3 +670,76 @@ ordinary `src/app.c` wiring.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A004-APPLICATION-MPEG-PROTECTED-START-HANDOFF-P10`.
+
+
+## R25 ordinary Pi MPEG product composition
+
+R25 activates the already-accepted R17 generation owner at the ordinary Pi
+product-composition seam without changing WireServer or MPEG-generation
+mechanisms.
+
+The selected composition-only product facts live in
+`pi/mpeg_product_profile.py`:
+
+- capture/provider display `:0`, inherited from the accepted native
+  LightDM/Xorg/X0tigervnc route;
+- exact clean desktop bounds `704x462`, matching the RFB ServerInit geometry
+  required by the PS2 product before READY;
+- producer retirement deadline `8.0` seconds, recovered from frozen H1
+  `experiments/media-harness-h1/h1_cp2p_mpeg_producer.py` at forensic commit
+  `3426f28b93de9519ca93e5f0e0aaf8b67cfca845`, where
+  `DEFAULT_RETIRE_TIMEOUT_SECONDS = 8.0`.
+
+That deadline detects failure only. R17 still requires real producer/thread and
+suppression retirement; elapsed time cannot manufacture success.
+
+R17's Configuration-owned producer values remain separate and unchanged in
+`mpeg_runtime_profile.py`: channel window, producer buffer, maximum dimensions
+and frame rate still project from `src/config/mpeg_runtime_profile.json`.
+
+The ordinary `wire_runtime.py` now supplies both factories to the same
+`WireServer`:
+
+- R14/R15 fresh RFB attachment factory;
+- R25 fresh exact-session MPEG generation factory.
+
+The MPEG factory accepts only the nonzero session identity allocated by the
+existing Q4 owner and constructs one new `MpegGenerationController` with the
+selected composition profile plus the existing producer profile. WireServer
+continues to invoke that factory only after exact Q4 ACTIVE has been published
+and attaches the returned controller only when its session identity matches.
+
+Controller construction remains producer-inert. Service startup, TCP accept,
+HELLO/ACCEPT, RFB attachment construction, RFB traffic and MPEG CREDIT do not
+launch FFmpeg. Exact R17 START remains the first producer-creation edge.
+
+RFB and MPEG remain independent riders. RFB provider connection is still lazy
+on channel-1 CREDIT; an MPEG-only session may start/retire generations without
+starting the RFB provider. Both riders share only the accepted Wire owner, which
+remains the sole physical socket reader/writer and global sequence allocator.
+
+Repeated MPEG generations within one Wire Session reuse that session's one R17
+controller and therefore retain its monotonic high-water generation fence. A
+replacement Wire Session receives a new controller object bound to the new
+session ID. No producer, suppression, local buffer, emission lease, wake state
+or dead-generation identity is rebound.
+
+Wire-session finish still calls the accepted controller `close()`. Failure to
+prove controller retirement changes that session outcome to protocol failure.
+Factory construction/attachment failure after Q4 is likewise terminal to the
+current session; the persistent listener may accept a later fresh session but
+does not retry/rebind the failed physical session or fall back to RFB-only
+semantics.
+
+`scripts/pi/install-wire-runtime.sh` stages the new maintained composition
+profile alongside the already-staged R17 mechanism/profile and R15 runtime. It
+continues to refuse active/enabled live service state and performs no
+daemon-reload, enable/disable, start/stop/restart or display/provider mutation.
+
+R25 does not modify PS2 `src/app.c`, choose the permanent MPEG trigger, service
+or retire a PS2 run, implement active-MPEG recalibration, add AUDIO, or change
+Wire bytes. Ordinary PS2 product activation remains a downstream Application
+packet.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-PI-MPEG-ORDINARY-PRODUCT-COMPOSITION-R25`.
