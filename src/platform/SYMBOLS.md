@@ -5,8 +5,12 @@ GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
 This directory owns genuinely PS2-specific system, controller-service
-bootstrap, Ethernet, the single GS/dmaKit presentation mechanism, and R26's
-session-scoped media-clock synchronization/time binding. Graphics owns desktop,
+bootstrap, Ethernet, fixed private-endpoint TCP descriptor creation, the single
+GS/dmaKit presentation mechanism, and R26's session-scoped media-clock
+synchronization/time binding. The network seam creates distinct caller-owned
+PSTV and management descriptors; only a PSTV descriptor may later transfer to
+Transport, while management protocol semantics remain in the higher Management
+owner. Graphics owns desktop,
 suppression, reusable MPEG video, inner matte, local-overlay layering,
 synchronized flip completion, post-sync timer observation, and fail-closed
 retained-video reveal after a synchronized no-video frame. The media-clock
