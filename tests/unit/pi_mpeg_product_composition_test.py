@@ -335,6 +335,28 @@ class ProductWireCompositionTests(unittest.TestCase):
             outcome = finish_peer(peer, thread, result)
             self.assertTrue(outcome.accepted)
             self.assertFalse(outcome.protocol_failed)
+            self.assertTrue(controller._closed)
+
+            peer_b, thread_b, result_b = serve_once(server)
+            session_b = establish(peer_b)
+            self.assertNotEqual(session_b, session_id)
+            wait_for(
+                lambda: len(controllers) == 2,
+                "fresh Session B MPEG controller construction",
+            )
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(calls[1][0], session_b)
+            controller_b = controllers[1]
+            self.assertIsNot(controller_b, controller)
+            self.assertEqual(controller_b.session_id, session_b)
+            self.assertIsNone(controller_b.producer)
+            self.assertIsNone(controller_b.plan)
+            self.assertEqual(controller_b.highest_generation, 0)
+
+            outcome_b = finish_peer(peer_b, thread_b, result_b)
+            self.assertTrue(outcome_b.accepted)
+            self.assertFalse(outcome_b.protocol_failed)
+            self.assertTrue(controller_b._closed)
 
     def test_credit_is_inert_start_is_first_producer_edge_and_wire_serializes(self) -> None:
         producer_factory = ProducerFactory()
