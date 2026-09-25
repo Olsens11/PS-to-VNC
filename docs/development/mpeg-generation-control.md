@@ -469,3 +469,64 @@ mechanisms, or change AUDIO, Input/UI/calibration or Wire protocol behavior.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-APPLICATION-MPEG-FINAL-RFB-REVEAL-R24`.
+
+
+## P8 manual MPEG CALIBRATION region source
+
+A004 P8 reconstructs one UI-owned manual source for an MPEG presentation region.
+It composes the accepted P1 MPEG CALIBRATION core rather than replacing or
+duplicating that core.
+
+The manual source remains explicitly begin-driven. It contains no START+SELECT
+entry detector, hold timer, or permanent product trigger. A future Application
+owner may choose a trigger and is responsible for consuming that entry sample
+before calling `pstvnc_mpeg_calibration_manual_begin()`.
+
+After begin, the source translates only normalized
+`pstvnc_controller_state_t` facts into the existing P1 action vocabulary:
+
+- D-pad edits base size around center;
+- R1 + D-pad moves base placement at pixel precision;
+- R2 + D-pad edits presentation-local inner matte;
+- L2 + D-pad edits outer/suppression matte;
+- START resets the P1 candidate;
+- CROSS enters review and, only after release/re-press, accepts;
+- CIRCLE backs out of review or cancels from edit.
+
+The adapter does not poll libpad. SELECT is not an MPEG-calibration action and
+no physical entry chord is encoded in this region source.
+
+While P1 owns EDIT, REVIEW, or release quarantine, the service result marks the
+normalized controller sample consumed so a later coordinator can prevent the
+same sample from also reaching ordinary desktop/OSK routing. P8 does not itself
+suspend input runtime, neutralize/rebase remote pointer state, freeze RFB, or
+otherwise acquire those cross-domain responsibilities.
+
+Acceptance is only the P1 one-shot accepted edge. P8 copies the accepted
+`pstvnc_mpeg_calibration_region_t` into its result; it does not infer
+acceptance from committed state or foreground exit. Cancel similarly produces
+no accepted region, and calibration retains controller ownership through P1's
+existing release quarantine until a fully released sample proves completion.
+
+The visible plan is platform-neutral and contains the exact P1 candidate plus
+the geometry returned by `pstvnc_mpeg_calibration_resolve_geometry()`:
+base rectangle, distinct inner-content rectangle and clipped outer/suppression
+footprint. EDIT and REVIEW are the only visible states. The frozen H1 Controls
+screen and adapter/checkpoint proliferation are not promoted into clean product
+architecture.
+
+The companion CT16 rasterizer copies a caller-supplied frozen desktop into a
+distinct caller-owned output surface, darkens the exact suppression footprint,
+restores the exact base, applies the inner matte as the complement of P1's
+resolved inner-content rectangle, and draws the selector on P1's exact base
+edge. It never mutates the frozen input. Buffer overlap, insufficient capacity,
+invalid rectangles and inconsistent plans fail before raster writes.
+
+The output remains region-source data only. P8 does not mutate P2, request RFB
+updates, start Transport/MPEG execution, arm P3, call Platform graphics, persist
+Pi configuration, touch DESKTOP CALIBRATION, or modify ordinary `src/app.c`.
+Future automatic or Application-pinned MPEG region sources may produce the same
+region value without depending on this manual controller adapter.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A004-MPEG-CALIBRATION-MANUAL-REGION-SOURCE-P8`.
