@@ -30,6 +30,8 @@ typedef enum test_event {
     EV_START,
     EV_CONSUMER_SERVICE,
     EV_CONSUMER_STATUS,
+    EV_ABORT_STORAGE_RETAINED,
+    EV_CONSUMER_ABANDON,
     EV_PRESENTATION_BEGIN_RETIRE,
     EV_RETIRE,
     EV_RETIRE_TAKE,
@@ -90,6 +92,8 @@ static uint32_t worker_outcome_generation;
 static pstvnc_mpeg_worker_result_t worker_release_result;
 static int runtime_release_result;
 static pstvnc_transport_result_t abort_result;
+static pstvnc_transport_result_t abort_storage_retained_result;
+static pstvnc_app_mpeg_frame_result_t consumer_abandon_result;
 
 static uint32_t observed_worker_generation;
 static pstvnc_transport_mpeg_start_request_t observed_start;
@@ -217,6 +221,8 @@ static void reset_fixture(void)
     worker_release_result = PSTVNC_MPEG_WORKER_OK;
     runtime_release_result = 0;
     abort_result = PSTVNC_TRANSPORT_OK;
+    abort_storage_retained_result = PSTVNC_TRANSPORT_OK;
+    consumer_abandon_result = PSTVNC_APP_MPEG_FRAME_OK;
 
     observed_worker_generation = 0u;
     memset(&observed_start, 0, sizeof(observed_start));
@@ -254,6 +260,15 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_run_abort_pre_start(
     CHECK(access != NULL);
     record_event(EV_ABORT);
     return abort_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_session_abort_storage_retained(
+    const pstvnc_transport_access_t *access)
+{
+    CHECK(access != NULL);
+    CHECK(access == NULL || access->opaque_ticket != 0u);
+    record_event(EV_ABORT_STORAGE_RETAINED);
+    return abort_storage_retained_result;
 }
 
 pstvnc_transport_result_t pstvnc_transport_mpeg_send_start(
@@ -446,6 +461,15 @@ pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_request_stop(
     CHECK(worker != NULL);
     CHECK(worker->run_generation == generation);
     record_event(EV_WORKER_STOP);
+
+    if (worker_stop_result == PSTVNC_MPEG_WORKER_OK) {
+        worker_status_value.stop_requested = 1;
+        if (worker_status_value.slot_state ==
+                PSTVNC_MPEG_WORKER_SLOT_AVAILABLE)
+            worker_status_value.slot_state =
+                PSTVNC_MPEG_WORKER_SLOT_EMPTY;
+    }
+
     return worker_stop_result;
 }
 
@@ -694,6 +718,27 @@ pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_service(
         consumer->faulted = 1;
 
     return consumer_service_result;
+}
+
+pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_abandon_claim(
+    pstvnc_app_mpeg_frame_consumer_t *consumer,
+    uint32_t generation)
+{
+    CHECK(consumer != NULL);
+    CHECK(consumer == NULL || consumer->run_generation == generation);
+    record_event(EV_CONSUMER_ABANDON);
+
+    if (consumer_abandon_result != PSTVNC_APP_MPEG_FRAME_OK)
+        return consumer_abandon_result;
+
+    if (consumer == NULL || !consumer->initialized)
+        return PSTVNC_APP_MPEG_FRAME_INVALID;
+
+    consumer->faulted = 1;
+    consumer->claim_outstanding = 0;
+    memset(&consumer->held_frame, 0, sizeof(consumer->held_frame));
+    worker_status_value.slot_state = PSTVNC_MPEG_WORKER_SLOT_EMPTY;
+    return PSTVNC_APP_MPEG_FRAME_OK;
 }
 
 pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_status(
