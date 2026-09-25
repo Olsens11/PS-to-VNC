@@ -40,6 +40,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/config_mpeg_runtime_profile.o \
 	$(BUILD_DIR)/config_media_clock_profile.o \
 	$(BUILD_DIR)/config_text.o \
+	$(BUILD_DIR)/config_product_action_bindings.o \
 	$(BUILD_DIR)/media_clock.o \
 	$(BUILD_DIR)/mpeg_decoder.o \
 	$(BUILD_DIR)/mpeg_worker.o \
@@ -149,6 +150,9 @@ $(BUILD_DIR)/config_media_clock_profile.o: src/config/media_clock_profile.c src/
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/config_text.o: src/config/text.c src/config/text.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/config_product_action_bindings.o: src/config/product_action_bindings.c src/config/product_action_bindings.h src/config/text.h src/input/product_action.h src/input/controller.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/media_clock.o: src/media/clock.c src/media/clock.h src/config/profile.h | $(BUILD_DIR)
