@@ -57,6 +57,7 @@ COMMON_FLAGS=(
     -I"$ROOT/src"
     -I"$ROOT/src/audio"
     -I"$ROOT/src/config"
+    -I"$ROOT/src/management"
     -I"$ROOT/src/media"
     -I"$ROOT/src/mpeg"
     -I"$ROOT/src/input"
@@ -87,6 +88,7 @@ SOURCES=(
     src/config/mpeg_runtime_profile.c
     src/config/media_clock_profile.c
     src/config/text.c
+    src/management/config_get.c
     src/media/clock.c
     src/mpeg/decoder.c
     src/mpeg/worker.c
