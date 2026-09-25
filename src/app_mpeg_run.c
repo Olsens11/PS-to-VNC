@@ -1180,16 +1180,15 @@ static int pstvnc_app_mpeg_run_session_abort_entry_valid(
         run->transport_access.opaque_ticket == 0u ||
         !run->transport_run_open ||
         !run->worker_runtime_owned ||
+        !run->worker_started ||
+        !run->frame_consumer_initialized ||
+        !run->presentation_armed ||
         !run->start_invoked)
         return 0;
 
-    if (run->worker_started && !run->worker_runtime_owned)
-        return 0;
-
-    if (run->frame_consumer_initialized &&
-        (!run->frame_consumer.initialized ||
-         run->frame_consumer.run_generation != run->current_generation ||
-         run->frame_consumer.worker != &run->worker))
+    if (!run->frame_consumer.initialized ||
+        run->frame_consumer.run_generation != run->current_generation ||
+        run->frame_consumer.worker != &run->worker)
         return 0;
 
     return 1;
