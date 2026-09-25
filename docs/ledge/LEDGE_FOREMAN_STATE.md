@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0063
-RECORDED_AT=2026-09-25T09:09:26-04:00
+STATE_REVISION=0064
+RECORDED_AT=2026-09-25T09:41:47-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0062
-SUPERSEDES_FOREMAN_STATE_REVISION=0062
+BASED_ON_FOREMAN_STATE_REVISION=0063
+SUPERSEDES_FOREMAN_STATE_REVISION=0063
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,31 +14,38 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0063 independently accepts
-`A004-APPLICATION-MPEG-CALIBRATION-FOREGROUND-P9` at final source authority
-`b3908f6b5e7262839b8c8706c6cfd19a0cfed0c5` and consumes immutable
-Reconstruction closeout `af2c897a083442443345358577ddd63df7aee9ac`.
+Revision 0064 independently accepts
+`A004-APPLICATION-MPEG-PROTECTED-START-HANDOFF-P10` at final source authority
+`2daf7194c0c92412464d10cee67990c3bb270f63` and consumes immutable
+Reconstruction closeout `e7baae8177882edbba8c19fba3069886e972b7bb`.
 
-P9 establishes the trigger-agnostic Application foreground safety transaction
-around manual MPEG CALIBRATION. It freezes P2 before local ownership, suspends
-mouse interpretation, neutralizes/rebases exact published pointer state,
-snapshots the last presented ordinary desktop into caller-owned storage,
-presents P8 calibration from a separate work surface, waits for release
-quarantine, physically restores the frozen desktop before mouse resume, and
-then diverges cleanly: cancel thaws with normal FULL-refresh debt while accept
-retains exact resolved MPEG presentation geometry in ACCEPTED_PROTECTED with P2
-still frozen and P3 still RFB_ONLY.
+P10 closes the exact Application ownership-transfer gap between P9
+ACCEPTED_PROTECTED and the already-accepted R21 MPEG run start. It copies the
+accepted MPEG CALIBRATION geometry without side effects, invokes the existing run
+start exactly once, independently proves exact WAIT_FIRST_FRAME/generation/P3
+geometry before committing the handoff, and then retires only P9's calibration
+authority while P2 remains continuously frozen.
 
-The next dependency is the exact ownership-transfer transaction from that
-protected accepted endpoint into the already-accepted R21 Application MPEG run
-start. This handoff must preserve one continuous P2 protection interval, make
-pre-START rollback distinguishable from irreversible/uncertain START failure,
-and retire P9's protected-calibration authority only after a successful exact
-WAIT_FIRST_FRAME run is proven. It still does not choose a product trigger or
-wire the ordinary main loop.
+P10 also makes rollback truth explicit. A non-OK start result may thaw through
+P9's existing abort only when the run independently proves clean IDLE with zero
+current generation and P3 exact RFB_ONLY/no snapshot. START uncertainty,
+post-START ownership, cleanup ambiguity, or proof contradiction never thaws P2;
+the protected handoff is fault-contained for outer teardown instead.
 
-P9 is now enrolled in the linked PS2 image and changes exact loadable identity;
-that identity is reproducible but remains hardware-pending.
+The next dependency is Pi-side ordinary MPEG product composition. The accepted
+R17 generation owner and WireServer factory seam are already present, but the
+ordinary `pi/wire_runtime.py` intentionally supplies no MPEG factory. Wiring
+the PS2's permanent START+SELECT entry gesture before that Pi rider exists would
+turn a successful local calibration into an unsupported product START.
+
+Frozen H1 authority resolves the previously open retirement-policy input:
+`h1_cp2p_mpeg_producer.py` at forensic commit
+`3426f28b93de9519ca93e5f0e0aaf8b67cfca845` defines the exact-generation
+product retirement default as 8.0 seconds. Current provider authority selects
+native LightDM/Xorg display `:0`; the clean PS2/RFB contract requires exact
+704x462 ServerInit geometry before READY. R25 may therefore compose these
+already-owned product facts into a fresh per-Wire-Session R17 MPEG owner without
+changing R17 mechanism semantics or claiming new hardware qualification.
 
 ## Temporal architecture reconciliation
 
@@ -71,7 +78,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A004_P9_APPLICATION_CALIBRATION_FOREGROUND_FOREMAN_ACCEPTED__A004_P10_PROTECTED_START_HANDOFF_ACTIVE__ORDINARY_MPEG_PRODUCT_ACTIVATION_DEFERRED`
+`A004_P10_PROTECTED_START_HANDOFF_FOREMAN_ACCEPTED__A003_R25_PI_MPEG_ORDINARY_PRODUCT_COMPOSITION_ACTIVE__PS2_MPEG_TRIGGER_MAIN_LOOP_DEFERRED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -112,7 +119,8 @@ APPLICATION_MPEG_Q7_RESTORE_OVERLAP=FOREMAN_ACCEPTED
 APPLICATION_MPEG_FINAL_REVEAL=FOREMAN_ACCEPTED
 MPEG_CALIBRATION_REGION_SOURCE=FOREMAN_ACCEPTED
 APPLICATION_MPEG_CALIBRATION_FOREGROUND=FOREMAN_ACCEPTED
-APPLICATION_MPEG_PROTECTED_START_HANDOFF=RECONSTRUCTION_ACTIVE
+APPLICATION_MPEG_PROTECTED_START_HANDOFF=FOREMAN_ACCEPTED
+PI_MPEG_ORDINARY_PRODUCT_COMPOSITION=RECONSTRUCTION_ACTIVE
 ORDINARY_MPEG_PRODUCT_ACTIVATION=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
@@ -1377,198 +1385,350 @@ P9_HARDWARE_QUALIFIED=NO
 P9_HARDWARE_PENDING=YES
 P9_LOCAL_WORKTREE_STATUS=NOT_OBSERVABLE
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted P10 protected MPEG start-handoff authority
 
 PACKET_ID=A004-APPLICATION-MPEG-PROTECTED-START-HANDOFF-P10
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0063
+ASSIGNING_FOREMAN_STATE_COMMIT=1f1c0495d59ee6f58f45bd929dc88e5101160d79
+ASSIGNING_FOREMAN_LOG_COMMIT=8bc28bd4cb023cbb0cf29625c5da165a37392fc2
+RECONSTRUCTION_STARTING_COMMIT=8bc28bd4cb023cbb0cf29625c5da165a37392fc2
+P10_FINAL_SOURCE_COMMIT=2daf7194c0c92412464d10cee67990c3bb270f63
+P10_RECONSTRUCTION_LOG_COMMIT=e7baae8177882edbba8c19fba3069886e972b7bb
+P10_PRE_LOG_COMMIT_COUNT=6
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260925T091219-0400__reconstruction__a004-presentation__interactive.md`
+
+### P10 criterion disposition
+
+A004-P10-C1=MET
+A004-P10-C2=MET
+A004-P10-C3=MET
+A004-P10-C4=MET
+A004-P10-C5=MET
+A004-P10-C6=MET
+A004-P10-C7=MET
+A004-P10-C8=MET
+A004-P10-C9=MET
+A004-P10-C10=MET
+A004-P10-C11=MET
+A004-P10-C12=MET
+
+Independent Foreman findings:
+
+1. P10 admission requires P9 ACCEPTED_PROTECTED, exact copyable geometry, P2
+   frozen/publication-denied, P3 exact RFB_ONLY/no snapshot, and a healthy IDLE
+   run with zero current generation before start is invoked.
+2. Accepted geometry is copied before mutation and P9's read seam does not thaw
+   P2, consume protected authority or mutate P3.
+3. The composition invokes only the existing
+   `pstvnc_app_mpeg_run_start()` once, passing the copied geometry and exact
+   borrowed P2/P3/Transport/media-clock owners. It owns no generation counter or
+   lower run-start mechanism.
+4. Success is independently re-proven through run status plus exact P3 snapshot:
+   STARTED_WAIT_FIRST_FRAME, nonzero exact current generation, no teardown
+   requirement, P2 still frozen, P3 exact WAIT_FIRST_FRAME and byte/value-equal
+   geometry.
+5. P9's new protected-handoff commit seam is legal only against that exact
+   downstream WAIT_FIRST_FRAME authority. It clears calibration geometry and
+   borrowed foreground references, returns P9 IDLE and never thaws P2.
+6. A failed start may use P9's existing abort only after independent proof that
+   R21 fully unwound to IDLE/current_generation zero and P3 exact
+   RFB_ONLY/no-snapshot while P2 remains frozen.
+7. START uncertainty, FAULTED/non-idle run ownership, nonzero generation,
+   WAIT_FIRST_FRAME or other proof contradiction never invokes P9 abort and
+   never thaws P2.
+8. P9's fault-contained protected-handoff seam preserves frozen protection and
+   retained geometry/evidence rather than advertising a normally reusable
+   ACCEPTED_PROTECTED endpoint after downstream ownership becomes uncertain.
+9. Successful transfer removes duplicate P9 geometry/protection authority; the
+   existing run coordinator becomes the sole Application MPEG lifecycle owner.
+10. P10 allocates, increments, resets and caches no generation identity.
+    Repeated-cycle tests prove generation history remains in app_mpeg_run.
+11. No ordinary `src/app.c`, permanent trigger, live service, retirement,
+    reveal, Pi factory activation, active-MPEG recalibration, lower-owner
+    mechanism or Wire/protocol behavior entered P10.
+12. The final changed-path range is confined to the narrow activation
+    composition, P9 owner seams, focused tests, build/topology enrollment,
+    dictionaries and directly affected lifecycle documentation.
+
+### Exact P10 machine evidence
+
+At exact final source authority
+`2daf7194c0c92412464d10cee67990c3bb270f63`, GitHub Actions run
+`36140699072`, attempt 1, completed SUCCESS. The run object independently
+identifies exact head SHA `2daf7194c0c92412464d10cee67990c3bb270f63`,
+branch `ledge/h1-all-guns`, push event and title
+`test: verify final P10 protected start handoff authority`.
+
+Observed successful jobs:
+
+- host-unit;
+- project-check;
+- dictionary-long;
+- ps2-compile;
+- ps2-link/current-source reproducibility.
+
+Observed host evidence includes:
+
+- `transport_runtime_test: PASS`;
+- `transport_mpeg_test: PASS`;
+- `MPEG_CALIBRATION_UNIT=PASS`;
+- `MPEG_CALIBRATION_MANUAL_TEST=PASS`;
+- `RFB_FLOW_POLICY_TEST=PASS`;
+- `MPEG_PRESENTATION_TEST=PASS`;
+- `MPEG_COMPOSITOR_TEST=PASS`;
+- `APP_MPEG_FRAME_TEST=PASS`;
+- `APP_MPEG_CALIBRATION_TEST=PASS`;
+- `APP_MPEG_ACTIVATION_TEST=PASS`;
+- `app_test: PASS`;
+- `app R15/R16B/R19 tests: PASS`;
+- `app_mpeg_run_test: PASS`.
+
+Observed repository/build evidence:
+
+- `SOURCE_TOPOLOGY_CONTRACT=PASS`;
+- `WORK_LOG_CHECK=PASS records=210 grandfathered=9 format_compat=2 stamp_compat=1`;
+- `SOURCE_DICTIONARIES=PASS`;
+- `PS_TO_VNC_PROJECT_CHECK=PASS`;
+- `CLEAN_PS2_COMPILE_CHECK=PASS`;
+- `ISSUE7_LINKED_BUILD=PASS`;
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+
+Exact linked identity:
+
+`ELF_PRISTINE_SHA256=7a25c34ccbd1b0047ee346acce4b273c85cc4dae5a38be6ed8e153089817d64d`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=38eb2ed29857687d232d604f21a8e9b2bb267a24fa8605a57149fd1f204033fb`
+`PT_LOAD_BYTES=512788`
+`PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74`
+
+P10_SOURCE_COMPLETE=YES
+P10_HOST_TESTED=PASS
+P10_PROJECT_CHECK=PASS
+P10_STRICT_DICTIONARIES=PASS
+P10_PS2_COMPILE=PASS
+P10_PS2_LINK=PASS
+P10_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+P10_LOADABLE_BYTES_CHANGED=YES
+P10_MACHINE_EVIDENCE=GITHUB_ACTIONS
+P10_INDEPENDENT_VALIDATION=NOT_RUN
+P10_OPERATOR_OBSERVED=NO
+P10_HARDWARE_QUALIFIED=NO
+P10_HARDWARE_PENDING=YES
+P10_LOCAL_WORKTREE_STATUS=NOT_OBSERVABLE
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A003-PI-MPEG-ORDINARY-PRODUCT-COMPOSITION-R25
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
-WORK_ITEM_KEY=a004-presentation
+WORK_ITEM_KEY=a003-mpeg-generation
 WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0063
-BASED_ON_ACCEPTED_P9_SOURCE=b3908f6b5e7262839b8c8706c6cfd19a0cfed0c5
-BASED_ON_P9_LOG=af2c897a083442443345358577ddd63df7aee9ac
-BASED_ON_ACCEPTED_R24_SOURCE=d777835c53a0e829e423f76bd0f78097c88e0ffb
-BASED_ON_ACCEPTED_R21_RUN_START=FOREMAN_ACCEPTED
+BASED_ON_FOREMAN_STATE_REVISION=0064
+BASED_ON_ACCEPTED_P10_SOURCE=2daf7194c0c92412464d10cee67990c3bb270f63
+BASED_ON_P10_LOG=e7baae8177882edbba8c19fba3069886e972b7bb
+BASED_ON_ACCEPTED_R17_PI_MPEG_OWNER=cc7dc1237957bfd288addc8379caae47e83bc5a6
+BASED_ON_ACCEPTED_R15_PI_RFB_COMPOSITION=FOREMAN_ACCEPTED
+BASED_ON_ACCEPTED_R12_PROVIDER_ENDPOINT=FOREMAN_ACCEPTED
+H1_FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
 BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0007
 
 ### Objective
 
-Compose one exact trigger-agnostic Application ownership transfer from P9
-`ACCEPTED_PROTECTED` into the already-accepted R21
-`pstvnc_app_mpeg_run_start()` transaction.
+Activate the already-accepted R17 exact-generation MPEG owner in the ordinary
+R15 Pi Wire product composition, without changing Wire physical ownership,
+generation mechanics, RFB attachment semantics or protocol bytes.
 
-P10 must preserve one continuous P2 freeze from calibration acceptance through
-MPEG WAIT_FIRST_FRAME, retire the P9 protected-calibration authority only after a
-successful exact run start is independently proven, and distinguish clean
-pre-START rollback from any uncertain/irreversible start failure.
+R25 supplies `WireServer` with one fresh session-scoped
+`MpegGenerationController` factory alongside the existing fresh RFB attachment
+factory. Construction after exact Q4 ACTIVE remains WireServer-owned; FFmpeg
+producer launch remains START-owned inside R17. Merely starting the service,
+accepting TCP, completing Q4, attaching RFB, or receiving MPEG credit must not
+launch a producer.
 
-P10 still does not choose START+SELECT or any other product trigger, does not
-wire ordinary `src/app.c`, and does not activate the currently dormant Pi MPEG
-factory. Pi ordinary MPEG composition remains a separate downstream dependency;
-its retirement deadline must be grounded in Configuration/evidence rather than
-invented in this packet.
+The current composition inputs are existing product authority, not new tuning:
+
+- selected native provider/capture display: `:0` from the accepted R11/R12
+  LightDM/Xorg + X0tigervnc provider route;
+- ordinary product desktop/capture coordinate contract: 704x462, the exact
+  clean display/RFB geometry that PS2 `pstvnc_rfb_session_start()` requires
+  from ServerInit before READY;
+- exact producer retirement deadline: 8.0 seconds, recovered from the frozen H1
+  all-guns exact-generation producer's
+  `DEFAULT_RETIRE_TIMEOUT_SECONDS` at the forensic source commit above.
+
+Represent these facts through one narrow selected Pi MPEG composition/profile
+authority. Do not scatter raw literals through WireServer or product startup.
+R17's existing selected producer profile remains the owner of channel window,
+buffer capacity, maximum MPEG dimensions and frame rate.
 
 ### Required behavior
 
-1. **Exact dual-owner admission.** Start handoff is legal only from P9
-   ACCEPTED_PROTECTED with copyable exact geometry, P2 still frozen, P3 exact
-   RFB_ONLY/no snapshot, and one session-scoped R21/R24 run coordinator in IDLE
-   with current_generation zero. Any mismatch rejects before invoking run start.
-2. **Copy before mutation.** Copy P9's accepted geometry into an
-   Application-local value before invoking R21. The read must not thaw P2,
-   consume P9 protection or mutate P3.
-3. **One existing run-start invocation.** Invoke
-   `pstvnc_app_mpeg_run_start()` exactly once using that exact geometry and the
-   same P2/P3 owners plus the caller-supplied current Transport access and
-   session media clock. Do not duplicate generation allocation, profile lookup,
-   worker/runtime startup, P3 arm, P7 init or START serialization.
-4. **Successful run proof before ownership transfer.** Treat R21 OK as
-   insufficient by itself. Re-read run status and P3 snapshot and require:
-   Application STARTED_WAIT_FIRST_FRAME, nonzero exact current generation,
-   no teardown requirement, P2 still frozen, P3 exact WAIT_FIRST_FRAME with the
-   same generation and geometry copied from P9.
-5. **Commit P9 without thaw only after proof.** Add the narrow P9 owner operation
-   needed to commit a successful protected handoff. It must verify the exact
-   frozen P2 + WAIT_FIRST_FRAME P3 snapshot matches its retained accepted
-   geometry, then clear only calibration-protected geometry/borrowed foreground
-   authority and return P9 to reusable IDLE **without thawing P2**. It must not
-   arm/promote/retire P3 or touch the run owner.
-6. **Clean pre-START failure rolls back protection only when proven.** If
-   `pstvnc_app_mpeg_run_start()` returns non-OK but the run independently
-   proves clean IDLE/current_generation zero and P3 proves exact RFB_ONLY/no
-   snapshot, use P9's existing explicit abort to thaw P2 once and return P9
-   IDLE. Preserve P2's resulting FULL/HOLD debt. Do not manufacture rollback
-   from a result code alone.
-7. **Uncertain/irreversible failure never thaws.** If run start fails and clean
-   pre-START rollback cannot be independently proven—including run FAULTED,
-   nonzero/current generation ownership, P3 WAIT_FIRST_FRAME or any inconsistent
-   state—leave P2 frozen, do not call P9 abort, and mark the handoff transaction
-   faulted/teardown-required for outer recovery.
-8. **Truthful P9 failure containment.** Provide the smallest P9-owned seam needed
-   to mark its ACCEPTED_PROTECTED authority fault-contained without thawing when
-   the run has acquired/possibly acquired downstream authority. Do not leave P9
-   advertising a normally usable protected acceptance after P3 is no longer
-   RFB_ONLY.
-9. **No duplicate ownership after success.** On successful handoff, P9 no longer
-   exposes accepted geometry or owns live protection; the run coordinator is
-   the sole Application MPEG-run lifecycle owner while P2 remains frozen under
-   that transaction's accepted contract.
-10. **Generation history remains run-owned.** P10 never allocates, increments,
-    resets or caches MPEG generation identity independently. Repeated successful
-    cycles use R24's retained run-coordinator generation history.
-11. **No trigger/service/retirement expansion.** P10 performs no ordinary
-    controller trigger detection, no `app_mpeg_run_service()`, retirement,
-    restored-RFB proof or reveal. It does not activate/reconfigure the Pi MPEG
-    factory and does not implement active-MPEG recalibration.
-12. **Scope/evidence.** Keep lower-owner RFB, input-runtime, P3/compositor,
-    Platform, P7/MPEG/Transport mechanisms, Configuration, Pi product source,
-    AUDIO, DESKTOP CALIBRATION and Wire bytes unchanged. Add focused deterministic
-    composition evidence and keep canonical host/project/dictionary/PS2
-    compile/link/reproducibility green.
+1. **One selected Pi MPEG composition profile.** Publish the exact ordinary
+   product source/display/bounds/retirement inputs above through one narrow,
+   deterministic owner/projection. The 8.0-second deadline is failure detection,
+   never success; do not copy H1's obsolete process wrapper or experiment
+   diagnostics.
+2. **Fresh controller per Wire Session.** The ordinary runtime supplies exactly
+   one factory `session_id -> MpegGenerationController`. Each invocation
+   constructs a fresh R17 controller bound to that exact nonzero session ID,
+   selected producer profile, `:0`, 704x462 and the selected retirement
+   deadline.
+3. **Q4 remains the attachment fence.** Preserve WireServer's accepted
+   sequencing: the MPEG controller is constructed/attached only after exact Q4
+   ACTIVE/session identity exists. No provisional/rejected peer receives MPEG
+   authority.
+4. **START remains sole producer edge.** Controller construction is inert.
+   FFmpeg/capture producer creation occurs only inside the existing exact R17
+   START path. CREDIT, RFB traffic, idle service, accept, or ordinary listener
+   startup cannot launch it.
+5. **RFB and MPEG riders coexist without ownership merger.** Ordinary runtime
+   supplies both the accepted RFB attachment factory and the new MPEG factory to
+   the same WireServer. RFB provider lifecycle remains lazy on RFB CREDIT and
+   independent from MPEG generation lifecycle.
+6. **Sole physical Wire owner unchanged.** Every MPEG DATA and exact RETIRE
+   completion still serializes only through `WireConnectionOwner`; factory or
+   controller code obtains no PS2-facing socket/send/sequence ownership.
+7. **Session-scoped generation history.** Repeated generations N/N+1 within one
+   Wire Session use the same R17 controller and its monotonic high-water fence.
+   A later Wire Session receives a distinct controller with no dead-generation
+   object, producer, suppression, buffer, lease or wake ownership from its
+   predecessor.
+8. **Exact session retirement.** Wire-session finish still calls the accepted
+   controller `close()` before the owner returns INACTIVE. An unproven
+   producer/suppression retirement makes that session outcome failed; timeout
+   cannot manufacture clean retirement.
+9. **Factory failure is session failure, not server rebind.** Construction or
+   attachment failure after Q4 uses the existing WireServer terminal-session
+   path. Do not retry/rebind the same physical session or silently fall back to
+   an RFB-only interpretation of MPEG-capable product composition.
+10. **No PS2 activation in R25.** Do not add START+SELECT recognition, P9/P10
+    calls, run service/retirement/reveal wiring or active-MPEG recalibration to
+    `src/app.c`. The PS2 ordinary main-loop trigger remains the next downstream
+    dependency.
+11. **No live system mutation.** Do not reload/enable/start/stop systemd, mutate
+    LightDM/Xorg/X0tigervnc, launch a real FFmpeg process in tests, or claim
+    operator/hardware qualification. Existing stager may be updated only if a
+    genuinely new maintained profile/projection file must be installed.
+12. **Scope/evidence.** Keep R17 mechanism, WireServer physical-I/O semantics,
+    RFB attachment/provider mechanisms, PS2 Transport/Application, AUDIO and
+    Wire bytes unchanged. Add deterministic composition tests and keep canonical
+    host/project/dictionary/PS2 compile/link/reproducibility evidence green.
 
 ### Acceptance criteria
 
-- A004-P10-C1 HANDOFF_ADMISSION_REQUIRES_EXACT_P9_PROTECTION_AND_IDLE_RUN
-- A004-P10-C2 ACCEPTED_GEOMETRY_COPY_IS_SIDE_EFFECT_FREE_BEFORE_RUN_START
-- A004-P10-C3 EXACTLY_ONE_EXISTING_R21_START_TRANSACTION_IS_INVOKED
-- A004-P10-C4 SUCCESS_REQUIRES_INDEPENDENT_WAIT_FIRST_FRAME_GENERATION_GEOMETRY_PROOF
-- A004-P10-C5 P9_COMMIT_AFTER_SUCCESS_CLEARS_CALIBRATION_AUTHORITY_WITHOUT_P2_THAW
-- A004-P10-C6 PROVEN_CLEAN_PRESTART_FAILURE_USES_EXISTING_P9_ABORT_AND_FULL_DEBT
-- A004-P10-C7 UNCERTAIN_OR_IRREVERSIBLE_START_FAILURE_NEVER_THAWS_P2
-- A004-P10-C8 P9_UNCERTAIN_HANDOFF_STATE_IS_FAULT_CONTAINED_NOT_NORMAL_ACCEPTED
-- A004-P10-C9 SUCCESS_LEAVES_RUN_SOLE_LIFECYCLE_OWNER_WITH_P2_CONTINUOUSLY_FROZEN
-- A004-P10-C10 GENERATION_ALLOCATION_AND_HISTORY_REMAIN_EXCLUSIVELY_APP_MPEG_RUN_OWNED
-- A004-P10-C11 NO_TRIGGER_LIVE_SERVICE_RETIRE_REVEAL_PI_FACTORY_OR_RECALIBRATION_SCOPE
-- A004-P10-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A003-R25-C1 SELECTED_PI_MPEG_COMPOSITION_PROFILE_HAS_GROUNDED_DISPLAY_BOUNDS_AND_RETIRE_DEADLINE
+- A003-R25-C2 ORDINARY_RUNTIME_SUPPLIES_ONE_FRESH_EXACT_SESSION_MPEG_FACTORY
+- A003-R25-C3 MPEG_CONTROLLER_ATTACHMENT_REMAINS_POST_Q4_ACTIVE_ONLY
+- A003-R25-C4 CONTROLLER_CONSTRUCTION_AND_CREDIT_ARE_PRODUCER_INERT_UNTIL_EXACT_START
+- A003-R25-C5 RFB_AND_MPEG_RIDERS_COEXIST_WITH_INDEPENDENT_LIFECYCLES
+- A003-R25-C6 WIRE_CONNECTION_OWNER_REMAINS_SOLE_PHYSICAL_MPEG_SERIALIZER
+- A003-R25-C7 SAME_SESSION_REPEATED_GENERATIONS_PRESERVE_HIGH_WATER_FRESH_SESSION_REPLACES_OWNER
+- A003-R25-C8 SESSION_FINISH_REQUIRES_PROVEN_MPEG_CONTROLLER_RETIREMENT
+- A003-R25-C9 FACTORY_OR_ATTACHMENT_FAILURE_TERMINATES_SESSION_WITHOUT_REBIND_OR_FALLBACK
+- A003-R25-C10 NO_PS2_TRIGGER_MAIN_LOOP_RECALIBRATION_OR_AUDIO_SCOPE_CREEP
+- A003-R25-C11 NO_LIVE_PI_SYSTEM_OR_REAL_FFMPEG_TEST_MUTATION
+- A003-R25-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
 All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-P10 must prove at least:
+R25 must prove at least:
 
-1. admission rejects P9 not ACCEPTED_PROTECTED, unfrozen P2, non-RFB_ONLY P3,
-   non-idle/faulted run, or uncopyable geometry before any start call;
-2. accepted geometry copy causes no P2/P3/P9 event;
-3. exactly one start call receives byte/value-identical geometry and the exact
-   borrowed P2/P3/Transport/media-clock owners;
-4. a successful start that does not independently prove exact
-   STARTED_WAIT_FIRST_FRAME + P3 snapshot is treated as contradiction, not
-   success;
-5. exact success proves P2 never thawed between P9 accept and run
-   WAIT_FIRST_FRAME;
-6. P9 successful handoff commit clears its geometry/protection authority without
-   calling P2 set_frozen(0), while run/P3 retain exact generation geometry;
-7. representative clean pre-START failures whose R21 unwind returns run IDLE/P3
-   RFB_ONLY invoke P9 abort exactly once and leave ordinary P2 FULL/HOLD debt;
-8. START send failure or cleanup/owner uncertainty leaves P2 frozen, does not
-   invoke P9 abort and fault-contains P9/handoff authority for outer teardown;
-9. no double-start is possible from one accepted P9 transaction;
-10. after a later independently completed R24 cycle and a new P9 acceptance, the
-    same run coordinator would allocate the successor generation rather than P10
-    owning any counter;
-11. direct source scan contains no permanent trigger, run live-service,
-    retirement/reveal, Pi-factory activation or lower-owner mutation;
-12. P9/P8/P1, R21-R24, P2/P3/P7/Transport/MPEG and ordinary Application
-    regressions remain green.
+1. selected Pi composition profile yields exactly display `:0`, desktop
+   704x462 and retirement deadline 8.0 seconds from named repository authority,
+   while existing R17 producer profile values remain unchanged;
+2. ordinary `build_product_wire_server()` supplies both a non-null RFB
+   attachment factory and a non-null MPEG generation factory;
+3. rejected/malformed Q4 never invokes the MPEG factory;
+4. accepted Q4 invokes the factory exactly once with the exact allocated Wire
+   Session ID and attaches that same controller;
+5. constructing/attaching an accepted controller performs no producer launch;
+6. with injected/fake producer ownership, exact START is the first producer
+   launch edge and channel-4 emission/RETIRE completion still use the existing
+   sole Wire serializer;
+7. idle/RFB-only operation never invokes MPEG producer creation;
+8. same-session generation N -> exact RETIRE -> N+1 uses one controller and
+   rejects stale generation, while a sequential Session B receives a distinct
+   controller object;
+9. session EOF/failure closes the exact controller; close failure makes the
+   session outcome protocol_failed and cannot be relabeled clean;
+10. factory construction failure after Q4 is terminal for that session but does
+    not corrupt the persistent listener's ability to accept a later fresh
+    session;
+11. source scans prove no new PS2-facing send/recv/sequence path, no ordinary
+    `src/app.c` MPEG activation and no protocol-byte change;
+12. R15/R16A/R17 Pi suites plus canonical host/project/dictionary/PS2
+    compile/link/current-source reproducibility remain green.
 
 ### Authorized source surface
 
-P10 may modify only the smallest justified subset of:
+R25 may modify only the smallest justified subset of:
 
-- `src/app_mpeg_calibration.c` / `.h` for narrow protected-handoff
-  commit/fault-containment owner seams;
-- new narrowly named `src/app_mpeg_activation.c` / `.h` (preferred) for the
-  cross-owner P9 -> R21 composition;
-- focused `tests/unit/app_mpeg_activation_test.c` and/or directly affected P9
-  test coverage;
-- `tests/Makefile`;
-- root symbol dictionaries and source-topology/build manifests only if genuinely
-  required;
-- directly affected Application MPEG lifecycle documentation.
+- `pi/wire_runtime.py`;
+- one narrow Pi MPEG composition/profile module or existing MPEG profile
+  projection if needed to avoid product magic literals;
+- deterministic profile generator/source authority only if genuinely required
+  for that narrow projection;
+- `tests/unit/pi_mpeg_generation_test.py`,
+  `tests/unit/pi_wire_server_test.py` or one focused Pi composition fixture;
+- `scripts/pi/install-wire-runtime.sh` only if a genuinely new maintained Pi
+  product file must be staged;
+- Pi/root symbol dictionaries and source-topology/check manifests only when
+  genuinely required;
+- directly affected Pi MPEG lifecycle documentation.
 
-Do not modify ordinary `src/app.c`, `src/app_mpeg_run.*`, P8/P1 behavior,
-RFB/input-runtime/local-UI lower owners, Display/P3/compositor/Platform
-mechanisms, P7/MPEG worker/runtime/backend, Transport, Configuration, Pi product
-source, AUDIO, DESKTOP CALIBRATION or Wire protocol. If the accepted R21/P9
-public seams cannot express the transaction without a lower-owner change, stop
-and return BLOCKED with the exact missing contract rather than widening scope.
+Do not modify `pi/wire_server.py` or `pi/mpeg_generation.py` unless the
+worker exposes an accepted-public-seam defect that makes this packet impossible;
+in that case return BLOCKED with the exact missing contract rather than silently
+widening lower-owner mechanism scope.
+
+Do not modify PS2 `src/app.c`, `src/app_mpeg_*`, RFB/Transport/MPEG/Display
+mechanisms, AUDIO, calibration behavior, systemd runtime state or Wire protocol
+bytes.
 
 ### Required checks before handoff
 
-Run focused P10 transfer tests plus P9/P8/P1, R21-R24, P2/P3/compositor/P7,
-Transport/MPEG and ordinary Application regressions; canonical host tests;
-project check; complete strict dictionary audit; pinned PS2 compile/link and
-current-source reproducibility. Record the exact linked identity if P10
-enrollment changes loadable bytes.
+Run focused Pi ordinary-composition tests plus the complete R15/R16A/R17
+Wire/RFB/MPEG Pi regressions; canonical host tests; project check; complete
+strict dictionary audit; pinned PS2 compile/link and current-source
+reproducibility.
+
+If only Pi/runtime/config-projection bytes change, prove whether the PS2 linked
+PT_LOAD remains exactly P10 or changes. Never infer identity stability from
+source scope.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` revision 0007 using:
 
 - ROLE_KEY=`reconstruction`;
-- WORK_ITEM_KEY=`a004-presentation`;
+- WORK_ITEM_KEY=`a003-mpeg-generation`;
 - WORKER_KEY=`interactive`.
 
 Then stop and return the baton.
 
 ## Current hardware debt
 
-Current fully Foreman-accepted behavior-bearing loadable authority is P9:
+Current fully Foreman-accepted behavior-bearing loadable authority is P10:
 
-`PT_LOAD_SHA256=b57964cb50464bcbe8239865f7d54d890e0fffe9d5bf4479b79d178c0293270a`
-`PT_LOAD_BYTES=510996`
+`PT_LOAD_SHA256=38eb2ed29857687d232d604f21a8e9b2bb267a24fa8605a57149fd1f204033fb`
+`PT_LOAD_BYTES=512788`
 
 This identity is repository-reproducible and not physically hardware-qualified.
 
-P10 may add linked Application composition bytes. Any new exact PT_LOAD identity
-remains hardware-pending until separately physically qualified.
+R25 is primarily Pi-side composition. It must nevertheless report exact linked
+PS2 identity from the canonical build; a shared configuration/projection change
+must not be assumed load-neutral.
 
-The accepted R17 Pi MPEG mechanism is still deliberately dormant in ordinary
-`pi/wire_runtime.py`. Its later product factory composition remains deferred;
-no retirement-timeout value is invented by State 0063.
+The 8.0-second Pi producer-retirement deadline is recovered historical product
+policy, not proof that reconstructed R17/R25 bytes are hardware-qualified.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
