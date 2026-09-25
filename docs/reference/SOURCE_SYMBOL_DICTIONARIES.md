@@ -11,7 +11,7 @@ This portal is generated from participating product `SYMBOLS.md` files.
 | `src/diagnostics` | [`src/diagnostics/SYMBOLS.md`](../../src/diagnostics/SYMBOLS.md) | COMPLETE | 69 |
 | `src/display` | [`src/display/SYMBOLS.md`](../../src/display/SYMBOLS.md) | COMPLETE | 303 |
 | `src/framebuffer` | [`src/framebuffer/SYMBOLS.md`](../../src/framebuffer/SYMBOLS.md) | COMPLETE | 94 |
-| `src/input` | [`src/input/SYMBOLS.md`](../../src/input/SYMBOLS.md) | COMPLETE | 607 |
+| `src/input` | [`src/input/SYMBOLS.md`](../../src/input/SYMBOLS.md) | COMPLETE | 635 |
 | `src/media` | [`src/media/SYMBOLS.md`](../../src/media/SYMBOLS.md) | COMPLETE | 152 |
 | `src/mpeg` | [`src/mpeg/SYMBOLS.md`](../../src/mpeg/SYMBOLS.md) | COMPLETE | 611 |
 | `src/platform` | [`src/platform/SYMBOLS.md`](../../src/platform/SYMBOLS.md) | COMPLETE | 214 |
