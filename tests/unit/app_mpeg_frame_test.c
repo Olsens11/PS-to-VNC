@@ -606,6 +606,110 @@ static void test_idle_reports_worker_finished_without_outcome(void)
     CHECK(g_compositor.call_count == 0);
 }
 
+static void test_session_abort_abandons_claim_once_without_presentation(void)
+{
+    fixture_t fixture;
+    pstvnc_app_mpeg_frame_service_result_t result;
+    pstvnc_app_mpeg_frame_status_t status;
+    int compositor_calls;
+    int release_calls;
+
+    fixture_init(&fixture);
+    fake_worker_offer(&fixture, 1u);
+    CHECK(pstvnc_app_mpeg_frame_consumer_service(
+        &fixture.consumer,
+        TEST_GENERATION,
+        0u,
+        &result) == PSTVNC_APP_MPEG_FRAME_PRESENTED);
+
+    fake_worker_offer(&fixture, 2u);
+    CHECK(pstvnc_app_mpeg_frame_consumer_service(
+        &fixture.consumer,
+        TEST_GENERATION,
+        1050u,
+        &result) == PSTVNC_APP_MPEG_FRAME_WAIT);
+    CHECK(result.claim_outstanding);
+    CHECK(g_worker.claimed);
+
+    compositor_calls = g_compositor.call_count;
+    release_calls = g_worker.release_calls;
+
+    CHECK(pstvnc_app_mpeg_frame_consumer_abandon_claim(
+        &fixture.consumer,
+        TEST_GENERATION) == PSTVNC_APP_MPEG_FRAME_OK);
+    CHECK(!g_worker.claimed);
+    CHECK(g_worker.release_calls == release_calls + 1);
+    CHECK(g_compositor.call_count == compositor_calls);
+
+    CHECK(pstvnc_app_mpeg_frame_consumer_status(
+        &fixture.consumer,
+        TEST_GENERATION,
+        &status) == PSTVNC_APP_MPEG_FRAME_OK);
+    CHECK(status.faulted);
+    CHECK(!status.claim_outstanding);
+    CHECK(status.held_ordinal == 0u);
+
+    /* Idempotent no-claim terminalization never releases/presents twice. */
+    release_calls = g_worker.release_calls;
+    CHECK(pstvnc_app_mpeg_frame_consumer_abandon_claim(
+        &fixture.consumer,
+        TEST_GENERATION) == PSTVNC_APP_MPEG_FRAME_OK);
+    CHECK(g_worker.release_calls == release_calls);
+    CHECK(g_compositor.call_count == compositor_calls);
+
+    CHECK(pstvnc_app_mpeg_frame_consumer_service(
+        &fixture.consumer,
+        TEST_GENERATION,
+        1100u,
+        &result) == PSTVNC_APP_MPEG_FRAME_FAULTED);
+}
+
+static void test_session_abort_abandon_failure_retains_exact_claim(void)
+{
+    fixture_t fixture;
+    pstvnc_app_mpeg_frame_service_result_t result;
+    pstvnc_app_mpeg_frame_status_t status;
+    int compositor_calls;
+
+    fixture_init(&fixture);
+    fake_worker_offer(&fixture, 1u);
+    CHECK(pstvnc_app_mpeg_frame_consumer_service(
+        &fixture.consumer,
+        TEST_GENERATION,
+        0u,
+        &result) == PSTVNC_APP_MPEG_FRAME_PRESENTED);
+
+    fake_worker_offer(&fixture, 2u);
+    CHECK(pstvnc_app_mpeg_frame_consumer_service(
+        &fixture.consumer,
+        TEST_GENERATION,
+        1050u,
+        &result) == PSTVNC_APP_MPEG_FRAME_WAIT);
+    compositor_calls = g_compositor.call_count;
+
+    g_worker.release_result = PSTVNC_MPEG_WORKER_SYNC_FAILED;
+    CHECK(pstvnc_app_mpeg_frame_consumer_abandon_claim(
+        &fixture.consumer,
+        TEST_GENERATION) == PSTVNC_APP_MPEG_FRAME_RELEASE_FAILED);
+    CHECK(g_worker.claimed);
+    CHECK(g_compositor.call_count == compositor_calls);
+
+    CHECK(pstvnc_app_mpeg_frame_consumer_status(
+        &fixture.consumer,
+        TEST_GENERATION,
+        &status) == PSTVNC_APP_MPEG_FRAME_OK);
+    CHECK(status.faulted);
+    CHECK(status.claim_outstanding);
+    CHECK(status.held_ordinal == 2u);
+
+    g_worker.release_result = PSTVNC_MPEG_WORKER_OK;
+    CHECK(pstvnc_app_mpeg_frame_consumer_abandon_claim(
+        &fixture.consumer,
+        TEST_GENERATION) == PSTVNC_APP_MPEG_FRAME_OK);
+    CHECK(!g_worker.claimed);
+    CHECK(g_compositor.call_count == compositor_calls);
+}
+
 static void test_wrong_generation_fails_closed(void)
 {
     fixture_t fixture;
@@ -635,6 +739,8 @@ int main(void)
     test_scheduler_decision_failure_contains_claim();
     test_scheduler_init_failure_after_first_sync();
     test_idle_reports_worker_finished_without_outcome();
+    test_session_abort_abandons_claim_once_without_presentation();
+    test_session_abort_abandon_failure_retains_exact_claim();
     test_wrong_generation_fails_closed();
 
     if (failures != 0) {
