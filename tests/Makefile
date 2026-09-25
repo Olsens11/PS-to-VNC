@@ -9,6 +9,7 @@ BUILD_DIR = .build
 unit: \
 	$(BUILD_DIR)/config_text_test \
 	$(BUILD_DIR)/config_product_action_bindings_test \
+	$(BUILD_DIR)/management_config_get_test \
 	$(BUILD_DIR)/video_mode_test \
 	$(BUILD_DIR)/rfb_wire_test \
 	$(BUILD_DIR)/framebuffer_test \
@@ -34,6 +35,7 @@ unit: \
 	$(BUILD_DIR)/app_mpeg_run_test
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/config_product_action_bindings_test
+	./$(BUILD_DIR)/management_config_get_test
 	./$(BUILD_DIR)/video_mode_test
 	./$(BUILD_DIR)/rfb_wire_test
 	./$(BUILD_DIR)/framebuffer_test
@@ -86,6 +88,19 @@ $(BUILD_DIR)/config_product_action_bindings_test: \
 		../src/config/product_action_bindings.c \
 		../src/config/text.c \
 		../src/input/product_action.c \
+		-o $@
+
+$(BUILD_DIR)/management_config_get_test: \
+	unit/management_config_get_test.c \
+	../src/management/config_get.c \
+	../src/management/config_get.h \
+	../src/platform/ps2_network.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/management_config_get_test.c \
+		../src/management/config_get.c \
+		-Wl,--wrap=send \
+		-Wl,--wrap=recv \
 		-o $@
 
 $(BUILD_DIR)/video_mode_test: \
@@ -460,6 +475,15 @@ unit: app-mpeg-session-foundation-source-unit
 app-mpeg-session-foundation-source-unit:
 	python3 $(APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST)
 
+
+
+MANAGEMENT_CONFIG_GET_SOURCE_TEST := unit/management_config_get_source_test.py
+
+.PHONY: management-config-get-source-unit
+unit: management-config-get-source-unit
+
+management-config-get-source-unit:
+	python3 $(MANAGEMENT_CONFIG_GET_SOURCE_TEST)
 
 
 CONFIG_PRODUCT_ACTION_BINDINGS_SOURCE_TEST := unit/config_product_action_bindings_source_test.py
