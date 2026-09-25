@@ -16,6 +16,7 @@
  */
 
 #include "app.h"
+#include "app_product_bindings.h"
 
 #include <stdint.h>
 
@@ -695,6 +696,7 @@ int pstvnc_app_run_with_session_profiles(
     static const char fatal[] = "PSTVNC_STAGE FATAL";
     static pstvnc_input_runtime_t input_runtime;
 
+    pstvnc_app_product_bindings_snapshot_t desired_product_bindings;
     int graphics_ready = 0;
     int diagnostics_ready = 0;
 
@@ -712,12 +714,24 @@ int pstvnc_app_run_with_session_profiles(
     if (pstvnc_ps2_network_wait_link() < 0)
         goto fail_resident;
 
+    /*
+     * R32 acquires desired binding authority once per resident process, after
+     * the private link exists and before the first physical PSTV attempt.
+     * Fetch/parse failures are deliberately nonfatal zero-binding fallbacks.
+     *
+     * The snapshot is not installed into Input in R32. It remains immutable
+     * resident Application authority across all provider-replacement attempts.
+     */
+    if (!pstvnc_app_product_bindings_acquire(&desired_product_bindings))
+        goto fail_resident;
+
     if (pstvnc_diagnostics_init() == 0)
         diagnostics_ready = 1;
 
     /*
-     * IOP/network/link, diagnostics, and an already-created graphics context are
-     * resident application ownership. Every pass below is one ordinary RFB
+     * IOP/network/link, the R32 desired-binding snapshot, diagnostics, and an
+     * already-created graphics context are resident application ownership.
+     * Every pass below is one ordinary RFB
      * attempt with fresh network, Transport/Q4, media-clock, RFB, framebuffer
      * and input authority. A typed provider failure is the only condition that
      * re-enters this admission path.
