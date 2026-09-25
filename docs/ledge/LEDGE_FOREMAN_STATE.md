@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0069
-RECORDED_AT=2026-09-25T16:24:40-04:00
+STATE_REVISION=0070
+RECORDED_AT=2026-09-25T17:50:46-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0068
-SUPERSEDES_FOREMAN_STATE_REVISION=0068
+BASED_ON_FOREMAN_STATE_REVISION=0069
+SUPERSEDES_FOREMAN_STATE_REVISION=0069
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,45 +14,39 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0069 independently accepts
-`A005-INPUT-RUNTIME-PRODUCT-ACTION-PUBLICATION-R29` at final source authority
-`56092a3a6d02df4a9feb89aec5c095e2542b178f` and consumes immutable
-Reconstruction closeout `6f6cffe32874b615bfdb71c03eef328d7c2a7188`.
+Revision 0070 independently accepts
+`B10-HUMAN-READABLE-PRODUCT-ACTION-BINDINGS-R30` at final source authority
+`6f42cf5ada266c46e2c6a6b84a91b823d939d1c8` and consumes immutable
+Reconstruction closeout `377416cd03a9f24bf1d6b0cd3145b3729b600fd1`.
 
-R29 closes the live Input publication boundary without selecting or executing
-any product binding. Each Input runtime owns fresh R28 resolver history, accepts
-only explicit caller-owned immutable binding values before worker start,
-observes every trustworthy physical poll, consumes one explicit caller-owned
-DESKTOP eligibility fact, and publishes a resolved semantic PRODUCT_ACTION
-through the existing ordinary FIFO before same-sample controller/mouse work.
+R30 closes the Configuration-owned representation boundary beneath live product
+bindings. It adds one bounded `[bindings]` document model whose recognized
+`mpeg_calibration` value maps exact symbolic project button names plus
+SETTLE/RELEASE/HOLD and DESKTOP/GLOBAL directly into the accepted R28 typed
+binding. Missing recognized authority produces an explicit zero-binding model;
+no compiled/default physical chord is introduced.
 
-Independent review confirms zero-binding behavior remains the ordinary default,
-resolver/publication failures are fail-closed, physical continuity and libpad
-handoff boundaries invalidate stale gesture history, ordinary mouse suspension
-does not create another gesture owner, and no Input source reaches into
-Application/UI/RFB/MPEG/media-clock/Transport/AUDIO/Pi/config persistence.
-Exact source CI is green. R29 changes PS2 linked bytes, so its reproducible
-PT_LOAD becomes the newest hardware-debt identity.
+Independent review confirms strict recognized validation, tolerant unknown
+future content, atomic parse publication, deterministic canonical formatting,
+bounded fixed storage, exact R28 validation reuse, and no management/runtime/
+Application/UI/RFB/MPEG/media-clock/Transport/AUDIO/Pi effect. START and SELECT
+exist only as ordinary symbolic button names; there is no START+SELECT special
+case or H1 750 ms adapter. Exact final CI is green. R30 changes linked PS2 bytes,
+so its reproducible PT_LOAD becomes the newest hardware-debt identity.
 
-The next dependency is Configuration-owned physical binding authority, not
-Application execution. Clean Architecture and B10 require controller/hotkey
-bindings to live in the same deliberate human-readable configuration model that
-can be inspected, backed up, manually edited and later edited through local UI.
-B10 also explicitly warns that the historical compiled B4A binding table is not
-a completed product configuration contract.
+The next dependency is the read-only management mechanism that can obtain the
+human-readable document. B10/B11 and Clean Architecture distinguish management
+transport from configuration semantics: the historical PS2 retrieved
+`/ps2vnc.conf` over a separate TCP 5959 HTTP connection, accepted only HTTP
+200, bounded header/body storage, and left the response untrusted for a later
+typed parser. Configuration retrieval failure was not itself permission to
+damage or replace the independent VNC/Wire session.
 
-R30 therefore reconstructs a small strict human-readable product-action binding
-model on top of the existing config text helpers and accepted R28 typed values.
-The current document grammar is a dedicated `[bindings]` section. The currently
-recognized key is `mpeg_calibration`; absence means no binding. A present value
-encodes symbolic button chord, trigger and context and publishes only a validated
-R28 binding value. Unknown future sections/keys remain opaque where ownership is
-unambiguous.
-
-R30 does not fetch `/ps2vnc.conf`, persist anything, install a product default,
-wire Application, execute P9/P10, or choose a physical chord on the user's
-behalf. It earns the representation and parser/formatter authority from which a
-later ordinary composition packet can consume an explicit configured value.
+R31 therefore reconstructs one small read-only PS2 management configuration GET
+client and the minimal platform connection seam it requires. It stops at raw
+bounded document bytes plus explicit success/failure. It does not parse R30,
+install bindings into R29, modify Application, persist anything, add POST
+transactions, or route MPEG CALIBRATION.
 
 ## Temporal architecture reconciliation
 
@@ -85,7 +79,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A005_R29_INPUT_RUNTIME_PRODUCT_ACTION_PUBLICATION_FOREMAN_ACCEPTED__B10_R30_HUMAN_READABLE_PRODUCT_BINDING_CONFIG_ACTIVE__APPLICATION_ROUTING_DEFERRED`
+`B10_R30_HUMAN_READABLE_PRODUCT_BINDING_CONFIG_FOREMAN_ACCEPTED__B11_R31_READ_ONLY_CONFIG_GET_ACTIVE__LIVE_BINDING_INSTALL_AND_APPLICATION_ROUTING_DEFERRED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -132,8 +126,9 @@ PS2_MEDIA_CLOCK_PRODUCT_BINDING=FOREMAN_ACCEPTED
 APPLICATION_MPEG_SESSION_FOUNDATION=FOREMAN_ACCEPTED
 SEMANTIC_PRODUCT_ACTION_BINDING_CORE=FOREMAN_ACCEPTED
 INPUT_RUNTIME_PRODUCT_ACTION_PUBLICATION=FOREMAN_ACCEPTED
-PRODUCT_ACTION_BINDING_CONFIG_MODEL=RECONSTRUCTION_ACTIVE
-MPEG_CALIBRATION_BINDING_SELECTION=HUMAN_READABLE_CONFIG_MODEL_ACTIVE__NO_DEFAULT_SELECTED
+PRODUCT_ACTION_BINDING_CONFIG_MODEL=FOREMAN_ACCEPTED
+MANAGEMENT_CONFIG_READ_CLIENT=RECONSTRUCTION_ACTIVE
+MPEG_CALIBRATION_BINDING_SELECTION=HUMAN_READABLE_CONFIG_MODEL_FOREMAN_ACCEPTED__LIVE_ACQUISITION_ACTIVE__NO_DEFAULT_SELECTED
 MPEG_CALIBRATION_ACTION_ROUTING=DEFERRED
 MPEG_CALIBRATION_PRODUCT_BINDING=SEMANTIC_ACTION_CORE_ACCEPTED__PHYSICAL_SELECTION_DEFERRED
 ORDINARY_MPEG_PRODUCT_ACTIVATION=DEFERRED
@@ -2206,9 +2201,142 @@ R29_HARDWARE_QUALIFIED=NO
 R29_HARDWARE_PENDING=YES
 R29_LOCAL_WORKTREE_STATUS=NOT_OBSERVABLE
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R30 human-readable product-action binding authority
 
 PACKET_ID=B10-HUMAN-READABLE-PRODUCT-ACTION-BINDINGS-R30
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0069
+ASSIGNING_FOREMAN_STATE_COMMIT=71c254b752dc6fac187622b3e4dd1c9dbef94642
+ASSIGNING_FOREMAN_LOG_COMMIT=25dc15455be2ae68b535d74d5b1dc298ccd7fcac
+RECONSTRUCTION_STARTING_COMMIT=25dc15455be2ae68b535d74d5b1dc298ccd7fcac
+R30_FINAL_SOURCE_COMMIT=6f42cf5ada266c46e2c6a6b84a91b823d939d1c8
+R30_RECONSTRUCTION_LOG_COMMIT=377416cd03a9f24bf1d6b0cd3145b3729b600fd1
+R30_PRE_LOG_COMMIT_COUNT=10
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260925T163720-0400__reconstruction__a005-interaction-input__interactive.md`
+
+### R30 criterion disposition
+
+B10-R30-C1=MET
+B10-R30-C2=MET
+B10-R30-C3=MET
+B10-R30-C4=MET
+B10-R30-C5=MET
+B10-R30-C6=MET
+B10-R30-C7=MET
+B10-R30-C8=MET
+B10-R30-C9=MET
+B10-R30-C10=MET
+B10-R30-C11=MET
+B10-R30-C12=MET
+
+Independent Foreman findings:
+
+1. `src/config/product_action_bindings.*` owns only a bounded Configuration
+   model containing accepted R28 typed values plus count. It does not duplicate
+   Input gesture state or define a second binding type.
+2. The recognized document surface is exactly `[bindings]` with current key
+   `mpeg_calibration`, whose value is chord + trigger + context.
+3. Empty/unrelated documents and missing recognized key publish a valid
+   zero-binding model. There is no fallback physical mask or default action.
+4. All sixteen symbolic button names map one-to-one to the project-owned
+   controller bits. Chords reject empty, repeated, unknown and malformed tokens.
+5. `settle/release/hold` and `desktop/global` map only to accepted R28 enum
+   values. The recognized key maps only to semantic MPEG_CALIBRATION.
+6. A completed typed candidate is passed through
+   `pstvnc_product_action_resolver_init()` as the accepted R28 validation
+   firewall; Config never calls live observe/recognition.
+7. Duplicate recognized section/key and malformed recognized value authority
+   fail closed. Unknown well-formed future sections and unknown keys remain
+   opaque/ignored.
+8. Parsing occurs into temporary state and only publishes after complete document
+   success. Focused tests prove seeded caller output remains byte-identical on
+   recognized failure.
+9. Canonical formatting uses stable lowercase tokens and deterministic project
+   button ordering. It formats into private bounded storage before touching the
+   caller and round-trips exactly through the parser.
+10. Document and line sizes are explicitly bounded, embedded NUL rejects, and
+    the production implementation uses no heap, executable config or callback
+    framework.
+11. R30 performs no file/network management operation, no Input-runtime install,
+    no Application/UI/RFB/MPEG/media-clock/Transport/AUDIO/Pi effect and no
+    urgent mailbox.
+12. The final changed-path range is confined to Configuration binding source,
+    focused tests/build enrollment, Configuration dictionary and directly
+    affected topology documentation.
+
+### Exact R30 machine evidence
+
+At exact final source authority
+`6f42cf5ada266c46e2c6a6b84a91b823d939d1c8`, GitHub Actions run
+`36187973098`, attempt 1, completed SUCCESS. The exact run object identifies
+branch `ledge/h1-all-guns`, head SHA
+`6f42cf5ada266c46e2c6a6b84a91b823d939d1c8`, push event and title
+`docs(config): explain R30 dictionary ownership`.
+
+Observed focused/cross-domain evidence includes:
+
+- `CONFIG_PRODUCT_ACTION_BINDINGS_SOURCE_TEST=PASS`;
+- `CONFIG_PRODUCT_ACTION_BINDINGS_TEST=PASS`;
+- `config_text_test: PASS`;
+- `PRODUCT_ACTION_SOURCE_TEST=PASS`;
+- `PRODUCT_ACTION_TEST=PASS`;
+- `PRODUCT_ACTION_EVENT_TEST=PASS`;
+- `INPUT_RUNTIME_PRODUCT_ACTION_SOURCE_TEST=PASS`;
+- `INPUT_RUNTIME_PRODUCT_ACTION_TEST=PASS`;
+- `INPUT_TEST=PASS`;
+- `CONTROLLER_EVENT_TEST=PASS`;
+- `LOCAL_CONTROLLER_TEST=PASS`;
+- `APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST=PASS`;
+- `APP_MPEG_CALIBRATION_TEST=PASS`;
+- `APP_MPEG_ACTIVATION_TEST=PASS`;
+- `app R15/R16B/R19/R27 tests: PASS`;
+- `app_mpeg_run_test: PASS`;
+- `MEDIA_CLOCK_PRODUCT_BINDING_TEST=PASS`;
+- `transport_mpeg_test: PASS`.
+
+Observed repository/build evidence includes:
+
+- `SOURCE_TOPOLOGY_LOCAL_FILE_COVERAGE=PASS`;
+- `SOURCE_TOPOLOGY_CONTRACT=PASS`;
+- `CLEAN_PRODUCT_SOURCE_TOPOLOGY=PASS`;
+- `WORK_LOG_CHECK=PASS records=222 grandfathered=9 format_compat=2 stamp_compat=1`;
+- `SOURCE_DICTIONARIES=PASS`;
+- `PS_TO_VNC_PROJECT_CHECK=PASS`;
+- `CLEAN_PS2_COMPILE_CHECK=PASS`;
+- `ISSUE7_LINKED_BUILD=PASS`;
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+
+Exact linked identity:
+
+`ELF_PRISTINE_SHA256=5c78663f84cf6372e9887337095d5b5da2424c2f7e26b68017387ac188d5cca8`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=f6b0a92cb1667a6a5d41ec27d3836d95ddc56450e55562354894637076ceba12`
+`PT_LOAD_BYTES=519700`
+`PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74`
+
+This differs from accepted R29 and is current new PS2 hardware debt.
+
+R30_SOURCE_COMPLETE=YES
+R30_HOST_TESTED=PASS
+R30_PROJECT_CHECK=PASS
+R30_STRICT_DICTIONARIES=PASS
+R30_PS2_COMPILE=PASS
+R30_PS2_LINK=PASS
+R30_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R30_PS2_PT_LOAD_CHANGED=YES
+R30_MACHINE_EVIDENCE=GITHUB_ACTIONS
+R30_INDEPENDENT_VALIDATION=NOT_RUN
+R30_OPERATOR_OBSERVED=NO
+R30_HARDWARE_QUALIFIED=NO
+R30_HARDWARE_PENDING=YES
+R30_LOCAL_WORKTREE_STATUS=NOT_OBSERVABLE
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=B11-READ-ONLY-HUMAN-CONFIG-GET-R31
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a005-interaction-input
@@ -2216,214 +2344,187 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0069
-BASED_ON_ACCEPTED_R29_SOURCE=56092a3a6d02df4a9feb89aec5c095e2542b178f
-BASED_ON_R29_LOG=6f6cffe32874b615bfdb71c03eef328d7c2a7188
+BASED_ON_FOREMAN_STATE_REVISION=0070
+BASED_ON_ACCEPTED_R30_SOURCE=6f42cf5ada266c46e2c6a6b84a91b823d939d1c8
+BASED_ON_R30_LOG=377416cd03a9f24bf1d6b0cd3145b3729b600fd1
 BASED_ON_B10_B11_AUDIT=EVIDENCE_SUPPORTED
-BASED_ON_A005_AUDIT_REVISION=0001
 BASED_ON_CLEAN_ARCHITECTURE=REBUILD_READY
-PRODUCT_DEFAULT_BINDING_SELECTED=NO
+MANAGEMENT_ENDPOINT_IP=192.168.50.1
+MANAGEMENT_ENDPOINT_PORT=5959
+CONFIG_PATH=/ps2vnc.conf
+R30_PARSE_AND_PUBLICATION=DEFERRED
+INPUT_BINDING_INSTALL=DEFERRED
 APPLICATION_PRODUCT_ACTION_ROUTING=DEFERRED
-MANAGEMENT_FETCH_PERSISTENCE=DEFERRED
-LOCAL_BINDING_EDITOR_UI=DEFERRED
+MANAGEMENT_POST_PERSISTENCE=DEFERRED
 
 ### Objective
 
-Create the Configuration-owned human-readable representation for semantic
-product-action bindings so a later ordinary product composition can supply R29
-with explicit validated binding authority without hard-coding physical policy in
-Input or Application.
+Reconstruct the smallest read-only PS2 management client needed to retrieve the
+human-readable configuration document from the Pi without coupling that
+management socket to the PSTV Wire/Transport session.
 
-R30 must build on:
+R31 owns mechanism only:
 
-- existing `src/config/text.*` whitespace/value helpers;
-- accepted R28 typed `pstvnc_product_action_binding_t` values;
-- B10's tolerant-document / strict-recognized-setting / atomic-publication
-  invariants.
+- connect to the private Pi management endpoint;
+- issue exact HTTP/1.0 GET for `/ps2vnc.conf`;
+- accept only a bounded valid HTTP 200 response;
+- copy only the raw bounded response body into caller-owned storage;
+- close the management descriptor on every terminal path.
 
-The initial recognized document surface is:
-
-```
-[bindings]
-mpeg_calibration = <button[+button...]> , <trigger> , <context>
-```
-
-Whitespace surrounding the key, separators and tokens may be normalized using
-the existing text helpers, but token spelling is otherwise strict and
-deterministic.
-
-Current recognized button tokens map one-to-one onto the project controller
-vocabulary:
-
-`select l3 r3 start up right down left l2 r2 l1 r1 triangle circle cross square`
-
-Current recognized trigger tokens are:
-
-`settle release hold`
-
-Current recognized context tokens are:
-
-`desktop global`
-
-The current recognized action key is:
-
-`mpeg_calibration`
-
-Absence of `[bindings]` or absence of `mpeg_calibration` means an explicit
-zero-binding result. R30 does not define a product default.
+The returned document remains untrusted. R31 does not parse R30 or publish a
+binding.
 
 ### Required behavior
 
-1. **Configuration owns the representation.** Add one small Configuration-owned
-   binding model/parser/formatter that produces accepted R28 typed values.
-   Input's resolver remains the sole gesture mechanism and is not duplicated in
-   Config.
-2. **Human-readable recognized grammar.** Recognize the dedicated
-   `[bindings]` section and the exact current action key
-   `mpeg_calibration`. Its value is exactly chord + trigger + context.
-3. **No default mapping.** A missing document section/key publishes zero
-   bindings. No source-level button mask is substituted. Configuration itself
-   does not decide that MPEG CALIBRATION must be bound.
-4. **Strict symbolic chord validation.** A present chord must contain one or
-   more exact recognized symbolic button tokens separated by `+`. Reject
-   empty tokens, unknown names, repeated button tokens and any resulting zero or
-   out-of-project mask.
-5. **Exact typed mapping.** Button names map only to
-   `PSTVNC_CONTROLLER_BUTTON_*`; trigger names map only to accepted R28
-   SETTLE/RELEASE/HOLD; context names map only to DESKTOP/GLOBAL; action key
-   maps only to `PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION`.
-6. **Recognized ambiguity fails closed.** Reject duplicate `[bindings]`
-   sections, duplicate recognized `mpeg_calibration` keys, malformed
-   recognized section/key/value syntax, extra recognized value fields and any
-   R28-invalid typed result.
-7. **Forward-compatible opacity.** Unknown future sections and unknown keys in
-   `[bindings]` remain ignored/opaque rather than making an older build reject
-   the whole document, provided they do not duplicate/conflict with recognized
-   ownership.
-8. **Atomic publication.** Parse and validate into temporary bounded state.
-   On any recognized-setting error, caller-visible output/count remains
-   unchanged. No partial binding is published.
-9. **Canonical formatter.** Provide a deterministic text formatter for the
-   recognized binding value or section model using canonical lowercase action,
-   button, trigger and context tokens. A parse -> format -> parse round trip
-   preserves the exact R28 typed binding. Formatting is data production only,
-   not persistence.
-10. **Bounded embedded implementation.** Use fixed/bounded storage and explicit
-    lengths; no heap, executable config, arbitrary callbacks or general-purpose
-    config framework. Reject embedded NUL/truncation/oversized recognized input
-    according to a documented local bound.
-11. **No runtime/persistence/effect scope creep.** Do not fetch
-    `/ps2vnc.conf`, open management sockets, write Pi files, mutate R29,
-    modify Application/UI, install a default binding, invoke P9/P10, arm media
-    clock, start MPEG, alter RFB/Transport/AUDIO/Pi, or create an urgent mailbox.
-    START and SELECT remain ordinary symbolic buttons a user may explicitly
-    choose; no START+SELECT special case or 750 ms adapter exists.
-12. **Evidence.** Focused Config binding parser/formatter tests plus R28/R29
-    resolver/runtime tests, existing config-text tests and canonical
-    host/project/dictionary/PS2 compile/link/current-source reproducibility
-    remain green.
+1. **Separate management connection.** The management GET uses its own TCP
+   descriptor to `192.168.50.1:5959`. It never borrows, aliases, closes,
+   sends on, receives from or otherwise mutates the sole PSTV Transport
+   descriptor/session.
+2. **Exact read-only request.** The semantic config client issues
+   `GET /ps2vnc.conf HTTP/1.0` with the private Pi Host value and
+   `Connection: close`. No POST, mutation or arbitrary product path is exposed
+   by this packet.
+3. **Small management owner.** Earn one coherent clean management source owner
+   rather than copying HTTP/socket logic into Config or Application. If a tiny
+   private generic GET helper is useful internally, keep it private to
+   management; public authority should remain the read-only config-document
+   operation.
+4. **Platform network boundary.** Reuse the existing initialized private PS2
+   network stack. Add only the smallest explicit Platform connection seam needed
+   for the management endpoint if direct socket creation would otherwise
+   duplicate platform endpoint/lifecycle ownership. Do not alter PSTV Transport
+   adoption semantics.
+5. **Bounded request/header/body.** Request storage and HTTP header storage are
+   fixed/bounded. Header termination is `\r\n\r\n` and must be found within
+   a documented maximum. Body storage is caller-owned and bounded; a response
+   larger than capacity fails rather than truncating successfully.
+6. **Strict status acceptance.** Accept only an HTTP/1.0 or HTTP/1.1 status line
+   with status 200 in the historically proven position. Redirects, other status
+   codes, malformed/short status lines and missing header terminator reject.
+7. **Connection-close body framing.** Preserve the proven HTTP/1.0 /
+   `Connection: close` mechanism: body is the bytes after the header terminator
+   through clean peer EOF. Do not invent chunked-transfer parsing, compression,
+   redirects or a full HTTP framework.
+8. **Atomic caller publication.** On failure, caller-visible body bytes and
+   caller length remain unchanged. Successful return publishes the exact body
+   byte count; no NUL terminator or text interpretation is required by the
+   management layer.
+9. **Exact send/receive failure semantics.** Partial request sends must continue
+   until complete or fail. Socket/connect/send/receive errors, premature
+   over-capacity response and malformed HTTP all fail. Every owned management
+   descriptor is closed exactly once on all exits.
+10. **No invented recovery policy.** R31 reports retrieval success/failure only.
+    It does not decide whether startup continues, reconnect PSTV, add a silent-
+    stall watchdog, retry indefinitely, render UI status or convert failure to a
+    default binding. Those policies belong to later Application/B11 composition.
+11. **No cross-domain scope creep.** Do not parse or call R30, install R29
+    bindings, modify Application/UI, send RFB/Transport messages, start MPEG,
+    arm media clock, activate AUDIO, add Pi persistence/POST handlers, or create
+    an urgent mailbox.
+12. **Evidence.** Deterministic host tests around request bytes, split/coalesced
+    header/body receives, status parsing, exact body publication, overflow and
+    cleanup plus R30/R29/config regressions and canonical project/dictionary/PS2
+    compile/link/current-source reproducibility must remain green.
 
 ### Acceptance criteria
 
-- B10-R30-C1 CONFIG_OWNS_HUMAN_READABLE_TYPED_BINDING_REPRESENTATION
-- B10-R30-C2 BINDINGS_SECTION_AND_MPEG_CALIBRATION_VALUE_GRAMMAR_IS_EXPLICIT
-- B10-R30-C3 ABSENT_RECOGNIZED_BINDING_PUBLISHES_ZERO_NOT_COMPILED_DEFAULT
-- B10-R30-C4 SYMBOLIC_CHORD_VALIDATION_IS_STRICT_COMPLETE_AND_PROJECT_OWNED
-- B10-R30-C5 ACTION_TRIGGER_CONTEXT_MAP_EXACTLY_TO_ACCEPTED_R28_TYPES
-- B10-R30-C6 DUPLICATE_OR_MALFORMED_RECOGNIZED_AUTHORITY_FAILS_CLOSED
-- B10-R30-C7 UNKNOWN_FUTURE_SECTIONS_AND_KEYS_REMAIN_FORWARD_COMPATIBLE
-- B10-R30-C8 PARSE_PUBLICATION_IS_ATOMIC_ON_ALL_RECOGNIZED_FAILURES
-- B10-R30-C9 CANONICAL_TEXT_ROUND_TRIP_PRESERVES_TYPED_BINDING
-- B10-R30-C10 IMPLEMENTATION_IS_BOUNDED_NO_HEAP_AND_DATA_ONLY
-- B10-R30-C11 NO_DEFAULT_RUNTIME_APPLICATION_UI_MANAGEMENT_OR_MEDIA_SCOPE_CREEP
-- B10-R30-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- B11-R31-C1 CONFIG_GET_OWNS_SEPARATE_MANAGEMENT_DESCRIPTOR_NOT_PSTV_TRANSPORT
+- B11-R31-C2 REQUEST_IS_EXACT_READ_ONLY_PS2VNC_CONF_HTTP10
+- B11-R31-C3 CLEAN_MANAGEMENT_OWNER_CONTAINS_HTTP_MECHANISM
+- B11-R31-C4 PLATFORM_PRIVATE_LINK_REUSE_DOES_NOT_CHANGE_PSTV_ADOPTION
+- B11-R31-C5 REQUEST_HEADER_AND_BODY_MEMORY_ARE_EXPLICITLY_BOUNDED
+- B11-R31-C6 ONLY_VALID_HTTP10_OR_HTTP11_200_IS_ACCEPTED
+- B11-R31-C7 BODY_IS_EXACT_CONNECTION_CLOSE_PAYLOAD_WITHOUT_HTTP_FEATURE_CREEP
+- B11-R31-C8 FAILURE_LEAVES_CALLER_BODY_AND_LENGTH_UNCHANGED
+- B11-R31-C9 PARTIAL_IO_OVERFLOW_AND_ALL_DESCRIPTOR_CLEANUP_FAIL_CLOSED
+- B11-R31-C10 RETRIEVAL_MECHANISM_OWNS_NO_STARTUP_RECOVERY_OR_DEFAULT_POLICY
+- B11-R31-C11 NO_PARSE_RUNTIME_APPLICATION_MEDIA_PERSISTENCE_OR_MAILBOX_SCOPE
+- B11-R31-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
 All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-R30 must prove at least:
+R31 must prove at least:
 
-1. empty document, unrelated document and `[bindings]` without the recognized
-   key all return a valid zero-binding model;
-2. each of the sixteen symbolic button tokens maps to its exact project-owned
-   bit, and a multi-button chord ORs only those exact bits;
-3. duplicate chord token, empty chord token, unknown token, malformed `+`
-   structure and zero chord all reject;
-4. `settle/release/hold` and `desktop/global` map exactly to R28 enums, while
-   unknown/empty spellings reject;
-5. recognized
-   `mpeg_calibration = l1+r1, settle, desktop`
-   (or equivalent normalized whitespace) produces exactly one R28 binding with
-   the expected typed values and passes R28 validation;
-6. duplicate recognized section or key, missing value field, extra field and
-   malformed recognized assignment reject with caller output unchanged;
-7. unknown sections and unknown `[bindings]` keys are skipped without
-   rewriting or inventing known authority;
-8. comments/blank lines/whitespace follow B10-established document tolerance;
-9. embedded NUL and documented size/line bounds reject safely;
-10. canonical formatting followed by reparsing returns the exact same typed
-    binding and uses stable lowercase token names/order; output buffer shortage
-    fails without partial success claim;
-11. source scans prove no built-in binding instance, no management/network/file
-    write, no Application/UI/RFB/MPEG/media-clock/Transport/AUDIO/Pi effect and
-    no H1 START+SELECT/750 ms special case;
-12. R28/R29 focused tests, config-text tests, canonical host/project/strict-
-    dictionary/PS2 compile/link/current-source reproducibility all pass and exact
-    linked identity is recorded if bytes change.
+1. exact emitted request bytes include
+   `GET /ps2vnc.conf HTTP/1.0\r\n`,
+   `Host: 192.168.50.1\r\n`,
+   `Connection: close\r\n\r\n`, with no request body;
+2. management connects to TCP 5959 through a descriptor distinct from any PSTV
+   Transport descriptor and closes only that descriptor;
+3. request send loops correctly across deterministic partial-send returns and
+   rejects zero/error before complete request transmission;
+4. header terminator detection succeeds when split across receive boundaries and
+   when header plus body arrive in one receive;
+5. HTTP/1.0 200 and HTTP/1.1 200 are accepted; malformed versions/status,
+   non-200 and missing/oversized headers reject;
+6. bytes already received after the header terminator become the first body
+   bytes and later receives append in exact order through EOF;
+7. exact-capacity body may succeed only when EOF proves there are no additional
+   bytes; one extra byte beyond capacity rejects without a truncated success;
+8. empty 200 body is a valid successful retrieval with length zero;
+9. injected socket/connect/send/recv failure closes exactly one owned management
+   descriptor and leaves seeded caller output/length unchanged;
+10. source tests prove no Transport descriptor/API use, no R30 parser call, no
+    Application/Input/UI/RFB/MPEG/media-clock/AUDIO product effect, no POST/
+    persistence and no retry/watchdog policy;
+11. R30 parser/formatter, R29 Input runtime and existing platform-network/
+    config-text regressions remain green;
+12. canonical host/project/strict-dictionary/PS2 compile/link/current-source
+    reproducibility pass, with exact linked identity recorded if bytes change.
 
 ### Authorized source surface
 
-R30 may modify only the smallest justified subset of:
+R31 may modify only the smallest justified subset of:
 
-- one narrow Configuration-owned product-action binding model/parser/formatter
-  under `src/config/`;
-- `src/config/text.c/.h` only if a genuinely reusable bounded token helper is
-  required;
-- focused Configuration binding tests;
+- a new coherent management client owner under `src/management/`;
+- `src/platform/ps2_network.c/.h` only for the narrow private management
+  connection seam if needed;
+- focused management host tests and PS2/network stubs;
 - build/check enrollment;
-- Configuration/root dictionaries and directly affected configuration/Input
-  documentation.
-
-Consume but do not modify unless a narrow compile dependency demands it:
-
-- `src/input/product_action.*`;
-- `src/input/controller.h`.
+- new management dictionary/topology documentation and directly affected
+  Platform/root dictionaries.
 
 Do not modify:
 
+- `src/config/product_action_bindings.*`;
 - `src/input/input_runtime.*`;
 - ordinary `src/app.c/.h`;
-- local UI / local controller;
-- management/network client or Pi persistence;
-- RFB, Transport, media clock, MPEG or AUDIO product source;
-- H1 forensic source.
+- local UI/local controller;
+- RFB, Transport, MPEG, media clock or AUDIO owners;
+- Pi product/persistence services;
+- H1/B4A forensic source.
 
-If the existing R28 typed seam is insufficient, return BLOCKED with exact
-evidence rather than duplicating the Input binding type inside Configuration.
+If adding `src/management/` is required, follow the current source-topology
+adoption contract: directory-local dictionary, build/test enrollment, topology
+documentation and complete strict dictionary reconciliation are part of the
+packet.
 
 ### Explicit non-goals
 
-R30 does not:
+R31 does not:
 
-- select a default physical MPEG CALIBRATION chord;
-- install configured bindings into R29;
-- route semantic actions in Application;
-- enter P9/P10 or run MPEG;
-- retrieve or persist a complete config document;
-- implement local binding-editor UI;
-- define urgent-control behavior;
+- parse the fetched document;
+- select or install an MPEG CALIBRATION binding;
+- decide whether fetch failure is fatal/nonfatal in ordinary product startup;
+- route PRODUCT_ACTION into P9/P10;
+- implement POST or persistence;
+- implement binding-editor UI;
+- add manual Refresh/reconnect policy;
+- add a general RFB silent-stall timeout;
+- create an urgent mailbox;
 - perform hardware qualification.
 
 ### Required checks before handoff
 
-Run focused Config binding parser/formatter tests; existing config-text tests;
-R28 product-action resolver/FIFO tests; R29 Input-runtime publication tests;
-R27 Application and P9/P10/R21-R26 focused regressions; canonical host tests;
-project check; complete strict dictionary audit; pinned PS2 compile/link and
-current-source reproducibility.
+Run focused management GET tests; existing Platform network tests if present;
+R30 Config binding parser/formatter and config-text tests; R28/R29 action/input
+tests; R27 Application and P9/P10/R21-R26 focused regressions; canonical host
+tests; project check; complete strict dictionary audit; pinned PS2 compile/link
+and current-source reproducibility.
 
-If R30 changes linked PS2 bytes, record exact new ELF/PT_LOAD identity and
+If R31 changes linked PS2 bytes, record exact new ELF/PT_LOAD identity and
 classify it hardware-pending.
 
 At shift end emit exactly one immutable Reconstruction record under
@@ -2437,11 +2538,11 @@ Then stop and return the baton.
 
 ## Current hardware debt
 
-Current fully Foreman-accepted PS2 loadable authority is R29:
+Current fully Foreman-accepted PS2 loadable authority is R30:
 
-`ELF_PRISTINE_SHA256=8b0c020f4e410d7a7cc5f7015cc34845f02d382b16055dc607d635a8bbdc7c51`
-`PT_LOAD_SHA256=f72a1a65b6a16abf792c803a8cfa3322ded51ccf6a038b6a27e94e3ee6eb43f7`
-`PT_LOAD_BYTES=516116`
+`ELF_PRISTINE_SHA256=5c78663f84cf6372e9887337095d5b5da2424c2f7e26b68017387ac188d5cca8`
+`PT_LOAD_SHA256=f6b0a92cb1667a6a5d41ec27d3836d95ddc56450e55562354894637076ceba12`
+`PT_LOAD_BYTES=519700`
 
 It is repository-reproducible and not physically hardware-qualified.
 
@@ -2449,8 +2550,7 @@ Accepted R25 maintained Pi product/runtime source remains at
 `60b7759fb78d5f555a589b9ce8cb58ce96096945`; no Pi operator/hardware
 qualification is claimed.
 
-R30 may add linked Configuration binding code and therefore may create a new PS2
-PT_LOAD identity. The worker must report exact build identity rather than infer
-it from source reachability.
+R31 may add linked management/network code and therefore may create a new PS2
+PT_LOAD identity. The worker must record exact identity rather than infer it.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
