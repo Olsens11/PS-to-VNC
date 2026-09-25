@@ -932,3 +932,31 @@ pi-rfb-runtime-profile-unit:
 
 rfb-runtime-profile-generation-unit:
 	python3 ../scripts/generate-rfb-runtime-profile.py --check
+
+
+APP_MPEG_CALIBRATION_TEST := .build/app_mpeg_calibration_test
+
+.PHONY: app-mpeg-calibration-unit
+unit: app-mpeg-calibration-unit
+
+app-mpeg-calibration-unit: $(APP_MPEG_CALIBRATION_TEST)
+	./$(APP_MPEG_CALIBRATION_TEST)
+
+$(APP_MPEG_CALIBRATION_TEST): \
+	unit/app_mpeg_calibration_test.c \
+	../src/app_mpeg_calibration.c \
+	../src/app_mpeg_calibration.h \
+	../src/ui/mpeg_calibration_manual.h \
+	../src/ui/mpeg_calibration.h \
+	../src/rfb/flow_policy.c \
+	../src/rfb/flow_policy.h \
+	../src/input/input_runtime.h \
+	../src/rfb/rfb_session.h \
+	../src/display/mpeg_presentation.h \
+	../src/platform/ps2_graphics.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/app_mpeg_calibration_test.c \
+		../src/app_mpeg_calibration.c \
+		../src/rfb/flow_policy.c \
+		-o $(APP_MPEG_CALIBRATION_TEST)
