@@ -357,11 +357,53 @@ releases R5, and calls R18 Transport finalization last. Any failure preserves th
 ownership facts already reached and faults for outer teardown instead of
 manufacturing cleanup.
 
-Successful R23 retirement enters explicit `RESTORE_PENDING`, retains the exact
-generation, leaves P3 `RETIRING` with its snapshot intact, and leaves P2
-frozen. R23 does not seal/reveal P3, thaw RFB, request/consume FULL refresh,
-activate ordinary `src/app.c`, activate Pi MPEG product flow, or alter
-Transport/P7/Presentation/worker mechanisms.
+The original R23 candidate entered explicit `RESTORE_PENDING`, retained the
+exact generation and P3 `RETIRING` snapshot, and left P2 frozen. Foreman State
+0059 identified that last P2-frozen requirement as a planning conflict with
+governing Q7 overlap semantics. R23C below supersedes only that suppression/
+restoration edge; the R23 completion/producer/worker/reclaim/finalize fences
+remain the execution-retirement foundation.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23`.
+
+
+## R23C Q7 restoration-overlap correction
+
+R23C preserves R23 retirement admission: P2 must already be frozen, P3 must be
+exact-generation `MPEG_OWNED`, and the accepted P7/R4/R5/R18 owners must be
+healthy. P3 still enters `RETIRING` before the one irreversible exact-generation
+RETIRE call.
+
+The correction begins immediately after RETIRE returns OK. Application invokes
+only P2's public `pstvnc_rfb_flow_policy_set_frozen(..., 0)` transition. That
+real frozen-to-thawed transition creates P2's accepted coalesced one-shot FULL
+refresh debt. Application verifies only the public consequence: remote
+publication is allowed and the next request is FULL when no request is already
+outstanding, otherwise HOLD. It never clears FULL debt, records request send,
+or manufactures update completion itself.
+
+After that release, ordinary R19 RFB service may request and receive desktop
+updates underneath the still-visible MPEG composition. P3 remains exact-
+generation `RETIRING`, and P7 continues unchanged IDLE/WAIT/PRESENTED/DROPPED
+drain. R23C retirement service therefore requires P2 to remain thawed rather
+than frozen; an unexpected re-freeze fails closed.
+
+All later R23 fences remain unchanged: exact RETIRE completion precedes
+producer-done, natural no-borrow worker completion precedes join and exact
+COMPLETED outcome, P7/R4/R5 reclaim precedes R18 finalization, and normal
+retirement never requests worker stop. A failure after Q7 release does not
+re-freeze P2 or relabel restoration as complete.
+
+Successful execution retirement still ends `RESTORE_PENDING` with exact
+generation and P3 `RETIRING` snapshot retained, but P2 is thawed. Its FULL
+obligation may still be pending, may be in flight, or may already have been
+satisfied by the outer ordinary RFB loop; this coordinator does not infer
+freshness from retirement completion.
+
+R23C still does not seal/commit P3, execute synchronized no-MPEG reveal, choose
+a user trigger, modify ordinary `src/app.c`, activate the Pi MPEG product
+factory, or alter lower-owner P2/P3/P7/Transport/MPEG mechanisms.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-APPLICATION-MPEG-Q7-RESTORE-OVERLAP-R23C`.
