@@ -354,6 +354,7 @@ $(BUILD_DIR)/app_mpeg_run_test: \
 	../src/mpeg/ps2_decoder_backend.h \
 	../src/mpeg/ps2_worker_runtime.h \
 	../src/mpeg/worker.h \
+	../src/rfb/flow_policy.c \
 	../src/rfb/flow_policy.h \
 	../src/transport/bridge.h \
 	../src/transport/transport.h | $(BUILD_DIR)
@@ -361,6 +362,7 @@ $(BUILD_DIR)/app_mpeg_run_test: \
 		-I../src \
 		unit/app_mpeg_run_test.c \
 		../src/app_mpeg_run.c \
+		../src/rfb/flow_policy.c \
 		-o $@
 
 clean:

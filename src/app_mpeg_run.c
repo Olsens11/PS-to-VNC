@@ -1,18 +1,20 @@
 /*
  * File synopsis:
- * Implements the R21-R23 Application-owned MPEG run coordinator. R21 owns the
- * exact start transaction, R22 composes P7 live frame service, and R23 owns the
- * exact retirement/drain ordering across P3, R20, P7, R4/R5 and R18.
+ * Implements the R21-R23C Application-owned MPEG run coordinator. R21 owns the
+ * exact start transaction, R22 composes P7 live frame service, R23 owns exact
+ * execution-retirement ordering, and R23C restores governing Q7 overlap by
+ * releasing P2 immediately after successful exact RETIRE serialization.
  *
- * R23 closes producer admission, drains accepted frames, proves natural worker
- * completion, reclaims execution owners and finalizes Transport. It deliberately
- * stops at RESTORE_PENDING: P3 remains RETIRING and P2 remains frozen for later
- * restoration/reveal authority.
+ * R23C does not reveal RFB. P3 remains RETIRING while ordinary RFB restoration
+ * may run underneath through thawed P2; exact completion, natural worker
+ * completion, reclaim and R18 finalization retain the accepted R23 ordering.
+ * Success stops at RESTORE_PENDING with P3 retained and P2 thawed.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
  * A003-APPLICATION-MPEG-RUN-START-R21,
- * A003-APPLICATION-MPEG-LIVE-SERVICE-R22 and
- * A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23.
+ * A003-APPLICATION-MPEG-LIVE-SERVICE-R22,
+ * A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23 and
+ * A003-APPLICATION-MPEG-Q7-RESTORE-OVERLAP-R23C.
  */
 
 #include "app_mpeg_run.h"
@@ -231,7 +233,7 @@ static int pstvnc_app_mpeg_run_service_claim_matches(
 }
 
 
-static int pstvnc_app_mpeg_run_rfb_still_frozen(
+static int pstvnc_app_mpeg_run_rfb_frozen_for_retirement_admission(
     const pstvnc_app_mpeg_run_t *run)
 {
     return run != NULL &&
@@ -239,6 +241,34 @@ static int pstvnc_app_mpeg_run_rfb_still_frozen(
         run->rfb_flow_policy->frozen &&
         !pstvnc_rfb_flow_policy_allows_remote_publication(
             run->rfb_flow_policy);
+}
+
+static int pstvnc_app_mpeg_run_rfb_restoration_started(
+    const pstvnc_app_mpeg_run_t *run)
+{
+    return run != NULL &&
+        run->rfb_flow_policy != NULL &&
+        !run->rfb_flow_policy->frozen &&
+        pstvnc_rfb_flow_policy_allows_remote_publication(
+            run->rfb_flow_policy);
+}
+
+static int pstvnc_app_mpeg_run_rfb_restoration_release_valid(
+    const pstvnc_app_mpeg_run_t *run)
+{
+    pstvnc_rfb_flow_request_t next_request;
+
+    if (!pstvnc_app_mpeg_run_rfb_restoration_started(run))
+        return 0;
+
+    next_request =
+        pstvnc_rfb_flow_policy_next_request(run->rfb_flow_policy);
+
+    if (pstvnc_rfb_flow_policy_has_outstanding_request(
+            run->rfb_flow_policy))
+        return next_request == PSTVNC_RFB_FLOW_REQUEST_HOLD;
+
+    return next_request == PSTVNC_RFB_FLOW_REQUEST_FULL;
 }
 
 static int pstvnc_app_mpeg_run_frame_status_healthy(
@@ -823,7 +853,7 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_begin_retirement(
         !pstvnc_app_mpeg_run_presentation_matches(
             run,
             PSTVNC_MPEG_PRESENTATION_MPEG_OWNED) ||
-        !pstvnc_app_mpeg_run_rfb_still_frozen(run) ||
+        !pstvnc_app_mpeg_run_rfb_frozen_for_retirement_admission(run) ||
         !pstvnc_app_mpeg_run_frame_status_healthy(
             run,
             &frame_status) ||
@@ -870,6 +900,20 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_begin_retirement(
             run,
             PSTVNC_APP_MPEG_RUN_RETIRE_SEND_FAILED);
 
+    /*
+     * Q7 restoration overlap begins only after RETIRE serialization succeeds.
+     * Use P2's public transition so its existing one-shot FULL-refresh debt is
+     * created by the real owner. Do not consume that debt here: ordinary R19
+     * scheduling owns request transmission and update completion.
+     */
+    if (!pstvnc_rfb_flow_policy_set_frozen(
+            run->rfb_flow_policy,
+            0) ||
+        !pstvnc_app_mpeg_run_rfb_restoration_release_valid(run))
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_RFB_RESTORE_RELEASE_FAILED);
+
     run->last_result = PSTVNC_APP_MPEG_RUN_OK;
     return PSTVNC_APP_MPEG_RUN_OK;
 }
@@ -909,7 +953,7 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
         !pstvnc_app_mpeg_run_presentation_matches(
             run,
             PSTVNC_MPEG_PRESENTATION_RETIRING) ||
-        !pstvnc_app_mpeg_run_rfb_still_frozen(run))
+        !pstvnc_app_mpeg_run_rfb_restoration_started(run))
         return pstvnc_app_mpeg_run_fail_live(
             run,
             PSTVNC_APP_MPEG_RUN_RETIRE_STATE_INVALID);
@@ -940,7 +984,7 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
         !pstvnc_app_mpeg_run_presentation_matches(
             run,
             PSTVNC_MPEG_PRESENTATION_RETIRING) ||
-        !pstvnc_app_mpeg_run_rfb_still_frozen(run))
+        !pstvnc_app_mpeg_run_rfb_restoration_started(run))
         return pstvnc_app_mpeg_run_fail_live(
             run,
             PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION);
@@ -1076,7 +1120,7 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
     if (!pstvnc_app_mpeg_run_presentation_matches(
             run,
             PSTVNC_MPEG_PRESENTATION_RETIRING) ||
-        !pstvnc_app_mpeg_run_rfb_still_frozen(run))
+        !pstvnc_app_mpeg_run_rfb_restoration_started(run))
         return pstvnc_app_mpeg_run_fail_live(
             run,
             PSTVNC_APP_MPEG_RUN_RETIRE_STATE_INVALID);

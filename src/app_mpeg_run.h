@@ -1,18 +1,22 @@
 /*
  * File synopsis:
- * Defines the R21-R23 Application-owned, trigger-agnostic MPEG run coordinator.
- * One session-scoped owner allocates exact run generations, composes accepted
- * start/live-frame service, and owns the ordered retirement/drain transaction
- * across existing Presentation, P7, MPEG worker/runtime and Transport seams.
+ * Defines the R21-R23C Application-owned, trigger-agnostic MPEG run
+ * coordinator. One session-scoped owner allocates exact run generations,
+ * composes accepted start/live-frame service, and owns the ordered retirement/
+ * drain transaction across existing Presentation, P7, P2, MPEG worker/runtime
+ * and Transport seams.
  *
- * R23 retires execution only. It deliberately stops at RESTORE_PENDING with the
- * MPEG composite retained and RFB still frozen; it does not seal/reveal P3,
- * thaw/refresh RFB, choose a product trigger, or activate Pi MPEG product flow.
+ * R23C preserves the R23 execution-retirement fences but releases P2
+ * suppression immediately after successful exact RETIRE serialization so
+ * ordinary RFB restoration can overlap visible P3 RETIRING drain. Successful
+ * execution retirement stops at RESTORE_PENDING with P3 retained and P2
+ * thawed; final P3 seal/reveal remains later authority.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
  * A003-APPLICATION-MPEG-RUN-START-R21,
- * A003-APPLICATION-MPEG-LIVE-SERVICE-R22 and
- * A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23.
+ * A003-APPLICATION-MPEG-LIVE-SERVICE-R22,
+ * A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23 and
+ * A003-APPLICATION-MPEG-Q7-RESTORE-OVERLAP-R23C.
  */
 
 #ifndef PSTVNC_APP_MPEG_RUN_H
@@ -81,7 +85,8 @@ typedef enum pstvnc_app_mpeg_run_result {
     PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_OUTCOME_FAILED = -35,
     PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_RELEASE_FAILED = -36,
     PSTVNC_APP_MPEG_RUN_RETIRE_RUNTIME_RELEASE_FAILED = -37,
-    PSTVNC_APP_MPEG_RUN_RETIRE_FINALIZE_FAILED = -38
+    PSTVNC_APP_MPEG_RUN_RETIRE_FINALIZE_FAILED = -38,
+    PSTVNC_APP_MPEG_RUN_RFB_RESTORE_RELEASE_FAILED = -39
 } pstvnc_app_mpeg_run_result_t;
 
 typedef struct pstvnc_app_mpeg_run_status {
@@ -168,7 +173,8 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_service(
  *
  * P3 enters RETIRING before the one RETIRE invocation. Crossing that invocation
  * is irreversible even if Transport reports failure; no rollback or cleanup is
- * manufactured here.
+ * manufactured here. After RETIRE returns OK, R23C releases P2 through its
+ * accepted thaw seam and verifies genuine FULL-refresh debt/HOLD accounting.
  */
 pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_begin_retirement(
     pstvnc_app_mpeg_run_t *run);
@@ -176,10 +182,11 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_begin_retirement(
 /*
  * Service one nonblocking retirement/drain step.
  *
- * P7 continues draining in P3 RETIRING. Exact RETIRE completion fences producer
+ * P7 continues draining in P3 RETIRING while ordinary RFB restoration is
+ * permitted through already-thawed P2. Exact RETIRE completion fences producer
  * done; only natural worker completion with no outstanding P7 borrow permits
  * join/outcome/reclaim and Transport finalization. Success stops at
- * RESTORE_PENDING with P3 retained and RFB frozen.
+ * RESTORE_PENDING with P3 retained and P2 still thawed.
  */
 pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
     pstvnc_app_mpeg_run_t *run,
