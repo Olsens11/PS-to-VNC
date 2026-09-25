@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0065
-RECORDED_AT=2026-09-25T10:46:26-04:00
+STATE_REVISION=0066
+RECORDED_AT=2026-09-25T11:55:27-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0064
-SUPERSEDES_FOREMAN_STATE_REVISION=0064
+BASED_ON_FOREMAN_STATE_REVISION=0065
+SUPERSEDES_FOREMAN_STATE_REVISION=0065
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,47 +14,42 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0065 independently accepts
-`A003-PI-MPEG-ORDINARY-PRODUCT-COMPOSITION-R25` at final source authority
-`60b7759fb78d5f555a589b9ce8cb58ce96096945` and consumes immutable
-Reconstruction closeout `cb78de304554f1ee61be39a24fd04d256a8bdea9`.
+Revision 0066 independently accepts
+`A002-PS2-MEDIA-CLOCK-PRODUCT-BINDING-R26` at final source authority
+`82a21a3a68a4288362003df2346783cb0c12ed0b` and consumes immutable
+Reconstruction closeout `dd8a116ff1473aaedd5483e671efb8bc8b767718`.
 
-R25 activates the already-accepted R17 exact-generation MPEG owner in ordinary
-Pi Wire composition without changing WireServer, R17 generation mechanics, RFB
-attachment semantics or protocol bytes. The ordinary runtime now supplies one
-fresh post-Q4 exact-session MPEG controller factory alongside the accepted RFB
-attachment factory. Construction and CREDIT remain producer-inert; exact START
-remains the first FFmpeg/producer edge; WireConnectionOwner remains the sole
-physical serializer; exact session finish still requires controller close/real
-retirement proof.
+R26 closes the missing production mechanism boundary beneath the accepted A002
+session media clock. Configuration now publishes one immutable selected
+0/0/0 common-clock profile, while Platform owns a session-scoped EE semaphore
+binding plus exact GetTimerSystemTime()/kBUSCLK/DelayThread observers for the
+existing platform-neutral clock seams. The media owner remains the sole epoch,
+armed-state, signed-offset, deadline and wait-policy implementation.
 
-R25 also leaves the PS2 linked PT_LOAD exactly byte-identical to accepted P10.
-Its maintained Pi product/runtime bytes are new source authority but remain
-hardware/operator-unqualified.
+R26 never arms the media clock and does not modify ordinary Application,
+MPEG lifecycle, AUDIO, Pi or Wire/protocol behavior. It changes PS2 linked bytes,
+so its exact reproducible PT_LOAD becomes the newest PS2 hardware-debt identity;
+no physical qualification is inherited.
 
-The next dependency is not a controller chord. A005 interaction/input audit
-revision 0001 explicitly classifies the H1 held START+SELECT 750 ms MPEG
-calibration entry chord as `DISCARD_AS_PRODUCT_BINDING`: it was a temporary
-hardware-test adapter. The durable product contract is a semantic calibration
-action plus the already-reconstructed foreground/quarantine lifecycle. Previous
-Foreman prose that called that chord "permanent" is superseded by this
-repository-authority correction; immutable historical logs are not rewritten.
+The next dependency is ordinary PS2 session composition, not user-trigger policy.
+Current `src/app.c` still opens an RFB-only Transport runtime via
+`pstvnc_transport_session_open()`. Accepted R21 cannot later open an MPEG run
+unless the session was created with an MPEG channel, and accepted R25 now makes
+the Pi-side MPEG rider available after Q4. Current Application also creates no
+session media-clock instance even though R26 now exposes the exact binding needed
+to do so.
 
-Before ordinary PS2 MPEG session composition can consume any semantic action,
-the clean product also needs production authority for the already-accepted A002
-session media clock. P10/R21 require a valid session clock, R22 scheduling
-requires current PS2 timer ticks, and ordinary `app.c` currently owns neither a
-selected media-clock profile nor a PS2 synchronization/time binding.
+R27 therefore composes a dormant MPEG-capable ordinary session foundation:
+selected RFB Transport values plus the selected R7 MPEG Transport subprofile are
+used to open one exact `session_open_with_mpeg` runtime, and each accepted
+physical session receives one fresh R26 binding plus one unarmed clean media
+clock. Provider-local replacement must retire the clock binding before retiring
+the old Transport session and create fresh authority for the replacement.
 
-Frozen H1 and A002 authority are sufficient to reconstruct that prerequisite:
-the qualified/all-guns profile lineage uses media epoch lead 0 us, video
-presentation offset 0 us and audio presentation offset 0 us; H1 measures the
-clock with `GetTimerSystemTime()` in `kBUSCLK` ticks and yields through
-`DelayThread()`. The clean A002 clock already owns epoch publication/deadline
-math through injected synchronization/time seams. R26 therefore reconstructs
-only selected Configuration authority and the PS2 platform binding for those
-existing seams. It does not arm the clock, wire `app.c`, choose a product
-trigger, start MPEG/audio or modify protocol bytes.
+R27 deliberately stops before semantic MPEG entry. A005 remains governing:
+the historical held START+SELECT chord is discarded as a product binding.
+R27 does not enter P9, call P10/R21, arm the media clock, send START/RETIRE,
+initialize a producer, or service MPEG frames.
 
 ## Temporal architecture reconciliation
 
@@ -87,7 +82,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R25_PI_MPEG_PRODUCT_COMPOSITION_FOREMAN_ACCEPTED__A002_R26_PS2_MEDIA_CLOCK_PRODUCT_BINDING_ACTIVE__SEMANTIC_MPEG_ENTRY_AND_MAIN_LOOP_DEFERRED`
+`A002_R26_PS2_MEDIA_CLOCK_PRODUCT_BINDING_FOREMAN_ACCEPTED__A003_R27_APPLICATION_MPEG_SESSION_FOUNDATION_ACTIVE__SEMANTIC_MPEG_ENTRY_DEFERRED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -130,7 +125,8 @@ MPEG_CALIBRATION_REGION_SOURCE=FOREMAN_ACCEPTED
 APPLICATION_MPEG_CALIBRATION_FOREGROUND=FOREMAN_ACCEPTED
 APPLICATION_MPEG_PROTECTED_START_HANDOFF=FOREMAN_ACCEPTED
 PI_MPEG_ORDINARY_PRODUCT_COMPOSITION=FOREMAN_ACCEPTED
-PS2_MEDIA_CLOCK_PRODUCT_BINDING=RECONSTRUCTION_ACTIVE
+PS2_MEDIA_CLOCK_PRODUCT_BINDING=FOREMAN_ACCEPTED
+APPLICATION_MPEG_SESSION_FOUNDATION=RECONSTRUCTION_ACTIVE
 MPEG_CALIBRATION_PRODUCT_BINDING=SEMANTIC_ACTION_REQUIRED_DEFERRED
 ORDINARY_MPEG_PRODUCT_ACTIVATION=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
@@ -1665,217 +1661,357 @@ R25_OPERATOR_OBSERVED=NO
 R25_HARDWARE_QUALIFIED=NO_NEW_CLAIM
 R25_LOCAL_WORKTREE_STATUS=NOT_OBSERVABLE
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R26 PS2 media-clock product-binding authority
 
 PACKET_ID=A002-PS2-MEDIA-CLOCK-PRODUCT-BINDING-R26
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0065
+ASSIGNING_FOREMAN_STATE_COMMIT=ee41686f274ac814e58d2e5bc0271e275eade8a3
+ASSIGNING_FOREMAN_LOG_COMMIT=e3b55a804a3133c7bd1c495772039d122a403aff
+RECONSTRUCTION_STARTING_COMMIT=e3b55a804a3133c7bd1c495772039d122a403aff
+R26_FINAL_SOURCE_COMMIT=82a21a3a68a4288362003df2346783cb0c12ed0b
+R26_RECONSTRUCTION_LOG_COMMIT=dd8a116ff1473aaedd5483e671efb8bc8b767718
+R26_PRE_LOG_COMMIT_COUNT=7
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260925T105026-0400__reconstruction__a002-config-audio-clock__interactive.md`
+
+### R26 criterion disposition
+
+A002-R26-C1=MET
+A002-R26-C2=MET
+A002-R26-C3=MET
+A002-R26-C4=MET
+A002-R26-C5=MET
+A002-R26-C6=MET
+A002-R26-C7=MET
+A002-R26-C8=MET
+A002-R26-C9=MET
+A002-R26-C10=MET
+A002-R26-C11=MET
+A002-R26-C12=MET
+
+Independent Foreman findings:
+
+1. `src/config/media_clock_profile.*` publishes exactly
+   `epoch_lead_us=0`, `audio_presentation_offset_us=0` and
+   `video_presentation_offset_us=0`. Selection returns a value copy, so caller
+   mutation cannot alter Configuration-owned authority.
+2. The Configuration source records A002 and frozen H1 provenance and adds no
+   PSTV CONFIG field or dynamic user/network tuning mechanism.
+3. `src/platform/ps2_media_clock.*` owns only one session-scoped semaphore
+   handle/state plus injected synchronization/time callbacks. It contains no
+   epoch, armed, offset, deadline or media-generation state.
+4. Binding lifetime is NEW -> ACTIVE -> RETIRED. Initialization pessimistically
+   marks the object RETIRED before CreateSema, so a create failure exposes no
+   partially usable authority and cannot be retried as if nothing happened.
+5. A successful binding creates one EE semaphore with initial count 1, maximum
+   count 1 and option 0. Lock/unlock call WaitSema/SignalSema only on that exact
+   active binding's semaphore ID and propagate kernel failure.
+6. Release revokes local authority before DeleteSema. Even if kernel deletion
+   fails, all previously copied sync/time observers resolve through the now-
+   RETIRED binding and fail closed; the binding cannot be reinitialized.
+7. Current tick and injected read_ticks directly return
+   `GetTimerSystemTime()`; tick rate is exactly `kBUSCLK`; delay delegates
+   the exact bounded request to `DelayThread()` and propagates failure.
+8. Session-A release followed by Session-B initialization uses distinct binding
+   objects and fresh semaphore authority. Stale Session-A observer copies fail
+   while Session B remains usable.
+9. No `src/media/clock.*` mechanism changed. Existing A002 one-shot arm,
+   synchronized publication, signed offsets, saturation and wait semantics
+   remain the sole media-clock implementation.
+10. R26 source contains no `pstvnc_media_clock_arm()` call. Ordinary
+    `src/app.c` does not consume the new binding/profile symbols yet.
+11. The final changed-path range is confined to Configuration/Platform binding,
+    tests/stubs, build/topology enrollment, dictionaries and directly affected
+    documentation. No Application MPEG, AUDIO, Transport/Wire or Pi behavior
+    changed.
+12. R26's new Config/Platform objects are explicitly enrolled in pinned PS2
+    compile and the product link rather than being unlinked host-only source.
+
+### Exact R26 machine evidence
+
+At exact final source authority
+`82a21a3a68a4288362003df2346783cb0c12ed0b`, GitHub Actions run
+`36155777592`, attempt 1, completed SUCCESS. The run object independently
+identifies exact head SHA `82a21a3a68a4288362003df2346783cb0c12ed0b`,
+branch `ledge/h1-all-guns`, push event and title
+`test: prove R26 media clock ownership boundaries`.
+
+Observed successful jobs:
+
+- host-unit;
+- project-check;
+- dictionary-long;
+- ps2-compile;
+- ps2-link/current-source reproducibility.
+
+Observed focused/cross-domain evidence includes:
+
+- `media_clock_test: PASS`;
+- `MEDIA_CLOCK_PRODUCT_BINDING_TEST=PASS`;
+- `MEDIA_CLOCK_PRODUCT_BINDING_SOURCE_TEST=PASS`;
+- R25 `pi_mpeg_product_composition_test.py`: 9 tests, OK;
+- `APP_MPEG_ACTIVATION_TEST=PASS`;
+- `app_mpeg_run_test: PASS`.
+
+Observed repository/build evidence includes:
+
+- `SOURCE_TOPOLOGY_CONTRACT=PASS`;
+- `WORK_LOG_CHECK=PASS records=214 grandfathered=9 format_compat=2 stamp_compat=1`;
+- `SOURCE_DICTIONARIES=PASS`;
+- `PS_TO_VNC_PROJECT_CHECK=PASS`;
+- pinned PS2 compile explicitly compiled
+  `src/config/media_clock_profile.c` and `src/platform/ps2_media_clock.c`;
+- `CLEAN_PS2_COMPILE_CHECK=PASS`;
+- `ISSUE7_LINKED_BUILD=PASS`;
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+
+Exact linked identity:
+
+`ELF_PRISTINE_SHA256=2dd5cd5a5083c659efcdc3f3cdbcafc9c3147f8ba964088b2d99d79b3e963613`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=e3b84ce42a3527c9518643edd808228637c980f5ea901fd0cf5256e28b6858aa`
+`PT_LOAD_BYTES=513812`
+`PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74`
+
+This differs from the previously accepted P10/R25 PT_LOAD and is current new
+PS2 hardware debt.
+
+R26_SOURCE_COMPLETE=YES
+R26_HOST_TESTED=PASS
+R26_PROJECT_CHECK=PASS
+R26_STRICT_DICTIONARIES=PASS
+R26_PS2_COMPILE=PASS
+R26_PS2_LINK=PASS
+R26_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R26_PS2_PT_LOAD_CHANGED=YES
+R26_MACHINE_EVIDENCE=GITHUB_ACTIONS
+R26_INDEPENDENT_VALIDATION=NOT_RUN
+R26_OPERATOR_OBSERVED=NO
+R26_HARDWARE_QUALIFIED=NO
+R26_HARDWARE_PENDING=YES
+R26_LOCAL_WORKTREE_STATUS=NOT_OBSERVABLE
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A003-APPLICATION-MPEG-SESSION-FOUNDATION-R27
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
-WORK_ITEM_KEY=a002-config-audio-clock
+WORK_ITEM_KEY=a003-mpeg-generation
 WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0065
+BASED_ON_FOREMAN_STATE_REVISION=0066
+BASED_ON_ACCEPTED_R26_SOURCE=82a21a3a68a4288362003df2346783cb0c12ed0b
+BASED_ON_R26_LOG=dd8a116ff1473aaedd5483e671efb8bc8b767718
 BASED_ON_ACCEPTED_R25_SOURCE=60b7759fb78d5f555a589b9ce8cb58ce96096945
-BASED_ON_R25_LOG=cb78de304554f1ee61be39a24fd04d256a8bdea9
-BASED_ON_A002_AUDIT_REVISION=0001
+BASED_ON_ACCEPTED_R7_MPEG_PROFILE=FOREMAN_ACCEPTED
+BASED_ON_ACCEPTED_R21_R24_APPLICATION_MPEG_LIFECYCLE=FOREMAN_ACCEPTED
 BASED_ON_A005_AUDIT_REVISION=0001
-H1_FORENSIC_SOURCE_COMMIT=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
+BASED_ON_A006_AUDIT_REVISION=0001
 
 ### Objective
 
-Provide the missing production Configuration + PS2 Platform binding needed to
-instantiate and service the already-accepted clean A002 session media clock.
+Make each ordinary PS2 Wire/RFB attempt MPEG-capable at the session-resource
+level while keeping MPEG execution completely dormant.
 
-R26 does not create a second clock implementation. `src/media/clock.*` remains
-the sole owner of epoch state, one-shot arm semantics, signed offset/deadline
-math and wait policy. R26 supplies only:
+R27 composes two already-accepted prerequisites into ordinary Application
+session startup:
 
-1. one selected product media-clock profile with evidence-grounded values; and
-2. one session-scoped PS2 synchronization/time adapter for the existing
-   `pstvnc_media_clock_sync_t` and `pstvnc_media_clock_time_ops_t` seams plus
-   current-tick observation required by R22.
+1. the selected R7 MPEG Transport subprofile is supplied to
+   `pstvnc_transport_session_open_with_mpeg()`, so the single accepted
+   Transport runtime owns logical channel 4 for that exact physical Wire
+   Session; and
+2. one fresh R26 PS2 binding plus one clean A002 `pstvnc_media_clock_t` are
+   initialized for that exact session and retired before that session's
+   Transport authority can be released/replaced.
 
-Selected product values for this reconstruction stage are:
-
-- `epoch_lead_us = 0`;
-- `audio_presentation_offset_us = 0`;
-- `video_presentation_offset_us = 0`.
-
-These are the common zero-offset/zero-lead values in the frozen qualified H1
-P11/all-guns profile lineage. They are product-profile values, not new protocol
-fields and not permission to reconstruct H1's 61-field laboratory CONFIG API.
-
-PS2 time authority is the recovered H1 platform mechanism:
-
-- `GetTimerSystemTime()` for monotonic current ticks;
-- `kBUSCLK` for ticks/second;
-- `DelayThread()` for bounded caller-requested yields.
-
-Synchronization must use an explicit PS2 kernel-owned mutual-exclusion primitive
-with session-scoped lifecycle. Do not regress A002 to H1's unsynchronized
-volatile representation or use diagnostic/global state as a lock.
+R27 is a session-foundation packet only. It does not enter calibration, create
+an MPEG run, invoke START/RETIRE, arm the media clock, service frames, choose a
+controller binding, or change Pi/Wire protocol behavior.
 
 ### Required behavior
 
-1. **Selected Configuration authority.** Publish one narrow immutable selected
-   media-clock profile containing exactly lead 0, audio offset 0 and video
-   offset 0, with explicit A002/H1 provenance. Do not make these values mutable
-   network/user tuning in R26.
-2. **One clock owner.** Do not duplicate epoch, armed, offset conversion,
-   deadline or wait logic outside `src/media/clock.*`. Platform code supplies
-   mechanisms only.
-3. **Session-scoped PS2 sync lifetime.** Provide an explicit init/release
-   lifecycle for the synchronization context used by one session clock.
-   Successful init creates exactly one usable mutual-exclusion authority;
-   failed init publishes no partially usable binding; release retires it exactly
-   once and repeated/fabricated release fails closed or is a documented safe
-   no-op without resurrecting authority.
-4. **Correct lock/unlock semantics.** The existing media-clock sync callbacks
-   acquire/release the exact session-owned PS2 synchronization object and
-   propagate kernel failure. No global mutable lock identity and no spin/delay
-   success inference.
-5. **Exact timer domain.** Current tick observation returns
-   `GetTimerSystemTime()` in the same `kBUSCLK` domain used by accepted P4
-   first-synchronized-frame timestamps. Expose the exact tick rate needed by
-   `pstvnc_media_clock_init()`; do not rescale to an invented timebase.
-6. **Exact delay semantics.** The injected delay observer delegates the requested
-   microseconds to `DelayThread()` and returns failure on platform failure.
-   Delay is scheduling/yield mechanism only, never lifecycle-success authority.
-7. **Composable binding.** A future Application caller can obtain/construct:
-   selected `pstvnc_config_media_clock_profile_t`, exact tick rate,
-   `pstvnc_media_clock_sync_t`, and `pstvnc_media_clock_time_ops_t`, and can
-   read one current tick for R22 scheduling without reaching directly into PS2
-   timer/kernel APIs.
-8. **Repeated-session freshness.** Retiring Session A's platform binding and
-   initializing Session B yields fresh synchronization authority. No armed
-   epoch, semaphore identity or mutable clock state is retained by the platform
-   adapter across sessions.
-9. **No early arm.** R26 never calls `pstvnc_media_clock_arm()`. First
-   synchronized MPEG presentation remains the accepted P4 arm boundary.
-10. **No product trigger/main-loop activation.** Do not modify ordinary
-    `src/app.c`, local-controller mappings, MPEG calibration entry policy,
-    P9/P10/R21-R24 behavior or choose any physical binding. A005's historical
-    START+SELECT 750 ms chord remains discarded as a product binding.
-11. **No AUDIO/Wire/protocol scope creep.** Do not start AUDSRV/audio workers,
-    alter Transport/Wire bytes or CONFIG framing, change Pi product behavior, or
-    add H1 laboratory CONFIG fields.
-12. **Evidence.** Add deterministic host/source contract tests where meaningful
-    and keep media-clock unit tests, canonical host/project/dictionary, pinned
-    PS2 compile/link and current-source reproducibility green.
+1. **Selected-profile admission precedes startup.** Ordinary `pstvnc_app_run()`
+   resolves the accepted RFB Transport profile, selected R7 MPEG runtime profile
+   and selected R26 media-clock profile before IOP/network/session startup. A
+   missing/invalid required selected profile fails before owning platform/session
+   resources.
+2. **One physical Transport owner with MPEG enabled.** Each fresh ordinary
+   session uses `pstvnc_transport_session_open_with_mpeg()` with the existing
+   RFB Transport config plus an exact copy/reference of R7's
+   `profile->transport`. Do not create a second Transport runtime or direct
+   channel-4 owner.
+3. **MPEG channel is dormant capacity only.** R27 may cause normal accepted
+   channel-4 CREDIT/resource initialization, but it must never open an MPEG run,
+   send START/RETIRE, consume MPEG DATA, create a worker/decoder, or mutate P3.
+   R25 already proves Pi CREDIT/controller construction is producer-inert until
+   exact START.
+4. **Fresh session media-clock binding.** After successful Transport admission,
+   each physical session initializes one fresh R26 binding, obtains exact sync
+   and tick-rate authority, and initializes one clean
+   `pstvnc_media_clock_t` from the selected R26 profile.
+5. **Clock remains unarmed.** R27 never calls `pstvnc_media_clock_arm()`.
+   Ordinary RFB startup/presentation and idle polling do not arm it. P4's exact
+   first synchronized MPEG presentation remains the only future arm boundary.
+6. **No hidden stale clock authority.** A provider-local RFB failure that is
+   eligible for R16B fresh-session replacement must retire the old session's
+   media-clock binding before old Transport retirement completes and before the
+   next physical connect/session admission begins.
+7. **Release failure blocks reuse.** If media-clock binding release cannot prove
+   success, Application must fail closed rather than admit a replacement
+   session. It may still continue monotonic fatal teardown of lower owners; it
+   must never pretend the old binding is reusable.
+8. **Reverse-ownership failure cleanup.** On fatal startup/live failure, any
+   initialized input owner is stopped first; active media-clock binding is then
+   retired; Transport is aborted/released afterward; resident graphics and
+   diagnostics follow existing cleanup policy. A pre-binding failure must not
+   fabricate release ownership.
+9. **Fresh replacement proof.** At least two scripted provider-recovery attempts
+   must prove Session B receives a fresh binding/media-clock initialization
+   after Session A's proven release, with no inherited armed/epoch state or
+   synchronization identity.
+10. **RFB behavior stays intact.** Existing R15/R16B/R19 startup, parser,
+    provider-recovery, P2 request/publication and input/UI behavior remains
+    semantically unchanged except for the deliberate Transport constructor and
+    clock ownership events.
+11. **No semantic-trigger or MPEG-lifecycle scope creep.** Do not call P9/P10,
+    `pstvnc_app_mpeg_run_start/service/begin_retirement`, initialize new P3/P7
+    product state, map START+SELECT, add another controller gesture, or change
+    local-controller/UI bindings. A005's semantic product-action requirement
+    remains deferred.
+12. **Evidence.** Deterministic Application tests plus R26 clock tests, R18/R20
+    Transport MPEG regressions, R21-R24/P10 regressions, R25 Pi composition,
+    canonical host/project/dictionary and pinned PS2 compile/link/current-source
+    reproducibility must remain green.
 
 ### Acceptance criteria
 
-- A002-R26-C1 SELECTED_MEDIA_CLOCK_PROFILE_IS_EXACT_GROUNDED_AND_IMMUTABLE
-- A002-R26-C2 MEDIA_CLOCK_REMAINS_SOLE_EPOCH_AND_DEADLINE_OWNER
-- A002-R26-C3 PS2_SYNC_BINDING_HAS_EXPLICIT_SESSION_SCOPED_INIT_RELEASE
-- A002-R26-C4 LOCK_UNLOCK_USE_EXACT_SESSION_AUTHORITY_AND_FAIL_CLOSED
-- A002-R26-C5 TIMER_READ_AND_TICK_RATE_MATCH_GETTIMERSYSTEMTIME_KBUSCLK_DOMAIN
-- A002-R26-C6 DELAY_OBSERVER_DELEGATES_EXACT_REQUEST_AND_NEVER_PROVES_LIFECYCLE
-- A002-R26-C7 FUTURE_APPLICATION_CAN_COMPOSE_PROFILE_SYNC_TIMEOPS_AND_CURRENT_TICK
-- A002-R26-C8 REPEATED_SESSION_BINDINGS_DO_NOT_REUSE_MUTABLE_CLOCK_AUTHORITY
-- A002-R26-C9 R26_NEVER_ARMS_OR_REARMS_MEDIA_CLOCK
-- A002-R26-C10 NO_APP_MAIN_LOOP_CONTROLLER_BINDING_OR_MPEG_LIFECYCLE_SCOPE_CREEP
-- A002-R26-C11 NO_AUDIO_PI_WIRE_OR_PROTOCOL_SCOPE_CREEP
-- A002-R26-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
+- A003-R27-C1 REQUIRED_SELECTED_PROFILES_RESOLVE_BEFORE_PLATFORM_SESSION_START
+- A003-R27-C2 ORDINARY_SESSION_OPENS_ONE_TRANSPORT_RUNTIME_WITH_SELECTED_MPEG_CHANNEL
+- A003-R27-C3 CHANNEL4_CAPACITY_REMAINS_PRODUCER_AND_RUN_INERT_WITHOUT_START
+- A003-R27-C4 EACH_ACCEPTED_WIRE_SESSION_OWNS_ONE_FRESH_UNARMED_MEDIA_CLOCK_BINDING
+- A003-R27-C5 ORDINARY_RFB_PATH_NEVER_ARMS_MEDIA_CLOCK
+- A003-R27-C6 PROVIDER_REPLACEMENT_RETIRES_CLOCK_BEFORE_OLD_TRANSPORT_AND_NEXT_CONNECT
+- A003-R27-C7 CLOCK_RELEASE_FAILURE_BLOCKS_REPLACEMENT_REUSE
+- A003-R27-C8 FATAL_CLEANUP_PRESERVES_REVERSE_OWNERSHIP_ORDER
+- A003-R27-C9 REPEATED_SESSION_ATTEMPTS_REBUILD_CLOCK_AUTHORITY_FROM_ZERO
+- A003-R27-C10 R15_R16B_R19_RFB_INPUT_UI_BEHAVIOR_REMAINS_GREEN
+- A003-R27-C11 NO_CALIBRATION_TRIGGER_RUN_START_FRAME_SERVICE_OR_PROTOCOL_SCOPE_CREEP
+- A003-R27-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
 All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-R26 must prove at least:
+R27 must prove at least:
 
-1. selected profile returns exactly `0/0/0` for epoch lead/audio offset/video
-   offset and names A002 plus frozen H1 profile provenance;
-2. selected profile mutation cannot alter Configuration-owned authority;
-3. one successful PS2 binding initialization produces one exact usable
-   synchronization context, sync callbacks and time ops;
-4. initialization failure does not expose a usable sync/time binding;
-5. lock and unlock callbacks use only the binding's current session-owned
-   synchronization primitive and propagate failure;
-6. current tick observation is a direct `GetTimerSystemTime()` observation and
-   tick rate is exactly `kBUSCLK`;
-7. delay passes the exact requested microseconds to `DelayThread()` and
-   propagates a negative/failure result;
-8. Session A release followed by Session B init creates fresh binding authority,
-   with no clock/epoch state retained in the Platform object;
-9. source/API tests prove R26 contains no `pstvnc_media_clock_arm` call and no
-   duplicate `armed`/epoch/deadline implementation;
-10. existing platform-neutral media-clock tests still prove one-shot arm,
-    synchronized publication, signed offsets, saturation and wait/error
-    behavior;
-11. source scans prove ordinary `src/app.c`, local-controller mappings,
-    P9/P10/R21-R24, AUDIO, Pi and Wire protocol bytes are unchanged;
-12. canonical host/project/dictionary/PS2 compile/link/current-source
-    reproducibility are green and exact new ELF/PT_LOAD identity is recorded if
-    linked bytes change.
+1. selected RFB/MPEG/media-clock profile acquisition occurs before IOP/network
+   startup, and a failed required selection causes zero platform/connect/
+   Transport ownership;
+2. each ordinary attempt calls only
+   `pstvnc_transport_session_open_with_mpeg()` with exact RFB Transport values
+   and exact selected R7 MPEG `transport` values;
+3. plain `pstvnc_transport_session_open()` is not used by the ordinary product
+   path after R27;
+4. successful Transport admission is followed by exactly one fresh R26 binding
+   init and exactly one A002 clock init using exact selected 0/0/0 profile and
+   exact `kBUSCLK` tick-rate authority;
+5. the initialized clock remains observably unarmed throughout ordinary RFB-only
+   operation;
+6. there are zero R27 calls to Transport MPEG run-open, generation START/RETIRE,
+   P9/P10/R21 activation, MPEG worker/decoder or P3 mutation;
+7. provider failure Session A ordering is:
+   input dormancy proof -> clock binding release -> Transport abort -> Session B
+   fresh connect;
+8. injected binding-release failure prevents Session B connect/admission and
+   continues only fatal teardown;
+9. pre-binding startup failure never calls binding release;
+10. two fresh sessions prove separate binding initializations and no old
+    sync/clock authority reused;
+11. existing R15/R16B/R19 app tests and R26/R21-R25 focused regressions remain
+    green;
+12. canonical host/project/strict-dictionary/PS2 compile/link/current-source
+    reproducibility pass and exact linked identity is recorded.
 
 ### Authorized source surface
 
-R26 may modify only the smallest justified subset of:
+R27 may modify only the smallest justified subset of:
 
-- one narrow Configuration-owned selected media-clock profile under
-  `src/config/` and its local dictionary;
-- one narrow PS2 Platform time/synchronization binding under `src/platform/`
-  (or the existing PS2 system seam if repository-local design proves that is
-  materially smaller and equally clear);
-- focused media-clock/platform binding tests and PS2 host stubs if required;
-- build/source-topology/check manifests needed to enroll the new maintained
-  files;
-- deterministic generated profile source/tooling only if the existing
-  Configuration profile pattern genuinely requires it;
-- directly affected A002/media-clock documentation and symbol dictionaries.
+- `src/app.c` / `src/app.h` for session-profile parameters and ownership
+  sequencing;
+- focused Application test fixture/stubs and tests;
+- directly affected Application/session documentation/dictionaries;
+- build/check manifests only if genuinely required by the changed Application
+  seam.
 
-Do not modify:
+Consume but do not modify unless an accepted-public-seam defect is proven:
 
-- ordinary `src/app.c` / `src/app.h`;
-- `src/app_mpeg_*`;
-- `src/media/clock.c` mechanism semantics unless an accepted-public-seam defect
-  is exposed; if so return BLOCKED with exact evidence rather than widening
-  silently;
-- local-controller/UI mappings;
-- AUDIO mechanisms;
-- Transport/Wire protocol;
-- Pi product/runtime;
-- H1 forensic evidence.
+- `src/config/mpeg_runtime_profile.*`;
+- `src/config/media_clock_profile.*`;
+- `src/platform/ps2_media_clock.*`;
+- `src/media/clock.*`;
+- Transport runtime/bridge;
+- RFB/P2/input/UI owners;
+- R21-R24/P9/P10;
+- Pi product source.
+
+If an accepted lower-owner seam defect blocks R27, return BLOCKED with exact
+evidence rather than silently widening scope.
+
+### Explicit non-goals
+
+R27 does not:
+
+- define a semantic MPEG-calibration product action;
+- choose or revive START+SELECT or any physical controller chord;
+- enter P9 calibration foreground;
+- invoke P10 protected activation;
+- start/service/retire/reveal an MPEG run;
+- arm/re-arm the media clock;
+- activate AUDIO;
+- modify Wire protocol bytes or Pi runtime;
+- perform hardware qualification.
 
 ### Required checks before handoff
 
-Run focused selected-profile and PS2 binding tests plus existing media-clock
-tests; relevant platform regressions; P10 activation/run regressions; R25 Pi
-composition regressions; canonical host tests; project check; complete strict
+Run focused Application session-foundation tests; full existing app tests;
+R26 media-clock product-binding and media-clock mechanism tests; R18/R20
+Transport MPEG tests; P10 and R21-R24 Application MPEG tests; R25 Pi product
+composition tests; canonical host tests; project check; complete strict
 dictionary audit; pinned PS2 compile/link and current-source reproducibility.
 
-If R26 changes linked PS2 bytes, record the exact new ELF/PT_LOAD identity and
-classify it hardware-pending. If link identity remains unchanged, prove exact
-byte identity rather than inferring it from source placement.
+Record exact new ELF/PT_LOAD identity if Application linkage changes. Any new
+loadable bytes are hardware-pending until separately qualified.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` revision 0007 using:
 
 - ROLE_KEY=`reconstruction`;
-- WORK_ITEM_KEY=`a002-config-audio-clock`;
+- WORK_ITEM_KEY=`a003-mpeg-generation`;
 - WORKER_KEY=`interactive`.
 
 Then stop and return the baton.
 
 ## Current hardware debt
 
-Current fully Foreman-accepted PS2 loadable authority remains P10 because R25
-changes no PS2 linked bytes:
+Current fully Foreman-accepted PS2 loadable authority is R26:
 
-`PT_LOAD_SHA256=38eb2ed29857687d232d604f21a8e9b2bb267a24fa8605a57149fd1f204033fb`
-`PT_LOAD_BYTES=512788`
+`ELF_PRISTINE_SHA256=2dd5cd5a5083c659efcdc3f3cdbcafc9c3147f8ba964088b2d99d79b3e963613`
+`PT_LOAD_SHA256=e3b84ce42a3527c9518643edd808228637c980f5ea901fd0cf5256e28b6858aa`
+`PT_LOAD_BYTES=513812`
 
-That PS2 identity is repository-reproducible and not physically
-hardware-qualified.
+It is repository-reproducible and not physically hardware-qualified.
 
-R25 additionally changes maintained Pi product/runtime source at accepted source
-authority `60b7759fb78d5f555a589b9ce8cb58ce96096945`. No new Pi operator/hardware
+Accepted R25 maintained Pi product/runtime source remains at
+`60b7759fb78d5f555a589b9ce8cb58ce96096945`; no Pi operator/hardware
 qualification is claimed.
 
-R26 is expected to add PS2-linked Configuration/Platform code and therefore may
-create a new PT_LOAD hardware debt identity. The worker must report exact build
-identity rather than infer whether dead/unreferenced code affects the link.
+R27 will modify ordinary Application composition and is expected to change the
+PS2 load image. The worker must record exact resulting identity rather than
+infer it.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
