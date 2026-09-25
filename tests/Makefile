@@ -597,9 +597,10 @@ $(CONFIG_MPEG_RUNTIME_PROFILE_TEST): \
 		-o $(CONFIG_MPEG_RUNTIME_PROFILE_TEST)
 
 MEDIA_CLOCK_TEST := .build/media_clock_test
+MEDIA_CLOCK_PRODUCT_BINDING_TEST := .build/media_clock_product_binding_test
 
-.PHONY: media-clock-unit
-unit: media-clock-unit
+.PHONY: media-clock-unit media-clock-product-binding-unit
+unit: media-clock-unit media-clock-product-binding-unit
 
 media-clock-unit: $(MEDIA_CLOCK_TEST)
 	./$(MEDIA_CLOCK_TEST)
@@ -614,6 +615,28 @@ $(MEDIA_CLOCK_TEST): \
 		unit/media_clock_test.c \
 		../src/media/clock.c \
 		-o $(MEDIA_CLOCK_TEST)
+
+media-clock-product-binding-unit: $(MEDIA_CLOCK_PRODUCT_BINDING_TEST)
+	./$(MEDIA_CLOCK_PRODUCT_BINDING_TEST)
+
+$(MEDIA_CLOCK_PRODUCT_BINDING_TEST): \
+	unit/media_clock_product_binding_test.c \
+	unit/media_clock_platform_host_stubs/kernel.h \
+	unit/media_clock_platform_host_stubs/timer.h \
+	unit/media_clock_platform_host_stubs/delaythread.h \
+	../src/config/media_clock_profile.c \
+	../src/config/media_clock_profile.h \
+	../src/config/profile.h \
+	../src/platform/ps2_media_clock.c \
+	../src/platform/ps2_media_clock.h \
+	../src/media/clock.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Iunit/media_clock_platform_host_stubs \
+		-I../src \
+		unit/media_clock_product_binding_test.c \
+		../src/config/media_clock_profile.c \
+		../src/platform/ps2_media_clock.c \
+		-o $(MEDIA_CLOCK_PRODUCT_BINDING_TEST)
 
 AUDIO_PLAYBACK_TEST := .build/audio_playback_test
 AUDIO_AUDSRV_SERVICE_TEST := .build/audio_audsrv_service_test

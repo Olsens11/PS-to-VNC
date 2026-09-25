@@ -38,6 +38,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/config_profile.o \
 	$(BUILD_DIR)/config_rfb_runtime_profile.o \
 	$(BUILD_DIR)/config_mpeg_runtime_profile.o \
+	$(BUILD_DIR)/config_media_clock_profile.o \
 	$(BUILD_DIR)/config_text.o \
 	$(BUILD_DIR)/media_clock.o \
 	$(BUILD_DIR)/mpeg_decoder.o \
@@ -81,6 +82,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/ps2_system.o \
 	$(BUILD_DIR)/ps2_network.o \
 	$(BUILD_DIR)/ps2_graphics.o \
+	$(BUILD_DIR)/ps2_media_clock.o \
 	$(BUILD_DIR)/SIO2MAN_irx.o \
 	$(BUILD_DIR)/PADMAN_irx.o \
 	$(BUILD_DIR)/DEV9_irx.o \
@@ -140,6 +142,9 @@ $(BUILD_DIR)/config_rfb_runtime_profile.o: src/config/rfb_runtime_profile.c src/
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/config_mpeg_runtime_profile.o: src/config/mpeg_runtime_profile.c src/config/mpeg_runtime_profile.h src/transport/transport.h src/mpeg/decoder.h src/mpeg/worker.h src/mpeg/ps2_worker_runtime.h src/display/mpeg_scheduler.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/config_media_clock_profile.o: src/config/media_clock_profile.c src/config/media_clock_profile.h src/config/profile.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/config_text.o: src/config/text.c src/config/text.h | $(BUILD_DIR)
@@ -269,6 +274,9 @@ $(BUILD_DIR)/ps2_network.o: src/platform/ps2_network.c src/platform/ps2_network.
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/ps2_graphics.o: src/platform/ps2_graphics.c src/platform/ps2_graphics.h src/display/display.h src/display/mpeg_frame.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/ps2_media_clock.o: src/platform/ps2_media_clock.c src/platform/ps2_media_clock.h src/media/clock.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(GEN_DIR)/SIO2MAN_irx.c: $(PS2SDK)/iop/irx/freesio2.irx | $(GEN_DIR)

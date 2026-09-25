@@ -85,6 +85,7 @@ SOURCES=(
     src/config/profile.c
     src/config/rfb_runtime_profile.c
     src/config/mpeg_runtime_profile.c
+    src/config/media_clock_profile.c
     src/config/text.c
     src/media/clock.c
     src/mpeg/decoder.c
@@ -126,6 +127,7 @@ SOURCES=(
     src/platform/ps2_system.c
     src/platform/ps2_network.c
     src/platform/ps2_graphics.c
+    src/platform/ps2_media_clock.c
 )
 
 for source in "${SOURCES[@]}"; do
