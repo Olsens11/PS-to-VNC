@@ -502,12 +502,13 @@ int pstvnc_ps2_graphics_present(
 
 /* ----- Focused P9 proofs ----- */
 
-static void assert_admission_rejected_without_freeze(
-    test_environment_t *environment)
+static void assert_admission_rejected_without_mutation(
+    test_environment_t *environment,
+    int expected_frozen)
 {
     assert(begin_environment(environment) ==
         PSTVNC_APP_MPEG_CALIBRATION_ADMISSION_REJECTED);
-    assert(!environment->flow.frozen);
+    assert(environment->flow.frozen == (unsigned int)expected_frozen);
     assert(event_count == 0u);
     assert(pstvnc_app_mpeg_calibration_state(
         &environment->calibration) ==
@@ -520,36 +521,36 @@ static void test_admission_requires_exact_rfb_only_desktop_state(void)
 
     environment_init(&environment);
     environment.local_ui.foreground = PSTVNC_LOCAL_UI_FOREGROUND_OSK;
-    assert_admission_rejected_without_freeze(&environment);
+    assert_admission_rejected_without_mutation(&environment, 0);
 
     environment_init(&environment);
     environment.local_ui.input_quarantined = 1;
-    assert_admission_rejected_without_freeze(&environment);
+    assert_admission_rejected_without_mutation(&environment, 0);
 
     environment_init(&environment);
     environment.presentation.state =
         PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME;
     environment.presentation.snapshot_valid = 1u;
     environment.presentation.run_generation = 7u;
-    assert_admission_rejected_without_freeze(&environment);
+    assert_admission_rejected_without_mutation(&environment, 0);
 
     environment_init(&environment);
     environment.presentation.snapshot_valid = 1u;
-    assert_admission_rejected_without_freeze(&environment);
+    assert_admission_rejected_without_mutation(&environment, 0);
 
     environment_init(&environment);
     environment.flow.frozen = 1u;
-    assert_admission_rejected_without_freeze(&environment);
+    assert_admission_rejected_without_mutation(&environment, 1);
 
     environment_init(&environment);
     environment.calibration.manual_source.calibration.screen =
         PSTVNC_MPEG_CALIBRATION_EDIT;
-    assert_admission_rejected_without_freeze(&environment);
+    assert_admission_rejected_without_mutation(&environment, 0);
 
     environment_init(&environment);
     environment.calibration.state =
         PSTVNC_APP_MPEG_CALIBRATION_ACCEPTED_PROTECTED;
-    assert_admission_rejected_without_freeze(&environment);
+    assert_admission_rejected_without_mutation(&environment, 0);
 }
 
 static void test_begin_order_and_immutable_snapshot(void)
