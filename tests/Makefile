@@ -598,9 +598,13 @@ $(CONFIG_MPEG_RUNTIME_PROFILE_TEST): \
 
 MEDIA_CLOCK_TEST := .build/media_clock_test
 MEDIA_CLOCK_PRODUCT_BINDING_TEST := .build/media_clock_product_binding_test
+MEDIA_CLOCK_PRODUCT_BINDING_SOURCE_TEST := unit/media_clock_product_binding_source_test.py
 
-.PHONY: media-clock-unit media-clock-product-binding-unit
-unit: media-clock-unit media-clock-product-binding-unit
+.PHONY: media-clock-unit media-clock-product-binding-unit media-clock-product-binding-source-unit
+unit: media-clock-unit media-clock-product-binding-unit media-clock-product-binding-source-unit
+
+media-clock-product-binding-source-unit:
+	python3 $(MEDIA_CLOCK_PRODUCT_BINDING_SOURCE_TEST)
 
 media-clock-unit: $(MEDIA_CLOCK_TEST)
 	./$(MEDIA_CLOCK_TEST)
