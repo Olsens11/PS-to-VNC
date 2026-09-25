@@ -60,6 +60,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/mpeg_scheduler.o \
 	$(BUILD_DIR)/mpeg_compositor.o \
 	$(BUILD_DIR)/input.o \
+	$(BUILD_DIR)/product_action.o \
 	$(BUILD_DIR)/mouse.o \
 	$(BUILD_DIR)/input_runtime.o \
 	$(BUILD_DIR)/keyboard.o \
@@ -207,7 +208,10 @@ $(BUILD_DIR)/mpeg_scheduler.o: src/display/mpeg_scheduler.c src/display/mpeg_sch
 $(BUILD_DIR)/mpeg_compositor.o: src/display/mpeg_compositor.c src/display/mpeg_compositor.h src/display/mpeg_frame.h src/display/mpeg_presentation.h src/media/clock.h src/platform/ps2_graphics.h src/display/display.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(BUILD_DIR)/input.o: src/input/input.c src/input/input.h src/input/mouse.h | $(BUILD_DIR)
+$(BUILD_DIR)/input.o: src/input/input.c src/input/input.h src/input/mouse.h src/input/product_action.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/product_action.o: src/input/product_action.c src/input/product_action.h src/input/controller.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/mouse.o: src/input/mouse.c src/input/mouse.h | $(BUILD_DIR)

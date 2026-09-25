@@ -15,7 +15,8 @@
  * Mouse updates were the first payload family earned by Issue #38. Issue #39
  * adds a compact keyboard-tap intent plus platform-neutral physical-controller
  * state facts needed by foreground routing. Controller facts remain physical
- * observations only; no OSK/UI action vocabulary is embedded in this queue.
+ * observations only. R28 adds a typed semantic product-action payload while
+ * leaving physical binding recognition and product-effect routing separate.
  *
  * Context:
  *   docs/PROJECT_INTENT.md, composition and complexity hierarchy;
@@ -29,6 +30,7 @@
 #include "controller.h"
 #include "keyboard.h"
 #include "mouse.h"
+#include "product_action.h"
 
 /*
  * The historical controller path qualified a bounded 256-entry producer /
@@ -54,7 +56,8 @@ typedef enum pstvnc_input_event_type {
     PSTVNC_INPUT_EVENT_NONE = 0,
     PSTVNC_INPUT_EVENT_CONTROLLER_STATE,
     PSTVNC_INPUT_EVENT_MOUSE_UPDATE,
-    PSTVNC_INPUT_EVENT_KEYBOARD_TAP
+    PSTVNC_INPUT_EVENT_KEYBOARD_TAP,
+    PSTVNC_INPUT_EVENT_PRODUCT_ACTION
 } pstvnc_input_event_type_t;
 
 /*
@@ -72,6 +75,7 @@ typedef union pstvnc_input_event_payload {
     pstvnc_controller_state_t controller_state;
     pstvnc_mouse_update_t mouse_update;
     pstvnc_keyboard_tap_t keyboard_tap;
+    pstvnc_product_action_t product_action;
 } pstvnc_input_event_payload_t;
 
 /*

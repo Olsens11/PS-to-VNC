@@ -105,6 +105,7 @@ SOURCES=(
     src/display/mpeg_scheduler.c
     src/display/mpeg_compositor.c
     src/input/input.c
+    src/input/product_action.c
     src/input/mouse.c
     src/input/input_runtime.c
     src/input/keyboard.c

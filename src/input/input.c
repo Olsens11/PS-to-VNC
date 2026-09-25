@@ -28,14 +28,21 @@
  * that payload. In particular, this function does not decide whether a mouse
  * update contains motion, a button change, or a wheel notch.
  */
-static int input_event_type_is_valid(
-    pstvnc_input_event_type_t event_type)
+static int input_event_is_valid(
+    const pstvnc_input_event_t *event)
 {
-    switch (event_type) {
+    if (event == NULL)
+        return 0;
+
+    switch (event->type) {
     case PSTVNC_INPUT_EVENT_CONTROLLER_STATE:
     case PSTVNC_INPUT_EVENT_MOUSE_UPDATE:
     case PSTVNC_INPUT_EVENT_KEYBOARD_TAP:
         return 1;
+
+    case PSTVNC_INPUT_EVENT_PRODUCT_ACTION:
+        return pstvnc_product_action_is_valid(
+            event->payload.product_action);
 
     case PSTVNC_INPUT_EVENT_NONE:
     default:
@@ -88,7 +95,7 @@ int pstvnc_input_queue_push(
     if (queue == NULL || event == NULL)
         return 0;
 
-    if (!input_event_type_is_valid(event->type))
+    if (!input_event_is_valid(event))
         return 0;
 
     /*
