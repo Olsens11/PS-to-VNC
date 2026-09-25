@@ -28,6 +28,7 @@ EXTRA_EE_OBJS ?=
 EE_OBJS = \
 	$(BUILD_DIR)/main.o \
 	$(BUILD_DIR)/app.o \
+	$(BUILD_DIR)/app_mpeg_activation.o \
 	$(BUILD_DIR)/app_mpeg_calibration.o \
 	$(BUILD_DIR)/app_mpeg_frame.o \
 	$(BUILD_DIR)/app_mpeg_run.o \
@@ -109,6 +110,9 @@ $(BUILD_DIR)/main.o: src/main.c src/app.h src/platform/ps2_system.h | $(BUILD_DI
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/app.o: src/app.c src/app.h src/diagnostics/diagnostics.h src/display/display.h src/framebuffer/framebuffer.h src/input/input.h src/input/input_runtime.h src/ui/local_ui_presentation.h src/ui/local_ui.h src/ui/osk.h src/ui/osk_render.h src/input/mouse.h src/input/pad.h src/rfb/rfb_session.h src/rfb/flow_policy.h src/transport/bridge.h src/transport/transport.h src/platform/ps2_graphics.h src/platform/ps2_network.h src/platform/ps2_system.h src/input/controller.h src/ui/local_controller.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/app_mpeg_activation.o: src/app_mpeg_activation.c src/app_mpeg_activation.h src/app_mpeg_calibration.h src/app_mpeg_run.h src/rfb/flow_policy.h src/display/mpeg_presentation.h src/media/clock.h src/transport/bridge.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/app_mpeg_calibration.o: src/app_mpeg_calibration.c src/app_mpeg_calibration.h src/ui/mpeg_calibration_manual.h src/ui/mpeg_calibration.h src/rfb/flow_policy.h src/rfb/rfb_session.h src/input/input_runtime.h src/ui/local_ui.h src/display/mpeg_presentation.h src/platform/ps2_graphics.h | $(BUILD_DIR)

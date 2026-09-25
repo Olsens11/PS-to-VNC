@@ -601,3 +601,72 @@ any lower-component mechanism.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A004-APPLICATION-MPEG-CALIBRATION-FOREGROUND-P9`.
+
+
+## P10 protected calibration-to-run start handoff
+
+A004 P10 closes the trigger-agnostic ownership gap between P9
+`ACCEPTED_PROTECTED` and the already-accepted R21 run-start transaction.
+
+The new `app_mpeg_activation` coordinator owns no MPEG generation identity. It
+contains no generation field, never increments or resets one, and invokes the
+same session-scoped `pstvnc_app_mpeg_run_t` that retains R21-R24 generation
+history.
+
+Admission requires all of the following before R21 is called:
+
+- the run status is exact IDLE with current_generation zero and no teardown
+  requirement;
+- P9 can copy its exact accepted geometry;
+- P9 still points to the same frozen P2 owner;
+- P2 denies remote publication;
+- P9 still points to exact P3 RFB_ONLY with no retained snapshot.
+
+The accepted geometry is copied into one Application-local value before the
+start mutation boundary. That read does not thaw P2 or consume P9 authority.
+
+P10 then invokes `pstvnc_app_mpeg_run_start()` exactly once with that geometry,
+P9's same P2 and P3 owners, and the caller-supplied current Transport access and
+session media clock. R21 remains sole owner of profile lookup, generation
+allocation, R18 open, R5/R4 startup, P3 arm, P7 initialization and START
+serialization.
+
+A returned R21 OK is not accepted on faith. P10 independently re-reads run
+status and P3 and requires:
+
+- run state STARTED_WAIT_FIRST_FRAME;
+- a nonzero current generation;
+- no teardown requirement;
+- P2 still frozen and publication-denied;
+- P3 exact WAIT_FIRST_FRAME;
+- P3 snapshot generation equal to the run generation;
+- P3 snapshot geometry exactly equal to the copied P9 geometry.
+
+Only after that proof does P10 call P9's narrow
+`pstvnc_app_mpeg_calibration_commit_protected_handoff()`. That P9 owner seam
+re-verifies its retained accepted geometry against the exact WAIT_FIRST_FRAME P3
+snapshot, clears only calibration-protected geometry/borrowed owner references,
+returns P9 to IDLE, and deliberately does not thaw P2 or mutate P3/run state.
+
+A non-OK R21 result takes the clean rollback path only when P10 independently
+proves the run is exact IDLE/current_generation zero with no teardown
+requirement and P3 is exact RFB_ONLY/no snapshot while P2 is still frozen. Only
+then does it call P9's existing `abort_accepted`, whose accepted thaw semantics
+preserve normal P2 FULL/HOLD debt.
+
+Any other start failure is uncertain or irreversible. P10 never calls P9 abort
+in that case. Instead it invokes P9's narrow fault-containment seam, which turns
+ACCEPTED_PROTECTED into FAULTED without thawing or discarding retained geometry
+evidence, and returns an explicit teardown-required activation result.
+
+The same containment rule applies when R21 returns OK but the independent
+WAIT_FIRST_FRAME proof fails, or when the P9 commit itself cannot be proven.
+No result code alone manufactures rollback.
+
+P10 is deliberately not ordinary product activation. It contains no controller
+entry detector, no live run service, no retirement/reveal operation, no Pi MPEG
+factory composition, no active-MPEG recalibration, no persistence and no
+ordinary `src/app.c` wiring.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A004-APPLICATION-MPEG-PROTECTED-START-HANDOFF-P10`.
