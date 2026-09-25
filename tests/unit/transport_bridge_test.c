@@ -485,6 +485,8 @@ int pstvnc_transport_runtime_wait_receiver_done(
     if (!wait_done_result)
         return 0;
     runtime->receiver_done = 1;
+    runtime->receiver_completion_outcome =
+        PSTVNC_TRANSPORT_RECEIVER_COMPLETION_PROVEN;
     return 1;
 }
 
@@ -493,11 +495,15 @@ int pstvnc_transport_runtime_release(
 {
     release_calls++;
     record_lifecycle(EVENT_RELEASE);
+
+    if (!release_result)
+        return 0;
+
     memset(runtime, 0, sizeof(*runtime));
     runtime->physical_stream.socket_fd = -1;
     runtime->physical_stream.send_semaphore_id = -1;
     runtime->receiver_thread_id = -1;
-    return release_result;
+    return 1;
 }
 
 int pstvnc_transport_runtime_rfb_read_exact(
@@ -859,6 +865,97 @@ static void test_failed_open_ownership_regression(void)
         PSTVNC_TRANSPORT_FAILED);
     CHECK(socket_fd == -1);
     CHECK(release_calls == 1);
+}
+
+static void test_two_phase_abort_retains_old_runtime_until_close(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    pstvnc_transport_access_t old_access;
+    pstvnc_transport_access_t new_access;
+    int socket_fd = 27;
+    int replacement_fd = 28;
+
+    reset_fixture();
+    memset(&old_access, 0, sizeof(old_access));
+    memset(&new_access, 0, sizeof(new_access));
+
+    CHECK(pstvnc_transport_session_open_with_mpeg(
+        &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&old_access) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_session_abort_storage_retained(&old_access) ==
+        PSTVNC_TRANSPORT_WOULD_BLOCK);
+
+    CHECK(pstvnc_transport_session_begin_abort() == PSTVNC_TRANSPORT_OK);
+    CHECK(lifecycle_event_count == 2u);
+    CHECK(lifecycle_events[0] == EVENT_STOP);
+    CHECK(lifecycle_events[1] == EVENT_WAIT);
+    CHECK(release_calls == 0);
+    CHECK(observed_runtime != NULL);
+    CHECK(observed_runtime == NULL || observed_runtime->initialized);
+    CHECK(observed_runtime == NULL || observed_runtime->receiver_done);
+    CHECK(observed_runtime == NULL ||
+        observed_runtime->receiver_completion_outcome ==
+            PSTVNC_TRANSPORT_RECEIVER_COMPLETION_PROVEN);
+    CHECK(pstvnc_transport_wire_availability() ==
+        PSTVNC_TRANSPORT_WIRE_INACTIVE);
+
+    CHECK(pstvnc_transport_session_abort_storage_retained(&old_access) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_rfb_write_exact(
+        &old_access, "x", 1u) == PSTVNC_TRANSPORT_CLOSED);
+    CHECK(pstvnc_transport_access_acquire(&new_access) ==
+        PSTVNC_TRANSPORT_CLOSED);
+    CHECK(new_access.opaque_ticket == 0u);
+
+    /*
+     * Retained runtime authority blocks replacement admission even though the
+     * old physical Wire is already terminal/inactive.
+     */
+    CHECK(pstvnc_transport_session_open(
+        &replacement_fd, &config) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(replacement_fd == 28);
+
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+    CHECK(release_calls == 1);
+    CHECK(pstvnc_transport_session_abort_storage_retained(&old_access) ==
+        PSTVNC_TRANSPORT_CLOSED);
+}
+
+static void test_two_phase_abort_release_failure_preserves_retained_runtime(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_mpeg_channel_config_t mpeg = make_mpeg_config();
+    pstvnc_transport_access_t old_access;
+    int socket_fd = 30;
+    int replacement_fd = 31;
+
+    reset_fixture();
+    memset(&old_access, 0, sizeof(old_access));
+
+    CHECK(pstvnc_transport_session_open_with_mpeg(
+        &socket_fd, &config, &mpeg) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&old_access) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_session_begin_abort() == PSTVNC_TRANSPORT_OK);
+
+    release_result = 0;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_FAILED);
+    CHECK(release_calls == 1);
+    CHECK(observed_runtime != NULL);
+    CHECK(observed_runtime == NULL || observed_runtime->initialized);
+    CHECK(pstvnc_transport_session_abort_storage_retained(&old_access) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_session_open(
+        &replacement_fd, &config) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(replacement_fd == 31);
+
+    release_result = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+    CHECK(release_calls == 2);
+    CHECK(pstvnc_transport_session_abort_storage_retained(&old_access) ==
+        PSTVNC_TRANSPORT_CLOSED);
 }
 
 static void test_fatal_abort_order_regression(void)
@@ -1486,6 +1583,8 @@ int main(void)
     test_audio_open_requires_explicit_config();
     test_mpeg_open_and_combined_authority();
     test_failed_open_ownership_regression();
+    test_two_phase_abort_retains_old_runtime_until_close();
+    test_two_phase_abort_release_failure_preserves_retained_runtime();
     test_fatal_abort_order_regression();
     test_rfb_result_mapping_regression();
     test_audio_result_mapping();
