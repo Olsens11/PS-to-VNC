@@ -1,7 +1,7 @@
 /*
  * File synopsis:
  * Implements the A004 P9 Application-owned manual MPEG CALIBRATION foreground
- * safety transaction.
+ * safety transaction plus the narrow P10 protected-start commit/fault seams.
  *
  * The coordinator composes public owner seams in a fixed order without taking
  * their private mechanisms: P2 global protection, input-runtime suspension,
@@ -133,6 +133,33 @@ static void copy_calibration_rect_to_presentation(
     destination->y = source->y;
     destination->width = source->width;
     destination->height = source->height;
+}
+
+static int presentation_rect_equal(
+    const pstvnc_mpeg_presentation_rect_t *left,
+    const pstvnc_mpeg_presentation_rect_t *right)
+{
+    return left != NULL &&
+        right != NULL &&
+        left->x == right->x &&
+        left->y == right->y &&
+        left->width == right->width &&
+        left->height == right->height;
+}
+
+static int presentation_geometry_equal(
+    const pstvnc_mpeg_presentation_geometry_t *left,
+    const pstvnc_mpeg_presentation_geometry_t *right)
+{
+    return left != NULL &&
+        right != NULL &&
+        presentation_rect_equal(&left->base, &right->base) &&
+        presentation_rect_equal(
+            &left->inner_content,
+            &right->inner_content) &&
+        presentation_rect_equal(
+            &left->suppression,
+            &right->suppression);
 }
 
 static int resolve_accepted_geometry(
@@ -329,7 +356,7 @@ pstvnc_app_mpeg_calibration_begin(
     pstvnc_input_runtime_t *input_runtime,
     pstvnc_rfb_session_t *rfb_session,
     const pstvnc_local_ui_t *local_ui,
-    const pstvnc_mpeg_presentation_t *presentation,
+    pstvnc_mpeg_presentation_t *presentation,
     unsigned int published_cursor_x,
     unsigned int published_cursor_y,
     unsigned char *published_click_buttons,
@@ -609,6 +636,78 @@ pstvnc_app_mpeg_calibration_abort_accepted(
     calibration->last_result = PSTVNC_APP_MPEG_CALIBRATION_OK;
     clear_live_owner_references(calibration);
     return PSTVNC_APP_MPEG_CALIBRATION_OK;
+}
+
+pstvnc_app_mpeg_calibration_result_t
+pstvnc_app_mpeg_calibration_commit_protected_handoff(
+    pstvnc_app_mpeg_calibration_t *calibration,
+    uint32_t run_generation)
+{
+    if (calibration == NULL || run_generation == 0u)
+        return PSTVNC_APP_MPEG_CALIBRATION_INVALID;
+
+    if (calibration->state == PSTVNC_APP_MPEG_CALIBRATION_FAULTED)
+        return PSTVNC_APP_MPEG_CALIBRATION_ALREADY_FAULTED;
+
+    if (calibration->state !=
+            PSTVNC_APP_MPEG_CALIBRATION_ACCEPTED_PROTECTED)
+        return PSTVNC_APP_MPEG_CALIBRATION_NOT_ACCEPTED_PROTECTED;
+
+    if (calibration->rfb_flow_policy == NULL ||
+        !calibration->rfb_flow_policy->frozen ||
+        calibration->mouse_interpretation_suspended ||
+        !calibration->accepted_geometry_valid ||
+        calibration->presentation == NULL ||
+        !manual_source_is_inactive(&calibration->manual_source) ||
+        calibration->presentation->state !=
+            PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME ||
+        !calibration->presentation->snapshot_valid ||
+        calibration->presentation->run_generation != run_generation ||
+        !presentation_geometry_equal(
+            &calibration->accepted_geometry,
+            &calibration->presentation->geometry))
+        return fail_closed(
+            calibration,
+            PSTVNC_APP_MPEG_CALIBRATION_HANDOFF_STATE_INVALID);
+
+    /*
+     * R21 now owns the still-frozen P2 protection and exact P3 snapshot.
+     * Clear only P9's borrowed/retained transaction facts; never thaw here.
+     */
+    calibration->accepted_geometry_valid = 0u;
+    memset(
+        &calibration->accepted_geometry,
+        0,
+        sizeof(calibration->accepted_geometry));
+
+    calibration->state = PSTVNC_APP_MPEG_CALIBRATION_IDLE;
+    calibration->last_result = PSTVNC_APP_MPEG_CALIBRATION_OK;
+    clear_live_owner_references(calibration);
+    return PSTVNC_APP_MPEG_CALIBRATION_OK;
+}
+
+pstvnc_app_mpeg_calibration_result_t
+pstvnc_app_mpeg_calibration_fault_protected_handoff(
+    pstvnc_app_mpeg_calibration_t *calibration)
+{
+    if (calibration == NULL)
+        return PSTVNC_APP_MPEG_CALIBRATION_INVALID;
+
+    if (calibration->state == PSTVNC_APP_MPEG_CALIBRATION_FAULTED)
+        return PSTVNC_APP_MPEG_CALIBRATION_ALREADY_FAULTED;
+
+    if (calibration->state !=
+            PSTVNC_APP_MPEG_CALIBRATION_ACCEPTED_PROTECTED)
+        return PSTVNC_APP_MPEG_CALIBRATION_NOT_ACCEPTED_PROTECTED;
+
+    /*
+     * Downstream start may have crossed an irreversible boundary. Preserve
+     * P2/geometry/owner evidence exactly as-is and make normal reuse impossible.
+     */
+    calibration->state = PSTVNC_APP_MPEG_CALIBRATION_FAULTED;
+    calibration->last_result =
+        PSTVNC_APP_MPEG_CALIBRATION_HANDOFF_FAULTED;
+    return calibration->last_result;
 }
 
 pstvnc_app_mpeg_calibration_state_t

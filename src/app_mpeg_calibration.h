@@ -1,7 +1,7 @@
 /*
  * File synopsis:
  * Defines the Application-owned manual MPEG CALIBRATION foreground transaction
- * reconstructed by A004 P9.
+ * reconstructed by A004 P9 and its narrow P10 protected-start handoff seams.
  *
  * This coordinator composes already-owned P2 RFB protection, input-runtime
  * mouse suspension/rebase, published-pointer neutralization, the accepted P8
@@ -58,7 +58,9 @@ typedef enum pstvnc_app_mpeg_calibration_result {
     PSTVNC_APP_MPEG_CALIBRATION_THAW_FAILED = -15,
     PSTVNC_APP_MPEG_CALIBRATION_NOT_ACTIVE = -16,
     PSTVNC_APP_MPEG_CALIBRATION_NOT_ACCEPTED_PROTECTED = -17,
-    PSTVNC_APP_MPEG_CALIBRATION_ALREADY_FAULTED = -18
+    PSTVNC_APP_MPEG_CALIBRATION_ALREADY_FAULTED = -18,
+    PSTVNC_APP_MPEG_CALIBRATION_HANDOFF_STATE_INVALID = -19,
+    PSTVNC_APP_MPEG_CALIBRATION_HANDOFF_FAULTED = -20
 } pstvnc_app_mpeg_calibration_result_t;
 
 typedef struct pstvnc_app_mpeg_calibration_service_result {
@@ -77,7 +79,7 @@ typedef struct pstvnc_app_mpeg_calibration {
     pstvnc_input_runtime_t *input_runtime;
     pstvnc_rfb_session_t *rfb_session;
     const pstvnc_local_ui_t *local_ui;
-    const pstvnc_mpeg_presentation_t *presentation;
+    pstvnc_mpeg_presentation_t *presentation;
 
     uint16_t *frozen_desktop;
     uint16_t *work_surface;
@@ -135,7 +137,7 @@ pstvnc_app_mpeg_calibration_begin(
     pstvnc_input_runtime_t *input_runtime,
     pstvnc_rfb_session_t *rfb_session,
     const pstvnc_local_ui_t *local_ui,
-    const pstvnc_mpeg_presentation_t *presentation,
+    pstvnc_mpeg_presentation_t *presentation,
     unsigned int published_cursor_x,
     unsigned int published_cursor_y,
     unsigned char *published_click_buttons,
@@ -173,6 +175,29 @@ int pstvnc_app_mpeg_calibration_copy_accepted_geometry(
  */
 pstvnc_app_mpeg_calibration_result_t
 pstvnc_app_mpeg_calibration_abort_accepted(
+    pstvnc_app_mpeg_calibration_t *calibration);
+
+/*
+ * Commit one already-proven protected transfer into an exact P3
+ * WAIT_FIRST_FRAME run without thawing P2.
+ *
+ * The retained accepted geometry must match P3's immutable snapshot for the
+ * supplied nonzero generation. Success clears only P9's protected-calibration
+ * authority and returns P9 to reusable IDLE. P2, P3 and the run owner are not
+ * mutated by this operation.
+ */
+pstvnc_app_mpeg_calibration_result_t
+pstvnc_app_mpeg_calibration_commit_protected_handoff(
+    pstvnc_app_mpeg_calibration_t *calibration,
+    uint32_t run_generation);
+
+/*
+ * Fault-contain one ACCEPTED_PROTECTED handoff after downstream run authority
+ * may have been acquired. This never thaws P2 and deliberately retains the
+ * geometry/owner evidence for outer teardown diagnosis.
+ */
+pstvnc_app_mpeg_calibration_result_t
+pstvnc_app_mpeg_calibration_fault_protected_handoff(
     pstvnc_app_mpeg_calibration_t *calibration);
 
 pstvnc_app_mpeg_calibration_state_t
