@@ -7,7 +7,7 @@ This portal is generated from participating product `SYMBOLS.md` files.
 | `pi` | [`pi/SYMBOLS.md`](../../pi/SYMBOLS.md) | COMPLETE | 774 |
 | `src` | [`src/SYMBOLS.md`](../../src/SYMBOLS.md) | COMPLETE | 750 |
 | `src/audio` | [`src/audio/SYMBOLS.md`](../../src/audio/SYMBOLS.md) | COMPLETE | 247 |
-| `src/config` | [`src/config/SYMBOLS.md`](../../src/config/SYMBOLS.md) | COMPLETE | 162 |
+| `src/config` | [`src/config/SYMBOLS.md`](../../src/config/SYMBOLS.md) | COMPLETE | 266 |
 | `src/diagnostics` | [`src/diagnostics/SYMBOLS.md`](../../src/diagnostics/SYMBOLS.md) | COMPLETE | 69 |
 | `src/display` | [`src/display/SYMBOLS.md`](../../src/display/SYMBOLS.md) | COMPLETE | 303 |
 | `src/framebuffer` | [`src/framebuffer/SYMBOLS.md`](../../src/framebuffer/SYMBOLS.md) | COMPLETE | 94 |
