@@ -88,6 +88,12 @@ it that:
 
 These are architecture and continuity requirements rather than optional style.
 
+For the Input-owned semantic product-action vocabulary and caller-supplied
+binding/arbitration contract, also read:
+
+    semantic-product-actions.md
+
+
 ## Cross-Wire module lifecycle
 
 Before creating or materially changing a module that performs cross-Wire work,

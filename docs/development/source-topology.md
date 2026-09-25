@@ -44,13 +44,24 @@ The current clean-generation directories are:
 | `src/diagnostics/` | diagnostics transport and runtime identity |
 | `src/display/` | platform-neutral display/presentation conversion |
 | `src/framebuffer/` | authoritative CPU-side remote desktop image |
-| `src/input/` | controller facts, libpad-facing project use, semantic input, keyboard, mouse |
+| `src/input/` | controller facts, libpad-facing project use, semantic input, caller-supplied product-action binding resolution, keyboard, mouse |
 | `src/media/` | session-scoped common media epoch, signed/saturating deadline math, synchronization contract, and host-testable wait boundary |
 | `src/mpeg/` | session-scoped MPEG decoder resource/call ownership, explicit feed and sequence bounds, safe-stop lifetime fencing, and payload-versus-transfer accounting |
 | `src/platform/` | genuinely PS2-specific system, network, graphics, and session-scoped media-clock synchronization/time mechanisms |
 | `src/rfb/` | RFB wire/session parsing, logical-stream adaptation, and complete-message safe-boundary policy |
 | `src/transport/` | sole physical PSTV stream/receiver, framing/sequence, logical-channel storage/flow control, and Transport-owned session lifecycle |
 | `src/ui/` | local foreground, controller-to-local routing, OSK model/rendering/presentation |
+
+R28 adds `src/input/product_action.{c,h}` inside the existing Input domain.
+It owns semantic product-action vocabulary plus pure binding/arbitration state:
+physical mask, semantic action, SETTLE/RELEASE/HOLD trigger, and
+DESKTOP/GLOBAL context. The resolver accepts only caller-supplied binding
+values and contains no default product mapping. It recognizes semantic intent
+only; Application/UI/RFB/MPEG/media-clock effects remain outside Input.
+`PSTVNC_INPUT_EVENT_PRODUCT_ACTION` is the ordinary FIFO representation for
+that resolved semantic intent. R28 deliberately does not wire the resolver into
+the live input worker yet.
+
 
 Current clean C/H files directly in `src/` are restricted to:
 
