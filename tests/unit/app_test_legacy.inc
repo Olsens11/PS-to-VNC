@@ -22,7 +22,9 @@
 #include "framebuffer.h"
 #include "input_runtime.h"
 #include "keyboard.h"
+#include "media/clock.h"
 #include "platform/ps2_graphics.h"
+#include "platform/ps2_media_clock.h"
 #include "platform/ps2_network.h"
 #include "platform/ps2_system.h"
 #include "rfb.h"
@@ -56,6 +58,10 @@ typedef enum event_id {
     EV_GRAPHICS_INIT,
     EV_CONNECT_PSTV,
     EV_TRANSPORT_OPEN,
+    EV_MEDIA_BINDING_INIT,
+    EV_MEDIA_CLOCK_INIT,
+    EV_MEDIA_CLOCK_IS_ARMED,
+    EV_MEDIA_BINDING_RELEASE,
     EV_SESSION_INIT,
     EV_SESSION_START,
     EV_INITIAL_FRAME,
@@ -125,7 +131,25 @@ static pstvnc_transport_result_t transport_abort_result;
 static size_t transport_open_calls;
 static size_t transport_abort_calls;
 static pstvnc_transport_session_config_t observed_transport_config;
+static pstvnc_transport_mpeg_channel_config_t observed_mpeg_transport_config;
 static int transport_open_socket_fds[16];
+static size_t plain_transport_open_calls;
+
+static int media_binding_init_result;
+static int media_binding_release_result;
+static int media_binding_sync_result;
+static int media_binding_tick_rate_result;
+static pstvnc_media_clock_result_t media_clock_init_result;
+static pstvnc_media_clock_result_t media_clock_is_armed_result;
+static int media_clock_initial_armed;
+static size_t media_binding_init_calls;
+static size_t media_binding_release_calls;
+static size_t media_clock_init_calls;
+static size_t media_clock_is_armed_calls;
+static int media_binding_assigned_ids[16];
+static void *media_clock_sync_contexts[16];
+static uint32_t media_clock_observed_tick_rates[16];
+static pstvnc_config_media_clock_profile_t media_clock_observed_profiles[16];
 
 static const pstvnc_transport_session_config_t test_transport_config = {
     101u,
@@ -137,6 +161,22 @@ static const pstvnc_transport_session_config_t test_transport_config = {
     105,
     106u
 };
+
+static const pstvnc_transport_mpeg_channel_config_t
+    test_mpeg_transport_config = {
+        201u,
+        202u,
+        203u,
+        1,
+        1
+    };
+
+static const pstvnc_config_media_clock_profile_t
+    test_media_clock_profile = {
+        0u,
+        0,
+        0
+    };
 
 static int present_overlay_visible[32];
 static size_t present_event_positions[32];
@@ -248,7 +288,21 @@ static void reset_script(void)
     memset(key_send_results, 0, sizeof(key_send_results));
     memset(key_calls, 0, sizeof(key_calls));
     memset(&observed_transport_config, 0, sizeof(observed_transport_config));
+    memset(
+        &observed_mpeg_transport_config,
+        0,
+        sizeof(observed_mpeg_transport_config));
     memset(transport_open_socket_fds, 0, sizeof(transport_open_socket_fds));
+    memset(media_binding_assigned_ids, 0, sizeof(media_binding_assigned_ids));
+    memset(media_clock_sync_contexts, 0, sizeof(media_clock_sync_contexts));
+    memset(
+        media_clock_observed_tick_rates,
+        0,
+        sizeof(media_clock_observed_tick_rates));
+    memset(
+        media_clock_observed_profiles,
+        0,
+        sizeof(media_clock_observed_profiles));
     memset(
         present_overlay_visible,
         0,
@@ -274,6 +328,20 @@ static void reset_script(void)
     transport_abort_result = PSTVNC_TRANSPORT_OK;
     transport_open_calls = 0u;
     transport_abort_calls = 0u;
+    plain_transport_open_calls = 0u;
+
+    media_binding_init_result = 0;
+    media_binding_release_result = 0;
+    media_binding_sync_result = 0;
+    media_binding_tick_rate_result = 0;
+    media_clock_init_result = PSTVNC_MEDIA_CLOCK_OK;
+    media_clock_is_armed_result = PSTVNC_MEDIA_CLOCK_OK;
+    media_clock_initial_armed = 0;
+    media_binding_init_calls = 0u;
+    media_binding_release_calls = 0u;
+    media_clock_init_calls = 0u;
+    media_clock_is_armed_calls = 0u;
+
     session_start_result = 1;
     session_start_result_count = 0u;
     session_start_calls = 0u;
@@ -336,7 +404,10 @@ static void reset_script(void)
 
 static int run_configured_app(void)
 {
-    return pstvnc_app_run_with_transport_config(&test_transport_config);
+    return pstvnc_app_run_with_session_profiles(
+        &test_transport_config,
+        &test_mpeg_transport_config,
+        &test_media_clock_profile);
 }
 
 static int event_index(event_id_t event)
@@ -431,13 +502,27 @@ pstvnc_transport_result_t pstvnc_transport_session_open(
     int *socket_fd,
     const pstvnc_transport_session_config_t *config)
 {
+    (void)socket_fd;
+    (void)config;
+    plain_transport_open_calls++;
+    return PSTVNC_TRANSPORT_FAILED;
+}
+
+pstvnc_transport_result_t pstvnc_transport_session_open_with_mpeg(
+    int *socket_fd,
+    const pstvnc_transport_session_config_t *config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_config)
+{
     log_event(EV_TRANSPORT_OPEN);
     transport_open_calls++;
 
     CHECK(socket_fd != NULL);
     CHECK(config != NULL);
+    CHECK(mpeg_config != NULL);
     if (config != NULL)
         observed_transport_config = *config;
+    if (mpeg_config != NULL)
+        observed_mpeg_transport_config = *mpeg_config;
 
     if (transport_open_calls <=
         sizeof(transport_open_socket_fds) /
@@ -451,6 +536,134 @@ pstvnc_transport_result_t pstvnc_transport_session_open(
         *socket_fd = -1;
 
     return transport_open_result;
+}
+
+
+static int test_media_clock_lock(void *context)
+{
+    return context != NULL ? 0 : -1;
+}
+
+static int test_media_clock_unlock(void *context)
+{
+    return context != NULL ? 0 : -1;
+}
+
+int pstvnc_ps2_media_clock_binding_init(
+    pstvnc_ps2_media_clock_binding_t *binding)
+{
+    int assigned_id;
+
+    log_event(EV_MEDIA_BINDING_INIT);
+    media_binding_init_calls++;
+
+    if (binding == NULL || media_binding_init_result < 0)
+        return -1;
+
+    assigned_id = 300 + (int)media_binding_init_calls;
+    binding->semaphore_id = assigned_id;
+    binding->state = PSTVNC_PS2_MEDIA_CLOCK_BINDING_ACTIVE;
+
+    if (media_binding_init_calls <=
+        sizeof(media_binding_assigned_ids) /
+        sizeof(media_binding_assigned_ids[0]))
+        media_binding_assigned_ids[media_binding_init_calls - 1u] = assigned_id;
+
+    return 0;
+}
+
+int pstvnc_ps2_media_clock_binding_release(
+    pstvnc_ps2_media_clock_binding_t *binding)
+{
+    log_event(EV_MEDIA_BINDING_RELEASE);
+    media_binding_release_calls++;
+
+    CHECK(binding != NULL);
+    if (binding == NULL ||
+        binding->state != PSTVNC_PS2_MEDIA_CLOCK_BINDING_ACTIVE)
+        return -1;
+
+    binding->semaphore_id = -1;
+    binding->state = PSTVNC_PS2_MEDIA_CLOCK_BINDING_RETIRED;
+    return media_binding_release_result;
+}
+
+int pstvnc_ps2_media_clock_binding_sync(
+    pstvnc_ps2_media_clock_binding_t *binding,
+    pstvnc_media_clock_sync_t *sync)
+{
+    if (binding == NULL || sync == NULL || media_binding_sync_result < 0)
+        return -1;
+
+    CHECK(binding->state == PSTVNC_PS2_MEDIA_CLOCK_BINDING_ACTIVE);
+    sync->lock = test_media_clock_lock;
+    sync->unlock = test_media_clock_unlock;
+    sync->context = binding;
+    return 0;
+}
+
+int pstvnc_ps2_media_clock_binding_tick_rate(
+    const pstvnc_ps2_media_clock_binding_t *binding,
+    uint32_t *ticks_per_second)
+{
+    if (binding == NULL ||
+        ticks_per_second == NULL ||
+        media_binding_tick_rate_result < 0)
+        return -1;
+
+    CHECK(binding->state == PSTVNC_PS2_MEDIA_CLOCK_BINDING_ACTIVE);
+    *ticks_per_second = 147456000u;
+    return 0;
+}
+
+int pstvnc_media_clock_init(
+    pstvnc_media_clock_t *clock,
+    const pstvnc_config_media_clock_profile_t *profile,
+    uint32_t ticks_per_second,
+    const pstvnc_media_clock_sync_t *sync)
+{
+    size_t index;
+
+    log_event(EV_MEDIA_CLOCK_INIT);
+    media_clock_init_calls++;
+    index = media_clock_init_calls - 1u;
+
+    if (clock == NULL ||
+        profile == NULL ||
+        sync == NULL ||
+        media_clock_init_result != PSTVNC_MEDIA_CLOCK_OK)
+        return media_clock_init_result;
+
+    if (index <
+        sizeof(media_clock_observed_profiles) /
+        sizeof(media_clock_observed_profiles[0])) {
+        media_clock_observed_profiles[index] = *profile;
+        media_clock_observed_tick_rates[index] = ticks_per_second;
+        media_clock_sync_contexts[index] = sync->context;
+    }
+
+    memset(clock, 0, sizeof(*clock));
+    clock->profile = *profile;
+    clock->sync = *sync;
+    clock->ticks_per_second = ticks_per_second;
+    clock->armed = media_clock_initial_armed;
+    return PSTVNC_MEDIA_CLOCK_OK;
+}
+
+int pstvnc_media_clock_is_armed(
+    const pstvnc_media_clock_t *clock,
+    int *armed)
+{
+    log_event(EV_MEDIA_CLOCK_IS_ARMED);
+    media_clock_is_armed_calls++;
+
+    if (clock == NULL ||
+        armed == NULL ||
+        media_clock_is_armed_result != PSTVNC_MEDIA_CLOCK_OK)
+        return media_clock_is_armed_result;
+
+    *armed = clock->armed;
+    return PSTVNC_MEDIA_CLOCK_OK;
 }
 
 pstvnc_transport_result_t pstvnc_transport_session_abort(void)
@@ -1110,6 +1323,7 @@ static void check_input_cleanup_precedes_transport_abort(void)
 static void check_config_was_forwarded(void)
 {
     CHECK(transport_open_calls == 1u);
+    CHECK(plain_transport_open_calls == 0u);
     CHECK(observed_transport_config.rfb_queue_capacity == 101u);
     CHECK(observed_transport_config.rfb_initial_credit_bytes == 102u);
     CHECK(observed_transport_config.rfb_credit_batch_bytes == 103u);
@@ -1118,6 +1332,11 @@ static void check_config_was_forwarded(void)
     CHECK(observed_transport_config.receiver_thread_stack_size == 104u);
     CHECK(observed_transport_config.receiver_thread_priority == 105);
     CHECK(observed_transport_config.max_data_payload == 106u);
+    CHECK(observed_mpeg_transport_config.queue_capacity == 201u);
+    CHECK(observed_mpeg_transport_config.initial_credit_bytes == 202u);
+    CHECK(observed_mpeg_transport_config.credit_batch_bytes == 203u);
+    CHECK(observed_mpeg_transport_config.credit_flush_on_empty == 1);
+    CHECK(observed_mpeg_transport_config.credit_return_enabled == 1);
 }
 
 static void test_no_argument_entry_fails_closed(void)

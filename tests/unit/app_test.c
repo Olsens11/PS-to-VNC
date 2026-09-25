@@ -14,10 +14,20 @@
 #include "app_test_legacy.inc"
 #undef main
 
+#include "config/media_clock_profile.h"
+#include "config/mpeg_runtime_profile.h"
+
 static int selected_projection_available;
 static size_t selected_projection_calls;
 static size_t selected_projection_event_count;
 static pstvnc_transport_session_config_t selected_projection;
+static int selected_mpeg_profile_available;
+static size_t selected_mpeg_profile_calls;
+static size_t selected_mpeg_profile_event_count;
+static pstvnc_config_mpeg_runtime_profile_t selected_mpeg_profile;
+static size_t selected_media_clock_profile_calls;
+static size_t selected_media_clock_profile_event_count;
+static pstvnc_config_media_clock_profile_t selected_media_clock_profile;
 
 int pstvnc_config_rfb_runtime_profile_selected(
     pstvnc_transport_session_config_t *transport_config)
@@ -32,12 +42,37 @@ int pstvnc_config_rfb_runtime_profile_selected(
     return 1;
 }
 
+const pstvnc_config_mpeg_runtime_profile_t *
+pstvnc_config_mpeg_runtime_profile_selected(void)
+{
+    selected_mpeg_profile_calls++;
+    selected_mpeg_profile_event_count = event_count;
+    return selected_mpeg_profile_available ? &selected_mpeg_profile : NULL;
+}
+
+pstvnc_config_media_clock_profile_t
+pstvnc_config_media_clock_profile_selected(void)
+{
+    selected_media_clock_profile_calls++;
+    selected_media_clock_profile_event_count = event_count;
+    return selected_media_clock_profile;
+}
+
 static void reset_selected_projection(void)
 {
     selected_projection_available = 0;
     selected_projection_calls = 0u;
     selected_projection_event_count = 0u;
     memset(&selected_projection, 0, sizeof(selected_projection));
+
+    selected_mpeg_profile_available = 0;
+    selected_mpeg_profile_calls = 0u;
+    selected_mpeg_profile_event_count = 0u;
+    memset(&selected_mpeg_profile, 0, sizeof(selected_mpeg_profile));
+
+    selected_media_clock_profile_calls = 0u;
+    selected_media_clock_profile_event_count = 0u;
+    memset(&selected_media_clock_profile, 0, sizeof(selected_media_clock_profile));
 }
 
 static int nth_event_index(event_id_t event, size_t occurrence)
@@ -327,6 +362,26 @@ static void test_r15_projection_failure_precedes_all_startup(void)
     CHECK(transport_open_calls == 0u);
 }
 
+static void test_r27_mpeg_profile_failure_precedes_all_startup(void)
+{
+    reset_script();
+    reset_selected_projection();
+
+    selected_projection_available = 1;
+    selected_projection = test_transport_config;
+
+    CHECK(pstvnc_app_run() == -1);
+    CHECK(selected_projection_calls == 1u);
+    CHECK(selected_mpeg_profile_calls == 1u);
+    CHECK(selected_media_clock_profile_calls == 0u);
+    CHECK(selected_projection_event_count == 0u);
+    CHECK(selected_mpeg_profile_event_count == 0u);
+    CHECK(event_count == 0u);
+    CHECK(connect_calls == 0u);
+    CHECK(transport_open_calls == 0u);
+    CHECK(media_binding_init_calls == 0u);
+}
+
 static void test_r15_selected_profile_reaches_existing_lifecycle_exactly(void)
 {
     reset_script();
@@ -342,18 +397,33 @@ static void test_r15_selected_profile_reaches_existing_lifecycle_exactly(void)
     selected_projection.receiver_thread_priority = 63;
     selected_projection.max_data_payload = 8192u;
 
-    /* Stop immediately after the existing configured lifecycle observes the
-     * selected value; this keeps the assertion about composition, not UI/RFB
-     * session behavior already covered by the legacy fixture. */
+    selected_mpeg_profile_available = 1;
+    selected_mpeg_profile.transport.queue_capacity = 65536u;
+    selected_mpeg_profile.transport.initial_credit_bytes = 49152u;
+    selected_mpeg_profile.transport.credit_batch_bytes = 16384u;
+    selected_mpeg_profile.transport.credit_flush_on_empty = 1;
+    selected_mpeg_profile.transport.credit_return_enabled = 1;
+
+    selected_media_clock_profile.epoch_lead_us = 0u;
+    selected_media_clock_profile.audio_presentation_offset_us = 0;
+    selected_media_clock_profile.video_presentation_offset_us = 0;
+
+    /* Stop at Transport admission after proving every selected value was
+     * acquired before the first platform startup event and forwarded exactly. */
     transport_open_result = PSTVNC_TRANSPORT_FAILED;
     transport_open_adopts = 0;
 
     CHECK(pstvnc_app_run() == -1);
     CHECK(selected_projection_calls == 1u);
+    CHECK(selected_mpeg_profile_calls == 1u);
+    CHECK(selected_media_clock_profile_calls == 1u);
     CHECK(selected_projection_event_count == 0u);
+    CHECK(selected_mpeg_profile_event_count == 0u);
+    CHECK(selected_media_clock_profile_event_count == 0u);
     CHECK(event_count > 0u);
     CHECK(events[0] == EV_PREPARE_IOP);
     CHECK(transport_open_calls == 1u);
+    CHECK(plain_transport_open_calls == 0u);
     CHECK(observed_transport_config.rfb_queue_capacity == 32768u);
     CHECK(observed_transport_config.rfb_initial_credit_bytes == 32768u);
     CHECK(observed_transport_config.rfb_credit_batch_bytes == 8192u);
@@ -362,6 +432,12 @@ static void test_r15_selected_profile_reaches_existing_lifecycle_exactly(void)
     CHECK(observed_transport_config.receiver_thread_stack_size == 16384u);
     CHECK(observed_transport_config.receiver_thread_priority == 63);
     CHECK(observed_transport_config.max_data_payload == 8192u);
+    CHECK(observed_mpeg_transport_config.queue_capacity == 65536u);
+    CHECK(observed_mpeg_transport_config.initial_credit_bytes == 49152u);
+    CHECK(observed_mpeg_transport_config.credit_batch_bytes == 16384u);
+    CHECK(observed_mpeg_transport_config.credit_flush_on_empty == 1);
+    CHECK(observed_mpeg_transport_config.credit_return_enabled == 1);
+    CHECK(media_binding_init_calls == 0u);
 }
 
 static void test_r19_thawed_dirty_update_completes_presents_and_reschedules(void)
@@ -570,6 +646,166 @@ static void test_r19_policy_accounting_rejection_fails_before_receive(void)
     CHECK(diagnostic_occurrences_of("PSTVNC_STAGE FATAL") == 1u);
 }
 
+
+static void check_media_profile_observation(size_t index)
+{
+    CHECK(index < media_clock_init_calls);
+    if (index >= media_clock_init_calls)
+        return;
+
+    CHECK(media_clock_observed_profiles[index].epoch_lead_us == 0u);
+    CHECK(
+        media_clock_observed_profiles[index].audio_presentation_offset_us == 0);
+    CHECK(
+        media_clock_observed_profiles[index].video_presentation_offset_us == 0);
+    CHECK(media_clock_observed_tick_rates[index] == 147456000u);
+    CHECK(media_clock_sync_contexts[index] != NULL);
+}
+
+static void test_r27_session_foundation_is_fresh_unarmed_and_mpeg_capable(void)
+{
+    reset_script();
+    session_start_result = 0;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(transport_open_calls == 1u);
+    CHECK(plain_transport_open_calls == 0u);
+    CHECK(media_binding_init_calls == 1u);
+    CHECK(media_clock_init_calls == 1u);
+    CHECK(media_clock_is_armed_calls == 1u);
+    CHECK(media_binding_release_calls == 1u);
+    check_config_was_forwarded();
+    check_media_profile_observation(0u);
+
+    CHECK(
+        nth_event_index(EV_TRANSPORT_OPEN, 0u) <
+        nth_event_index(EV_MEDIA_BINDING_INIT, 0u));
+    CHECK(
+        nth_event_index(EV_MEDIA_BINDING_INIT, 0u) <
+        nth_event_index(EV_MEDIA_CLOCK_INIT, 0u));
+    CHECK(
+        nth_event_index(EV_MEDIA_CLOCK_INIT, 0u) <
+        nth_event_index(EV_MEDIA_CLOCK_IS_ARMED, 0u));
+    CHECK(
+        nth_event_index(EV_MEDIA_CLOCK_IS_ARMED, 0u) <
+        nth_event_index(EV_SESSION_START, 0u));
+    CHECK(
+        nth_event_index(EV_MEDIA_BINDING_RELEASE, 0u) <
+        nth_event_index(EV_TRANSPORT_ABORT, 0u));
+}
+
+static void test_r27_provider_replacement_retires_clock_before_transport(void)
+{
+    int first_shutdown;
+    int first_release;
+    int first_abort;
+    int second_connect;
+
+    reset_script();
+    script_fresh_connections(2u);
+
+    request_results[0] = 1;
+    request_results[1] = 1;
+    request_result_count = 2u;
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[0] = PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ;
+    try_receive_results[1] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[1] = PSTVNC_RFB_SESSION_ERROR_IO;
+    try_receive_result_count = 2u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(connect_calls == 2u);
+    CHECK(transport_open_calls == 2u);
+    CHECK(plain_transport_open_calls == 0u);
+    CHECK(media_binding_init_calls == 2u);
+    CHECK(media_clock_init_calls == 2u);
+    CHECK(media_clock_is_armed_calls == 2u);
+    CHECK(media_binding_release_calls == 2u);
+    CHECK(media_binding_assigned_ids[0] != 0);
+    CHECK(media_binding_assigned_ids[1] != 0);
+    CHECK(media_binding_assigned_ids[0] != media_binding_assigned_ids[1]);
+    check_media_profile_observation(0u);
+    check_media_profile_observation(1u);
+
+    first_shutdown = nth_event_index(EV_INPUT_SHUTDOWN, 0u);
+    first_release = nth_event_index(EV_MEDIA_BINDING_RELEASE, 0u);
+    first_abort = nth_event_index(EV_TRANSPORT_ABORT, 0u);
+    second_connect = nth_event_index(EV_CONNECT_PSTV, 1u);
+
+    CHECK(first_shutdown >= 0);
+    CHECK(first_shutdown < first_release);
+    CHECK(first_release < first_abort);
+    CHECK(first_abort < second_connect);
+}
+
+static void test_r27_binding_release_failure_blocks_replacement(void)
+{
+    reset_script();
+    script_fresh_connections(2u);
+
+    media_binding_release_result = -1;
+    request_results[0] = 1;
+    request_result_count = 1u;
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[0] = PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ;
+    try_receive_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(connect_calls == 1u);
+    CHECK(transport_open_calls == 1u);
+    CHECK(media_binding_init_calls == 1u);
+    CHECK(media_binding_release_calls == 1u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 1u);
+    CHECK(
+        nth_event_index(EV_INPUT_SHUTDOWN, 0u) <
+        nth_event_index(EV_MEDIA_BINDING_RELEASE, 0u));
+    CHECK(
+        nth_event_index(EV_MEDIA_BINDING_RELEASE, 0u) <
+        nth_event_index(EV_TRANSPORT_ABORT, 0u));
+}
+
+static void test_r27_prebinding_failure_never_releases_clock(void)
+{
+    reset_script();
+    transport_open_result = PSTVNC_TRANSPORT_FAILED;
+    transport_open_adopts = 0;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(transport_open_calls == 1u);
+    CHECK(media_binding_init_calls == 0u);
+    CHECK(media_clock_init_calls == 0u);
+    CHECK(media_binding_release_calls == 0u);
+}
+
+static void test_r27_binding_init_failure_aborts_transport_without_release(void)
+{
+    reset_script();
+    media_binding_init_result = -1;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(transport_open_calls == 1u);
+    CHECK(media_binding_init_calls == 1u);
+    CHECK(media_clock_init_calls == 0u);
+    CHECK(media_binding_release_calls == 0u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 1u);
+}
+
+static void test_r27_clock_must_begin_unarmed(void)
+{
+    reset_script();
+    media_clock_initial_armed = 1;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(media_binding_init_calls == 1u);
+    CHECK(media_clock_init_calls == 1u);
+    CHECK(media_clock_is_armed_calls == 1u);
+    CHECK(event_occurrences(EV_SESSION_START) == 0u);
+    CHECK(media_binding_release_calls == 1u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 1u);
+}
+
 int main(void)
 {
     int legacy_result;
@@ -580,7 +816,15 @@ int main(void)
         return legacy_result;
 
     test_r15_projection_failure_precedes_all_startup();
+    test_r27_mpeg_profile_failure_precedes_all_startup();
     test_r15_selected_profile_reaches_existing_lifecycle_exactly();
+
+    test_r27_session_foundation_is_fresh_unarmed_and_mpeg_capable();
+    test_r27_provider_replacement_retires_clock_before_transport();
+    test_r27_binding_release_failure_blocks_replacement();
+    test_r27_prebinding_failure_never_releases_clock();
+    test_r27_binding_init_failure_aborts_transport_without_release();
+    test_r27_clock_must_begin_unarmed();
 
     test_r16b_provider_connect_failure_restarts_fresh();
     test_r16b_provider_read_closes_admission_before_restart();
@@ -600,10 +844,10 @@ int main(void)
     test_r19_policy_accounting_rejection_fails_before_receive();
 
     if (failures != 0) {
-        fprintf(stderr, "app R15/R16B/R19 tests: %d failure(s)\n", failures);
+        fprintf(stderr, "app R15/R16B/R19/R27 tests: %d failure(s)\n", failures);
         return 1;
     }
 
-    printf("app R15/R16B/R19 tests: PASS\n");
+    printf("app R15/R16B/R19/R27 tests: PASS\n");
     return 0;
 }

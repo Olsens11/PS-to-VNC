@@ -326,6 +326,10 @@ $(BUILD_DIR)/app_test: \
 	../src/platform/ps2_graphics.h \
 	../src/platform/ps2_network.h \
 	../src/platform/ps2_system.h \
+	../src/platform/ps2_media_clock.h \
+	../src/media/clock.h \
+	../src/config/mpeg_runtime_profile.h \
+	../src/config/media_clock_profile.h \
 	../src/rfb/rfb.h \
 	../src/rfb/rfb_session.h \
 	../src/rfb/flow_policy.h \
@@ -368,6 +372,15 @@ $(BUILD_DIR)/app_mpeg_run_test: \
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+
+APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST := unit/app_mpeg_session_foundation_source_test.py
+
+.PHONY: app-mpeg-session-foundation-source-unit
+unit: app-mpeg-session-foundation-source-unit
+
+app-mpeg-session-foundation-source-unit:
+	python3 $(APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST)
 
 
 GEOMETRY_TEST := .build/video_geometry_test
