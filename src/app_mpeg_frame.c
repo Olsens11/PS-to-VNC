@@ -528,6 +528,40 @@ pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_service(
     return result->result;
 }
 
+pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_abandon_claim(
+    pstvnc_app_mpeg_frame_consumer_t *consumer,
+    uint32_t run_generation)
+{
+    pstvnc_mpeg_worker_result_t worker_result;
+
+    if (!pstvnc_app_mpeg_frame_generation_valid(
+            consumer,
+            run_generation))
+        return consumer != NULL && consumer->initialized
+            ? PSTVNC_APP_MPEG_FRAME_WRONG_GENERATION
+            : PSTVNC_APP_MPEG_FRAME_INVALID;
+
+    /*
+     * Crossing this seam is terminal for this P7 consumer. Even when no claim
+     * exists, prevent any later service from acquiring/presenting a new frame
+     * while the enclosing Wire Session is being destroyed.
+     */
+    consumer->faulted = 1;
+
+    if (!consumer->claim_outstanding)
+        return PSTVNC_APP_MPEG_FRAME_OK;
+
+    worker_result = pstvnc_mpeg_worker_release_frame(
+        consumer->worker,
+        consumer->run_generation,
+        consumer->held_frame.claim_token);
+    if (worker_result != PSTVNC_MPEG_WORKER_OK)
+        return PSTVNC_APP_MPEG_FRAME_RELEASE_FAILED;
+
+    pstvnc_app_mpeg_frame_clear_held(consumer);
+    return PSTVNC_APP_MPEG_FRAME_OK;
+}
+
 pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_status(
     const pstvnc_app_mpeg_frame_consumer_t *consumer,
     uint32_t run_generation,
