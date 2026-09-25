@@ -151,6 +151,13 @@ static void pstvnc_app_mpeg_run_clear_attempt(
     run->producer_done_published = 0;
     run->worker_joined = 0;
     run->rfb_restoration_presented = 0;
+
+    run->session_abort_stop_requested = 0;
+    run->session_abort_outcome_recorded = 0;
+    memset(
+        &run->session_abort_worker_outcome,
+        0,
+        sizeof(run->session_abort_worker_outcome));
 }
 
 static void pstvnc_app_mpeg_run_fault(
@@ -1165,6 +1172,221 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
     return PSTVNC_APP_MPEG_RUN_OK;
 }
 
+static int pstvnc_app_mpeg_run_session_abort_entry_valid(
+    const pstvnc_app_mpeg_run_t *run)
+{
+    if (run == NULL ||
+        run->current_generation == 0u ||
+        run->transport_access.opaque_ticket == 0u ||
+        !run->transport_run_open ||
+        !run->worker_runtime_owned ||
+        !run->start_invoked)
+        return 0;
+
+    if (run->worker_started && !run->worker_runtime_owned)
+        return 0;
+
+    if (run->frame_consumer_initialized &&
+        (!run->frame_consumer.initialized ||
+         run->frame_consumer.run_generation != run->current_generation ||
+         run->frame_consumer.worker != &run->worker))
+        return 0;
+
+    return 1;
+}
+
+static pstvnc_app_mpeg_run_result_t
+pstvnc_app_mpeg_run_session_abort_fail(
+    pstvnc_app_mpeg_run_t *run,
+    pstvnc_app_mpeg_run_result_t result)
+{
+    run->last_result = result;
+    run->session_teardown_required = 1;
+    return result;
+}
+
+pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_session_abort_service(
+    pstvnc_app_mpeg_run_t *run)
+{
+    pstvnc_transport_result_t transport_result;
+    pstvnc_mpeg_worker_status_t worker_status;
+    pstvnc_mpeg_worker_outcome_t outcome;
+    pstvnc_app_mpeg_frame_result_t frame_result;
+
+    if (run == NULL)
+        return PSTVNC_APP_MPEG_RUN_INVALID;
+
+    if (run->state == PSTVNC_APP_MPEG_RUN_SESSION_ABORT_READY) {
+        run->last_result = PSTVNC_APP_MPEG_RUN_OK;
+        return PSTVNC_APP_MPEG_RUN_OK;
+    }
+
+    if (run->state != PSTVNC_APP_MPEG_RUN_SESSION_ABORTING &&
+        run->state != PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME &&
+        run->state != PSTVNC_APP_MPEG_RUN_MPEG_OWNED &&
+        run->state != PSTVNC_APP_MPEG_RUN_RETIRING &&
+        run->state != PSTVNC_APP_MPEG_RUN_FAULTED)
+        return PSTVNC_APP_MPEG_RUN_NOT_SESSION_ABORTABLE;
+
+    /*
+     * The exact old Transport ticket must still name a terminal runtime whose
+     * storage is retained. CLOSED from a stale/released ticket is not enough:
+     * a worker may still be unwinding through that old runtime's wait/feed
+     * resources.
+     */
+    transport_result =
+        pstvnc_transport_session_abort_storage_retained(
+            &run->transport_access);
+    if (transport_result != PSTVNC_TRANSPORT_OK)
+        return pstvnc_app_mpeg_run_session_abort_fail(
+            run,
+            PSTVNC_APP_MPEG_RUN_SESSION_ABORT_TRANSPORT_NOT_RETAINED);
+
+    if (run->state != PSTVNC_APP_MPEG_RUN_SESSION_ABORTING) {
+        if (!pstvnc_app_mpeg_run_session_abort_entry_valid(run))
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+
+        run->state = PSTVNC_APP_MPEG_RUN_SESSION_ABORTING;
+        run->session_teardown_required = 1;
+    }
+
+    /*
+     * P7 owns the exact borrowed-frame bookkeeping. Abandonment is deliberately
+     * first: a CLAIMED worker slot prevents join, and session teardown must
+     * never present that old frame merely to make the slot releasable.
+     */
+    if (run->frame_consumer_initialized) {
+        frame_result = pstvnc_app_mpeg_frame_consumer_abandon_claim(
+            &run->frame_consumer,
+            run->current_generation);
+        if (frame_result != PSTVNC_APP_MPEG_FRAME_OK)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_FRAME_ABANDON_FAILED);
+    }
+
+    if (run->worker_started && !run->worker_joined) {
+        if (!run->session_abort_stop_requested) {
+            if (pstvnc_mpeg_worker_request_stop(
+                    &run->worker,
+                    run->current_generation) != PSTVNC_MPEG_WORKER_OK)
+                return pstvnc_app_mpeg_run_session_abort_fail(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STOP_FAILED);
+
+            run->session_abort_stop_requested = 1;
+        }
+
+        memset(&worker_status, 0, sizeof(worker_status));
+        if (pstvnc_mpeg_worker_status(
+                &run->worker,
+                run->current_generation,
+                &worker_status) != PSTVNC_MPEG_WORKER_OK)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
+
+        /*
+         * request_stop() discards AVAILABLE itself; P7 abandonment above owns
+         * CLAIMED. Any remaining nonempty slot is contradictory and must keep
+         * teardown fenced.
+         */
+        if (worker_status.slot_state != PSTVNC_MPEG_WORKER_SLOT_EMPTY)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+
+        if (!worker_status.worker_finished) {
+            run->last_result = PSTVNC_APP_MPEG_RUN_OK;
+            return PSTVNC_APP_MPEG_RUN_OK;
+        }
+
+        if (!worker_status.stop_requested ||
+            worker_status.decoder_live ||
+            worker_status.thread_joined)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
+
+        if (pstvnc_mpeg_worker_join(
+                &run->worker,
+                run->current_generation) != PSTVNC_MPEG_WORKER_OK)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_JOIN_FAILED);
+
+        run->worker_joined = 1;
+    }
+
+    if (run->worker_started && !run->worker_joined)
+        return pstvnc_app_mpeg_run_session_abort_fail(
+            run,
+            PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+
+    if (run->worker_started && !run->session_abort_outcome_recorded) {
+        memset(&outcome, 0, sizeof(outcome));
+        if (pstvnc_mpeg_worker_outcome(
+                &run->worker,
+                run->current_generation,
+                &outcome) != PSTVNC_MPEG_WORKER_OK ||
+            outcome.run_generation != run->current_generation)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_OUTCOME_FAILED);
+
+        /*
+         * Preserve STOPPED, FAILED, or a genuine racing natural terminal
+         * outcome exactly as worker evidence. None is promoted into R23/R24
+         * successful retirement semantics.
+         */
+        run->session_abort_worker_outcome = outcome;
+        run->session_abort_outcome_recorded = 1;
+    }
+
+    if (run->frame_consumer_initialized) {
+        memset(&run->frame_consumer, 0, sizeof(run->frame_consumer));
+        run->frame_consumer_initialized = 0;
+    }
+
+    if (run->worker_started) {
+        if (!run->session_abort_outcome_recorded)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+
+        if (pstvnc_mpeg_worker_release(
+                &run->worker,
+                run->current_generation) != PSTVNC_MPEG_WORKER_OK)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_RELEASE_FAILED);
+
+        run->worker_started = 0;
+    }
+
+    if (run->worker_runtime_owned) {
+        if (pstvnc_mpeg_ps2_worker_runtime_release(
+                &run->worker_runtime) != 0)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_RUNTIME_RELEASE_FAILED);
+
+        run->worker_runtime_owned = 0;
+    }
+
+    /*
+     * Do not finalize the Transport MPEG run or mutate P2/P3. The enclosing
+     * session is dying; final Transport close will destroy those old session
+     * structures only after this local asynchronous owner is proven dormant.
+     */
+    run->state = PSTVNC_APP_MPEG_RUN_SESSION_ABORT_READY;
+    run->last_result = PSTVNC_APP_MPEG_RUN_OK;
+    run->session_teardown_required = 1;
+    return PSTVNC_APP_MPEG_RUN_OK;
+}
+
 pstvnc_app_mpeg_run_result_t
 pstvnc_app_mpeg_run_record_restored_rfb_presented(
     pstvnc_app_mpeg_run_t *run,
@@ -1337,5 +1559,12 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_status(
     status->worker_joined = run->worker_joined;
     status->rfb_restoration_presented =
         run->rfb_restoration_presented;
+
+    status->session_abort_stop_requested =
+        run->session_abort_stop_requested;
+    status->session_abort_outcome_recorded =
+        run->session_abort_outcome_recorded;
+    status->session_abort_worker_outcome =
+        run->session_abort_worker_outcome;
     return PSTVNC_APP_MPEG_RUN_OK;
 }
