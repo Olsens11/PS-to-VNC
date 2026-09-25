@@ -129,6 +129,16 @@ pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_service(
     uint64_t current_tick,
     pstvnc_app_mpeg_frame_service_result_t *result);
 
+/*
+ * Abandon one exact outstanding P7 claim for abnormal enclosing-session
+ * teardown. The claimed worker slot is released without compositor/scheduler
+ * presentation and the consumer is fault-contained so it cannot resume frame
+ * service afterward. No-claim is a successful terminalization.
+ */
+pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_abandon_claim(
+    pstvnc_app_mpeg_frame_consumer_t *consumer,
+    uint32_t run_generation);
+
 /* Read Application-owned claim/accounting state; no worker outcome is inferred. */
 pstvnc_app_mpeg_frame_result_t pstvnc_app_mpeg_frame_consumer_status(
     const pstvnc_app_mpeg_frame_consumer_t *consumer,
