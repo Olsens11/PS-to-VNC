@@ -79,6 +79,22 @@ pstvnc_transport_result_t pstvnc_transport_session_open_with_audio_mpeg(
     const pstvnc_transport_audio_channel_config_t *audio_config,
     const pstvnc_transport_mpeg_channel_config_t *mpeg_config);
 
+/*
+ * Begin abnormal enclosing-session teardown without reclaiming Transport
+ * storage. This terminalizes the active runtime, wakes logical rider waiters,
+ * shuts down physical I/O, and proves receiver completion. The exact old
+ * runtime/ticket storage remains owned until session_close().
+ */
+pstvnc_transport_result_t pstvnc_transport_session_begin_abort(void);
+
+/*
+ * Prove that one exact old access ticket still refers to the terminal retained
+ * runtime produced by begin_abort(). OK is the only state in which a dependent
+ * module may perform local old-session cleanup before final Transport release.
+ */
+pstvnc_transport_result_t pstvnc_transport_session_abort_storage_retained(
+    const pstvnc_transport_access_t *transport_access);
+
 pstvnc_transport_result_t pstvnc_transport_session_abort(void);
 pstvnc_transport_result_t pstvnc_transport_session_wait_receiver_done(void);
 pstvnc_transport_result_t pstvnc_transport_session_close(void);
