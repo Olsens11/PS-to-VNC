@@ -329,6 +329,64 @@ are not completion proof.
 This is the R20C correction to the A001 lifecycle contract; it changes no Wire
 bytes, logical-rider semantics, or module start/stop policy.
 
+### R33 retained-runtime abort fence
+
+R33 makes the dependency between Transport terminality and asynchronous module
+retirement explicit for an active MPEG worker.
+
+A fatal enclosing-session abort is now two-phase when a Transport runtime owns
+riders:
+
+    Transport begin-abort
+        |
+        | close admission, publish terminal rider wakeups,
+        | shut down physical I/O, prove receiver/outbound completion
+        v
+    terminal old runtime retained
+        |
+        | exact old access is terminal, replacement admission remains closed,
+        | queues/semaphores/ticket storage still exist
+        v
+    dependent local module retirement
+        |
+        | abandon any exact P7 frame claim without presentation
+        | request exact-generation worker stop
+        | wait for true worker completion
+        | join -> observe exact terminal outcome -> release worker/runtime
+        v
+    Transport final close/release
+
+Receiver completion is therefore necessary but not sufficient to reclaim a
+runtime that still has a logical media waiter/consumer unwinding through its
+old queues or semaphores. The accepted runtime release fence still refuses
+reclamation while a protected media waiter owns its rendezvous. R33 adds no
+second generic refcount and does not move media lifecycle ownership into
+Transport.
+
+`pstvnc_transport_session_begin_abort()` performs only the terminal/wake and
+receiver-completion phase. It deliberately retains the runtime and active ticket
+storage. `pstvnc_transport_session_abort_storage_retained()` is an exact-ticket
+proof used by a dependent owner before local teardown; a stale/released ticket
+does not satisfy it. The existing one-shot
+`pstvnc_transport_session_abort()` remains compatible by composing begin-abort
+with final close for callers that have no live dependent module to retire.
+
+The R33 Application MPEG path is abnormal session destruction, not successful
+R23/R24 run retirement. It does **not** send RETIRE, publish producer-done,
+finalize the MPEG run for same-session reuse, thaw P2, advance P3 retirement,
+or reveal the compositor. Those operations assert a continuing usable Wire
+Session and are therefore false semantics during enclosing-session loss.
+
+Instead the run enters `SESSION_ABORTING`, terminalizes any outstanding P7
+borrow without presenting it, requests the existing safe worker stop exactly
+once, waits for synchronized worker finish, joins and preserves the exact
+worker outcome (including failure), then releases worker and PS2 worker-runtime
+resources. Only that local dormancy proof reaches `SESSION_ABORT_READY`.
+Abort-ready remains terminal for the old run/session and is not restartable.
+
+Ordinary `app.c` does not compose this R33 seam yet. That outer invocation and
+final Transport release ordering belong to a later bounded Application packet.
+
 ## Transport fencing does not replace module retirement
 
 Transport and module lifecycle defend different boundaries.
