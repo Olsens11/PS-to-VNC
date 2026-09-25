@@ -72,21 +72,28 @@ existing injected synchronization contract.
 
 ## Composition boundary
 
-A future Application composition may obtain:
+R27 now consumes the accepted R26 product boundary in ordinary Application
+session startup.
 
-1. `pstvnc_config_media_clock_profile_selected()`;
-2. an initialized `pstvnc_ps2_media_clock_binding_t`;
-3. `pstvnc_media_clock_sync_t` from that binding;
-4. exact `kBUSCLK` ticks/second;
-5. `pstvnc_media_clock_time_ops_t`;
-6. one direct current-tick observation for existing R22 scheduling.
+Before platform startup, product entry resolves
+`pstvnc_config_media_clock_profile_selected()`. After one MPEG-capable
+Transport session has been admitted, each physical attempt creates a fresh
+`pstvnc_ps2_media_clock_binding_t`, obtains its
+`pstvnc_media_clock_sync_t` and exact `kBUSCLK` tick rate, and initializes
+one clean `pstvnc_media_clock_t` from the selected profile.
 
-It may then initialize the existing `pstvnc_media_clock_t` without reaching
-directly into PS2 kernel/timer APIs.
+That composition remains dormant. R27 does not request time-ops/current-tick
+service because no media deadline is active yet, and it never calls
+`pstvnc_media_clock_arm()`. The accepted first synchronized MPEG presentation
+remains the future arm boundary.
 
-R26 itself does **not** call `pstvnc_media_clock_arm()`. The accepted first
-synchronized MPEG presentation remains the arm boundary. R26 also does not wire
-ordinary `src/app.c`, choose a controller gesture, start MPEG/AUDIO, or change
+Provider-local replacement retires the exact session binding before Transport
+retirement and before successor connection admission. Release failure blocks
+replacement. A successor attempt constructs fresh binding and clean clock
+authority rather than resetting/reusing the old session object.
+
+R26 itself remains a mechanism/profile packet; R27 is the first ordinary caller.
+Neither packet chooses a controller gesture, starts MPEG/AUDIO, or changes
 Wire/protocol bytes.
 
 ## Qualification

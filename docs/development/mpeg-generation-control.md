@@ -743,3 +743,67 @@ packet.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-PI-MPEG-ORDINARY-PRODUCT-COMPOSITION-R25`.
+
+
+## R27 dormant PS2 MPEG session foundation
+
+R27 changes ordinary PS2 session composition without creating semantic MPEG
+activity.
+
+At product entry, Application resolves all selected session inputs before any
+IOP/network/platform startup:
+
+- the existing selected RFB Transport projection;
+- the selected R7 MPEG runtime profile;
+- the selected R26 media-clock profile.
+
+A missing RFB projection or missing selected MPEG profile therefore fails before
+Application owns platform, physical connection, Transport, or media-clock
+resources.
+
+Each ordinary physical attempt now calls only
+`pstvnc_transport_session_open_with_mpeg()`, supplying the exact selected RFB
+Transport values plus the exact R7 `profile->transport` MPEG channel values.
+The plain RFB-only Transport constructor is no longer used by ordinary product
+Application startup. This creates one physical Transport owner with logical RFB
+and dormant channel-4 capacity; it does not create an MPEG run.
+
+After successful Transport admission, the same attempt creates one fresh R26
+PS2 media-clock binding, obtains its exact synchronization seam and
+`kBUSCLK` tick-rate authority, and initializes one clean A002
+`pstvnc_media_clock_t` from the selected 0/0/0 Configuration profile.
+Application immediately verifies the new clock is unarmed.
+
+The binding and clock are attempt-local automatic objects. A provider-local
+R16B replacement cannot continue until the old attempt has proven:
+
+1. input worker dormancy;
+2. exact media-clock binding release;
+3. Transport abort/session retirement.
+
+Only then may the next physical connect occur. Binding-release failure blocks
+replacement admission and converges to fatal cleanup rather than pretending the
+old synchronization authority is reusable.
+
+Fatal cleanup preserves the same reverse ownership order: input shutdown first,
+then active media-clock binding release, then Transport abort/release. A failure
+before binding initialization does not fabricate a binding release.
+
+R27 deliberately adds no semantic MPEG edge. Ordinary RFB operation:
+
+- never calls `pstvnc_media_clock_arm()`;
+- never opens an MPEG Transport run;
+- never sends START or RETIRE;
+- never consumes channel-4 MPEG DATA;
+- never starts an MPEG decoder/worker;
+- never mutates P3;
+- never enters P9/P10/R21-R24;
+- never chooses a controller gesture.
+
+Accepted R25 Pi composition therefore remains producer-inert: channel-4
+capacity and controller construction exist, but exact START remains the first
+producer-creation edge. A005 semantic product-action selection and ordinary
+MPEG activation remain separate downstream authority.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-R27-APPLICATION-MPEG-SESSION-FOUNDATION`.

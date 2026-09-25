@@ -79,7 +79,11 @@ Platform desktop presentation and a protected handoff value for later MPEG
 start without taking any of those private mechanisms. A004 P10 adds
 `app_mpeg_activation.{c,h}` as the narrow Application-to-Application ownership
 transfer from that protected calibration value into the existing R21 run-start
-transaction; it owns no generation counter or lower mechanism. None of these
+transaction; it owns no generation counter or lower mechanism. R27 keeps
+ordinary session-foundation composition in `app.c`: the root Application
+selects RFB/MPEG/media-clock profiles, opens one MPEG-capable Transport session,
+and owns the fresh session clock-binding lifetime while leaving semantic MPEG
+activation to the dedicated P9/P10/R21-R24 coordinators. None of these
 Application coordinators justifies a new top-level source directory.
 
 
