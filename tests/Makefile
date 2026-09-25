@@ -500,6 +500,15 @@ app-product-bindings-source-unit:
 	python3 $(APP_PRODUCT_BINDINGS_SOURCE_TEST)
 
 
+APP_MPEG_SESSION_ABORT_SOURCE_TEST := unit/app_mpeg_session_abort_source_test.py
+
+.PHONY: app-mpeg-session-abort-source-unit
+unit: app-mpeg-session-abort-source-unit
+
+app-mpeg-session-abort-source-unit:
+	python3 $(APP_MPEG_SESSION_ABORT_SOURCE_TEST)
+
+
 APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST := unit/app_mpeg_session_foundation_source_test.py
 
 .PHONY: app-mpeg-session-foundation-source-unit
