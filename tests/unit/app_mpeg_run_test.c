@@ -1,8 +1,9 @@
 /*
- * R21/R22 focused host proof for the trigger-agnostic Application MPEG run
+ * R21-R23 focused host proof for the trigger-agnostic Application MPEG run
  * coordinator. Lower owners are represented only through their accepted public
- * seams so this fixture can prove start ordering/generation authority and R22's
- * exact P7 live-service composition without duplicating lower-owner mechanics.
+ * seams so this fixture proves start/live-service authority plus exact ordered
+ * retirement/drain without duplicating P7, Presentation, worker or Transport
+ * mechanisms.
  */
 
 #include <limits.h>
@@ -29,6 +30,12 @@ typedef enum test_event {
     EV_START,
     EV_CONSUMER_SERVICE,
     EV_CONSUMER_STATUS,
+    EV_PRESENTATION_BEGIN_RETIRE,
+    EV_RETIRE,
+    EV_RETIRE_TAKE,
+    EV_PRODUCER_DONE,
+    EV_WORKER_STATUS,
+    EV_FINALIZE,
     EV_PRESENTATION_ABORT,
     EV_WORKER_STOP,
     EV_WORKER_JOIN,
@@ -58,10 +65,22 @@ static pstvnc_app_mpeg_frame_service_result_t consumer_service_detail;
 static int consumer_service_promotes_presentation;
 static int consumer_service_faults_consumer;
 static pstvnc_transport_result_t start_result;
+static pstvnc_transport_result_t retire_result;
+static pstvnc_transport_result_t retire_take_result;
+static uint32_t retire_completion_generation;
+static pstvnc_transport_result_t producer_done_result;
+static pstvnc_transport_result_t finalize_result;
+static int presentation_begin_retirement_result;
 static int presentation_abort_result;
+static pstvnc_mpeg_worker_result_t worker_status_result;
+static pstvnc_mpeg_worker_status_t worker_status_value;
 static pstvnc_mpeg_worker_result_t worker_stop_result;
 static pstvnc_mpeg_worker_result_t worker_join_result;
 static pstvnc_mpeg_worker_result_t worker_outcome_result;
+static pstvnc_mpeg_worker_outcome_kind_t worker_outcome_kind;
+static pstvnc_mpeg_decoder_result_t worker_outcome_decoder_result;
+static pstvnc_mpeg_decoder_result_t worker_outcome_release_result;
+static uint32_t worker_outcome_generation;
 static pstvnc_mpeg_worker_result_t worker_release_result;
 static int runtime_release_result;
 static pstvnc_transport_result_t abort_result;
@@ -150,10 +169,24 @@ static void reset_fixture(void)
     consumer_service_promotes_presentation = 0;
     consumer_service_faults_consumer = 0;
     start_result = PSTVNC_TRANSPORT_OK;
+    retire_result = PSTVNC_TRANSPORT_OK;
+    retire_take_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
+    retire_completion_generation = 1u;
+    producer_done_result = PSTVNC_TRANSPORT_OK;
+    finalize_result = PSTVNC_TRANSPORT_OK;
+    presentation_begin_retirement_result = 1;
     presentation_abort_result = 1;
+    worker_status_result = PSTVNC_MPEG_WORKER_OK;
+    memset(&worker_status_value, 0, sizeof(worker_status_value));
+    worker_status_value.slot_state = PSTVNC_MPEG_WORKER_SLOT_EMPTY;
+    worker_status_value.decoder_live = 1;
     worker_stop_result = PSTVNC_MPEG_WORKER_OK;
     worker_join_result = PSTVNC_MPEG_WORKER_OK;
     worker_outcome_result = PSTVNC_MPEG_WORKER_OK;
+    worker_outcome_kind = PSTVNC_MPEG_WORKER_OUTCOME_STOPPED;
+    worker_outcome_decoder_result = PSTVNC_MPEG_DECODER_STOPPED;
+    worker_outcome_release_result = PSTVNC_MPEG_DECODER_COMPLETE;
+    worker_outcome_generation = 0u;
     worker_release_result = PSTVNC_MPEG_WORKER_OK;
     runtime_release_result = 0;
     abort_result = PSTVNC_TRANSPORT_OK;
@@ -211,6 +244,47 @@ pstvnc_transport_result_t pstvnc_transport_mpeg_send_start(
     if (request != NULL)
         observed_start = *request;
     return start_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_send_retire(
+    const pstvnc_transport_access_t *access,
+    const pstvnc_transport_mpeg_retire_request_t *request)
+{
+    CHECK(access != NULL);
+    CHECK(request != NULL);
+    CHECK(request == NULL || request->generation != 0u);
+    record_event(EV_RETIRE);
+    return retire_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_take_retire_completion(
+    const pstvnc_transport_access_t *access,
+    pstvnc_transport_mpeg_retire_completion_t *completion)
+{
+    CHECK(access != NULL);
+    CHECK(completion != NULL);
+    record_event(EV_RETIRE_TAKE);
+
+    if (retire_take_result == PSTVNC_TRANSPORT_OK && completion != NULL)
+        completion->generation = retire_completion_generation;
+
+    return retire_take_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_mark_producer_done(
+    const pstvnc_transport_access_t *access)
+{
+    CHECK(access != NULL);
+    record_event(EV_PRODUCER_DONE);
+    return producer_done_result;
+}
+
+pstvnc_transport_result_t pstvnc_transport_mpeg_run_finalize(
+    const pstvnc_transport_access_t *access)
+{
+    CHECK(access != NULL);
+    record_event(EV_FINALIZE);
+    return finalize_result;
 }
 
 int pstvnc_mpeg_ps2_worker_runtime_init(
@@ -321,6 +395,22 @@ pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_start(
     return worker_start_result;
 }
 
+pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_status(
+    pstvnc_mpeg_worker_t *worker,
+    uint32_t generation,
+    pstvnc_mpeg_worker_status_t *status)
+{
+    CHECK(worker != NULL);
+    CHECK(status != NULL);
+    CHECK(worker == NULL || worker->run_generation == generation);
+    record_event(EV_WORKER_STATUS);
+
+    if (worker_status_result == PSTVNC_MPEG_WORKER_OK && status != NULL)
+        *status = worker_status_value;
+
+    return worker_status_result;
+}
+
 pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_request_stop(
     pstvnc_mpeg_worker_t *worker,
     uint32_t generation)
@@ -355,9 +445,14 @@ pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_outcome(
     record_event(EV_WORKER_OUTCOME);
     if (worker_outcome_result == PSTVNC_MPEG_WORKER_OK) {
         memset(outcome, 0, sizeof(*outcome));
-        outcome->kind = PSTVNC_MPEG_WORKER_OUTCOME_STOPPED;
+        outcome->kind = worker_outcome_kind;
         outcome->worker_result = PSTVNC_MPEG_WORKER_OK;
-        outcome->run_generation = generation;
+        outcome->decoder_result = worker_outcome_decoder_result;
+        outcome->decoder_release_result = worker_outcome_release_result;
+        outcome->run_generation =
+            worker_outcome_generation != 0u
+                ? worker_outcome_generation
+                : generation;
     }
     return worker_outcome_result;
 }
@@ -410,6 +505,21 @@ int pstvnc_mpeg_presentation_snapshot(
         return 0;
     *geometry = presentation->geometry;
     *generation = presentation->run_generation;
+    return 1;
+}
+
+int pstvnc_mpeg_presentation_begin_retirement(
+    pstvnc_mpeg_presentation_t *presentation,
+    uint32_t generation)
+{
+    record_event(EV_PRESENTATION_BEGIN_RETIRE);
+    if (!presentation_begin_retirement_result)
+        return 0;
+    CHECK(presentation != NULL);
+    CHECK(presentation == NULL ||
+        presentation->run_generation == generation);
+    if (presentation != NULL)
+        presentation->state = PSTVNC_MPEG_PRESENTATION_RETIRING;
     return 1;
 }
 
@@ -1307,6 +1417,420 @@ static void test_generation_and_state_contradictions_fail_closed(void)
     CHECK(run.frame_consumer.initialized);
 }
 
+
+static void configure_retirement_fixture(void)
+{
+    consumer_service_promotes_presentation = 0;
+    consumer_service_faults_consumer = 0;
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_IDLE;
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_IDLE;
+
+    worker_status_result = PSTVNC_MPEG_WORKER_OK;
+    memset(&worker_status_value, 0, sizeof(worker_status_value));
+    worker_status_value.slot_state = PSTVNC_MPEG_WORKER_SLOT_EMPTY;
+    worker_status_value.decoder_live = 1;
+
+    retire_result = PSTVNC_TRANSPORT_OK;
+    retire_take_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
+    retire_completion_generation = 1u;
+    producer_done_result = PSTVNC_TRANSPORT_OK;
+    finalize_result = PSTVNC_TRANSPORT_OK;
+
+    worker_join_result = PSTVNC_MPEG_WORKER_OK;
+    worker_outcome_result = PSTVNC_MPEG_WORKER_OK;
+    worker_outcome_kind = PSTVNC_MPEG_WORKER_OUTCOME_COMPLETED;
+    worker_outcome_decoder_result = PSTVNC_MPEG_DECODER_COMPLETE;
+    worker_outcome_release_result = PSTVNC_MPEG_DECODER_COMPLETE;
+    worker_outcome_generation = 0u;
+    worker_release_result = PSTVNC_MPEG_WORKER_OK;
+    runtime_release_result = 0;
+    presentation_begin_retirement_result = 1;
+}
+
+static void start_owned_test_run(
+    pstvnc_app_mpeg_run_t *run,
+    pstvnc_rfb_flow_policy_t *policy,
+    pstvnc_transport_access_t *access,
+    pstvnc_mpeg_presentation_t *presentation,
+    pstvnc_media_clock_t *clock)
+{
+    start_live_test_run(run, policy, access, presentation, clock);
+    promote_live_test_run(run);
+    configure_retirement_fixture();
+    reset_attempt_observation();
+}
+
+static void begin_retirement_test_run(
+    pstvnc_app_mpeg_run_t *run)
+{
+    CHECK(pstvnc_app_mpeg_run_begin_retirement(run) ==
+        PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(run->state == PSTVNC_APP_MPEG_RUN_RETIRING);
+    CHECK(run->retire_invoked);
+    CHECK(event_index(EV_PRESENTATION_BEGIN_RETIRE) >= 0);
+    CHECK(event_index(EV_PRESENTATION_BEGIN_RETIRE) <
+        event_index(EV_RETIRE));
+    reset_attempt_observation();
+}
+
+static void test_retirement_admission_and_irreversible_retire(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+
+    reset_fixture();
+    pstvnc_app_mpeg_run_init(&run);
+    CHECK(pstvnc_app_mpeg_run_begin_retirement(&run) ==
+        PSTVNC_APP_MPEG_RUN_NOT_MPEG_OWNED);
+    CHECK(event_index(EV_RETIRE) < 0);
+
+    run.state = PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME;
+    CHECK(pstvnc_app_mpeg_run_begin_retirement(&run) ==
+        PSTVNC_APP_MPEG_RUN_NOT_MPEG_OWNED);
+    CHECK(event_index(EV_RETIRE) < 0);
+
+    run.state = PSTVNC_APP_MPEG_RUN_FAULTED;
+    CHECK(pstvnc_app_mpeg_run_begin_retirement(&run) ==
+        PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED);
+    CHECK(event_index(EV_RETIRE) < 0);
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    run.worker_runtime_owned = 0;
+    CHECK(pstvnc_app_mpeg_run_begin_retirement(&run) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_STATE_INVALID);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(event_index(EV_RETIRE) < 0);
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    retire_result = PSTVNC_TRANSPORT_FAILED;
+    CHECK(pstvnc_app_mpeg_run_begin_retirement(&run) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_SEND_FAILED);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.session_teardown_required == 1);
+    CHECK(run.retire_invoked);
+    CHECK(presentation.state == PSTVNC_MPEG_PRESENTATION_RETIRING);
+    CHECK(event_index(EV_PRESENTATION_BEGIN_RETIRE) <
+        event_index(EV_RETIRE));
+    CHECK(event_index(EV_PRESENTATION_ABORT) < 0);
+    CHECK(event_index(EV_WORKER_STOP) < 0);
+    CHECK(event_index(EV_ABORT) < 0);
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+    CHECK(pstvnc_app_mpeg_run_begin_retirement(&run) ==
+        PSTVNC_APP_MPEG_RUN_NOT_MPEG_OWNED);
+    CHECK(event_index(EV_RETIRE) < 0);
+}
+
+static void test_retiring_drain_preserves_all_benign_p7_outcomes(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1000u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_IDLE);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_RETIRING);
+    CHECK(!run.retire_completion_taken);
+    CHECK(event_index(EV_RETIRE_TAKE) >= 0);
+    CHECK(event_index(EV_PRODUCER_DONE) < 0);
+
+    reset_attempt_observation();
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_WAIT;
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_WAIT;
+    consumer_service_detail.picture_ordinal = 2u;
+    consumer_service_detail.deadline_tick = 2222u;
+    consumer_service_detail.claim_outstanding = 1;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1100u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_WAIT);
+    CHECK(service_result.claim_outstanding);
+    CHECK(service_result.deadline_tick == 2222u);
+    CHECK(run.frame_consumer.claim_outstanding);
+    CHECK(event_index(EV_PRODUCER_DONE) < 0);
+
+    reset_attempt_observation();
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_PRESENTED;
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_PRESENTED;
+    consumer_service_detail.picture_ordinal = 2u;
+    consumer_service_detail.compositor_effects.synchronized = 1u;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 2222u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_PRESENTED);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_RETIRING);
+
+    reset_attempt_observation();
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_DROPPED;
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_DROPPED;
+    consumer_service_detail.picture_ordinal = 3u;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 3333u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(service_result.result == PSTVNC_APP_MPEG_FRAME_DROPPED);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_RETIRING);
+    CHECK(presentation.state == PSTVNC_MPEG_PRESENTATION_RETIRING);
+    CHECK(policy.frozen);
+}
+
+static void test_retire_completion_fence_and_producer_done_order(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+
+    retire_take_result = PSTVNC_TRANSPORT_OK;
+    retire_completion_generation = 2u;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1000u, &service_result) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_COMPLETION_MISMATCH);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(!run.producer_done_published);
+    CHECK(event_index(EV_PRODUCER_DONE) < 0);
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+    retire_take_result = PSTVNC_TRANSPORT_FAILED;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1000u, &service_result) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_COMPLETION_FAILED);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(event_index(EV_PRODUCER_DONE) < 0);
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+    retire_take_result = PSTVNC_TRANSPORT_OK;
+    retire_completion_generation = 1u;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1000u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(run.retire_completion_taken);
+    CHECK(run.producer_done_published);
+    CHECK(event_index(EV_RETIRE_TAKE) >= 0);
+    CHECK(event_index(EV_RETIRE_TAKE) < event_index(EV_PRODUCER_DONE));
+    CHECK(event_index(EV_WORKER_JOIN) < 0);
+
+    reset_attempt_observation();
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1100u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(event_index(EV_RETIRE_TAKE) < 0);
+    CHECK(event_index(EV_PRODUCER_DONE) < 0);
+}
+
+static void test_worker_finish_fence_and_clean_reclaim_order(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+    pstvnc_app_mpeg_run_status_t status;
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+    consumer_service_detail.worker_finished = 1;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1000u, &service_result) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_EARLY_FINISH);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(event_index(EV_WORKER_JOIN) < 0);
+    CHECK(event_index(EV_WORKER_STOP) < 0);
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+    retire_take_result = PSTVNC_TRANSPORT_OK;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1000u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+
+    reset_attempt_observation();
+    consumer_service_result = PSTVNC_APP_MPEG_FRAME_IDLE;
+    memset(&consumer_service_detail, 0, sizeof(consumer_service_detail));
+    consumer_service_detail.result = PSTVNC_APP_MPEG_FRAME_IDLE;
+    consumer_service_detail.worker_finished = 1;
+    worker_status_value.worker_finished = 1;
+    worker_status_value.decoder_live = 0;
+    worker_status_value.slot_state = PSTVNC_MPEG_WORKER_SLOT_EMPTY;
+
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1200u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_RESTORE_PENDING);
+    CHECK(run.current_generation == 1u);
+    CHECK(run.retire_invoked);
+    CHECK(run.retire_completion_taken);
+    CHECK(run.producer_done_published);
+    CHECK(run.worker_joined);
+    CHECK(!run.frame_consumer_initialized);
+    CHECK(!run.worker_started);
+    CHECK(!run.worker_runtime_owned);
+    CHECK(!run.transport_run_open);
+    CHECK(presentation.state == PSTVNC_MPEG_PRESENTATION_RETIRING);
+    CHECK(presentation.run_generation == 1u);
+    CHECK(presentation.snapshot_valid);
+    CHECK(policy.frozen);
+    CHECK(!publication_allowed);
+
+    CHECK(event_index(EV_WORKER_STATUS) >= 0);
+    CHECK(event_index(EV_WORKER_STATUS) < event_index(EV_WORKER_JOIN));
+    CHECK(event_index(EV_WORKER_JOIN) < event_index(EV_WORKER_OUTCOME));
+    CHECK(event_index(EV_WORKER_OUTCOME) < event_index(EV_WORKER_RELEASE));
+    CHECK(event_index(EV_WORKER_RELEASE) < event_index(EV_RUNTIME_RELEASE));
+    CHECK(event_index(EV_RUNTIME_RELEASE) < event_index(EV_FINALIZE));
+    CHECK(event_index(EV_WORKER_STOP) < 0);
+    CHECK(event_index(EV_PRESENTATION_ABORT) < 0);
+    CHECK(event_index(EV_ABORT) < 0);
+
+    CHECK(pstvnc_app_mpeg_run_status(&run, &status) ==
+        PSTVNC_APP_MPEG_RUN_OK);
+    CHECK(status.state == PSTVNC_APP_MPEG_RUN_RESTORE_PENDING);
+    CHECK(status.current_generation == 1u);
+    CHECK(status.retire_invoked);
+    CHECK(status.retire_completion_taken);
+    CHECK(status.producer_done_published);
+    CHECK(status.worker_joined);
+}
+
+static void test_retirement_reclaim_failures_preserve_truth(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+    retire_take_result = PSTVNC_TRANSPORT_OK;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1000u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    reset_attempt_observation();
+    consumer_service_detail.worker_finished = 1;
+    worker_status_value.worker_finished = 1;
+    worker_status_value.decoder_live = 0;
+    worker_outcome_kind = PSTVNC_MPEG_WORKER_OUTCOME_STOPPED;
+    worker_outcome_decoder_result = PSTVNC_MPEG_DECODER_STOPPED;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1200u, &service_result) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_OUTCOME_FAILED);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(run.worker_joined);
+    CHECK(run.worker_started);
+    CHECK(run.worker_runtime_owned);
+    CHECK(run.transport_run_open);
+    CHECK(event_index(EV_WORKER_RELEASE) < 0);
+    CHECK(event_index(EV_FINALIZE) < 0);
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+    retire_take_result = PSTVNC_TRANSPORT_OK;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1000u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    reset_attempt_observation();
+    consumer_service_detail.worker_finished = 1;
+    worker_status_value.worker_finished = 1;
+    worker_status_value.decoder_live = 0;
+    runtime_release_result = -1;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1200u, &service_result) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_RUNTIME_RELEASE_FAILED);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(!run.frame_consumer_initialized);
+    CHECK(!run.worker_started);
+    CHECK(run.worker_runtime_owned);
+    CHECK(run.transport_run_open);
+    CHECK(event_index(EV_FINALIZE) < 0);
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    begin_retirement_test_run(&run);
+    retire_take_result = PSTVNC_TRANSPORT_OK;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1000u, &service_result) == PSTVNC_APP_MPEG_RUN_OK);
+    reset_attempt_observation();
+    consumer_service_detail.worker_finished = 1;
+    worker_status_value.worker_finished = 1;
+    worker_status_value.decoder_live = 0;
+    finalize_result = PSTVNC_TRANSPORT_WOULD_BLOCK;
+    CHECK(pstvnc_app_mpeg_run_retirement_service(
+        &run, 1200u, &service_result) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_FINALIZE_FAILED);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(!run.frame_consumer_initialized);
+    CHECK(!run.worker_started);
+    CHECK(!run.worker_runtime_owned);
+    CHECK(run.transport_run_open);
+    CHECK(event_index(EV_FINALIZE) >= 0);
+}
+
+static void test_retirement_requires_frozen_p2_and_exact_p3(void)
+{
+    pstvnc_app_mpeg_run_t run;
+    pstvnc_rfb_flow_policy_t policy;
+    pstvnc_transport_access_t access;
+    pstvnc_mpeg_presentation_t presentation;
+    pstvnc_media_clock_t clock;
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    policy.frozen = 0u;
+    publication_allowed = 1;
+    CHECK(pstvnc_app_mpeg_run_begin_retirement(&run) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_STATE_INVALID);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(event_index(EV_RETIRE) < 0);
+
+    reset_fixture();
+    start_owned_test_run(
+        &run, &policy, &access, &presentation, &clock);
+    presentation.run_generation = 2u;
+    CHECK(pstvnc_app_mpeg_run_begin_retirement(&run) ==
+        PSTVNC_APP_MPEG_RUN_RETIRE_STATE_INVALID);
+    CHECK(run.state == PSTVNC_APP_MPEG_RUN_FAULTED);
+    CHECK(event_index(EV_RETIRE) < 0);
+}
+
 int main(void)
 {
     test_success_orders_all_owners_and_maps_exact_geometry();
@@ -1325,6 +1849,13 @@ int main(void)
     test_unexpected_worker_finish_faults_before_and_after_promotion();
     test_negative_p7_results_fault_without_erasing_evidence();
     test_generation_and_state_contradictions_fail_closed();
+
+    test_retirement_admission_and_irreversible_retire();
+    test_retiring_drain_preserves_all_benign_p7_outcomes();
+    test_retire_completion_fence_and_producer_done_order();
+    test_worker_finish_fence_and_clean_reclaim_order();
+    test_retirement_reclaim_failures_preserve_truth();
+    test_retirement_requires_frozen_p2_and_exact_p3();
 
     if (failures != 0) {
         fprintf(stderr, "app_mpeg_run_test: %d failure(s)\n", failures);

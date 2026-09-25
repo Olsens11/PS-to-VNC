@@ -1,17 +1,18 @@
 /*
  * File synopsis:
- * Defines the R21/R22 Application-owned, trigger-agnostic MPEG run coordinator.
- * One session-scoped owner allocates nonzero monotonically increasing run
- * generations, composes the accepted R21 start transaction, and services that
- * exact live generation only through the already-accepted P7 frame consumer.
+ * Defines the R21-R23 Application-owned, trigger-agnostic MPEG run coordinator.
+ * One session-scoped owner allocates exact run generations, composes accepted
+ * start/live-frame service, and owns the ordered retirement/drain transaction
+ * across existing Presentation, P7, MPEG worker/runtime and Transport seams.
  *
- * Application records WAIT_FIRST_FRAME versus MPEG_OWNED run authority but does
- * not duplicate P7 frame mechanics, arm the media clock, retire the run, choose
- * a product trigger, thaw/reveal RFB, or activate the Pi MPEG product runtime.
+ * R23 retires execution only. It deliberately stops at RESTORE_PENDING with the
+ * MPEG composite retained and RFB still frozen; it does not seal/reveal P3,
+ * thaw/refresh RFB, choose a product trigger, or activate Pi MPEG product flow.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
- * A003-APPLICATION-MPEG-RUN-START-R21 and
- * A003-APPLICATION-MPEG-LIVE-SERVICE-R22.
+ * A003-APPLICATION-MPEG-RUN-START-R21,
+ * A003-APPLICATION-MPEG-LIVE-SERVICE-R22 and
+ * A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23.
  */
 
 #ifndef PSTVNC_APP_MPEG_RUN_H
@@ -33,6 +34,8 @@ typedef enum pstvnc_app_mpeg_run_state {
     PSTVNC_APP_MPEG_RUN_IDLE = 0,
     PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME,
     PSTVNC_APP_MPEG_RUN_MPEG_OWNED,
+    PSTVNC_APP_MPEG_RUN_RETIRING,
+    PSTVNC_APP_MPEG_RUN_RESTORE_PENDING,
     PSTVNC_APP_MPEG_RUN_FAULTED
 } pstvnc_app_mpeg_run_state_t;
 
@@ -62,7 +65,23 @@ typedef enum pstvnc_app_mpeg_run_result {
     PSTVNC_APP_MPEG_RUN_LIVE_STATE_INVALID = -20,
     PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_FAILED = -21,
     PSTVNC_APP_MPEG_RUN_UNEXPECTED_WORKER_FINISH = -22,
-    PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION = -23
+    PSTVNC_APP_MPEG_RUN_FRAME_SERVICE_CONTRADICTION = -23,
+
+    PSTVNC_APP_MPEG_RUN_NOT_MPEG_OWNED = -24,
+    PSTVNC_APP_MPEG_RUN_RETIRE_STATE_INVALID = -25,
+    PSTVNC_APP_MPEG_RUN_PRESENTATION_RETIRE_FAILED = -26,
+    PSTVNC_APP_MPEG_RUN_RETIRE_SEND_FAILED = -27,
+    PSTVNC_APP_MPEG_RUN_NOT_RETIRING = -28,
+    PSTVNC_APP_MPEG_RUN_RETIRE_COMPLETION_FAILED = -29,
+    PSTVNC_APP_MPEG_RUN_RETIRE_COMPLETION_MISMATCH = -30,
+    PSTVNC_APP_MPEG_RUN_PRODUCER_DONE_FAILED = -31,
+    PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_EARLY_FINISH = -32,
+    PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_STATUS_FAILED = -33,
+    PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_JOIN_FAILED = -34,
+    PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_OUTCOME_FAILED = -35,
+    PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_RELEASE_FAILED = -36,
+    PSTVNC_APP_MPEG_RUN_RETIRE_RUNTIME_RELEASE_FAILED = -37,
+    PSTVNC_APP_MPEG_RUN_RETIRE_FINALIZE_FAILED = -38
 } pstvnc_app_mpeg_run_result_t;
 
 typedef struct pstvnc_app_mpeg_run_status {
@@ -71,6 +90,10 @@ typedef struct pstvnc_app_mpeg_run_status {
     uint32_t last_allocated_generation;
     uint32_t current_generation;
     int session_teardown_required;
+    int retire_invoked;
+    int retire_completion_taken;
+    int producer_done_published;
+    int worker_joined;
 } pstvnc_app_mpeg_run_status_t;
 
 typedef struct pstvnc_app_mpeg_run {
@@ -99,6 +122,11 @@ typedef struct pstvnc_app_mpeg_run {
     int presentation_armed;
     int frame_consumer_initialized;
     int start_invoked;
+
+    int retire_invoked;
+    int retire_completion_taken;
+    int producer_done_published;
+    int worker_joined;
 } pstvnc_app_mpeg_run_t;
 
 /*
@@ -131,6 +159,29 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_start(
  * teardown; this operation performs no retirement or cleanup.
  */
 pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_service(
+    pstvnc_app_mpeg_run_t *run,
+    uint64_t current_tick,
+    pstvnc_app_mpeg_frame_service_result_t *service_result);
+
+/*
+ * Begin exact-generation retirement from one healthy MPEG_OWNED run.
+ *
+ * P3 enters RETIRING before the one RETIRE invocation. Crossing that invocation
+ * is irreversible even if Transport reports failure; no rollback or cleanup is
+ * manufactured here.
+ */
+pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_begin_retirement(
+    pstvnc_app_mpeg_run_t *run);
+
+/*
+ * Service one nonblocking retirement/drain step.
+ *
+ * P7 continues draining in P3 RETIRING. Exact RETIRE completion fences producer
+ * done; only natural worker completion with no outstanding P7 borrow permits
+ * join/outcome/reclaim and Transport finalization. Success stops at
+ * RESTORE_PENDING with P3 retained and RFB frozen.
+ */
+pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
     pstvnc_app_mpeg_run_t *run,
     uint64_t current_tick,
     pstvnc_app_mpeg_frame_service_result_t *service_result);

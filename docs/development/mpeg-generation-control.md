@@ -324,3 +324,44 @@ Ordinary `src/app.c` and Pi MPEG product activation remain unchanged.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-APPLICATION-MPEG-LIVE-SERVICE-R22`.
+
+
+## R23 Application retirement drain
+
+R23 adds the trigger-agnostic retirement transaction for one exact healthy
+Application `MPEG_OWNED` generation. It deliberately separates execution
+retirement from later RFB restoration/reveal.
+
+Retirement admission requires exact P3/P7 generation ownership, live R18/R4/R5
+owners, nonfaulted P7 state, a naturally running worker, and P2 still frozen.
+Application first advances P3 to `RETIRING`, preserving the retained MPEG
+composite, then records and invokes exactly one current-generation R20 RETIRE.
+That invocation is irreversible: failure faults and requires outer teardown
+without returning P3 to MPEG_OWNED or pretending the run is reusable.
+
+While RETIRE completion is pending, Application continues only the accepted P7
+consumer in P3 `RETIRING`. P7 IDLE, WAIT, PRESENTED and DROPPED remain ordinary
+drain outcomes; WAIT preserves its exact claim and deadline. RETIRE-completion
+`WOULD_BLOCK` is benign. Only an exact current-generation completion is
+accepted, after which Application publishes Transport producer-done exactly
+once.
+
+Worker completion before that producer fence is a fault. After producer-done,
+Application continues P7 drain until P7 reports worker-finished with no
+outstanding borrow. Clean retirement then requires exact worker join and an
+exact-generation `COMPLETED` outcome; Application does not request worker stop
+on this normal path.
+
+After clean outcome proof, Application retires the empty P7 value, releases R4,
+releases R5, and calls R18 Transport finalization last. Any failure preserves the
+ownership facts already reached and faults for outer teardown instead of
+manufacturing cleanup.
+
+Successful R23 retirement enters explicit `RESTORE_PENDING`, retains the exact
+generation, leaves P3 `RETIRING` with its snapshot intact, and leaves P2
+frozen. R23 does not seal/reveal P3, thaw RFB, request/consume FULL refresh,
+activate ordinary `src/app.c`, activate Pi MPEG product flow, or alter
+Transport/P7/Presentation/worker mechanisms.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23`.
