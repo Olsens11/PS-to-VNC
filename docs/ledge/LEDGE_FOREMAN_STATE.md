@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0060
-RECORDED_AT=2026-09-24T20:51:51-04:00
+STATE_REVISION=0061
+RECORDED_AT=2026-09-24T21:16:41-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0059
-SUPERSEDES_FOREMAN_STATE_REVISION=0059
+BASED_ON_FOREMAN_STATE_REVISION=0060
+SUPERSEDES_FOREMAN_STATE_REVISION=0060
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,31 +14,29 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0060 independently accepts the corrected combined R23/R23C
-Application MPEG retirement transaction at final source authority
-`da091d1e1fcb2398bd695cae1516c4730213cf55` and consumes immutable
-Reconstruction closeout `842625885cfda96c5e068cba9dff90415190c7ad`.
+Revision 0061 independently accepts
+`A003-APPLICATION-MPEG-FINAL-RFB-REVEAL-R24` at final source authority
+`d777835c53a0e829e423f76bd0f78097c88e0ffb` and consumes immutable
+Reconstruction closeout `2f4a03ff38f851b6d9f73ab5f5305e6751e532d5`.
 
-R23C resolves State 0058's Q7 ordering defect without weakening R23's proven
-safe-stop fences. Normal retirement still proves exact MPEG ownership, moves P3
-to RETIRING and serializes one exact-generation RETIRE before restoration is
-released. Only after RETIRE returns OK does Application thaw P2 through its real
-public flow-policy seam. That transition creates the existing one-shot FULL
-refresh debt and permits ordinary RFB restoration while valid retiring MPEG
-remains visible. Exact RETIRE completion, producer-done, natural worker
-completion, P7/R4/R5 reclaim and R18 finalization retain the accepted R23 order.
+R24 closes the trigger-agnostic Application MPEG run lifecycle. The accepted
+coordinator now distinguishes RFB protocol freshness from actual graphics-cache
+freshness, records one exact run-scoped restored-desktop presentation proof,
+seals P3 only after that proof, uses only the accepted compositor reveal seam,
+preserves retryability before physical synchronization, verifies exact
+synchronized RFB_ONLY completion, and returns the coordinator to reusable IDLE
+without reusing generation identity or resetting the session media clock.
 
-The successful corrected endpoint is RESTORE_PENDING with execution/Transport
-ownership retired, exact generation retained, P3 still RETIRING, and P2 thawed.
-Final synchronized visual reveal remains a distinct dependency because P2
-protocol freshness alone does not prove that the restored desktop was actually
-uploaded into the Platform desktop cache. The next packet therefore establishes
-an explicit Application restoration-presentation proof and composes the already
-accepted P3 seal/compositor reveal seam without yet wiring ordinary product
-activation.
+This does not yet make ordinary product MPEG activation live. Current Q6 says
+the first product region source may be manual MPEG CALIBRATION, while preserving
+future region sources. The clean P1 calibration core exists, but its
+controller-facing region-source adapter and visible calibration presentation
+were deliberately excluded from P1 and are not wired into ordinary Application.
+The next packet therefore reconstructs that UI-owned manual region source
+without yet coupling it to RFB/input-runtime ownership or starting MPEG.
 
-R23C changes PS2 loadable bytes. Its exact reproducible identity is recorded
-below and is not hardware-qualified.
+R24 changes PS2 loadable bytes. Its exact reproducible identity is recorded
+below and remains hardware-pending.
 
 ## Temporal architecture reconciliation
 
@@ -71,7 +69,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R23_R23C_CORRECTED_RETIREMENT_FOREMAN_ACCEPTED__A003_R24_FINAL_RFB_REVEAL_ACTIVE__ORDINARY_MPEG_PRODUCT_ACTIVATION_DEFERRED`
+`A003_R24_FINAL_RFB_REVEAL_FOREMAN_ACCEPTED__A004_P8_MANUAL_MPEG_REGION_SOURCE_ACTIVE__ORDINARY_MPEG_PRODUCT_ACTIVATION_DEFERRED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -109,7 +107,8 @@ APPLICATION_MPEG_RUN_START=FOREMAN_ACCEPTED
 APPLICATION_MPEG_LIVE_SERVICE=FOREMAN_ACCEPTED
 APPLICATION_MPEG_RETIREMENT=FOREMAN_ACCEPTED
 APPLICATION_MPEG_Q7_RESTORE_OVERLAP=FOREMAN_ACCEPTED
-APPLICATION_MPEG_FINAL_REVEAL=RECONSTRUCTION_ACTIVE
+APPLICATION_MPEG_FINAL_REVEAL=FOREMAN_ACCEPTED
+MPEG_CALIBRATION_REGION_SOURCE=RECONSTRUCTION_ACTIVE
 ORDINARY_MPEG_PRODUCT_ACTIVATION=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
@@ -1005,178 +1004,326 @@ R23C_HARDWARE_PENDING=YES
 No workflow/status record was exposed for the later immutable Reconstruction-log
 head at Foreman review time, so no log-head CI result is manufactured.
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R24 final restored-RFB reveal authority
 
 PACKET_ID=A003-APPLICATION-MPEG-FINAL-RFB-REVEAL-R24
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0060
+ASSIGNING_FOREMAN_STATE_COMMIT=3ceb16b59d73535244d6afb2b42a9485ba04580b
+ASSIGNING_FOREMAN_LOG_COMMIT=5b329dd46066602cd95eb1813be226395d3d07a0
+RECONSTRUCTION_STARTING_COMMIT=5b329dd46066602cd95eb1813be226395d3d07a0
+R24_FINAL_SOURCE_COMMIT=d777835c53a0e829e423f76bd0f78097c88e0ffb
+R24_RECONSTRUCTION_LOG_COMMIT=2f4a03ff38f851b6d9f73ab5f5305e6751e532d5
+R24_PRE_LOG_COMMIT_COUNT=6
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260924T205847-0400__reconstruction__a003-mpeg-generation__interactive.md`
+
+### R24 criterion disposition
+
+A003-R24-C1=MET
+A003-R24-C2=MET
+A003-R24-C3=MET
+A003-R24-C4=MET
+A003-R24-C5=MET
+A003-R24-C6=MET
+A003-R24-C7=MET
+A003-R24-C8=MET
+A003-R24-C9=MET
+A003-R24-C10=MET
+A003-R24-C11=MET
+A003-R24-C12=MET
+
+Independent Foreman findings:
+
+1. final restoration admission requires exact RESTORE_PENDING/REVEAL_PENDING
+   state plus the complete R23C execution-retired fact set;
+2. `rfb_restoration_presented` is an explicit run-scoped Application fact and
+   is not inferred from P2 protocol state;
+3. the marker can be recorded only after real P2 post-thaw FULL completion:
+   thawed/publication-enabled, no outstanding request and next request
+   INCREMENTAL;
+4. the API contract explicitly requires the corresponding authoritative
+   FULL-refreshed desktop to have crossed the existing successful graphics
+   presentation/upload boundary before the caller records the marker;
+5. FULL owed, request outstanding, frozen P2, absent marker, wrong generation or
+   fabricated retired-execution state prevents seal/reveal;
+6. exact P3 RETIRING -> REVEAL_PENDING seal occurs only after protocol freshness
+   plus the graphics-presentation proof;
+7. Application records explicit REVEAL_PENDING after independently verifying P3;
+8. physical handoff calls only
+   `pstvnc_mpeg_compositor_reveal_retired()`; Application does not call
+   Platform reveal or P3 commit directly;
+9. compositor PLATFORM_FAILED and SYNC_INVALID are retryable pre-sync outcomes:
+   generation, proof and exact P3 REVEAL_PENDING snapshot remain, no reseal is
+   performed, and session teardown is not demanded merely for those outcomes;
+10. nonretryable compositor/state/effects contradictions fail closed without
+    pretending IDLE;
+11. successful completion requires synchronized + retirement_revealed effects,
+    exact P3 RFB_ONLY, no retained snapshot and no MPEG visual ownership;
+12. exact success clears only current-run/transient coordinator state, preserves
+    `last_allocated_generation`, leaves external P2 thawed and does not mutate
+    the external session media-clock object;
+13. focused evidence proves the same coordinator allocates generation N+1 after
+    the external caller re-establishes the existing frozen-P2 start
+    precondition;
+14. ordinary `src/app.c`, lower-owner RFB/P3/compositor/Platform/P7/MPEG/
+    Transport implementation, Pi product source, AUDIO, Input/UI/calibration
+    behavior and Wire protocol were untouched.
+
+### Exact R24 machine evidence
+
+At exact final source authority
+`d777835c53a0e829e423f76bd0f78097c88e0ffb`, GitHub Actions run
+`36080636735`, attempt 1, completed SUCCESS.
+
+Observed successful jobs:
+
+- host-unit;
+- project-check;
+- dictionary-long;
+- ps2-compile;
+- ps2-link/current-source reproducibility.
+
+Observed host evidence includes:
+
+- `transport_runtime_test: PASS`;
+- `transport_mpeg_test: PASS`;
+- `RFB_FLOW_POLICY_TEST=PASS`;
+- `MPEG_PRESENTATION_TEST=PASS`;
+- `MPEG_COMPOSITOR_TEST=PASS`;
+- `MPEG_WORKER_TEST=PASS`;
+- `APP_MPEG_FRAME_TEST=PASS`;
+- `app R15/R16B/R19 tests: PASS`;
+- `app_mpeg_run_test: PASS`.
+
+Observed project/build evidence includes:
+
+- `SOURCE_TOPOLOGY_CONTRACT=PASS`;
+- `WORK_LOG_CHECK=PASS records=204 grandfathered=9 format_compat=2 stamp_compat=1`;
+- `SOURCE_DICTIONARIES=PASS`;
+- `PS_TO_VNC_PROJECT_CHECK=PASS`;
+- `CLEAN_PS2_COMPILE_CHECK=PASS`;
+- `ISSUE7_LINKED_BUILD=PASS`;
+- `LEDGE_CURRENT_LINKED_REPRODUCIBILITY=PASS`.
+
+Exact linked identity:
+
+`ELF_PRISTINE_SHA256=d9fa5af6749f21f4a7e5ab6dc727bebb66c584c37bc487a4c909b96abcdfb549`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=0b4810977f794cb5c34e5ce4a90a54be628622a53ac74fe519df12f6e58efc4e`
+`PT_LOAD_BYTES=500244`
+`PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74`
+
+R24_SOURCE_COMPLETE=YES
+R24_HOST_TESTED=PASS
+R24_PROJECT_CHECK=PASS
+R24_STRICT_DICTIONARIES=PASS
+R24_PS2_COMPILE=PASS
+R24_PS2_LINK=PASS
+R24_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R24_MACHINE_EVIDENCE=GITHUB_ACTIONS
+R24_INDEPENDENT_VALIDATION=NOT_RUN
+R24_OPERATOR_OBSERVED=NO
+R24_HARDWARE_QUALIFIED=NO
+R24_HARDWARE_PENDING=YES
+
+No workflow/status record was exposed for the later immutable Reconstruction-log
+head at Foreman review time, so no log-head CI result is manufactured.
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A004-MPEG-CALIBRATION-MANUAL-REGION-SOURCE-P8
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
-WORK_ITEM_KEY=a003-mpeg-generation
+WORK_ITEM_KEY=a004-presentation
 WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0060
-BASED_ON_ACCEPTED_R23C_SOURCE=da091d1e1fcb2398bd695cae1516c4730213cf55
-BASED_ON_R23C_LOG=842625885cfda96c5e068cba9dff90415190c7ad
+BASED_ON_FOREMAN_STATE_REVISION=0061
+BASED_ON_ACCEPTED_R24_SOURCE=d777835c53a0e829e423f76bd0f78097c88e0ffb
+BASED_ON_R24_LOG=2f4a03ff38f851b6d9f73ab5f5305e6751e532d5
+BASED_ON_A004_P1_CALIBRATION_CORE=FOREMAN_ACCEPTED
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
 BASED_ON_ARCHITECTURE_OVERLAY_REVISION=0007
+BASED_ON_CALIBRATION_SEPARATION_INVARIANT_REVISION=0001
 
 ### Objective
 
-Complete the trigger-agnostic Application-owned visible handoff for one exact
-accepted R23C RESTORE_PENDING run.
+Reconstruct the clean UI-owned **manual MPEG CALIBRATION region source** needed
+before ordinary Application MPEG activation can be wired.
 
-R24 must not equate P2 protocol completion with Platform desktop-cache freshness.
-It must add one explicit Application restoration-presentation proof that future
-ordinary orchestration can record only after the post-thaw FULL response has
-completed and its authoritative RFB desktop has actually been presented/uploaded
-through the existing graphics path while retained MPEG remains visually on top.
+P8 must compose the already-accepted P1 MPEG CALIBRATION core with normalized
+controller semantics and a platform-neutral visible calibration presentation,
+using the frozen H1 MPEG calibration lineage as behavior evidence. It must
+remain explicitly begin-driven and region-source-shaped so START+SELECT is not
+turned into permanent architecture and future automatic/application-pinned
+region sources remain possible.
 
-Only after that proof and current P2 freshness may Application seal P3, invoke
-the already-accepted synchronized compositor reveal, and return the MPEG run
-coordinator to reusable IDLE state. Pre-sync reveal failure remains retryable
-with the exact run retained. Ordinary product trigger/service wiring remains a
+P8 does not yet own RFB freeze/thaw, input-runtime mouse suspension, remote
+pointer neutralization/rebase, Application start/retire/reveal orchestration or
+Pi persistence. Those are cross-domain Application/configuration concerns for a
 later packet.
+
+**CALIBRATION SEPARATION INVARIANT:** DESKTOP CALIBRATION and MPEG CALIBRATION
+are separate historical systems with separate state, geometry authority,
+ownership and evidence. Do not derive MPEG-calibration behavior from the older
+desktop-calibration implementation merely because both manipulate screen
+rectangles or use similar UI mechanics. For MPEG calibration, use the frozen
+`experiments/media-harness-h1/mpeg_presentation_calibration/` lineage and A004
+authority. If a relationship is unclear, preserve separation rather than
+merging by inference.
 
 ### Required behavior
 
-1. **Exact RESTORE_PENDING admission.** Final restoration work is legal only for
-   a nonzero exact current generation in Application RESTORE_PENDING whose R23C
-   execution retirement is complete: RETIRE invoked/completed, producer-done
-   published, worker joined, P7/R4/R5 retired and R18 run closed. P3 must still
-   be exact-generation RETIRING and P2 must be thawed/publication-enabled.
-2. **Do not infer graphics freshness from P2 alone.** Add one run-scoped
-   Application proof/marker for the restored RFB desktop having actually crossed
-   the existing successful desktop-presentation/upload boundary. The marker may
-   be recorded only for the exact RESTORE_PENDING run after P2 shows the
-   post-thaw FULL obligation has completed: no outstanding request and
-   `pstvnc_rfb_flow_policy_next_request()==PSTVNC_RFB_FLOW_REQUEST_INCREMENTAL`.
-   Its caller contract must explicitly require that the corresponding
-   authoritative FULL-refreshed framebuffer was successfully presented through
-   the existing graphics path before recording the marker.
-3. **Freshness gaps remain closed.** FULL still owed, any RFB request outstanding,
-   frozen P2, missing presentation marker, wrong generation/state, or fabricated
-   execution ownership must prevent P3 sealing/reveal without clearing evidence.
-4. **Seal only after restoration proof.** From exact RESTORE_PENDING with both
-   protocol-fresh P2 and the run-scoped presentation proof, call
-   `pstvnc_mpeg_presentation_seal_retirement()` exactly once for the current
-   generation. Verify exact P3 REVEAL_PENDING before attempting physical reveal.
-5. **Explicit Application reveal-pending state.** Once P3 is sealed, record an
-   Application state that truthfully means final physical reveal is pending.
-   Do not revert it to RESTORE_PENDING or RETIRING.
-6. **Use only the accepted compositor reveal seam.** Physical handoff must call
-   `pstvnc_mpeg_compositor_reveal_retired()` for the exact current generation.
-   Application must not call Platform graphics directly or duplicate P3 commit.
-7. **Pre-sync reveal failure is retryable.** Existing compositor
-   PLATFORM_FAILED/SYNC_INVALID outcomes leave P3 REVEAL_PENDING and retained
-   video retryable. Preserve Application REVEAL_PENDING, exact generation and
-   restoration proof, do not set session-teardown-required merely for these
-   retryable outcomes, and allow a later exact retry. A retry must not re-seal.
-8. **Contradictions after/around reveal fail closed.** Invalid/wrong-generation
-   compositor state, retirement-commit failure, or an OK result lacking
-   synchronized + retirement-revealed effects / exact P3 RFB_ONLY proof is not
-   retryable success. Preserve truthful evidence and require containing recovery.
-9. **Successful physical boundary is exact.** Only compositor OK with synchronized
-   no-MPEG reveal, `retirement_revealed`, P3 RFB_ONLY, no current P3 snapshot
-   and no MPEG visual ownership completes final restoration.
-10. **Return coordinator to reusable IDLE only after physical success.** Clear
-    only current-run/transient ownership after exact reveal, set
-    `current_generation=0`, preserve monotonically increasing
-    `last_allocated_generation`, preserve the external session media-clock
-    object and persistent calibration/config ownership, and leave P2 thawed.
-11. **Prove repeated-generation readiness without product activation.** Focused
-    tests must show a completed generation can return to IDLE, then after an
-    external caller re-establishes the existing start precondition (P2 frozen)
-    the same coordinator allocates the next generation rather than reusing the
-    retired generation. Do not wire a real trigger or ordinary app loop.
-12. **No broader activation/scope.** Do not modify ordinary `src/app.c`, Pi
-    product activation, RFB/P3/compositor/Platform/P7/MPEG/Transport lower-owner
-    implementations, AUDIO, Input/UI/calibration behavior or Wire protocol
-    bytes. Add deterministic tests/docs/dictionaries and keep canonical evidence
-    green.
+1. **Explicit begin, no hardwired product trigger.** Preserve P1's explicit
+   `pstvnc_mpeg_calibration_begin()` boundary. P8 may expose a narrow manual
+   region-source wrapper, but must not bake START+SELECT, 750-ms timing or a
+   permanent controller chord into the calibration core/region definition.
+2. **Normalized controller mapping.** Add one UI-owned mapping/service seam from
+   current neutral `pstvnc_controller_state_t` facts to the existing P1
+   semantic calibration actions. Preserve D-pad geometry editing, R1 move, R2
+   inner-matte editing, L2 outer-matte editing, START reset, CROSS review/accept
+   and CIRCLE cancel semantics supported by the accepted clean core. Do not poll
+   libpad here.
+3. **Foreground consumption fact.** While MPEG CALIBRATION owns edit/review or
+   release-quarantine state, the region-source result must explicitly report
+   that the controller sample belongs to calibration and must not be routed as
+   ordinary desktop/OSK input. Entry-trigger consumption remains caller policy.
+4. **Preserve one-shot acceptance.** Propagate only the P1 accepted edge emitted
+   after REVIEW release/re-press; do not infer acceptance from committed
+   geometry, screen state or foreground exit. Return a copied accepted region
+   value rather than exposing mutable draft authority.
+5. **Preserve cancel/quarantine semantics.** Cancel emits no accepted region.
+   Calibration continues to own controller semantics through its existing
+   release quarantine and reports exactly when that quarantine completes.
+6. **Platform-neutral visual plan.** Add a UI-owned presentation description for
+   the current P1 EDIT/REVIEW state. It must expose the exact candidate base
+   rectangle, distinct inner-content matte and outer/suppression footprint, plus
+   enough screen-kind/help/review facts for deterministic rendering. Do not
+   invent a third DESKTOP CALIBRATION-derived geometry authority.
+7. **Deterministic caller-owned raster/surface preparation.** Reconstruct the
+   smallest useful clean calibration visualization from frozen H1 render/raster
+   evidence into caller-owned CT16 pixels. It may use a caller-supplied frozen
+   desktop underlay, but must never mutate the authoritative RFB framebuffer.
+   The visible selector/matte/suppression geometry must derive from the exact P1
+   candidate/resolve-geometry result, not duplicated geometry calculations.
+8. **No experimental UI obligation expansion.** Preserve the accepted clean P1
+   state machine. Do not reintroduce H1-only adapter proliferation, checkpoint
+   counters or a separate CONTROLS screen/state unless current repository
+   authority proves it is required by P1/Q6. Helpful rendering text may be
+   simplified while retaining the actual edit/review/geometry semantics.
+9. **Region-source output remains data, not activation.** Successful manual
+   acceptance yields one MPEG region definition suitable for later Application
+   consumption. It must not freeze P2, send START, open an MPEG Transport run,
+   start a decoder/worker, arm/promote Presentation, or claim MPEG visual
+   ownership.
+10. **No cross-domain foreground mechanics yet.** Do not call input-runtime
+    suspend/resume, send RFB pointer events, rebase mouse state, mutate P2,
+    request framebuffer updates or modify ordinary `src/app.c`.
+11. **Separation and future-source readiness.** DESKTOP CALIBRATION remains
+    untouched; no shared geometry store is invented. Public naming/comments
+    make clear this is one manual MPEG-region source, not the product definition
+    of MPEG activation.
+12. **Evidence and integration.** Add deterministic focused tests, canonical
+    build/source-topology registration only as genuinely required, reconcile
+    dictionaries, and keep host/project/strict-dictionary/PS2 compile/link
+    evidence green.
 
 ### Acceptance criteria
 
-- A003-R24-C1 FINAL_RESTORE_ADMISSION_REQUIRES_EXACT_RETIRED_EXECUTION_AND_P3_RETIRING
-- A003-R24-C2 RFB_GRAPHICS_FRESHNESS_IS_EXPLICIT_RUN_SCOPED_PROOF_NOT_P2_INFERENCE
-- A003-R24-C3 FULL_PENDING_OUTSTANDING_FROZEN_OR_UNPRESENTED_RFB_BLOCKS_REVEAL
-- A003-R24-C4 EXACT_P3_SEAL_OCCURS_ONLY_AFTER_FRESH_PRESENTED_RFB_PROOF
-- A003-R24-C5 APPLICATION_HAS_EXPLICIT_REVEAL_PENDING_STATE_AFTER_SEAL
-- A003-R24-C6 PHYSICAL_HANDOFF_USES_ONLY_EXACT_ACCEPTED_COMPOSITOR_REVEAL
-- A003-R24-C7 PRE_SYNC_REVEAL_FAILURE_IS_RETRYABLE_WITHOUT_RESEAL_OR_TEARDOWN
-- A003-R24-C8 POST_SYNC_OR_STATE_CONTRADICTIONS_FAIL_CLOSED_WITH_EVIDENCE
-- A003-R24-C9 SUCCESS_REQUIRES_SYNCHRONIZED_REVEAL_AND_EXACT_P3_RFB_ONLY
-- A003-R24-C10 SUCCESS_CLEARS_ONLY_CURRENT_RUN_AND_PRESERVES_GENERATION_HISTORY
-- A003-R24-C11 SAME_COORDINATOR_CAN_ALLOCATE_NEXT_GENERATION_AFTER_EXTERNAL_REFREEZE
-- A003-R24-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN_WITH_NO_SCOPE_CREEP
+- A004-P8-C1 EXPLICIT_BEGIN_WITHOUT_PERMANENT_START_SELECT_POLICY
+- A004-P8-C2 NORMALIZED_CONTROLLER_MAPS_ONLY_ACCEPTED_MPEG_CALIBRATION_ACTIONS
+- A004-P8-C3 FOREGROUND_AND_RELEASE_QUARANTINE_CONTROLLER_CONSUMPTION_EXPLICIT
+- A004-P8-C4 ONE_SHOT_ACCEPT_EDGE_AND_COPIED_REGION_PRESERVED
+- A004-P8-C5 CANCEL_AND_RELEASE_QUARANTINE_PRESERVE_NO_ACCEPTANCE
+- A004-P8-C6 EDIT_REVIEW_VISUAL_PLAN_USES_EXACT_P1_BASE_INNER_OUTER_MEANINGS
+- A004-P8-C7 CALLER_OWNED_RASTER_NEVER_MUTATES_RFB_AUTHORITY_OR_DUPLICATES_GEOMETRY
+- A004-P8-C8 NO_H1_EXPERIMENTAL_UI_STATE_OR_ADAPTER_PROLIFERATION_REINTRODUCED
+- A004-P8-C9 ACCEPTED_REGION_IS_DATA_ONLY_NOT_MPEG_ACTIVATION
+- A004-P8-C10 NO_RFB_INPUT_RUNTIME_APP_TRANSPORT_MPEG_OR_PLATFORM_SCOPE_CREEP
+- A004-P8-C11 DESKTOP_CALIBRATION_REMAINS_SEPARATE_AND_FUTURE_REGION_SOURCES_REMAIN_POSSIBLE
+- A004-P8-C12 HOST_PROJECT_DICTIONARY_PS2_BUILD_EVIDENCE_GREEN
 
 All twelve criteria must be MET for source acceptance.
 
 ### Required deterministic evidence
 
-R24 must prove at least:
+P8 must prove at least:
 
-1. RESTORE_PENDING admission rejects live/retiring/faulted/fabricated owner
-   states and wrong P3/generation before seal;
-2. after R23C thaw, FULL still pending blocks restoration-presentation proof;
-3. FULL sent but response outstanding blocks the proof;
-4. after real P2 FULL completion, the explicit restoration-presentation marker
-   remains absent until the focused caller records successful graphics
-   presentation;
-5. reveal remains blocked when the marker is absent even though P2 is otherwise
-   protocol-fresh;
-6. exact marker + fresh P2 permits one P3 RETIRING -> REVEAL_PENDING seal;
-7. retryable compositor PLATFORM_FAILED and SYNC_INVALID preserve exact
-   REVEAL_PENDING state/snapshot and a second call does not seal again;
-8. compositor INVALID/retirement-commit contradiction or contradictory OK/effects
-   fails closed without pretending IDLE;
-9. successful compositor reveal proves synchronized + retirement_revealed and
-   exact P3 RFB_ONLY before current-run state is cleared;
-10. success preserves last_allocated_generation while current_generation becomes
-    zero, P2 remains thawed and the external media-clock object is not reset;
-11. after caller freezes P2 again, a second start allocates generation N+1;
-12. all R21/R22/R23/R23C, P2/P3/compositor/P7/R18/R20/R4/R5 and ordinary
-    Application regressions remain green.
+1. explicit begin is required and no START+SELECT/hold timer exists in the clean
+   calibration region-source implementation;
+2. every supported physical controller mapping reaches the correct existing P1
+   semantic action, with no libpad polling;
+3. calibration-owned EDIT/REVIEW/release-quarantine samples are marked consumed;
+4. REVIEW cannot accept while CROSS remains held; release followed by fresh
+   CROSS emits exactly one accepted edge and copied region;
+5. cancel emits no acceptance and release quarantine remains owned until proven
+   complete;
+6. base width/height remain macroblock aligned while X/Y placement remains
+   pixel-precision;
+7. inner-content and outer/suppression geometry remain distinct in the visual
+   plan and raster;
+8. caller frozen-desktop input remains byte-for-byte unchanged after raster
+   preparation;
+9. output surface bounds/capacity/overflow-invalid inputs fail closed;
+10. accepted region output does not call or mutate P2, Transport, MPEG worker,
+    P3/compositor, media clock, Pi or ordinary Application;
+11. DESKTOP CALIBRATION source is unchanged;
+12. canonical MPEG-calibration plus full host/project/dictionary/PS2 build
+    regressions remain green.
 
 ### Authorized source surface
 
-R24 may modify only the smallest justified subset of:
+P8 may modify only the smallest justified subset of:
 
-- `src/app_mpeg_run.c` / `.h`;
-- `tests/unit/app_mpeg_run_test.c` or one focused Application reveal companion;
-- `tests/Makefile` only if focused-test linkage genuinely requires it;
-- directly affected Application MPEG lifecycle documentation/dictionaries;
-- build/check manifests only if genuinely required.
+- `src/ui/mpeg_calibration.c` / `.h` when a narrow extension is cleaner than
+  a duplicate owner;
+- new narrowly named `src/ui/mpeg_calibration_*.[ch]` files for controller
+  adaptation and/or presentation/raster preparation;
+- `tests/unit/mpeg_calibration_test.c` and/or focused companion tests;
+- `tests/Makefile`;
+- UI/root symbol dictionaries and source-topology/build manifests only if
+  genuinely required;
+- directly affected MPEG CALIBRATION documentation.
 
-Do not modify ordinary `src/app.c`, RFB flow-policy/session/parser,
-Display/Presentation/compositor/Platform graphics, P7, MPEG worker/backend/
-runtime, Transport, Configuration, Pi product source, AUDIO, Input/UI/
-calibration or protocol bytes. If an accepted lower-owner seam cannot represent
-the required final handoff, stop and return BLOCKED with the exact missing
-contract rather than broadening scope.
+Do not modify ordinary `src/app.c`, `src/app_mpeg_run.*`, RFB
+flow-policy/session/parser, input runtime/physical controller acquisition,
+Display/Presentation/compositor/Platform graphics, MPEG decoder/worker/runtime,
+Transport, Configuration, Pi product source, AUDIO, DESKTOP CALIBRATION or Wire
+protocol bytes. If the accepted neutral controller value or P1 seam is
+insufficient, stop and return BLOCKED with the exact missing contract rather
+than widening scope.
 
 ### Required checks before handoff
 
-Run focused R21-R24 Application MPEG tests plus real P2, P3/compositor, P7,
-R18/R20, worker/runtime/backend and ordinary Application regressions; canonical
-host tests; project check; complete strict dictionary audit; pinned PS2
-compile/link and current-source reproducibility. Preserve exact ELF/PT_LOAD
-identity if loadable bytes change.
+Run the focused MPEG CALIBRATION region-source/presentation tests, existing P1
+calibration tests and canonical full host suite; project check; complete strict
+dictionary audit; pinned PS2 compile/link and current-source reproducibility.
+Preserve exact ELF/PT_LOAD identity if loadable bytes change.
 
 At shift end emit exactly one immutable Reconstruction record under
-`docs/ledge/work-log/` following revision 0007, then stop and return the baton.
+`docs/ledge/work-log/` following revision 0007, using:
+
+- ROLE_KEY=`reconstruction`;
+- WORK_ITEM_KEY=`a004-presentation`;
+- WORKER_KEY=`interactive`.
+
+Then stop and return the baton.
 
 ## Current hardware debt
 
-Current fully Foreman-accepted behavior-bearing authority is corrected R23C:
+Current fully Foreman-accepted behavior-bearing authority is R24:
 
-`PT_LOAD_SHA256=c7443e28a6eb4a6580a153768e816d4011b2b2784dabb8ef274954cb36c081fa`
-`PT_LOAD_BYTES=498964`
+`PT_LOAD_SHA256=0b4810977f794cb5c34e5ce4a90a54be628622a53ac74fe519df12f6e58efc4e`
+`PT_LOAD_BYTES=500244`
 
 This identity is repository-reproducible and not physically hardware-qualified.
 
-R24 is expected to change Application loadable bytes again. Any new linked
-identity must be recorded exactly and remains hardware-pending unless separately
-qualified.
+P8 may change loadable bytes if its UI region-source/presentation implementation
+is included in the clean product build. Any new linked identity must be recorded
+exactly and remains hardware-pending unless separately qualified.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
