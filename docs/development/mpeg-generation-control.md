@@ -407,3 +407,65 @@ factory, or alter lower-owner P2/P3/P7/Transport/MPEG mechanisms.
 
 Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
 `A003-APPLICATION-MPEG-Q7-RESTORE-OVERLAP-R23C`.
+
+
+## R24 final restored-RFB reveal
+
+R24 completes the trigger-agnostic visible retirement transaction without
+activating MPEG in the ordinary product loop.
+
+The accepted R23C endpoint is exact-generation `RESTORE_PENDING`: execution
+owners are retired, P3 still retains the visible `RETIRING` MPEG snapshot and
+P2 is thawed so ordinary RFB restoration can run underneath. R24 deliberately
+does not treat that P2 protocol state as proof that the restored authoritative
+desktop has actually crossed the graphics presentation/upload boundary.
+
+Application therefore owns one additional run-scoped fact:
+`rfb_restoration_presented`. It may be recorded only for the exact current
+`RESTORE_PENDING` generation after P2 proves the post-thaw FULL transaction is
+complete: P2 is thawed, no request is outstanding and its next request is
+ordinary INCREMENTAL. The API contract additionally requires its caller to have
+successfully presented/uploaded the corresponding authoritative FULL-refreshed
+desktop through the existing graphics path before recording the fact. R24 does
+not itself perform that desktop presentation and does not manufacture the proof
+from protocol completion.
+
+FULL debt still pending, an in-flight RFB request, frozen P2, missing explicit
+presentation proof, wrong generation or fabricated execution-retirement
+authority blocks final reveal before P3 seal.
+
+Once exact RESTORE_PENDING authority, current P2 protocol freshness and the
+explicit graphics-presentation proof all agree, Application seals P3 exactly
+once into `REVEAL_PENDING`. Application records the corresponding explicit
+`PSTVNC_APP_MPEG_RUN_REVEAL_PENDING` state, then invokes only
+`pstvnc_mpeg_compositor_reveal_retired()` for the exact current generation.
+
+The accepted compositor remains sole owner of the physical synchronized
+desktop/no-MPEG reveal and the final P3 logical commit. Application never calls
+Platform graphics directly and never duplicates
+`pstvnc_mpeg_presentation_commit_reveal()`.
+
+Compositor `PLATFORM_FAILED` and `SYNC_INVALID` outcomes are retryable
+pre-sync failures. Application preserves REVEAL_PENDING, the exact generation,
+the RFB-presentation proof and the P3 retained snapshot without setting session
+teardown merely for those results. A later exact retry bypasses P3 seal and
+invokes the compositor reveal again.
+
+Other compositor failures or state/effect contradictions fail closed and
+require containing recovery. In particular, an OK return is accepted only when
+its effects prove synchronized retirement reveal and P3 independently reports
+RFB_ONLY with no retained snapshot and no MPEG visual ownership.
+
+Only that exact physical boundary returns the coordinator to reusable IDLE.
+Current-generation/transient run state is cleared, `current_generation`
+becomes zero, and `last_allocated_generation` is preserved so a later caller
+that re-establishes the existing P2-frozen start precondition receives N+1
+rather than reusing the retired generation. R24 never resets the externally
+owned session media-clock object.
+
+R24 does not choose a product trigger, modify ordinary `src/app.c`, activate
+the Pi MPEG factory, alter P2/P3/compositor/Platform/P7/MPEG/Transport
+mechanisms, or change AUDIO, Input/UI/calibration or Wire protocol behavior.
+
+Context: `docs/ledge/LEDGE_FOREMAN_STATE.md`,
+`A003-APPLICATION-MPEG-FINAL-RFB-REVEAL-R24`.
