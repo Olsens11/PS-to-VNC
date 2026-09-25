@@ -515,18 +515,23 @@ class MpegGenerationTests(unittest.TestCase):
         self.assertLessEqual(producer.available, 8)
         producer.retire(1.0)
 
-    def test_stager_tracks_r17_without_activating_final_composition(self) -> None:
+    def test_stager_tracks_r17_and_r25_composes_only_the_factory(self) -> None:
         installer = (
             ROOT / "scripts/pi/install-wire-runtime.sh"
         ).read_text(encoding="utf-8")
         for path in (
             "/usr/lib/ps-to-vnc/mpeg_runtime_profile_generated.py",
             "/usr/lib/ps-to-vnc/mpeg_runtime_profile.py",
+            "/usr/lib/ps-to-vnc/mpeg_product_profile.py",
             "/usr/lib/ps-to-vnc/mpeg_generation.py",
         ):
             self.assertIn(path, installer)
+
         runtime = (ROOT / "pi/wire_runtime.py").read_text(encoding="utf-8")
-        self.assertNotIn("mpeg_generation_factory", runtime)
+        self.assertIn("mpeg_generation_factory", runtime)
+        self.assertIn("selected_mpeg_generation_factory", runtime)
+        self.assertNotIn("subprocess.Popen", runtime)
+        self.assertNotIn("start_exact(", runtime)
 
     def test_channel_credit_is_bounded_independently(self) -> None:
         controller, _ = make_controller()
