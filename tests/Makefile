@@ -962,3 +962,32 @@ $(APP_MPEG_CALIBRATION_TEST): \
 		../src/app_mpeg_calibration.c \
 		../src/rfb/flow_policy.c \
 		-o $(APP_MPEG_CALIBRATION_TEST)
+
+
+APP_MPEG_ACTIVATION_TEST := .build/app_mpeg_activation_test
+
+.PHONY: app-mpeg-activation-unit
+unit: app-mpeg-activation-unit
+
+app-mpeg-activation-unit: $(APP_MPEG_ACTIVATION_TEST)
+	./$(APP_MPEG_ACTIVATION_TEST)
+
+$(APP_MPEG_ACTIVATION_TEST): \
+	unit/app_mpeg_activation_test.c \
+	support/libpad.h \
+	../src/app_mpeg_activation.c \
+	../src/app_mpeg_activation.h \
+	../src/app_mpeg_calibration.h \
+	../src/app_mpeg_run.h \
+	../src/rfb/flow_policy.c \
+	../src/rfb/flow_policy.h \
+	../src/display/mpeg_presentation.h \
+	../src/media/clock.h \
+	../src/transport/bridge.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Isupport \
+		-I../src \
+		unit/app_mpeg_activation_test.c \
+		../src/app_mpeg_activation.c \
+		../src/rfb/flow_policy.c \
+		-o $(APP_MPEG_ACTIVATION_TEST)

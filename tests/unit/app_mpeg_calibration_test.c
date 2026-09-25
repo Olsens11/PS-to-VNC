@@ -914,6 +914,136 @@ static void test_restore_or_p3_failure_never_silently_releases(void)
         PSTVNC_APP_MPEG_CALIBRATION_FAULTED);
 }
 
+
+static void prepare_accepted_protected_for_handoff(
+    test_environment_t *environment)
+{
+    pstvnc_app_mpeg_calibration_service_result_t result;
+
+    environment_init(environment);
+    seed_exact_geometry();
+
+    assert(begin_environment(environment) ==
+        PSTVNC_APP_MPEG_CALIBRATION_OK);
+
+    next_manual_step = MANUAL_STEP_ACCEPT;
+    result = service_ok(environment);
+    assert(result.accepted_edge);
+    assert(!result.foreground_completed);
+
+    next_manual_step = MANUAL_STEP_RELEASE;
+    result = service_ok(environment);
+    assert(result.foreground_completed);
+    assert(result.accepted_protected);
+    assert(environment->flow.frozen);
+    assert(environment->calibration.accepted_geometry_valid);
+    assert(pstvnc_app_mpeg_calibration_state(
+        &environment->calibration) ==
+        PSTVNC_APP_MPEG_CALIBRATION_ACCEPTED_PROTECTED);
+}
+
+static void arm_handoff_presentation(
+    test_environment_t *environment,
+    uint32_t generation)
+{
+    environment->presentation.state =
+        PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME;
+    environment->presentation.geometry =
+        environment->calibration.accepted_geometry;
+    environment->presentation.run_generation = generation;
+    environment->presentation.snapshot_valid = 1u;
+}
+
+static void test_protected_handoff_commit_never_thaws(void)
+{
+    test_environment_t environment;
+    pstvnc_mpeg_presentation_geometry_t copied;
+    size_t events_before;
+
+    prepare_accepted_protected_for_handoff(&environment);
+    arm_handoff_presentation(&environment, 17u);
+    events_before = event_count;
+
+    assert(pstvnc_app_mpeg_calibration_commit_protected_handoff(
+        &environment.calibration,
+        17u) == PSTVNC_APP_MPEG_CALIBRATION_OK);
+
+    assert(event_count == events_before);
+    assert(environment.flow.frozen);
+    assert(!environment.flow.full_refresh_pending);
+    assert(pstvnc_rfb_flow_policy_next_request(
+        &environment.flow) == PSTVNC_RFB_FLOW_REQUEST_HOLD);
+    assert(environment.presentation.state ==
+        PSTVNC_MPEG_PRESENTATION_WAIT_FIRST_FRAME);
+    assert(environment.presentation.snapshot_valid);
+    assert(environment.presentation.run_generation == 17u);
+    assert(pstvnc_app_mpeg_calibration_state(
+        &environment.calibration) ==
+        PSTVNC_APP_MPEG_CALIBRATION_IDLE);
+    assert(!environment.calibration.accepted_geometry_valid);
+    assert(!pstvnc_app_mpeg_calibration_copy_accepted_geometry(
+        &environment.calibration,
+        &copied));
+}
+
+static void test_protected_handoff_commit_mismatch_fails_closed(void)
+{
+    test_environment_t environment;
+    size_t events_before;
+
+    prepare_accepted_protected_for_handoff(&environment);
+    arm_handoff_presentation(&environment, 18u);
+    environment.presentation.geometry.base.x++;
+    events_before = event_count;
+
+    assert(pstvnc_app_mpeg_calibration_commit_protected_handoff(
+        &environment.calibration,
+        18u) ==
+        PSTVNC_APP_MPEG_CALIBRATION_HANDOFF_STATE_INVALID);
+
+    assert(event_count == events_before);
+    assert(environment.flow.frozen);
+    assert(environment.calibration.accepted_geometry_valid);
+    assert(pstvnc_app_mpeg_calibration_state(
+        &environment.calibration) ==
+        PSTVNC_APP_MPEG_CALIBRATION_FAULTED);
+    assert(pstvnc_app_mpeg_calibration_abort_accepted(
+        &environment.calibration) ==
+        PSTVNC_APP_MPEG_CALIBRATION_ALREADY_FAULTED);
+    assert(environment.flow.frozen);
+}
+
+static void test_protected_handoff_fault_contains_without_thaw(void)
+{
+    test_environment_t environment;
+    pstvnc_mpeg_presentation_geometry_t retained;
+    size_t events_before;
+
+    prepare_accepted_protected_for_handoff(&environment);
+    retained = environment.calibration.accepted_geometry;
+    arm_handoff_presentation(&environment, 19u);
+    events_before = event_count;
+
+    assert(pstvnc_app_mpeg_calibration_fault_protected_handoff(
+        &environment.calibration) ==
+        PSTVNC_APP_MPEG_CALIBRATION_HANDOFF_FAULTED);
+
+    assert(event_count == events_before);
+    assert(environment.flow.frozen);
+    assert(environment.calibration.accepted_geometry_valid);
+    assert(memcmp(
+        &environment.calibration.accepted_geometry,
+        &retained,
+        sizeof(retained)) == 0);
+    assert(pstvnc_app_mpeg_calibration_state(
+        &environment.calibration) ==
+        PSTVNC_APP_MPEG_CALIBRATION_FAULTED);
+    assert(pstvnc_app_mpeg_calibration_abort_accepted(
+        &environment.calibration) ==
+        PSTVNC_APP_MPEG_CALIBRATION_ALREADY_FAULTED);
+    assert(environment.flow.frozen);
+}
+
 int main(void)
 {
     test_admission_requires_exact_rfb_only_desktop_state();
@@ -925,6 +1055,9 @@ int main(void)
     test_accept_waits_for_release_then_stays_protected();
     test_cancel_restores_then_resumes_then_thaws_with_full_debt();
     test_restore_or_p3_failure_never_silently_releases();
+    test_protected_handoff_commit_never_thaws();
+    test_protected_handoff_commit_mismatch_fails_closed();
+    test_protected_handoff_fault_contains_without_thaw();
 
     puts("APP_MPEG_CALIBRATION_TEST=PASS");
     return 0;
