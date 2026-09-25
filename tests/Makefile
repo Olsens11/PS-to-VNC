@@ -309,7 +309,7 @@ $(BUILD_DIR)/input_runtime_product_action_test: \
 	../src/input/mouse.c \
 	../src/input/mouse.h \
 	../src/input/pad.h | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) -Wno-pedantic \
 		-Iunit/input_runtime_product_action_host_stubs \
 		-I../src \
 		unit/input_runtime_product_action_test.c \
