@@ -1,22 +1,24 @@
 /*
  * File synopsis:
- * Defines the R21-R23C Application-owned, trigger-agnostic MPEG run
- * coordinator. One session-scoped owner allocates exact run generations,
- * composes accepted start/live-frame service, and owns the ordered retirement/
- * drain transaction across existing Presentation, P7, P2, MPEG worker/runtime
- * and Transport seams.
+ * Defines the R21-R24 Application-owned, trigger-agnostic MPEG run coordinator.
+ * One session-scoped owner allocates exact run generations, composes accepted
+ * start/live-frame service, orders retirement/restoration across P2/P3/P7,
+ * worker/runtime and Transport owners, and records the final run-scoped RFB
+ * presentation proof before invoking the accepted compositor reveal seam.
  *
- * R23C preserves the R23 execution-retirement fences but releases P2
- * suppression immediately after successful exact RETIRE serialization so
- * ordinary RFB restoration can overlap visible P3 RETIRING drain. Successful
- * execution retirement stops at RESTORE_PENDING with P3 retained and P2
- * thawed; final P3 seal/reveal remains later authority.
+ * R24 completes only the trigger-agnostic visible handoff. It never infers
+ * graphics freshness from protocol completion: an exact RESTORE_PENDING run
+ * must receive an explicit caller-recorded proof that the authoritative
+ * FULL-refreshed desktop was successfully presented before P3 can be sealed.
+ * Successful synchronized reveal returns the coordinator to reusable IDLE while
+ * preserving generation history and the external session media clock.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
  * A003-APPLICATION-MPEG-RUN-START-R21,
  * A003-APPLICATION-MPEG-LIVE-SERVICE-R22,
- * A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23 and
- * A003-APPLICATION-MPEG-Q7-RESTORE-OVERLAP-R23C.
+ * A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23,
+ * A003-APPLICATION-MPEG-Q7-RESTORE-OVERLAP-R23C and
+ * A003-APPLICATION-MPEG-FINAL-RFB-REVEAL-R24.
  */
 
 #ifndef PSTVNC_APP_MPEG_RUN_H
@@ -26,6 +28,7 @@
 
 #include "app_mpeg_frame.h"
 #include "config/mpeg_runtime_profile.h"
+#include "display/mpeg_compositor.h"
 #include "display/mpeg_presentation.h"
 #include "media/clock.h"
 #include "mpeg/ps2_decoder_backend.h"
@@ -40,6 +43,7 @@ typedef enum pstvnc_app_mpeg_run_state {
     PSTVNC_APP_MPEG_RUN_MPEG_OWNED,
     PSTVNC_APP_MPEG_RUN_RETIRING,
     PSTVNC_APP_MPEG_RUN_RESTORE_PENDING,
+    PSTVNC_APP_MPEG_RUN_REVEAL_PENDING,
     PSTVNC_APP_MPEG_RUN_FAULTED
 } pstvnc_app_mpeg_run_state_t;
 
@@ -86,7 +90,17 @@ typedef enum pstvnc_app_mpeg_run_result {
     PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_RELEASE_FAILED = -36,
     PSTVNC_APP_MPEG_RUN_RETIRE_RUNTIME_RELEASE_FAILED = -37,
     PSTVNC_APP_MPEG_RUN_RETIRE_FINALIZE_FAILED = -38,
-    PSTVNC_APP_MPEG_RUN_RFB_RESTORE_RELEASE_FAILED = -39
+    PSTVNC_APP_MPEG_RUN_RFB_RESTORE_RELEASE_FAILED = -39,
+
+    PSTVNC_APP_MPEG_RUN_NOT_RESTORE_PENDING = -40,
+    PSTVNC_APP_MPEG_RUN_RESTORE_STATE_INVALID = -41,
+    PSTVNC_APP_MPEG_RUN_RFB_RESTORE_NOT_FRESH = -42,
+    PSTVNC_APP_MPEG_RUN_RFB_RESTORE_NOT_PRESENTED = -43,
+    PSTVNC_APP_MPEG_RUN_PRESENTATION_SEAL_FAILED = -44,
+    PSTVNC_APP_MPEG_RUN_REVEAL_PLATFORM_FAILED = -45,
+    PSTVNC_APP_MPEG_RUN_REVEAL_SYNC_INVALID = -46,
+    PSTVNC_APP_MPEG_RUN_REVEAL_FAILED = -47,
+    PSTVNC_APP_MPEG_RUN_REVEAL_CONTRADICTION = -48
 } pstvnc_app_mpeg_run_result_t;
 
 typedef struct pstvnc_app_mpeg_run_status {
@@ -99,6 +113,7 @@ typedef struct pstvnc_app_mpeg_run_status {
     int retire_completion_taken;
     int producer_done_published;
     int worker_joined;
+    int rfb_restoration_presented;
 } pstvnc_app_mpeg_run_status_t;
 
 typedef struct pstvnc_app_mpeg_run {
@@ -132,6 +147,7 @@ typedef struct pstvnc_app_mpeg_run {
     int retire_completion_taken;
     int producer_done_published;
     int worker_joined;
+    int rfb_restoration_presented;
 } pstvnc_app_mpeg_run_t;
 
 /*
@@ -192,6 +208,33 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
     pstvnc_app_mpeg_run_t *run,
     uint64_t current_tick,
     pstvnc_app_mpeg_frame_service_result_t *service_result);
+
+/*
+ * Record the exact RESTORE_PENDING run's graphics-fresh RFB proof.
+ *
+ * The caller may invoke this only after the post-thaw FULL response has
+ * completed through P2 and the authoritative FULL-refreshed desktop has then
+ * crossed the existing successful desktop presentation/upload boundary while
+ * retained MPEG remains visible. Protocol freshness alone is insufficient.
+ */
+pstvnc_app_mpeg_run_result_t
+pstvnc_app_mpeg_run_record_restored_rfb_presented(
+    pstvnc_app_mpeg_run_t *run,
+    uint32_t run_generation);
+
+/*
+ * Seal and reveal one exact restoration-ready run through the accepted P3 and
+ * compositor seams.
+ *
+ * RESTORE_PENDING seals once into REVEAL_PENDING. PLATFORM_FAILED and
+ * SYNC_INVALID compositor outcomes are retryable and preserve that state,
+ * generation and restoration proof. Success requires synchronized reveal,
+ * retirement_revealed effects and exact P3 RFB_ONLY before the current run is
+ * cleared back to IDLE.
+ */
+pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_reveal_restored(
+    pstvnc_app_mpeg_run_t *run,
+    pstvnc_mpeg_compositor_effects_t *effects);
 
 /* Read Application-owned run/generation state without advancing lifecycle. */
 pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_status(

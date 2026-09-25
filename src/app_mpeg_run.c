@@ -1,20 +1,22 @@
 /*
  * File synopsis:
- * Implements the R21-R23C Application-owned MPEG run coordinator. R21 owns the
- * exact start transaction, R22 composes P7 live frame service, R23 owns exact
- * execution-retirement ordering, and R23C restores governing Q7 overlap by
- * releasing P2 immediately after successful exact RETIRE serialization.
+ * Implements the R21-R24 Application-owned MPEG run coordinator. R21-R23C own
+ * exact run start, live service, safe execution retirement and Q7 restoration
+ * overlap. R24 adds the explicit run-scoped proof that a protocol-fresh restored
+ * RFB desktop was actually presented before composing P3 seal with the accepted
+ * synchronized compositor reveal.
  *
- * R23C does not reveal RFB. P3 remains RETIRING while ordinary RFB restoration
- * may run underneath through thawed P2; exact completion, natural worker
- * completion, reclaim and R18 finalization retain the accepted R23 ordering.
- * Success stops at RESTORE_PENDING with P3 retained and P2 thawed.
+ * R24 does not activate ordinary product MPEG flow or perform graphics work
+ * directly. Retryable pre-sync compositor failure leaves exact REVEAL_PENDING
+ * authority intact. Only synchronized retirement reveal and exact P3 RFB_ONLY
+ * return the coordinator to reusable IDLE.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
  * A003-APPLICATION-MPEG-RUN-START-R21,
  * A003-APPLICATION-MPEG-LIVE-SERVICE-R22,
- * A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23 and
- * A003-APPLICATION-MPEG-Q7-RESTORE-OVERLAP-R23C.
+ * A003-APPLICATION-MPEG-RETIREMENT-DRAIN-R23,
+ * A003-APPLICATION-MPEG-Q7-RESTORE-OVERLAP-R23C and
+ * A003-APPLICATION-MPEG-FINAL-RFB-REVEAL-R24.
  */
 
 #include "app_mpeg_run.h"
@@ -148,6 +150,7 @@ static void pstvnc_app_mpeg_run_clear_attempt(
     run->retire_completion_taken = 0;
     run->producer_done_published = 0;
     run->worker_joined = 0;
+    run->rfb_restoration_presented = 0;
 }
 
 static void pstvnc_app_mpeg_run_fault(
@@ -269,6 +272,38 @@ static int pstvnc_app_mpeg_run_rfb_restoration_release_valid(
         return next_request == PSTVNC_RFB_FLOW_REQUEST_HOLD;
 
     return next_request == PSTVNC_RFB_FLOW_REQUEST_FULL;
+}
+
+static int pstvnc_app_mpeg_run_retired_execution_valid(
+    const pstvnc_app_mpeg_run_t *run)
+{
+    return run != NULL &&
+        run->current_generation != 0u &&
+        !run->session_teardown_required &&
+        !run->transport_run_open &&
+        !run->worker_runtime_owned &&
+        !run->worker_started &&
+        run->presentation_armed &&
+        !run->frame_consumer_initialized &&
+        run->start_invoked &&
+        run->retire_invoked &&
+        run->retire_completion_taken &&
+        run->producer_done_published &&
+        run->worker_joined &&
+        run->presentation != NULL &&
+        run->rfb_flow_policy != NULL &&
+        run->media_clock != NULL;
+}
+
+static int pstvnc_app_mpeg_run_rfb_protocol_fresh(
+    const pstvnc_app_mpeg_run_t *run)
+{
+    return pstvnc_app_mpeg_run_rfb_restoration_started(run) &&
+        !pstvnc_rfb_flow_policy_has_outstanding_request(
+            run->rfb_flow_policy) &&
+        pstvnc_rfb_flow_policy_next_request(
+            run->rfb_flow_policy) ==
+            PSTVNC_RFB_FLOW_REQUEST_INCREMENTAL;
 }
 
 static int pstvnc_app_mpeg_run_frame_status_healthy(
@@ -1130,6 +1165,160 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
     return PSTVNC_APP_MPEG_RUN_OK;
 }
 
+pstvnc_app_mpeg_run_result_t
+pstvnc_app_mpeg_run_record_restored_rfb_presented(
+    pstvnc_app_mpeg_run_t *run,
+    uint32_t run_generation)
+{
+    if (run == NULL || run_generation == 0u)
+        return PSTVNC_APP_MPEG_RUN_INVALID;
+
+    if (run->state == PSTVNC_APP_MPEG_RUN_FAULTED)
+        return PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED;
+
+    if (run->state != PSTVNC_APP_MPEG_RUN_RESTORE_PENDING)
+        return PSTVNC_APP_MPEG_RUN_NOT_RESTORE_PENDING;
+
+    if (run_generation != run->current_generation ||
+        !pstvnc_app_mpeg_run_retired_execution_valid(run) ||
+        !pstvnc_app_mpeg_run_presentation_matches(
+            run,
+            PSTVNC_MPEG_PRESENTATION_RETIRING) ||
+        !pstvnc_app_mpeg_run_rfb_restoration_started(run))
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_RESTORE_STATE_INVALID);
+
+    /*
+     * P2 protocol freshness is necessary but not sufficient. Crossing this API
+     * is the caller's explicit run-scoped assertion that the corresponding
+     * authoritative FULL-refreshed framebuffer has also completed the existing
+     * successful desktop presentation/upload boundary.
+     */
+    if (!pstvnc_app_mpeg_run_rfb_protocol_fresh(run)) {
+        run->last_result = PSTVNC_APP_MPEG_RUN_RFB_RESTORE_NOT_FRESH;
+        return run->last_result;
+    }
+
+    run->rfb_restoration_presented = 1;
+    run->last_result = PSTVNC_APP_MPEG_RUN_OK;
+    return PSTVNC_APP_MPEG_RUN_OK;
+}
+
+pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_reveal_restored(
+    pstvnc_app_mpeg_run_t *run,
+    pstvnc_mpeg_compositor_effects_t *effects)
+{
+    pstvnc_mpeg_presentation_geometry_t geometry;
+    pstvnc_mpeg_compositor_result_t reveal_result;
+    uint32_t snapshot_generation = 0u;
+
+    if (effects == NULL)
+        return PSTVNC_APP_MPEG_RUN_INVALID;
+
+    memset(effects, 0, sizeof(*effects));
+
+    if (run == NULL)
+        return PSTVNC_APP_MPEG_RUN_INVALID;
+
+    if (run->state == PSTVNC_APP_MPEG_RUN_FAULTED)
+        return PSTVNC_APP_MPEG_RUN_ALREADY_FAULTED;
+
+    if (run->state != PSTVNC_APP_MPEG_RUN_RESTORE_PENDING &&
+        run->state != PSTVNC_APP_MPEG_RUN_REVEAL_PENDING)
+        return PSTVNC_APP_MPEG_RUN_NOT_RESTORE_PENDING;
+
+    if (!pstvnc_app_mpeg_run_retired_execution_valid(run))
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_RESTORE_STATE_INVALID);
+
+    if (!pstvnc_app_mpeg_run_rfb_protocol_fresh(run)) {
+        run->last_result = PSTVNC_APP_MPEG_RUN_RFB_RESTORE_NOT_FRESH;
+        return run->last_result;
+    }
+
+    if (!run->rfb_restoration_presented) {
+        run->last_result = PSTVNC_APP_MPEG_RUN_RFB_RESTORE_NOT_PRESENTED;
+        return run->last_result;
+    }
+
+    if (run->state == PSTVNC_APP_MPEG_RUN_RESTORE_PENDING) {
+        if (!pstvnc_app_mpeg_run_presentation_matches(
+                run,
+                PSTVNC_MPEG_PRESENTATION_RETIRING))
+            return pstvnc_app_mpeg_run_fail_live(
+                run,
+                PSTVNC_APP_MPEG_RUN_RESTORE_STATE_INVALID);
+
+        if (!pstvnc_mpeg_presentation_seal_retirement(
+                run->presentation,
+                run->current_generation))
+            return pstvnc_app_mpeg_run_fail_live(
+                run,
+                PSTVNC_APP_MPEG_RUN_PRESENTATION_SEAL_FAILED);
+
+        if (!pstvnc_app_mpeg_run_presentation_matches(
+                run,
+                PSTVNC_MPEG_PRESENTATION_REVEAL_PENDING))
+            return pstvnc_app_mpeg_run_fail_live(
+                run,
+                PSTVNC_APP_MPEG_RUN_REVEAL_CONTRADICTION);
+
+        run->state = PSTVNC_APP_MPEG_RUN_REVEAL_PENDING;
+    } else if (!pstvnc_app_mpeg_run_presentation_matches(
+            run,
+            PSTVNC_MPEG_PRESENTATION_REVEAL_PENDING)) {
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_REVEAL_CONTRADICTION);
+    }
+
+    reveal_result = pstvnc_mpeg_compositor_reveal_retired(
+        run->presentation,
+        run->current_generation,
+        effects);
+
+    if (reveal_result == PSTVNC_MPEG_COMPOSITOR_PLATFORM_FAILED) {
+        run->last_result = PSTVNC_APP_MPEG_RUN_REVEAL_PLATFORM_FAILED;
+        return run->last_result;
+    }
+
+    if (reveal_result == PSTVNC_MPEG_COMPOSITOR_SYNC_INVALID) {
+        run->last_result = PSTVNC_APP_MPEG_RUN_REVEAL_SYNC_INVALID;
+        return run->last_result;
+    }
+
+    if (reveal_result != PSTVNC_MPEG_COMPOSITOR_OK)
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_REVEAL_FAILED);
+
+    if (!effects->synchronized ||
+        !effects->retirement_revealed ||
+        pstvnc_mpeg_presentation_state(run->presentation) !=
+            PSTVNC_MPEG_PRESENTATION_RFB_ONLY ||
+        pstvnc_mpeg_presentation_owns_mpeg_visual(
+            run->presentation) ||
+        pstvnc_mpeg_presentation_snapshot(
+            run->presentation,
+            &geometry,
+            &snapshot_generation))
+        return pstvnc_app_mpeg_run_fail_live(
+            run,
+            PSTVNC_APP_MPEG_RUN_REVEAL_CONTRADICTION);
+
+    /*
+     * Exact physical retirement succeeded. Clear only this run's transient
+     * ownership. last_allocated_generation intentionally survives, and this
+     * helper never mutates the externally owned session media-clock object.
+     */
+    pstvnc_app_mpeg_run_clear_attempt(run);
+    run->state = PSTVNC_APP_MPEG_RUN_IDLE;
+    run->last_result = PSTVNC_APP_MPEG_RUN_OK;
+    return PSTVNC_APP_MPEG_RUN_OK;
+}
+
 pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_status(
     const pstvnc_app_mpeg_run_t *run,
     pstvnc_app_mpeg_run_status_t *status)
@@ -1146,5 +1335,7 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_status(
     status->retire_completion_taken = run->retire_completion_taken;
     status->producer_done_published = run->producer_done_published;
     status->worker_joined = run->worker_joined;
+    status->rfb_restoration_presented =
+        run->rfb_restoration_presented;
     return PSTVNC_APP_MPEG_RUN_OK;
 }
