@@ -537,6 +537,9 @@ static void test_r32_acquisition_internal_failure_is_resident_fatal(void)
     CHECK(product_bindings_acquire_calls == 1u);
     CHECK(connect_calls == 0u);
     CHECK(transport_open_calls == 0u);
+
+    /* Keep this one injected invariant failure isolated from later regressions. */
+    product_bindings_acquire_result = 1;
 }
 
 static void test_r19_thawed_dirty_update_completes_presents_and_reschedules(void)
