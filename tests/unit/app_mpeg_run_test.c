@@ -1961,7 +1961,7 @@ static void test_failed_worker_outcome_is_not_clean_retirement(void)
     worker_status_value.decoder_live = 0;
     worker_status_value.slot_state = PSTVNC_MPEG_WORKER_SLOT_EMPTY;
     worker_outcome_kind = PSTVNC_MPEG_WORKER_OUTCOME_FAILED;
-    worker_outcome_decoder_result = PSTVNC_MPEG_DECODER_FAILED;
+    worker_outcome_decoder_result = PSTVNC_MPEG_DECODER_PICTURE_FAILED;
 
     CHECK(pstvnc_app_mpeg_run_retirement_service(
         &run, 1200u, &service_result) ==
