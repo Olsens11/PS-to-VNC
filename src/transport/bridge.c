@@ -323,26 +323,70 @@ pstvnc_transport_result_t pstvnc_transport_session_open_with_audio_mpeg(
         socket_fd, config, audio_config, mpeg_config);
 }
 
+pstvnc_transport_result_t pstvnc_transport_session_begin_abort(void)
+{
+    if (!pstvnc_transport_bridge_runtime_active)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    /*
+     * request_stop() owns terminal publication: it closes new outbound
+     * admission, wakes logical media/RFB activity waiters and interrupts the
+     * physical I/O owner. wait_receiver_done() then proves the receiver and all
+     * previously admitted outbound submitters are dormant. Deliberately do not
+     * call runtime_release() here: dependent old-session modules still need the
+     * queues/semaphores/ticket storage while they unwind from those wakeups.
+     */
+    if (!pstvnc_transport_runtime_request_stop(
+            &pstvnc_transport_bridge_runtime))
+        return PSTVNC_TRANSPORT_FAILED;
+
+    if (!pstvnc_transport_runtime_wait_receiver_done(
+            &pstvnc_transport_bridge_runtime))
+        return PSTVNC_TRANSPORT_FAILED;
+
+    return PSTVNC_TRANSPORT_OK;
+}
+
+pstvnc_transport_result_t pstvnc_transport_session_abort_storage_retained(
+    const pstvnc_transport_access_t *transport_access)
+{
+    if (transport_access == NULL || transport_access->opaque_ticket == 0u)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    if (!pstvnc_transport_bridge_runtime_active ||
+        transport_access->opaque_ticket !=
+            pstvnc_transport_bridge_active_ticket)
+        return PSTVNC_TRANSPORT_CLOSED;
+
+    if (!pstvnc_transport_bridge_runtime.receiver_done)
+        return PSTVNC_TRANSPORT_WOULD_BLOCK;
+
+    if (pstvnc_transport_bridge_runtime.receiver_completion_outcome !=
+            PSTVNC_TRANSPORT_RECEIVER_COMPLETION_PROVEN)
+        return PSTVNC_TRANSPORT_FAILED;
+
+    return PSTVNC_TRANSPORT_OK;
+}
+
 pstvnc_transport_result_t pstvnc_transport_session_abort(void)
 {
     if (pstvnc_transport_bridge_runtime_active) {
-        if (!pstvnc_transport_runtime_request_stop(
-                &pstvnc_transport_bridge_runtime))
-            return PSTVNC_TRANSPORT_FAILED;
+        pstvnc_transport_result_t result =
+            pstvnc_transport_session_begin_abort();
 
-        if (!pstvnc_transport_runtime_wait_receiver_done(
-                &pstvnc_transport_bridge_runtime))
-            return PSTVNC_TRANSPORT_FAILED;
+        if (result != PSTVNC_TRANSPORT_OK)
+            return result;
 
-        return pstvnc_transport_bridge_finish_release();
+        return pstvnc_transport_session_close();
     }
 
     if (!pstvnc_transport_bridge_wire_active)
         return PSTVNC_TRANSPORT_INVALID;
 
     /*
-     * Establishment-only ACTIVE owns no receiver thread. Interrupt/close the
-     * private physical stream directly and retire all Wire authority.
+     * Establishment-only ACTIVE owns no receiver or rider runtime. There is no
+     * dependent queue/semaphore storage to retain, so the historical one-shot
+     * abort may retire the private physical lineage directly.
      */
     (void)pstvnc_transport_physical_stream_shutdown_io(
         &pstvnc_transport_bridge_established_stream);
