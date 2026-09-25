@@ -314,7 +314,8 @@ class ProductWireCompositionTests(unittest.TestCase):
             peer, thread, result = serve_once(server)
             session_id = establish(peer)
 
-            wait_for(lambda: len(calls) == 1, "exact MPEG factory invocation")
+            wait_for(lambda: len(controllers) == 1, "exact MPEG controller construction")
+            self.assertEqual(len(calls), 1)
             self.assertEqual(calls[0][0], session_id)
             composition = calls[0][1]
             self.assertEqual(composition.display, ":0")
