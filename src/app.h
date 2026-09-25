@@ -10,20 +10,24 @@
 #ifndef PSTVNC_APP_H
 #define PSTVNC_APP_H
 
+#include "config/profile.h"
 #include "transport/transport.h"
 
 /*
- * Run the product lifecycle with one explicitly validated Transport session
- * configuration supplied by the eventual configuration/composition owner.
- * Application forwards this value unchanged; it does not invent defaults.
+ * Run the ordinary session lifecycle with already-selected owner values.
+ *
+ * R27 forwards the exact RFB and MPEG Transport values into one Transport
+ * runtime and creates one fresh unarmed media clock for each accepted physical
+ * Wire Session. This seam does not start an MPEG run or arm the media clock.
  */
-int pstvnc_app_run_with_transport_config(
-    const pstvnc_transport_session_config_t *transport_config);
+int pstvnc_app_run_with_session_profiles(
+    const pstvnc_transport_session_config_t *transport_config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_transport_config,
+    const pstvnc_config_media_clock_profile_t *media_clock_profile);
 
 /*
- * Current process entry remains deliberately fail-gated until repository
- * authority supplies a validated all-guns Transport configuration owner.
- * No queue/credit/thread/payload defaults are manufactured here.
+ * Product entry resolves all selected RFB/MPEG/media-clock authority before
+ * platform startup, then enters the same ordinary session lifecycle.
  */
 int pstvnc_app_run(void);
 

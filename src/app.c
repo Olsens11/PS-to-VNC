@@ -19,6 +19,8 @@
 
 #include <stdint.h>
 
+#include "config/media_clock_profile.h"
+#include "config/mpeg_runtime_profile.h"
 #include "config/rfb_runtime_profile.h"
 #include "diagnostics.h"
 #include "display.h"
@@ -27,7 +29,9 @@
 #include "local_controller.h"
 #include "local_ui_presentation.h"
 #include "keyboard.h"
+#include "media/clock.h"
 #include "platform/ps2_graphics.h"
+#include "platform/ps2_media_clock.h"
 #include "platform/ps2_network.h"
 #include "platform/ps2_system.h"
 #include "rfb_session.h"
@@ -679,8 +683,10 @@ static int service_semantic_input_events(
         PSTVNC_INPUT_RUNTIME_ERROR_NONE;
 }
 
-int pstvnc_app_run_with_transport_config(
-    const pstvnc_transport_session_config_t *transport_config)
+int pstvnc_app_run_with_session_profiles(
+    const pstvnc_transport_session_config_t *transport_config,
+    const pstvnc_transport_mpeg_channel_config_t *mpeg_transport_config,
+    const pstvnc_config_media_clock_profile_t *media_clock_profile)
 {
     static const char net_ready[] = "PSTVNC_STAGE NET_READY";
     static const char gs_ready[] = "PSTVNC_STAGE GS_READY";
@@ -689,32 +695,22 @@ int pstvnc_app_run_with_transport_config(
     static const char fatal[] = "PSTVNC_STAGE FATAL";
     static pstvnc_input_runtime_t input_runtime;
 
-    pstvnc_framebuffer_t framebuffer;
-    pstvnc_local_controller_t local_controller;
-    pstvnc_local_ui_t local_ui;
-    pstvnc_osk_t osk;
-    pstvnc_rfb_session_t session;
-    pstvnc_rfb_flow_policy_t rfb_flow_policy;
-    app_published_pointer_state_t published_pointer;
-
-    int socket_fd = -1;
-    int transport_session_active = 0;
     int graphics_ready = 0;
     int diagnostics_ready = 0;
-    int input_runtime_ready = 0;
-    int mouse_interpretation_suspended = 0;
 
-    if (transport_config == NULL)
+    if (transport_config == NULL ||
+        mpeg_transport_config == NULL ||
+        media_clock_profile == NULL)
         return -1;
 
     if (pstvnc_ps2_system_prepare_iop() < 0)
-        goto fail;
+        goto fail_resident;
 
     if (pstvnc_ps2_network_init() < 0)
-        goto fail;
+        goto fail_resident;
 
     if (pstvnc_ps2_network_wait_link() < 0)
-        goto fail;
+        goto fail_resident;
 
     if (pstvnc_diagnostics_init() == 0)
         diagnostics_ready = 1;
@@ -722,32 +718,84 @@ int pstvnc_app_run_with_transport_config(
     /*
      * IOP/network/link, diagnostics, and an already-created graphics context are
      * resident application ownership. Every pass below is one ordinary RFB
-     * attempt with fresh network, Transport/Q4, RFB, framebuffer and input
-     * authority. A typed provider failure is the only condition that re-enters
-     * this admission path.
+     * attempt with fresh network, Transport/Q4, media-clock, RFB, framebuffer
+     * and input authority. A typed provider failure is the only condition that
+     * re-enters this admission path.
      */
     for (;;) {
-        socket_fd = -1;
-        transport_session_active = 0;
-        input_runtime_ready = 0;
-        mouse_interpretation_suspended = 0;
+        pstvnc_framebuffer_t framebuffer;
+        pstvnc_local_controller_t local_controller;
+        pstvnc_local_ui_t local_ui;
+        pstvnc_osk_t osk;
+        pstvnc_rfb_session_t session;
+        pstvnc_rfb_flow_policy_t rfb_flow_policy;
+        app_published_pointer_state_t published_pointer;
+        pstvnc_ps2_media_clock_binding_t media_clock_binding =
+            PSTVNC_PS2_MEDIA_CLOCK_BINDING_INITIALIZER;
+        pstvnc_media_clock_sync_t media_clock_sync;
+        pstvnc_media_clock_t media_clock;
+        uint32_t media_clock_ticks_per_second = 0u;
+        int media_clock_armed = 1;
+        int socket_fd = -1;
+        int transport_session_active = 0;
+        int media_clock_binding_active = 0;
+        int media_clock_binding_release_failed = 0;
+        int input_runtime_ready = 0;
+        int mouse_interpretation_suspended = 0;
 
         /*
          * Application owns the freshly connected descriptor only until
          * Transport successfully adopts it. Every replacement attempt obtains a
          * new descriptor and therefore a new Q4 Wire Session; no old descriptor,
-         * access ticket, channel state or Pi attachment can be rebound here.
+         * access ticket, channel state, media-clock synchronization authority or
+         * Pi attachment can be rebound here.
          */
         socket_fd = pstvnc_ps2_network_connect_pstv();
         if (socket_fd < 0)
-            goto fail;
+            goto attempt_fatal;
 
-        if (pstvnc_transport_session_open(
+        if (pstvnc_transport_session_open_with_mpeg(
                 &socket_fd,
-                transport_config) != PSTVNC_TRANSPORT_OK)
-            goto fail;
+                transport_config,
+                mpeg_transport_config) != PSTVNC_TRANSPORT_OK)
+            goto attempt_fatal;
 
         transport_session_active = 1;
+
+        /*
+         * R26 binding storage is one-session authority. This declaration has a
+         * fresh C object lifetime on every loop entry; after release this exact
+         * object is discarded rather than reset/reinitialized for a successor
+         * Wire Session.
+         */
+        if (pstvnc_ps2_media_clock_binding_init(
+                &media_clock_binding) < 0)
+            goto attempt_fatal;
+
+        media_clock_binding_active = 1;
+
+        if (pstvnc_ps2_media_clock_binding_sync(
+                &media_clock_binding,
+                &media_clock_sync) < 0)
+            goto attempt_fatal;
+
+        if (pstvnc_ps2_media_clock_binding_tick_rate(
+                &media_clock_binding,
+                &media_clock_ticks_per_second) < 0)
+            goto attempt_fatal;
+
+        if (pstvnc_media_clock_init(
+                &media_clock,
+                media_clock_profile,
+                media_clock_ticks_per_second,
+                &media_clock_sync) != PSTVNC_MEDIA_CLOCK_OK)
+            goto attempt_fatal;
+
+        if (pstvnc_media_clock_is_armed(
+                &media_clock,
+                &media_clock_armed) != PSTVNC_MEDIA_CLOCK_OK ||
+            media_clock_armed)
+            goto attempt_fatal;
 
         send_diagnostic_literal(
             diagnostics_ready,
@@ -763,13 +811,13 @@ int pstvnc_app_run_with_transport_config(
                 &framebuffer,
                 remote_pixels,
                 PSTVNC_DISPLAY_PIXEL_COUNT))
-            goto fail;
+            goto attempt_fatal;
 
         if (!pstvnc_framebuffer_set_geometry(
                 &framebuffer,
                 PSTVNC_DISPLAY_WIDTH,
                 PSTVNC_DISPLAY_HEIGHT))
-            goto fail;
+            goto attempt_fatal;
 
         /*
          * Graphics is resident process state rather than RFB-attempt state.
@@ -778,7 +826,7 @@ int pstvnc_app_run_with_transport_config(
          */
         if (!graphics_ready) {
             if (pstvnc_ps2_graphics_init() < 0)
-                goto fail;
+                goto attempt_fatal;
 
             graphics_ready = 1;
 
@@ -816,7 +864,7 @@ int pstvnc_app_run_with_transport_config(
                 1,
                 &local_ui,
                 &osk))
-            goto fail;
+            goto attempt_fatal;
 
         send_diagnostic_literal(
             diagnostics_ready,
@@ -829,7 +877,7 @@ int pstvnc_app_run_with_transport_config(
                 PSTVNC_DISPLAY_HEIGHT,
                 PSTVNC_APP_CONTROLLER_PORT,
                 PSTVNC_APP_CONTROLLER_SLOT) < 0)
-            goto fail;
+            goto attempt_fatal;
 
         input_runtime_ready = 1;
 
@@ -850,7 +898,7 @@ int pstvnc_app_run_with_transport_config(
             goto attempt_failed;
 
         if (pstvnc_input_runtime_start(&input_runtime) < 0)
-            goto fail;
+            goto attempt_fatal;
 
         send_diagnostic_literal(
             diagnostics_ready,
@@ -879,14 +927,14 @@ int pstvnc_app_run_with_transport_config(
                         0,
                         &local_ui,
                         &osk))
-                    goto fail;
+                    goto attempt_fatal;
             }
 
             if (!resume_desktop_mouse_if_ready(
                     &input_runtime,
                     &local_ui,
                     &mouse_interpretation_suspended))
-                goto fail;
+                goto attempt_fatal;
 
             receive_result = pstvnc_rfb_session_try_receive_update(
                 &session,
@@ -898,12 +946,12 @@ int pstvnc_app_run_with_transport_config(
             if (receive_result == PSTVNC_RFB_SESSION_RECEIVE_IDLE) {
                 if (pstvnc_ps2_system_delay_us(
                         PSTVNC_APP_IDLE_POLL_DELAY_US) < 0)
-                    goto fail;
+                    goto attempt_fatal;
                 continue;
             }
 
             if (receive_result != PSTVNC_RFB_SESSION_RECEIVE_UPDATE)
-                goto fail;
+                goto attempt_fatal;
 
             /*
              * The parser has completed exactly one live update response.
@@ -912,16 +960,17 @@ int pstvnc_app_run_with_transport_config(
              */
             if (!pstvnc_rfb_flow_policy_record_update_complete(
                     &rfb_flow_policy))
-                goto fail;
+                goto attempt_fatal;
 
             if (!framebuffer.valid)
-                goto fail;
+                goto attempt_fatal;
 
             /*
              * Remote framebuffer truth already advanced in the RFB owner.
              * Publication is a separate Application composition decision.
-             * R19 has no production freeze caller, so ordinary behavior remains
-             * thawed while the accepted P2 gate is now authoritative.
+             * Ordinary behavior remains thawed while P2 is authoritative.
+             * The dormant session media clock is intentionally unrelated to
+             * ordinary RFB publication and remains unarmed.
              */
             if (framebuffer.dirty &&
                 pstvnc_rfb_flow_policy_allows_remote_publication(
@@ -931,7 +980,7 @@ int pstvnc_app_run_with_transport_config(
                         1,
                         &local_ui,
                         &osk))
-                    goto fail;
+                    goto attempt_fatal;
             }
 
             if (!service_rfb_flow_request(&session, &rfb_flow_policy))
@@ -951,52 +1000,75 @@ attempt_failed:
                 break;
 
             default:
-                goto fail;
+                goto attempt_fatal;
         }
 
         /*
-         * Reaching this branch closes failed-attempt admission immediately:
-         * no further input publication, update request, parser service, or
-         * other provider-bound ordinary-RFB work is admitted to this attempt.
-         *
-         * The owners themselves prove complete stop. Input shutdown must prove
-         * worker dormancy. Transport abort interrupts the sole receiver, proves
-         * its completion, releases the physical/runtime session, and fences the
-         * old access ticket. Any unproven owner blocks replacement admission.
+         * Replacement is admitted only after complete reverse-order retirement:
+         * input worker dormancy, exact R26 binding release, then Transport
+         * abort/receiver/session retirement. Failure of any proof prevents the
+         * next physical connect.
          */
         if (input_runtime_ready &&
             pstvnc_input_runtime_shutdown(&input_runtime) == 0)
             input_runtime_ready = 0;
 
+        if (media_clock_binding_active) {
+            if (pstvnc_ps2_media_clock_binding_release(
+                    &media_clock_binding) < 0)
+                media_clock_binding_release_failed = 1;
+
+            /*
+             * R26 revokes local binding authority before DeleteSema() reports.
+             * Do not fabricate a second release attempt or reuse this object.
+             */
+            media_clock_binding_active = 0;
+        }
+
         if (transport_session_active &&
             pstvnc_transport_session_abort() == PSTVNC_TRANSPORT_OK)
             transport_session_active = 0;
 
-        if (input_runtime_ready || transport_session_active)
-            goto fail;
+        if (input_runtime_ready ||
+            transport_session_active ||
+            media_clock_binding_release_failed)
+            goto attempt_fatal;
 
         /*
          * There is no success-by-delay and no in-place component restart. The
-         * next iteration uses ordinary startup and must independently reach its
-         * normal healthy boundary.
+         * next iteration creates fresh automatic binding/clock objects and must
+         * independently reach its normal healthy boundary.
          */
         continue;
+
+attempt_fatal:
+        /*
+         * Fatal convergence preserves the same reverse ownership order. A
+         * pre-binding failure does not fabricate release authority.
+         */
+        if (input_runtime_ready)
+            (void)pstvnc_input_runtime_shutdown(&input_runtime);
+
+        if (media_clock_binding_active) {
+            (void)pstvnc_ps2_media_clock_binding_release(
+                &media_clock_binding);
+            media_clock_binding_active = 0;
+        }
+
+        if (transport_session_active) {
+            (void)pstvnc_transport_session_abort();
+        } else if (socket_fd >= 0) {
+            pstvnc_ps2_network_close(socket_fd);
+        }
+
+        goto fail_resident;
     }
 
-fail:
+fail_resident:
     send_diagnostic_literal(
         diagnostics_ready,
         fatal,
         sizeof(fatal) - 1u);
-
-    if (input_runtime_ready)
-        (void)pstvnc_input_runtime_shutdown(&input_runtime);
-
-    if (transport_session_active) {
-        (void)pstvnc_transport_session_abort();
-    } else if (socket_fd >= 0) {
-        pstvnc_ps2_network_close(socket_fd);
-    }
 
     if (graphics_ready)
         pstvnc_ps2_graphics_shutdown();
@@ -1010,9 +1082,25 @@ fail:
 int pstvnc_app_run(void)
 {
     pstvnc_transport_session_config_t transport_config;
+    const pstvnc_config_mpeg_runtime_profile_t *mpeg_profile;
+    pstvnc_config_media_clock_profile_t media_clock_profile;
 
+    /*
+     * Required selected authority is resolved before any IOP/network/platform
+     * startup. A missing RFB projection or MPEG profile therefore owns nothing.
+     * The selected R26 media-clock profile is an immutable by-value authority.
+     */
     if (!pstvnc_config_rfb_runtime_profile_selected(&transport_config))
         return -1;
 
-    return pstvnc_app_run_with_transport_config(&transport_config);
+    mpeg_profile = pstvnc_config_mpeg_runtime_profile_selected();
+    if (mpeg_profile == NULL)
+        return -1;
+
+    media_clock_profile = pstvnc_config_media_clock_profile_selected();
+
+    return pstvnc_app_run_with_session_profiles(
+        &transport_config,
+        &mpeg_profile->transport,
+        &media_clock_profile);
 }
