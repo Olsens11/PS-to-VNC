@@ -1,6 +1,7 @@
 /*
  * File synopsis:
- * Defines the R21-R24 Application-owned, trigger-agnostic MPEG run coordinator.
+ * Defines the R21-R24 Application-owned, trigger-agnostic MPEG run coordinator
+ * plus R33's abnormal enclosing-session local teardown path.
  * One session-scoped owner allocates exact run generations, composes accepted
  * start/live-frame service, orders retirement/restoration across P2/P3/P7,
  * worker/runtime and Transport owners, and records the final run-scoped RFB
@@ -44,6 +45,8 @@ typedef enum pstvnc_app_mpeg_run_state {
     PSTVNC_APP_MPEG_RUN_RETIRING,
     PSTVNC_APP_MPEG_RUN_RESTORE_PENDING,
     PSTVNC_APP_MPEG_RUN_REVEAL_PENDING,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORTING,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_READY,
     PSTVNC_APP_MPEG_RUN_FAULTED
 } pstvnc_app_mpeg_run_state_t;
 
@@ -100,7 +103,18 @@ typedef enum pstvnc_app_mpeg_run_result {
     PSTVNC_APP_MPEG_RUN_REVEAL_PLATFORM_FAILED = -45,
     PSTVNC_APP_MPEG_RUN_REVEAL_SYNC_INVALID = -46,
     PSTVNC_APP_MPEG_RUN_REVEAL_FAILED = -47,
-    PSTVNC_APP_MPEG_RUN_REVEAL_CONTRADICTION = -48
+    PSTVNC_APP_MPEG_RUN_REVEAL_CONTRADICTION = -48,
+
+    PSTVNC_APP_MPEG_RUN_NOT_SESSION_ABORTABLE = -49,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_TRANSPORT_NOT_RETAINED = -50,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_FRAME_ABANDON_FAILED = -51,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STOP_FAILED = -52,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED = -53,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_JOIN_FAILED = -54,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_OUTCOME_FAILED = -55,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_RELEASE_FAILED = -56,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_RUNTIME_RELEASE_FAILED = -57,
+    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID = -58
 } pstvnc_app_mpeg_run_result_t;
 
 typedef struct pstvnc_app_mpeg_run_status {
@@ -114,6 +128,10 @@ typedef struct pstvnc_app_mpeg_run_status {
     int producer_done_published;
     int worker_joined;
     int rfb_restoration_presented;
+
+    int session_abort_stop_requested;
+    int session_abort_outcome_recorded;
+    pstvnc_mpeg_worker_outcome_t session_abort_worker_outcome;
 } pstvnc_app_mpeg_run_status_t;
 
 typedef struct pstvnc_app_mpeg_run {
@@ -148,6 +166,10 @@ typedef struct pstvnc_app_mpeg_run {
     int producer_done_published;
     int worker_joined;
     int rfb_restoration_presented;
+
+    int session_abort_stop_requested;
+    int session_abort_outcome_recorded;
+    pstvnc_mpeg_worker_outcome_t session_abort_worker_outcome;
 } pstvnc_app_mpeg_run_t;
 
 /*
@@ -235,6 +257,24 @@ pstvnc_app_mpeg_run_record_restored_rfb_presented(
 pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_reveal_restored(
     pstvnc_app_mpeg_run_t *run,
     pstvnc_mpeg_compositor_effects_t *effects);
+
+/*
+ * Service abnormal local teardown after Transport begin-abort has proven the
+ * exact old session terminal while retaining its runtime storage.
+ *
+ * This path never emits RETIRE/producer-done, never finalizes the Transport MPEG
+ * run, never thaws RFB flow, and never seals/reveals presentation. It discards
+ * any exact P7 claim, requests safe worker stop once, waits for true worker
+ * completion, joins and records the exact terminal outcome, then releases local
+ * worker/PS2 runtime resources. Success reaches SESSION_ABORT_READY, which is
+ * terminal for this run object and exists only so the enclosing owner may
+ * release retained Transport storage.
+ *
+ * A still-running worker is a successful pending service step; callers inspect
+ * state/status and call again after the worker advances.
+ */
+pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_session_abort_service(
+    pstvnc_app_mpeg_run_t *run);
 
 /* Read Application-owned run/generation state without advancing lifecycle. */
 pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_status(
