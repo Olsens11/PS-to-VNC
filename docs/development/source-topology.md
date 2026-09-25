@@ -40,7 +40,7 @@ The current clean-generation directories are:
 | `pi/` | maintained Raspberry Pi companion runtime: product Wire protocol/server ownership and later Pi-side product mechanisms |
 | `src/` | executable entry point and application coordinator only |
 | `src/audio/` | session-scoped audio worker/resources, non-consuming startup reservoir and common-clock audio gating, synchronous PCM consumption, and resident AUDSRV stream operations |
-| `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values including selected MPEG/media-clock profiles, and small config-text helpers |
+| `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values including selected MPEG/media-clock profiles, human-readable desired binding values, and small config-text helpers |
 | `src/diagnostics/` | diagnostics transport and runtime identity |
 | `src/display/` | platform-neutral display/presentation conversion |
 | `src/framebuffer/` | authoritative CPU-side remote desktop image |
@@ -67,6 +67,14 @@ bindings are present, consumes only an explicit caller-owned DESKTOP-eligibility
 fact, and publishes a resolved action through the same ordinary FIFO before
 same-sample controller/mouse work. Zero bindings remain the default. Input still
 selects no physical MPEG-calibration mapping and executes no product effect.
+
+R30 adds `src/config/product_action_bindings.{c,h}` as the bounded
+Configuration-owned human-readable representation of those R28 values.
+`[bindings]` / `mpeg_calibration` text maps exact symbolic button, trigger
+and context tokens into one validated caller-owned binding and formats that
+typed value canonically. Missing recognized binding text remains an explicit
+zero-binding model; Configuration selects no physical default, installs no
+Input runtime binding, performs no persistence, and routes no product effect.
 
 
 Current clean C/H files directly in `src/` are restricted to:
