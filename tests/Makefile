@@ -8,6 +8,7 @@ BUILD_DIR = .build
 
 unit: \
 	$(BUILD_DIR)/config_text_test \
+	$(BUILD_DIR)/config_product_action_bindings_test \
 	$(BUILD_DIR)/video_mode_test \
 	$(BUILD_DIR)/rfb_wire_test \
 	$(BUILD_DIR)/framebuffer_test \
@@ -32,6 +33,7 @@ unit: \
 	$(BUILD_DIR)/app_test \
 	$(BUILD_DIR)/app_mpeg_run_test
 	./$(BUILD_DIR)/config_text_test
+	./$(BUILD_DIR)/config_product_action_bindings_test
 	./$(BUILD_DIR)/video_mode_test
 	./$(BUILD_DIR)/rfb_wire_test
 	./$(BUILD_DIR)/framebuffer_test
@@ -67,6 +69,23 @@ $(BUILD_DIR)/config_text_test: \
 		-I../src \
 		unit/config_text_test.c \
 		../src/config/text.c \
+		-o $@
+
+$(BUILD_DIR)/config_product_action_bindings_test: \
+	unit/config_product_action_bindings_test.c \
+	../src/config/product_action_bindings.c \
+	../src/config/product_action_bindings.h \
+	../src/config/text.c \
+	../src/config/text.h \
+	../src/input/product_action.c \
+	../src/input/product_action.h \
+	../src/input/controller.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/config_product_action_bindings_test.c \
+		../src/config/product_action_bindings.c \
+		../src/config/text.c \
+		../src/input/product_action.c \
 		-o $@
 
 $(BUILD_DIR)/video_mode_test: \
@@ -441,6 +460,15 @@ unit: app-mpeg-session-foundation-source-unit
 app-mpeg-session-foundation-source-unit:
 	python3 $(APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST)
 
+
+
+CONFIG_PRODUCT_ACTION_BINDINGS_SOURCE_TEST := unit/config_product_action_bindings_source_test.py
+
+.PHONY: config-product-action-bindings-source-unit
+unit: config-product-action-bindings-source-unit
+
+config-product-action-bindings-source-unit:
+	python3 $(CONFIG_PRODUCT_ACTION_BINDINGS_SOURCE_TEST)
 
 
 PRODUCT_ACTION_SOURCE_TEST := unit/product_action_source_test.py
