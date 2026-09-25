@@ -4,7 +4,7 @@ DIRECTORY=src
 GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
-This directory owns the executable entry point and Application coordinators, including narrow cross-domain sequencing such as the exact-run MPEG worker-claim to Display scheduler/compositor bridge and R21's trigger-agnostic MPEG run-start transaction. The run-start coordinator owns session-local generation allocation and ordering only; private MPEG decode/thread mechanics, Display presentation/timing mechanisms, input, UI, RFB, framebuffer, diagnostics, Transport, and platform mechanisms remain in their earned domain directories.
+This directory owns the executable entry point and Application coordinators, including narrow cross-domain sequencing such as the exact-run MPEG worker-claim to Display scheduler/compositor bridge, R21's trigger-agnostic MPEG run-start transaction, and R32's one-shot Management-to-Configuration desired-binding acquisition. R32 retains only the typed resident desired snapshot and nonfatal zero-fallback status; it does not install Input bindings or route PRODUCT_ACTION. The run-start coordinator owns session-local generation allocation and ordering only; private MPEG decode/thread mechanics, Display presentation/timing mechanisms, input, UI, RFB, framebuffer, diagnostics, Transport, Management protocol mechanics, Configuration parsing, and platform mechanisms remain in their earned domain directories.
 
 The inventory below covers clean-generation symbols defined directly in this directory.
 
