@@ -40,14 +40,14 @@ The current clean-generation directories are:
 | `pi/` | maintained Raspberry Pi companion runtime: product Wire protocol/server ownership and later Pi-side product mechanisms |
 | `src/` | executable entry point and application coordinator only |
 | `src/audio/` | session-scoped audio worker/resources, non-consuming startup reservoir and common-clock audio gating, synchronous PCM consumption, and resident AUDSRV stream operations |
-| `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values, and small config-text helpers |
+| `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values including selected MPEG/media-clock profiles, and small config-text helpers |
 | `src/diagnostics/` | diagnostics transport and runtime identity |
 | `src/display/` | platform-neutral display/presentation conversion |
 | `src/framebuffer/` | authoritative CPU-side remote desktop image |
 | `src/input/` | controller facts, libpad-facing project use, semantic input, keyboard, mouse |
 | `src/media/` | session-scoped common media epoch, signed/saturating deadline math, synchronization contract, and host-testable wait boundary |
 | `src/mpeg/` | session-scoped MPEG decoder resource/call ownership, explicit feed and sequence bounds, safe-stop lifetime fencing, and payload-versus-transfer accounting |
-| `src/platform/` | genuinely PS2-specific system, network, and graphics mechanisms |
+| `src/platform/` | genuinely PS2-specific system, network, graphics, and session-scoped media-clock synchronization/time mechanisms |
 | `src/rfb/` | RFB wire/session parsing, logical-stream adaptation, and complete-message safe-boundary policy |
 | `src/transport/` | sole physical PSTV stream/receiver, framing/sequence, logical-channel storage/flow control, and Transport-owned session lifecycle |
 | `src/ui/` | local foreground, controller-to-local routing, OSK model/rendering/presentation |
@@ -152,6 +152,15 @@ configuration ownership nor a PS2 platform mechanism. `clock.{c,h}` owns only
 reusable session timing state/math plus injected synchronization and time
 observer contracts. It does not own PCM/AUDSRV runtime, MPEG/video callsites,
 or concrete PS2 lock/timer bindings.
+
+R26 preserves that boundary while making it product-composable. Configuration's
+`media_clock_profile.{c,h}` owns only the selected immutable common-clock
+values (zero epoch lead and zero audio/video presentation offsets). Platform's
+`ps2_media_clock.{c,h}` owns one session-scoped EE semaphore and adapts
+`GetTimerSystemTime()`, `kBUSCLK`, and `DelayThread()` into the existing
+`pstvnc_media_clock_sync_t` and `pstvnc_media_clock_time_ops_t` seams. The
+Platform adapter owns no epoch, armed flag, offset conversion, deadline math, or
+wait policy; those remain solely in `src/media/clock.*`.
 
 `src/mpeg/` was deliberately created during A003 MPEG Transport/decoder-core
 reconstruction on 2026-09-16 because decoder-visible resource lifetime, sequence/feed

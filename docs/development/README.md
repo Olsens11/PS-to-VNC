@@ -103,6 +103,11 @@ For exact Pi MPEG generation-control/producer lifecycle work, also read:
 
     mpeg-generation-control.md
 
+For the selected A002 media-clock product profile and PS2 synchronization/time
+binding, also read:
+
+    media-clock-product-binding.md
+
 That companion note records the R16A compatibility boundary, typed channel-local
 failure seam, waiter termination behavior, stale-state rules, and the explicit
 line between Transport/RFB mechanism and later Application recovery policy.

@@ -5,12 +5,15 @@ GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
 This directory owns genuinely PS2-specific system, controller-service
-bootstrap, Ethernet, and the single GS/dmaKit presentation mechanism, including
-desktop, suppression, reusable MPEG video, inner matte, local-overlay layering,
+bootstrap, Ethernet, the single GS/dmaKit presentation mechanism, and R26's
+session-scoped media-clock synchronization/time binding. Graphics owns desktop,
+suppression, reusable MPEG video, inner matte, local-overlay layering,
 synchronized flip completion, post-sync timer observation, and fail-closed
-retained-video reveal after a synchronized no-video frame.
-The clean Issue #7 platform surface is limited to the six `ps2_*.[ch]` files
-listed below; no retained historical platform module is silently included.
+retained-video reveal after a synchronized no-video frame. The media-clock
+binding owns only one EE semaphore lifetime plus direct GetTimerSystemTime,
+kBUSCLK, and DelayThread adaptation for the platform-neutral media owner.
+The current clean platform surface is the eight `ps2_*.[ch]` files listed
+below; no retained historical platform module is silently included.
 
 | Name | Kind | File | Owner | Scope | Description | Context |
 |---|---|---|---|---|---|---|
