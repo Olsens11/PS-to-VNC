@@ -383,10 +383,11 @@ class ProductWireCompositionTests(unittest.TestCase):
             controller = controllers[0]
             self.assertEqual(producer_factory.items, [])
 
-            # Ordinary RFB composition may publish its initial credit, but no
-            # channel-1 client CREDIT is sent so its provider remains lazy.
-            header, _payload = read_frame(peer)
-            self.assertTrue(protocol.is_rfb_credit_header(header))
+            # No channel-1 client CREDIT is sent, so the ordinary RFB rider
+            # remains provider-inert. R13 grants reverse capacity only after a
+            # provider connection is actually composed, so no RFB output is
+            # expected here.
+            self.assertEqual(attachments[0].stats.connect_attempts, 0)
 
             peer.sendall(protocol.encode_mpeg_credit_frame(128, sequence=2))
             wait_for(lambda: controller.credit_bytes == 128, "MPEG credit")
