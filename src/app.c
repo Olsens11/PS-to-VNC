@@ -3,7 +3,8 @@
  * Runs the application coordinator: ordered startup, Transport descriptor
  * adoption, logical RFB session service, P2-governed live request/publication
  * flow, semantic controller-input routing, presentation, typed RFB-provider
- * recovery policy, and ownership-safe cleanup.
+ * recovery policy, ordinary MPEG retirement/RFB restoration/reveal, and
+ * ownership-safe cleanup.
  *
  * Concrete Transport queue/credit/thread/payload values are never chosen here;
  * the configured entry point accepts one already-validated value from its
@@ -1176,17 +1177,48 @@ int pstvnc_app_run_with_session_profiles(
                 goto attempt_fatal;
 
             if (pstvnc_app_mpeg_product_has_started_run(&mpeg_product)) {
+                int was_retiring =
+                    pstvnc_app_mpeg_product_is_retiring(&mpeg_product);
+
                 if (pstvnc_ps2_media_clock_binding_current_tick(
                         &media_clock_binding,
                         &current_tick) < 0)
                     goto attempt_fatal;
 
-                if (pstvnc_app_mpeg_product_service_live(
+                if (was_retiring) {
+                    if (pstvnc_app_mpeg_product_service_retirement(
+                            &mpeg_product,
+                            current_tick) != PSTVNC_APP_MPEG_PRODUCT_OK) {
+                        mpeg_session_failure = 1;
+                        goto attempt_failed;
+                    }
+
+                    /*
+                     * R23C thawed P2 through its own owner seam. Re-enter only
+                     * the ordinary R19 request path here so HOLD/FULL debt and
+                     * request accounting remain P2-owned.
+                     */
+                    if (!service_rfb_flow_request(
+                            &session,
+                            &rfb_flow_policy))
+                        goto attempt_failed;
+                } else if (pstvnc_app_mpeg_product_service_live(
                         &mpeg_product,
                         current_tick) != PSTVNC_APP_MPEG_PRODUCT_OK) {
                     mpeg_session_failure = 1;
                     goto attempt_failed;
                 }
+            }
+
+            /*
+             * R24 retryable pre-sync outcomes are serviced at ordinary loop
+             * cadence and never converted into success-by-delay. Outside
+             * RESTORE/REVEAL_PENDING this public product seam is a no-op.
+             */
+            if (pstvnc_app_mpeg_product_service_reveal(
+                    &mpeg_product) != PSTVNC_APP_MPEG_PRODUCT_OK) {
+                mpeg_session_failure = 1;
+                goto attempt_failed;
             }
 
             receive_result = pstvnc_rfb_session_try_receive_update(
@@ -1225,15 +1257,36 @@ int pstvnc_app_run_with_session_profiles(
              * The dormant session media clock is intentionally unrelated to
              * ordinary RFB publication and remains unarmed.
              */
-            if (framebuffer.dirty &&
-                pstvnc_rfb_flow_policy_allows_remote_publication(
-                    &rfb_flow_policy)) {
-                if (!present_current_application_frame(
-                        &framebuffer,
-                        1,
-                        &local_ui,
-                        &osk))
-                    goto attempt_fatal;
+            {
+                int restoration_pending =
+                    pstvnc_app_mpeg_product_restoration_pending(
+                        &mpeg_product);
+
+                /*
+                 * R35 requires an actual desktop upload boundary before the R24
+                 * marker. A protocol-fresh FULL response can be pixel-identical
+                 * to current CPU truth, so RESTORE_PENDING forces a rebuild and
+                 * upload from the authoritative framebuffer even when the RFB
+                 * owner reports no pixel dirtiness.
+                 */
+                if ((framebuffer.dirty || restoration_pending) &&
+                    pstvnc_rfb_flow_policy_allows_remote_publication(
+                        &rfb_flow_policy)) {
+                    if (!present_current_application_frame(
+                            &framebuffer,
+                            1,
+                            &local_ui,
+                            &osk))
+                        goto attempt_fatal;
+
+                    if (restoration_pending &&
+                        pstvnc_app_mpeg_product_record_restored_desktop_presented(
+                            &mpeg_product) !=
+                            PSTVNC_APP_MPEG_PRODUCT_OK) {
+                        mpeg_session_failure = 1;
+                        goto attempt_failed;
+                    }
+                }
             }
 
             if (!service_rfb_flow_request(&session, &rfb_flow_policy))
