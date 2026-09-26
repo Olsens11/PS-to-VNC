@@ -646,10 +646,11 @@ $(RFB_BRIDGE_TEST): unit/rfb_bridge_test.c ../src/rfb/bridge.c ../src/rfb/bridge
 TRANSPORT_PHYSICAL_STREAM_TEST := .build/transport_physical_stream_test
 TRANSPORT_RUNTIME_TEST := .build/transport_runtime_test
 TRANSPORT_AUDIO_TEST := .build/transport_audio_test
+TRANSPORT_AUDIO_ACTIVATION_SOURCE_TEST := unit/transport_audio_activation_source_test.py
 TRANSPORT_MPEG_TEST := .build/transport_mpeg_test
 
-.PHONY: transport-physical-stream-unit transport-runtime-unit transport-audio-unit transport-mpeg-unit
-unit: transport-physical-stream-unit transport-runtime-unit transport-audio-unit transport-mpeg-unit
+.PHONY: transport-physical-stream-unit transport-runtime-unit transport-audio-unit transport-audio-activation-source-unit transport-mpeg-unit
+unit: transport-physical-stream-unit transport-runtime-unit transport-audio-unit transport-audio-activation-source-unit transport-mpeg-unit
 
 transport-physical-stream-unit: $(TRANSPORT_PHYSICAL_STREAM_TEST)
 	./$(TRANSPORT_PHYSICAL_STREAM_TEST)
@@ -703,6 +704,9 @@ $(TRANSPORT_RUNTIME_TEST): \
 
 transport-audio-unit: $(TRANSPORT_AUDIO_TEST)
 	./$(TRANSPORT_AUDIO_TEST)
+
+transport-audio-activation-source-unit:
+	python3 $(TRANSPORT_AUDIO_ACTIVATION_SOURCE_TEST)
 
 $(TRANSPORT_AUDIO_TEST): \
 	unit/transport_audio_test.c \
