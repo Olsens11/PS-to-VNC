@@ -167,6 +167,35 @@ producer-done representation. R39 leaves `pi/wire_runtime.py` without an AUDIO
 factory, so final AUDIO admission/start/failure/teardown policy remains an A006
 composition responsibility.
 
+R41 adds the narrow Application lifecycle coordinator without yet wiring it into
+ordinary `app.c`. Construction is inert and copies the selected R36 AUDIO
+profile plus the exact Transport ticket, session clock and R26 time operations.
+Explicit start acquires the R37 runtime/operation tables before crossing the R40
+AUDIO activation edge, then starts the accepted AUDIO session with the selected
+PCM/session values and resident AUDSRV service operations. Before activation,
+local acquisition failure is cleaned locally or retained as explicit local
+ownership debt. From the activation attempt onward, failure is enclosing-session
+teardown debt and cannot trigger an in-session AUDIO restart.
+
+ACTIVE service consumes only R38 completion publication: PENDING is immediately
+nonblocking; DONE is joined before outcome observation and reclamation. Finite
+EMPTY and playback COMPLETE retire local AUDIO ownership into
+FINITE_COMPLETE while retaining the historical fact that this Wire Session had
+AUDIO activated. Other worker outcomes remain exact failure evidence. The
+first-MPEG-presentation query is non-consuming and becomes ready only when the
+Transport AUDIO queue reaches the selected 458752-byte startup reservoir or the
+finite producer is already done. It never infers readiness from time, poll
+count, or byte consumption and never arms/resets the common clock.
+
+Abnormal post-activation cleanup is fenced by
+`pstvnc_transport_session_abort_storage_retained()` for the exact stored
+ticket. Only after that proof may Application request AUDIO stop, observe
+completion, join, preserve outcome, release session ownership and finally
+release the R37 runtime. Partial never-started/destroy-failure ownership remains
+retryable and cannot be converted to ABORT_READY by timeout. Ordinary
+`app.c` and `pi/wire_runtime.py` AUDIO composition remain deferred to the
+successor integration packet.
+
 ### Input and mouse forwarding
 
 Local controller/input acquisition is a PS2-local facility and need not die
