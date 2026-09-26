@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0076
-RECORDED_AT=2026-09-26T09:59:49-04:00
+STATE_REVISION=0077
+RECORDED_AT=2026-09-26T14:28:09-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0075
-SUPERSEDES_FOREMAN_STATE_REVISION=0075
+BASED_ON_FOREMAN_STATE_REVISION=0076
+SUPERSEDES_FOREMAN_STATE_REVISION=0076
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,82 +14,77 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0076 independently accepts the complete original
-`A006-ORDINARY-MPEG-ACTION-ACTIVATION-R34` product packet at final source
-authority `ec99a1fa0276a9add773d81dfe0e82edcdd42748` and consumes immutable
-Reconstruction closeout `12ef69048c80a7abed36e76217203eac3027b3db`.
+Revision 0077 independently accepts
+`A003-MPEG-PARTIAL-RETIREMENT-SESSION-DORMANCY-R35P` at final pre-log source
+authority `6fc0c755d4a3d51a8b5f87ad12c553b2e74b7385` and consumes immutable
+Reconstruction closeout `f6b20fa7aaf3dddb1e4d858ac24021af6aa2272f`.
 
-R34 reached this authority in three repository-visible stages:
+The returned range is exactly nine commits ahead of assigning Foreman log
+`ec6280390c1ec4afc5cf9096b2bc7cd0fb51c8f8`, zero behind, and is confined to
+the authorized Application MPEG run/session-abort, focused-test and dictionary
+surface. Ordinary `src/app.c`, `src/app_mpeg_product.*`, MPEG worker/runtime,
+Transport, Input/UI, RFB/Display/compositor, media-clock, Configuration/
+Management, Pi, AUDIO and forensic product source were not changed.
 
-1. the initial Application composition through
-   `6f1acf56d0007a05c081c0217f099a5fcbc4a754`, which correctly stopped BLOCKED
-   when lower-owner pre-START dormancy was missing;
-2. independently accepted prerequisite R34P at
-   `c6e1dcf514adfc29296633374e75020b3480e5e0`, which closed exact pre-START
-   retained-worker/runtime ownership;
-3. continuation R34C through `ec99a1fa...`, which separated genuine R22 live
-   ownership from the broader abnormal MPEG teardown-owner predicate and routed
-   pre-START R34P, post-START R33 and true no-MPEG R16B attempts correctly.
+Independent source review accepts all twelve R35P requirements. Accepted R23
+now retains the exact successful natural terminal worker outcome before P7 and
+worker-owner reclamation, so a later enclosing-session abort never has to query
+released state merely to reconstruct already-proven evidence.
 
-Independent final review accepts all original A006-R34-C1 through C12. Every
-fresh Input runtime receives exactly the resident R32 configured binding
-snapshot before worker start; zero remains zero and no physical default is
-introduced. DESKTOP eligibility remains coupled to real local foreground,
-quarantine and MPEG/calibration ownership. Application routes only the semantic
-`PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION` fact, P9 retains controller first
-refusal, cancel never starts MPEG, protected accept invokes P10 once, and R22
-current-tick service remains limited to a genuinely started run.
+Abnormal session teardown now admits only concrete monotonic R23/R24 partial
+failure prefixes. Full-live R33 remains unchanged in meaning. A natural R23
+worker that already finished can retry join without an abnormal stop; an
+already-joined worker can retry outcome/release without duplicate join; a
+worker-release prefix reuses the retained natural completed outcome; runtime-only
+residual ownership retries only runtime release; a Transport-run-only finalize
+failure does not replay normal finalize; and post-finalize nonretryable
+restore/reveal contradictions can become SESSION_ABORT_READY after exact
+retained-session proof with no fabricated execution owner.
 
-The final failure convergence now distinguishes three exact meanings. A
-post-START MPEG owner uses Input dormancy -> Transport begin-abort -> retained
-old-session proof -> R33 local dormancy -> media-clock binding release -> final
-Transport close. A pre-START teardown-required R21 owner uses the same outer
-ordering with accepted R34P instead of being mislabeled "no MPEG." A genuinely
-clean/no-MPEG attempt retains accepted R16B one-shot Transport abort. No
-replacement is admitted while dependent Input/MPEG dormancy is unproven.
+Retryable R24 PLATFORM_FAILED and SYNC_INVALID remain same-session
+REVEAL_PENDING outcomes with `session_teardown_required=0` and are not admitted
+as abnormal-retirement failures. The abnormal path still emits no new RETIRE,
+RETIRE-completion take, producer-done, Transport MPEG finalize, P2 thaw, P3
+seal or compositor reveal.
 
-Exact final-source GitHub Actions run `36231587440`, attempt 1, checked out
-`ec99a1fa0276a9add773d81dfe0e82edcdd42748` on
+Exact final-source GitHub Actions run `36261728269`, attempt 1, checked out
+`6fc0c755d4a3d51a8b5f87ad12c553b2e74b7385` on
 `ledge/h1-all-guns` and passed host-unit, project-check, strict dictionaries,
 pinned PS2 compile, linked build and current-source reproducibility. Exact
-immutable-log-head run `36231794981`, attempt 1, also passed the complete
+immutable-log-head run `36261850645`, attempt 1, also passed the complete
 canonical gate set.
 
-The accepted R34 linked identity is:
+The accepted R35P linked identity is:
 
-`ELF_PRISTINE_SHA256=96137519a4cde6f984199fbaf893a660945cefa8cd85dbd729b8eddaaf54e7cc`
+`ELF_PRISTINE_SHA256=df4b86c726417677575b6a964d2b6646836d21622bd09cac7d36815d12615915`
 
 `PT_LOAD_SEGMENTS=1`
 
-`PT_LOAD_SHA256=e90c2f8de4729ca2c273a6cc81edbb4806e851cd3000e938f0c65efa8e8851a6`
+`PT_LOAD_SHA256=39e08e49a5d6aaf32f12d134305a4f9925f7f419d75c4b15e6dde9ad17449fc9`
 
-`PT_LOAD_BYTES=525844`
+`PT_LOAD_BYTES=526612`
 
-With R34 accepted, these bytes become the newest fully Foreman-accepted product
-source/build identity. They remain hardware-pending: no independent Validation,
-operator observation or physical qualification transfers from earlier images.
+These bytes become the newest fully Foreman-accepted source/build identity and
+remain hardware-pending. No independent Validation, operator observation or
+physical qualification is inferred from earlier images.
 
-The previously queued normal same-session MPEG retirement is now the next
-product dependency, but direct R35 composition is not yet safe. Independent
-Foreman review of accepted R23/R24 finds reachable faulted prefixes after normal
-retirement has already reclaimed some lower owners:
+With R35P accepted, ordinary same-session retirement/restoration/reveal is now
+dependency-ready. The next packet composes only already-accepted R23/R23C/R24
+through the existing Application product coordinator and ordinary RFB
+presentation loop.
 
-- worker release can fail after P7 is cleared and the worker is joined;
-- PS2 worker-runtime release can fail after the worker is fully gone;
-- Transport MPEG finalization can fail after worker and runtime are gone;
-- nonretryable R24 restore/reveal contradictions can fault after Transport
-  run-finalization, with only presentation/run diagnostic state remaining.
+One semantic constraint is explicit: the configured binding context is
+preserved. A DESKTOP-context `MPEG_CALIBRATION` binding remains ineligible
+while MPEG owns presentation. Only a semantic action already admitted by Input
+—for example an explicitly configured GLOBAL binding—may request normal
+retirement while the exact run is MPEG_OWNED. Application still receives no
+physical chord/mask/timing authority.
 
-Current R33 abnormal-session admission requires the original full post-START
-owner shape and therefore cannot consume all of those legitimate partially
-retired prefixes. Wiring ordinary action-driven retirement before closing that
-lower-owner gap would create a new session-failure path that cannot prove local
-dormancy before retained Transport release.
-
-The next bounded dependency is therefore one A003 prerequisite: extend abnormal
-session teardown to exact reachable R23/R24 partial-retirement failure prefixes
-without changing normal retirement semantics. Ordinary R35 product retirement
-remains queued behind that proof.
+The packet stops after successful R24 reveal back to ordinary desktop. It does
+not automatically reopen P9 calibration. A fresh semantic action after restored
+desktop may use the already-accepted R34 idle calibration route; whether one
+gesture should automatically retire and reopen calibration remains a later
+policy decision.
 
 ## Temporal architecture reconciliation
 
@@ -122,7 +117,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A006_R34_ORDINARY_MPEG_ACTION_ACTIVATION_FOREMAN_ACCEPTED__A003_R35P_PARTIAL_RETIREMENT_SESSION_DORMANCY_ACTIVE__NORMAL_MPEG_ACTION_RETIREMENT_QUEUED`
+`A003_R35P_PARTIAL_RETIREMENT_SESSION_DORMANCY_FOREMAN_ACCEPTED__A006_R35_ORDINARY_MPEG_ACTION_RETIRE_RESTORE_REVEAL_ACTIVE__AUTO_RECALIBRATION_DEFERRED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -174,11 +169,13 @@ MANAGEMENT_CONFIG_READ_CLIENT=FOREMAN_ACCEPTED
 APPLICATION_PRODUCT_BINDING_SNAPSHOT=FOREMAN_ACCEPTED
 TRANSPORT_MPEG_SESSION_ABORT_FENCE=FOREMAN_ACCEPTED
 MPEG_PRESTART_PARTIAL_SESSION_DORMANCY=FOREMAN_ACCEPTED_R34P
+MPEG_PARTIAL_RETIREMENT_SESSION_DORMANCY=FOREMAN_ACCEPTED_R35P
 MPEG_CALIBRATION_ACTION_ROUTING=FOREMAN_ACCEPTED_R34
 MPEG_CALIBRATION_PRODUCT_BINDING=FOREMAN_ACCEPTED_R34__CONFIG_SELECTED__NO_DEFAULT
-ORDINARY_MPEG_PRODUCT_ACTIVATION=FOREMAN_ACCEPTED_R34_THROUGH_LIVE_FRAME_SERVICE_AND_SAFE_SESSION_FAILURE_TEARDOWN
-MPEG_PARTIAL_RETIREMENT_SESSION_DORMANCY=RECONSTRUCTION_ACTIVE_R35P
-NORMAL_MPEG_ACTION_RETIREMENT=DEPENDENCY_QUEUED_AFTER_R35P
+ORDINARY_MPEG_PRODUCT_ACTIVATION=FOREMAN_ACCEPTED_R34
+NORMAL_MPEG_ACTION_RETIREMENT=RECONSTRUCTION_ACTIVE_R35
+NORMAL_MPEG_RFB_RESTORATION=RECONSTRUCTION_ACTIVE_R35
+NORMAL_MPEG_FINAL_REVEAL=RECONSTRUCTION_ACTIVE_R35
 AUTO_RECALIBRATION_AFTER_RETIREMENT=DEFERRED
 AUDIO_ACTIVATION=DEFERRED
 CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED
@@ -3054,191 +3051,295 @@ local dormancy before final retained Transport reclamation. Normal same-session
 retirement/reveal must not be retried as if the session were still usable merely
 to manufacture cleanup.
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R35P partial-retirement session dormancy authority
 
 PACKET_ID=A003-MPEG-PARTIAL-RETIREMENT-SESSION-DORMANCY-R35P
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0076
+ASSIGNING_FOREMAN_STATE_COMMIT=2967b37e9df02f24a260dd68c1b97a456372ea7e
+ASSIGNING_FOREMAN_LOG_COMMIT=ec6280390c1ec4afc5cf9096b2bc7cd0fb51c8f8
+RECONSTRUCTION_STARTING_COMMIT=ec6280390c1ec4afc5cf9096b2bc7cd0fb51c8f8
+R35P_FINAL_SOURCE_COMMIT=6fc0c755d4a3d51a8b5f87ad12c553b2e74b7385
+R35P_RECONSTRUCTION_LOG_COMMIT=f6b20fa7aaf3dddb1e4d858ac24021af6aa2272f
+R35P_PRE_LOG_COMMIT_COUNT=9
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260926T140024-0400__reconstruction__a003-mpeg-generation__interactive.md`
+
+Independent Foreman disposition:
+
+A003-R35P-C1=MET
+A003-R35P-C2=MET
+A003-R35P-C3=MET
+A003-R35P-C4=MET
+A003-R35P-C5=MET
+A003-R35P-C6=MET
+A003-R35P-C7=MET
+A003-R35P-C8=MET
+A003-R35P-C9=MET
+A003-R35P-C10=MET
+A003-R35P-C11=MET
+A003-R35P-C12=MET
+
+Independent findings:
+
+1. Concrete R23/R24 monotonic failure prefixes are classified explicitly rather
+   than by arbitrary FAULTED admission.
+2. Exact old-session retained Transport proof remains before local reclamation.
+3. Existing R33 full-live and early-RETIRING P7-abandon semantics remain intact.
+4. P7 is never reconstructed after R23 already retired it.
+5. Natural worker completion can retry join; already-joined ownership can retry
+   outcome/release without duplicate abnormal stop/join.
+6. A retained successful natural worker outcome is recorded before normal worker
+   release, allowing truthful retry after later owner-release failure.
+7. Runtime-only residual ownership retries only runtime release.
+8. Transport-run-only residual ownership does not replay normal MPEG finalize.
+9. Post-finalize nonretryable R24 faults may reach SESSION_ABORT_READY without
+   fabricated execution or reveal work.
+10. PLATFORM_FAILED and SYNC_INVALID remain retryable REVEAL_PENDING states and
+    do not set teardown debt.
+11. Pre-START R34P remains a separate exact admission path.
+12. Abnormal session cleanup still cannot emit normal RETIRE/take/producer-done/
+    finalize/P2-thaw/P3-seal/reveal effects.
+
+R35P_SOURCE_COMPLETE=YES
+R35P_FOREMAN_ACCEPTED=YES
+R35P_HOST_TESTED=YES
+R35P_PROJECT_CHECK=PASS
+R35P_STRICT_DICTIONARIES=PASS
+R35P_PS2_COMPILE=PASS
+R35P_PS2_LINK=PASS
+R35P_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R35P_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36261728269_ATTEMPT_1
+R35P_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36261850645_ATTEMPT_1
+R35P_INDEPENDENT_VALIDATION=NOT_RUN
+R35P_OPERATOR_OBSERVED=NO
+R35P_HARDWARE_QUALIFIED=NO
+R35P_HARDWARE_PENDING=YES
+
+Accepted linked identity:
+
+`ELF_PRISTINE_SHA256=df4b86c726417677575b6a964d2b6646836d21622bd09cac7d36815d12615915`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=39e08e49a5d6aaf32f12d134305a4f9925f7f419d75c4b15e6dde9ad17449fc9`
+`PT_LOAD_BYTES=526612`
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A006-ORDINARY-MPEG-ACTION-RETIRE-RESTORE-REVEAL-R35
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
-WORK_ITEM_KEY=a003-mpeg-generation
+WORK_ITEM_KEY=a006-orchestration-shutdown
 WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0076
-BASED_ON_ACCEPTED_R23_R24_AUTHORITY=YES
-BASED_ON_ACCEPTED_R33_SOURCE=c48d460aa3d2e095d079289d07321f96151113a9
-BASED_ON_ACCEPTED_R34P_SOURCE=c6e1dcf514adfc29296633374e75020b3480e5e0
+BASED_ON_FOREMAN_STATE_REVISION=0077
 BASED_ON_ACCEPTED_R34_SOURCE=ec99a1fa0276a9add773d81dfe0e82edcdd42748
-NORMAL_MPEG_PRODUCT_RETIREMENT=DEFERRED_UNTIL_R35P_ACCEPTED
+BASED_ON_ACCEPTED_R35P_SOURCE=6fc0c755d4a3d51a8b5f87ad12c553b2e74b7385
+BASED_ON_ACCEPTED_R23_R23C_R24=YES
 AUTO_RECALIBRATION=DEFERRED
-TRANSPORT_TWO_PHASE_ABORT=UNCHANGED
+NEW_PRODUCT_ACTION=FORBIDDEN
+BINDING_CONTEXT_REINTERPRETATION=FORBIDDEN
+AUDIO_ACTIVATION=DEFERRED
+CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED
 
 ### Objective
 
-Extend the accepted abnormal Application MPEG session-dormancy process so an
-enclosing-session abort can safely consume every **actually reachable partial
-R23/R24 normal-retirement failure prefix**, including prefixes in which P7,
-worker, worker runtime or Transport MPEG run ownership has already been
-legitimately retired.
+Compose the already-accepted normal same-session MPEG retirement, RFB
+restoration overlap and final desktop reveal into the ordinary Application
+product path.
 
-The result must prove local no-touch/dormancy for the old run before final
-Transport session close without replaying normal same-session retirement,
-inventing missing ownership or converting R24 retryable reveal outcomes into
-session failure.
+A semantic `PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION` that Input has already
+legitimately emitted while the exact run is `MPEG_OWNED` may request retirement.
+Because R28/R29 context semantics are immutable, an explicit DESKTOP-context
+binding remains ineligible while MPEG owns presentation; an explicitly
+configured GLOBAL binding can produce the action while live. Application must
+not infer or override that context.
+
+Successful R35 stops at restored ordinary desktop with the run IDLE. It does not
+automatically begin P9 again. A later independently recognized semantic action
+may enter the existing R34 idle calibration path.
 
 ### Required behavior
 
-1. **Enumerate exact reachable R23/R24 failure prefixes.** Classify the owner
-   combinations produced by accepted begin-retirement, retirement-service,
-   restoration-marker and reveal failure points. Admission must be based on
-   those concrete monotonic prefixes, not a permissive arbitrary-FAULTED rule.
-2. **Retained Transport proof remains first.** Every abnormal cleanup attempt
-   still requires exact
-   `pstvnc_transport_session_abort_storage_retained()` proof before touching a
-   remaining worker/runtime owner or declaring local dormancy.
-3. **Full-live/post-START R33 stays valid.** Existing R33 WAIT_FIRST_FRAME /
-   MPEG_OWNED / early-RETIRING behavior, P7 claim abandonment, stop/status/join/
-   outcome/release and runtime release remain unchanged in meaning.
-4. **Already-retired P7 is not recreated.** If accepted R23 has already proven
-   no borrow and cleared the frame consumer, abnormal teardown must not require
-   or fabricate P7 state. If a claim is still represented, terminate it only
-   through the existing P7 abandon seam before join.
-5. **Joined/finished worker prefixes resume from truthful owner state.** A
-   worker already naturally finished or joined during R23 is not stopped or
-   joined again merely to satisfy R33-shaped cleanup. Preserve exact terminal
-   outcome where still observable and retry only the remaining worker-owner
-   release operation.
-6. **Runtime-only residual ownership is supported.** If R23 already released the
-   worker but PS2 worker-runtime release failed, abnormal cleanup may retry only
-   that runtime-owner release after proving the worker no longer touches it.
-7. **Transport-run-only residual ownership is supported without normal
-   finalization.** If worker and runtime are gone but
-   `transport_run_open` remains because normal finalize failed, abnormal
-   session teardown does not retry same-session MPEG finalize. It proves no
-   local asynchronous owner remains and leaves final old-session Transport
-   reclamation to the enclosing `pstvnc_transport_session_close()`.
-8. **Post-finalize R24 fault prefixes can become abort-ready.** A nonretryable
-   restoration/reveal contradiction after worker/runtime/Transport-run ownership
-   is already gone may reach SESSION_ABORT_READY after exact retained-session
-   proof without fabricating worker, runtime, RETIRE, producer-done, finalize or
-   reveal work.
-9. **R24 retryable reveal outcomes remain same-session states.**
-   `PSTVNC_APP_MPEG_RUN_REVEAL_PLATFORM_FAILED` and
-   `PSTVNC_APP_MPEG_RUN_REVEAL_SYNC_INVALID` remain retryable
-   REVEAL_PENDING outcomes with `session_teardown_required=0`; they are not
-   admitted merely because a reveal attempt failed.
-10. **Abnormal teardown never resumes normal retirement semantics.** No new
-    RETIRE, RETIRE-completion take, producer-done publication, Transport MPEG
-    finalize, P2 thaw, P3 seal or compositor reveal may be issued by the
-    abnormal cleanup path. Existing already-recorded facts are diagnostic/owner
-    evidence only.
-11. **Pre-START R34P remains distinct and green.** Its exact partial-worker
-    admission/reclaim behavior must not be widened into post-retirement shapes,
-    and clean pre-START rollback remains excluded.
-12. **Deterministic evidence closes the full fence.** Focused tests plus
-    canonical host/project/strict-dictionary/pinned-PS2
-    compile/link/current-source reproducibility prove requirements 1-11 and
-    preserve R21-R24, R33, R34P and R34 regressions.
+1. **Preserve Input/config authority exactly.** Add no product action, default
+   chord, physical-mask/timing logic or binding-context reinterpretation.
+   DESKTOP-context bindings remain blocked while MPEG owns presentation; GLOBAL
+   bindings retain their accepted ability to publish a semantic action outside
+   DESKTOP when their physical gesture independently qualifies.
+2. **One semantic action has state-dependent Application policy only.** Exact
+   idle desktop keeps the accepted R34 P9-begin meaning. Exact
+   `PSTVNC_APP_MPEG_RUN_MPEG_OWNED` may interpret the same already-published
+   semantic action as one request to begin normal R23 retirement. WAIT_FIRST_FRAME,
+   RETIRING, RESTORE_PENDING and REVEAL_PENDING consume the action without
+   starting another generation, duplicate RETIRE or automatic calibration.
+3. **R23 begins once through its public owner seam.**
+   `pstvnc_app_mpeg_run_begin_retirement()` is the sole normal retirement
+   entry. Application/product code does not call Transport RETIRE, thaw P2,
+   mutate P3 or alter worker ownership directly.
+4. **R22 and R23 service stay distinct.** WAIT_FIRST_FRAME/MPEG_OWNED continue
+   using accepted R22 live service. RETIRING uses
+   `pstvnc_app_mpeg_run_retirement_service()` nonblockingly with the exact
+   current session-clock tick at the ordinary safe cadence. A RETIRING run is
+   never passed to R22 as if still ordinary live service.
+5. **R23C restoration uses the existing P2/R19 request path.** After successful
+   R23 begin thaws P2, ordinary `service_rfb_flow_request()` owns HOLD/FULL/
+   incremental serialization and accounting. R35 creates no special RFB request
+   path and does not consume FULL-refresh debt outside P2.
+6. **Graphics-fresh restoration proof crosses the existing presentation
+   boundary.** While R23/R24 retain MPEG presentation, completed RFB updates may
+   update the underlying desktop. The exact RESTORE_PENDING generation may call
+   `pstvnc_app_mpeg_run_record_restored_rfb_presented()` only after the
+   corresponding authoritative remote framebuffer has successfully crossed
+   `present_current_application_frame()`. If a pre-thaw outstanding response
+   completes first, lower P2 freshness rejects the marker until the required
+   FULL request has genuinely completed and been presented.
+7. **A completed FULL refresh is presented even when pixel truth is unchanged.**
+   Once P2 proves protocol freshness for RESTORE_PENDING, the Application must
+   execute the existing desktop presentation/upload boundary before recording
+   the R24 restoration marker, using current authoritative framebuffer/GS truth
+   without inventing remote dirtiness.
+8. **R24 reveal is serviced without success-by-delay.** After exact restoration
+   presentation is recorded, call
+   `pstvnc_app_mpeg_run_reveal_restored()`. PLATFORM_FAILED and SYNC_INVALID
+   are retryable pending outcomes and must be retried at ordinary safe cadence
+   without re-sealing P3 or declaring session failure. Any nonretryable R24
+   failure becomes normal session failure and is contained by accepted R35P.
+9. **Successful reveal restores ordinary desktop ownership.** Success requires
+   the accepted R24 synchronized/retirement-revealed proof, exact P3 RFB_ONLY
+   and run IDLE. P2 remains thawed. On a later loop/context observation,
+   DESKTOP-action eligibility may return through existing R29 semantics; held
+   gestures do not gain a new action merely because context became eligible.
+10. **Failure convergence remains owner-correct.** Any R23 or nonretryable R24
+    fault preserves nonzero generation/teardown debt and therefore uses the
+    accepted R35P/R33 abnormal two-phase session path before final Transport
+    release. No product-level rollback, forced owner clear or normal-retirement
+    replay is added.
+11. **Session media clock remains session authority.** R35 may read the current
+    tick for R23 service but does not reset, disarm or allocate a replacement
+    media clock during retirement/reveal. Successful R24 preserves the accepted
+    session clock and monotonic run-generation history.
+12. **Close deterministic product evidence without scope creep.** Focused tests
+    plus canonical host/project/strict-dictionary/pinned-PS2
+    compile/link/current-source reproducibility prove requirements 1-11 while
+    preserving R16B, R19, R21-R24, R28-R35P and R34 behavior.
 
 ### Required deterministic evidence
 
-Focused tests must prove at minimum:
+Focused evidence must prove at minimum:
 
-- an early RETIRING failure with a represented P7 claim still abandons the exact
-  claim before worker join;
-- worker join/outcome/release failures remain retryable from their truthful
-  R23-established prefixes without duplicate stop/join;
-- worker-release failure after P7 clear can progress to SESSION_ABORT_READY only
-  after successful worker release and later runtime release;
-- runtime-release failure with no live worker retries runtime release only;
-- Transport-finalize failure with no worker/runtime does **not** call normal
-  finalize again during abnormal teardown and can become locally abort-ready;
-- a nonretryable R24 restore/reveal contradiction after normal execution-owner
-  retirement can become locally abort-ready without reveal/rollback;
-- retryable R24 PLATFORM_FAILED and SYNC_INVALID remain non-teardown states and
-  are rejected by abnormal admission unless some separate enclosing-session
-  failure has legitimately moved the run into an accepted abort state;
-- retained Transport proof failure performs no local reclaim and preserves exact
-  old-run evidence;
-- no abnormal path emits new RETIRE/take/producer-done/finalize/P2-thaw/P3-seal/
-  reveal effects;
-- existing post-START R33 and pre-START R34P focused tests remain green.
+- a DESKTOP-context binding cannot become live-retirement authority merely
+  because R35 exists; Input context tests remain unchanged;
+- a semantic action already delivered while exact MPEG_OWNED begins R23 exactly
+  once;
+- the same action while WAIT_FIRST_FRAME, RETIRING, RESTORE_PENDING or
+  REVEAL_PENDING starts no RETIRE and no P9;
+- exact idle desktop action still begins P9 as accepted in R34;
+- after begin-retirement, no product/Application direct P2 thaw, P3 mutation,
+  Transport RETIRE or lower-worker manipulation exists outside R23;
+- RETIRING service obtains current tick and calls R23 service, while R22 is not
+  invoked for that state;
+- R23 WOULD_BLOCK/pending retirement progress remains in the same session and
+  does not spin into failure or replacement;
+- a pre-thaw outstanding RFB response may complete/present but cannot satisfy the
+  R24 marker while FULL debt remains;
+- the subsequent FULL request uses the ordinary R19/P2 path, and after its
+  completed response the desktop presentation boundary occurs before the R24
+  marker;
+- if protocol freshness is achieved with unchanged framebuffer pixels, the
+  existing desktop presentation/upload boundary still occurs before marking
+  restoration;
+- PLATFORM_FAILED and SYNC_INVALID reveal outcomes remain pending/retryable and
+  a later success reveals without a second P3 seal;
+- a nonretryable R23/R24 failure routes to session failure and the existing
+  product abnormal-owner predicate remains true for R35P containment;
+- successful reveal returns run IDLE/P3 RFB_ONLY/P2 thawed and does not call P9;
+- after success a later fresh semantic action can use the existing R34 idle P9
+  route, but R35 itself never automatically starts calibration;
+- no normal retirement path changes Pi/Wire producer source, AUDIO or
+  Configuration/Management persistence.
 
 ### Authorized source surface
 
-R35P may modify only the smallest justified subset of:
+R35 may modify only the smallest justified subset of:
 
-- `src/app_mpeg_run.c/.h`;
-- focused `app_mpeg_run` / session-abort tests and source-boundary tests;
-- directly affected A003/Application MPEG dictionaries;
-- directly affected lifecycle/topology documentation;
+- `src/app.c/.h`;
+- `src/app_mpeg_product.c/.h`;
+- focused Application/product/source-boundary tests and stubs;
+- directly affected Application dictionaries and lifecycle/topology docs;
 - canonical test/build enrollment only if required.
 
 Consume but do not modify absent an independently demonstrated prerequisite
 defect:
 
-- `src/mpeg/worker.c/.h`;
-- `src/app.c/.h`;
-- `src/app_mpeg_product.c/.h`;
-- P9/P10;
+- `src/app_mpeg_run.c/.h` including accepted R35P;
+- `src/app_mpeg_frame.*`;
+- `src/app_mpeg_activation.*`;
+- `src/app_mpeg_calibration.*`;
+- `src/app_product_bindings.*`;
 - Input/UI;
+- RFB flow/session/framebuffer implementation;
+- Display/compositor/Platform implementation;
 - Transport implementation;
-- RFB/Display/compositor implementation;
+- MPEG worker/runtime;
 - media clock;
 - Configuration/Management;
 - Pi product source;
 - AUDIO product source;
 - H1/B4A forensic source.
 
-If accepted public lower-owner seams cannot safely prove one of the concrete
-R23/R24 residual prefixes, return BLOCKED naming the exact missing owner
-contract rather than clearing or reconstructing private state.
+If accepted R23/R24 public seams are insufficient to prove the required
+Application presentation/restoration boundary, return BLOCKED naming the exact
+missing owner contract rather than reaching into lower-owner private state.
 
 ### Explicit non-goals
 
-R35P does not:
+R35 does not:
 
-- wire a user action into normal retirement;
-- call normal R23/R24 from ordinary `src/app.c`;
-- implement automatic or one-gesture recalibration;
-- change the successful normal retirement/reveal state machine;
-- modify Transport two-phase abort;
-- activate AUDIO;
-- add persistence/editor/live reload;
-- change Pi/Wire producer behavior;
+- automatically enter calibration after reveal;
+- add a distinct MPEG_STOP/RETIRE action;
+- make a DESKTOP binding act GLOBAL while MPEG is live;
+- retire WAIT_FIRST_FRAME before first physical MPEG ownership;
+- start generation N+1;
+- add AUDIO;
+- add config persistence/editor/live reload;
+- alter Pi producer/Wire framing;
 - add timeout/watchdog success;
-- claim hardware qualification.
+- claim independent Validation, operator observation or hardware qualification.
 
 ### Required checks before handoff
 
-Run focused R35P partial-retirement/session-abort tests; complete R21-R24/R33/
-R34P regressions; R34 Application product regressions; canonical host tests;
-project check; complete strict dictionaries; pinned PS2 compile/link and
-current-source reproducibility.
+Run focused final R35 Application/product tests; R16B/R19/R27/R32/R34
+Application regressions; R21-R24/R33/R34P/R35P run regressions; R28-R30
+binding/context/Input/config regressions; canonical host tests; project check;
+complete strict dictionaries; pinned PS2 compile/link and current-source
+reproducibility.
 
-Record exact final linked identity if source changes. Classify any changed bytes
+Record exact final ELF/PT_LOAD identity if bytes change and classify it
 hardware-pending.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` revision 0007 using:
 
 - ROLE_KEY=`reconstruction`;
-- WORK_ITEM_KEY=`a003-mpeg-generation`;
+- WORK_ITEM_KEY=`a006-orchestration-shutdown`;
 - WORKER_KEY=`interactive`.
 
 Then stop and return the baton.
 
-FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_PARTIAL_RETIREMENT_OWNER_CONTRACT
-STRETCH=NONE__DO_NOT_ENTER_ORDINARY_R35_PRODUCT_RETIREMENT
+FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_APPLICATION_RESTORATION_OWNER_CONTRACT
+STRETCH=NONE__DO_NOT_ENTER_AUTO_RECALIBRATION_OR_AUDIO
 
 ## Current hardware debt
 
-Newest fully Foreman-accepted product source/build identity is R34:
+Newest fully Foreman-accepted source/build identity is R35P:
 
-`ELF_PRISTINE_SHA256=96137519a4cde6f984199fbaf893a660945cefa8cd85dbd729b8eddaaf54e7cc`
+`ELF_PRISTINE_SHA256=df4b86c726417677575b6a964d2b6646836d21622bd09cac7d36815d12615915`
 `PT_LOAD_SEGMENTS=1`
-`PT_LOAD_SHA256=e90c2f8de4729ca2c273a6cc81edbb4806e851cd3000e938f0c65efa8e8851a6`
-`PT_LOAD_BYTES=525844`
+`PT_LOAD_SHA256=39e08e49a5d6aaf32f12d134305a4f9925f7f419d75c4b15e6dde9ad17449fc9`
+`PT_LOAD_BYTES=526612`
 
 This exact image is reproducible and Foreman-accepted at source/product-contract
 level, but remains physically unqualified.
