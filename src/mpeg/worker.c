@@ -660,6 +660,53 @@ pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_outcome(
     return PSTVNC_MPEG_WORKER_OK;
 }
 
+pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_reclaim_unstarted(
+    pstvnc_mpeg_worker_t *worker,
+    uint32_t run_generation)
+{
+    if (!pstvnc_mpeg_worker_generation_valid(worker, run_generation))
+        return worker != NULL && worker->initialized
+            ? PSTVNC_MPEG_WORKER_WRONG_GENERATION
+            : PSTVNC_MPEG_WORKER_INVALID;
+
+    /*
+     * This is deliberately narrower than ordinary release. It describes only
+     * the owner prefix created by create-success/start-failure/destroy-failure:
+     * one created thread that never ran, its stack, and no decoder/slot/outcome
+     * authority. Any other shape belongs to the normal started-worker path or
+     * is contradictory and must remain represented.
+     */
+    if (!worker->thread_created ||
+        worker->thread_started ||
+        worker->thread_joined ||
+        worker->thread_destroyed ||
+        worker->thread_id < 0 ||
+        worker->worker_stack == NULL ||
+        worker->stop_requested ||
+        worker->decoder_live ||
+        worker->worker_finished ||
+        worker->slot_state != PSTVNC_MPEG_WORKER_SLOT_EMPTY ||
+        worker->outcome.kind != PSTVNC_MPEG_WORKER_OUTCOME_NONE)
+        return PSTVNC_MPEG_WORKER_INVALID;
+
+    if (worker->thread_ops.destroy(
+            worker->thread_ops.context,
+            worker->thread_id) != 0)
+        return PSTVNC_MPEG_WORKER_THREAD_DESTROY_FAILED;
+
+    worker->thread_destroyed = 1;
+    worker->thread_created = 0;
+    worker->thread_id = -1;
+
+    worker->memory_ops.release(
+        worker->memory_ops.context,
+        worker->worker_stack);
+    worker->worker_stack = NULL;
+
+    worker->initialized = 0;
+    return PSTVNC_MPEG_WORKER_OK;
+}
+
 pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_release(
     pstvnc_mpeg_worker_t *worker,
     uint32_t run_generation)
