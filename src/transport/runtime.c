@@ -782,7 +782,9 @@ static int pstvnc_transport_runtime_accept_audio_frame(
     int accepted;
     int signal_waiter;
 
-    if (!runtime->audio_enabled || header->flags != 0u ||
+    if (!runtime->audio_enabled ||
+        runtime->audio_activation_state == PSTVNC_TRANSPORT_AUDIO_DORMANT ||
+        header->flags != 0u ||
         header->payload_length > runtime->max_data_payload)
         return 0;
 
@@ -1499,11 +1501,6 @@ int pstvnc_transport_runtime_start_receiver(
             runtime,
             PSTVNC_TRANSPORT_CHANNEL_RFB,
             runtime->rfb_initial_credit_bytes) ||
-        (runtime->audio_enabled &&
-         !pstvnc_transport_runtime_send_credit(
-             runtime,
-             PSTVNC_TRANSPORT_CHANNEL_AUDIO,
-             runtime->audio_initial_credit_bytes)) ||
         (runtime->mpeg_enabled &&
          !pstvnc_transport_runtime_send_credit(
              runtime,
@@ -1918,6 +1915,87 @@ pstvnc_transport_result_t pstvnc_transport_runtime_rfb_provider_failure(
 }
 
 
+pstvnc_transport_result_t pstvnc_transport_runtime_audio_activate(
+    pstvnc_transport_runtime_t *runtime)
+{
+    pstvnc_transport_result_t result = PSTVNC_TRANSPORT_INVALID;
+
+    if (runtime == NULL || !runtime->initialized || !runtime->audio_enabled ||
+        !runtime->receiver_thread_started)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    if (runtime->failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (runtime->receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    if (runtime->stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+
+    if (WaitSema(runtime->audio_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (runtime->audio_activation_state == PSTVNC_TRANSPORT_AUDIO_DORMANT &&
+        runtime->audio_initial_credit_bytes != 0u) {
+        /*
+         * Publish admission before the synchronous outbound rendezvous. The
+         * receiver may immediately observe credit-driven DATA while the caller
+         * is still waiting for physical CREDIT completion.
+         */
+        runtime->audio_activation_state = PSTVNC_TRANSPORT_AUDIO_ACTIVATING;
+        result = PSTVNC_TRANSPORT_OK;
+    }
+
+    if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (result != PSTVNC_TRANSPORT_OK)
+        return PSTVNC_TRANSPORT_INVALID;
+
+    if (!pstvnc_transport_runtime_send_credit(
+            runtime,
+            PSTVNC_TRANSPORT_CHANNEL_AUDIO,
+            runtime->audio_initial_credit_bytes)) {
+        /*
+         * ACTIVATING is deliberately irreversible. A failed physical submit
+         * terminalizes Transport and can never be retried as a fresh credit.
+         */
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (WaitSema(runtime->audio_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (runtime->audio_activation_state !=
+            PSTVNC_TRANSPORT_AUDIO_ACTIVATING) {
+        (void)SignalSema(runtime->audio_queue_semaphore_id);
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    runtime->audio_activation_state = PSTVNC_TRANSPORT_AUDIO_ACTIVE;
+
+    if (SignalSema(runtime->audio_queue_semaphore_id) < 0) {
+        runtime->failed = 1;
+        return PSTVNC_TRANSPORT_FAILED;
+    }
+
+    if (runtime->failed)
+        return PSTVNC_TRANSPORT_FAILED;
+    if (runtime->receiver_done)
+        return PSTVNC_TRANSPORT_CLOSED;
+    if (runtime->stop_requested)
+        return PSTVNC_TRANSPORT_STOPPED;
+
+    return PSTVNC_TRANSPORT_OK;
+}
+
 pstvnc_transport_result_t pstvnc_transport_runtime_audio_read_available(
     pstvnc_transport_runtime_t *runtime,
     void *buffer,
@@ -1930,7 +2008,8 @@ pstvnc_transport_result_t pstvnc_transport_runtime_audio_read_available(
 
     if (runtime == NULL || buffer == NULL || maximum_count == 0u ||
         read_count == NULL || maximum_count > UINT32_MAX ||
-        !runtime->initialized || !runtime->audio_enabled)
+        !runtime->initialized || !runtime->audio_enabled ||
+        runtime->audio_activation_state != PSTVNC_TRANSPORT_AUDIO_ACTIVE)
         return PSTVNC_TRANSPORT_INVALID;
 
     *read_count = 0u;
@@ -1983,7 +2062,8 @@ pstvnc_transport_result_t pstvnc_transport_runtime_audio_status(
     int *producer_done)
 {
     if (runtime == NULL || available_count == NULL || producer_done == NULL ||
-        !runtime->initialized || !runtime->audio_enabled)
+        !runtime->initialized || !runtime->audio_enabled ||
+        runtime->audio_activation_state != PSTVNC_TRANSPORT_AUDIO_ACTIVE)
         return PSTVNC_TRANSPORT_INVALID;
 
     if (WaitSema(runtime->audio_queue_semaphore_id) < 0) {
@@ -2115,7 +2195,9 @@ int pstvnc_transport_runtime_audio_activity_snapshot(
 {
     return pstvnc_transport_runtime_media_activity_snapshot(
         runtime,
-        runtime != NULL ? runtime->audio_enabled : 0,
+        runtime != NULL &&
+            runtime->audio_enabled &&
+            runtime->audio_activation_state == PSTVNC_TRANSPORT_AUDIO_ACTIVE,
         runtime != NULL ? runtime->audio_queue_semaphore_id : -1,
         runtime != NULL ? &runtime->audio_activity_sequence : NULL,
         NULL,
@@ -2128,7 +2210,9 @@ int pstvnc_transport_runtime_audio_wait_activity(
 {
     return pstvnc_transport_runtime_media_wait_activity(
         runtime,
-        runtime != NULL ? runtime->audio_enabled : 0,
+        runtime != NULL &&
+            runtime->audio_enabled &&
+            runtime->audio_activation_state == PSTVNC_TRANSPORT_AUDIO_ACTIVE,
         runtime != NULL ? runtime->audio_queue_semaphore_id : -1,
         runtime != NULL ? runtime->audio_activity_semaphore_id : -1,
         runtime != NULL ? &runtime->audio_activity_sequence : NULL,
