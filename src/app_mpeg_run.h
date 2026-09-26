@@ -263,15 +263,18 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_reveal_restored(
  * exact old session terminal while retaining its runtime storage.
  *
  * This path never emits RETIRE/producer-done, never finalizes the Transport MPEG
- * run, never thaws RFB flow, and never seals/reveals presentation. It discards
- * any exact P7 claim, requests safe worker stop once, waits for true worker
- * completion, joins and records the exact terminal outcome, then releases local
- * worker/PS2 runtime resources. Success reaches SESSION_ABORT_READY, which is
- * terminal for this run object and exists only so the enclosing owner may
- * release retained Transport storage.
+ * run, never thaws RFB flow, and never seals/reveals presentation. Post-START it
+ * preserves R33's exact P7-abandon/stop/status/join/outcome/release contract.
+ * For an exact R21 pre-START CLEANUP_FAILED prefix it additionally accepts only
+ * the represented started-worker or created-but-never-started worker owners,
+ * reclaims them through their owner seams, and never fabricates START, join or
+ * worker outcome. PS2 worker-runtime resources are released only after worker
+ * no-touch proof. Success reaches SESSION_ABORT_READY, terminal for this old
+ * run object and used only so the enclosing owner may release retained
+ * Transport storage.
  *
- * A still-running worker is a successful pending service step; callers inspect
- * state/status and call again after the worker advances.
+ * A still-running started worker is a successful pending service step; callers
+ * inspect state/status and call again after the worker advances.
  */
 pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_session_abort_service(
     pstvnc_app_mpeg_run_t *run);
