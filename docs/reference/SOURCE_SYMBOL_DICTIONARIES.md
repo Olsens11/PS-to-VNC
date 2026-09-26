@@ -4,7 +4,7 @@ This portal is generated from participating product `SYMBOLS.md` files.
 
 | Directory | Dictionary | Coverage | Symbols |
 |---|---|---|---:|
-| `pi` | [`pi/SYMBOLS.md`](../../pi/SYMBOLS.md) | COMPLETE | 902 |
+| `pi` | [`pi/SYMBOLS.md`](../../pi/SYMBOLS.md) | COMPLETE | 907 |
 | `src` | [`src/SYMBOLS.md`](../../src/SYMBOLS.md) | COMPLETE | 968 |
 | `src/audio` | [`src/audio/SYMBOLS.md`](../../src/audio/SYMBOLS.md) | COMPLETE | 380 |
 | `src/config` | [`src/config/SYMBOLS.md`](../../src/config/SYMBOLS.md) | COMPLETE | 284 |
@@ -17,7 +17,7 @@ This portal is generated from participating product `SYMBOLS.md` files.
 | `src/mpeg` | [`src/mpeg/SYMBOLS.md`](../../src/mpeg/SYMBOLS.md) | COMPLETE | 617 |
 | `src/platform` | [`src/platform/SYMBOLS.md`](../../src/platform/SYMBOLS.md) | COMPLETE | 221 |
 | `src/rfb` | [`src/rfb/SYMBOLS.md`](../../src/rfb/SYMBOLS.md) | COMPLETE | 422 |
-| `src/transport` | [`src/transport/SYMBOLS.md`](../../src/transport/SYMBOLS.md) | COMPLETE | 1416 |
+| `src/transport` | [`src/transport/SYMBOLS.md`](../../src/transport/SYMBOLS.md) | COMPLETE | 1432 |
 | `src/ui` | [`src/ui/SYMBOLS.md`](../../src/ui/SYMBOLS.md) | COMPLETE | 647 |
 
 Generate the comprehensive view with:

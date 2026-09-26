@@ -918,4 +918,9 @@ in this directory.
 | name | variable | pi/wire_server.py | WireConnectionOwner.attach_audio_pcm.<genexpr[name]#a877d682806a>~1 | local | Defines name as a current clean-source variable. | mechanically reconciled current clean source |
 | audio_pcm_factory | field | pi/wire_server.py | WireServer | local | Defines audio_pcm_factory as a current clean-source field. | mechanically reconciled current clean source |
 | audio_pcm_factory | parameter | pi/wire_server.py | WireServer.__init__ | local | Defines audio_pcm_factory as a current clean-source parameter. | mechanically reconciled current clean source |
-| audio_pcm | variable | pi/wire_server.py | WireServer.serve_connection | local | Defines audio_pcm as a current clean-source variable. | mechanically reconciled current clean source |
+| _audio_pcm_factory | field | pi/wire_server.py | WireConnectionOwner | local | Defines _audio_pcm_factory as a current clean-source field. | mechanically reconciled current clean source |
+| audio_pcm_factory | parameter | pi/wire_server.py | WireConnectionOwner.__init__ | local | Defines audio_pcm_factory as a current clean-source parameter. | mechanically reconciled current clean source |
+| amount | variable | pi/wire_server.py | WireConnectionOwner._handle_audio_frame | local | Defines amount as a current clean-source variable. | mechanically reconciled current clean source |
+| created | variable | pi/wire_server.py | WireConnectionOwner._handle_audio_frame | local | Defines created as a current clean-source variable. | mechanically reconciled current clean source |
+| exc | variable | pi/wire_server.py | WireConnectionOwner._handle_audio_frame | local | Defines exc as a current clean-source variable. | mechanically reconciled current clean source |
+| factory | variable | pi/wire_server.py | WireConnectionOwner._handle_audio_frame | local | Defines factory as a current clean-source variable. | mechanically reconciled current clean source |
