@@ -71,10 +71,39 @@ require(
     "pstvnc_ps2_media_clock_binding_current_tick(" in app,
     "live R22 service must use exact current session clock tick",
 )
+
+# R34C keeps live service and abnormal teardown ownership semantically distinct.
 require(
-    "pstvnc_transport_session_begin_abort(" in app
-    and "pstvnc_transport_session_close(" in app,
-    "live MPEG session failure must use R33 two-phase Transport teardown",
+    "pstvnc_app_mpeg_product_requires_session_abort(" in product,
+    "R34C must expose one product-level abnormal teardown-owner predicate",
+)
+live_branch = app[
+    app.index("pstvnc_app_mpeg_product_has_started_run("):
+    app.index("receive_result = pstvnc_rfb_session_try_receive_update(")
+]
+require(
+    "pstvnc_app_mpeg_product_requires_session_abort(" not in live_branch,
+    "pre-START teardown debt must not broaden current-tick R22 live service",
+)
+retire_start = app.index("static int retire_attempt_owners(")
+retire_end = app.index(
+    "int pstvnc_app_run_with_session_profiles(",
+    retire_start,
+)
+retire = app[retire_start:retire_end]
+require(
+    "pstvnc_app_mpeg_product_requires_session_abort(" in retire,
+    "attempt retirement must classify R33/R34P abnormal MPEG ownership",
+)
+require(
+    "pstvnc_app_mpeg_product_has_started_run(" not in retire,
+    "attempt retirement must not reuse the R22 live-service predicate",
+)
+require(
+    "pstvnc_transport_session_begin_abort(" in retire
+    and "pstvnc_app_mpeg_product_service_session_abort(" in retire
+    and "pstvnc_transport_session_close(" in retire,
+    "abnormal MPEG teardown must retain begin-abort -> local dormancy -> close",
 )
 require(
     "pstvnc_transport_session_abort()" in app,
