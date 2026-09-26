@@ -522,11 +522,18 @@ class WireConnectionOwner:
 
         attachment = self._rfb_attachment
         generation = self._mpeg_generation
-        audio_pcm = self._audio_pcm
-        if attachment is None and generation is None and audio_pcm is None:
+        if (
+            attachment is None
+            and generation is None
+            and self._audio_pcm is None
+            and self._audio_pcm_factory is None
+        ):
             raise RuntimeError("no Wire rider is configured")
 
         while True:
+            # R40 may create AUDIO only after the first exact channel-2 CREDIT,
+            # so refresh this session-local owner on every readiness cycle.
+            audio_pcm = self._audio_pcm
             try:
                 self._flush_rfb_attachment_output()
             except (OSError, RuntimeError):
@@ -727,6 +734,7 @@ class WireConnectionOwner:
             self._rfb_attachment is not None
             or self._mpeg_generation is not None
             or self._audio_pcm is not None
+            or self._audio_pcm_factory is not None
         ):
             return self._wait_with_riders()
 
