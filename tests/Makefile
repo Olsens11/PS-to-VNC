@@ -119,6 +119,34 @@ $(BUILD_DIR)/app_mpeg_product_test: \
 		../src/app_mpeg_product.c \
 		-o $@
 
+APP_AUDIO_PRODUCT_TEST := .build/app_audio_product_test
+APP_AUDIO_PRODUCT_SOURCE_TEST := unit/app_audio_product_source_test.py
+
+.PHONY: app-audio-product-unit app-audio-product-source-unit
+unit: app-audio-product-unit app-audio-product-source-unit
+
+app-audio-product-unit: $(APP_AUDIO_PRODUCT_TEST)
+	./$(APP_AUDIO_PRODUCT_TEST)
+
+app-audio-product-source-unit:
+	python3 $(APP_AUDIO_PRODUCT_SOURCE_TEST)
+
+$(APP_AUDIO_PRODUCT_TEST): \
+	unit/app_audio_product_test.c \
+	../src/app_audio_product.c \
+	../src/app_audio_product.h \
+	../src/audio/audsrv_service.h \
+	../src/audio/ps2_runtime.h \
+	../src/audio/session.h \
+	../src/config/audio_runtime_profile.h \
+	../src/media/clock.h \
+	../src/transport/bridge.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/app_audio_product_test.c \
+		../src/app_audio_product.c \
+		-o $(APP_AUDIO_PRODUCT_TEST)
+
 $(BUILD_DIR)/app_product_bindings_test: \
 	unit/app_product_bindings_test.c \
 	../src/app_product_bindings.c \
