@@ -20,6 +20,7 @@
 #include "app_mpeg_product.h"
 
 #include <stdint.h>
+#include <string.h>
 
 #include "config/media_clock_profile.h"
 #include "config/mpeg_runtime_profile.h"
