@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SESSION_C = (ROOT / "src/audio/session.c").read_text(encoding="utf-8")
 SESSION_H = (ROOT / "src/audio/session.h").read_text(encoding="utf-8")
 RUNTIME_C = (ROOT / "src/audio/ps2_runtime.c").read_text(encoding="utf-8")
-APP_C = "\n".join(path.read_text(encoding="utf-8") for path in ROOT.glob("src/app*.c"))
+APP_C = (ROOT / "src/app.c").read_text(encoding="utf-8")
 
 
 def function_body(text: str, name: str) -> str:
