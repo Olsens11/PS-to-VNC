@@ -260,6 +260,7 @@ pstvnc_app_mpeg_run_retirement_service(
     uint64_t current_tick,
     pstvnc_app_mpeg_frame_service_result_t *service_result)
 {
+    (void)run;
     run_retirement_service_calls++;
     observed_retirement_tick = current_tick;
     if (service_result != NULL)
