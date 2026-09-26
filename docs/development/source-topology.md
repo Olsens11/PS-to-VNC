@@ -104,6 +104,8 @@ Current clean C/H files directly in `src/` are restricted to:
     src/app.h
     src/app_product_bindings.c
     src/app_product_bindings.h
+    src/app_mpeg_product.c
+    src/app_mpeg_product.h
     src/app_mpeg_activation.c
     src/app_mpeg_activation.h
     src/app_mpeg_calibration.c
@@ -133,8 +135,12 @@ and owns the fresh session clock-binding lifetime while leaving semantic MPEG
 activation to the dedicated P9/P10/R21-R24 coordinators. R32 admits
 `app_product_bindings.{c,h}` because one-shot Management-to-Configuration
 composition plus the resident fallback decision is Application policy and is
-independently host-testable. None of these Application coordinators justifies a
-new top-level source directory.
+independently host-testable. R34 admits `app_mpeg_product.{c,h}` as the narrow
+ordinary-product coordinator that routes semantic MPEG calibration intent into
+the already accepted P9/P10/R21/R22 owners and exposes R33 local-abort progress
+to the ordinary Application session teardown path. It owns no physical gesture,
+decoder, Transport, presentation, or normal retirement mechanism. None of these
+Application coordinators justifies a new top-level source directory.
 
 
 The PS2 application root dictionary is:
