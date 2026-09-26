@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0081
-RECORDED_AT=2026-09-26T18:26:10-04:00
+STATE_REVISION=0082
+RECORDED_AT=2026-09-26T18:52:29-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0080
-SUPERSEDES_FOREMAN_STATE_REVISION=0080
+BASED_ON_FOREMAN_STATE_REVISION=0081
+SUPERSEDES_FOREMAN_STATE_REVISION=0081
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,46 +14,47 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0081 independently accepts
-`A002-AUDIO-SESSION-COMPLETION-PUBLICATION-R38` at final pre-log source
-authority `9834277d61b1f8dd6ed8c47923cb328e414ba08d` and consumes immutable
-Reconstruction closeout `bd538e663ff71295e8ca68cbe49ff329b1bbffaf`.
+Revision 0082 independently accepts
+`A002-PI-AUDIO-PCM-PRODUCER-R39` at final pre-log source authority
+`66b44a2e68db99b511504e998e13def4a6acb7cf` and consumes immutable
+Reconstruction closeout `863328cdfbf6caa6677f02608f6e759aafc32131`.
 
-The returned R38 range is exactly eight commits ahead of assigning Foreman log
-`e735b3298e1ee8a7b00671eaf2f62d6c32ce52a6`, zero behind, and is confined to
-the authorized AUDIO-session completion seam, accepted R37 PS2 completion
-adapter, focused tests, lifecycle documentation and dictionary reconciliation.
-Application, Transport, Configuration profile values, media-clock behavior,
-playback/AUDSRV service semantics, MPEG/RFB/Input/UI/Display, Pi product source
-and Wire protocol behavior did not change.
+The returned R39 range is exactly nine commits ahead of assigning Foreman log
+`88d5d86717e516e4588579d05c7bea7af6f79e54`, zero behind, and is confined to
+the authorized clean Pi AUDIO producer/rider, generated Pi profile projection,
+focused tests, topology/lifecycle documentation and dictionary reconciliation.
+`pi/wire_runtime.py`, all PS2 product source, Transport implementation,
+Application, media-clock implementation, MPEG/RFB/Input/UI/Display product
+behavior, H1 forensic source and Wire compatibility version remain unchanged.
 
-Independent review accepts all twelve R38 requirements. The public
-`pstvnc_audio_session_poll()` reports only PENDING versus DONE for an exact
-initialized, created, successfully started and not-destroyed worker. It never
-inspects Transport queue/end facts, media-clock state, elapsed time,
-worker outcome or Application flags. Thread-owner observation failure is a real
-`PSTVNC_AUDIO_SESSION_THREAD_STATUS_FAILED`, not a synthetic PENDING result.
+Independent review accepts all twelve R39 requirements. The generated Pi AUDIO
+projection comes from the same canonical R36 JSON and is exactly 524288-byte
+channel window, 48000-Hz stereo 16-bit PCM with four-byte frame alignment. The
+session-scoped producer discovers the default PipeWire sink monitor through
+`wpctl`, launches `pw-record` with only selected format authority, owns one
+bounded capture process/reader/spool/credit state, and never touches the
+PS2-facing socket or Wire sequence.
 
-The accepted R37 PS2 adapter now exposes one exact nonblocking completion
-operation using the retained completion semaphore. Before completion it uses
-`ReferSemaStatus` and returns immediately; successful one-shot `PollSema`
-consumption first records `completion_observed`, so later status and join
-operations never wait on the same event again. The poll path contains no
-`WaitSema`, `DelayThread`, `ReferThreadStatus`, timeout or poll-count
-success rule.
+Exact channel-2 CREDIT is the sole AUDIO DATA admission authority. Emitted
+payloads are nonempty, four-byte aligned and bounded by available complete
+frames, remaining credit and the existing 8192-byte Wire maximum. WireServer
+remains sole physical-send/global-sequence owner and integrates AUDIO readiness
+through the existing `select()` loop, not a timer-backed scheduler.
 
-DONE is deliberately weaker than joined. Existing join remains the visibility
-and exact `THS_DORMANT` fence; outcome access and resource reclamation are
-still illegal until join succeeds. R37's partial-start, DeleteThread retry,
-allocation ownership and runtime-release rules remain unchanged.
+Unexpected capture EOF, malformed terminal PCM tail, discovery/launch failure,
+reader failure and credit overflow all fail closed. Ordinary R39 cleanup never
+emits the zero-length channel-2 producer-done marker. Capture process/thread
+retirement must be actually proven; a timeout can escalate terminate/kill but
+cannot become successful dormancy by itself.
 
-Exact final-source GitHub Actions run `36274451271`, attempt 1, checked out
-`9834277d61b1f8dd6ed8c47923cb328e414ba08d` and passed host-unit,
+Exact final-source GitHub Actions run `36277134548`, attempt 1, checked out
+`66b44a2e68db99b511504e998e13def4a6acb7cf` and passed host-unit,
 project-check, strict dictionaries, pinned PS2 compile, linked build and
-current-source reproducibility. Exact immutable-log-head run `36274547884`,
+current-source reproducibility. Exact immutable-log-head run `36277245270`,
 attempt 1, also passed the complete canonical gate set.
 
-The accepted R38 linked identity is:
+R39 changes no PS2 loadable source. Exact linked identity remains byte-identical
+to accepted R38:
 
 `ELF_PRISTINE_SHA256=3b8319a17aa57e50a75399b1eb4ac0c35e59168f2805a1d7d531bd68d92450c6`
 
@@ -63,31 +64,31 @@ The accepted R38 linked identity is:
 
 `PT_LOAD_BYTES=550804`
 
-These bytes become the newest fully Foreman-accepted source/build identity and
-remain hardware-pending.
+R39 therefore creates no new PS2 hardware-qualification debt; inherited R38
+hardware debt remains pending.
 
-The post-R38 dependency pass found that ordinary PS2 Application AUDIO
-composition is still not end-to-end ready for a different reason: the clean Pi
-product has no AUDIO rider/producer at all. Current `pi/wire_runtime.py`
-composes only RFB attachment and MPEG generation factories; current
-`pi/wire_protocol.py` has no clean channel-2 AUDIO helpers; current
-`pi/wire_server.py` accepts no AUDIO owner/factory and does not dispatch AUDIO
-CREDIT or emit AUDIO DATA. A007 explicitly classifies the Pi media
-runner/producer family as A001/A002/A003/A006 product responsibility, so this is
-not optional test scaffolding.
+The next dependency is not yet final A006 AUDIO composition. Independent timing
+review found one lower cross-platform activation-boundary gap.
 
-The PS2 Transport side is already ready for this lower owner: channel 2 exists,
-initial and returned AUDIO credit are emitted from the sole I/O owner, nonzero
-DATA enters the AUDIO queue, and zero-length channel-2 DATA is the existing
-one-shot producer-done marker. The clean AUDIO consumer therefore must not be
-wired into ordinary Application before the Pi has a real product producer that
-obeys those exact credit and lifetime contracts.
+Accepted R26/A003 authority says the common media epoch is unarmed until the
+first real MPEG presentation. Accepted R36 currently selects 524288 bytes of
+initial AUDIO credit. Current Transport sends that initial AUDIO credit
+automatically when the receiver runtime starts. If ordinary Pi runtime simply
+enabled the accepted R39 factory now, that startup CREDIT would immediately
+create PipeWire capture and permit channel-2 DATA long before a user may choose
+manual MPEG calibration/activation. The bounded AUDIO queue would then retain
+old desktop PCM and later present it against a newly armed MPEG epoch.
 
-The next packet reconstructs that Pi-side A002 producer/rider mechanism only.
-It remains optional/injected in `WireServer` and deliberately does not enable
-AUDIO in ordinary `pi/wire_runtime.py` yet. That keeps R39 below final
-cross-platform product composition and lets the later A006 packet activate Pi
-and PS2 AUDIO together under one reviewed session policy.
+The fix belongs below Application policy: make AUDIO initial credit an explicit
+one-shot activation edge. Transport may allocate the AUDIO rider at session
+open, but must not publish its selected initial credit until a later caller
+activates AUDIO. On the Pi side, an injected AUDIO factory must become lazy:
+first valid channel-2 CREDIT creates the exact-session R39 owner, and no capture
+process exists before that credit.
+
+This preserves the existing Wire protocol and R36 selected credit amount while
+providing final A006 with a clean policy edge. Application start timing remains
+deferred until this lower activation fence is accepted.
 
 ## Temporal architecture reconciliation
 
@@ -120,7 +121,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A002_R38_AUDIO_SESSION_COMPLETION_FOREMAN_ACCEPTED__A002_R39_PI_AUDIO_PCM_PRODUCER_ACTIVE__A006_AUDIO_APPLICATION_COMPOSITION_QUEUED`
+`A002_R39_PI_AUDIO_PCM_PRODUCER_FOREMAN_ACCEPTED__A002_R40_DEFERRED_AUDIO_CREDIT_ACTIVATION_ACTIVE__A006_AUDIO_COMPOSITION_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -182,8 +183,9 @@ NORMAL_MPEG_FINAL_REVEAL=FOREMAN_ACCEPTED_R35
 AUDIO_RUNTIME_PROFILE_AUTHORITY=FOREMAN_ACCEPTED_R36
 AUDIO_PS2_EXECUTION_BINDING=FOREMAN_ACCEPTED_R37
 AUDIO_SESSION_COMPLETION_PUBLICATION=FOREMAN_ACCEPTED_R38
-PI_AUDIO_PCM_PRODUCER=RECONSTRUCTION_ACTIVE_R39
-AUDIO_APPLICATION_COMPOSITION=DEPENDENCY_QUEUED_AFTER_R39
+PI_AUDIO_PCM_PRODUCER=FOREMAN_ACCEPTED_R39
+AUDIO_DEFERRED_INITIAL_CREDIT_ACTIVATION=RECONSTRUCTION_ACTIVE_R40
+AUDIO_APPLICATION_COMPOSITION=DEPENDENCY_QUEUED_AFTER_R40
 AUTO_RECALIBRATION_AFTER_RETIREMENT=DEFERRED_OPTIONAL_POLICY
 CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
@@ -3435,9 +3437,74 @@ Exact observed gap:
 This is a dependency of final A006 AUDIO composition, not a reason to put Pi
 capture policy inside PS2 Application or Transport.
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R39 clean Pi AUDIO PCM producer authority
 
 PACKET_ID=A002-PI-AUDIO-PCM-PRODUCER-R39
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0081
+ASSIGNING_FOREMAN_STATE_COMMIT=3f6e6ea3e93bfcc47b8d2ae35bb6dab09e6ceda3
+ASSIGNING_FOREMAN_LOG_COMMIT=88d5d86717e516e4588579d05c7bea7af6f79e54
+RECONSTRUCTION_STARTING_COMMIT=88d5d86717e516e4588579d05c7bea7af6f79e54
+R39_FINAL_SOURCE_COMMIT=66b44a2e68db99b511504e998e13def4a6acb7cf
+R39_RECONSTRUCTION_LOG_COMMIT=863328cdfbf6caa6677f02608f6e759aafc32131
+R39_PRE_LOG_COMMIT_COUNT=9
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260926T182820-0400__reconstruction__a002-config-audio-clock__interactive.md`
+
+Independent Foreman disposition:
+
+A002-R39-C1=MET
+A002-R39-C2=MET
+A002-R39-C3=MET
+A002-R39-C4=MET
+A002-R39-C5=MET
+A002-R39-C6=MET
+A002-R39-C7=MET
+A002-R39-C8=MET
+A002-R39-C9=MET
+A002-R39-C10=MET
+A002-R39-C11=MET
+A002-R39-C12=MET
+
+R39_SOURCE_COMPLETE=YES
+R39_FOREMAN_ACCEPTED=YES
+R39_HOST_TESTED=YES
+R39_PROJECT_CHECK=PASS
+R39_STRICT_DICTIONARIES=PASS
+R39_PS2_COMPILE=PASS
+R39_PS2_LINK=PASS
+R39_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R39_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36277134548_ATTEMPT_1
+R39_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36277245270_ATTEMPT_1
+R39_PS2_PT_LOAD_CHANGED=NO
+R39_INDEPENDENT_VALIDATION=NOT_RUN
+R39_OPERATOR_OBSERVED=NO
+R39_HARDWARE_QUALIFIED=NO
+R39_INHERITED_HARDWARE_PENDING=YES
+
+Exact linked identity remains R38:
+
+`ELF_PRISTINE_SHA256=3b8319a17aa57e50a75399b1eb4ac0c35e59168f2805a1d7d531bd68d92450c6`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=a5a048b8e96650bcce751c3899fb1491d7a41d5b7c2615e60e3cf4779f726313`
+`PT_LOAD_BYTES=550804`
+
+## Newly exposed AUDIO activation fence
+
+Current PS2 Transport startup sends selected AUDIO initial credit immediately
+whenever the AUDIO rider is enabled. Current R39 Pi factory construction starts
+capture immediately. That combination is unsafe for the current manually
+activated MPEG product because R26 is deliberately unarmed until first real MPEG
+presentation.
+
+Final A006 needs an explicit lower edge where AUDIO becomes live; it must not use
+queue occupancy, elapsed time or hidden Pi capture as that edge.
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A002-DEFERRED-AUDIO-CREDIT-ACTIVATION-R40
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a002-config-audio-clock
@@ -3445,191 +3512,166 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0081
+BASED_ON_FOREMAN_STATE_REVISION=0082
 BASED_ON_ACCEPTED_R36_SOURCE=a5528b08fa48382545ee9e325c5f103b4e38c0b9
-BASED_ON_ACCEPTED_R38_SOURCE=9834277d61b1f8dd6ed8c47923cb328e414ba08d
-BASED_ON_A002_AUDIT=docs/ledge/LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md
-BASED_ON_A006_AUDIT=docs/ledge/LEDGE_AUDIT_A006_ORCHESTRATION_SHUTDOWN.md
-BASED_ON_H1_PCM_PRODUCER=experiments/media-harness-h1/h1_mux_server.py
-ORDINARY_PI_AUDIO_ACTIVATION=DEFERRED
-PS2_AUDIO_APPLICATION_COMPOSITION=DEFERRED
-TRANSPORT_AUDIO_PS2_MECHANISM=UNCHANGED
+BASED_ON_ACCEPTED_R39_SOURCE=66b44a2e68db99b511504e998e13def4a6acb7cf
+BASED_ON_ACCEPTED_R26_COMMON_CLOCK=YES
+AUDIO_APPLICATION_COMPOSITION=DEFERRED
+ORDINARY_PI_AUDIO_FACTORY_ACTIVATION=DEFERRED
+AUDIO_START_POLICY=DEFERRED_TO_A006
 WIRE_VERSION=UNCHANGED
-AUTO_RECALIBRATION=DEFERRED_OPTIONAL_POLICY
+R36_SELECTED_INITIAL_CREDIT=UNCHANGED
 
 ### Objective
 
-Reconstruct the clean Raspberry Pi A002 PCM producer/rider owner required by the
-already-accepted PS2 Transport/AUDIO consumer stack.
+Create one exact lower AUDIO activation edge without changing selected values or
+ordinary product policy.
 
-R39 must create a session-scoped Pi AUDIO owner that:
+PS2 Transport may allocate the selected AUDIO queue/rendezvous resources when an
+AUDIO-capable session runtime opens, but it must remain DORMANT and send **no**
+channel-2 initial CREDIT until an explicit caller invokes a new AUDIO activation
+seam on the exact current Transport access ticket.
 
-- captures the selected 48-kHz signed-16 stereo default-sink monitor;
-- obeys exact PS2 channel-2 CREDIT;
-- emits only aligned channel-2 DATA through WireServer's sole physical send and
-  global sequence owner;
-- preserves bounded producer/process ownership and fail-closed cleanup.
+On the Pi, an injected AUDIO factory must remain lazy. The first valid channel-2
+CREDIT for the accepted Wire Session creates the exact R39 owner, binds it to
+that session and applies that CREDIT exactly once. No AUDIO capture process may
+exist before that activation CREDIT.
 
-The owner remains optional/injected. R39 must not yet enable it from ordinary
-`pi/wire_runtime.py`, and it must not modify PS2 Application AUDIO policy.
-
-### Selected Pi projection
-
-Use `src/config/audio_runtime_profile.json` as the sole selected numeric AUDIO
-authority and generate/check a narrow Pi projection rather than copying numbers
-into Pi source.
-
-The Pi producer projection needs only:
-
-- channel window = 524288 bytes;
-- PCM rate = 48000 Hz;
-- channels = 2;
-- bits/sample = 16;
-- PCM frame alignment = 4 bytes.
-
-The Wire maximum payload remains the existing protocol-owned 8192 bytes.
-
-Do not create an independent user-visible Pi AUDIO tuning profile. A local
-producer spool, if implementation requires one, must be bounded and must not
-exceed the selected 524288-byte channel window. Direct pipe backpressure is also
-acceptable and requires no invented host-buffer tuning field.
+R40 does not decide when Application will call the activation seam.
 
 ### Required behavior
 
-1. **Clean Pi protocol vocabulary gains AUDIO only.** Add channel-2 AUDIO
-   constant/helpers for exact CREDIT decode/classification and DATA encoding.
-   Nonzero AUDIO DATA must preserve the existing Wire header/version/sequence
-   contract and never exceed the existing maximum payload.
-2. **PCM framing is exact.** Every emitted payload is nonempty and a multiple of
-   four bytes for selected signed-16 stereo PCM. Credit smaller than one frame
-   cannot authorize emission. No byte padding or silent truncation of already
-   admitted samples is allowed.
-3. **Selected values have one source.** Generate/check the narrow Pi AUDIO
-   projection from R36's canonical JSON. Runtime code contains no duplicated
-   48000/2/16/524288 tuning literals except protocol-derived frame arithmetic.
-4. **Capture target is owner-correct.** Discover the PipeWire default sink's
-   `node.name` through `wpctl inspect @DEFAULT_AUDIO_SINK@` and capture its
-   `.monitor` with `pw-record` using the selected rate/channels and signed
-   16-bit format. Failure to discover or launch is a real AUDIO-owner failure.
-5. **One exact session owner.** The AUDIO producer object belongs to one accepted
-   Wire Session, owns its capture process/reader state, credit and any bounded
-   local spool, and cannot be reused across session IDs.
-6. **Credit is the only DATA admission authority.** PS2 channel-2 CREDIT grows a
-   bounded credit balance no larger than the selected channel window. Emission
-   never exceeds credit, available complete PCM frames or Wire maximum payload;
-   exact sent bytes consume exact credit once.
-7. **WireServer remains sole physical I/O/sequence owner.** The AUDIO owner never
-   calls the PS2 socket directly. WireServer accepts AUDIO CREDIT into the
-   injected owner and serializes AUDIO DATA using its ordinary global
-   `next_send_sequence` path alongside RFB/MPEG.
-8. **Producer activity integrates without polling sleeps.** AUDIO data-ready/
-   terminal state must wake or participate in WireServer's existing readiness
-   loop. Do not add a blind millisecond scheduler or background socket writer.
-9. **Unexpected capture EOF/error is failure, not finite success.** Ordinary
-   `pw-record` EOF, reader failure or malformed frame tail while the Wire
-   Session remains active must make the AUDIO owner/Wire session fail closed.
-   It must not emit the zero-length producer-done marker as a recovery trick.
-10. **Session cleanup proves local producer dormancy.** Wire retirement asks the
-    AUDIO owner to stop its capture process and any reader thread, then proves
-    actual process/thread termination before owner state is reusable/discarded.
-    A bounded wait may trigger terminate/kill escalation but timeout alone can
-    never mean success.
-11. **Producer-done representation remains explicit and unused by accident.**
-    Preserve the existing PS2 semantic that zero-length channel-2 DATA means
-    producer done; provide a protocol helper/test if useful, but R39 ordinary
-    unexpected EOF/cleanup must not send it. Final product policy for any
-    explicit in-session finite AUDIO end remains a later Application/composition
-    decision.
-12. **No ordinary activation yet.** `pi/wire_runtime.py` must continue building
-    the ordinary product server without an AUDIO factory after R39. PS2 source,
-    Transport AUDIO mechanism and Application behavior remain unchanged. All
-    canonical Pi/host/project/dictionary and PS2 compile/link/reproducibility
-    gates must remain green.
+1. **AUDIO runtime opens dormant.** AUDIO queue/semaphore/storage allocation and
+   selected config validation remain part of Transport session open, but receiver
+   startup no longer sends AUDIO initial CREDIT automatically.
+2. **RFB/MPEG startup behavior is unchanged.** RFB and MPEG selected initial
+   credits retain their current receiver-start semantics. R40 must not create a
+   generic rider activation framework.
+3. **One explicit Transport AUDIO activation seam.** Add a narrow public
+   ticket-scoped operation, e.g. `pstvnc_transport_audio_activate()`, that
+   publishes the already-stored selected AUDIO initial-credit amount through the
+   existing sole outbound Transport owner.
+4. **Activation is one-way and exact.** A DORMANT AUDIO rider may cross to
+   ACTIVATING/ACTIVE once. Duplicate activation, stale ticket, disabled AUDIO,
+   terminal Transport or contradictory state is rejected without a second
+   CREDIT.
+5. **No inbound AUDIO before activation.** Nonzero channel-2 DATA and the
+   zero-length AUDIO producer-done marker received while AUDIO is still DORMANT
+   are protocol failure. Queue capacity alone is never permission to admit PCM.
+6. **Activation publication is race-safe.** Transport must publish an
+   ACTIVATING admission fact before the initial CREDIT can physically leave, so
+   immediate credit-driven Pi DATA cannot race a still-DORMANT receiver check.
+   Successful CREDIT submission closes to ACTIVE. If submission fails, Transport
+   becomes terminal; ACTIVATING state is never recycled into a later attempt.
+7. **Consumer seams require activated ownership.** AUDIO read/status/activity
+   consumption must not silently operate on a merely allocated DORMANT rider.
+   Pre-activation calls reject/fail closed rather than waiting indefinitely or
+   treating an empty dormant queue as producer progress.
+8. **Dormant teardown is clean.** Session abort/close before AUDIO activation
+   reclaims the allocated but never-activated AUDIO resources without requiring
+   producer-done, capture state, timeout or fabricated completion.
+9. **Pi AUDIO factory becomes lazy.** `WireServer` may be configured with an
+   AUDIO factory, but accepted Wire establishment alone never invokes it.
+   The first valid channel-2 CREDIT invokes the factory exactly once with the
+   current nonzero session ID.
+10. **First CREDIT is lossless across owner creation.** After successful lazy
+    owner creation/attachment, the same decoded CREDIT amount is applied exactly
+    once. Factory/attachment/credit failure fails the session and closes any
+    created owner with truthful retirement proof.
+11. **No capture before activation; one owner afterward.** Sessions that end
+    before AUDIO activation create no `pw-record` process/thread. Subsequent
+    channel-2 CREDIT goes only to the already-created exact-session R39 owner;
+    it never recreates or replaces that owner.
+12. **No ordinary activation yet.** `pi/wire_runtime.py` still injects no AUDIO
+    factory, `src/app*` does not open/activate AUDIO, R36 values remain exact,
+    and Wire version/bytes gain no new frame kind. Canonical host/project/
+    strict-dictionary/pinned-PS2 compile/link/current-source reproducibility
+    close green.
 
 ### Required deterministic evidence
 
 Focused tests must prove at minimum:
 
-- selected Pi profile projection exactly matches 524288/48000/2/16 and derives
-  4-byte PCM frame alignment;
-- stale/generated Pi AUDIO projection is rejected by canonical profile checks;
-- default-sink monitor discovery accepts the qualified `node.name` form and
-  rejects missing/malformed output;
-- the exact `pw-record` command uses monitor target, 48000 Hz, s16, two
-  channels and stdout;
-- zero credit and 1-3 bytes of credit cannot emit;
-- emission is <=8192, <=credit, <=available complete frames and 4-byte aligned;
-- exact emission decrements credit once and global Wire sequence once;
-- credit overflow beyond 524288 is rejected;
-- AUDIO CREDIT on a server with no injected AUDIO owner is unsupported/fails
-  closed rather than being silently discarded;
-- RFB and MPEG rider dispatch/emission remain unchanged when an AUDIO owner is
-  also injected;
-- capture launch/read/EOF failure becomes exact owner/Wire failure and never
-  sends zero-length AUDIO DATA;
-- session close proves producer/process/thread retirement; failed proof returns
-  failure and never claims clean reuse;
-- ordinary `build_product_wire_server()` still injects no AUDIO owner/factory
-  in R39;
-- existing Pi Wire/RFB/MPEG tests plus all R36-R38/A002 regressions stay green;
-- PS2 linked identity remains exactly R38 if no PS2 loadable source changes.
+- Transport open-with-AUDIO allocates AUDIO but sends no initial channel-2
+  CREDIT at receiver startup;
+- RFB and MPEG startup credits are byte-for-byte unchanged;
+- first exact AUDIO activation emits precisely the configured initial credit
+  once through the sole outbound owner;
+- duplicate activation emits nothing and is rejected;
+- stale access, disabled AUDIO and terminal runtime activation are rejected;
+- channel-2 DATA or zero-length producer-done before activation makes the Wire
+  runtime fail;
+- an immediate inbound DATA frame after the activation CREDIT is not rejected by
+  a DORMANT-state race;
+- pre-activation AUDIO read/status/activity seams reject rather than block;
+- abort/close of an unactivated AUDIO-capable runtime needs no producer marker
+  and releases cleanly;
+- Pi WireServer with an AUDIO factory performs zero factory/capture calls at Q4
+  acceptance alone;
+- first valid AUDIO CREDIT creates exactly one R39 owner for the exact session,
+  applies the original credit once and preserves global Wire sequence;
+- factory/attach/add-credit failure retires any created owner and fails the
+  session;
+- a session closed before first AUDIO CREDIT creates no AUDIO owner;
+- later CREDIT reuses the same owner and cannot recreate it;
+- ordinary `build_product_wire_server()` remains AUDIO-disabled in R40;
+- existing R39 Pi producer tests and R36-R38/A001-A006 Transport/media
+  regressions remain green.
 
 ### Authorized source surface
 
-R39 may modify only the smallest justified subset of:
+R40 may modify only the smallest justified subset of:
 
-- new `pi/audio_*.py` producer/profile modules;
-- generated Pi AUDIO profile artifact sourced from
-  `src/config/audio_runtime_profile.json`;
-- `pi/wire_protocol.py` for channel-2 AUDIO framing helpers;
-- `pi/wire_server.py` for optional injected AUDIO rider ownership/dispatch;
-- the existing AUDIO profile generator only as needed to generate/check the Pi
-  projection from the same JSON;
-- focused Pi/profile/Wire tests;
-- canonical test/project/topology enrollment;
-- directly affected Pi/source dictionaries and process/lifecycle documentation.
+- `src/transport/runtime.c/.h`;
+- `src/transport/bridge.c/.h`;
+- focused Transport AUDIO tests/source-boundary tests;
+- `pi/wire_server.py` lazy AUDIO-factory lifecycle;
+- focused Pi Wire/R39 rider tests;
+- directly affected Transport/Pi dictionaries and lifecycle/topology docs;
+- canonical test/build enrollment if required.
 
-Do not modify absent an independently demonstrated prerequisite defect:
+Consume but do not modify absent an independently demonstrated prerequisite
+defect:
 
-- `pi/wire_runtime.py` ordinary product factory composition;
-- PS2 `src/app*`;
-- PS2 AUDIO session/playback/AUDSRV/R37 runtime;
-- Transport implementation;
+- `src/config/audio_runtime_profile.*`;
+- `src/audio/session.*`, playback, AUDSRV service and R37 runtime;
 - R26 media clock;
-- R36 selected JSON values;
-- MPEG/RFB/Input/UI/Display product behavior;
-- Wire/product compatibility version;
+- `src/app*`;
+- `pi/audio_pcm_producer.py`;
+- `pi/wire_runtime.py`;
+- Pi MPEG/RFB product owners;
+- Input/UI/Display/MPEG product source;
 - H1 forensic source.
 
-If a clean Pi capture owner cannot be integrated into the sole WireServer
-readiness/send loop without introducing a second PS2 socket writer or
-unbounded/unowned producer thread, return BLOCKED with the exact missing owner
-seam rather than bypassing Wire ownership.
+If the existing sole-I/O outbound rendezvous cannot make activation publication
+race-safe without a broader Transport change, return BLOCKED with the exact
+missing atomic owner seam. Do not solve it with delay, sleep, polling count or a
+new Wire control frame.
 
 ### Explicit non-goals
 
-R39 does not:
+R40 does not:
 
-- enable AUDIO in ordinary `pi/wire_runtime.py`;
-- open the PS2 Transport with AUDIO from Application;
-- initialize/start the PS2 AUDIO session;
-- decide final AUDIO start timing relative to Wire admission or MPEG;
-- arm/change the media clock;
-- send normal producer-done during unexpected EOF/session cleanup;
-- change Pi MPEG or RFB product policy;
+- choose the final Application AUDIO start moment;
+- start an AUDIO session on PS2;
+- enable ordinary Pi AUDIO factory composition;
+- modify selected AUDIO values;
+- arm/reset the media clock;
+- add a new Wire frame/version;
+- couple AUDIO activation automatically to MPEG inside Transport or Pi;
+- implement producer-done policy;
 - add automatic MPEG recalibration;
 - claim independent Validation/operator observation/hardware qualification.
 
 ### Required checks before handoff
 
-Run focused Pi AUDIO producer/protocol/server/profile tests plus all current Pi
-Wire/RFB/MPEG product tests; existing A002/R26/R36/R37/R38 host regressions;
-canonical project check; complete strict dictionaries; pinned PS2 compile/link
-and current-source reproducibility.
+Run focused Transport activation and lazy Pi-factory tests; R39 producer/Wire
+tests; existing A001 Transport, A002 AUDIO, R26, R36-R38 and MPEG/RFB regression
+sets; canonical host tests; project check; complete strict dictionaries; pinned
+PS2 compile/link and current-source reproducibility.
 
-If PS2 loadable bytes are unchanged, record exact identity equality with R38.
-If they unexpectedly change, stop and explain the changed loadable source before
-claiming packet completion.
+Record the new ELF/PT_LOAD identity because Transport product source is expected
+to change. Classify it hardware-pending.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` revision 0007 using:
@@ -3640,19 +3682,19 @@ At shift end emit exactly one immutable Reconstruction record under
 
 Then stop and return the baton.
 
-FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_PI_AUDIO_WIRE_OWNER_SEAM
-STRETCH=NONE__DO_NOT_ENTER_ORDINARY_PI_OR_PS2_AUDIO_ACTIVATION
+FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_RACE_SAFE_AUDIO_ACTIVATION_OWNER_CONTRACT
+STRETCH=NONE__DO_NOT_ENTER_A006_APPLICATION_AUDIO_COMPOSITION
 
 ## Current hardware debt
 
-Newest fully Foreman-accepted source/build identity is R38:
+Newest fully Foreman-accepted PS2 source/build identity remains R38:
 
 `ELF_PRISTINE_SHA256=3b8319a17aa57e50a75399b1eb4ac0c35e59168f2805a1d7d531bd68d92450c6`
 `PT_LOAD_SEGMENTS=1`
 `PT_LOAD_SHA256=a5a048b8e96650bcce751c3899fb1491d7a41d5b7c2615e60e3cf4779f726313`
 `PT_LOAD_BYTES=550804`
 
-This exact image is reproducible and Foreman-accepted at source/product-contract
-level, but remains physically unqualified.
+R39 is Pi-only and byte-identical to that PS2 image. The image remains
+physically unqualified.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
