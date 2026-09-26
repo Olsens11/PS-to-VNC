@@ -48,15 +48,18 @@ typedef struct fake_thread {
     int thread_id;
     int create_calls;
     int start_calls;
+    int poll_calls;
     int join_calls;
     int destroy_calls;
     int fail_create;
     int fail_start;
+    int fail_poll;
     int fail_join;
     int fail_destroy;
     int run_on_start;
     int run_on_join;
     int entry_ran;
+    int completion_published;
 } fake_thread_t;
 
 typedef struct fake_sync {
@@ -227,6 +230,22 @@ static int fake_thread_start(void *context, int thread_id)
         return -1;
     if (thread->run_on_start)
         fake_thread_run_entry(thread);
+    return 0;
+}
+
+static int fake_thread_poll_completion(
+    void *context,
+    int thread_id,
+    int *completed)
+{
+    fake_thread_t *thread = (fake_thread_t *)context;
+
+    thread->poll_calls += 1;
+    TEST_CHECK(thread_id == thread->thread_id);
+    if (thread->fail_poll)
+        return -1;
+
+    *completed = thread->entry_ran;
     return 0;
 }
 
@@ -514,6 +533,7 @@ static void fixture_init(fixture_t *fixture)
     fixture->memory_ops.context = &fixture->memory;
     fixture->thread_ops.create = fake_thread_create;
     fixture->thread_ops.start = fake_thread_start;
+    fixture->thread_ops.poll_completion = fake_thread_poll_completion;
     fixture->thread_ops.join = fake_thread_join;
     fixture->thread_ops.destroy = fake_thread_destroy;
     fixture->thread_ops.context = &fixture->thread;
@@ -547,6 +567,19 @@ static pstvnc_audio_session_result_t fixture_start(fixture_t *fixture)
         &fixture->sync_ops);
 }
 
+static pstvnc_audio_session_completion_state_t fixture_poll(
+    fixture_t *fixture)
+{
+    pstvnc_audio_session_completion_state_t state =
+        PSTVNC_AUDIO_SESSION_COMPLETION_PENDING;
+
+    TEST_CHECK(
+        pstvnc_audio_session_poll(
+            &fixture->session,
+            &state) == PSTVNC_AUDIO_SESSION_OK);
+    return state;
+}
+
 static pstvnc_audio_session_outcome_t fixture_join_outcome(fixture_t *fixture)
 {
     pstvnc_audio_session_outcome_t outcome;
@@ -559,6 +592,172 @@ static pstvnc_audio_session_outcome_t fixture_join_outcome(fixture_t *fixture)
 static void fixture_release(fixture_t *fixture)
 {
     TEST_CHECK(pstvnc_audio_session_release(&fixture->session) == PSTVNC_AUDIO_SESSION_OK);
+}
+
+static void test_nonblocking_completion_poll(void)
+{
+    fixture_t fixture;
+    pstvnc_audio_session_completion_state_t state =
+        PSTVNC_AUDIO_SESSION_COMPLETION_DONE;
+    pstvnc_audio_session_outcome_t outcome;
+
+    fixture_init(&fixture);
+    fixture.thread.run_on_start = 0;
+    fixture.thread.run_on_join = 0;
+
+    TEST_CHECK(fixture_start(&fixture) == PSTVNC_AUDIO_SESSION_OK);
+
+    TEST_CHECK(
+        pstvnc_audio_session_poll(
+            &fixture.session,
+            &state) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(state == PSTVNC_AUDIO_SESSION_COMPLETION_PENDING);
+    TEST_CHECK(fixture.thread.poll_calls == 1);
+    TEST_CHECK(fixture.thread.join_calls == 0);
+    TEST_CHECK(g_time.delay_calls == 0);
+    TEST_CHECK(g_transport.snapshot_calls == 0);
+    TEST_CHECK(g_transport.status_calls == 0);
+
+    state = PSTVNC_AUDIO_SESSION_COMPLETION_DONE;
+    TEST_CHECK(
+        pstvnc_audio_session_poll(
+            &fixture.session,
+            &state) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(state == PSTVNC_AUDIO_SESSION_COMPLETION_PENDING);
+    TEST_CHECK(fixture.thread.poll_calls == 2);
+    TEST_CHECK(fixture.thread.join_calls == 0);
+    TEST_CHECK(g_time.delay_calls == 0);
+
+    fake_thread_run_entry(&fixture.thread);
+    TEST_CHECK(
+        fixture_poll(&fixture) ==
+        PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+
+    memset(&outcome, 0, sizeof(outcome));
+    TEST_CHECK(
+        pstvnc_audio_session_outcome(
+            &fixture.session,
+            &outcome) == PSTVNC_AUDIO_SESSION_NOT_FINISHED);
+
+    TEST_CHECK(
+        pstvnc_audio_session_join(
+            &fixture.session) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(
+        pstvnc_audio_session_outcome(
+            &fixture.session,
+            &outcome) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(outcome.kind == PSTVNC_AUDIO_SESSION_OUTCOME_PLAYBACK);
+
+    state = PSTVNC_AUDIO_SESSION_COMPLETION_PENDING;
+    TEST_CHECK(
+        pstvnc_audio_session_poll(
+            &fixture.session,
+            &state) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(state == PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+
+    fixture_release(&fixture);
+}
+
+static void test_completion_poll_error_and_partial_start(void)
+{
+    fixture_t fixture;
+    pstvnc_audio_session_completion_state_t state =
+        PSTVNC_AUDIO_SESSION_COMPLETION_DONE;
+
+    fixture_init(&fixture);
+    fixture.thread.run_on_start = 0;
+    TEST_CHECK(fixture_start(&fixture) == PSTVNC_AUDIO_SESSION_OK);
+
+    fixture.thread.fail_poll = 1;
+    TEST_CHECK(
+        pstvnc_audio_session_poll(
+            &fixture.session,
+            &state) == PSTVNC_AUDIO_SESSION_THREAD_STATUS_FAILED);
+    TEST_CHECK(state == PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+    TEST_CHECK(fixture.thread.join_calls == 0);
+
+    fixture.thread.fail_poll = 0;
+    fake_thread_run_entry(&fixture.thread);
+    TEST_CHECK(
+        fixture_poll(&fixture) ==
+        PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+    TEST_CHECK(
+        pstvnc_audio_session_join(
+            &fixture.session) == PSTVNC_AUDIO_SESSION_OK);
+    fixture_release(&fixture);
+
+    fixture_init(&fixture);
+    fixture.thread.fail_start = 1;
+    fixture.thread.fail_destroy = 1;
+    TEST_CHECK(
+        fixture_start(&fixture) ==
+        PSTVNC_AUDIO_SESSION_THREAD_START_FAILED);
+    TEST_CHECK(
+        pstvnc_audio_session_poll(
+            &fixture.session,
+            &state) == PSTVNC_AUDIO_SESSION_INVALID);
+    fixture.thread.fail_destroy = 0;
+    fixture_release(&fixture);
+
+    fixture_init(&fixture);
+    TEST_CHECK(
+        pstvnc_audio_session_poll(
+            &fixture.session,
+            &state) == PSTVNC_AUDIO_SESSION_INVALID);
+}
+
+static void test_terminal_worker_outcomes_publish_completion(void)
+{
+    fixture_t fixture;
+
+    fixture_init(&fixture);
+    g_transport.available_count = 0u;
+    g_transport.producer_done = 1;
+    TEST_CHECK(fixture_start(&fixture) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(fixture_poll(&fixture) == PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+    TEST_CHECK(fixture_join_outcome(&fixture).kind ==
+        PSTVNC_AUDIO_SESSION_OUTCOME_EMPTY);
+    fixture_release(&fixture);
+
+    fixture_init(&fixture);
+    TEST_CHECK(fixture_start(&fixture) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(fixture_poll(&fixture) == PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+    TEST_CHECK(fixture_join_outcome(&fixture).playback_result ==
+        PSTVNC_AUDIO_PLAYBACK_COMPLETE);
+    fixture_release(&fixture);
+
+    fixture_init(&fixture);
+    g_playback.result = PSTVNC_AUDIO_PLAYBACK_SERVICE_PLAY_FAILED;
+    TEST_CHECK(fixture_start(&fixture) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(fixture_poll(&fixture) == PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+    TEST_CHECK(fixture_join_outcome(&fixture).playback_result ==
+        PSTVNC_AUDIO_PLAYBACK_SERVICE_PLAY_FAILED);
+    fixture_release(&fixture);
+
+    fixture_init(&fixture);
+    g_transport.available_count = 1u;
+    g_time.stop_on_reservoir_call = 1;
+    TEST_CHECK(fixture_start(&fixture) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(fixture_poll(&fixture) == PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+    TEST_CHECK(fixture_join_outcome(&fixture).kind ==
+        PSTVNC_AUDIO_SESSION_OUTCOME_STOPPED);
+    fixture_release(&fixture);
+
+    fixture_init(&fixture);
+    g_transport.status_result = PSTVNC_TRANSPORT_CLOSED;
+    TEST_CHECK(fixture_start(&fixture) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(fixture_poll(&fixture) == PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+    TEST_CHECK(fixture_join_outcome(&fixture).kind ==
+        PSTVNC_AUDIO_SESSION_OUTCOME_TRANSPORT);
+    fixture_release(&fixture);
+
+    fixture_init(&fixture);
+    g_clock_forced_result = PSTVNC_MEDIA_CLOCK_SYNC_FAILED;
+    TEST_CHECK(fixture_start(&fixture) == PSTVNC_AUDIO_SESSION_OK);
+    TEST_CHECK(fixture_poll(&fixture) == PSTVNC_AUDIO_SESSION_COMPLETION_DONE);
+    TEST_CHECK(fixture_join_outcome(&fixture).kind ==
+        PSTVNC_AUDIO_SESSION_OUTCOME_CLOCK);
+    fixture_release(&fixture);
 }
 
 static void test_explicit_authority_and_reclaim_fence(void)
@@ -789,6 +988,9 @@ static void test_zero_authority_rejected(void)
 
 int main(void)
 {
+    test_nonblocking_completion_poll();
+    test_completion_poll_error_and_partial_start();
+    test_terminal_worker_outcomes_publish_completion();
     test_explicit_authority_and_reclaim_fence();
     test_allocation_create_start_join_failures();
     test_reservoir_activity_short_final_and_empty();

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""R37 source/build boundary proof for the PS2 AUDIO execution binding."""
+"""R37/R38 source/build boundary proof for the PS2 AUDIO execution binding."""
 
 from pathlib import Path
 import re
@@ -23,6 +23,8 @@ for required in (
     "size_AUDSRV_irx",
     "CreateSema(",
     "WaitSema(",
+    "PollSema(",
+    "ReferSemaStatus(",
     "SignalSema(",
     "CreateThread(",
     "StartThread(",

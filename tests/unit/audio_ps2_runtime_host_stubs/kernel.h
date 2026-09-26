@@ -1,6 +1,13 @@
 #ifndef PSTVNC_AUDIO_PS2_RUNTIME_TEST_KERNEL_H
 #define PSTVNC_AUDIO_PS2_RUNTIME_TEST_KERNEL_H
-typedef struct ee_sema { int init_count; int max_count; int option; } ee_sema_t;
+typedef struct ee_sema {
+    int count;
+    int max_count;
+    int init_count;
+    int wait_threads;
+    unsigned int attr;
+    unsigned int option;
+} ee_sema_t;
 typedef struct ee_thread {
     void *func; void *stack; int stack_size; void *gp_reg;
     int initial_priority; int attr; int option;
@@ -12,7 +19,9 @@ extern char _gp;
 int CreateSema(ee_sema_t *semaphore);
 int DeleteSema(int semaphore_id);
 int WaitSema(int semaphore_id);
+int PollSema(int semaphore_id);
 int SignalSema(int semaphore_id);
+int ReferSemaStatus(int semaphore_id, ee_sema_t *semaphore);
 int CreateThread(ee_thread_t *thread);
 int StartThread(int thread_id, void *argument);
 int ReferThreadStatus(int thread_id, ee_thread_status_t *status);

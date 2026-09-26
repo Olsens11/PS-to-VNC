@@ -29,6 +29,10 @@ static int g_create_sema_fail_call;
 static int g_delete_sema_fail_id;
 static int g_wait_sema_calls;
 static int g_wait_sema_fail_once;
+static int g_poll_sema_calls;
+static int g_poll_sema_fail_once;
+static int g_sema_status_calls;
+static int g_sema_status_fail_once;
 static int g_delay_calls;
 static int g_delay_fail_once;
 
@@ -72,6 +76,10 @@ static void reset_fakes(void)
     g_delete_sema_fail_id = -1;
     g_wait_sema_calls = 0;
     g_wait_sema_fail_once = 0;
+    g_poll_sema_calls = 0;
+    g_poll_sema_fail_once = 0;
+    g_sema_status_calls = 0;
+    g_sema_status_fail_once = 0;
     g_delay_calls = 0;
     g_delay_fail_once = 0;
 
@@ -155,6 +163,46 @@ int WaitSema(int semaphore_id)
         !g_semas[semaphore_id].used || g_semas[semaphore_id].count <= 0)
         return -1;
     g_semas[semaphore_id].count--;
+    return 0;
+}
+
+int PollSema(int semaphore_id)
+{
+    g_poll_sema_calls++;
+
+    if (g_poll_sema_fail_once) {
+        g_poll_sema_fail_once = 0;
+        return -1;
+    }
+
+    if (semaphore_id <= 0 ||
+        semaphore_id >= TEST_MAX_SEMAS ||
+        !g_semas[semaphore_id].used ||
+        g_semas[semaphore_id].count <= 0)
+        return -1;
+
+    g_semas[semaphore_id].count--;
+    return 0;
+}
+
+int ReferSemaStatus(int semaphore_id, ee_sema_t *semaphore)
+{
+    g_sema_status_calls++;
+
+    if (g_sema_status_fail_once) {
+        g_sema_status_fail_once = 0;
+        return -1;
+    }
+
+    if (semaphore_id <= 0 ||
+        semaphore_id >= TEST_MAX_SEMAS ||
+        !g_semas[semaphore_id].used ||
+        semaphore == NULL)
+        return -1;
+
+    memset(semaphore, 0, sizeof(*semaphore));
+    semaphore->count = g_semas[semaphore_id].count;
+    semaphore->max_count = g_semas[semaphore_id].maximum;
     return 0;
 }
 
@@ -376,6 +424,7 @@ static void test_start_failure_cleanup_is_retryable(void)
     pstvnc_audio_session_sync_t sync;
     int thread_id = -1;
     int value = 0;
+    int completed = -1;
 
     reset_fakes();
     init_runtime(&runtime, &memory_ops, &thread_ops, &sync);
@@ -412,6 +461,7 @@ static void test_completion_dormancy_and_delete_retry(void)
     pstvnc_audio_session_sync_t sync;
     int thread_id = -1;
     int value = 0;
+    int completed = -1;
 
     reset_fakes();
     init_runtime(&runtime, &memory_ops, &thread_ops, &sync);
@@ -419,8 +469,21 @@ static void test_completion_dormancy_and_delete_retry(void)
     assert(thread_ops.create(thread_ops.context, worker_entry, &value,
         (void *)(uintptr_t)0x1000u, 16384u, 65, &thread_id) == 0);
 
-    g_auto_run_thread = 1;
     assert(thread_ops.start(thread_ops.context, thread_id) == 0);
+
+    assert(thread_ops.poll_completion(
+        thread_ops.context, thread_id, &completed) == 0);
+    assert(completed == 0);
+    completed = -1;
+    assert(thread_ops.poll_completion(
+        thread_ops.context, thread_id, &completed) == 0);
+    assert(completed == 0);
+    assert(g_wait_sema_calls == 0);
+    assert(g_poll_sema_calls == 0);
+    assert(g_delay_calls == 0);
+
+    g_auto_run_thread = 1;
+    assert(StartThread(thread_id, &runtime) == 0);
     assert(g_worker_calls == 1);
     assert(value == 1);
     assert(g_exit_thread_calls == 1);
@@ -449,6 +512,7 @@ static void test_completion_observation_survives_status_failure(void)
     pstvnc_audio_session_sync_t sync;
     int thread_id = -1;
     int value = 0;
+    int completed = -1;
     int wait_calls_after_failure;
 
     reset_fakes();
@@ -458,6 +522,27 @@ static void test_completion_observation_survives_status_failure(void)
         (void *)(uintptr_t)0x1000u, 16384u, 65, &thread_id) == 0);
     g_auto_run_thread = 1;
     assert(thread_ops.start(thread_ops.context, thread_id) == 0);
+
+    g_sema_status_fail_once = 1;
+    assert(thread_ops.poll_completion(
+        thread_ops.context, thread_id, &completed) == -1);
+    assert(runtime.completion_observed == 0);
+
+    g_poll_sema_fail_once = 1;
+    assert(thread_ops.poll_completion(
+        thread_ops.context, thread_id, &completed) == -1);
+    assert(runtime.completion_observed == 0);
+
+    assert(thread_ops.poll_completion(
+        thread_ops.context, thread_id, &completed) == 0);
+    assert(completed == 1);
+    assert(runtime.completion_observed == 1);
+
+    g_sema_status_fail_once = 1;
+    completed = 0;
+    assert(thread_ops.poll_completion(
+        thread_ops.context, thread_id, &completed) == 0);
+    assert(completed == 1);
 
     g_refer_fail_once = 1;
     assert(thread_ops.join(thread_ops.context, thread_id) == -1);
