@@ -52,6 +52,8 @@ typedef struct fake_thread {
     int start_calls;
     int join_calls;
     int destroy_calls;
+    int start_result;
+    int destroy_result;
     int ran;
 } fake_thread_t;
 
@@ -234,7 +236,7 @@ static int fake_thread_start(void *context, int thread_id)
         return -1;
 
     thread->start_calls += 1;
-    return 0;
+    return thread->start_result;
 }
 
 static int fake_thread_join(void *context, int thread_id)
@@ -261,7 +263,7 @@ static int fake_thread_destroy(void *context, int thread_id)
         return -1;
 
     thread->destroy_calls += 1;
-    return 0;
+    return thread->destroy_result;
 }
 
 static void fake_event_signal(void *context)
@@ -606,6 +608,8 @@ static void fixture_init(fixture_t *fixture)
 
     fixture->values.worker_stack_bytes = 4096u;
     fixture->values.worker_priority = 43;
+    fixture->thread.start_result = 0;
+    fixture->thread.destroy_result = 0;
 
     fixture->decoder_config.max_width = 32u;
     fixture->decoder_config.max_height = 16u;
@@ -884,8 +888,112 @@ static void test_later_failure_not_masked_by_earlier_frame(void)
     CHECK(outcome.decoder_release_result == PSTVNC_MPEG_DECODER_COMPLETE);
 }
 
+static void test_unstarted_partial_owner_reclaims_only_after_destroy_proof(void)
+{
+    fixture_t fixture;
+    void *retained_stack;
+    int retained_thread_id;
+
+    fixture_init(&fixture);
+    fixture.thread.start_result = -1;
+    fixture.thread.destroy_result = -1;
+
+    CHECK(pstvnc_mpeg_worker_start(
+        &fixture.worker,
+        TEST_GENERATION,
+        &fixture.values,
+        &fixture.decoder_config,
+        &fixture.decoder_memory_ops,
+        &fixture.decoder_sync_ops,
+        &fixture.platform_ops,
+        &fixture.worker_memory_ops,
+        &fixture.thread_ops,
+        &fixture.worker_sync_ops,
+        &fixture.event_ops) == PSTVNC_MPEG_WORKER_THREAD_START_FAILED);
+
+    CHECK(fixture.worker.initialized);
+    CHECK(fixture.worker.thread_created);
+    CHECK(!fixture.worker.thread_started);
+    CHECK(!fixture.worker.thread_joined);
+    CHECK(!fixture.worker.thread_destroyed);
+    CHECK(fixture.worker.worker_stack != NULL);
+    CHECK(fixture.worker.slot_state == PSTVNC_MPEG_WORKER_SLOT_EMPTY);
+    CHECK(fixture.worker.outcome.kind == PSTVNC_MPEG_WORKER_OUTCOME_NONE);
+    CHECK(fixture.thread.create_calls == 1);
+    CHECK(fixture.thread.start_calls == 1);
+    CHECK(fixture.thread.destroy_calls == 1);
+    CHECK(fixture.memory.release_calls == 0);
+
+    retained_stack = fixture.worker.worker_stack;
+    retained_thread_id = fixture.worker.thread_id;
+
+    CHECK(pstvnc_mpeg_worker_reclaim_unstarted(
+        &fixture.worker,
+        TEST_GENERATION + 1u) == PSTVNC_MPEG_WORKER_WRONG_GENERATION);
+    CHECK(fixture.thread.destroy_calls == 1);
+    CHECK(fixture.worker.worker_stack == retained_stack);
+    CHECK(fixture.worker.thread_id == retained_thread_id);
+
+    CHECK(pstvnc_mpeg_worker_release(
+        &fixture.worker,
+        TEST_GENERATION) == PSTVNC_MPEG_WORKER_NOT_JOINED);
+    CHECK(fixture.thread.destroy_calls == 1);
+    CHECK(fixture.memory.release_calls == 0);
+
+    CHECK(pstvnc_mpeg_worker_reclaim_unstarted(
+        &fixture.worker,
+        TEST_GENERATION) == PSTVNC_MPEG_WORKER_THREAD_DESTROY_FAILED);
+    CHECK(fixture.thread.destroy_calls == 2);
+    CHECK(fixture.worker.initialized);
+    CHECK(fixture.worker.thread_created);
+    CHECK(!fixture.worker.thread_started);
+    CHECK(fixture.worker.worker_stack == retained_stack);
+    CHECK(fixture.worker.thread_id == retained_thread_id);
+    CHECK(fixture.memory.release_calls == 0);
+
+    fixture.thread.destroy_result = 0;
+
+    CHECK(pstvnc_mpeg_worker_reclaim_unstarted(
+        &fixture.worker,
+        TEST_GENERATION) == PSTVNC_MPEG_WORKER_OK);
+    CHECK(fixture.thread.destroy_calls == 3);
+    CHECK(!fixture.worker.initialized);
+    CHECK(!fixture.worker.thread_created);
+    CHECK(!fixture.worker.thread_started);
+    CHECK(fixture.worker.thread_destroyed);
+    CHECK(fixture.worker.thread_id == -1);
+    CHECK(fixture.worker.worker_stack == NULL);
+    CHECK(fixture.worker.outcome.kind == PSTVNC_MPEG_WORKER_OUTCOME_NONE);
+    CHECK(fixture.thread.join_calls == 0);
+    CHECK(fixture.memory.release_calls == 1);
+
+    CHECK(pstvnc_mpeg_worker_reclaim_unstarted(
+        &fixture.worker,
+        TEST_GENERATION) == PSTVNC_MPEG_WORKER_INVALID);
+    CHECK(fixture.thread.destroy_calls == 3);
+    CHECK(fixture.memory.release_calls == 1);
+}
+
+static void test_unstarted_reclaim_rejects_normal_started_worker(void)
+{
+    fixture_t fixture;
+
+    fixture_init(&fixture);
+    fixture_start(&fixture);
+
+    CHECK(pstvnc_mpeg_worker_reclaim_unstarted(
+        &fixture.worker,
+        TEST_GENERATION) == PSTVNC_MPEG_WORKER_INVALID);
+    CHECK(fixture.thread.destroy_calls == 0);
+    CHECK(fixture.memory.release_calls == 1);
+    CHECK(fixture.worker.initialized);
+    CHECK(fixture.worker.thread_started);
+}
+
 int main(void)
 {
+    test_unstarted_partial_owner_reclaims_only_after_destroy_proof();
+    test_unstarted_reclaim_rejects_normal_started_worker();
     test_one_slot_no_run_ahead_and_lost_wake();
     test_stop_discards_available_frame();
     test_stop_claimed_waits_for_exact_release();
