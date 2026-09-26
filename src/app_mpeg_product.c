@@ -212,6 +212,37 @@ int pstvnc_app_mpeg_product_has_started_run(
         product->run.start_invoked;
 }
 
+int pstvnc_app_mpeg_product_requires_session_abort(
+    const pstvnc_app_mpeg_product_t *product)
+{
+    pstvnc_app_mpeg_run_status_t status;
+
+    if (product == NULL || !product->initialized)
+        return 0;
+
+    /*
+     * Keep live-service admission and abnormal teardown ownership distinct.
+     * A healthy started run needs R33 if the enclosing session dies even before
+     * it has faulted. Once any accepted run failure/abort path marks teardown
+     * required, the nonzero generation is the persistent public owner fact that
+     * survives partial local reclamation. Clean R21 rollback clears the current
+     * generation and therefore never creates two-phase-abort debt.
+     */
+    memset(&status, 0, sizeof(status));
+    if (pstvnc_app_mpeg_run_status(
+            &product->run,
+            &status) != PSTVNC_APP_MPEG_RUN_OK)
+        return 0;
+
+    if (status.current_generation == 0u)
+        return 0;
+
+    if (pstvnc_app_mpeg_product_has_started_run(product))
+        return 1;
+
+    return status.session_teardown_required != 0;
+}
+
 pstvnc_app_mpeg_product_result_t
 pstvnc_app_mpeg_product_service_session_abort(
     pstvnc_app_mpeg_product_t *product,
@@ -220,7 +251,7 @@ pstvnc_app_mpeg_product_service_session_abort(
     if (product == NULL ||
         abort_ready == NULL ||
         !product->initialized ||
-        !pstvnc_app_mpeg_product_has_started_run(product))
+        !pstvnc_app_mpeg_product_requires_session_abort(product))
         return PSTVNC_APP_MPEG_PRODUCT_INVALID;
 
     *abort_ready = 0;
