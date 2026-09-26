@@ -2,9 +2,10 @@
  * File synopsis:
  * Implements R34's ordinary MPEG product composition using only accepted
  * Application/lower-owner public seams. It owns semantic routing and
- * cross-domain sequencing, not gesture recognition, calibration mechanics,
- * generation identity, decoding, presentation mechanisms, Transport validity,
- * or normal retirement/reveal.
+ * cross-domain sequencing, including the distinction between R22 live service
+ * and R33/R34P abnormal teardown ownership. It does not own gesture
+ * recognition, calibration mechanics, generation identity, decoding,
+ * presentation mechanisms, Transport validity, or normal retirement/reveal.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
  * A006-ORDINARY-MPEG-ACTION-ACTIVATION-R34.
