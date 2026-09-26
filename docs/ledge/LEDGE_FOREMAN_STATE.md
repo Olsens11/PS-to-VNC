@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0077
-RECORDED_AT=2026-09-26T14:28:09-04:00
+STATE_REVISION=0078
+RECORDED_AT=2026-09-26T15:18:52-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0076
-SUPERSEDES_FOREMAN_STATE_REVISION=0076
+BASED_ON_FOREMAN_STATE_REVISION=0077
+SUPERSEDES_FOREMAN_STATE_REVISION=0077
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,77 +14,86 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0077 independently accepts
-`A003-MPEG-PARTIAL-RETIREMENT-SESSION-DORMANCY-R35P` at final pre-log source
-authority `6fc0c755d4a3d51a8b5f87ad12c553b2e74b7385` and consumes immutable
-Reconstruction closeout `f6b20fa7aaf3dddb1e4d858ac24021af6aa2272f`.
+Revision 0078 independently accepts
+`A006-ORDINARY-MPEG-ACTION-RETIRE-RESTORE-REVEAL-R35` at final pre-log source
+authority `e8e69c4f25ea832d2c6fb94139631eaafbc8a3e7` and consumes immutable
+Reconstruction closeout `9bf3bd373e96a1a5928899880822f72879396fdf`.
 
-The returned range is exactly nine commits ahead of assigning Foreman log
-`ec6280390c1ec4afc5cf9096b2bc7cd0fb51c8f8`, zero behind, and is confined to
-the authorized Application MPEG run/session-abort, focused-test and dictionary
-surface. Ordinary `src/app.c`, `src/app_mpeg_product.*`, MPEG worker/runtime,
-Transport, Input/UI, RFB/Display/compositor, media-clock, Configuration/
-Management, Pi, AUDIO and forensic product source were not changed.
+The returned R35 range is exactly eleven commits ahead of assigning Foreman log
+`ca9ebc585e61c0e2417bc98703096e3bddbf3f69`, zero behind, and is confined to
+the authorized ordinary Application/product composition, focused tests and
+dictionary reconciliation. Accepted R21-R24/R33/R34P/R35P run-owner
+implementation, MPEG worker/runtime, Transport, RFB flow/session/framebuffer,
+Display/compositor, Input/UI, media-clock, Configuration/Management, Pi, AUDIO
+and forensic product source were not modified.
 
-Independent source review accepts all twelve R35P requirements. Accepted R23
-now retains the exact successful natural terminal worker outcome before P7 and
-worker-owner reclamation, so a later enclosing-session abort never has to query
-released state merely to reconstruct already-proven evidence.
+Independent review accepts all twelve R35 requirements. The existing semantic
+`PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION` now has state-dependent Application
+policy without any physical gesture/context reinterpretation: exact IDLE keeps
+R34 P9 begin, exact MPEG_OWNED enters accepted R23 once, and
+WAIT_FIRST_FRAME/RETIRING/RESTORE_PENDING/REVEAL_PENDING consume the already-
+published action without duplicate RETIRE, new generation or automatic
+calibration.
 
-Abnormal session teardown now admits only concrete monotonic R23/R24 partial
-failure prefixes. Full-live R33 remains unchanged in meaning. A natural R23
-worker that already finished can retry join without an abnormal stop; an
-already-joined worker can retry outcome/release without duplicate join; a
-worker-release prefix reuses the retained natural completed outcome; runtime-only
-residual ownership retries only runtime release; a Transport-run-only finalize
-failure does not replay normal finalize; and post-finalize nonretryable
-restore/reveal contradictions can become SESSION_ABORT_READY after exact
-retained-session proof with no fabricated execution owner.
+R22 and R23 service are distinct. RETIRING reads the exact current session
+media-clock tick and services only accepted R23. Once R23C thaws P2, the
+Application re-enters only the existing R19/P2 request path; no private FULL-
+request shortcut or debt mutation was added.
 
-Retryable R24 PLATFORM_FAILED and SYNC_INVALID remain same-session
-REVEAL_PENDING outcomes with `session_teardown_required=0` and are not admitted
-as abnormal-retirement failures. The abnormal path still emits no new RETIRE,
-RETIRE-completion take, producer-done, Transport MPEG finalize, P2 thaw, P3
-seal or compositor reveal.
+R24 graphics freshness is composed correctly. A completed response while
+RESTORE_PENDING crosses the existing
+`present_current_application_frame()` upload boundary before the restoration
+marker is attempted. RESTORE_PENDING forces that upload even when the
+authoritative FULL response is pixel-identical, so protocol freshness is never
+mistaken for physical presentation proof. A pre-thaw outstanding response can
+be presented yet still fails R24 freshness until the genuine P2-owned FULL
+request completes and is presented.
 
-Exact final-source GitHub Actions run `36261728269`, attempt 1, checked out
-`6fc0c755d4a3d51a8b5f87ad12c553b2e74b7385` on
+R24 PLATFORM_FAILED and SYNC_INVALID remain retryable same-session
+REVEAL_PENDING outcomes. Other R23/R24 failures become ordinary product session
+failure and retain nonzero run/teardown authority for the accepted R35P/R33
+two-phase abnormal containment path. Successful reveal returns the run to
+IDLE/P3 RFB_ONLY with P2 thawed and does not automatically reopen P9.
+
+Exact final-source GitHub Actions run `36264322641`, attempt 1, checked out
+`e8e69c4f25ea832d2c6fb94139631eaafbc8a3e7` on
 `ledge/h1-all-guns` and passed host-unit, project-check, strict dictionaries,
 pinned PS2 compile, linked build and current-source reproducibility. Exact
-immutable-log-head run `36261850645`, attempt 1, also passed the complete
+immutable-log-head run `36264443125`, attempt 1, also passed the complete
 canonical gate set.
 
-The accepted R35P linked identity is:
+The accepted R35 linked identity is:
 
-`ELF_PRISTINE_SHA256=df4b86c726417677575b6a964d2b6646836d21622bd09cac7d36815d12615915`
+`ELF_PRISTINE_SHA256=a974cd2d463809ed9e5dea4c0538a163a378abee096b46713940e18e6e02850a`
 
 `PT_LOAD_SEGMENTS=1`
 
-`PT_LOAD_SHA256=39e08e49a5d6aaf32f12d134305a4f9925f7f419d75c4b15e6dde9ad17449fc9`
+`PT_LOAD_SHA256=908f31b526fc51d2d819b9ac092e218b048c475576568ca26cfe13a3fc84bb66`
 
-`PT_LOAD_BYTES=526612`
+`PT_LOAD_BYTES=527380`
 
 These bytes become the newest fully Foreman-accepted source/build identity and
 remain hardware-pending. No independent Validation, operator observation or
 physical qualification is inferred from earlier images.
 
-With R35P accepted, ordinary same-session retirement/restoration/reveal is now
-dependency-ready. The next packet composes only already-accepted R23/R23C/R24
-through the existing Application product coordinator and ordinary RFB
-presentation loop.
+With normal MPEG activation and retirement/restoration/reveal now product-
+composed, the next dependency is not optional automatic recalibration policy.
+A007's semantic closure states that audio consumption remains an A002/A006
+product responsibility, while automatic one-action recalibration is not needed
+to close the audited product responsibility set.
 
-One semantic constraint is explicit: the configured binding context is
-preserved. A DESKTOP-context `MPEG_CALIBRATION` binding remains ineligible
-while MPEG owns presentation. Only a semantic action already admitted by Input
-—for example an explicitly configured GLOBAL binding—may request normal
-retirement while the exact run is MPEG_OWNED. Application still receives no
-physical chord/mask/timing authority.
+Current clean AUDIO already has the accepted synchronous playback core, AUDSRV
+service wrapper and session worker/lifecycle owner, but no selected production
+runtime profile equivalent to the accepted RFB/MPEG profile authorities. The
+existing A002 H1 evidence provides exact selected PCM/queue/session values in
+the qualified `P11_COMPAT_PLUS_PCM` lineage. Before any PS2 execution binding
+or Application AUDIO activation is composed, Configuration must publish those
+selected values through one narrow immutable audio runtime profile with no giant
+H1 CONFIG surface and no hidden defaults.
 
-The packet stops after successful R24 reveal back to ordinary desktop. It does
-not automatically reopen P9 calibration. A fresh semantic action after restored
-desktop may use the already-accepted R34 idle calibration route; whether one
-gesture should automatically retire and reopen calibration remains a later
-policy decision.
+The next bounded packet therefore establishes only that Configuration authority.
+PS2 AUDIO worker execution binding and A006 Application AUDIO composition remain
+dependency-queued behind it.
 
 ## Temporal architecture reconciliation
 
@@ -117,7 +126,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A003_R35P_PARTIAL_RETIREMENT_SESSION_DORMANCY_FOREMAN_ACCEPTED__A006_R35_ORDINARY_MPEG_ACTION_RETIRE_RESTORE_REVEAL_ACTIVE__AUTO_RECALIBRATION_DEFERRED`
+`A006_R35_NORMAL_MPEG_RETIRE_RESTORE_REVEAL_FOREMAN_ACCEPTED__A002_R36_AUDIO_RUNTIME_PROFILE_ACTIVE__AUDIO_EXECUTION_AND_APPLICATION_COMPOSITION_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -173,11 +182,13 @@ MPEG_PARTIAL_RETIREMENT_SESSION_DORMANCY=FOREMAN_ACCEPTED_R35P
 MPEG_CALIBRATION_ACTION_ROUTING=FOREMAN_ACCEPTED_R34
 MPEG_CALIBRATION_PRODUCT_BINDING=FOREMAN_ACCEPTED_R34__CONFIG_SELECTED__NO_DEFAULT
 ORDINARY_MPEG_PRODUCT_ACTIVATION=FOREMAN_ACCEPTED_R34
-NORMAL_MPEG_ACTION_RETIREMENT=RECONSTRUCTION_ACTIVE_R35
-NORMAL_MPEG_RFB_RESTORATION=RECONSTRUCTION_ACTIVE_R35
-NORMAL_MPEG_FINAL_REVEAL=RECONSTRUCTION_ACTIVE_R35
-AUTO_RECALIBRATION_AFTER_RETIREMENT=DEFERRED
-AUDIO_ACTIVATION=DEFERRED
+NORMAL_MPEG_ACTION_RETIREMENT=FOREMAN_ACCEPTED_R35
+NORMAL_MPEG_RFB_RESTORATION=FOREMAN_ACCEPTED_R35
+NORMAL_MPEG_FINAL_REVEAL=FOREMAN_ACCEPTED_R35
+AUTO_RECALIBRATION_AFTER_RETIREMENT=DEFERRED_OPTIONAL_POLICY
+AUDIO_RUNTIME_PROFILE_AUTHORITY=RECONSTRUCTION_ACTIVE_R36
+AUDIO_PS2_EXECUTION_BINDING=DEPENDENCY_QUEUED_AFTER_R36
+AUDIO_APPLICATION_COMPOSITION=DEPENDENCY_QUEUED_AFTER_AUDIO_EXECUTION_BINDING
 CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
@@ -3125,197 +3136,264 @@ Accepted linked identity:
 `PT_LOAD_SHA256=39e08e49a5d6aaf32f12d134305a4f9925f7f419d75c4b15e6dde9ad17449fc9`
 `PT_LOAD_BYTES=526612`
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R35 ordinary MPEG retire / restore / reveal authority
 
 PACKET_ID=A006-ORDINARY-MPEG-ACTION-RETIRE-RESTORE-REVEAL-R35
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0077
+ASSIGNING_FOREMAN_STATE_COMMIT=228b3c2009f803601a4ed42738e753f9d6f3be3e
+ASSIGNING_FOREMAN_LOG_COMMIT=ca9ebc585e61c0e2417bc98703096e3bddbf3f69
+RECONSTRUCTION_STARTING_COMMIT=ca9ebc585e61c0e2417bc98703096e3bddbf3f69
+R35_FINAL_SOURCE_COMMIT=e8e69c4f25ea832d2c6fb94139631eaafbc8a3e7
+R35_RECONSTRUCTION_LOG_COMMIT=9bf3bd373e96a1a5928899880822f72879396fdf
+R35_PRE_LOG_COMMIT_COUNT=11
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260926T144419-0400__reconstruction__a006-orchestration-shutdown__interactive.md`
+
+Independent Foreman disposition:
+
+A006-R35-C1=MET
+A006-R35-C2=MET
+A006-R35-C3=MET
+A006-R35-C4=MET
+A006-R35-C5=MET
+A006-R35-C6=MET
+A006-R35-C7=MET
+A006-R35-C8=MET
+A006-R35-C9=MET
+A006-R35-C10=MET
+A006-R35-C11=MET
+A006-R35-C12=MET
+
+Independent findings:
+
+1. Input/config binding context is untouched; Application consumes only the
+   existing semantic action.
+2. Exact IDLE retains R34 P9 begin; exact MPEG_OWNED enters R23 once; intermediate
+   run states consume without duplicate RETIRE or calibration.
+3. R23 begin/service and R24 marker/reveal are reached only through accepted run
+   owner APIs; Application/product source contains no private Transport/P3/worker
+   retirement mechanism.
+4. RETIRING obtains the current session tick and uses R23, never R22.
+5. R23C re-enters only ordinary R19/P2 request scheduling.
+6. Restoration marker follows a real successful desktop presentation boundary.
+7. RESTORE_PENDING forces that boundary even for pixel-identical completed FULL
+   responses.
+8. R24 PLATFORM_FAILED/SYNC_INVALID are retryable; nonretryable results become
+   product session failure.
+9. Successful reveal returns IDLE/P3 RFB_ONLY/P2 thawed with no automatic P9.
+10. R35 failures preserve accepted R35P/R33 abnormal containment authority.
+11. The session media clock is observed but neither reset nor replaced.
+12. Exact final source/log heads pass all canonical gates and R28-R35P
+    regressions.
+
+R35_SOURCE_COMPLETE=YES
+R35_FOREMAN_ACCEPTED=YES
+R35_HOST_TESTED=YES
+R35_PROJECT_CHECK=PASS
+R35_STRICT_DICTIONARIES=PASS
+R35_PS2_COMPILE=PASS
+R35_PS2_LINK=PASS
+R35_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R35_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36264322641_ATTEMPT_1
+R35_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36264443125_ATTEMPT_1
+R35_INDEPENDENT_VALIDATION=NOT_RUN
+R35_OPERATOR_OBSERVED=NO
+R35_HARDWARE_QUALIFIED=NO
+R35_HARDWARE_PENDING=YES
+
+Accepted linked identity:
+
+`ELF_PRISTINE_SHA256=a974cd2d463809ed9e5dea4c0538a163a378abee096b46713940e18e6e02850a`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=908f31b526fc51d2d819b9ac092e218b048c475576568ca26cfe13a3fc84bb66`
+`PT_LOAD_BYTES=527380`
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A002-AUDIO-RUNTIME-PROFILE-AUTHORITY-R36
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
-WORK_ITEM_KEY=a006-orchestration-shutdown
+WORK_ITEM_KEY=a002-config-audio-clock
 WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0077
-BASED_ON_ACCEPTED_R34_SOURCE=ec99a1fa0276a9add773d81dfe0e82edcdd42748
-BASED_ON_ACCEPTED_R35P_SOURCE=6fc0c755d4a3d51a8b5f87ad12c553b2e74b7385
-BASED_ON_ACCEPTED_R23_R23C_R24=YES
-AUTO_RECALIBRATION=DEFERRED
-NEW_PRODUCT_ACTION=FORBIDDEN
-BINDING_CONTEXT_REINTERPRETATION=FORBIDDEN
-AUDIO_ACTIVATION=DEFERRED
-CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED
+BASED_ON_FOREMAN_STATE_REVISION=0078
+BASED_ON_A002_AUDIT=docs/ledge/LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md
+BASED_ON_H1_PROFILE=experiments/media-harness-h1/h1_profiles.py::P11_COMPAT_PLUS_PCM
+BASED_ON_FORENSIC_SOURCE=3426f28b93de9519ca93e5f0e0aaf8b67cfca845
+AUDIO_PS2_EXECUTION_BINDING=DEFERRED
+AUDIO_APPLICATION_COMPOSITION=DEFERRED
+TRANSPORT_AUDIO_ACTIVATION=DEFERRED
+AUDSRV_PRODUCT_START=DEFERRED
+AUTO_RECALIBRATION=DEFERRED_OPTIONAL_POLICY
 
 ### Objective
 
-Compose the already-accepted normal same-session MPEG retirement, RFB
-restoration overlap and final desktop reveal into the ordinary Application
-product path.
+Create Configuration's one selected immutable production AUDIO runtime profile,
+parallel in responsibility to the accepted R7 MPEG runtime profile.
 
-A semantic `PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION` that Input has already
-legitimately emitted while the exact run is `MPEG_OWNED` may request retirement.
-Because R28/R29 context semantics are immutable, an explicit DESKTOP-context
-binding remains ineligible while MPEG owns presentation; an explicitly
-configured GLOBAL binding can produce the action while live. Application must
-not infer or override that context.
+The profile must carry only already-audited A002 owner inputs needed later by:
 
-Successful R35 stops at restored ordinary desktop with the run IDLE. It does not
-automatically begin P9 again. A later independently recognized semantic action
-may enter the existing R34 idle calibration path.
+- Transport's optional logical AUDIO channel;
+- the clean AUDIO session lifecycle;
+- the clean synchronous PCM playback core.
+
+It must be grounded in the qualified H1
+`P11_COMPAT_PLUS_PCM` lineage and must not import the 61-field H1 laboratory
+CONFIG surface, perform PS2/AUDSRV lifecycle work, start an audio thread, open a
+Transport AUDIO rider, or modify ordinary Application behavior.
+
+### Selected value authority
+
+The selected current profile is the following exact clean projection of
+`P11_COMPAT_PLUS_PCM`:
+
+Transport AUDIO channel:
+
+- queue capacity = 524288 bytes;
+- initial credit = 524288 bytes;
+- credit batch = 4096 bytes;
+- flush on empty = true;
+- credit return enabled = true.
+
+PCM playback:
+
+- rate = 48000 Hz;
+- channels = 2;
+- bits per sample = 16;
+- volume = 100 percent.
+
+AUDIO session policy:
+
+- playback buffer capacity = 4096 bytes, projected from the qualified
+  `audio_chunk_bytes`;
+- startup reservoir = 458752 bytes;
+- worker priority = 65;
+- worker stack = 16384 bytes;
+- reservoir poll cadence = 1000 us;
+- common-clock poll cadence = 1000 us.
+
+The two clean poll fields are independently named even though the current
+qualified lineage selects the same 1000-us value for both. Do not recreate
+H1's semantic coupling of both waits to one `audio_idle_delay_us` field.
+
+The accepted R26 common-media-clock profile remains the sole owner of
+`audio_presentation_offset_us=0`; R36 must not duplicate that value into the
+AUDIO runtime profile.
 
 ### Required behavior
 
-1. **Preserve Input/config authority exactly.** Add no product action, default
-   chord, physical-mask/timing logic or binding-context reinterpretation.
-   DESKTOP-context bindings remain blocked while MPEG owns presentation; GLOBAL
-   bindings retain their accepted ability to publish a semantic action outside
-   DESKTOP when their physical gesture independently qualifies.
-2. **One semantic action has state-dependent Application policy only.** Exact
-   idle desktop keeps the accepted R34 P9-begin meaning. Exact
-   `PSTVNC_APP_MPEG_RUN_MPEG_OWNED` may interpret the same already-published
-   semantic action as one request to begin normal R23 retirement. WAIT_FIRST_FRAME,
-   RETIRING, RESTORE_PENDING and REVEAL_PENDING consume the action without
-   starting another generation, duplicate RETIRE or automatic calibration.
-3. **R23 begins once through its public owner seam.**
-   `pstvnc_app_mpeg_run_begin_retirement()` is the sole normal retirement
-   entry. Application/product code does not call Transport RETIRE, thaw P2,
-   mutate P3 or alter worker ownership directly.
-4. **R22 and R23 service stay distinct.** WAIT_FIRST_FRAME/MPEG_OWNED continue
-   using accepted R22 live service. RETIRING uses
-   `pstvnc_app_mpeg_run_retirement_service()` nonblockingly with the exact
-   current session-clock tick at the ordinary safe cadence. A RETIRING run is
-   never passed to R22 as if still ordinary live service.
-5. **R23C restoration uses the existing P2/R19 request path.** After successful
-   R23 begin thaws P2, ordinary `service_rfb_flow_request()` owns HOLD/FULL/
-   incremental serialization and accounting. R35 creates no special RFB request
-   path and does not consume FULL-refresh debt outside P2.
-6. **Graphics-fresh restoration proof crosses the existing presentation
-   boundary.** While R23/R24 retain MPEG presentation, completed RFB updates may
-   update the underlying desktop. The exact RESTORE_PENDING generation may call
-   `pstvnc_app_mpeg_run_record_restored_rfb_presented()` only after the
-   corresponding authoritative remote framebuffer has successfully crossed
-   `present_current_application_frame()`. If a pre-thaw outstanding response
-   completes first, lower P2 freshness rejects the marker until the required
-   FULL request has genuinely completed and been presented.
-7. **A completed FULL refresh is presented even when pixel truth is unchanged.**
-   Once P2 proves protocol freshness for RESTORE_PENDING, the Application must
-   execute the existing desktop presentation/upload boundary before recording
-   the R24 restoration marker, using current authoritative framebuffer/GS truth
-   without inventing remote dirtiness.
-8. **R24 reveal is serviced without success-by-delay.** After exact restoration
-   presentation is recorded, call
-   `pstvnc_app_mpeg_run_reveal_restored()`. PLATFORM_FAILED and SYNC_INVALID
-   are retryable pending outcomes and must be retried at ordinary safe cadence
-   without re-sealing P3 or declaring session failure. Any nonretryable R24
-   failure becomes normal session failure and is contained by accepted R35P.
-9. **Successful reveal restores ordinary desktop ownership.** Success requires
-   the accepted R24 synchronized/retirement-revealed proof, exact P3 RFB_ONLY
-   and run IDLE. P2 remains thawed. On a later loop/context observation,
-   DESKTOP-action eligibility may return through existing R29 semantics; held
-   gestures do not gain a new action merely because context became eligible.
-10. **Failure convergence remains owner-correct.** Any R23 or nonretryable R24
-    fault preserves nonzero generation/teardown debt and therefore uses the
-    accepted R35P/R33 abnormal two-phase session path before final Transport
-    release. No product-level rollback, forced owner clear or normal-retirement
-    replay is added.
-11. **Session media clock remains session authority.** R35 may read the current
-    tick for R23 service but does not reset, disarm or allocate a replacement
-    media clock during retirement/reveal. Successful R24 preserves the accepted
-    session clock and monotonic run-generation history.
-12. **Close deterministic product evidence without scope creep.** Focused tests
-    plus canonical host/project/strict-dictionary/pinned-PS2
-    compile/link/current-source reproducibility prove requirements 1-11 while
-    preserving R16B, R19, R21-R24, R28-R35P and R34 behavior.
+1. Define one Configuration-owned audio runtime profile type that aggregates
+   existing narrow owner types where already available rather than copying/
+   renaming their fields. At minimum the Transport AUDIO config, PCM profile and
+   AUDIO session values remain visibly distinct owner values.
+2. Publish exactly one selected immutable current profile through a narrow
+   accessor with static-const Configuration lifetime or an equivalent
+   immutable-by-value contract.
+3. Encode exactly the selected values listed above; no H1 profile ID, session ID,
+   diagnostic field, queue-allocation-order flag, start-mode enum, startup-delay
+   knob or unrelated MPEG/RFB value becomes production authority.
+4. Preserve the separation between Transport capacity/credit policy, AUDIO
+   session worker/reservoir policy and PCM/AUDSRV format/volume policy.
+5. Keep reservoir-poll and clock-poll values distinct in the clean type and
+   validation even though both selected values are currently 1000 us.
+6. Validate selected values deterministically. Queue/credit relations, nonzero
+   stack/buffer/reservoir/poll values, positive worker priority, valid PCM
+   format and volume must fail closed if the source profile is malformed.
+7. If the project uses the existing JSON/generated-profile pattern, generation
+   must be deterministic and checked into canonical project validation exactly
+   like the current RFB/MPEG selected profiles. Do not add runtime JSON parsing.
+8. Profile access performs no allocation, thread creation, semaphore creation,
+   AUDSRV call, Transport open/access, media-clock arm/wait, Application routing
+   or Pi mutation.
+9. Do not change accepted `src/audio/session.*`, playback, AUDSRV mechanism,
+   Transport AUDIO mechanism, R26 media-clock mechanism, Application, Pi or
+   Wire/protocol behavior in R36.
+10. Keep the old generic `pstvnc_config_session_profile_t` parser behavior
+    unchanged unless a directly demonstrated compile/test compatibility edit is
+    required; R36 is selected internal product authority, not expansion of the
+    PSTV CONFIG wire.
+11. Enroll the selected profile in canonical source topology/dictionaries and
+    pinned PS2 compile/link so it is product source rather than a host-only
+    fixture, but do not consume it from ordinary Application yet.
+12. Close host/project/strict-dictionary/pinned-PS2
+    compile/link/current-source reproducibility evidence with no hardware-success
+    claim.
 
 ### Required deterministic evidence
 
-Focused evidence must prove at minimum:
+Focused tests must prove at minimum:
 
-- a DESKTOP-context binding cannot become live-retirement authority merely
-  because R35 exists; Input context tests remain unchanged;
-- a semantic action already delivered while exact MPEG_OWNED begins R23 exactly
-  once;
-- the same action while WAIT_FIRST_FRAME, RETIRING, RESTORE_PENDING or
-  REVEAL_PENDING starts no RETIRE and no P9;
-- exact idle desktop action still begins P9 as accepted in R34;
-- after begin-retirement, no product/Application direct P2 thaw, P3 mutation,
-  Transport RETIRE or lower-worker manipulation exists outside R23;
-- RETIRING service obtains current tick and calls R23 service, while R22 is not
-  invoked for that state;
-- R23 WOULD_BLOCK/pending retirement progress remains in the same session and
-  does not spin into failure or replacement;
-- a pre-thaw outstanding RFB response may complete/present but cannot satisfy the
-  R24 marker while FULL debt remains;
-- the subsequent FULL request uses the ordinary R19/P2 path, and after its
-  completed response the desktop presentation boundary occurs before the R24
-  marker;
-- if protocol freshness is achieved with unchanged framebuffer pixels, the
-  existing desktop presentation/upload boundary still occurs before marking
-  restoration;
-- PLATFORM_FAILED and SYNC_INVALID reveal outcomes remain pending/retryable and
-  a later success reveals without a second P3 seal;
-- a nonretryable R23/R24 failure routes to session failure and the existing
-  product abnormal-owner predicate remains true for R35P containment;
-- successful reveal returns run IDLE/P3 RFB_ONLY/P2 thawed and does not call P9;
-- after success a later fresh semantic action can use the existing R34 idle P9
-  route, but R35 itself never automatically starts calibration;
-- no normal retirement path changes Pi/Wire producer source, AUDIO or
-  Configuration/Management persistence.
+- exact equality of all selected Transport/PCM/session values;
+- queue capacity/initial-credit/batch/flush/return mapping is owner-correct;
+- 4096 playback capacity is the clean projection of qualified chunk sizing;
+- 458752 startup reservoir, priority 65 and stack 16384 are exact;
+- reservoir poll and clock poll are independently addressable fields, each 1000;
+- invalid zero/overflow/structurally impossible profile values are rejected by
+  generation/validation rather than silently clamped;
+- accessor results cannot mutate the stored Configuration authority;
+- no media-clock offset is duplicated into the AUDIO runtime profile;
+- no Application, AUDSRV, thread/semaphore, Transport-open or Pi side effect
+  occurs from profile selection;
+- existing A002 audio playback/session/media-clock tests remain green;
+- existing RFB/MPEG selected-profile generation/checks remain green.
 
 ### Authorized source surface
 
-R35 may modify only the smallest justified subset of:
+R36 may modify only the smallest justified subset of:
 
-- `src/app.c/.h`;
-- `src/app_mpeg_product.c/.h`;
-- focused Application/product/source-boundary tests and stubs;
-- directly affected Application dictionaries and lifecycle/topology docs;
-- canonical test/build enrollment only if required.
+- new `src/config/audio_runtime_profile.*` and selected profile data/generator
+  artifacts following existing project conventions;
+- focused Configuration profile tests/generation checks;
+- canonical build/test/topology enrollment;
+- directly affected Configuration/source dictionaries and profile
+  documentation.
 
-Consume but do not modify absent an independently demonstrated prerequisite
-defect:
+Consume existing AUDIO/Transport owner types as value vocabulary if needed.
 
-- `src/app_mpeg_run.c/.h` including accepted R35P;
-- `src/app_mpeg_frame.*`;
-- `src/app_mpeg_activation.*`;
-- `src/app_mpeg_calibration.*`;
-- `src/app_product_bindings.*`;
-- Input/UI;
-- RFB flow/session/framebuffer implementation;
-- Display/compositor/Platform implementation;
-- Transport implementation;
-- MPEG worker/runtime;
-- media clock;
-- Configuration/Management;
+Do not modify absent an independently demonstrated prerequisite defect:
+
+- `src/audio/session.*`;
+- `src/audio/playback.*`;
+- `src/audio/audsrv_service.*`;
+- `src/transport/*`;
+- `src/media/*`;
+- `src/app*`;
+- Input/UI/RFB/Display/MPEG product source;
 - Pi product source;
-- AUDIO product source;
-- H1/B4A forensic source.
+- Wire/protocol version/bytes;
+- H1 forensic source.
 
-If accepted R23/R24 public seams are insufficient to prove the required
-Application presentation/restoration boundary, return BLOCKED naming the exact
-missing owner contract rather than reaching into lower-owner private state.
+If the existing type dependency direction prevents a clean Configuration
+aggregate without a cycle, return BLOCKED naming the exact missing neutral value
+type instead of duplicating or moving behavior opportunistically.
 
 ### Explicit non-goals
 
-R35 does not:
+R36 does not:
 
-- automatically enter calibration after reveal;
-- add a distinct MPEG_STOP/RETIRE action;
-- make a DESKTOP binding act GLOBAL while MPEG is live;
-- retire WAIT_FIRST_FRAME before first physical MPEG ownership;
-- start generation N+1;
-- add AUDIO;
-- add config persistence/editor/live reload;
-- alter Pi producer/Wire framing;
-- add timeout/watchdog success;
-- claim independent Validation, operator observation or hardware qualification.
+- initialize AUDSRV;
+- create AUDIO worker/runtime resources;
+- open Transport with AUDIO;
+- start or stop PCM playback;
+- arm/wait the media clock;
+- integrate AUDIO into Application startup/steady-state/shutdown;
+- change Pi AUDIO producer behavior;
+- implement automatic MPEG recalibration;
+- add user-editable audio tuning;
+- add generic timeout/watchdog success;
+- claim independent Validation/operator observation/hardware qualification.
 
 ### Required checks before handoff
 
-Run focused final R35 Application/product tests; R16B/R19/R27/R32/R34
-Application regressions; R21-R24/R33/R34P/R35P run regressions; R28-R30
-binding/context/Input/config regressions; canonical host tests; project check;
-complete strict dictionaries; pinned PS2 compile/link and current-source
-reproducibility.
+Run focused audio-runtime-profile tests plus existing A002 config/audio/session/
+media-clock regressions; RFB/MPEG generated-profile regressions; canonical host
+tests; project check; complete strict dictionaries; pinned PS2 compile/link and
+current-source reproducibility.
 
 Record exact final ELF/PT_LOAD identity if bytes change and classify it
 hardware-pending.
@@ -3324,22 +3402,22 @@ At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` revision 0007 using:
 
 - ROLE_KEY=`reconstruction`;
-- WORK_ITEM_KEY=`a006-orchestration-shutdown`;
+- WORK_ITEM_KEY=`a002-config-audio-clock`;
 - WORKER_KEY=`interactive`.
 
 Then stop and return the baton.
 
-FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_APPLICATION_RESTORATION_OWNER_CONTRACT
-STRETCH=NONE__DO_NOT_ENTER_AUTO_RECALIBRATION_OR_AUDIO
+FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_NEUTRAL_AUDIO_PROFILE_TYPE_CONTRACT
+STRETCH=NONE__DO_NOT_ENTER_PS2_AUDIO_EXECUTION_OR_APPLICATION_COMPOSITION
 
 ## Current hardware debt
 
-Newest fully Foreman-accepted source/build identity is R35P:
+Newest fully Foreman-accepted source/build identity is R35:
 
-`ELF_PRISTINE_SHA256=df4b86c726417677575b6a964d2b6646836d21622bd09cac7d36815d12615915`
+`ELF_PRISTINE_SHA256=a974cd2d463809ed9e5dea4c0538a163a378abee096b46713940e18e6e02850a`
 `PT_LOAD_SEGMENTS=1`
-`PT_LOAD_SHA256=39e08e49a5d6aaf32f12d134305a4f9925f7f419d75c4b15e6dde9ad17449fc9`
-`PT_LOAD_BYTES=526612`
+`PT_LOAD_SHA256=908f31b526fc51d2d819b9ac092e218b048c475576568ca26cfe13a3fc84bb66`
+`PT_LOAD_BYTES=527380`
 
 This exact image is reproducible and Foreman-accepted at source/product-contract
 level, but remains physically unqualified.
