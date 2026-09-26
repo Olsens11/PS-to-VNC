@@ -618,6 +618,10 @@ static void test_interleaved_channels_credit_and_event_wake(void)
     CHECK(pstvnc_transport_runtime_initialize_with_audio_mpeg(
         &runtime, 50, &base, &audio, &mpeg) == 1);
     CHECK(pstvnc_transport_runtime_start_receiver(&runtime) == 1);
+    CHECK(runtime.audio_activation_state == PSTVNC_TRANSPORT_AUDIO_DORMANT);
+    CHECK(pstvnc_transport_runtime_audio_activate(&runtime) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(runtime.audio_activation_state == PSTVNC_TRANSPORT_AUDIO_ACTIVE);
     CHECK(pstvnc_transport_runtime_mpeg_run_open(
         &runtime) == PSTVNC_TRANSPORT_OK);
     CHECK(find_credit(PSTVNC_TRANSPORT_CHANNEL_RFB, 8u));
