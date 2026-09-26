@@ -17,6 +17,7 @@
 
 #include "app.h"
 #include "app_product_bindings.h"
+#include "app_mpeg_product.h"
 
 #include <stdint.h>
 
@@ -53,6 +54,10 @@
 static uint16_t remote_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
     __attribute__((aligned(128)));
 static uint16_t gs_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
+    __attribute__((aligned(128)));
+static uint16_t mpeg_calibration_frozen_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
+    __attribute__((aligned(128)));
+static uint16_t mpeg_calibration_work_pixels[PSTVNC_DISPLAY_PIXEL_COUNT]
     __attribute__((aligned(128)));
 static uint16_t local_overlay_pixels[
     PSTVNC_OSK_SURFACE_PIXEL_COUNT]
@@ -394,15 +399,20 @@ static int open_osk_foreground(
     app_published_pointer_state_t *published_pointer,
     pstvnc_local_ui_t *local_ui,
     pstvnc_osk_t *osk,
-    int *mouse_interpretation_suspended)
+    int *mouse_interpretation_suspended,
+    int *mpeg_session_failure)
 {
     if (input_runtime == NULL ||
+        mpeg_product == NULL ||
         session == NULL ||
         published_pointer == NULL ||
         local_ui == NULL ||
         osk == NULL ||
-        mouse_interpretation_suspended == NULL)
+        mouse_interpretation_suspended == NULL ||
+        mpeg_session_failure == NULL)
         return 0;
+
+    *mpeg_session_failure = 0;
 
     if (local_ui->foreground != PSTVNC_LOCAL_UI_FOREGROUND_DESKTOP ||
         pstvnc_local_ui_input_is_quarantined(local_ui) ||
@@ -446,6 +456,8 @@ static int apply_local_controller_action(
     pstvnc_osk_activation_t activation;
 
     if (input_runtime == NULL ||
+        mpeg_product == NULL ||
+        rfb_flow_policy == NULL ||
         session == NULL ||
         published_pointer == NULL ||
         local_ui == NULL ||
@@ -530,6 +542,7 @@ static int apply_local_controller_action(
 
 static int service_controller_state(
     pstvnc_input_runtime_t *input_runtime,
+    pstvnc_app_mpeg_product_t *mpeg_product,
     pstvnc_rfb_session_t *session,
     app_published_pointer_state_t *published_pointer,
     pstvnc_local_controller_t *local_controller,
@@ -551,6 +564,21 @@ static int service_controller_state(
         controller_state == NULL)
         return 0;
 
+    {
+        int product_consumed = 0;
+        pstvnc_app_mpeg_product_result_t product_result =
+            pstvnc_app_mpeg_product_service_controller(
+                mpeg_product,
+                controller_state,
+                &product_consumed);
+
+        if (product_result != PSTVNC_APP_MPEG_PRODUCT_OK)
+            return 0;
+
+        if (product_consumed)
+            return 1;
+    }
+
     if (!pstvnc_local_controller_route(
             local_controller,
             local_ui->foreground,
@@ -562,6 +590,19 @@ static int service_controller_state(
     for (action_index = 0;
          action_index < result.action_count;
          action_index++) {
+        /*
+         * Closing DESKTOP admission before the foreground mutation prevents a
+         * racing worker sample from beginning a desktop-only gesture in OSK.
+         * Re-entry is published later only after quarantine and all MPEG
+         * ownership have returned to ordinary desktop.
+         */
+        if (result.actions[action_index] ==
+                PSTVNC_LOCAL_CONTROLLER_ACTION_OPEN_OSK &&
+            pstvnc_input_runtime_set_product_action_desktop_eligible(
+                input_runtime,
+                0) < 0)
+            return 0;
+
         if (!apply_local_controller_action(
                 input_runtime,
                 session,
@@ -613,6 +654,8 @@ static int resume_desktop_mouse_if_ready(
 
 static int service_semantic_input_events(
     pstvnc_input_runtime_t *input_runtime,
+    pstvnc_app_mpeg_product_t *mpeg_product,
+    pstvnc_rfb_flow_policy_t *rfb_flow_policy,
     pstvnc_rfb_session_t *session,
     app_published_pointer_state_t *published_pointer,
     pstvnc_local_controller_t *local_controller,
@@ -646,6 +689,7 @@ static int service_semantic_input_events(
             case PSTVNC_INPUT_EVENT_CONTROLLER_STATE:
                 if (!service_controller_state(
                         input_runtime,
+                        mpeg_product,
                         session,
                         published_pointer,
                         local_controller,
@@ -674,6 +718,43 @@ static int service_semantic_input_events(
                     return 0;
                 break;
 
+            case PSTVNC_INPUT_EVENT_PRODUCT_ACTION:
+                /*
+                 * The queue carries semantic meaning only. Close DESKTOP
+                 * admission before beginning P9 so no subsequent sample can
+                 * inherit stale desktop eligibility during calibration.
+                 */
+                if (pstvnc_input_runtime_set_product_action_desktop_eligible(
+                        input_runtime,
+                        0) < 0)
+                    return 0;
+
+                {
+                    pstvnc_app_mpeg_product_result_t product_result =
+                        pstvnc_app_mpeg_product_route_action(
+                            mpeg_product,
+                            event.payload.product_action,
+                            rfb_flow_policy,
+                            input_runtime,
+                            session,
+                            local_ui,
+                            published_pointer->cursor_x,
+                            published_pointer->cursor_y,
+                            &published_pointer->click_buttons,
+                            gs_pixels,
+                            PSTVNC_DISPLAY_PIXEL_COUNT);
+
+                    if (product_result ==
+                            PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE) {
+                        *mpeg_session_failure = 1;
+                        return 0;
+                    }
+
+                    if (product_result != PSTVNC_APP_MPEG_PRODUCT_OK)
+                        return 0;
+                }
+                break;
+
             case PSTVNC_INPUT_EVENT_NONE:
             default:
                 return 0;
@@ -682,6 +763,102 @@ static int service_semantic_input_events(
 
     return pstvnc_input_runtime_last_error(input_runtime) ==
         PSTVNC_INPUT_RUNTIME_ERROR_NONE;
+}
+
+static int sync_product_action_desktop_eligibility(
+    pstvnc_input_runtime_t *input_runtime,
+    const pstvnc_app_mpeg_product_t *mpeg_product,
+    const pstvnc_local_ui_t *local_ui)
+{
+    if (input_runtime == NULL || mpeg_product == NULL || local_ui == NULL)
+        return 0;
+
+    return pstvnc_input_runtime_set_product_action_desktop_eligible(
+        input_runtime,
+        pstvnc_app_mpeg_product_desktop_action_eligible(
+            mpeg_product,
+            local_ui)) == 0;
+}
+
+static int retire_attempt_owners(
+    pstvnc_input_runtime_t *input_runtime,
+    int *input_runtime_ready,
+    pstvnc_app_mpeg_product_t *mpeg_product,
+    int mpeg_product_ready,
+    pstvnc_ps2_media_clock_binding_t *media_clock_binding,
+    int *media_clock_binding_active,
+    int *media_clock_binding_release_failed,
+    int *transport_session_active)
+{
+    int abort_ready = 0;
+    int has_started_mpeg = 0;
+
+    if (input_runtime == NULL ||
+        input_runtime_ready == NULL ||
+        media_clock_binding == NULL ||
+        media_clock_binding_active == NULL ||
+        media_clock_binding_release_failed == NULL ||
+        transport_session_active == NULL)
+        return 0;
+
+    if (*input_runtime_ready) {
+        if (pstvnc_input_runtime_shutdown(input_runtime) != 0)
+            return 0;
+        *input_runtime_ready = 0;
+    }
+
+    has_started_mpeg =
+        mpeg_product_ready &&
+        mpeg_product != NULL &&
+        pstvnc_app_mpeg_product_has_started_run(mpeg_product);
+
+    if (has_started_mpeg && *transport_session_active) {
+        if (pstvnc_transport_session_begin_abort() !=
+                PSTVNC_TRANSPORT_OK)
+            return 0;
+
+        /*
+         * R33 is deliberately polled to proof, not to a deadline. Transport
+         * terminal wakeup is what lets an old worker leave its wait/feed path.
+         */
+        while (!abort_ready) {
+            if (pstvnc_app_mpeg_product_service_session_abort(
+                    mpeg_product,
+                    &abort_ready) != PSTVNC_APP_MPEG_PRODUCT_OK)
+                return 0;
+
+            if (!abort_ready &&
+                pstvnc_ps2_system_delay_us(
+                    PSTVNC_APP_IDLE_POLL_DELAY_US) < 0)
+                return 0;
+        }
+    }
+
+    if (*media_clock_binding_active) {
+        if (pstvnc_ps2_media_clock_binding_release(
+                media_clock_binding) < 0)
+            *media_clock_binding_release_failed = 1;
+
+        /*
+         * R26 revokes local binding authority before DeleteSema() reports.
+         * Never fabricate a second release attempt for this session object.
+         */
+        *media_clock_binding_active = 0;
+    }
+
+    if (*transport_session_active) {
+        pstvnc_transport_result_t close_result =
+            has_started_mpeg
+                ? pstvnc_transport_session_close()
+                : pstvnc_transport_session_abort();
+
+        if (close_result != PSTVNC_TRANSPORT_OK)
+            return 0;
+
+        *transport_session_active = 0;
+    }
+
+    return !*media_clock_binding_release_failed;
 }
 
 int pstvnc_app_run_with_session_profiles(
@@ -743,6 +920,8 @@ int pstvnc_app_run_with_session_profiles(
         pstvnc_osk_t osk;
         pstvnc_rfb_session_t session;
         pstvnc_rfb_flow_policy_t rfb_flow_policy;
+        pstvnc_transport_access_t transport_access;
+        pstvnc_app_mpeg_product_t mpeg_product;
         app_published_pointer_state_t published_pointer;
         pstvnc_ps2_media_clock_binding_t media_clock_binding =
             PSTVNC_PS2_MEDIA_CLOCK_BINDING_INITIALIZER;
@@ -755,7 +934,9 @@ int pstvnc_app_run_with_session_profiles(
         int media_clock_binding_active = 0;
         int media_clock_binding_release_failed = 0;
         int input_runtime_ready = 0;
+        int mpeg_product_ready = 0;
         int mouse_interpretation_suspended = 0;
+        int mpeg_session_failure = 0;
 
         /*
          * Application owns the freshly connected descriptor only until
@@ -775,6 +956,11 @@ int pstvnc_app_run_with_session_profiles(
             goto attempt_fatal;
 
         transport_session_active = 1;
+
+        memset(&transport_access, 0, sizeof(transport_access));
+        if (pstvnc_transport_access_acquire(
+                &transport_access) != PSTVNC_TRANSPORT_OK)
+            goto attempt_fatal;
 
         /*
          * R26 binding storage is one-session authority. This declaration has a
@@ -873,6 +1059,19 @@ int pstvnc_app_run_with_session_profiles(
          */
         pstvnc_rfb_flow_policy_init(&rfb_flow_policy);
 
+        if (!pstvnc_app_mpeg_product_init(
+                &mpeg_product,
+                &transport_access,
+                &media_clock,
+                PSTVNC_DISPLAY_WIDTH,
+                PSTVNC_DISPLAY_HEIGHT,
+                mpeg_calibration_frozen_pixels,
+                mpeg_calibration_work_pixels,
+                PSTVNC_DISPLAY_PIXEL_COUNT))
+            goto attempt_fatal;
+
+        mpeg_product_ready = 1;
+
         if (!present_current_application_frame(
                 &framebuffer,
                 1,
@@ -894,6 +1093,18 @@ int pstvnc_app_run_with_session_profiles(
             goto attempt_fatal;
 
         input_runtime_ready = 1;
+
+        if (pstvnc_input_runtime_set_product_action_bindings(
+                &input_runtime,
+                desired_product_bindings.desired.bindings,
+                desired_product_bindings.desired.binding_count) < 0)
+            goto attempt_fatal;
+
+        if (!sync_product_action_desktop_eligibility(
+                &input_runtime,
+                &mpeg_product,
+                &local_ui))
+            goto attempt_fatal;
 
         /*
          * Published input authority is reconstructed, not inherited. Every
@@ -924,16 +1135,33 @@ int pstvnc_app_run_with_session_profiles(
 
         for (;;) {
             pstvnc_rfb_session_receive_result_t receive_result;
+            uint64_t current_tick = 0u;
 
+            if (!sync_product_action_desktop_eligibility(
+                    &input_runtime,
+                    &mpeg_product,
+                    &local_ui))
+                goto attempt_fatal;
+
+            mpeg_session_failure = 0;
             if (!service_semantic_input_events(
                     &input_runtime,
+                    &mpeg_product,
+                    &rfb_flow_policy,
                     &session,
                     &published_pointer,
                     &local_controller,
                     &local_ui,
                     &osk,
-                    &mouse_interpretation_suspended))
+                    &mouse_interpretation_suspended,
+                    &mpeg_session_failure))
                 goto attempt_failed;
+
+            if (!sync_product_action_desktop_eligibility(
+                    &input_runtime,
+                    &mpeg_product,
+                    &local_ui))
+                goto attempt_fatal;
 
             if (pstvnc_local_ui_needs_present(&local_ui)) {
                 if (!present_current_application_frame(
@@ -949,6 +1177,20 @@ int pstvnc_app_run_with_session_profiles(
                     &local_ui,
                     &mouse_interpretation_suspended))
                 goto attempt_fatal;
+
+            if (pstvnc_app_mpeg_product_has_started_run(&mpeg_product)) {
+                if (pstvnc_ps2_media_clock_binding_current_tick(
+                        &media_clock_binding,
+                        &current_tick) < 0)
+                    goto attempt_fatal;
+
+                if (pstvnc_app_mpeg_product_service_live(
+                        &mpeg_product,
+                        current_tick) != PSTVNC_APP_MPEG_PRODUCT_OK) {
+                    mpeg_session_failure = 1;
+                    goto attempt_failed;
+                }
+            }
 
             receive_result = pstvnc_rfb_session_try_receive_update(
                 &session,
@@ -1007,14 +1249,16 @@ attempt_failed:
          * The three R16A provider-local causes remain typed facts even though
          * the initial product policy deliberately treats them alike.
          */
-        switch (session.error) {
-            case PSTVNC_RFB_SESSION_ERROR_PROVIDER_CONNECT:
-            case PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ:
-            case PSTVNC_RFB_SESSION_ERROR_PROVIDER_WRITE:
-                break;
+        if (!mpeg_session_failure) {
+            switch (session.error) {
+                case PSTVNC_RFB_SESSION_ERROR_PROVIDER_CONNECT:
+                case PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ:
+                case PSTVNC_RFB_SESSION_ERROR_PROVIDER_WRITE:
+                    break;
 
-            default:
-                goto attempt_fatal;
+                default:
+                    goto attempt_fatal;
+            }
         }
 
         /*
@@ -1023,29 +1267,15 @@ attempt_failed:
          * abort/receiver/session retirement. Failure of any proof prevents the
          * next physical connect.
          */
-        if (input_runtime_ready &&
-            pstvnc_input_runtime_shutdown(&input_runtime) == 0)
-            input_runtime_ready = 0;
-
-        if (media_clock_binding_active) {
-            if (pstvnc_ps2_media_clock_binding_release(
-                    &media_clock_binding) < 0)
-                media_clock_binding_release_failed = 1;
-
-            /*
-             * R26 revokes local binding authority before DeleteSema() reports.
-             * Do not fabricate a second release attempt or reuse this object.
-             */
-            media_clock_binding_active = 0;
-        }
-
-        if (transport_session_active &&
-            pstvnc_transport_session_abort() == PSTVNC_TRANSPORT_OK)
-            transport_session_active = 0;
-
-        if (input_runtime_ready ||
-            transport_session_active ||
-            media_clock_binding_release_failed)
+        if (!retire_attempt_owners(
+                &input_runtime,
+                &input_runtime_ready,
+                &mpeg_product,
+                mpeg_product_ready,
+                &media_clock_binding,
+                &media_clock_binding_active,
+                &media_clock_binding_release_failed,
+                &transport_session_active))
             goto attempt_fatal;
 
         /*
@@ -1060,19 +1290,28 @@ attempt_fatal:
          * Fatal convergence preserves the same reverse ownership order. A
          * pre-binding failure does not fabricate release authority.
          */
-        if (input_runtime_ready)
-            (void)pstvnc_input_runtime_shutdown(&input_runtime);
-
-        if (media_clock_binding_active) {
-            (void)pstvnc_ps2_media_clock_binding_release(
-                &media_clock_binding);
-            media_clock_binding_active = 0;
-        }
-
         if (transport_session_active) {
-            (void)pstvnc_transport_session_abort();
-        } else if (socket_fd >= 0) {
-            pstvnc_ps2_network_close(socket_fd);
+            (void)retire_attempt_owners(
+                &input_runtime,
+                &input_runtime_ready,
+                &mpeg_product,
+                mpeg_product_ready,
+                &media_clock_binding,
+                &media_clock_binding_active,
+                &media_clock_binding_release_failed,
+                &transport_session_active);
+        } else {
+            if (input_runtime_ready)
+                (void)pstvnc_input_runtime_shutdown(&input_runtime);
+
+            if (media_clock_binding_active) {
+                (void)pstvnc_ps2_media_clock_binding_release(
+                    &media_clock_binding);
+                media_clock_binding_active = 0;
+            }
+
+            if (socket_fd >= 0)
+                pstvnc_ps2_network_close(socket_fd);
         }
 
         goto fail_resident;
