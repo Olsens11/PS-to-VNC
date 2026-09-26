@@ -1,5 +1,7 @@
 #include "audio/ps2_runtime.h"
 
+#include <kernel.h>
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
