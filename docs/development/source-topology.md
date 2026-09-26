@@ -228,10 +228,17 @@ bounds, and safe-stop semantics are neither Transport physical-stream ownership 
 application/presentation policy. `decoder.{c,h}` owns known-state
 prepare/initialize/picture/destroy ordering, explicit caller-supplied sequence and feed
 bounds, truthful Transport data/exhaustion/failure consumption, decoder-call lifetime
-fencing, and separate real-payload versus padded-transfer accounting. It does not own
-the physical PSTV receiver, exact-generation START/retirement orchestration, Pi
-producer/capture control, presentation/compositor work, first-presentation clock arm,
-scheduler/drop policy, calibration, application orchestration, or hardware
+fencing, and separate real-payload versus padded-transfer accounting.
+`worker.{c,h}` owns the exact-generation worker/thread/stack lifecycle. R34P
+adds only the narrow retryable reclaim of the create-success/start-failure/
+destroy-failure prefix: a never-started worker's created thread and stack remain
+owned until concrete destruction succeeds, and that path cannot synthesize join
+or worker outcome. Application's `app_mpeg_run.{c,h}` classifies the reachable
+pre-START residual run shapes and invokes that owner seam only after exact
+retained-Transport proof. It does not own the physical PSTV receiver,
+exact-generation START/retirement mechanism, Pi producer/capture control,
+presentation/compositor work, first-presentation clock arm, scheduler/drop
+policy, calibration, application product orchestration, or hardware
 qualification.
 
 `src/audio/` was deliberately created during the A002 synchronous PCM playback
