@@ -399,20 +399,15 @@ static int open_osk_foreground(
     app_published_pointer_state_t *published_pointer,
     pstvnc_local_ui_t *local_ui,
     pstvnc_osk_t *osk,
-    int *mouse_interpretation_suspended,
-    int *mpeg_session_failure)
+    int *mouse_interpretation_suspended)
 {
     if (input_runtime == NULL ||
-        mpeg_product == NULL ||
         session == NULL ||
         published_pointer == NULL ||
         local_ui == NULL ||
         osk == NULL ||
-        mouse_interpretation_suspended == NULL ||
-        mpeg_session_failure == NULL)
+        mouse_interpretation_suspended == NULL)
         return 0;
-
-    *mpeg_session_failure = 0;
 
     if (local_ui->foreground != PSTVNC_LOCAL_UI_FOREGROUND_DESKTOP ||
         pstvnc_local_ui_input_is_quarantined(local_ui) ||
@@ -456,8 +451,6 @@ static int apply_local_controller_action(
     pstvnc_osk_activation_t activation;
 
     if (input_runtime == NULL ||
-        mpeg_product == NULL ||
-        rfb_flow_policy == NULL ||
         session == NULL ||
         published_pointer == NULL ||
         local_ui == NULL ||
@@ -553,8 +546,10 @@ static int service_controller_state(
 {
     pstvnc_local_controller_result_t result;
     unsigned int action_index;
+    int product_consumed = 0;
 
     if (input_runtime == NULL ||
+        mpeg_product == NULL ||
         session == NULL ||
         published_pointer == NULL ||
         local_controller == NULL ||
@@ -564,20 +559,14 @@ static int service_controller_state(
         controller_state == NULL)
         return 0;
 
-    {
-        int product_consumed = 0;
-        pstvnc_app_mpeg_product_result_t product_result =
-            pstvnc_app_mpeg_product_service_controller(
-                mpeg_product,
-                controller_state,
-                &product_consumed);
+    if (pstvnc_app_mpeg_product_service_controller(
+            mpeg_product,
+            controller_state,
+            &product_consumed) != PSTVNC_APP_MPEG_PRODUCT_OK)
+        return 0;
 
-        if (product_result != PSTVNC_APP_MPEG_PRODUCT_OK)
-            return 0;
-
-        if (product_consumed)
-            return 1;
-    }
+    if (product_consumed)
+        return 1;
 
     if (!pstvnc_local_controller_route(
             local_controller,
@@ -590,12 +579,6 @@ static int service_controller_state(
     for (action_index = 0;
          action_index < result.action_count;
          action_index++) {
-        /*
-         * Closing DESKTOP admission before the foreground mutation prevents a
-         * racing worker sample from beginning a desktop-only gesture in OSK.
-         * Re-entry is published later only after quarantine and all MPEG
-         * ownership have returned to ordinary desktop.
-         */
         if (result.actions[action_index] ==
                 PSTVNC_LOCAL_CONTROLLER_ACTION_OPEN_OSK &&
             pstvnc_input_runtime_set_product_action_desktop_eligible(
@@ -661,16 +644,22 @@ static int service_semantic_input_events(
     pstvnc_local_controller_t *local_controller,
     pstvnc_local_ui_t *local_ui,
     pstvnc_osk_t *osk,
-    int *mouse_interpretation_suspended)
+    int *mouse_interpretation_suspended,
+    int *mpeg_session_failure)
 {
     if (input_runtime == NULL ||
+        mpeg_product == NULL ||
+        rfb_flow_policy == NULL ||
         session == NULL ||
         published_pointer == NULL ||
         local_controller == NULL ||
         local_ui == NULL ||
         osk == NULL ||
-        mouse_interpretation_suspended == NULL)
+        mouse_interpretation_suspended == NULL ||
+        mpeg_session_failure == NULL)
         return 0;
+
+    *mpeg_session_failure = 0;
 
     if (pstvnc_input_runtime_last_error(input_runtime) !=
         PSTVNC_INPUT_RUNTIME_ERROR_NONE)
@@ -696,8 +685,10 @@ static int service_semantic_input_events(
                         local_ui,
                         osk,
                         mouse_interpretation_suspended,
-                        &event.payload.controller_state))
+                        &event.payload.controller_state)) {
+                    *mpeg_session_failure = 1;
                     return 0;
+                }
                 break;
 
             case PSTVNC_INPUT_EVENT_MOUSE_UPDATE:
@@ -718,42 +709,37 @@ static int service_semantic_input_events(
                     return 0;
                 break;
 
-            case PSTVNC_INPUT_EVENT_PRODUCT_ACTION:
-                /*
-                 * The queue carries semantic meaning only. Close DESKTOP
-                 * admission before beginning P9 so no subsequent sample can
-                 * inherit stale desktop eligibility during calibration.
-                 */
+            case PSTVNC_INPUT_EVENT_PRODUCT_ACTION: {
+                pstvnc_app_mpeg_product_result_t product_result;
+
                 if (pstvnc_input_runtime_set_product_action_desktop_eligible(
                         input_runtime,
                         0) < 0)
                     return 0;
 
-                {
-                    pstvnc_app_mpeg_product_result_t product_result =
-                        pstvnc_app_mpeg_product_route_action(
-                            mpeg_product,
-                            event.payload.product_action,
-                            rfb_flow_policy,
-                            input_runtime,
-                            session,
-                            local_ui,
-                            published_pointer->cursor_x,
-                            published_pointer->cursor_y,
-                            &published_pointer->click_buttons,
-                            gs_pixels,
-                            PSTVNC_DISPLAY_PIXEL_COUNT);
+                product_result = pstvnc_app_mpeg_product_route_action(
+                    mpeg_product,
+                    event.payload.product_action,
+                    rfb_flow_policy,
+                    input_runtime,
+                    session,
+                    local_ui,
+                    published_pointer->cursor_x,
+                    published_pointer->cursor_y,
+                    &published_pointer->click_buttons,
+                    gs_pixels,
+                    PSTVNC_DISPLAY_PIXEL_COUNT);
 
-                    if (product_result ==
-                            PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE) {
-                        *mpeg_session_failure = 1;
-                        return 0;
-                    }
-
-                    if (product_result != PSTVNC_APP_MPEG_PRODUCT_OK)
-                        return 0;
+                if (product_result ==
+                        PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE) {
+                    *mpeg_session_failure = 1;
+                    return 0;
                 }
+
+                if (product_result != PSTVNC_APP_MPEG_PRODUCT_OK)
+                    return 0;
                 break;
+            }
 
             case PSTVNC_INPUT_EVENT_NONE:
             default:
@@ -817,10 +803,6 @@ static int retire_attempt_owners(
                 PSTVNC_TRANSPORT_OK)
             return 0;
 
-        /*
-         * R33 is deliberately polled to proof, not to a deadline. Transport
-         * terminal wakeup is what lets an old worker leave its wait/feed path.
-         */
         while (!abort_ready) {
             if (pstvnc_app_mpeg_product_service_session_abort(
                     mpeg_product,
@@ -839,10 +821,6 @@ static int retire_attempt_owners(
                 media_clock_binding) < 0)
             *media_clock_binding_release_failed = 1;
 
-        /*
-         * R26 revokes local binding authority before DeleteSema() reports.
-         * Never fabricate a second release attempt for this session object.
-         */
         *media_clock_binding_active = 0;
     }
 
