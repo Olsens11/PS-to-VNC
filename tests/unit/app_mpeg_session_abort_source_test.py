@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""R33 source-boundary proof for retained Transport and local MPEG abort."""
+"""R33/R34P/R35P source-boundary proof for retained-session local MPEG abort."""
 
 from pathlib import Path
 import re
@@ -83,6 +83,14 @@ local_abort = function_body(
     run,
     "pstvnc_app_mpeg_run_session_abort_service",
 )
+partial_retirement_admission = function_body(
+    run,
+    "pstvnc_app_mpeg_run_partial_retirement_session_abort_entry_valid",
+)
+retirement_service = function_body(
+    run,
+    "pstvnc_app_mpeg_run_retirement_service",
+)
 abandon = function_body(
     frame,
     "pstvnc_app_mpeg_frame_consumer_abandon_claim",
@@ -135,10 +143,10 @@ for required in (
 ):
     require(required in local_abort, f"local abort missing {required}")
 
-# R34P adds a pre-START status-only probe before R33's normal worker-stop
-# block so an already-joined pre-START worker is not stopped/joined twice.
-# Prove the accepted post-START R33 path from the actual stop branch rather
-# than using first textual occurrence of worker_status across both paths.
+# R34P adds a pre-START status-only probe and R35P adds a post-retirement
+# natural-finish probe before R33's normal worker-stop block. Prove the accepted
+# full-live R33 path from the actual stop branch rather than using the first
+# textual worker_status/join occurrence across all admitted prefixes.
 retained_pos = local_abort.index(
     "pstvnc_transport_session_abort_storage_retained("
 )
@@ -188,6 +196,48 @@ positions = (
 require(
     list(positions) == sorted(positions),
     "R33 post-START local abort owner ordering drifted",
+)
+
+for required in (
+    "PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_RELEASE_FAILED",
+    "PSTVNC_APP_MPEG_RUN_RETIRE_RUNTIME_RELEASE_FAILED",
+    "PSTVNC_APP_MPEG_RUN_RETIRE_FINALIZE_FAILED",
+    "PSTVNC_APP_MPEG_RUN_RETIRE_STATE_INVALID",
+    "PSTVNC_APP_MPEG_RUN_RESTORE_STATE_INVALID",
+    "PSTVNC_APP_MPEG_RUN_PRESENTATION_SEAL_FAILED",
+    "PSTVNC_APP_MPEG_RUN_REVEAL_FAILED",
+    "PSTVNC_APP_MPEG_RUN_REVEAL_CONTRADICTION",
+    "retirement_worker_outcome_recorded",
+):
+    require(
+        required in partial_retirement_admission,
+        f"R35P partial-retirement admission missing {required}",
+    )
+
+for forbidden in (
+    "PSTVNC_APP_MPEG_RUN_REVEAL_PLATFORM_FAILED",
+    "PSTVNC_APP_MPEG_RUN_REVEAL_SYNC_INVALID",
+    "pstvnc_transport_mpeg_run_finalize(",
+    "pstvnc_mpeg_compositor_reveal_retired(",
+):
+    require(
+        forbidden not in partial_retirement_admission,
+        f"R35P admission widened into retryable/normal work: {forbidden}",
+    )
+
+require(
+    "run->retirement_worker_outcome = outcome;" in retirement_service
+    and "run->retirement_worker_outcome_recorded = 1;" in retirement_service,
+    "R23 must retain exact natural terminal worker evidence for R35P",
+)
+require(
+    retirement_service.index("run->retirement_worker_outcome = outcome;")
+    < retirement_service.index("pstvnc_mpeg_worker_release("),
+    "R23 terminal worker evidence must be retained before worker release",
+)
+require(
+    "pstvnc_app_mpeg_run_partial_retirement_session_abort_entry_valid(" in local_abort,
+    "R35P admission helper is not composed by local abort",
 )
 
 for forbidden in (
