@@ -135,20 +135,59 @@ for required in (
 ):
     require(required in local_abort, f"local abort missing {required}")
 
-ordered = (
-    "pstvnc_transport_session_abort_storage_retained(",
-    "pstvnc_app_mpeg_frame_consumer_abandon_claim(",
-    "pstvnc_mpeg_worker_request_stop(",
-    "pstvnc_mpeg_worker_status(",
-    "pstvnc_mpeg_worker_join(",
-    "pstvnc_mpeg_worker_outcome(",
-    "pstvnc_mpeg_worker_release(",
-    "pstvnc_mpeg_ps2_worker_runtime_release(",
+# R34P adds a pre-START status-only probe before R33's normal worker-stop
+# block so an already-joined pre-START worker is not stopped/joined twice.
+# Prove the accepted post-START R33 path from the actual stop branch rather
+# than using first textual occurrence of worker_status across both paths.
+retained_pos = local_abort.index(
+    "pstvnc_transport_session_abort_storage_retained("
 )
-positions = [local_abort.index(item) for item in ordered]
+abandon_pos = local_abort.index(
+    "pstvnc_app_mpeg_frame_consumer_abandon_claim(",
+    retained_pos,
+)
+stop_branch_pos = local_abort.index(
+    "if (!run->worker_joined)",
+    abandon_pos,
+)
+stop_pos = local_abort.index(
+    "pstvnc_mpeg_worker_request_stop(",
+    stop_branch_pos,
+)
+status_pos = local_abort.index(
+    "pstvnc_mpeg_worker_status(",
+    stop_pos,
+)
+join_pos = local_abort.index(
+    "pstvnc_mpeg_worker_join(",
+    status_pos,
+)
+outcome_pos = local_abort.index(
+    "pstvnc_mpeg_worker_outcome(",
+    join_pos,
+)
+release_pos = local_abort.index(
+    "pstvnc_mpeg_worker_release(",
+    outcome_pos,
+)
+runtime_release_pos = local_abort.index(
+    "pstvnc_mpeg_ps2_worker_runtime_release(",
+    release_pos,
+)
+positions = (
+    retained_pos,
+    abandon_pos,
+    stop_branch_pos,
+    stop_pos,
+    status_pos,
+    join_pos,
+    outcome_pos,
+    release_pos,
+    runtime_release_pos,
+)
 require(
-    positions == sorted(positions),
-    "R33 local abort owner ordering drifted",
+    list(positions) == sorted(positions),
+    "R33 post-START local abort owner ordering drifted",
 )
 
 for forbidden in (
