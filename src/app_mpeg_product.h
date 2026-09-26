@@ -2,8 +2,9 @@
  * File synopsis:
  * Defines R34's ordinary Application-owned MPEG product coordinator. It composes
  * accepted P9 calibration, P10 protected activation, R21/R22 live-run service,
- * and R33 local session-abort service without acquiring any lower-owner
- * mechanism or normal R23/R24 retirement/reveal authority.
+ * and R33/R34P local session-abort service without acquiring any lower-owner
+ * mechanism or normal R23/R24 retirement/reveal authority. Live service and
+ * abnormal teardown ownership are exposed as separate predicates.
  *
  * Physical binding recognition remains Input-owned. This coordinator receives
  * only semantic product actions and trustworthy controller facts.
