@@ -13,8 +13,9 @@ R13 composes one explicit session-scoped RFB attachment mechanism while
 preserving this object as the sole PS2-facing Wire recv/send and global sequence
 owner. R17 optionally composes one exact-generation MPEG owner under the same
 physical loop. R39 permits one optional exact-session AUDIO PCM owner under that
-same readiness/send loop; AUDIO CREDIT is dispatched here and AUDIO DATA is
-serialized only by this owner's global-sequence send path.
+same readiness/send loop. R40 keeps the configured factory lazy: the first valid
+channel-2 CREDIT creates that exact-session owner, applies the same CREDIT once,
+and only then may AUDIO DATA be serialized by this owner's global-sequence path.
 
 With no explicit rider factories the server remains establishment-only. Rider
 mechanisms own their local lifecycle; this server still owns no selected profile
@@ -137,12 +138,14 @@ class WireConnectionOwner:
         rfb_attachment: rfb_attach.RfbAttachment | None = None,
         mpeg_generation: mpeg.MpegGenerationController | None = None,
         audio_pcm: object | None = None,
+        audio_pcm_factory: Callable[[int], object] | None = None,
     ) -> None:
         self._connection = connection
         self._session_ids = session_ids
         self._rfb_attachment = rfb_attachment
         self._mpeg_generation = mpeg_generation
         self._audio_pcm = audio_pcm
+        self._audio_pcm_factory = audio_pcm_factory
         self.state = WireSessionState.PROVISIONAL
         self.session_id: int | None = None
         self.next_receive_sequence = 1
@@ -364,17 +367,35 @@ class WireConnectionOwner:
         header: protocol.WireHeader,
         payload: bytes,
     ) -> bool:
-        audio_pcm = self._audio_pcm
-        if audio_pcm is None:
+        if not protocol.is_audio_credit_header(header):
             return False
 
-        if protocol.is_audio_credit_header(header):
-            audio_pcm.add_credit(
-                protocol.decode_audio_credit_payload(payload)
-            )
-            return True
+        amount = protocol.decode_audio_credit_payload(payload)
+        audio_pcm = self._audio_pcm
 
-        return False
+        if audio_pcm is None:
+            factory = self._audio_pcm_factory
+            if factory is None or self.session_id is None:
+                return False
+
+            created = None
+            try:
+                created = factory(self.session_id)
+                self.attach_audio_pcm(created)
+                created.add_credit(amount)
+                return True
+            except Exception as exc:
+                if created is not None and self._audio_pcm is not created:
+                    try:
+                        created.close()
+                    except Exception:
+                        pass
+                raise RuntimeError(
+                    "failed to activate exact-session AUDIO owner"
+                ) from exc
+
+        audio_pcm.add_credit(amount)
+        return True
 
     def _handle_mpeg_frame(
         self,
@@ -801,29 +822,11 @@ class WireServer:
             connection,
             self.session_ids,
             rfb_attachment=attachment,
+            audio_pcm_factory=self.audio_pcm_factory,
         )
         try:
             outcome = owner.establish()
             if outcome.accepted:
-                if (
-                    self.audio_pcm_factory is not None
-                    and outcome.session_id is not None
-                ):
-                    audio_pcm = None
-                    try:
-                        audio_pcm = self.audio_pcm_factory(outcome.session_id)
-                        owner.attach_audio_pcm(audio_pcm)
-                    except (RuntimeError, ValueError):
-                        if audio_pcm is not None:
-                            try:
-                                audio_pcm.close()
-                            except Exception:
-                                pass
-                        return owner._finish(
-                            accepted=True,
-                            rejection_reason=None,
-                            protocol_failed=True,
-                        )
                 if (
                     self.mpeg_generation_factory is not None
                     and outcome.session_id is not None
