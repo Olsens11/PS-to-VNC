@@ -62,7 +62,6 @@ static pstvnc_transport_result_t r34_close_result;
 static uint64_t r34_current_tick_value;
 static size_t r34_begin_abort_legacy_event_count;
 static size_t r34_abort_service_legacy_event_count;
-static size_t r34_media_release_legacy_event_count;
 static size_t r34_close_legacy_event_count;
 
 int pstvnc_config_rfb_runtime_profile_selected(
@@ -318,7 +317,6 @@ static void reset_selected_projection(void)
     r34_current_tick_value = UINT64_C(0x123456789abcdef0);
     r34_begin_abort_legacy_event_count = 0u;
     r34_abort_service_legacy_event_count = 0u;
-    r34_media_release_legacy_event_count = 0u;
     r34_close_legacy_event_count = 0u;
 }
 
@@ -1131,6 +1129,8 @@ static void test_r34_live_failure_uses_r33_before_release_and_close(void)
 
     reset_script();
     reset_selected_projection();
+    script_fresh_connections(2u);
+    connect_results[1] = -1;
 
     r34_has_started_run = 1;
     r34_live_result = PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE;
