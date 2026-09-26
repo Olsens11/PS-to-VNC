@@ -437,6 +437,34 @@ static int pstvnc_app_mpeg_run_unwind_pre_start(
         return 0;
     }
 
+    /*
+     * The only initialized worker that can exist without run->worker_started is
+     * R34P's exact created-but-never-started partial owner. Reclaim it through
+     * the worker-owned seam; no joined/finished/outcome facts are synthesized.
+     */
+    if (!run->worker_started && run->worker.initialized) {
+        pstvnc_mpeg_worker_result_t partial_result;
+
+        if (run->start_invoked)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+
+        partial_result = pstvnc_mpeg_worker_reclaim_unstarted(
+            &run->worker,
+            run->current_generation);
+
+        if (partial_result == PSTVNC_MPEG_WORKER_THREAD_DESTROY_FAILED)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_RELEASE_FAILED);
+
+        if (partial_result != PSTVNC_MPEG_WORKER_OK)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+    }
+
     if (run->worker_runtime_owned) {
         if (pstvnc_mpeg_ps2_worker_runtime_release(
                 &run->worker_runtime) != 0) {
@@ -1172,7 +1200,7 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
     return PSTVNC_APP_MPEG_RUN_OK;
 }
 
-static int pstvnc_app_mpeg_run_session_abort_entry_valid(
+static int pstvnc_app_mpeg_run_poststart_session_abort_entry_valid(
     const pstvnc_app_mpeg_run_t *run)
 {
     if (run == NULL ||
@@ -1189,6 +1217,63 @@ static int pstvnc_app_mpeg_run_session_abort_entry_valid(
     if (!run->frame_consumer.initialized ||
         run->frame_consumer.run_generation != run->current_generation ||
         run->frame_consumer.worker != &run->worker)
+        return 0;
+
+    return 1;
+}
+
+static int pstvnc_app_mpeg_run_prestart_session_abort_entry_valid(
+    const pstvnc_app_mpeg_run_t *run)
+{
+    if (run == NULL ||
+        run->state != PSTVNC_APP_MPEG_RUN_FAULTED ||
+        !run->session_teardown_required ||
+        run->current_generation == 0u ||
+        run->transport_access.opaque_ticket == 0u ||
+        run->start_invoked ||
+        run->frame_consumer_initialized ||
+        run->frame_consumer.initialized ||
+        run->retire_invoked ||
+        run->retire_completion_taken ||
+        run->producer_done_published ||
+        run->rfb_restoration_presented)
+        return 0;
+
+    /*
+     * R21 can return CLEANUP_FAILED with no asynchronous worker left, with a
+     * started worker retained after failed stop/join/release, or with the exact
+     * create-success/start-failure/destroy-failure partial worker. A retained
+     * worker of either kind necessarily still depends on the R5 runtime and the
+     * open MPEG Transport run because R21 returns before those owners are
+     * released. Other combinations are contradictory rather than cleanup
+     * prefixes.
+     */
+    if (run->worker_started) {
+        if (!run->worker.initialized ||
+            !run->worker.thread_started ||
+            !run->worker_runtime_owned ||
+            !run->transport_run_open)
+            return 0;
+    } else if (run->worker.initialized) {
+        if (!run->worker_runtime_owned ||
+            !run->transport_run_open ||
+            !run->worker.thread_created ||
+            run->worker.thread_started ||
+            run->worker.thread_joined ||
+            run->worker.thread_destroyed ||
+            run->worker.thread_id < 0 ||
+            run->worker.worker_stack == NULL ||
+            run->worker.stop_requested ||
+            run->worker.decoder_live ||
+            run->worker.worker_finished ||
+            run->worker.slot_state != PSTVNC_MPEG_WORKER_SLOT_EMPTY ||
+            run->worker.outcome.kind != PSTVNC_MPEG_WORKER_OUTCOME_NONE ||
+            run->presentation_armed)
+            return 0;
+    }
+
+    if (run->worker_runtime_owned !=
+        (run->worker_runtime.resources_owned != 0))
         return 0;
 
     return 1;
@@ -1242,7 +1327,8 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_session_abort_service(
             PSTVNC_APP_MPEG_RUN_SESSION_ABORT_TRANSPORT_NOT_RETAINED);
 
     if (run->state != PSTVNC_APP_MPEG_RUN_SESSION_ABORTING) {
-        if (!pstvnc_app_mpeg_run_session_abort_entry_valid(run))
+        if (!pstvnc_app_mpeg_run_poststart_session_abort_entry_valid(run) &&
+            !pstvnc_app_mpeg_run_prestart_session_abort_entry_valid(run))
             return pstvnc_app_mpeg_run_session_abort_fail(
                 run,
                 PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
@@ -1267,56 +1353,88 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_session_abort_service(
     }
 
     if (run->worker_started && !run->worker_joined) {
-        if (!run->session_abort_stop_requested) {
-            if (pstvnc_mpeg_worker_request_stop(
+        /*
+         * A pre-START unwind may already have joined the worker and then failed
+         * while destroying/releasing it. Recover that owner fact from the
+         * worker itself instead of issuing a second stop/join. Post-START R33
+         * retains its original stop -> status -> join ordering unchanged.
+         */
+        if (!run->start_invoked) {
+            memset(&worker_status, 0, sizeof(worker_status));
+            if (pstvnc_mpeg_worker_status(
+                    &run->worker,
+                    run->current_generation,
+                    &worker_status) != PSTVNC_MPEG_WORKER_OK)
+                return pstvnc_app_mpeg_run_session_abort_fail(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
+
+            if (worker_status.thread_joined) {
+                if (worker_status.slot_state !=
+                        PSTVNC_MPEG_WORKER_SLOT_EMPTY ||
+                    !worker_status.stop_requested ||
+                    worker_status.decoder_live ||
+                    !worker_status.worker_finished)
+                    return pstvnc_app_mpeg_run_session_abort_fail(
+                        run,
+                        PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
+
+                run->worker_joined = 1;
+            }
+        }
+
+        if (!run->worker_joined) {
+            if (!run->session_abort_stop_requested) {
+                if (pstvnc_mpeg_worker_request_stop(
+                        &run->worker,
+                        run->current_generation) != PSTVNC_MPEG_WORKER_OK)
+                    return pstvnc_app_mpeg_run_session_abort_fail(
+                        run,
+                        PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STOP_FAILED);
+
+                run->session_abort_stop_requested = 1;
+            }
+
+            memset(&worker_status, 0, sizeof(worker_status));
+            if (pstvnc_mpeg_worker_status(
+                    &run->worker,
+                    run->current_generation,
+                    &worker_status) != PSTVNC_MPEG_WORKER_OK)
+                return pstvnc_app_mpeg_run_session_abort_fail(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
+
+            /*
+             * request_stop() discards AVAILABLE itself; P7 abandonment above
+             * owns CLAIMED. Pre-START admission proves P7 never existed, so a
+             * remaining CLAIMED slot there is also contradictory.
+             */
+            if (worker_status.slot_state != PSTVNC_MPEG_WORKER_SLOT_EMPTY)
+                return pstvnc_app_mpeg_run_session_abort_fail(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+
+            if (!worker_status.worker_finished) {
+                run->last_result = PSTVNC_APP_MPEG_RUN_OK;
+                return PSTVNC_APP_MPEG_RUN_OK;
+            }
+
+            if (!worker_status.stop_requested ||
+                worker_status.decoder_live ||
+                worker_status.thread_joined)
+                return pstvnc_app_mpeg_run_session_abort_fail(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
+
+            if (pstvnc_mpeg_worker_join(
                     &run->worker,
                     run->current_generation) != PSTVNC_MPEG_WORKER_OK)
                 return pstvnc_app_mpeg_run_session_abort_fail(
                     run,
-                    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STOP_FAILED);
+                    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_JOIN_FAILED);
 
-            run->session_abort_stop_requested = 1;
+            run->worker_joined = 1;
         }
-
-        memset(&worker_status, 0, sizeof(worker_status));
-        if (pstvnc_mpeg_worker_status(
-                &run->worker,
-                run->current_generation,
-                &worker_status) != PSTVNC_MPEG_WORKER_OK)
-            return pstvnc_app_mpeg_run_session_abort_fail(
-                run,
-                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
-
-        /*
-         * request_stop() discards AVAILABLE itself; P7 abandonment above owns
-         * CLAIMED. Any remaining nonempty slot is contradictory and must keep
-         * teardown fenced.
-         */
-        if (worker_status.slot_state != PSTVNC_MPEG_WORKER_SLOT_EMPTY)
-            return pstvnc_app_mpeg_run_session_abort_fail(
-                run,
-                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
-
-        if (!worker_status.worker_finished) {
-            run->last_result = PSTVNC_APP_MPEG_RUN_OK;
-            return PSTVNC_APP_MPEG_RUN_OK;
-        }
-
-        if (!worker_status.stop_requested ||
-            worker_status.decoder_live ||
-            worker_status.thread_joined)
-            return pstvnc_app_mpeg_run_session_abort_fail(
-                run,
-                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
-
-        if (pstvnc_mpeg_worker_join(
-                &run->worker,
-                run->current_generation) != PSTVNC_MPEG_WORKER_OK)
-            return pstvnc_app_mpeg_run_session_abort_fail(
-                run,
-                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_JOIN_FAILED);
-
-        run->worker_joined = 1;
     }
 
     if (run->worker_started && !run->worker_joined)
