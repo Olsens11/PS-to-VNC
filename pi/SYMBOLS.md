@@ -5,10 +5,12 @@ GENERATION=CLEAN_RECONSTRUCTION
 COVERAGE=COMPLETE
 
 This directory owns the maintained Raspberry Pi product Wire protocol/server,
-RFB attachment/relay/profile mechanisms, and the R17 exact-generation MPEG
-producer/control lifecycle. It does not own provisioning tooling, systemd
+RFB attachment/relay/profile mechanisms, the R17 exact-generation MPEG
+producer/control lifecycle, and R39's optional session-scoped AUDIO PCM
+producer/rider mechanism. It does not own provisioning tooling, systemd
 installation actions, the direct-RFB provider, final PS2 Application MPEG
-orchestration, AUDIO activation, heartbeat, or presentation policy.
+orchestration, ordinary AUDIO activation/start policy, heartbeat, or
+presentation policy.
 
 The inventory below covers maintained clean-generation symbols defined directly
 in this directory.

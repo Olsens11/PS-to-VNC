@@ -174,12 +174,18 @@ remain under `systemd/pi/`, while the installed product Python bytes live under
 The canonical selected AUDIO runtime values live in
 `src/config/audio_runtime_profile.json` and are deterministically projected by
 `scripts/generate-audio-runtime-profile.py` into
-`src/config/audio_runtime_profile_generated.h`. The hand-written
+`src/config/audio_runtime_profile_generated.h` and the narrow
+`pi/audio_runtime_profile_generated.py` producer projection. The hand-written
 `audio_runtime_profile.{c,h}` aggregate only existing Transport AUDIO, PCM and
 AUDIO-session owner value types and publish an immutable caller-owned copy after
-validation. The profile deliberately contains no media-clock presentation
-offset, H1 laboratory profile ID, runtime JSON parsing, AUDSRV/thread effects,
-Transport open, or Application activation.
+validation. R39 adds `pi/audio_pcm_producer.py` as the session-scoped Pi owner
+of default-sink monitor discovery, selected PipeWire PCM capture, bounded local
+spooling, exact channel-2 credit accounting, readiness publication and proven
+process/thread retirement. WireServer remains the sole PS2-facing physical I/O
+and sequence owner, and ordinary `pi/wire_runtime.py` AUDIO activation remains
+deferred. The selected profile deliberately contains no media-clock
+presentation offset, H1 laboratory profile ID, runtime JSON parsing,
+AUDSRV/thread effects, Transport open, or Application activation.
 
 ### R14 shared RFB profile authority
 

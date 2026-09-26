@@ -377,4 +377,7 @@ class AudioWireServerTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main(verbosity=2)
+    program = unittest.main(verbosity=2, exit=False)
+    if not program.result.wasSuccessful():
+        raise SystemExit(1)
+    print("PI_AUDIO_WIRE_SERVER_TEST=PASS")

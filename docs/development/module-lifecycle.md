@@ -153,6 +153,20 @@ read Transport queue/producer state or expose terminal AUDIO outcome. A kernel
 observation failure is an error. A done poll still does not authorize outcome
 access or reclamation: join remains the visibility/dormancy fence.
 
+R39 supplies the companion Pi-side mechanism without making AUDIO ordinary
+product policy. One injected AUDIO PCM owner belongs to exactly one accepted
+Wire Session. It discovers and captures the selected default-sink monitor,
+buffers no more than the selected channel window, and treats PS2 channel-2
+CREDIT as the only DATA admission authority. Producer readiness is published
+through a session-local wake descriptor into WireServer's existing readiness
+loop; only WireServer writes the PS2 socket and allocates the global send
+sequence. Unexpected capture EOF, reader failure, malformed final PCM framing,
+credit overflow, or unproven process/thread retirement fails the session
+closed. Ordinary retirement never fabricates the existing zero-length AUDIO
+producer-done representation. R39 leaves `pi/wire_runtime.py` without an AUDIO
+factory, so final AUDIO admission/start/failure/teardown policy remains an A006
+composition responsibility.
+
 ### Input and mouse forwarding
 
 Local controller/input acquisition is a PS2-local facility and need not die
