@@ -79,12 +79,15 @@ class FakeAudioOwner:
         *,
         payload: bytes = b"abcd",
         close_result: bool = True,
+        fail_add_credit: bool = False,
     ) -> None:
         self.session_id = session_id
         self.profile = SimpleNamespace(frame_bytes=4)
         self.credit_bytes = 0
         self.payload = payload
         self.close_result = close_result
+        self.fail_add_credit = fail_add_credit
+        self.credit_amounts: list[int] = []
         self.closed = False
         self._wake_reader, self._wake_writer = socket.socketpair()
         self._wake_reader.setblocking(False)
@@ -112,6 +115,9 @@ class FakeAudioOwner:
             raise RuntimeError("fake AUDIO owner closed")
 
     def add_credit(self, amount: int) -> None:
+        self.credit_amounts.append(amount)
+        if self.fail_add_credit:
+            raise RuntimeError("injected AUDIO credit failure")
         self.credit_bytes += amount
         self._wake()
 
@@ -290,6 +296,7 @@ class AudioWireServerTests(unittest.TestCase):
         )
         peer, thread, result = serve_once(server)
         session_id = establish(peer)
+        self.assertEqual(audio_owners, [])
 
         rfb_header, rfb_payload = read_frame(peer)
         self.assertTrue(protocol.is_rfb_credit_header(rfb_header))
@@ -311,7 +318,9 @@ class AudioWireServerTests(unittest.TestCase):
         self.assertEqual(mpeg_header.sequence, 4)
         self.assertEqual(mpeg_payload, b"MPEG")
 
+        self.assertEqual(len(audio_owners), 1)
         self.assertEqual(audio_owners[0].session_id, session_id)
+        self.assertEqual(audio_owners[0].credit_amounts, [4])
         self.assertEqual(mpeg_owners[0].session_id, session_id)
 
         outcome = finish(peer, thread, result)
@@ -335,12 +344,14 @@ class AudioWireServerTests(unittest.TestCase):
         server = wire_server.WireServer(audio_pcm_factory=make_audio)
         peer, thread, result = serve_once(server)
         establish(peer)
+        self.assertEqual(owners, [])
+        peer.sendall(protocol.encode_audio_credit_frame(4, sequence=2))
         outcome = finish(peer, thread, result)
         self.assertTrue(outcome.accepted)
         self.assertTrue(outcome.protocol_failed)
         self.assertTrue(owners[0].closed)
 
-    def test_each_wire_session_gets_fresh_audio_owner(self) -> None:
+    def test_lazy_owner_is_absent_before_credit_reused_then_fresh_next_session(self) -> None:
         owners: list[FakeAudioOwner] = []
 
         def make_audio(session_id: int):
@@ -352,21 +363,96 @@ class AudioWireServerTests(unittest.TestCase):
             session_ids=wire_server.SessionIdAllocator(70),
             audio_pcm_factory=make_audio,
         )
+
         peer_a, thread_a, result_a = serve_once(server)
         session_a = establish(peer_a)
+        self.assertEqual(session_a, 70)
+        self.assertEqual(owners, [])
         outcome_a = finish(peer_a, thread_a, result_a)
         self.assertFalse(outcome_a.protocol_failed)
+        self.assertEqual(owners, [])
 
         peer_b, thread_b, result_b = serve_once(server)
         session_b = establish(peer_b)
+        self.assertEqual(session_b, 71)
+        self.assertEqual(owners, [])
+        peer_b.sendall(protocol.encode_audio_credit_frame(4, sequence=2))
+        peer_b.sendall(protocol.encode_audio_credit_frame(3, sequence=3))
         outcome_b = finish(peer_b, thread_b, result_b)
         self.assertFalse(outcome_b.protocol_failed)
+        self.assertEqual(len(owners), 1)
+        self.assertEqual(owners[0].session_id, 71)
+        self.assertEqual(owners[0].credit_amounts, [4, 3])
+        self.assertEqual(owners[0].credit_bytes, 7)
 
-        self.assertEqual((session_a, session_b), (70, 71))
+        peer_c, thread_c, result_c = serve_once(server)
+        session_c = establish(peer_c)
+        self.assertEqual(session_c, 72)
+        peer_c.sendall(protocol.encode_audio_credit_frame(2, sequence=2))
+        outcome_c = finish(peer_c, thread_c, result_c)
+        self.assertFalse(outcome_c.protocol_failed)
         self.assertEqual(len(owners), 2)
         self.assertIsNot(owners[0], owners[1])
-        self.assertEqual(owners[0].session_id, 70)
-        self.assertEqual(owners[1].session_id, 71)
+        self.assertEqual(owners[1].session_id, 72)
+        self.assertEqual(owners[1].credit_amounts, [2])
+
+    def test_lazy_factory_attach_and_credit_failures_are_terminal(self) -> None:
+        def fail_factory(_session_id: int):
+            raise RuntimeError("injected AUDIO factory failure")
+
+        server = wire_server.WireServer(audio_pcm_factory=fail_factory)
+        peer, thread, result = serve_once(server)
+        establish(peer)
+        peer.sendall(protocol.encode_audio_credit_frame(4, sequence=2))
+        thread.join(timeout=2.0)
+        self.assertFalse(thread.is_alive())
+        self.assertTrue(result["outcome"].protocol_failed)
+        peer.close()
+
+        wrong_session_owners: list[FakeAudioOwner] = []
+
+        def wrong_session_factory(session_id: int):
+            owner = FakeAudioOwner(session_id + 1, payload=b"")
+            wrong_session_owners.append(owner)
+            return owner
+
+        server = wire_server.WireServer(
+            audio_pcm_factory=wrong_session_factory
+        )
+        peer, thread, result = serve_once(server)
+        establish(peer)
+        peer.sendall(protocol.encode_audio_credit_frame(4, sequence=2))
+        thread.join(timeout=2.0)
+        self.assertFalse(thread.is_alive())
+        self.assertTrue(result["outcome"].protocol_failed)
+        self.assertEqual(len(wrong_session_owners), 1)
+        self.assertTrue(wrong_session_owners[0].closed)
+        peer.close()
+
+        credit_failure_owners: list[FakeAudioOwner] = []
+
+        def credit_failure_factory(session_id: int):
+            owner = FakeAudioOwner(
+                session_id,
+                payload=b"",
+                fail_add_credit=True,
+            )
+            credit_failure_owners.append(owner)
+            return owner
+
+        server = wire_server.WireServer(
+            audio_pcm_factory=credit_failure_factory
+        )
+        peer, thread, result = serve_once(server)
+        establish(peer)
+        peer.sendall(protocol.encode_audio_credit_frame(4, sequence=2))
+        thread.join(timeout=2.0)
+        self.assertFalse(thread.is_alive())
+        self.assertTrue(result["outcome"].protocol_failed)
+        self.assertEqual(len(credit_failure_owners), 1)
+        self.assertEqual(credit_failure_owners[0].credit_amounts, [4])
+        self.assertTrue(credit_failure_owners[0].closed)
+        peer.close()
 
     def test_ordinary_product_runtime_still_injects_no_audio_owner(self) -> None:
         server = wire_runtime.build_product_wire_server()
