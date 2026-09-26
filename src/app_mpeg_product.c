@@ -1,14 +1,15 @@
 /*
  * File synopsis:
- * Implements R34's ordinary MPEG product composition using only accepted
- * Application/lower-owner public seams. It owns semantic routing and
- * cross-domain sequencing, including the distinction between R22 live service
- * and R33/R34P abnormal teardown ownership. It does not own gesture
- * recognition, calibration mechanics, generation identity, decoding,
- * presentation mechanisms, Transport validity, or normal retirement/reveal.
+ * Implements ordinary MPEG product composition using only accepted
+ * Application/lower-owner public seams. R34 owns semantic activation and R22
+ * live service; R35 adds state-dependent normal R23 retirement and R24 restored
+ * desktop reveal while preserving R33/R34P/R35P abnormal teardown ownership.
+ * It does not own gesture recognition, calibration mechanics, generation
+ * identity, decoding, presentation mechanisms or Transport validity.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
- * A006-ORDINARY-MPEG-ACTION-ACTIVATION-R34.
+ * A006-ORDINARY-MPEG-ACTION-ACTIVATION-R34 and
+ * A006-ORDINARY-MPEG-ACTION-RETIRE-RESTORE-REVEAL-R35.
  */
 
 #include <string.h>
@@ -96,12 +97,28 @@ pstvnc_app_mpeg_product_route_action(
         return PSTVNC_APP_MPEG_PRODUCT_INVALID;
 
     /*
-     * R34 owns only MPEG_CALIBRATION. A semantic action observed while another
-     * calibration/run owns the lifecycle is consumed as inadmissible, never
-     * translated into overlapping work.
+     * One semantic action has state-dependent Application policy only. Input
+     * already decided whether the configured DESKTOP/GLOBAL context admitted
+     * this event; never reinterpret that binding here.
      */
     if (action != PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION)
         return PSTVNC_APP_MPEG_PRODUCT_INVALID;
+
+    if (product->run.state == PSTVNC_APP_MPEG_RUN_MPEG_OWNED) {
+        if (pstvnc_app_mpeg_run_begin_retirement(&product->run) !=
+                PSTVNC_APP_MPEG_RUN_OK)
+            return PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE;
+
+        return PSTVNC_APP_MPEG_PRODUCT_OK;
+    }
+
+    /*
+     * WAIT_FIRST_FRAME, RETIRING, RESTORE_PENDING and REVEAL_PENDING consume
+     * the already-published semantic action without duplicating RETIRE or
+     * opening calibration. Exact IDLE keeps R34's desktop P9 meaning.
+     */
+    if (product->run.state != PSTVNC_APP_MPEG_RUN_IDLE)
+        return PSTVNC_APP_MPEG_PRODUCT_OK;
 
     if (!pstvnc_app_mpeg_product_desktop_action_eligible(
             product,
@@ -196,6 +213,100 @@ pstvnc_app_mpeg_product_service_live(
         return PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE;
 
     return PSTVNC_APP_MPEG_PRODUCT_OK;
+}
+
+int pstvnc_app_mpeg_product_is_retiring(
+    const pstvnc_app_mpeg_product_t *product)
+{
+    return product != NULL &&
+        product->initialized &&
+        product->run.state == PSTVNC_APP_MPEG_RUN_RETIRING;
+}
+
+pstvnc_app_mpeg_product_result_t
+pstvnc_app_mpeg_product_service_retirement(
+    pstvnc_app_mpeg_product_t *product,
+    uint64_t current_tick)
+{
+    pstvnc_app_mpeg_frame_service_result_t service_result;
+
+    if (product == NULL || !product->initialized)
+        return PSTVNC_APP_MPEG_PRODUCT_INVALID;
+
+    if (product->run.state != PSTVNC_APP_MPEG_RUN_RETIRING)
+        return PSTVNC_APP_MPEG_PRODUCT_OK;
+
+    memset(&service_result, 0, sizeof(service_result));
+
+    if (pstvnc_app_mpeg_run_retirement_service(
+            &product->run,
+            current_tick,
+            &service_result) != PSTVNC_APP_MPEG_RUN_OK)
+        return PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE;
+
+    return PSTVNC_APP_MPEG_PRODUCT_OK;
+}
+
+int pstvnc_app_mpeg_product_restoration_pending(
+    const pstvnc_app_mpeg_product_t *product)
+{
+    return product != NULL &&
+        product->initialized &&
+        product->run.state == PSTVNC_APP_MPEG_RUN_RESTORE_PENDING;
+}
+
+pstvnc_app_mpeg_product_result_t
+pstvnc_app_mpeg_product_record_restored_desktop_presented(
+    pstvnc_app_mpeg_product_t *product)
+{
+    pstvnc_app_mpeg_run_result_t run_result;
+
+    if (product == NULL || !product->initialized)
+        return PSTVNC_APP_MPEG_PRODUCT_INVALID;
+
+    if (product->run.state != PSTVNC_APP_MPEG_RUN_RESTORE_PENDING)
+        return PSTVNC_APP_MPEG_PRODUCT_OK;
+
+    run_result = pstvnc_app_mpeg_run_record_restored_rfb_presented(
+        &product->run,
+        product->run.current_generation);
+
+    if (run_result == PSTVNC_APP_MPEG_RUN_OK ||
+        run_result == PSTVNC_APP_MPEG_RUN_RFB_RESTORE_NOT_FRESH)
+        return PSTVNC_APP_MPEG_PRODUCT_OK;
+
+    return PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE;
+}
+
+pstvnc_app_mpeg_product_result_t
+pstvnc_app_mpeg_product_service_reveal(
+    pstvnc_app_mpeg_product_t *product)
+{
+    pstvnc_app_mpeg_run_result_t run_result;
+    pstvnc_mpeg_compositor_effects_t effects;
+
+    if (product == NULL || !product->initialized)
+        return PSTVNC_APP_MPEG_PRODUCT_INVALID;
+
+    if (product->run.state == PSTVNC_APP_MPEG_RUN_RESTORE_PENDING &&
+        !product->run.rfb_restoration_presented)
+        return PSTVNC_APP_MPEG_PRODUCT_OK;
+
+    if (product->run.state != PSTVNC_APP_MPEG_RUN_RESTORE_PENDING &&
+        product->run.state != PSTVNC_APP_MPEG_RUN_REVEAL_PENDING)
+        return PSTVNC_APP_MPEG_PRODUCT_OK;
+
+    memset(&effects, 0, sizeof(effects));
+    run_result = pstvnc_app_mpeg_run_reveal_restored(
+        &product->run,
+        &effects);
+
+    if (run_result == PSTVNC_APP_MPEG_RUN_OK ||
+        run_result == PSTVNC_APP_MPEG_RUN_REVEAL_PLATFORM_FAILED ||
+        run_result == PSTVNC_APP_MPEG_RUN_REVEAL_SYNC_INVALID)
+        return PSTVNC_APP_MPEG_PRODUCT_OK;
+
+    return PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE;
 }
 
 int pstvnc_app_mpeg_product_has_started_run(
