@@ -239,7 +239,7 @@ int pstvnc_app_mpeg_product_requires_session_abort(
 {
     return product != NULL &&
         product->initialized &&
-        r34_requires_session_abort;
+        (r34_has_started_run || r34_requires_session_abort);
 }
 
 pstvnc_app_mpeg_product_result_t pstvnc_app_mpeg_product_service_session_abort(
