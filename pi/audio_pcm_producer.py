@@ -154,6 +154,7 @@ class AudioPcmProducer:
         self._buffer = bytearray()
         self._retiring = False
         self._closed = False
+        self._retired_proven = False
         self._eof = False
         self._error: BaseException | None = None
 
@@ -350,7 +351,7 @@ class AudioPcmProducer:
 
         with self._condition:
             if self._closed:
-                return True
+                return self._retired_proven
             self._closed = True
             prior_error = self._error
             self._retiring = True
@@ -402,4 +403,5 @@ class AudioPcmProducer:
         except OSError:
             pass
 
-        return retired and prior_error is None
+        self._retired_proven = retired and prior_error is None
+        return self._retired_proven

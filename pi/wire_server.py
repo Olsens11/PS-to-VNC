@@ -809,10 +809,16 @@ class WireServer:
                     self.audio_pcm_factory is not None
                     and outcome.session_id is not None
                 ):
+                    audio_pcm = None
                     try:
                         audio_pcm = self.audio_pcm_factory(outcome.session_id)
                         owner.attach_audio_pcm(audio_pcm)
                     except (RuntimeError, ValueError):
+                        if audio_pcm is not None:
+                            try:
+                                audio_pcm.close()
+                            except Exception:
+                                pass
                         return owner._finish(
                             accepted=True,
                             rejection_reason=None,
