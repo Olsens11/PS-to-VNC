@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "profile_id": "current-audio",
+  "transport": {
+    "queue_capacity": 524288,
+    "initial_credit_bytes": 524288,
+    "credit_batch_bytes": 4096,
+    "credit_flush_on_empty": true,
+    "credit_return_enabled": true
+  },
+  "pcm": {
+    "rate_hz": 48000,
+    "channels": 2,
+    "bits_per_sample": 16,
+    "volume_percent": 100
+  },
+  "session": {
+    "playback_buffer_capacity": 4096,
+    "startup_reservoir_bytes": 458752,
+    "worker_priority": 65,
+    "worker_stack_bytes": 16384,
+    "reservoir_poll_us": 1000,
+    "clock_poll_us": 1000
+  },
+  "provenance": {
+    "source_stage": "A002-AUDIO-RUNTIME-PROFILE-AUTHORITY-R36",
+    "forensic_commit": "3426f28b93de9519ca93e5f0e0aaf8b67cfca845",
+    "qualified_lineage": "P11_COMPAT_PLUS_PCM"
+  }
+}

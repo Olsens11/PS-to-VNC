@@ -765,9 +765,11 @@ $(TRANSPORT_MPEG_TEST): \
 
 CONFIG_PROFILE_TEST := .build/config_profile_test
 CONFIG_MPEG_RUNTIME_PROFILE_TEST := .build/config_mpeg_runtime_profile_test
+CONFIG_AUDIO_RUNTIME_PROFILE_TEST := .build/config_audio_runtime_profile_test
+CONFIG_AUDIO_RUNTIME_PROFILE_GENERATION_TEST := unit/config_audio_runtime_profile_generation_test.py
 
-.PHONY: config-profile-unit config-mpeg-runtime-profile-unit
-unit: config-profile-unit config-mpeg-runtime-profile-unit
+.PHONY: config-profile-unit config-mpeg-runtime-profile-unit config-audio-runtime-profile-unit config-audio-runtime-profile-generation-unit
+unit: config-profile-unit config-mpeg-runtime-profile-unit config-audio-runtime-profile-unit config-audio-runtime-profile-generation-unit
 
 config-profile-unit: $(CONFIG_PROFILE_TEST)
 	./$(CONFIG_PROFILE_TEST)
@@ -802,6 +804,27 @@ $(CONFIG_MPEG_RUNTIME_PROFILE_TEST): \
 		unit/config_mpeg_runtime_profile_test.c \
 		../src/config/mpeg_runtime_profile.c \
 		-o $(CONFIG_MPEG_RUNTIME_PROFILE_TEST)
+
+config-audio-runtime-profile-unit: $(CONFIG_AUDIO_RUNTIME_PROFILE_TEST)
+	./$(CONFIG_AUDIO_RUNTIME_PROFILE_TEST)
+
+$(CONFIG_AUDIO_RUNTIME_PROFILE_TEST): \
+	unit/config_audio_runtime_profile_test.c \
+	../src/config/audio_runtime_profile.c \
+	../src/config/audio_runtime_profile.h \
+	../src/config/audio_runtime_profile_generated.h \
+	../src/audio/session.h \
+	../src/audio/playback.h \
+	../src/config/profile.h \
+	../src/transport/transport.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/config_audio_runtime_profile_test.c \
+		../src/config/audio_runtime_profile.c \
+		-o $(CONFIG_AUDIO_RUNTIME_PROFILE_TEST)
+
+config-audio-runtime-profile-generation-unit:
+	python3 $(CONFIG_AUDIO_RUNTIME_PROFILE_GENERATION_TEST)
 
 MEDIA_CLOCK_TEST := .build/media_clock_test
 MEDIA_CLOCK_PRODUCT_BINDING_TEST := .build/media_clock_product_binding_test

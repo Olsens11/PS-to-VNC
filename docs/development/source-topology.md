@@ -40,7 +40,7 @@ The current clean-generation directories are:
 | `pi/` | maintained Raspberry Pi companion runtime: product Wire protocol/server ownership and later Pi-side product mechanisms |
 | `src/` | executable entry point and application coordinator only |
 | `src/audio/` | session-scoped audio worker/resources, non-consuming startup reservoir and common-clock audio gating, synchronous PCM consumption, and resident AUDSRV stream operations |
-| `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values including selected MPEG/media-clock profiles, human-readable desired binding values, and small config-text helpers |
+| `src/config/` | pure session CONFIG/profile decoding, validation, immutable owner-specific values including selected MPEG/AUDIO/media-clock profiles, human-readable desired binding values, and small config-text helpers |
 | `src/diagnostics/` | diagnostics transport and runtime identity |
 | `src/display/` | platform-neutral display/presentation conversion |
 | `src/framebuffer/` | authoritative CPU-side remote desktop image |
@@ -168,6 +168,18 @@ and local-file topology checks as `src/`. Its runtime installation definitions
 remain under `systemd/pi/`, while the installed product Python bytes live under
 `/usr/lib/ps-to-vnc`.
 
+
+### R36 selected AUDIO runtime profile authority
+
+The canonical selected AUDIO runtime values live in
+`src/config/audio_runtime_profile.json` and are deterministically projected by
+`scripts/generate-audio-runtime-profile.py` into
+`src/config/audio_runtime_profile_generated.h`. The hand-written
+`audio_runtime_profile.{c,h}` aggregate only existing Transport AUDIO, PCM and
+AUDIO-session owner value types and publish an immutable caller-owned copy after
+validation. The profile deliberately contains no media-clock presentation
+offset, H1 laboratory profile ID, runtime JSON parsing, AUDSRV/thread effects,
+Transport open, or Application activation.
 
 ### R14 shared RFB profile authority
 
