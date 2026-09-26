@@ -175,13 +175,21 @@ require(
     "pstvnc_mpeg_worker_release_frame(" in abandon,
     "claim abandonment must release the exact worker claim",
 )
-require(
-    "pstvnc_app_mpeg_run_session_abort_service(" not in ordinary_app,
-    "R33 must not wire ordinary app.c",
-)
-require(
-    "pstvnc_transport_session_begin_abort(" not in ordinary_app,
-    "R33 must not alter ordinary app teardown yet",
-)
+# R33 owns the local-abort mechanism; later Application packets may compose
+# its public seams. Keep ordinary Application out of R33's private worker/runtime
+# mechanics rather than freezing the product forever at the pre-R34 call graph.
+for forbidden in (
+    "pstvnc_mpeg_worker_request_stop(",
+    "pstvnc_mpeg_worker_status(",
+    "pstvnc_mpeg_worker_join(",
+    "pstvnc_mpeg_worker_outcome(",
+    "pstvnc_mpeg_worker_release(",
+    "pstvnc_mpeg_ps2_worker_runtime_release(",
+    "pstvnc_transport_runtime_",
+):
+    require(
+        forbidden not in ordinary_app,
+        f"ordinary Application bypassed R33 public abort seam: {forbidden}",
+    )
 
 print("APP_MPEG_SESSION_ABORT_SOURCE_TEST=PASS")
