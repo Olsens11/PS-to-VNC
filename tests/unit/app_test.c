@@ -53,6 +53,7 @@ static int r34_last_desktop_eligible;
 static pstvnc_product_action_t r34_last_routed_action;
 static int r34_desktop_eligible_at_route;
 static int r34_has_started_run;
+static int r34_requires_session_abort;
 static pstvnc_app_mpeg_product_result_t r34_route_result;
 static pstvnc_app_mpeg_product_result_t r34_controller_result;
 static pstvnc_app_mpeg_product_result_t r34_live_result;
@@ -233,6 +234,14 @@ int pstvnc_app_mpeg_product_has_started_run(
     return product != NULL && product->initialized && r34_has_started_run;
 }
 
+int pstvnc_app_mpeg_product_requires_session_abort(
+    const pstvnc_app_mpeg_product_t *product)
+{
+    return product != NULL &&
+        product->initialized &&
+        r34_requires_session_abort;
+}
+
 pstvnc_app_mpeg_product_result_t pstvnc_app_mpeg_product_service_session_abort(
     pstvnc_app_mpeg_product_t *product,
     int *abort_ready)
@@ -310,6 +319,7 @@ static void reset_selected_projection(void)
     r34_last_routed_action = PSTVNC_PRODUCT_ACTION_NONE;
     r34_desktop_eligible_at_route = -1;
     r34_has_started_run = 0;
+    r34_requires_session_abort = 0;
     r34_route_result = PSTVNC_APP_MPEG_PRODUCT_OK;
     r34_controller_result = PSTVNC_APP_MPEG_PRODUCT_OK;
     r34_live_result = PSTVNC_APP_MPEG_PRODUCT_OK;
@@ -1167,6 +1177,116 @@ static void test_r34_live_failure_uses_r33_before_release_and_close(void)
     r34_live_result = PSTVNC_APP_MPEG_PRODUCT_OK;
 }
 
+static void test_r34c_prestart_teardown_uses_r34p_before_release_and_close(void)
+{
+    int shutdown_index;
+    int release_index;
+
+    reset_script();
+    reset_selected_projection();
+    script_fresh_connections(2u);
+    connect_results[1] = -1;
+
+    /*
+     * Route one semantic action into a deterministic P10 teardown-required
+     * result. It owns R34P abnormal teardown but is deliberately not an R22
+     * live-serviceable started run.
+     */
+    input_events[0].type = PSTVNC_INPUT_EVENT_PRODUCT_ACTION;
+    input_events[0].payload.product_action =
+        PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION;
+    input_event_count = 1u;
+    r34_route_result = PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE;
+    r34_requires_session_abort = 1;
+    r34_has_started_run = 0;
+    r34_abort_ready = 1;
+
+    request_results[0] = 1;
+    request_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    shutdown_index = nth_event_index(EV_INPUT_SHUTDOWN, 0u);
+    release_index = nth_event_index(EV_MEDIA_BINDING_RELEASE, 0u);
+
+    CHECK(r34_route_action_calls == 1u);
+    CHECK(r34_current_tick_calls == 0u);
+    CHECK(r34_live_service_calls == 0u);
+    CHECK(r34_begin_abort_calls == 1u);
+    CHECK(r34_abort_service_calls == 1u);
+    CHECK(r34_transport_close_calls == 1u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 0u);
+
+    CHECK(shutdown_index >= 0);
+    CHECK((size_t)(shutdown_index + 1) <=
+        r34_begin_abort_legacy_event_count);
+    CHECK(r34_begin_abort_legacy_event_count <=
+        r34_abort_service_legacy_event_count);
+    CHECK(release_index >= 0);
+    CHECK(r34_abort_service_legacy_event_count <= (size_t)release_index);
+    CHECK((size_t)(release_index + 1) <= r34_close_legacy_event_count);
+
+    r34_route_result = PSTVNC_APP_MPEG_PRODUCT_OK;
+    r34_requires_session_abort = 0;
+}
+
+static void test_r34c_prestart_input_shutdown_failure_blocks_begin_abort(void)
+{
+    reset_script();
+    reset_selected_projection();
+    script_fresh_connections(2u);
+
+    input_events[0].type = PSTVNC_INPUT_EVENT_PRODUCT_ACTION;
+    input_events[0].payload.product_action =
+        PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION;
+    input_event_count = 1u;
+    r34_route_result = PSTVNC_APP_MPEG_PRODUCT_SESSION_FAILURE;
+    r34_requires_session_abort = 1;
+    r34_has_started_run = 0;
+    input_shutdown_result = -1;
+
+    request_results[0] = 1;
+    request_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(connect_calls == 1u);
+    CHECK(event_occurrences(EV_INPUT_SHUTDOWN) == 2u);
+    CHECK(r34_begin_abort_calls == 0u);
+    CHECK(r34_abort_service_calls == 0u);
+    CHECK(r34_transport_close_calls == 0u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 0u);
+    CHECK(r34_current_tick_calls == 0u);
+    CHECK(r34_live_service_calls == 0u);
+
+    input_shutdown_result = 0;
+    r34_route_result = PSTVNC_APP_MPEG_PRODUCT_OK;
+    r34_requires_session_abort = 0;
+}
+
+static void test_r34c_clean_no_mpeg_failure_keeps_one_shot_abort(void)
+{
+    reset_script();
+    reset_selected_projection();
+    script_fresh_connections(2u);
+    connect_results[1] = -1;
+
+    request_results[0] = 1;
+    request_result_count = 1u;
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[0] = PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ;
+    try_receive_result_count = 1u;
+
+    r34_has_started_run = 0;
+    r34_requires_session_abort = 0;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(r34_begin_abort_calls == 0u);
+    CHECK(r34_abort_service_calls == 0u);
+    CHECK(r34_transport_close_calls == 0u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 1u);
+}
+
 static void test_r27_binding_release_failure_blocks_replacement(void)
 {
     reset_script();
@@ -1261,6 +1381,9 @@ int main(void)
     test_r34_exact_binding_installs_on_each_fresh_input_runtime();
     test_r34_semantic_product_action_routes_without_physical_logic();
     test_r34_live_failure_uses_r33_before_release_and_close();
+    test_r34c_prestart_teardown_uses_r34p_before_release_and_close();
+    test_r34c_prestart_input_shutdown_failure_blocks_begin_abort();
+    test_r34c_clean_no_mpeg_failure_keeps_one_shot_abort();
 
     test_r16b_provider_connect_failure_restarts_fresh();
     test_r16b_provider_read_closes_admission_before_restart();
