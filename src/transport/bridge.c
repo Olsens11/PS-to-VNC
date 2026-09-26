@@ -9,7 +9,9 @@
  * physical lineage may remain idle at sequence 2/2 until a rider runtime is
  * explicitly opened; only then is the lineage transferred to the sole I/O
  * thread. R16A exposes one ticket-scoped typed RFB provider-terminal fact while
- * preserving physical Wire health as a separate Transport fact.
+ * preserving physical Wire health as a separate Transport fact. R40 keeps
+ * allocated AUDIO resources dormant until one exact access ticket explicitly
+ * activates their already-selected initial CREDIT.
  * RFB safe-boundary choice, PCM playback, MPEG decoding, media-clock use,
  * generation allocation/geometry choice, exact-generation orchestration, and
  * presentation remain outside this bridge. R20 stamps only Transport-private
@@ -515,6 +517,19 @@ pstvnc_transport_result_t pstvnc_transport_rfb_provider_failure(
     return pstvnc_transport_runtime_rfb_provider_failure(
         &pstvnc_transport_bridge_runtime,
         reason);
+}
+
+pstvnc_transport_result_t pstvnc_transport_audio_activate(
+    const pstvnc_transport_access_t *transport_access)
+{
+    pstvnc_transport_result_t access_result =
+        pstvnc_transport_bridge_access_result(transport_access);
+
+    if (access_result != PSTVNC_TRANSPORT_OK)
+        return access_result;
+
+    return pstvnc_transport_runtime_audio_activate(
+        &pstvnc_transport_bridge_runtime);
 }
 
 pstvnc_transport_result_t pstvnc_transport_audio_read_available(
