@@ -144,6 +144,15 @@ never-started slot until dormant-state proof plus successful deletion. Stack,
 buffer and session-semaphore ownership remains live until those exact lower
 owners are gone.
 
+R38 adds a nonblocking owner observation above that fence. The AUDIO session
+poll reports only pending versus done for an exact successfully started worker
+and delegates that fact to the injected thread owner. The PS2 binding inspects
+the completion semaphore without waiting, consumes the one-shot event at most
+once, and retains that observation for later polls and join. Polling does not
+read Transport queue/producer state or expose terminal AUDIO outcome. A kernel
+observation failure is an error. A done poll still does not authorize outcome
+access or reclamation: join remains the visibility/dormancy fence.
+
 ### Input and mouse forwarding
 
 Local controller/input acquisition is a PS2-local facility and need not die
