@@ -76,6 +76,7 @@ COMMON_FLAGS=(
 SOURCES=(
     src/main.c
     src/app.c
+    src/app_audio_product.c
     src/app_product_bindings.c
     src/app_mpeg_product.c
     src/app_mpeg_activation.c
