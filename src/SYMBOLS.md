@@ -833,7 +833,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | transport_session_active | parameter | src/app.c | retire_attempt_owners | local | Defines transport_session_active as a current clean-source parameter. | mechanically reconciled current clean source |
 | abort_ready | variable | src/app.c | retire_attempt_owners | local | Defines abort_ready as a current clean-source variable. | mechanically reconciled current clean source |
 | close_result | variable | src/app.c | retire_attempt_owners | local | Defines close_result as a current clean-source variable. | mechanically reconciled current clean source |
-| has_started_mpeg | variable | src/app.c | retire_attempt_owners | local | Defines has_started_mpeg as a current clean-source variable. | mechanically reconciled current clean source |
 | input_shutdown_failed | variable | src/app.c | retire_attempt_owners | local | Defines input_shutdown_failed as a current clean-source variable. | mechanically reconciled current clean source |
 | mpeg_product | parameter | src/app.c | service_controller_state | local | Defines mpeg_product as a current clean-source parameter. | mechanically reconciled current clean source |
 | mpeg_session_failure | parameter | src/app.c | service_controller_state | local | Defines mpeg_session_failure as a current clean-source parameter. | mechanically reconciled current clean source |
@@ -941,3 +940,9 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | run | parameter | src/app_mpeg_run.c | pstvnc_app_mpeg_run_poststart_session_abort_entry_valid | local | Defines run as a current clean-source parameter. | mechanically reconciled current clean source |
 | run | parameter | src/app_mpeg_run.c | pstvnc_app_mpeg_run_prestart_session_abort_entry_valid | local | Defines run as a current clean-source parameter. | mechanically reconciled current clean source |
 | partial_result | variable | src/app_mpeg_run.c | pstvnc_app_mpeg_run_session_abort_service | local | Defines partial_result as a current clean-source variable. | mechanically reconciled current clean source |
+| has_mpeg_abort_owner | variable | src/app.c | retire_attempt_owners | local | Defines has_mpeg_abort_owner as a current clean-source variable. | mechanically reconciled current clean source |
+| pstvnc_app_mpeg_product_requires_session_abort | function | src/app_mpeg_product.c | app_mpeg_product | file | Defines pstvnc_app_mpeg_product_requires_session_abort as a current clean-source function. | mechanically reconciled current clean source |
+| product | parameter | src/app_mpeg_product.c | pstvnc_app_mpeg_product_requires_session_abort | local | Defines product as a current clean-source parameter. | mechanically reconciled current clean source |
+| status | variable | src/app_mpeg_product.c | pstvnc_app_mpeg_product_requires_session_abort | local | Defines status as a current clean-source variable. | mechanically reconciled current clean source |
+| pstvnc_app_mpeg_product_requires_session_abort | function declaration | src/app_mpeg_product.h | app_mpeg_product interface | public | Defines pstvnc_app_mpeg_product_requires_session_abort as a current clean-source function declaration. | mechanically reconciled current clean source |
+| product | prototype parameter | src/app_mpeg_product.h | pstvnc_app_mpeg_product_requires_session_abort | local | Defines product as a current clean-source prototype parameter. | mechanically reconciled current clean source |
