@@ -977,15 +977,17 @@ static void test_unstarted_partial_owner_reclaims_only_after_destroy_proof(void)
 static void test_unstarted_reclaim_rejects_normal_started_worker(void)
 {
     fixture_t fixture;
+    int releases_before;
 
     fixture_init(&fixture);
     fixture_start(&fixture);
+    releases_before = fixture.memory.release_calls;
 
     CHECK(pstvnc_mpeg_worker_reclaim_unstarted(
         &fixture.worker,
         TEST_GENERATION) == PSTVNC_MPEG_WORKER_INVALID);
     CHECK(fixture.thread.destroy_calls == 0);
-    CHECK(fixture.memory.release_calls == 1);
+    CHECK(fixture.memory.release_calls == releases_before);
     CHECK(fixture.worker.initialized);
     CHECK(fixture.worker.thread_started);
 }
