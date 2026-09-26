@@ -12,13 +12,14 @@ retires that connection before the persistent owner accepts another.
 R13 composes one explicit session-scoped RFB attachment mechanism while
 preserving this object as the sole PS2-facing Wire recv/send and global sequence
 owner. R17 optionally composes one exact-generation MPEG owner under the same
-physical loop: START/RETIRE/CREDIT are received here, while MPEG DATA is emitted
-only by this owner's ordinary global-sequence send path.
+physical loop. R39 permits one optional exact-session AUDIO PCM owner under that
+same readiness/send loop; AUDIO CREDIT is dispatched here and AUDIO DATA is
+serialized only by this owner's global-sequence send path.
 
 With no explicit rider factories the server remains establishment-only. Rider
 mechanisms own their local lifecycle; this server still owns no selected profile
-defaults, Application policy, AUDIO/CONFIG rider, heartbeat, or custom restart
-loop.
+defaults, Application policy, ordinary AUDIO activation, CONFIG rider, heartbeat,
+or custom restart loop.
 
 Context: docs/ledge/LEDGE_AUDIT_A001_TRANSPORT_RFB.md.
 """
@@ -135,11 +136,13 @@ class WireConnectionOwner:
         session_ids: SessionIdAllocator,
         rfb_attachment: rfb_attach.RfbAttachment | None = None,
         mpeg_generation: mpeg.MpegGenerationController | None = None,
+        audio_pcm: object | None = None,
     ) -> None:
         self._connection = connection
         self._session_ids = session_ids
         self._rfb_attachment = rfb_attachment
         self._mpeg_generation = mpeg_generation
+        self._audio_pcm = audio_pcm
         self.state = WireSessionState.PROVISIONAL
         self.session_id: int | None = None
         self.next_receive_sequence = 1
@@ -335,6 +338,44 @@ class WireConnectionOwner:
             raise RuntimeError("MPEG generation owner does not match active Wire")
         self._mpeg_generation = generation
 
+    def attach_audio_pcm(self, audio_pcm: object) -> None:
+        """Bind one exact-session AUDIO owner without transferring Wire I/O."""
+
+        required = (
+            "activity_reader",
+            "add_credit",
+            "acknowledge_activity",
+            "check_health",
+            "begin_emission",
+            "close",
+        )
+        if (
+            self.state is not WireSessionState.ACTIVE
+            or self.session_id is None
+            or self._audio_pcm is not None
+            or getattr(audio_pcm, "session_id", None) != self.session_id
+            or any(not hasattr(audio_pcm, name) for name in required)
+        ):
+            raise RuntimeError("AUDIO PCM owner does not match active Wire")
+        self._audio_pcm = audio_pcm
+
+    def _handle_audio_frame(
+        self,
+        header: protocol.WireHeader,
+        payload: bytes,
+    ) -> bool:
+        audio_pcm = self._audio_pcm
+        if audio_pcm is None:
+            return False
+
+        if protocol.is_audio_credit_header(header):
+            audio_pcm.add_credit(
+                protocol.decode_audio_credit_payload(payload)
+            )
+            return True
+
+        return False
+
     def _handle_mpeg_frame(
         self,
         header: protocol.WireHeader,
@@ -384,6 +425,29 @@ class WireConnectionOwner:
             # A failure makes the Wire Session terminal; finishing the local lease
             # is not a claim that failed physical bytes were delivered.
             generation.finish_emission(lease)
+
+    def _flush_audio_pcm_output(self) -> None:
+        """Serialize one credit-authorized AUDIO payload through Wire ownership."""
+
+        audio_pcm = self._audio_pcm
+        if audio_pcm is None:
+            return
+
+        audio_pcm.check_health()
+        payload = audio_pcm.begin_emission(protocol.MAX_PAYLOAD_BYTES)
+        if payload is None:
+            return
+        if (
+            not payload
+            or len(payload) % getattr(audio_pcm, "profile").frame_bytes != 0
+        ):
+            raise RuntimeError("AUDIO owner returned invalid PCM payload")
+
+        self._send_active_frame(
+            protocol.FRAME_DATA,
+            protocol.CHANNEL_AUDIO,
+            payload,
+        )
 
     def _flush_rfb_attachment_output(self) -> None:
         """Serialize attachment output through the sole physical Wire owner."""
@@ -437,7 +501,8 @@ class WireConnectionOwner:
 
         attachment = self._rfb_attachment
         generation = self._mpeg_generation
-        if attachment is None and generation is None:
+        audio_pcm = self._audio_pcm
+        if attachment is None and generation is None and audio_pcm is None:
             raise RuntimeError("no Wire rider is configured")
 
         while True:
@@ -462,6 +527,9 @@ class WireConnectionOwner:
             mpeg_wake = (
                 generation.activity_reader if generation is not None else None
             )
+            audio_wake = (
+                audio_pcm.activity_reader if audio_pcm is not None else None
+            )
 
             read_wait = [self._connection]
             write_wait: list[socket.socket] = []
@@ -471,6 +539,8 @@ class WireConnectionOwner:
                 read_wait.append(quiesce_wake)
             if mpeg_wake is not None:
                 read_wait.append(mpeg_wake)
+            if audio_wake is not None:
+                read_wait.append(audio_wake)
             if connecting is not None:
                 write_wait.append(connecting)
                 exception_wait.append(connecting)
@@ -525,6 +595,8 @@ class WireConnectionOwner:
                     if not handled:
                         handled = self._handle_mpeg_frame(header, payload)
                     if not handled:
+                        handled = self._handle_audio_frame(header, payload)
+                    if not handled:
                         raise protocol.WireProtocolError(
                             "unsupported active Wire frame"
                         )
@@ -555,6 +627,21 @@ class WireConnectionOwner:
                 try:
                     self._flush_mpeg_generation_output()
                 except (OSError, mpeg.MpegGenerationError):
+                    return self._finish(
+                        accepted=True,
+                        rejection_reason=None,
+                        protocol_failed=True,
+                    )
+
+            if (
+                audio_pcm is not None
+                and audio_wake is not None
+                and audio_wake in readable
+            ):
+                audio_pcm.acknowledge_activity()
+                try:
+                    self._flush_audio_pcm_output()
+                except (OSError, RuntimeError, ValueError):
                     return self._finish(
                         accepted=True,
                         rejection_reason=None,
@@ -615,7 +702,11 @@ class WireConnectionOwner:
         if self.state is not WireSessionState.ACTIVE or self.session_id is None:
             raise RuntimeError("Wire Session is not ACTIVE")
 
-        if self._rfb_attachment is not None or self._mpeg_generation is not None:
+        if (
+            self._rfb_attachment is not None
+            or self._mpeg_generation is not None
+            or self._audio_pcm is not None
+        ):
             return self._wait_with_riders()
 
         # With no explicitly injected rider the installed service remains
@@ -653,6 +744,12 @@ class WireConnectionOwner:
         if self._mpeg_generation is not None:
             if not self._mpeg_generation.close():
                 protocol_failed = True
+        if self._audio_pcm is not None:
+            try:
+                if not self._audio_pcm.close():
+                    protocol_failed = True
+            except Exception:
+                protocol_failed = True
         self.state = WireSessionState.INACTIVE
         return WireSessionOutcome(
             accepted=accepted,
@@ -678,6 +775,7 @@ class WireServer:
         mpeg_generation_factory: Callable[
             [int], mpeg.MpegGenerationController
         ] | None = None,
+        audio_pcm_factory: Callable[[int], object] | None = None,
     ) -> None:
         if not listen_address:
             raise ValueError("listen_address must be non-empty")
@@ -688,6 +786,7 @@ class WireServer:
         self.session_ids = session_ids or SessionIdAllocator()
         self.rfb_attachment_factory = rfb_attachment_factory
         self.mpeg_generation_factory = mpeg_generation_factory
+        self.audio_pcm_factory = audio_pcm_factory
 
     def serve_connection(
         self,
@@ -706,6 +805,19 @@ class WireServer:
         try:
             outcome = owner.establish()
             if outcome.accepted:
+                if (
+                    self.audio_pcm_factory is not None
+                    and outcome.session_id is not None
+                ):
+                    try:
+                        audio_pcm = self.audio_pcm_factory(outcome.session_id)
+                        owner.attach_audio_pcm(audio_pcm)
+                    except (RuntimeError, ValueError):
+                        return owner._finish(
+                            accepted=True,
+                            rejection_reason=None,
+                            protocol_failed=True,
+                        )
                 if (
                     self.mpeg_generation_factory is not None
                     and outcome.session_id is not None
