@@ -879,9 +879,10 @@ $(MEDIA_CLOCK_PRODUCT_BINDING_TEST): \
 AUDIO_PLAYBACK_TEST := .build/audio_playback_test
 AUDIO_AUDSRV_SERVICE_TEST := .build/audio_audsrv_service_test
 AUDIO_SESSION_TEST := .build/audio_session_test
+AUDIO_SESSION_COMPLETION_SOURCE_TEST := unit/audio_session_completion_source_test.py
 
-.PHONY: audio-playback-unit audio-audsrv-service-unit audio-session-unit
-unit: audio-playback-unit audio-audsrv-service-unit audio-session-unit
+.PHONY: audio-playback-unit audio-audsrv-service-unit audio-session-unit audio-session-completion-source-unit
+unit: audio-playback-unit audio-audsrv-service-unit audio-session-unit audio-session-completion-source-unit
 
 audio-playback-unit: $(AUDIO_PLAYBACK_TEST)
 	./$(AUDIO_PLAYBACK_TEST)
@@ -916,6 +917,9 @@ $(AUDIO_AUDSRV_SERVICE_TEST): \
 
 audio-session-unit: $(AUDIO_SESSION_TEST)
 	./$(AUDIO_SESSION_TEST)
+
+audio-session-completion-source-unit:
+	python3 $(AUDIO_SESSION_COMPLETION_SOURCE_TEST)
 
 $(AUDIO_SESSION_TEST): \
 	unit/audio_session_test.c \
