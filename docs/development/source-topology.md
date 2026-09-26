@@ -102,6 +102,8 @@ Current clean C/H files directly in `src/` are restricted to:
     src/main.c
     src/app.c
     src/app.h
+    src/app_audio_product.c
+    src/app_audio_product.h
     src/app_product_bindings.c
     src/app_product_bindings.h
     src/app_mpeg_product.c
@@ -139,8 +141,14 @@ independently host-testable. R34 admits `app_mpeg_product.{c,h}` as the narrow
 ordinary-product coordinator that routes semantic MPEG calibration intent into
 the already accepted P9/P10/R21/R22 owners and exposes R33 local-abort progress
 to the ordinary Application session teardown path. It owns no physical gesture,
-decoder, Transport, presentation, or normal retirement mechanism. None of these
-Application coordinators justifies a new top-level source directory.
+decoder, Transport, presentation, or normal retirement mechanism. R41 admits
+`app_audio_product.{c,h}` as a separate Application-owned lifecycle
+coordinator over the accepted R36 profile, R37/R38 session execution, R40
+Transport activation, AUDSRV service boundary and common clock. It owns the
+non-consuming first-MPEG-presentation AUDIO reservoir gate and retained-session
+AUDIO cleanup order, but does not arm the clock, modify MPEG presentation, or
+enable ordinary `app.c`/Pi AUDIO composition. None of these Application
+coordinators justifies a new top-level source directory.
 
 
 The PS2 application root dictionary is:
