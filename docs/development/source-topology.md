@@ -267,6 +267,16 @@ Audio never arms or moves the common epoch and does not own Transport abort or
 close. Application orchestration, MPEG/video presentation, receive-poison
 repair, and hardware qualification remain outside this domain.
 
+R37 adds `ps2_runtime.{c,h}` inside the AUDIO domain as the concrete PS2
+execution adapter for that accepted session owner. One caller-owned resident
+state retains successful LIBSD/AUDSRV module preparation across sessions, while
+one session runtime owns exact aligned allocations, a session-local semaphore,
+a retained completion semaphore and one EE thread slot. Completion observation
+survives a later status failure, and thread/resource reclamation requires actual
+`THS_DORMANT`/kernel deletion success rather than any elapsed-time or poll-count
+threshold. The adapter deliberately exports no media-clock time operations and
+ordinary Application AUDIO activation remains deferred.
+
 A future display-model or other reconstruction stage may adopt, replace, move,
 or delete remaining retained material deliberately. The moment a source file
 becomes current clean product source, it must satisfy this policy, the

@@ -37,6 +37,7 @@ EE_OBJS = \
 	$(BUILD_DIR)/audio_playback.o \
 	$(BUILD_DIR)/audio_audsrv_service.o \
 	$(BUILD_DIR)/audio_session.o \
+	$(BUILD_DIR)/audio_ps2_runtime.o \
 	$(BUILD_DIR)/config_profile.o \
 	$(BUILD_DIR)/config_rfb_runtime_profile.o \
 	$(BUILD_DIR)/config_mpeg_runtime_profile.o \
@@ -93,7 +94,8 @@ EE_OBJS = \
 	$(BUILD_DIR)/PADMAN_irx.o \
 	$(BUILD_DIR)/DEV9_irx.o \
 	$(BUILD_DIR)/NETMAN_irx.o \
-	$(BUILD_DIR)/SMAP_irx.o
+	$(BUILD_DIR)/SMAP_irx.o \
+	$(BUILD_DIR)/AUDSRV_irx.o
 
 EE_OBJS += $(EXTRA_EE_OBJS)
 
@@ -145,6 +147,9 @@ $(BUILD_DIR)/audio_audsrv_service.o: src/audio/audsrv_service.c src/audio/audsrv
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/audio_session.o: src/audio/session.c src/audio/session.h src/audio/playback.h src/media/clock.h src/transport/bridge.h src/transport/transport.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/audio_ps2_runtime.o: src/audio/ps2_runtime.c src/audio/ps2_runtime.h src/audio/session.h | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/config_profile.o: src/config/profile.c src/config/profile.h src/transport/transport.h src/transport/protocol.h | $(BUILD_DIR)
@@ -318,6 +323,9 @@ $(GEN_DIR)/NETMAN_irx.c: $(PS2SDK)/iop/irx/netman.irx | $(GEN_DIR)
 $(GEN_DIR)/SMAP_irx.c: $(PS2SDK)/iop/irx/smap.irx | $(GEN_DIR)
 	bin2c $< $@ SMAP_irx
 
+$(GEN_DIR)/AUDSRV_irx.c: $(PS2SDK)/iop/irx/audsrv.irx | $(GEN_DIR)
+	bin2c $< $@ AUDSRV_irx
+
 $(BUILD_DIR)/SIO2MAN_irx.o: $(GEN_DIR)/SIO2MAN_irx.c | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
@@ -331,6 +339,9 @@ $(BUILD_DIR)/NETMAN_irx.o: $(GEN_DIR)/NETMAN_irx.c | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(BUILD_DIR)/SMAP_irx.o: $(GEN_DIR)/SMAP_irx.c | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/AUDSRV_irx.o: $(GEN_DIR)/AUDSRV_irx.c | $(BUILD_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 clean:

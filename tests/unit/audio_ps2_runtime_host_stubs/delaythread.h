@@ -1,0 +1,4 @@
+#ifndef PSTVNC_AUDIO_PS2_RUNTIME_TEST_DELAYTHREAD_H
+#define PSTVNC_AUDIO_PS2_RUNTIME_TEST_DELAYTHREAD_H
+int DelayThread(unsigned int microseconds);
+#endif

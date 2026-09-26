@@ -134,6 +134,16 @@ its ordinary prerequisites.
 Wire loss stops the current audio instance. A replacement Wire Session uses the
 normal audio startup path.
 
+R37 makes the lower PS2 execution fence explicit. A started AUDIO worker is not
+reclaimable merely because time has passed: its completion signal must be
+observed and the exact EE thread must subsequently report `THS_DORMANT`.
+Completion observation is retained after the one-shot completion semaphore is
+consumed, so a later status-query failure can be retried without waiting for an
+already-consumed signal. A create-success/start-failure thread remains an exact
+never-started slot until dormant-state proof plus successful deletion. Stack,
+buffer and session-semaphore ownership remains live until those exact lower
+owners are gone.
+
 ### Input and mouse forwarding
 
 Local controller/input acquisition is a PS2-local facility and need not die

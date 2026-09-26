@@ -1256,3 +1256,31 @@ $(APP_MPEG_ACTIVATION_TEST): \
 		../src/app_mpeg_activation.c \
 		../src/rfb/flow_policy.c \
 		-o $(APP_MPEG_ACTIVATION_TEST)
+
+
+AUDIO_PS2_RUNTIME_TEST := .build/audio_ps2_runtime_test
+AUDIO_PS2_RUNTIME_SOURCE_TEST := unit/audio_ps2_runtime_source_test.py
+
+.PHONY: audio-ps2-runtime-unit audio-ps2-runtime-source-unit
+unit: audio-ps2-runtime-unit audio-ps2-runtime-source-unit
+
+audio-ps2-runtime-unit: $(AUDIO_PS2_RUNTIME_TEST)
+	./$(AUDIO_PS2_RUNTIME_TEST)
+
+$(AUDIO_PS2_RUNTIME_TEST): \
+	unit/audio_ps2_runtime_test.c \
+	unit/audio_ps2_runtime_host_stubs/kernel.h \
+	unit/audio_ps2_runtime_host_stubs/delaythread.h \
+	unit/audio_ps2_runtime_host_stubs/loadfile.h \
+	../src/audio/ps2_runtime.c \
+	../src/audio/ps2_runtime.h \
+	../src/audio/session.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Iunit/audio_ps2_runtime_host_stubs \
+		-I../src \
+		unit/audio_ps2_runtime_test.c \
+		../src/audio/ps2_runtime.c \
+		-o $(AUDIO_PS2_RUNTIME_TEST)
+
+audio-ps2-runtime-source-unit:
+	python3 $(AUDIO_PS2_RUNTIME_SOURCE_TEST)
