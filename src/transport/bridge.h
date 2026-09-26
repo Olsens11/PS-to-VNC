@@ -122,6 +122,13 @@ pstvnc_transport_result_t pstvnc_transport_rfb_provider_failure(
     const pstvnc_transport_access_t *transport_access,
     pstvnc_rfb_provider_failure_reason_t *reason);
 
+/*
+ * One-shot exact-ticket AUDIO admission edge. Session open may allocate AUDIO
+ * resources, but no channel-2 initial CREDIT exists until this succeeds.
+ */
+pstvnc_transport_result_t pstvnc_transport_audio_activate(
+    const pstvnc_transport_access_t *transport_access);
+
 pstvnc_transport_result_t pstvnc_transport_audio_read_available(
     const pstvnc_transport_access_t *transport_access,
     void *buffer,
