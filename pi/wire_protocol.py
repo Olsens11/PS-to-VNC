@@ -4,8 +4,9 @@ Defines the Raspberry Pi product-side PSTV Wire framing and provisional
 establishment representation shared conceptually with src/transport/protocol.*.
 
 This module owns bytes only: fixed headers, HELLO, ACCEPT, NOT_ACCEPTED, exact
-RFB DATA/CREDIT/provider-terminal framing, exact MPEG START/RETIRE/DATA/CREDIT
-framing, envelope classification, and unsigned-field validation. It owns no
+RFB DATA/CREDIT/provider-terminal framing, exact AUDIO DATA/CREDIT/producer-done
+framing, exact MPEG START/RETIRE/DATA/CREDIT framing, envelope classification,
+and unsigned-field validation. It owns no
 sockets, listener/session lifecycle, rider dispatch, MPEG producer state, RFB
 provider lifecycle, reconnect policy, or systemd behavior.
 
@@ -40,6 +41,7 @@ FRAME_NOT_ACCEPTED = 13
 
 CHANNEL_CONTROL = 0
 CHANNEL_RFB = 1
+CHANNEL_AUDIO = 2
 CHANNEL_MPEG2 = 4
 
 # HELLO carries two independent compatibility words. Fixed framing and the
@@ -305,6 +307,57 @@ def encode_rfb_data_frame(payload: bytes, sequence: int) -> bytes:
     )
 
 
+def encode_audio_credit_payload(amount: int) -> bytes:
+    _require_u32(amount, "AUDIO credit")
+    if amount == 0:
+        raise WireProtocolError("AUDIO credit must be nonzero")
+    return CREDIT.pack(amount)
+
+
+def decode_audio_credit_payload(payload: bytes) -> int:
+    if len(payload) != CREDIT.size:
+        raise WireProtocolError("AUDIO CREDIT payload must be exactly 4 bytes")
+    amount = CREDIT.unpack(payload)[0]
+    if amount == 0:
+        raise WireProtocolError("AUDIO credit must be nonzero")
+    return amount
+
+
+def encode_audio_credit_frame(amount: int, sequence: int) -> bytes:
+    return encode_channel_frame(
+        FRAME_CREDIT,
+        CHANNEL_AUDIO,
+        sequence,
+        encode_audio_credit_payload(amount),
+    )
+
+
+def encode_audio_data_frame(payload: bytes, sequence: int) -> bytes:
+    if not payload:
+        raise WireProtocolError(
+            "ordinary AUDIO DATA payload must be non-empty"
+        )
+    if len(payload) > MAX_PAYLOAD_BYTES:
+        raise WireProtocolError("AUDIO DATA payload exceeds product Wire maximum")
+    return encode_channel_frame(
+        FRAME_DATA,
+        CHANNEL_AUDIO,
+        sequence,
+        payload,
+    )
+
+
+def encode_audio_producer_done_frame(sequence: int) -> bytes:
+    """Encode the explicit existing zero-length AUDIO producer-done marker."""
+
+    return encode_channel_frame(
+        FRAME_DATA,
+        CHANNEL_AUDIO,
+        sequence,
+        b"",
+    )
+
+
 def encode_mpeg_credit_payload(amount: int) -> bytes:
     _require_u32(amount, "MPEG credit")
     if amount == 0:
@@ -501,6 +554,34 @@ def is_rfb_provider_failure_header(header: WireHeader) -> bool:
         and header.channel == CHANNEL_RFB
         and header.flags == 0
         and header.payload_length == RFB_PROVIDER_FAILURE.size
+    )
+
+
+def is_audio_credit_header(header: WireHeader) -> bool:
+    return (
+        header.kind == FRAME_CREDIT
+        and header.channel == CHANNEL_AUDIO
+        and header.flags == 0
+        and header.payload_length == CREDIT.size
+    )
+
+
+def is_audio_data_header(header: WireHeader) -> bool:
+    return (
+        header.kind == FRAME_DATA
+        and header.channel == CHANNEL_AUDIO
+        and header.flags == 0
+        and header.payload_length != 0
+        and header.payload_length <= MAX_PAYLOAD_BYTES
+    )
+
+
+def is_audio_producer_done_header(header: WireHeader) -> bool:
+    return (
+        header.kind == FRAME_DATA
+        and header.channel == CHANNEL_AUDIO
+        and header.flags == 0
+        and header.payload_length == 0
     )
 
 
