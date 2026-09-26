@@ -43,6 +43,19 @@ typedef enum pstvnc_transport_receiver_completion_outcome {
     PSTVNC_TRANSPORT_RECEIVER_COMPLETION_FAILED = 2
 } pstvnc_transport_receiver_completion_outcome_t;
 
+/*
+ * R40 AUDIO admission state. DORMANT owns allocated queue/rendezvous resources
+ * but admits no channel-2 DATA and exposes no consumer progress. ACTIVATING is
+ * published under the AUDIO queue lock before initial CREDIT submission so an
+ * immediate credit-driven peer DATA frame cannot race a stale DORMANT check.
+ * ACTIVE is published only after that sole-owner CREDIT submission succeeds.
+ */
+typedef enum pstvnc_transport_audio_activation_state {
+    PSTVNC_TRANSPORT_AUDIO_DORMANT = 0,
+    PSTVNC_TRANSPORT_AUDIO_ACTIVATING = 1,
+    PSTVNC_TRANSPORT_AUDIO_ACTIVE = 2
+} pstvnc_transport_audio_activation_state_t;
+
 typedef struct pstvnc_transport_outbound_work {
     uint8_t kind;
     uint8_t channel;
@@ -93,6 +106,7 @@ typedef struct pstvnc_transport_runtime {
 
     int initialized;
     int audio_enabled;
+    pstvnc_transport_audio_activation_state_t audio_activation_state;
     int mpeg_enabled;
     int receiver_thread_started;
     volatile int receiver_done;
@@ -319,6 +333,14 @@ int pstvnc_transport_runtime_rfb_write_exact(
 pstvnc_transport_result_t pstvnc_transport_runtime_rfb_provider_failure(
     pstvnc_transport_runtime_t *runtime,
     pstvnc_rfb_provider_failure_reason_t *reason);
+
+/*
+ * Publish the configured AUDIO initial CREDIT exactly once. The caller-facing
+ * bridge supplies ticket lineage; this internal owner enforces the one-way
+ * DORMANT -> ACTIVATING -> ACTIVE transition.
+ */
+pstvnc_transport_result_t pstvnc_transport_runtime_audio_activate(
+    pstvnc_transport_runtime_t *runtime);
 
 /*
  * Logical AUDIO consumer seam. read_available() is nonblocking and bounded:
