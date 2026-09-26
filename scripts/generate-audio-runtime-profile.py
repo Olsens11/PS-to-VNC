@@ -15,6 +15,7 @@ import sys
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PATH = Path("src/config/audio_runtime_profile.json")
 OUTPUT_PATH = Path("src/config/audio_runtime_profile_generated.h")
+PI_OUTPUT_PATH = Path("pi/audio_runtime_profile_generated.py")
 
 TOP = {"schema_version","profile_id","transport","pcm","session","provenance"}
 TRANSPORT = {"queue_capacity","initial_credit_bytes","credit_batch_bytes",
@@ -146,23 +147,57 @@ def render_c(profile):
         clock_poll=s["clock_poll_us"])
 
 
+def render_pi(profile):
+    t, p = profile["transport"], profile["pcm"]
+    return """#!/usr/bin/env python3
+# GENERATED FILE - DO NOT EDIT.
+# Source: src/config/audio_runtime_profile.json
+# Generator: scripts/generate-audio-runtime-profile.py
+#
+# Narrow Pi producer projection only. Ordinary product AUDIO activation remains
+# outside this generated value authority.
+
+CHANNEL_WINDOW_BYTES = {window}
+PCM_RATE_HZ = {rate}
+PCM_CHANNELS = {channels}
+PCM_BITS_PER_SAMPLE = {bits}
+PCM_FRAME_BYTES = PCM_CHANNELS * (PCM_BITS_PER_SAMPLE // 8)
+""".format(
+        window=t["queue_capacity"],
+        rate=p["rate_hz"],
+        channels=p["channels"],
+        bits=p["bits_per_sample"],
+    )
+
+
 def expected_output(root):
     return render_c(load_profile(root))
 
 
-def check_output(root):
-    expected = expected_output(root)
-    path = root / OUTPUT_PATH
+def expected_pi_output(root):
+    return render_pi(load_profile(root))
+
+
+def _check_one_output(root, path, expected):
+    target = root / path
     try:
-        actual = path.read_text(encoding="utf-8")
+        actual = target.read_text(encoding="utf-8")
     except FileNotFoundError:
-        print(f"AUDIO_PROFILE_GENERATED_MISSING={OUTPUT_PATH}", file=sys.stderr)
+        print(f"AUDIO_PROFILE_GENERATED_MISSING={path}", file=sys.stderr)
         return False
     if actual != expected:
-        print(f"AUDIO_PROFILE_GENERATED_STALE={OUTPUT_PATH}", file=sys.stderr)
+        print(f"AUDIO_PROFILE_GENERATED_STALE={path}", file=sys.stderr)
         return False
-    print("AUDIO_RUNTIME_PROFILE_GENERATED=PASS")
     return True
+
+
+def check_output(root):
+    profile = load_profile(root)
+    valid = _check_one_output(root, OUTPUT_PATH, render_c(profile))
+    valid = _check_one_output(root, PI_OUTPUT_PATH, render_pi(profile)) and valid
+    if valid:
+        print("AUDIO_RUNTIME_PROFILE_GENERATED=PASS")
+    return valid
 
 
 def main():
@@ -174,9 +209,15 @@ def main():
     try:
         if args.check:
             return 0 if check_output(root) else 1
-        path = root / OUTPUT_PATH
-        path.write_text(expected_output(root), encoding="utf-8", newline="\n")
-        print(f"AUDIO_PROFILE_GENERATED_WRITE={OUTPUT_PATH}")
+        profile = load_profile(root)
+        outputs = (
+            (OUTPUT_PATH, render_c(profile)),
+            (PI_OUTPUT_PATH, render_pi(profile)),
+        )
+        for output_path, content in outputs:
+            path = root / output_path
+            path.write_text(content, encoding="utf-8", newline="\n")
+            print(f"AUDIO_PROFILE_GENERATED_WRITE={output_path}")
         return 0
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"AUDIO_RUNTIME_PROFILE_GENERATION_ERROR={exc}", file=sys.stderr)
