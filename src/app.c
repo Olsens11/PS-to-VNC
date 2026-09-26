@@ -542,7 +542,8 @@ static int service_controller_state(
     pstvnc_local_ui_t *local_ui,
     pstvnc_osk_t *osk,
     int *mouse_interpretation_suspended,
-    const pstvnc_controller_state_t *controller_state)
+    const pstvnc_controller_state_t *controller_state,
+    int *mpeg_session_failure)
 {
     pstvnc_local_controller_result_t result;
     unsigned int action_index;
@@ -556,14 +557,17 @@ static int service_controller_state(
         local_ui == NULL ||
         osk == NULL ||
         mouse_interpretation_suspended == NULL ||
-        controller_state == NULL)
+        controller_state == NULL ||
+        mpeg_session_failure == NULL)
         return 0;
 
     if (pstvnc_app_mpeg_product_service_controller(
             mpeg_product,
             controller_state,
-            &product_consumed) != PSTVNC_APP_MPEG_PRODUCT_OK)
+            &product_consumed) != PSTVNC_APP_MPEG_PRODUCT_OK) {
+        *mpeg_session_failure = 1;
         return 0;
+    }
 
     if (product_consumed)
         return 1;
@@ -685,10 +689,9 @@ static int service_semantic_input_events(
                         local_ui,
                         osk,
                         mouse_interpretation_suspended,
-                        &event.payload.controller_state)) {
-                    *mpeg_session_failure = 1;
+                        &event.payload.controller_state,
+                        mpeg_session_failure))
                     return 0;
-                }
                 break;
 
             case PSTVNC_INPUT_EVENT_MOUSE_UPDATE:
