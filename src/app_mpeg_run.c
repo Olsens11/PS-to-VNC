@@ -1,15 +1,16 @@
 /*
  * File synopsis:
- * Implements the R21-R24 Application-owned MPEG run coordinator. R21-R23C own
- * exact run start, live service, safe execution retirement and Q7 restoration
- * overlap. R24 adds the explicit run-scoped proof that a protocol-fresh restored
- * RFB desktop was actually presented before composing P3 seal with the accepted
- * synchronized compositor reveal.
+ * Implements the R21-R24 Application-owned MPEG run coordinator plus the
+ * R33/R34P/R35P retained-session abnormal dormancy paths. R21-R23C own exact
+ * run start, live service, safe execution retirement and Q7 restoration
+ * overlap. R24 owns explicit restored-RFB presentation proof and synchronized
+ * final reveal. R35P lets an enclosing-session abort resume from exact
+ * monotonic R23/R24 partial-retirement owner states without replaying normal
+ * retirement, Transport finalization, restoration or reveal work.
  *
- * R24 does not activate ordinary product MPEG flow or perform graphics work
- * directly. Retryable pre-sync compositor failure leaves exact REVEAL_PENDING
- * authority intact. Only synchronized retirement reveal and exact P3 RFB_ONLY
- * return the coordinator to reusable IDLE.
+ * Retryable pre-sync compositor failure remains same-session REVEAL_PENDING
+ * authority. Only synchronized retirement reveal and exact P3 RFB_ONLY return
+ * the normal coordinator to reusable IDLE.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
  * A003-APPLICATION-MPEG-RUN-START-R21,
