@@ -1601,6 +1601,10 @@ static void test_receiver_completion_event_is_real_no_touch_fence(void)
     config.rfb_initial_credit_bytes = 0u;
     initialize_media_runtime(&runtime, &config, &audio, &mpeg);
     start_runtime(&runtime);
+    CHECK(runtime.audio_activation_state == PSTVNC_TRANSPORT_AUDIO_DORMANT);
+    CHECK(pstvnc_transport_runtime_audio_activate(&runtime) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(runtime.audio_activation_state == PSTVNC_TRANSPORT_AUDIO_ACTIVE);
 
     memset(&audio_waiter, 0, sizeof(audio_waiter));
     audio_waiter.runtime = &runtime;
