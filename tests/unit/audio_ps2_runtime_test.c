@@ -9,6 +9,7 @@
 
 #define TEST_MAX_SEMAS 32
 #define TEST_MAX_STATUS 16
+#define TEST_HEAP_BYTES 32768u
 
 typedef struct test_sema {
     int used;
@@ -17,6 +18,11 @@ typedef struct test_sema {
 } test_sema_t;
 
 static test_sema_t g_semas[TEST_MAX_SEMAS];
+static unsigned char g_test_heap[TEST_HEAP_BYTES];
+static size_t g_test_heap_offset;
+static int g_malloc_fail_once;
+static int g_malloc_calls;
+static int g_free_calls;
 static int g_next_sema_id;
 static int g_create_sema_call_count;
 static int g_create_sema_fail_call;
@@ -55,6 +61,11 @@ static void reset_fakes(void)
     memset(&g_thread, 0, sizeof(g_thread));
     memset(g_status_values, 0, sizeof(g_status_values));
 
+    g_test_heap_offset = 0u;
+    g_malloc_fail_once = 0;
+    g_malloc_calls = 0;
+    g_free_calls = 0;
+
     g_next_sema_id = 1;
     g_create_sema_call_count = 0;
     g_create_sema_fail_call = 0;
@@ -80,6 +91,30 @@ static void reset_fakes(void)
     g_exec_module_calls = 0;
     g_load_module_fail_once = 0;
     g_exec_module_fail_once = 0;
+}
+
+void *test_malloc(size_t byte_count)
+{
+    void *memory;
+
+    g_malloc_calls++;
+    if (g_malloc_fail_once) {
+        g_malloc_fail_once = 0;
+        return NULL;
+    }
+
+    if (byte_count > TEST_HEAP_BYTES - g_test_heap_offset)
+        return NULL;
+
+    memory = &g_test_heap[g_test_heap_offset];
+    g_test_heap_offset += byte_count;
+    return memory;
+}
+
+void test_free(void *memory)
+{
+    assert(memory != NULL);
+    g_free_calls++;
 }
 
 int CreateSema(ee_sema_t *semaphore)
@@ -305,6 +340,10 @@ static void test_memory_and_release(void)
     reset_fakes();
     init_runtime(&runtime, &memory_ops, &thread_ops, &sync);
 
+    g_malloc_fail_once = 1;
+    assert(memory_ops.allocate(memory_ops.context, 4096u, 1u) == NULL);
+    assert(runtime.live_allocations == 0u);
+
     buffer = memory_ops.allocate(memory_ops.context, 4096u, 1u);
     stack = memory_ops.allocate(memory_ops.context, 16384u, 16u);
     assert(buffer != NULL);
@@ -321,6 +360,8 @@ static void test_memory_and_release(void)
     assert(runtime.live_allocations == 1u);
     memory_ops.release(memory_ops.context, buffer);
     assert(runtime.live_allocations == 0u);
+    assert(g_malloc_calls == 3);
+    assert(g_free_calls == 2);
 
     assert(sync.lock(sync.context) == 0);
     assert(sync.unlock(sync.context) == 0);

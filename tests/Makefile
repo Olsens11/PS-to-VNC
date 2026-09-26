@@ -1276,6 +1276,7 @@ $(AUDIO_PS2_RUNTIME_TEST): \
 	../src/audio/ps2_runtime.h \
 	../src/audio/session.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) -Wno-pedantic \
+		-Dmalloc=test_malloc -Dfree=test_free \
 		-Iunit/audio_ps2_runtime_host_stubs \
 		-I../src \
 		unit/audio_ps2_runtime_test.c \
