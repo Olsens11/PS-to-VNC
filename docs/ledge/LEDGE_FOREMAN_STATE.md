@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0080
-RECORDED_AT=2026-09-26T17:33:25-04:00
+STATE_REVISION=0081
+RECORDED_AT=2026-09-26T18:27:54-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0079
-SUPERSEDES_FOREMAN_STATE_REVISION=0079
+BASED_ON_FOREMAN_STATE_REVISION=0080
+SUPERSEDES_FOREMAN_STATE_REVISION=0080
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,81 +14,80 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0080 independently accepts
-`A002-PS2-AUDIO-EXECUTION-BINDING-R37` at final pre-log source authority
-`87069d82787c4b8c66a759ef9ef2a1bc7af03b53` and consumes immutable
-Reconstruction closeout `93e3271b42b5dcad1d83d7126d989306629d0e11`.
+Revision 0081 independently accepts
+`A002-AUDIO-SESSION-COMPLETION-PUBLICATION-R38` at final pre-log source
+authority `9834277d61b1f8dd6ed8c47923cb328e414ba08d` and consumes immutable
+Reconstruction closeout `bd538e663ff71295e8ca68cbe49ff329b1bbffaf`.
 
-The returned R37 range is exactly six commits ahead of assigning Foreman log
-`78c4623f9c9b9838fbfc091e380380cd49b32974`, zero behind, and is confined to
-the authorized AUDIO-domain PS2 execution binding, pinned AUDSRV build input,
-focused host stubs/tests, lifecycle/topology documentation and dictionary
-reconciliation. Ordinary Application, Transport, AUDIO session/playback/AUDSRV
-service semantics, Configuration profile authority, media-clock implementation,
-MPEG/RFB/Input/UI/Display, Pi and Wire/protocol behavior did not change.
+The returned R38 range is exactly eight commits ahead of assigning Foreman log
+`e735b3298e1ee8a7b00671eaf2f62d6c32ce52a6`, zero behind, and is confined to
+the authorized AUDIO-session completion seam, accepted R37 PS2 completion
+adapter, focused tests, lifecycle documentation and dictionary reconciliation.
+Application, Transport, Configuration profile values, media-clock behavior,
+playback/AUDSRV service semantics, MPEG/RFB/Input/UI/Display, Pi product source
+and Wire protocol behavior did not change.
 
-Independent review accepts all twelve R37 requirements. One
-`pstvnc_audio_ps2_runtime_t` owns exactly one AUDIO session-lock semaphore, one
-retained worker-completion semaphore, one EE thread slot and bounded aligned
-allocation records. The separate caller-owned resident state records LIBSD and
-AUDSRV module preparation independently, so partial module preparation is
-truthful and retryable. No `audsrv_quit()`, IOP reset or per-session module
-unload/reload exists.
+Independent review accepts all twelve R38 requirements. The public
+`pstvnc_audio_session_poll()` reports only PENDING versus DONE for an exact
+initialized, created, successfully started and not-destroyed worker. It never
+inspects Transport queue/end facts, media-clock state, elapsed time,
+worker outcome or Application flags. Thread-owner observation failure is a real
+`PSTVNC_AUDIO_SESSION_THREAD_STATUS_FAILED`, not a synthetic PENDING result.
 
-The clean linked build now embeds the pinned
-`$(PS2SDK)/iop/irx/audsrv.irx` image through the same deterministic generated
-object pattern as other resident IRX inputs.
+The accepted R37 PS2 adapter now exposes one exact nonblocking completion
+operation using the retained completion semaphore. Before completion it uses
+`ReferSemaStatus` and returns immediately; successful one-shot `PollSema`
+consumption first records `completion_observed`, so later status and join
+operations never wait on the same event again. The poll path contains no
+`WaitSema`, `DelayThread`, `ReferThreadStatus`, timeout or poll-count
+success rule.
 
-Thread ownership is proof-driven. Failed CreateThread creates no slot; successful
-create records one dormant-created slot; failed StartThread leaves that exact
-slot owned for retryable destruction; worker return publishes a retained
-completion event before ExitThread; join retains completion observation across a
-later status failure and succeeds only after the exact thread is observed
-`THS_DORMANT`. No elapsed duration or bounded poll count creates dormancy.
-DeleteThread failure preserves the slot for retry, and runtime/semaphore release
-clears each owner only after concrete kernel success.
+DONE is deliberately weaker than joined. Existing join remains the visibility
+and exact `THS_DORMANT` fence; outcome access and resource reclamation are
+still illegal until join succeeds. R37's partial-start, DeleteThread retry,
+allocation ownership and runtime-release rules remain unchanged.
 
-R37 deliberately exports no timer/time-operation table. Accepted R26 remains the
-sole PS2 common-media-clock/time-operation owner.
-
-Exact final-source GitHub Actions run `36272813140`, attempt 1, checked out
-`87069d82787c4b8c66a759ef9ef2a1bc7af03b53` and passed host-unit,
+Exact final-source GitHub Actions run `36274451271`, attempt 1, checked out
+`9834277d61b1f8dd6ed8c47923cb328e414ba08d` and passed host-unit,
 project-check, strict dictionaries, pinned PS2 compile, linked build and
-current-source reproducibility. Exact immutable-log-head run `36272934134`,
+current-source reproducibility. Exact immutable-log-head run `36274547884`,
 attempt 1, also passed the complete canonical gate set.
 
-The accepted R37 linked identity is:
+The accepted R38 linked identity is:
 
-`ELF_PRISTINE_SHA256=f7270f3f738ab497dbe9e5163df24984056b6d5fdb0ca5286459d59fc32687a5`
+`ELF_PRISTINE_SHA256=3b8319a17aa57e50a75399b1eb4ac0c35e59168f2805a1d7d531bd68d92450c6`
 
 `PT_LOAD_SEGMENTS=1`
 
-`PT_LOAD_SHA256=776dd4923ca3302585bd31e630f7e9914a45cd2c4b5980c4766ad0dfdbf4b2b9`
+`PT_LOAD_SHA256=a5a048b8e96650bcce751c3899fb1491d7a41d5b7c2615e60e3cf4779f726313`
 
-`PT_LOAD_BYTES=550164`
+`PT_LOAD_BYTES=550804`
 
 These bytes become the newest fully Foreman-accepted source/build identity and
 remain hardware-pending.
 
-Application AUDIO composition is not yet dependency-ready. A006 requires the
-steady-state coordinator to observe explicit owner completion/error facts
-without turning diagnostic/Transport state into lifecycle authority. Clean
-`pstvnc_audio_session_t` currently exposes blocking `join()` and post-join
-`outcome()`, but no nonblocking owner completion/status seam. Calling join in
-the ordinary Application loop could stall RFB/input/MPEG coordination for the
-entire remaining AUDIO producer lifetime; inferring completion from Transport
-`producer_done + empty` would bypass the AUDIO worker/AUDSRV owner and would
-not prove worker dormancy.
+The post-R38 dependency pass found that ordinary PS2 Application AUDIO
+composition is still not end-to-end ready for a different reason: the clean Pi
+product has no AUDIO rider/producer at all. Current `pi/wire_runtime.py`
+composes only RFB attachment and MPEG generation factories; current
+`pi/wire_protocol.py` has no clean channel-2 AUDIO helpers; current
+`pi/wire_server.py` accepts no AUDIO owner/factory and does not dispatch AUDIO
+CREDIT or emit AUDIO DATA. A007 explicitly classifies the Pi media
+runner/producer family as A001/A002/A003/A006 product responsibility, so this is
+not optional test scaffolding.
 
-The next bounded dependency is therefore one A002 completion-publication
-prerequisite. The AUDIO session/thread contract must expose a nonblocking,
-owner-truthful completion observation that survives retry and still requires
-join as the visibility/dormancy fence before outcome/release. It must not turn
-Transport end, a timeout, elapsed time or an unproven thread state into
-completion.
+The PS2 Transport side is already ready for this lower owner: channel 2 exists,
+initial and returned AUDIO credit are emitted from the sole I/O owner, nonzero
+DATA enters the AUDIO queue, and zero-length channel-2 DATA is the existing
+one-shot producer-done marker. The clean AUDIO consumer therefore must not be
+wired into ordinary Application before the Pi has a real product producer that
+obeys those exact credit and lifetime contracts.
 
-Once that seam is accepted, ordinary A006 AUDIO Application composition can
-consume R36 + R37 + R26 without blocking the resident steady-state coordinator.
+The next packet reconstructs that Pi-side A002 producer/rider mechanism only.
+It remains optional/injected in `WireServer` and deliberately does not enable
+AUDIO in ordinary `pi/wire_runtime.py` yet. That keeps R39 below final
+cross-platform product composition and lets the later A006 packet activate Pi
+and PS2 AUDIO together under one reviewed session policy.
 
 ## Temporal architecture reconciliation
 
@@ -121,7 +120,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A002_R37_PS2_AUDIO_EXECUTION_BINDING_FOREMAN_ACCEPTED__A002_R38_AUDIO_SESSION_COMPLETION_PUBLICATION_ACTIVE__AUDIO_APPLICATION_COMPOSITION_QUEUED`
+`A002_R38_AUDIO_SESSION_COMPLETION_FOREMAN_ACCEPTED__A002_R39_PI_AUDIO_PCM_PRODUCER_ACTIVE__A006_AUDIO_APPLICATION_COMPOSITION_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -182,8 +181,9 @@ NORMAL_MPEG_RFB_RESTORATION=FOREMAN_ACCEPTED_R35
 NORMAL_MPEG_FINAL_REVEAL=FOREMAN_ACCEPTED_R35
 AUDIO_RUNTIME_PROFILE_AUTHORITY=FOREMAN_ACCEPTED_R36
 AUDIO_PS2_EXECUTION_BINDING=FOREMAN_ACCEPTED_R37
-AUDIO_SESSION_COMPLETION_PUBLICATION=RECONSTRUCTION_ACTIVE_R38
-AUDIO_APPLICATION_COMPOSITION=DEPENDENCY_QUEUED_AFTER_R38
+AUDIO_SESSION_COMPLETION_PUBLICATION=FOREMAN_ACCEPTED_R38
+PI_AUDIO_PCM_PRODUCER=RECONSTRUCTION_ACTIVE_R39
+AUDIO_APPLICATION_COMPOSITION=DEPENDENCY_QUEUED_AFTER_R39
 AUTO_RECALIBRATION_AFTER_RETIREMENT=DEFERRED_OPTIONAL_POLICY
 CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
@@ -3349,9 +3349,95 @@ worker finished AUDSRV work or became reclaimable.
 
 The next packet adds only the missing owner seam.
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R38 AUDIO session-completion authority
 
 PACKET_ID=A002-AUDIO-SESSION-COMPLETION-PUBLICATION-R38
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0080
+ASSIGNING_FOREMAN_STATE_COMMIT=5575434111c963749faeff7055abaf589eb82dd1
+ASSIGNING_FOREMAN_LOG_COMMIT=e735b3298e1ee8a7b00671eaf2f62d6c32ce52a6
+RECONSTRUCTION_STARTING_COMMIT=e735b3298e1ee8a7b00671eaf2f62d6c32ce52a6
+R38_FINAL_SOURCE_COMMIT=9834277d61b1f8dd6ed8c47923cb328e414ba08d
+R38_RECONSTRUCTION_LOG_COMMIT=bd538e663ff71295e8ca68cbe49ff329b1bbffaf
+R38_PRE_LOG_COMMIT_COUNT=8
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260926T173947-0400__reconstruction__a002-config-audio-clock__interactive.md`
+
+Independent Foreman disposition:
+
+A002-R38-C1=MET
+A002-R38-C2=MET
+A002-R38-C3=MET
+A002-R38-C4=MET
+A002-R38-C5=MET
+A002-R38-C6=MET
+A002-R38-C7=MET
+A002-R38-C8=MET
+A002-R38-C9=MET
+A002-R38-C10=MET
+A002-R38-C11=MET
+A002-R38-C12=MET
+
+Independent findings:
+
+1. Public AUDIO completion status is nonblocking and owner-local.
+2. Only exact successfully started workers are status-observable.
+3. Transport producer/queue facts never substitute for worker completion.
+4. PS2 completion polling has no blocking wait, delay or dormancy loop.
+5. One-shot completion consumption is retained for future status/join.
+6. Repeated active polls never become success by count or elapsed time.
+7. Kernel observation failure is a real status error.
+8. Join remains required for visibility/dormancy/outcome/reclaim.
+9. Finite success/failure/stop/Transport/clock worker returns publish DONE.
+10. R37 partial-start and reclaim behavior remains unchanged.
+11. Ordinary Application does not consume R38 yet.
+12. Exact final source/log heads close every canonical deterministic gate.
+
+R38_SOURCE_COMPLETE=YES
+R38_FOREMAN_ACCEPTED=YES
+R38_HOST_TESTED=YES
+R38_PROJECT_CHECK=PASS
+R38_STRICT_DICTIONARIES=PASS
+R38_PS2_COMPILE=PASS
+R38_PS2_LINK=PASS
+R38_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R38_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36274451271_ATTEMPT_1
+R38_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36274547884_ATTEMPT_1
+R38_INDEPENDENT_VALIDATION=NOT_RUN
+R38_OPERATOR_OBSERVED=NO
+R38_HARDWARE_QUALIFIED=NO
+R38_HARDWARE_PENDING=YES
+
+Accepted linked identity:
+
+`ELF_PRISTINE_SHA256=3b8319a17aa57e50a75399b1eb4ac0c35e59168f2805a1d7d531bd68d92450c6`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=a5a048b8e96650bcce751c3899fb1491d7a41d5b7c2615e60e3cf4779f726313`
+`PT_LOAD_BYTES=550804`
+
+## Newly exposed clean Pi AUDIO dependency
+
+Current clean Pi product composition has no A002 AUDIO producer/rider.
+
+Exact observed gap:
+
+- `pi/wire_protocol.py` has no channel-2 AUDIO vocabulary/helpers;
+- `pi/wire_server.py` accepts only RFB and MPEG rider owners/factories;
+- `pi/wire_runtime.py` composes only selected RFB attachment and MPEG
+  generation factories;
+- no clean Pi source discovers the default sink monitor or launches the qualified
+  48-kHz signed-16 stereo PipeWire capture;
+- therefore no clean product owner consumes PS2 channel-2 CREDIT or emits
+  channel-2 DATA.
+
+This is a dependency of final A006 AUDIO composition, not a reason to put Pi
+capture policy inside PS2 Application or Transport.
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A002-PI-AUDIO-PCM-PRODUCER-R39
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a002-config-audio-clock
@@ -3359,158 +3445,191 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0080
-BASED_ON_ACCEPTED_R37_SOURCE=87069d82787c4b8c66a759ef9ef2a1bc7af03b53
+BASED_ON_FOREMAN_STATE_REVISION=0081
 BASED_ON_ACCEPTED_R36_SOURCE=a5528b08fa48382545ee9e325c5f103b4e38c0b9
+BASED_ON_ACCEPTED_R38_SOURCE=9834277d61b1f8dd6ed8c47923cb328e414ba08d
+BASED_ON_A002_AUDIT=docs/ledge/LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md
 BASED_ON_A006_AUDIT=docs/ledge/LEDGE_AUDIT_A006_ORCHESTRATION_SHUTDOWN.md
-AUDIO_APPLICATION_COMPOSITION=DEFERRED
-TRANSPORT_AUDIO_PRODUCT_ACTIVATION=DEFERRED
-R36_PROFILE_CONSUMPTION_BY_APPLICATION=DEFERRED
-AUDIO_START_POLICY=DEFERRED_TO_APPLICATION_PACKET
+BASED_ON_H1_PCM_PRODUCER=experiments/media-harness-h1/h1_mux_server.py
+ORDINARY_PI_AUDIO_ACTIVATION=DEFERRED
+PS2_AUDIO_APPLICATION_COMPOSITION=DEFERRED
+TRANSPORT_AUDIO_PS2_MECHANISM=UNCHANGED
+WIRE_VERSION=UNCHANGED
 AUTO_RECALIBRATION=DEFERRED_OPTIONAL_POLICY
 
 ### Objective
 
-Give the clean AUDIO session owner one nonblocking, explicit completion
-publication/observation seam suitable for the resident Application steady-state
-loop.
+Reconstruct the clean Raspberry Pi A002 PCM producer/rider owner required by the
+already-accepted PS2 Transport/AUDIO consumer stack.
 
-The seam must answer only whether the exact successfully started AUDIO worker has
-completed its session entry work. It must not return the terminal AUDIO outcome
-before the existing join visibility/dormancy fence, and it must not infer
-completion from Transport producer state, elapsed time, diagnostics or queue
-emptiness.
+R39 must create a session-scoped Pi AUDIO owner that:
 
-R38 may extend the injected AUDIO thread-operation contract and the accepted R37
-PS2 adapter only as needed to make that completion observation exact and
-nonblocking.
+- captures the selected 48-kHz signed-16 stereo default-sink monitor;
+- obeys exact PS2 channel-2 CREDIT;
+- emits only aligned channel-2 DATA through WireServer's sole physical send and
+  global sequence owner;
+- preserves bounded producer/process ownership and fail-closed cleanup.
+
+The owner remains optional/injected. R39 must not yet enable it from ordinary
+`pi/wire_runtime.py`, and it must not modify PS2 Application AUDIO policy.
+
+### Selected Pi projection
+
+Use `src/config/audio_runtime_profile.json` as the sole selected numeric AUDIO
+authority and generate/check a narrow Pi projection rather than copying numbers
+into Pi source.
+
+The Pi producer projection needs only:
+
+- channel window = 524288 bytes;
+- PCM rate = 48000 Hz;
+- channels = 2;
+- bits/sample = 16;
+- PCM frame alignment = 4 bytes.
+
+The Wire maximum payload remains the existing protocol-owned 8192 bytes.
+
+Do not create an independent user-visible Pi AUDIO tuning profile. A local
+producer spool, if implementation requires one, must be bounded and must not
+exceed the selected 524288-byte channel window. Direct pipe backpressure is also
+acceptable and requires no invented host-buffer tuning field.
 
 ### Required behavior
 
-1. **Public owner status is nonblocking.** Add one narrow AUDIO-session
-   completion/status operation that can be called from the ordinary coordinator
-   without waiting for producer completion, worker dormancy or AUDSRV progress.
-   It returns an explicit ACTIVE/PENDING versus COMPLETED fact, or a real owner
-   error.
-2. **Only a successfully started worker is status-observable.** Clean unstarted,
-   start-failed, released or contradictory session states are rejected rather
-   than treated as completed.
-3. **Completion remains an AUDIO worker fact.** The status seam may consume an
-   injected thread-owner completion observation, but it must never inspect
-   Transport AUDIO `producer_done`, queue bytes, media-clock state, elapsed
-   time, diagnostics or Application flags to infer completion.
-4. **R37 provides an exact nonblocking thread completion observation.** Extend
-   the thread-ops contract with the smallest needed poll/status operation.
-   Concrete PS2 implementation may use retained completion/dormancy kernel
-   evidence, but it must perform no blocking wait or delay loop.
-5. **Observation is retained across retries.** If a one-shot completion event is
-   consumed, record that fact before returning. Later status/join calls must not
-   wait for the same event again. A subsequent kernel status error cannot erase
-   already-proven completion.
-6. **No false completion on active thread.** RUN/READY/WAIT/SUSPEND or other
-   non-dormant/unfinished states remain ACTIVE/PENDING. Repeated polling,
-   elapsed time or poll count never changes them to COMPLETED.
-7. **Kernel/status failure is not ACTIVE.** An inability to distinguish an active
-   exact worker from a completed one returns a real status/error result rather
-   than silently reporting still-running.
-8. **Join remains the visibility/dormancy fence.** COMPLETED status does not make
-   `pstvnc_audio_session_outcome()` legal and does not release memory/thread
-   ownership. The existing join path must still prove the exact worker's
-   completion/dormancy and establish visibility before outcome/release.
-9. **Normal finite completion is visible.** MEDIA_END+empty, successful playback
-   completion, playback failure, clock failure, Transport failure and
-   stop-request completion all eventually publish COMPLETED once their worker
-   actually returns. Status reports completion, not success/failure policy.
-10. **Partial-start/release semantics remain unchanged.** The accepted R37
-    created-but-not-started retryable destroy path, exact allocation ownership,
-    DeleteThread retry and runtime release rules are not weakened.
-11. **No Application policy yet.** Do not open Transport AUDIO, start a product
-    AUDIO session, select when AUDIO should begin relative to manual MPEG
-    activation, or change ordinary Application teardown. R38 is owner
-    observability only.
-12. **Canonical evidence closes green.** Focused session/runtime tests plus
-    A002/R26/R36/R37 regressions and canonical host/project/strict-dictionary/
-    pinned-PS2 compile/link/current-source reproducibility pass without hardware
-    success claims.
+1. **Clean Pi protocol vocabulary gains AUDIO only.** Add channel-2 AUDIO
+   constant/helpers for exact CREDIT decode/classification and DATA encoding.
+   Nonzero AUDIO DATA must preserve the existing Wire header/version/sequence
+   contract and never exceed the existing maximum payload.
+2. **PCM framing is exact.** Every emitted payload is nonempty and a multiple of
+   four bytes for selected signed-16 stereo PCM. Credit smaller than one frame
+   cannot authorize emission. No byte padding or silent truncation of already
+   admitted samples is allowed.
+3. **Selected values have one source.** Generate/check the narrow Pi AUDIO
+   projection from R36's canonical JSON. Runtime code contains no duplicated
+   48000/2/16/524288 tuning literals except protocol-derived frame arithmetic.
+4. **Capture target is owner-correct.** Discover the PipeWire default sink's
+   `node.name` through `wpctl inspect @DEFAULT_AUDIO_SINK@` and capture its
+   `.monitor` with `pw-record` using the selected rate/channels and signed
+   16-bit format. Failure to discover or launch is a real AUDIO-owner failure.
+5. **One exact session owner.** The AUDIO producer object belongs to one accepted
+   Wire Session, owns its capture process/reader state, credit and any bounded
+   local spool, and cannot be reused across session IDs.
+6. **Credit is the only DATA admission authority.** PS2 channel-2 CREDIT grows a
+   bounded credit balance no larger than the selected channel window. Emission
+   never exceeds credit, available complete PCM frames or Wire maximum payload;
+   exact sent bytes consume exact credit once.
+7. **WireServer remains sole physical I/O/sequence owner.** The AUDIO owner never
+   calls the PS2 socket directly. WireServer accepts AUDIO CREDIT into the
+   injected owner and serializes AUDIO DATA using its ordinary global
+   `next_send_sequence` path alongside RFB/MPEG.
+8. **Producer activity integrates without polling sleeps.** AUDIO data-ready/
+   terminal state must wake or participate in WireServer's existing readiness
+   loop. Do not add a blind millisecond scheduler or background socket writer.
+9. **Unexpected capture EOF/error is failure, not finite success.** Ordinary
+   `pw-record` EOF, reader failure or malformed frame tail while the Wire
+   Session remains active must make the AUDIO owner/Wire session fail closed.
+   It must not emit the zero-length producer-done marker as a recovery trick.
+10. **Session cleanup proves local producer dormancy.** Wire retirement asks the
+    AUDIO owner to stop its capture process and any reader thread, then proves
+    actual process/thread termination before owner state is reusable/discarded.
+    A bounded wait may trigger terminate/kill escalation but timeout alone can
+    never mean success.
+11. **Producer-done representation remains explicit and unused by accident.**
+    Preserve the existing PS2 semantic that zero-length channel-2 DATA means
+    producer done; provide a protocol helper/test if useful, but R39 ordinary
+    unexpected EOF/cleanup must not send it. Final product policy for any
+    explicit in-session finite AUDIO end remains a later Application/composition
+    decision.
+12. **No ordinary activation yet.** `pi/wire_runtime.py` must continue building
+    the ordinary product server without an AUDIO factory after R39. PS2 source,
+    Transport AUDIO mechanism and Application behavior remain unchanged. All
+    canonical Pi/host/project/dictionary and PS2 compile/link/reproducibility
+    gates must remain green.
 
 ### Required deterministic evidence
 
 Focused tests must prove at minimum:
 
-- ACTIVE is returned immediately for an exact started worker whose completion is
-  not yet published;
-- polling ACTIVE repeatedly performs no wait/delay and never changes state by
-  count;
-- real worker return becomes COMPLETED without a blocking join;
-- consuming a one-shot completion event records retained completion so a second
-  status call and later join do not wait for it again;
-- a kernel status/poll failure before completion returns an error, not ACTIVE or
-  COMPLETED;
-- a status failure after completion has already been retained does not erase the
-  retained fact;
-- COMPLETED status still leaves `pstvnc_audio_session_outcome()` unavailable
-  until successful join;
-- successful join after prior completion polling remains legal and does not
-  consume completion twice;
-- finite EMPTY, playback COMPLETE, representative playback failure and
-  stop-request worker returns all become COMPLETED irrespective of outcome kind;
-- start failure/never-started partial ownership is rejected by the public status
-  seam and remains releasable through existing R37/session ownership;
-- no Transport producer/queue, media-clock, diagnostics or Application source is
-  consulted by completion status;
-- existing R37 partial-start/dormancy/release and R36/R26/audio session/playback
-  tests remain green.
+- selected Pi profile projection exactly matches 524288/48000/2/16 and derives
+  4-byte PCM frame alignment;
+- stale/generated Pi AUDIO projection is rejected by canonical profile checks;
+- default-sink monitor discovery accepts the qualified `node.name` form and
+  rejects missing/malformed output;
+- the exact `pw-record` command uses monitor target, 48000 Hz, s16, two
+  channels and stdout;
+- zero credit and 1-3 bytes of credit cannot emit;
+- emission is <=8192, <=credit, <=available complete frames and 4-byte aligned;
+- exact emission decrements credit once and global Wire sequence once;
+- credit overflow beyond 524288 is rejected;
+- AUDIO CREDIT on a server with no injected AUDIO owner is unsupported/fails
+  closed rather than being silently discarded;
+- RFB and MPEG rider dispatch/emission remain unchanged when an AUDIO owner is
+  also injected;
+- capture launch/read/EOF failure becomes exact owner/Wire failure and never
+  sends zero-length AUDIO DATA;
+- session close proves producer/process/thread retirement; failed proof returns
+  failure and never claims clean reuse;
+- ordinary `build_product_wire_server()` still injects no AUDIO owner/factory
+  in R39;
+- existing Pi Wire/RFB/MPEG tests plus all R36-R38/A002 regressions stay green;
+- PS2 linked identity remains exactly R38 if no PS2 loadable source changes.
 
 ### Authorized source surface
 
-R38 may modify only the smallest justified subset of:
+R39 may modify only the smallest justified subset of:
 
-- `src/audio/session.c/.h`;
-- `src/audio/ps2_runtime.c/.h`;
-- focused AUDIO session/R37 runtime tests and PS2 host stubs;
-- canonical test/build/topology enrollment if needed;
-- directly affected AUDIO/source dictionaries and lifecycle documentation.
+- new `pi/audio_*.py` producer/profile modules;
+- generated Pi AUDIO profile artifact sourced from
+  `src/config/audio_runtime_profile.json`;
+- `pi/wire_protocol.py` for channel-2 AUDIO framing helpers;
+- `pi/wire_server.py` for optional injected AUDIO rider ownership/dispatch;
+- the existing AUDIO profile generator only as needed to generate/check the Pi
+  projection from the same JSON;
+- focused Pi/profile/Wire tests;
+- canonical test/project/topology enrollment;
+- directly affected Pi/source dictionaries and process/lifecycle documentation.
 
 Do not modify absent an independently demonstrated prerequisite defect:
 
-- AUDIO playback/AUDSRV service semantics;
-- R36 selected profile values;
-- R26 media clock;
+- `pi/wire_runtime.py` ordinary product factory composition;
+- PS2 `src/app*`;
+- PS2 AUDIO session/playback/AUDSRV/R37 runtime;
 - Transport implementation;
-- Application;
-- Input/UI/RFB/Display/MPEG;
-- Pi product source;
-- Wire/protocol behavior;
+- R26 media clock;
+- R36 selected JSON values;
+- MPEG/RFB/Input/UI/Display product behavior;
+- Wire/product compatibility version;
 - H1 forensic source.
 
-If PS2SDK completion primitives cannot expose a truthful nonblocking completion
-fact without changing the accepted worker ownership model, return BLOCKED with
-the exact missing primitive/contract. Do not replace the requirement with
-blocking join or timeout success.
+If a clean Pi capture owner cannot be integrated into the sole WireServer
+readiness/send loop without introducing a second PS2 socket writer or
+unbounded/unowned producer thread, return BLOCKED with the exact missing owner
+seam rather than bypassing Wire ownership.
 
 ### Explicit non-goals
 
-R38 does not:
+R39 does not:
 
-- open/activate the Transport AUDIO rider;
-- decide whether AUDIO starts at session admission or only with MPEG;
-- initialize/start ordinary product AUDIO;
-- aggregate AUDIO failure into Application;
-- change media-clock arm policy;
-- change AUDSRV playback ordering;
+- enable AUDIO in ordinary `pi/wire_runtime.py`;
+- open the PS2 Transport with AUDIO from Application;
+- initialize/start the PS2 AUDIO session;
+- decide final AUDIO start timing relative to Wire admission or MPEG;
+- arm/change the media clock;
+- send normal producer-done during unexpected EOF/session cleanup;
+- change Pi MPEG or RFB product policy;
 - add automatic MPEG recalibration;
-- add timeout/watchdog success;
-- claim Validation/operator observation/hardware qualification.
+- claim independent Validation/operator observation/hardware qualification.
 
 ### Required checks before handoff
 
-Run focused AUDIO completion/status and R37 PS2 runtime tests plus existing A002
-playback/session/R26/R36 profile regressions; canonical host tests; project
-check; complete strict dictionaries; pinned PS2 compile/link and current-source
-reproducibility.
+Run focused Pi AUDIO producer/protocol/server/profile tests plus all current Pi
+Wire/RFB/MPEG product tests; existing A002/R26/R36/R37/R38 host regressions;
+canonical project check; complete strict dictionaries; pinned PS2 compile/link
+and current-source reproducibility.
 
-Record exact final ELF/PT_LOAD identity if bytes change and classify it
-hardware-pending.
+If PS2 loadable bytes are unchanged, record exact identity equality with R38.
+If they unexpectedly change, stop and explain the changed loadable source before
+claiming packet completion.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` revision 0007 using:
@@ -3521,17 +3640,17 @@ At shift end emit exactly one immutable Reconstruction record under
 
 Then stop and return the baton.
 
-FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_NONBLOCKING_AUDIO_COMPLETION_CONTRACT
-STRETCH=NONE__DO_NOT_ENTER_APPLICATION_AUDIO_COMPOSITION
+FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_PI_AUDIO_WIRE_OWNER_SEAM
+STRETCH=NONE__DO_NOT_ENTER_ORDINARY_PI_OR_PS2_AUDIO_ACTIVATION
 
 ## Current hardware debt
 
-Newest fully Foreman-accepted source/build identity is R37:
+Newest fully Foreman-accepted source/build identity is R38:
 
-`ELF_PRISTINE_SHA256=f7270f3f738ab497dbe9e5163df24984056b6d5fdb0ca5286459d59fc32687a5`
+`ELF_PRISTINE_SHA256=3b8319a17aa57e50a75399b1eb4ac0c35e59168f2805a1d7d531bd68d92450c6`
 `PT_LOAD_SEGMENTS=1`
-`PT_LOAD_SHA256=776dd4923ca3302585bd31e630f7e9914a45cd2c4b5980c4766ad0dfdbf4b2b9`
-`PT_LOAD_BYTES=550164`
+`PT_LOAD_SHA256=a5a048b8e96650bcce751c3899fb1491d7a41d5b7c2615e60e3cf4779f726313`
+`PT_LOAD_BYTES=550804`
 
 This exact image is reproducible and Foreman-accepted at source/product-contract
 level, but remains physically unqualified.
