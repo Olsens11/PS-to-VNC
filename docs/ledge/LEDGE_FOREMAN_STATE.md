@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0079
-RECORDED_AT=2026-09-26T16:04:19-04:00
+STATE_REVISION=0080
+RECORDED_AT=2026-09-26T17:33:25-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0078
-SUPERSEDES_FOREMAN_STATE_REVISION=0078
+BASED_ON_FOREMAN_STATE_REVISION=0079
+SUPERSEDES_FOREMAN_STATE_REVISION=0079
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,76 +14,81 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0079 independently accepts
-`A002-AUDIO-RUNTIME-PROFILE-AUTHORITY-R36` at final pre-log source authority
-`a5528b08fa48382545ee9e325c5f103b4e38c0b9` and consumes immutable
-Reconstruction closeout `146d9c831b48c48caadeb9276622febe136468eb`.
+Revision 0080 independently accepts
+`A002-PS2-AUDIO-EXECUTION-BINDING-R37` at final pre-log source authority
+`87069d82787c4b8c66a759ef9ef2a1bc7af03b53` and consumes immutable
+Reconstruction closeout `93e3271b42b5dcad1d83d7126d989306629d0e11`.
 
-The returned R36 range is exactly four commits ahead of assigning Foreman log
-`b8bd7e71beedf7b8798b976df8ffc7275589fa8b`, zero behind, and is confined to
-the authorized Configuration/profile, focused-test, deterministic generation,
-build/topology and dictionary surface. AUDIO session/playback/AUDSRV mechanism,
-Transport, media clock, Application, Input/UI/RFB/Display/MPEG, Pi and
-Wire/protocol behavior did not change.
+The returned R37 range is exactly six commits ahead of assigning Foreman log
+`78c4623f9c9b9838fbfc091e380380cd49b32974`, zero behind, and is confined to
+the authorized AUDIO-domain PS2 execution binding, pinned AUDSRV build input,
+focused host stubs/tests, lifecycle/topology documentation and dictionary
+reconciliation. Ordinary Application, Transport, AUDIO session/playback/AUDSRV
+service semantics, Configuration profile authority, media-clock implementation,
+MPEG/RFB/Input/UI/Display, Pi and Wire/protocol behavior did not change.
 
-Independent review accepts all twelve R36 requirements. Configuration now owns
-one immutable selected AUDIO runtime profile built from three existing narrow
-owner values: Transport AUDIO channel policy, PCM format/volume and AUDIO
-session worker/reservoir policy. The selected values exactly match the qualified
-`P11_COMPAT_PLUS_PCM` clean projection: 524288-byte queue/initial credit,
-4096-byte credit batch, flush/credit return enabled, 48 kHz stereo 16-bit PCM at
-100 percent volume, 4096-byte playback buffer, 458752-byte startup reservoir,
-priority 65, 16384-byte worker stack and independently named 1000-us reservoir
-and common-clock poll cadences.
+Independent review accepts all twelve R37 requirements. One
+`pstvnc_audio_ps2_runtime_t` owns exactly one AUDIO session-lock semaphore, one
+retained worker-completion semaphore, one EE thread slot and bounded aligned
+allocation records. The separate caller-owned resident state records LIBSD and
+AUDSRV module preparation independently, so partial module preparation is
+truthful and retryable. No `audsrv_quit()`, IOP reset or per-session module
+unload/reload exists.
 
-R26 remains the sole common-media-clock offset authority; no audio presentation
-offset is duplicated into R36. The selected profile is private static-const
-Configuration state copied into caller-owned storage after deterministic
-validation, so returned-copy mutation cannot alter Configuration authority.
+The clean linked build now embeds the pinned
+`$(PS2SDK)/iop/irx/audsrv.irx` image through the same deterministic generated
+object pattern as other resident IRX inputs.
 
-The checked-in JSON/generator path is deterministic and canonical-project
-checked. Runtime JSON parsing was not added. Validation rejects malformed
-queue/credit relations, invalid PCM shape/volume, invalid worker values,
-oversized buffering and zero poll cadences rather than clamping them.
+Thread ownership is proof-driven. Failed CreateThread creates no slot; successful
+create records one dormant-created slot; failed StartThread leaves that exact
+slot owned for retryable destruction; worker return publishes a retained
+completion event before ExitThread; join retains completion observation across a
+later status failure and succeeds only after the exact thread is observed
+`THS_DORMANT`. No elapsed duration or bounded poll count creates dormancy.
+DeleteThread failure preserves the slot for retry, and runtime/semaphore release
+clears each owner only after concrete kernel success.
 
-Exact final-source GitHub Actions run `36266535951`, attempt 1, checked out
-`a5528b08fa48382545ee9e325c5f103b4e38c0b9` on
-`ledge/h1-all-guns` and passed host-unit, project-check, strict dictionaries,
-pinned PS2 compile, linked build and current-source reproducibility. Exact
-immutable-log-head run `36266656183`, attempt 1, also passed the complete
-canonical gate set.
+R37 deliberately exports no timer/time-operation table. Accepted R26 remains the
+sole PS2 common-media-clock/time-operation owner.
 
-The accepted R36 linked identity is:
+Exact final-source GitHub Actions run `36272813140`, attempt 1, checked out
+`87069d82787c4b8c66a759ef9ef2a1bc7af03b53` and passed host-unit,
+project-check, strict dictionaries, pinned PS2 compile, linked build and
+current-source reproducibility. Exact immutable-log-head run `36272934134`,
+attempt 1, also passed the complete canonical gate set.
 
-`ELF_PRISTINE_SHA256=8dc8b419cc80d655bdaaccb9b9f5534f6578f5d57c4623b396ab3c35d92ff8db`
+The accepted R37 linked identity is:
+
+`ELF_PRISTINE_SHA256=f7270f3f738ab497dbe9e5163df24984056b6d5fdb0ca5286459d59fc32687a5`
 
 `PT_LOAD_SEGMENTS=1`
 
-`PT_LOAD_SHA256=5c59e5a914d38f5dbe7c0ad9d72df602f91753a1a002b2bfa112f48e4978d423`
+`PT_LOAD_SHA256=776dd4923ca3302585bd31e630f7e9914a45cd2c4b5980c4766ad0dfdbf4b2b9`
 
-`PT_LOAD_BYTES=528020`
+`PT_LOAD_BYTES=550164`
 
 These bytes become the newest fully Foreman-accepted source/build identity and
 remain hardware-pending.
 
-The next AUDIO dependency is the missing PS2 execution binding, not ordinary
-Application composition yet. Clean `src/audio/session.*` already owns
-session-scoped AUDIO worker semantics but receives abstract memory/thread/sync
-operation tables. The existing PS2 product has no concrete binding for those
-tables and no resident AUDSRV/LIBSD module foundation. H1 proves both mechanisms
-but its bounded 3-second shutdown poll is not correctness authority.
+Application AUDIO composition is not yet dependency-ready. A006 requires the
+steady-state coordinator to observe explicit owner completion/error facts
+without turning diagnostic/Transport state into lifecycle authority. Clean
+`pstvnc_audio_session_t` currently exposes blocking `join()` and post-join
+`outcome()`, but no nonblocking owner completion/status seam. Calling join in
+the ordinary Application loop could stall RFB/input/MPEG coordination for the
+entire remaining AUDIO producer lifetime; inferring completion from Transport
+`producer_done + empty` would bypass the AUDIO worker/AUDSRV owner and would
+not prove worker dormancy.
 
-The next packet therefore creates one lower AUDIO execution adapter. It must
-bind allocation, synchronization and EE worker lifecycle to PS2 mechanisms,
-provide resident one-time LIBSD/AUDSRV module preparation, and preserve exact
-retryable ownership on partial startup/cleanup failures. Join/completion must be
-proof-driven: no elapsed duration or bounded poll count may manufacture
-dormancy.
+The next bounded dependency is therefore one A002 completion-publication
+prerequisite. The AUDIO session/thread contract must expose a nonblocking,
+owner-truthful completion observation that survives retry and still requires
+join as the visibility/dormancy fence before outcome/release. It must not turn
+Transport end, a timeout, elapsed time or an unproven thread state into
+completion.
 
-The existing R26 media-clock binding remains the source of
-`pstvnc_media_clock_time_ops_t`; the AUDIO execution adapter must not create a
-second timer/clock owner. Application consumption of R36, Transport AUDIO
-activation and actual PCM product startup remain queued behind this lower owner.
+Once that seam is accepted, ordinary A006 AUDIO Application composition can
+consume R36 + R37 + R26 without blocking the resident steady-state coordinator.
 
 ## Temporal architecture reconciliation
 
@@ -116,7 +121,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A002_R36_AUDIO_RUNTIME_PROFILE_FOREMAN_ACCEPTED__A002_R37_PS2_AUDIO_EXECUTION_BINDING_ACTIVE__AUDIO_APPLICATION_COMPOSITION_QUEUED`
+`A002_R37_PS2_AUDIO_EXECUTION_BINDING_FOREMAN_ACCEPTED__A002_R38_AUDIO_SESSION_COMPLETION_PUBLICATION_ACTIVE__AUDIO_APPLICATION_COMPOSITION_QUEUED`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -176,8 +181,9 @@ NORMAL_MPEG_ACTION_RETIREMENT=FOREMAN_ACCEPTED_R35
 NORMAL_MPEG_RFB_RESTORATION=FOREMAN_ACCEPTED_R35
 NORMAL_MPEG_FINAL_REVEAL=FOREMAN_ACCEPTED_R35
 AUDIO_RUNTIME_PROFILE_AUTHORITY=FOREMAN_ACCEPTED_R36
-AUDIO_PS2_EXECUTION_BINDING=RECONSTRUCTION_ACTIVE_R37
-AUDIO_APPLICATION_COMPOSITION=DEPENDENCY_QUEUED_AFTER_R37
+AUDIO_PS2_EXECUTION_BINDING=FOREMAN_ACCEPTED_R37
+AUDIO_SESSION_COMPLETION_PUBLICATION=RECONSTRUCTION_ACTIVE_R38
+AUDIO_APPLICATION_COMPOSITION=DEPENDENCY_QUEUED_AFTER_R38
 AUTO_RECALIBRATION_AFTER_RETIREMENT=DEFERRED_OPTIONAL_POLICY
 CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
@@ -3254,9 +3260,98 @@ Accepted linked identity:
 `PT_LOAD_SHA256=5c59e5a914d38f5dbe7c0ad9d72df602f91753a1a002b2bfa112f48e4978d423`
 `PT_LOAD_BYTES=528020`
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R37 PS2 AUDIO execution-binding authority
 
 PACKET_ID=A002-PS2-AUDIO-EXECUTION-BINDING-R37
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0079
+ASSIGNING_FOREMAN_STATE_COMMIT=a8e65a5835e4956cc993e438127340a930dbc914
+ASSIGNING_FOREMAN_LOG_COMMIT=78c4623f9c9b9838fbfc091e380380cd49b32974
+RECONSTRUCTION_STARTING_COMMIT=78c4623f9c9b9838fbfc091e380380cd49b32974
+R37_FINAL_SOURCE_COMMIT=87069d82787c4b8c66a759ef9ef2a1bc7af03b53
+R37_RECONSTRUCTION_LOG_COMMIT=93e3271b42b5dcad1d83d7126d989306629d0e11
+R37_PRE_LOG_COMMIT_COUNT=6
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260926T171142-0400__reconstruction__a002-config-audio-clock__interactive.md`
+
+Independent Foreman disposition:
+
+A002-R37-C1=MET
+A002-R37-C2=MET
+A002-R37-C3=MET
+A002-R37-C4=MET
+A002-R37-C5=MET
+A002-R37-C6=MET
+A002-R37-C7=MET
+A002-R37-C8=MET
+A002-R37-C9=MET
+A002-R37-C10=MET
+A002-R37-C11=MET
+A002-R37-C12=MET
+
+Independent findings:
+
+1. One AUDIO-domain PS2 runtime owns only session-local memory/thread/sync
+   mechanism and no Application/Transport/media policy.
+2. Resident LIBSD/AUDSRV preparation is truthful across partial failure and
+   idempotent after success.
+3. Pinned PS2SDK AUDSRV IRX is embedded deterministically.
+4. Aligned allocations publish ownership only after success and are not reclaimed
+   while live.
+5. Session synchronization has its own binding-owned semaphore.
+6. Create/start transitions preserve exact one-thread-slot ownership.
+7. Worker completion and actual THS_DORMANT proof, not elapsed time, gate join.
+8. Completion observation survives status failure and is not consumed twice.
+9. Started and never-started destroy paths are proof-driven and retryable.
+10. Runtime/semaphore release is monotonic under partial failure.
+11. R26 remains sole timer/common-clock time-operation owner.
+12. Application AUDIO activation remains absent and neighboring A002/R26/R36
+    mechanisms remain green.
+
+R37_SOURCE_COMPLETE=YES
+R37_FOREMAN_ACCEPTED=YES
+R37_HOST_TESTED=YES
+R37_PROJECT_CHECK=PASS
+R37_STRICT_DICTIONARIES=PASS
+R37_PS2_COMPILE=PASS
+R37_PS2_LINK=PASS
+R37_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R37_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36272813140_ATTEMPT_1
+R37_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36272934134_ATTEMPT_1
+R37_INDEPENDENT_VALIDATION=NOT_RUN
+R37_OPERATOR_OBSERVED=NO
+R37_HARDWARE_QUALIFIED=NO
+R37_HARDWARE_PENDING=YES
+
+Accepted linked identity:
+
+`ELF_PRISTINE_SHA256=f7270f3f738ab497dbe9e5163df24984056b6d5fdb0ca5286459d59fc32687a5`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=776dd4923ca3302585bd31e630f7e9914a45cd2c4b5980c4766ad0dfdbf4b2b9`
+`PT_LOAD_BYTES=550164`
+
+## Newly exposed AUDIO completion prerequisite
+
+A006 says finite PCM completion and owner failure must be explicit steady-state
+facts. Current clean AUDIO session ownership has:
+
+- blocking `pstvnc_audio_session_join()`;
+- post-join `pstvnc_audio_session_outcome()`;
+- no public nonblocking completion/status operation.
+
+The Application cannot therefore compose AUDIO honestly yet. Blocking join in
+the main steady-state loop could stall unrelated RFB/input/MPEG service until
+the full audio producer ends. Looking at Transport AUDIO producer_done/empty is
+also insufficient: that is producer/queue state, not proof that the AUDIO
+worker finished AUDSRV work or became reclaimable.
+
+The next packet adds only the missing owner seam.
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A002-AUDIO-SESSION-COMPLETION-PUBLICATION-R38
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a002-config-audio-clock
@@ -3264,167 +3359,155 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0079
+BASED_ON_FOREMAN_STATE_REVISION=0080
+BASED_ON_ACCEPTED_R37_SOURCE=87069d82787c4b8c66a759ef9ef2a1bc7af03b53
 BASED_ON_ACCEPTED_R36_SOURCE=a5528b08fa48382545ee9e325c5f103b4e38c0b9
-BASED_ON_A002_AUDIT=docs/ledge/LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md
-BASED_ON_H1_AUDIO_RUNTIME=experiments/media-harness-h1/h1_audio_runtime.c
+BASED_ON_A006_AUDIT=docs/ledge/LEDGE_AUDIT_A006_ORCHESTRATION_SHUTDOWN.md
 AUDIO_APPLICATION_COMPOSITION=DEFERRED
 TRANSPORT_AUDIO_PRODUCT_ACTIVATION=DEFERRED
 R36_PROFILE_CONSUMPTION_BY_APPLICATION=DEFERRED
+AUDIO_START_POLICY=DEFERRED_TO_APPLICATION_PACKET
 AUTO_RECALIBRATION=DEFERRED_OPTIONAL_POLICY
 
 ### Objective
 
-Provide the concrete PlayStation 2 execution/platform binding required by the
-already-accepted clean `pstvnc_audio_session_t` owner.
+Give the clean AUDIO session owner one nonblocking, explicit completion
+publication/observation seam suitable for the resident Application steady-state
+loop.
 
-R37 must supply only lower AUDIO mechanisms:
+The seam must answer only whether the exact successfully started AUDIO worker has
+completed its session entry work. It must not return the terminal AUDIO outcome
+before the existing join visibility/dormancy fence, and it must not infer
+completion from Transport producer state, elapsed time, diagnostics or queue
+emptiness.
 
-- resident-ELF LIBSD/AUDSRV module preparation;
-- aligned session memory operations;
-- one session synchronization primitive;
-- one EE worker-thread slot with proof-driven completion/join/destroy;
-- explicit retryable resource release.
-
-It must not start an AUDIO session from Application, open a Transport AUDIO
-rider, consume R36 from Application, arm/wait the common media clock, or change
-PCM playback policy.
+R38 may extend the injected AUDIO thread-operation contract and the accepted R37
+PS2 adapter only as needed to make that completion observation exact and
+nonblocking.
 
 ### Required behavior
 
-1. **One PS2 AUDIO execution binding owns its resources.** Introduce one narrow
-   AUDIO-domain PS2 runtime/binding object with explicit IDs/state for its
-   session synchronization primitive, worker-completion primitive, one thread
-   slot and live allocations. No global mutable session object or generic
-   platform god-object.
-2. **Resident AUDSRV foundation is explicit and idempotent.** Provide one
-   resident preparation seam that loads/establishes the required LIBSD and
-   embedded AUDSRV IRX exactly once per successful resident lifetime. Track
-   partial success explicitly so a later retry never pretends an unproven
-   module is loaded. Never call or expose `audsrv_quit()`.
-3. **Pinned AUDSRV IRX is part of the product build.** Embed the AUDSRV IRX from
-   the pinned PS2SDK build using the same deterministic generated-object pattern
-   as existing product IRX images. R37 may add this image to the linked product
-   but must not execute it except through the explicit resident preparation
-   seam.
-4. **Memory operations preserve exact ownership.** Allocation satisfies the
-   requested AUDIO session alignment, rejects zero/invalid/overflow cases, and
-   records live allocation ownership. Release clears exactly one real owned
-   allocation; runtime release is forbidden while allocations remain live.
-5. **Synchronization is owner-local.** The session lock/unlock operation table
-   is backed by one binding-owned PS2 semaphore (or equivalent exact primitive)
-   and is used only for AUDIO session state. It is not the R26 media-clock lock,
-   Transport lock or a shared global mutex.
-6. **Thread creation has exact ownership.** The session-supplied stack,
-   priority, entry and argument are forwarded into one EE thread slot. Successful
-   create records a dormant-created thread. Start transitions only that exact
-   slot and never fabricates started authority after a failed StartThread.
-7. **Worker completion is a retained fact, not a timeout.** The PS2 trampoline
-   runs the session entry, publishes a retained binding-owned completion fact,
-   and exits normally. Join may wait/yield for that fact and for actual
-   THS_DORMANT observation, but elapsed time, poll count or delay expiry can
-   never turn a live/unknown worker into success.
-8. **Join is retryable without losing completion.** If a wait/status operation
-   fails after completion has already been observed, retain that observation so
-   a later join retry does not block forever waiting for a consumed one-shot
-   signal. Join succeeds only after the exact thread is proven dormant.
-9. **Destroy is fail closed.** A never-started created thread may be destroyed
-   only after proving its dormant state. A started thread may be destroyed only
-   after completion/dormancy proof. DeleteThread failure preserves the thread
-   slot/IDs/state for retry; no force termination or owner memset is allowed.
-10. **Runtime release is retryable and monotonic.** Release requires no active
-    thread slot and zero live allocations. Semaphore/resource deletion clears
-    each local owner only after successful kernel deletion; partial release
-    failure preserves remaining owner IDs and can be retried. No delay is
-    reclamation proof.
-11. **Clock ownership remains R26.** R37 does not provide or duplicate
-    `pstvnc_media_clock_time_ops_t`, timer reads, media offsets, clock arm or
-    deadline policy. Later Application composition must obtain time operations
-    from the accepted R26 media-clock binding.
-12. **No ordinary product AUDIO activation yet.** Existing
-    `src/audio/session.*`, playback/AUDSRV policy, Transport mechanism,
-    Application, Pi and R36 selected values remain behaviorally unchanged.
-    Canonical host/project/strict-dictionary/pinned-PS2 compile/link/
-    reproducibility must close green.
+1. **Public owner status is nonblocking.** Add one narrow AUDIO-session
+   completion/status operation that can be called from the ordinary coordinator
+   without waiting for producer completion, worker dormancy or AUDSRV progress.
+   It returns an explicit ACTIVE/PENDING versus COMPLETED fact, or a real owner
+   error.
+2. **Only a successfully started worker is status-observable.** Clean unstarted,
+   start-failed, released or contradictory session states are rejected rather
+   than treated as completed.
+3. **Completion remains an AUDIO worker fact.** The status seam may consume an
+   injected thread-owner completion observation, but it must never inspect
+   Transport AUDIO `producer_done`, queue bytes, media-clock state, elapsed
+   time, diagnostics or Application flags to infer completion.
+4. **R37 provides an exact nonblocking thread completion observation.** Extend
+   the thread-ops contract with the smallest needed poll/status operation.
+   Concrete PS2 implementation may use retained completion/dormancy kernel
+   evidence, but it must perform no blocking wait or delay loop.
+5. **Observation is retained across retries.** If a one-shot completion event is
+   consumed, record that fact before returning. Later status/join calls must not
+   wait for the same event again. A subsequent kernel status error cannot erase
+   already-proven completion.
+6. **No false completion on active thread.** RUN/READY/WAIT/SUSPEND or other
+   non-dormant/unfinished states remain ACTIVE/PENDING. Repeated polling,
+   elapsed time or poll count never changes them to COMPLETED.
+7. **Kernel/status failure is not ACTIVE.** An inability to distinguish an active
+   exact worker from a completed one returns a real status/error result rather
+   than silently reporting still-running.
+8. **Join remains the visibility/dormancy fence.** COMPLETED status does not make
+   `pstvnc_audio_session_outcome()` legal and does not release memory/thread
+   ownership. The existing join path must still prove the exact worker's
+   completion/dormancy and establish visibility before outcome/release.
+9. **Normal finite completion is visible.** MEDIA_END+empty, successful playback
+   completion, playback failure, clock failure, Transport failure and
+   stop-request completion all eventually publish COMPLETED once their worker
+   actually returns. Status reports completion, not success/failure policy.
+10. **Partial-start/release semantics remain unchanged.** The accepted R37
+    created-but-not-started retryable destroy path, exact allocation ownership,
+    DeleteThread retry and runtime release rules are not weakened.
+11. **No Application policy yet.** Do not open Transport AUDIO, start a product
+    AUDIO session, select when AUDIO should begin relative to manual MPEG
+    activation, or change ordinary Application teardown. R38 is owner
+    observability only.
+12. **Canonical evidence closes green.** Focused session/runtime tests plus
+    A002/R26/R36/R37 regressions and canonical host/project/strict-dictionary/
+    pinned-PS2 compile/link/current-source reproducibility pass without hardware
+    success claims.
 
 ### Required deterministic evidence
 
-Focused tests/source proofs must establish at minimum:
+Focused tests must prove at minimum:
 
-- resident LIBSD/AUDSRV preparation is one-time after success and retains
-  truthful partial-load state across injected failure;
-- no `audsrv_quit`, IOP reset or per-session module unload/reload path exists;
-- exact AUDSRV IRX build provenance comes from pinned `$(PS2SDK)` product
-  inputs;
-- playback-buffer and 16-byte worker-stack allocations are correctly aligned
-  and tracked;
-- allocation failure cannot create false live-allocation authority;
-- create success/start success owns exactly one thread slot;
-- create failure owns no thread; start failure leaves an exact dormant-created
-  thread available for the session owner's existing destroy/release retry;
-- worker return publishes completion before join can succeed;
-- repeated non-dormant status observations never become success by poll count or
-  elapsed duration;
-- wait/status failure after completion preserves the retained completion fact
-  and a later retry can still prove dormancy;
-- DeleteThread failure preserves exact thread ownership and later retry works;
-- runtime release fails while a thread/allocation is live and partial semaphore
-  deletion remains retryable;
-- existing `audio_session_test`, `audio_playback_test`,
-  `audio_audsrv_service_test`, R36 profile tests and R26 media-clock tests stay
-  green.
+- ACTIVE is returned immediately for an exact started worker whose completion is
+  not yet published;
+- polling ACTIVE repeatedly performs no wait/delay and never changes state by
+  count;
+- real worker return becomes COMPLETED without a blocking join;
+- consuming a one-shot completion event records retained completion so a second
+  status call and later join do not wait for it again;
+- a kernel status/poll failure before completion returns an error, not ACTIVE or
+  COMPLETED;
+- a status failure after completion has already been retained does not erase the
+  retained fact;
+- COMPLETED status still leaves `pstvnc_audio_session_outcome()` unavailable
+  until successful join;
+- successful join after prior completion polling remains legal and does not
+  consume completion twice;
+- finite EMPTY, playback COMPLETE, representative playback failure and
+  stop-request worker returns all become COMPLETED irrespective of outcome kind;
+- start failure/never-started partial ownership is rejected by the public status
+  seam and remains releasable through existing R37/session ownership;
+- no Transport producer/queue, media-clock, diagnostics or Application source is
+  consulted by completion status;
+- existing R37 partial-start/dormancy/release and R36/R26/audio session/playback
+  tests remain green.
 
 ### Authorized source surface
 
-R37 may modify only the smallest justified subset of:
+R38 may modify only the smallest justified subset of:
 
-- new AUDIO-domain PS2 execution/runtime binding source and header under
-  `src/audio/`;
-- build rules required to embed the pinned AUDSRV IRX and link the new binding;
-- focused PS2-runtime host stubs/tests/source-boundary tests;
-- canonical test/build/topology enrollment;
+- `src/audio/session.c/.h`;
+- `src/audio/ps2_runtime.c/.h`;
+- focused AUDIO session/R37 runtime tests and PS2 host stubs;
+- canonical test/build/topology enrollment if needed;
 - directly affected AUDIO/source dictionaries and lifecycle documentation.
 
-Consume but do not modify absent a directly demonstrated prerequisite defect:
+Do not modify absent an independently demonstrated prerequisite defect:
 
-- `src/audio/session.*`;
-- `src/audio/playback.*`;
-- `src/audio/audsrv_service.*`;
-- `src/config/audio_runtime_profile.*`;
-- `src/media/*`;
-- `src/platform/ps2_media_clock.*`;
-- `src/transport/*`;
-- `src/app*`;
-- Input/UI/RFB/Display/MPEG product source;
+- AUDIO playback/AUDSRV service semantics;
+- R36 selected profile values;
+- R26 media clock;
+- Transport implementation;
+- Application;
+- Input/UI/RFB/Display/MPEG;
 - Pi product source;
+- Wire/protocol behavior;
 - H1 forensic source.
 
-If the available PS2SDK kernel/module primitives cannot satisfy retained
-completion plus retryable dormancy/reclaim without changing the accepted AUDIO
-session owner contract, return BLOCKED naming the exact missing seam rather than
-adding timeout success or force termination.
+If PS2SDK completion primitives cannot expose a truthful nonblocking completion
+fact without changing the accepted worker ownership model, return BLOCKED with
+the exact missing primitive/contract. Do not replace the requirement with
+blocking join or timeout success.
 
 ### Explicit non-goals
 
-R37 does not:
+R38 does not:
 
-- open Transport with AUDIO;
-- call `pstvnc_audio_session_start()` from Application;
-- consume R36 in Application;
-- start PCM playback during ordinary product execution;
-- arm/wait the media clock as an AUDIO policy owner;
-- add Pi AUDIO production;
-- change MPEG calibration/recalibration policy;
-- add user-editable audio tuning;
-- add generic watchdog/timeout success;
-- claim independent Validation/operator observation/hardware qualification.
+- open/activate the Transport AUDIO rider;
+- decide whether AUDIO starts at session admission or only with MPEG;
+- initialize/start ordinary product AUDIO;
+- aggregate AUDIO failure into Application;
+- change media-clock arm policy;
+- change AUDSRV playback ordering;
+- add automatic MPEG recalibration;
+- add timeout/watchdog success;
+- claim Validation/operator observation/hardware qualification.
 
 ### Required checks before handoff
 
-Run focused R37 execution-binding tests/source proofs plus existing
-A002/R26/R36 AUDIO/profile/media-clock regressions; canonical host tests;
-project check; complete strict dictionaries; pinned PS2 compile/link and
-current-source reproducibility.
+Run focused AUDIO completion/status and R37 PS2 runtime tests plus existing A002
+playback/session/R26/R36 profile regressions; canonical host tests; project
+check; complete strict dictionaries; pinned PS2 compile/link and current-source
+reproducibility.
 
 Record exact final ELF/PT_LOAD identity if bytes change and classify it
 hardware-pending.
@@ -3438,17 +3521,17 @@ At shift end emit exactly one immutable Reconstruction record under
 
 Then stop and return the baton.
 
-FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_PS2_AUDIO_DORMANCY_OR_MODULE_CONTRACT
+FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_NONBLOCKING_AUDIO_COMPLETION_CONTRACT
 STRETCH=NONE__DO_NOT_ENTER_APPLICATION_AUDIO_COMPOSITION
 
 ## Current hardware debt
 
-Newest fully Foreman-accepted source/build identity is R36:
+Newest fully Foreman-accepted source/build identity is R37:
 
-`ELF_PRISTINE_SHA256=8dc8b419cc80d655bdaaccb9b9f5534f6578f5d57c4623b396ab3c35d92ff8db`
+`ELF_PRISTINE_SHA256=f7270f3f738ab497dbe9e5163df24984056b6d5fdb0ca5286459d59fc32687a5`
 `PT_LOAD_SEGMENTS=1`
-`PT_LOAD_SHA256=5c59e5a914d38f5dbe7c0ad9d72df602f91753a1a002b2bfa112f48e4978d423`
-`PT_LOAD_BYTES=528020`
+`PT_LOAD_SHA256=776dd4923ca3302585bd31e630f7e9914a45cd2c4b5980c4766ad0dfdbf4b2b9`
+`PT_LOAD_BYTES=550164`
 
 This exact image is reproducible and Foreman-accepted at source/product-contract
 level, but remains physically unqualified.
