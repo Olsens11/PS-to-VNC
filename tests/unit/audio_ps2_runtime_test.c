@@ -424,7 +424,6 @@ static void test_start_failure_cleanup_is_retryable(void)
     pstvnc_audio_session_sync_t sync;
     int thread_id = -1;
     int value = 0;
-    int completed = -1;
 
     reset_fakes();
     init_runtime(&runtime, &memory_ops, &thread_ops, &sync);
