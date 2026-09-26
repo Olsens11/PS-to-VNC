@@ -437,34 +437,6 @@ static int pstvnc_app_mpeg_run_unwind_pre_start(
         return 0;
     }
 
-    /*
-     * The only initialized worker that can exist without run->worker_started is
-     * R34P's exact created-but-never-started partial owner. Reclaim it through
-     * the worker-owned seam; no joined/finished/outcome facts are synthesized.
-     */
-    if (!run->worker_started && run->worker.initialized) {
-        pstvnc_mpeg_worker_result_t partial_result;
-
-        if (run->start_invoked)
-            return pstvnc_app_mpeg_run_session_abort_fail(
-                run,
-                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
-
-        partial_result = pstvnc_mpeg_worker_reclaim_unstarted(
-            &run->worker,
-            run->current_generation);
-
-        if (partial_result == PSTVNC_MPEG_WORKER_THREAD_DESTROY_FAILED)
-            return pstvnc_app_mpeg_run_session_abort_fail(
-                run,
-                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_RELEASE_FAILED);
-
-        if (partial_result != PSTVNC_MPEG_WORKER_OK)
-            return pstvnc_app_mpeg_run_session_abort_fail(
-                run,
-                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
-    }
-
     if (run->worker_runtime_owned) {
         if (pstvnc_mpeg_ps2_worker_runtime_release(
                 &run->worker_runtime) != 0) {
@@ -1481,6 +1453,34 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_session_abort_service(
                 PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_RELEASE_FAILED);
 
         run->worker_started = 0;
+    }
+
+    /*
+     * The only initialized worker that can exist without run->worker_started is
+     * R34P's exact created-but-never-started partial owner. Reclaim it through
+     * the worker-owned seam; no joined/finished/outcome facts are synthesized.
+     */
+    if (!run->worker_started && run->worker.initialized) {
+        pstvnc_mpeg_worker_result_t partial_result;
+
+        if (run->start_invoked)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+
+        partial_result = pstvnc_mpeg_worker_reclaim_unstarted(
+            &run->worker,
+            run->current_generation);
+
+        if (partial_result == PSTVNC_MPEG_WORKER_THREAD_DESTROY_FAILED)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_RELEASE_FAILED);
+
+        if (partial_result != PSTVNC_MPEG_WORKER_OK)
+            return pstvnc_app_mpeg_run_session_abort_fail(
+                run,
+                PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
     }
 
     if (run->worker_runtime_owned) {
