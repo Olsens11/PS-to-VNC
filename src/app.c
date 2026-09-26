@@ -782,6 +782,7 @@ static int retire_attempt_owners(
 {
     int abort_ready = 0;
     int has_started_mpeg = 0;
+    int input_shutdown_failed = 0;
 
     if (input_runtime == NULL ||
         input_runtime_ready == NULL ||
@@ -791,16 +792,28 @@ static int retire_attempt_owners(
         transport_session_active == NULL)
         return 0;
 
-    if (*input_runtime_ready) {
-        if (pstvnc_input_runtime_shutdown(input_runtime) != 0)
-            return 0;
-        *input_runtime_ready = 0;
-    }
-
     has_started_mpeg =
         mpeg_product_ready &&
         mpeg_product != NULL &&
         pstvnc_app_mpeg_product_has_started_run(mpeg_product);
+
+    if (*input_runtime_ready) {
+        if (pstvnc_input_runtime_shutdown(input_runtime) != 0) {
+            input_shutdown_failed = 1;
+        } else {
+            *input_runtime_ready = 0;
+        }
+    }
+
+    /*
+     * A live MPEG worker may still depend on retained Transport wait/storage
+     * state. R34 therefore refuses to begin R33 until Input dormancy is proven.
+     * The no-MPEG R16B path has no such dependent module and retains its
+     * accepted best-effort one-shot Transport retirement before fatal
+     * convergence even when Input shutdown itself was unproven.
+     */
+    if (has_started_mpeg && input_shutdown_failed)
+        return 0;
 
     if (has_started_mpeg && *transport_session_active) {
         if (pstvnc_transport_session_begin_abort() !=
@@ -840,7 +853,8 @@ static int retire_attempt_owners(
         *transport_session_active = 0;
     }
 
-    return !*media_clock_binding_release_failed;
+    return !input_shutdown_failed &&
+        !*media_clock_binding_release_failed;
 }
 
 int pstvnc_app_run_with_session_profiles(
