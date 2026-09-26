@@ -282,6 +282,7 @@ typedef struct fake_send_record {
 static fake_send_record_t send_records[MAX_SENDS];
 static size_t send_record_count;
 static pthread_mutex_t send_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int fail_audio_credit_send;
 static int shutdown_calls;
 static int release_calls;
 static int adopt_calls;
@@ -348,6 +349,14 @@ int pstvnc_transport_physical_stream_send_frame(
         payload_length <= sizeof(record->payload))
         memcpy(record->payload, payload, payload_length);
     pthread_mutex_unlock(&send_mutex);
+
+    if (fail_audio_credit_send &&
+        kind == PSTVNC_TRANSPORT_FRAME_CREDIT &&
+        channel == PSTVNC_TRANSPORT_CHANNEL_AUDIO) {
+        fail_audio_credit_send = 0;
+        return 0;
+    }
+
     return 1;
 }
 
@@ -466,6 +475,7 @@ static void reset_fixture(void)
     memset(send_records, 0, sizeof(send_records));
     send_record_count = 0u;
     pthread_mutex_unlock(&send_mutex);
+    fail_audio_credit_send = 0;
 
     shutdown_calls = 0;
     release_calls = 0;
@@ -567,10 +577,28 @@ static void start_runtime(pstvnc_transport_runtime_t *runtime)
     CHECK(runtime->receiver_thread_started == 1);
 
     /*
-     * The single physical-I/O owner performs a readiness poll before receive.
-     * With no queued inbound frame, startup must not call receive_frame().
+     * R40 keeps AUDIO DORMANT at receiver startup. RFB retains its historical
+     * startup credit and remains the only send for an AUDIO-capable runtime
+     * until explicit AUDIO activation.
      */
+    CHECK(send_record_count == 1u);
+    CHECK(send_records[0].channel == PSTVNC_TRANSPORT_CHANNEL_RFB);
+    CHECK(send_credit_amount(0u) == runtime->rfb_initial_credit_bytes);
     CHECK(receive_calls == 0);
+}
+
+static void activate_audio_runtime(pstvnc_transport_runtime_t *runtime)
+{
+    size_t before = send_record_count;
+
+    CHECK(runtime->audio_activation_state == PSTVNC_TRANSPORT_AUDIO_DORMANT);
+    CHECK(pstvnc_transport_runtime_audio_activate(runtime) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(runtime->audio_activation_state == PSTVNC_TRANSPORT_AUDIO_ACTIVE);
+    CHECK(send_record_count == before + 1u);
+    CHECK(send_records[before].kind == PSTVNC_TRANSPORT_FRAME_CREDIT);
+    CHECK(send_records[before].channel == PSTVNC_TRANSPORT_CHANNEL_AUDIO);
+    CHECK(send_credit_amount(before) == runtime->audio_initial_credit_bytes);
 }
 
 static void stop_and_release_runtime(pstvnc_transport_runtime_t *runtime)
@@ -626,6 +654,127 @@ static void test_explicit_audio_config_and_rfb_only_regression(void)
     CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
 }
 
+static void test_dormant_activation_and_consumer_fences(void)
+{
+    pstvnc_transport_runtime_t runtime;
+    uint8_t output;
+    size_t read_count = 99u;
+    size_t available = 99u;
+    int producer_done = 1;
+    uint32_t activity = 0u;
+    size_t sends_before_duplicate;
+
+    reset_fixture();
+    initialize_audio_runtime(&runtime, 8u);
+    start_runtime(&runtime);
+
+    CHECK(runtime.audio_activation_state == PSTVNC_TRANSPORT_AUDIO_DORMANT);
+    CHECK(send_record_count == 1u);
+    CHECK(pstvnc_transport_runtime_audio_read_available(
+        &runtime, &output, 1u, &read_count) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(pstvnc_transport_runtime_audio_status(
+        &runtime, &available, &producer_done) == PSTVNC_TRANSPORT_INVALID);
+    CHECK(pstvnc_transport_runtime_audio_activity_snapshot(
+        &runtime, &activity) == 0);
+    CHECK(pstvnc_transport_runtime_audio_wait_activity(
+        &runtime, &activity) == 0);
+
+    activate_audio_runtime(&runtime);
+    sends_before_duplicate = send_record_count;
+    CHECK(pstvnc_transport_runtime_audio_activate(&runtime) ==
+        PSTVNC_TRANSPORT_INVALID);
+    CHECK(send_record_count == sends_before_duplicate);
+
+    stop_and_release_runtime(&runtime);
+}
+
+static void test_dormant_inbound_and_teardown_are_fail_closed(void)
+{
+    static const uint8_t one_byte[] = { 0x44u };
+    pstvnc_transport_runtime_t runtime;
+
+    reset_fixture();
+    initialize_audio_runtime(&runtime, 8u);
+    start_runtime(&runtime);
+    push_frame(
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_AUDIO,
+        one_byte,
+        sizeof(one_byte));
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+    CHECK(runtime.failed == 1);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+
+    reset_fixture();
+    initialize_audio_runtime(&runtime, 8u);
+    start_runtime(&runtime);
+    push_frame(
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_AUDIO,
+        NULL,
+        0u);
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+    CHECK(runtime.failed == 1);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+
+    reset_fixture();
+    initialize_audio_runtime(&runtime, 8u);
+    start_runtime(&runtime);
+    CHECK(runtime.audio_activation_state == PSTVNC_TRANSPORT_AUDIO_DORMANT);
+    CHECK(pstvnc_transport_runtime_request_stop(&runtime) == 1);
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+    CHECK(runtime.failed == 0);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+}
+
+static void test_activating_admits_immediate_data_and_send_failure_is_terminal(void)
+{
+    static const uint8_t payload[] = { 1u, 2u, 3u, 4u };
+    pstvnc_transport_runtime_t runtime;
+    uint8_t output[4];
+    size_t read_count = 0u;
+
+    /*
+     * The receiver-side race contract is the ACTIVATING fact itself: once it
+     * is published, immediate credit-driven DATA is legal even before the
+     * caller has observed ACTIVE after synchronous CREDIT completion.
+     */
+    reset_fixture();
+    initialize_audio_runtime(&runtime, 8u);
+    start_runtime(&runtime);
+    CHECK(WaitSema(runtime.audio_queue_semaphore_id) == 0);
+    runtime.audio_activation_state = PSTVNC_TRANSPORT_AUDIO_ACTIVATING;
+    CHECK(SignalSema(runtime.audio_queue_semaphore_id) == 0);
+    push_frame(
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_AUDIO,
+        payload,
+        sizeof(payload));
+    wait_for_receive_calls(1);
+    CHECK(runtime.failed == 0);
+    CHECK(WaitSema(runtime.audio_queue_semaphore_id) == 0);
+    runtime.audio_activation_state = PSTVNC_TRANSPORT_AUDIO_ACTIVE;
+    CHECK(SignalSema(runtime.audio_queue_semaphore_id) == 0);
+    CHECK(pstvnc_transport_runtime_audio_read_available(
+        &runtime, output, sizeof(output), &read_count) ==
+        PSTVNC_TRANSPORT_OK);
+    CHECK(read_count == sizeof(payload));
+    CHECK(memcmp(output, payload, sizeof(payload)) == 0);
+    stop_and_release_runtime(&runtime);
+
+    reset_fixture();
+    initialize_audio_runtime(&runtime, 8u);
+    start_runtime(&runtime);
+    fail_audio_credit_send = 1;
+    CHECK(pstvnc_transport_runtime_audio_activate(&runtime) ==
+        PSTVNC_TRANSPORT_FAILED);
+    CHECK(runtime.audio_activation_state ==
+        PSTVNC_TRANSPORT_AUDIO_ACTIVATING);
+    CHECK(runtime.failed == 1);
+    CHECK(pstvnc_transport_runtime_wait_receiver_done(&runtime) == 1);
+    CHECK(pstvnc_transport_runtime_release(&runtime) == 1);
+}
+
 static void test_interleaved_single_receiver_and_independent_credit(void)
 {
     static const uint8_t rfb_payload[] = { 9, 8, 7 };
@@ -639,6 +788,8 @@ static void test_interleaved_single_receiver_and_independent_credit(void)
     initialize_audio_runtime(&runtime, 8u);
     start_runtime(&runtime);
 
+    CHECK(runtime.audio_activation_state == PSTVNC_TRANSPORT_AUDIO_DORMANT);
+    activate_audio_runtime(&runtime);
     CHECK(send_record_count == 2u);
     CHECK(send_records[0].channel == PSTVNC_TRANSPORT_CHANNEL_RFB);
     CHECK(send_credit_amount(0u) == 8u);
@@ -697,6 +848,7 @@ static void test_marker_drain_exhaust_and_post_marker_reject(void)
     reset_fixture();
     initialize_audio_runtime(&runtime, 8u);
     start_runtime(&runtime);
+    activate_audio_runtime(&runtime);
     clear_send_records();
 
     push_frame(
@@ -749,6 +901,7 @@ static void test_overflow_fails_but_committed_bytes_drain(void)
     reset_fixture();
     initialize_audio_runtime(&runtime, 4u);
     start_runtime(&runtime);
+    activate_audio_runtime(&runtime);
 
     push_frame(
         PSTVNC_TRANSPORT_FRAME_DATA,
@@ -812,6 +965,7 @@ static void run_terminal_wakeup_case(int mode)
     reset_fixture();
     initialize_audio_runtime(&runtime, 8u);
     start_runtime(&runtime);
+    activate_audio_runtime(&runtime);
 
     waiter.runtime = &runtime;
     waiter.result = 0;
@@ -890,6 +1044,9 @@ static void test_release_preserves_signaled_audio_waiter_resources(void)
 int main(void)
 {
     test_explicit_audio_config_and_rfb_only_regression();
+    test_dormant_activation_and_consumer_fences();
+    test_dormant_inbound_and_teardown_are_fail_closed();
+    test_activating_admits_immediate_data_and_send_failure_is_terminal();
     test_interleaved_single_receiver_and_independent_credit();
     test_marker_drain_exhaust_and_post_marker_reject();
     test_overflow_fails_but_committed_bytes_drain();
