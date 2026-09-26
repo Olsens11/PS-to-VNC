@@ -155,11 +155,14 @@ for forbidden in (
     )
 
 # The R24 marker follows the real existing desktop presentation boundary.
-receive = app[
-    app.index("pstvnc_rfb_flow_policy_record_update_complete("):
-    app.index("if (!service_rfb_flow_request(&session, &rfb_flow_policy))",
-              app.index("pstvnc_rfb_flow_policy_record_update_complete(")),
-]
+receive_start = app.index(
+    "pstvnc_rfb_flow_policy_record_update_complete("
+)
+receive_end = app.index(
+    "if (!service_rfb_flow_request(&session, &rfb_flow_policy))",
+    receive_start,
+)
+receive = app[receive_start:receive_end]
 require(
     "pstvnc_app_mpeg_product_restoration_pending(" in receive,
     "Application must identify exact RESTORE_PENDING publication",
