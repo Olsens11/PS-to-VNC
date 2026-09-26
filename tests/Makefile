@@ -767,9 +767,10 @@ CONFIG_PROFILE_TEST := .build/config_profile_test
 CONFIG_MPEG_RUNTIME_PROFILE_TEST := .build/config_mpeg_runtime_profile_test
 CONFIG_AUDIO_RUNTIME_PROFILE_TEST := .build/config_audio_runtime_profile_test
 CONFIG_AUDIO_RUNTIME_PROFILE_GENERATION_TEST := unit/config_audio_runtime_profile_generation_test.py
+CONFIG_AUDIO_RUNTIME_PROFILE_SOURCE_TEST := unit/config_audio_runtime_profile_source_test.py
 
 .PHONY: config-profile-unit config-mpeg-runtime-profile-unit config-audio-runtime-profile-unit config-audio-runtime-profile-generation-unit
-unit: config-profile-unit config-mpeg-runtime-profile-unit config-audio-runtime-profile-unit config-audio-runtime-profile-generation-unit
+unit: config-profile-unit config-mpeg-runtime-profile-unit config-audio-runtime-profile-unit config-audio-runtime-profile-generation-unit config-audio-runtime-profile-source-unit
 
 config-profile-unit: $(CONFIG_PROFILE_TEST)
 	./$(CONFIG_PROFILE_TEST)
@@ -825,6 +826,9 @@ $(CONFIG_AUDIO_RUNTIME_PROFILE_TEST): \
 
 config-audio-runtime-profile-generation-unit:
 	python3 $(CONFIG_AUDIO_RUNTIME_PROFILE_GENERATION_TEST)
+
+config-audio-runtime-profile-source-unit:
+	python3 $(CONFIG_AUDIO_RUNTIME_PROFILE_SOURCE_TEST)
 
 MEDIA_CLOCK_TEST := .build/media_clock_test
 MEDIA_CLOCK_PRODUCT_BINDING_TEST := .build/media_clock_product_binding_test
