@@ -263,8 +263,9 @@ static pstvnc_transport_result_t pstvnc_transport_session_open_internal(
 
     /*
      * Runtime now owns the exact established stream and its 2/2 sequence
-     * lineage. Starting the owner thread is the explicit rider-activation
-     * boundary; startup credits are not part of Q4 itself.
+     * lineage. Starting the owner thread activates physical I/O plus historical
+     * RFB/MPEG startup credit; an allocated AUDIO rider stays DORMANT until its
+     * separate exact-ticket activation. Startup credit is not part of Q4.
      */
     if (!pstvnc_transport_runtime_start_receiver(
             &pstvnc_transport_bridge_runtime)) {
