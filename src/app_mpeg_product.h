@@ -79,7 +79,20 @@ pstvnc_app_mpeg_product_service_live(
     pstvnc_app_mpeg_product_t *product,
     uint64_t current_tick);
 
+/*
+ * Report only a genuinely started R21 owner eligible for current-tick R22
+ * service. Pre-START teardown debt must never satisfy this predicate.
+ */
 int pstvnc_app_mpeg_product_has_started_run(
+    const pstvnc_app_mpeg_product_t *product);
+
+/*
+ * Report whether the current attempt owns MPEG lifecycle state that requires
+ * retained-session abnormal dormancy before Transport release. This includes a
+ * healthy started run plus accepted R33/R34P teardown-required generations, and
+ * excludes clean IDLE/current-generation-zero rollback.
+ */
+int pstvnc_app_mpeg_product_requires_session_abort(
     const pstvnc_app_mpeg_product_t *product);
 
 pstvnc_app_mpeg_product_result_t
