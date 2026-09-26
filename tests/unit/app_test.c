@@ -51,6 +51,7 @@ static pstvnc_product_action_binding_t r34_installed_binding;
 static size_t r34_installed_binding_count;
 static int r34_last_desktop_eligible;
 static pstvnc_product_action_t r34_last_routed_action;
+static int r34_desktop_eligible_at_route;
 static int r34_has_started_run;
 static pstvnc_app_mpeg_product_result_t r34_route_result;
 static pstvnc_app_mpeg_product_result_t r34_controller_result;
@@ -200,6 +201,7 @@ pstvnc_app_mpeg_product_result_t pstvnc_app_mpeg_product_route_action(
     (void)last_presented_desktop; (void)last_presented_pixel_count;
     r34_route_action_calls++;
     r34_last_routed_action = action;
+    r34_desktop_eligible_at_route = r34_last_desktop_eligible;
     return r34_route_result;
 }
 
@@ -306,6 +308,7 @@ static void reset_selected_projection(void)
     r34_installed_binding_count = 0u;
     r34_last_desktop_eligible = -1;
     r34_last_routed_action = PSTVNC_PRODUCT_ACTION_NONE;
+    r34_desktop_eligible_at_route = -1;
     r34_has_started_run = 0;
     r34_route_result = PSTVNC_APP_MPEG_PRODUCT_OK;
     r34_controller_result = PSTVNC_APP_MPEG_PRODUCT_OK;
@@ -1119,7 +1122,7 @@ static void test_r34_semantic_product_action_routes_without_physical_logic(void)
     CHECK(run_configured_app() == -1);
     CHECK(r34_route_action_calls == 1u);
     CHECK(r34_last_routed_action == PSTVNC_PRODUCT_ACTION_MPEG_CALIBRATION);
-    CHECK(r34_last_desktop_eligible == 0);
+    CHECK(r34_desktop_eligible_at_route == 0);
 }
 
 static void test_r34_live_failure_uses_r33_before_release_and_close(void)
@@ -1158,6 +1161,10 @@ static void test_r34_live_failure_uses_r33_before_release_and_close(void)
     CHECK(release_index >= 0);
     CHECK(r34_abort_service_legacy_event_count <= (size_t)release_index);
     CHECK((size_t)(release_index + 1) <= r34_close_legacy_event_count);
+
+    /* Do not leak this R34-only scripted live owner into legacy scenarios. */
+    r34_has_started_run = 0;
+    r34_live_result = PSTVNC_APP_MPEG_PRODUCT_OK;
 }
 
 static void test_r27_binding_release_failure_blocks_replacement(void)
