@@ -384,8 +384,34 @@ worker outcome (including failure), then releases worker and PS2 worker-runtime
 resources. Only that local dormancy proof reaches `SESSION_ABORT_READY`.
 Abort-ready remains terminal for the old run/session and is not restartable.
 
-Ordinary `app.c` does not compose this R33 seam yet. That outer invocation and
-final Transport release ordering belong to a later bounded Application packet.
+R33 itself established only the lower abnormal-retirement seam. The later R34
+Application work on the branch composes begin-abort, local dormancy and final
+Transport close, but that R34 source remains blocked/unaccepted until its lower
+pre-START prerequisite is independently accepted.
+
+R34P closes that prerequisite without changing post-START R33 meaning. A
+pre-START R21 cleanup failure may retain one of two asynchronous worker prefixes:
+a genuinely started worker whose stop/join/release proof failed, or the exact
+create-success/start-failure/destroy-failure worker that owns a created but
+never-started thread plus stack. The abnormal session-abort path admits such
+prefixes only from a FAULTED teardown-required run with a nonzero generation,
+the exact retained Transport ticket, `start_invoked == 0`, no initialized P7
+consumer, and no retirement/producer/restoration facts.
+
+Retained-Transport proof remains first. A started worker still uses proof-driven
+stop/status/join/outcome/release, with already-joined state observed rather than
+stopped or joined twice. A created-but-never-started worker uses the worker-owned
+`pstvnc_mpeg_worker_reclaim_unstarted()` seam: it retries only concrete thread
+destruction, retains thread/stack ownership on failure, frees the stack only
+after destruction succeeds, and never fabricates join, completion, stop, decoder
+outcome, or normal retirement. PS2 worker-runtime release remains later than
+worker no-touch proof. The enclosing owner still performs final Transport close;
+R34P emits no START, RETIRE, producer-done, MPEG-run finalize, P2 thaw, P3
+seal/reveal, or same-session reuse semantics.
+
+Clean pre-START rollback remains the ordinary R21 IDLE path and is not admitted
+to abnormal session abort. `SESSION_ABORT_READY` remains terminal for the old
+run/session and does not make a pre-START failed run reusable.
 
 ## Transport fencing does not replace module retirement
 
