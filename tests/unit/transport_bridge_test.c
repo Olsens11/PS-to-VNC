@@ -45,7 +45,9 @@ static int rfb_provider_failure_calls;
 static int rfb_read_calls;
 static int rfb_write_calls;
 static int audio_status_calls;
+static int audio_activate_calls;
 static int mpeg_status_calls;
+static pstvnc_transport_result_t audio_activate_result = PSTVNC_TRANSPORT_OK;
 static pstvnc_transport_result_t audio_read_result = PSTVNC_TRANSPORT_OK;
 static pstvnc_transport_result_t audio_status_result = PSTVNC_TRANSPORT_OK;
 static int audio_snapshot_result = 1;
@@ -142,7 +144,9 @@ static void reset_fixture(void)
     rfb_read_calls = 0;
     rfb_write_calls = 0;
     audio_status_calls = 0;
+    audio_activate_calls = 0;
     mpeg_status_calls = 0;
+    audio_activate_result = PSTVNC_TRANSPORT_OK;
     audio_read_result = PSTVNC_TRANSPORT_OK;
     audio_status_result = PSTVNC_TRANSPORT_OK;
     audio_snapshot_result = 1;
@@ -549,6 +553,15 @@ pstvnc_transport_result_t pstvnc_transport_runtime_rfb_provider_failure(
     return rfb_provider_failure_result;
 }
 
+pstvnc_transport_result_t pstvnc_transport_runtime_audio_activate(
+    pstvnc_transport_runtime_t *runtime)
+{
+    audio_activate_calls++;
+    if (runtime == NULL || !runtime->audio_enabled)
+        return PSTVNC_TRANSPORT_INVALID;
+    return audio_activate_result;
+}
+
 pstvnc_transport_result_t pstvnc_transport_runtime_audio_read_available(
     pstvnc_transport_runtime_t *runtime,
     void *buffer,
@@ -805,6 +818,65 @@ static void test_audio_open_requires_explicit_config(void)
         observed_runtime->mpeg_enabled == 0);
     CHECK(memcmp(&observed_audio_config, &audio, sizeof(audio)) == 0);
     complete_and_close();
+}
+
+static void test_audio_activation_ticket_and_state_fence(void)
+{
+    pstvnc_transport_session_config_t config = make_config();
+    pstvnc_transport_audio_channel_config_t audio = make_audio_config();
+    pstvnc_transport_access_t access_a;
+    pstvnc_transport_access_t access_b;
+    int socket_fd = 57;
+    int calls_before;
+
+    reset_fixture();
+    memset(&access_a, 0, sizeof(access_a));
+    memset(&access_b, 0, sizeof(access_b));
+
+    CHECK(pstvnc_transport_session_open_with_audio(
+        &socket_fd, &config, &audio) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&access_a) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_audio_activate(&access_a) == PSTVNC_TRANSPORT_OK);
+    CHECK(audio_activate_calls == 1);
+
+    audio_activate_result = PSTVNC_TRANSPORT_INVALID;
+    CHECK(pstvnc_transport_audio_activate(&access_a) ==
+        PSTVNC_TRANSPORT_INVALID);
+    CHECK(audio_activate_calls == 2);
+
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+
+    socket_fd = 58;
+    CHECK(pstvnc_transport_session_open(
+        &socket_fd, &config) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&access_b) == PSTVNC_TRANSPORT_OK);
+    calls_before = audio_activate_calls;
+    CHECK(pstvnc_transport_audio_activate(&access_b) ==
+        PSTVNC_TRANSPORT_INVALID);
+    CHECK(audio_activate_calls == calls_before + 1);
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
+
+    socket_fd = 59;
+    audio_activate_result = PSTVNC_TRANSPORT_OK;
+    CHECK(pstvnc_transport_session_open_with_audio(
+        &socket_fd, &config, &audio) == PSTVNC_TRANSPORT_OK);
+    CHECK(pstvnc_transport_access_acquire(&access_b) == PSTVNC_TRANSPORT_OK);
+    CHECK(access_b.opaque_ticket != access_a.opaque_ticket);
+
+    calls_before = audio_activate_calls;
+    CHECK(pstvnc_transport_audio_activate(&access_a) ==
+        PSTVNC_TRANSPORT_CLOSED);
+    CHECK(audio_activate_calls == calls_before);
+
+    observed_runtime->failed = 1;
+    CHECK(pstvnc_transport_audio_activate(&access_b) ==
+        PSTVNC_TRANSPORT_FAILED);
+    CHECK(audio_activate_calls == calls_before);
+    observed_runtime->failed = 0;
+    observed_runtime->receiver_done = 1;
+    CHECK(pstvnc_transport_session_close() == PSTVNC_TRANSPORT_OK);
 }
 
 static void test_mpeg_open_and_combined_authority(void)
@@ -1581,6 +1653,7 @@ int main(void)
     test_repeated_wire_sessions_do_not_resume_rider_access();
     test_rfb_only_open_and_close_regression();
     test_audio_open_requires_explicit_config();
+    test_audio_activation_ticket_and_state_fence();
     test_mpeg_open_and_combined_authority();
     test_failed_open_ownership_regression();
     test_two_phase_abort_retains_old_runtime_until_close();
