@@ -25,6 +25,7 @@ static unsigned int calibration_service_calls;
 static unsigned int activation_calls;
 static unsigned int run_service_calls;
 static unsigned int run_abort_calls;
+static unsigned int run_status_calls;
 
 static pstvnc_app_mpeg_calibration_result_t calibration_begin_result;
 static pstvnc_app_mpeg_calibration_result_t calibration_service_result;
@@ -63,6 +64,35 @@ void pstvnc_app_mpeg_run_init(pstvnc_app_mpeg_run_t *run)
 {
     memset(run, 0, sizeof(*run));
     run->state = PSTVNC_APP_MPEG_RUN_IDLE;
+}
+
+pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_status(
+    const pstvnc_app_mpeg_run_t *run,
+    pstvnc_app_mpeg_run_status_t *status)
+{
+    run_status_calls++;
+
+    if (run == NULL || status == NULL)
+        return PSTVNC_APP_MPEG_RUN_INVALID;
+
+    memset(status, 0, sizeof(*status));
+    status->state = run->state;
+    status->last_result = run->last_result;
+    status->last_allocated_generation = run->last_allocated_generation;
+    status->current_generation = run->current_generation;
+    status->session_teardown_required = run->session_teardown_required;
+    status->retire_invoked = run->retire_invoked;
+    status->retire_completion_taken = run->retire_completion_taken;
+    status->producer_done_published = run->producer_done_published;
+    status->worker_joined = run->worker_joined;
+    status->rfb_restoration_presented = run->rfb_restoration_presented;
+    status->session_abort_stop_requested =
+        run->session_abort_stop_requested;
+    status->session_abort_outcome_recorded =
+        run->session_abort_outcome_recorded;
+    status->session_abort_worker_outcome =
+        run->session_abort_worker_outcome;
+    return PSTVNC_APP_MPEG_RUN_OK;
 }
 
 int pstvnc_app_mpeg_calibration_init(
@@ -223,6 +253,7 @@ static void reset_fixture(void)
     activation_calls = 0u;
     run_service_calls = 0u;
     run_abort_calls = 0u;
+    run_status_calls = 0u;
 
     calibration_begin_result = PSTVNC_APP_MPEG_CALIBRATION_OK;
     calibration_service_result = PSTVNC_APP_MPEG_CALIBRATION_OK;
@@ -484,6 +515,111 @@ static void test_session_abort_reports_only_r33_ready(void)
     CHECK(run_abort_calls == 2u);
 }
 
+static void test_abort_owner_is_distinct_from_live_service_owner(void)
+{
+    pstvnc_app_mpeg_product_t product;
+    pstvnc_media_clock_t clock;
+    uint16_t frozen[4096], work[4096];
+
+    reset_fixture();
+    CHECK(init_product(&product, &clock, frozen, work));
+
+    /* Fresh/clean R21 state has neither live-service nor abort ownership. */
+    CHECK(!pstvnc_app_mpeg_product_has_started_run(&product));
+    CHECK(!pstvnc_app_mpeg_product_requires_session_abort(&product));
+
+    /* Healthy post-START owner is both live-serviceable and abort-owned. */
+    product.run.state = PSTVNC_APP_MPEG_RUN_STARTED_WAIT_FIRST_FRAME;
+    product.run.current_generation = 4u;
+    product.run.transport_run_open = 1;
+    product.run.worker_runtime_owned = 1;
+    product.run.worker_started = 1;
+    product.run.frame_consumer_initialized = 1;
+    product.run.presentation_armed = 1;
+    product.run.start_invoked = 1;
+
+    CHECK(pstvnc_app_mpeg_product_has_started_run(&product));
+    CHECK(pstvnc_app_mpeg_product_requires_session_abort(&product));
+
+    /*
+     * Accepted R34P pre-START teardown debt must not become R22-live merely
+     * because it owns a nonzero generation. It still requires two-phase abort.
+     */
+    product.run.state = PSTVNC_APP_MPEG_RUN_FAULTED;
+    product.run.current_generation = 5u;
+    product.run.session_teardown_required = 1;
+    product.run.transport_run_open = 1;
+    product.run.worker_runtime_owned = 1;
+    product.run.worker_started = 0;
+    product.run.frame_consumer_initialized = 0;
+    product.run.presentation_armed = 0;
+    product.run.start_invoked = 0;
+
+    CHECK(!pstvnc_app_mpeg_product_has_started_run(&product));
+    CHECK(pstvnc_app_mpeg_product_requires_session_abort(&product));
+
+    /*
+     * The same public teardown fact persists after partial local reclaim, so a
+     * retry cannot accidentally fall back to one-shot R16B abort.
+     */
+    product.run.state = PSTVNC_APP_MPEG_RUN_SESSION_ABORTING;
+    product.run.transport_run_open = 1;
+    product.run.worker_runtime_owned = 0;
+    product.run.worker_started = 0;
+    CHECK(!pstvnc_app_mpeg_product_has_started_run(&product));
+    CHECK(pstvnc_app_mpeg_product_requires_session_abort(&product));
+
+    /* Clean rollback clears the current generation and therefore the debt. */
+    product.run.state = PSTVNC_APP_MPEG_RUN_IDLE;
+    product.run.current_generation = 0u;
+    product.run.session_teardown_required = 0;
+    product.run.transport_run_open = 0;
+    CHECK(!pstvnc_app_mpeg_product_requires_session_abort(&product));
+    CHECK(run_status_calls >= 4u);
+}
+
+static void test_prestart_abort_service_uses_same_product_seam(void)
+{
+    pstvnc_app_mpeg_product_t product;
+    pstvnc_media_clock_t clock;
+    uint16_t frozen[4096], work[4096];
+    int ready = -1;
+
+    reset_fixture();
+    CHECK(init_product(&product, &clock, frozen, work));
+
+    product.run.state = PSTVNC_APP_MPEG_RUN_FAULTED;
+    product.run.current_generation = 7u;
+    product.run.session_teardown_required = 1;
+    product.run.transport_run_open = 1;
+    product.run.worker_runtime_owned = 1;
+    product.run.start_invoked = 0;
+
+    CHECK(!pstvnc_app_mpeg_product_has_started_run(&product));
+    CHECK(pstvnc_app_mpeg_product_requires_session_abort(&product));
+
+    abort_state_after_service = PSTVNC_APP_MPEG_RUN_SESSION_ABORTING;
+    CHECK(pstvnc_app_mpeg_product_service_session_abort(
+        &product,
+        &ready) == PSTVNC_APP_MPEG_PRODUCT_OK);
+    CHECK(ready == 0);
+    CHECK(run_abort_calls == 1u);
+
+    /*
+     * Lower-owner R34P may reclaim worker/runtime state while the product still
+     * owes final retained-session close. Teardown admission must remain true.
+     */
+    product.run.worker_runtime_owned = 0;
+    abort_state_after_service = PSTVNC_APP_MPEG_RUN_SESSION_ABORT_READY;
+    CHECK(pstvnc_app_mpeg_product_service_session_abort(
+        &product,
+        &ready) == PSTVNC_APP_MPEG_PRODUCT_OK);
+    CHECK(ready == 1);
+    CHECK(run_abort_calls == 2u);
+    CHECK(!pstvnc_app_mpeg_product_has_started_run(&product));
+    CHECK(pstvnc_app_mpeg_product_requires_session_abort(&product));
+}
+
 int main(void)
 {
     test_desktop_eligibility_tracks_real_owners();
@@ -492,6 +628,8 @@ int main(void)
     test_calibration_cancel_never_invokes_activation();
     test_live_service_uses_exact_tick_and_no_overlap_action();
     test_session_abort_reports_only_r33_ready();
+    test_abort_owner_is_distinct_from_live_service_owner();
+    test_prestart_abort_service_uses_same_product_seam();
 
     if (failures != 0) {
         fprintf(stderr, "APP_MPEG_PRODUCT_TEST=FAIL count=%d\n", failures);
