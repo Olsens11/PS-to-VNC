@@ -10,6 +10,7 @@ unit: \
 	$(BUILD_DIR)/config_text_test \
 	$(BUILD_DIR)/config_product_action_bindings_test \
 	$(BUILD_DIR)/management_config_get_test \
+	$(BUILD_DIR)/app_mpeg_product_test \
 	$(BUILD_DIR)/app_product_bindings_test \
 	$(BUILD_DIR)/video_mode_test \
 	$(BUILD_DIR)/rfb_wire_test \
@@ -37,6 +38,7 @@ unit: \
 	./$(BUILD_DIR)/config_text_test
 	./$(BUILD_DIR)/config_product_action_bindings_test
 	./$(BUILD_DIR)/management_config_get_test
+	./$(BUILD_DIR)/app_mpeg_product_test
 	./$(BUILD_DIR)/app_product_bindings_test
 	./$(BUILD_DIR)/video_mode_test
 	./$(BUILD_DIR)/rfb_wire_test
@@ -103,6 +105,16 @@ $(BUILD_DIR)/management_config_get_test: \
 		../src/management/config_get.c \
 		-Wl,--wrap=send \
 		-Wl,--wrap=recv \
+		-o $@
+
+$(BUILD_DIR)/app_mpeg_product_test: \
+	unit/app_mpeg_product_test.c \
+	../src/app_mpeg_product.c \
+	../src/app_mpeg_product.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-I../src \
+		unit/app_mpeg_product_test.c \
+		../src/app_mpeg_product.c \
 		-o $@
 
 $(BUILD_DIR)/app_product_bindings_test: \
@@ -489,6 +501,15 @@ $(BUILD_DIR)/app_mpeg_run_test: \
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+
+APP_MPEG_PRODUCT_SOURCE_TEST := unit/app_mpeg_product_source_test.py
+
+.PHONY: app-mpeg-product-source-unit
+unit: app-mpeg-product-source-unit
+
+app-mpeg-product-source-unit:
+	python3 $(APP_MPEG_PRODUCT_SOURCE_TEST)
 
 
 APP_PRODUCT_BINDINGS_SOURCE_TEST := unit/app_product_bindings_source_test.py
