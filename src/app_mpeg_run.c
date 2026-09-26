@@ -158,6 +158,12 @@ static void pstvnc_app_mpeg_run_clear_attempt(
         &run->session_abort_worker_outcome,
         0,
         sizeof(run->session_abort_worker_outcome));
+
+    run->retirement_worker_outcome_recorded = 0;
+    memset(
+        &run->retirement_worker_outcome,
+        0,
+        sizeof(run->retirement_worker_outcome));
 }
 
 static void pstvnc_app_mpeg_run_fault(
@@ -1128,6 +1134,15 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_retirement_service(
             PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_OUTCOME_FAILED);
 
     /*
+     * Retain the exact natural terminal outcome before lower-owner reclamation.
+     * If a later release step fails and the enclosing Wire Session must die,
+     * R35P can resume from truthful ownership without querying a released or
+     * partially released worker merely to reconstruct already-proven evidence.
+     */
+    run->retirement_worker_outcome = outcome;
+    run->retirement_worker_outcome_recorded = 1;
+
+    /*
      * P7 is a value coordinator with no external resource ownership. It may be
      * retired only after natural worker completion and exact no-borrow proof.
      */
@@ -1192,6 +1207,84 @@ static int pstvnc_app_mpeg_run_poststart_session_abort_entry_valid(
         return 0;
 
     return 1;
+}
+
+static int pstvnc_app_mpeg_run_partial_retirement_session_abort_entry_valid(
+    const pstvnc_app_mpeg_run_t *run)
+{
+    if (run == NULL ||
+        run->state != PSTVNC_APP_MPEG_RUN_FAULTED ||
+        !run->session_teardown_required ||
+        run->current_generation == 0u ||
+        run->transport_access.opaque_ticket == 0u ||
+        !run->start_invoked ||
+        !run->presentation_armed ||
+        !run->retire_invoked ||
+        !run->retire_completion_taken ||
+        !run->producer_done_published ||
+        !run->worker_joined ||
+        run->frame_consumer_initialized ||
+        run->frame_consumer.initialized ||
+        !run->retirement_worker_outcome_recorded ||
+        run->retirement_worker_outcome.run_generation !=
+            run->current_generation ||
+        run->retirement_worker_outcome.kind !=
+            PSTVNC_MPEG_WORKER_OUTCOME_COMPLETED ||
+        run->retirement_worker_outcome.worker_result !=
+            PSTVNC_MPEG_WORKER_OK ||
+        run->retirement_worker_outcome.decoder_result !=
+            PSTVNC_MPEG_DECODER_COMPLETE ||
+        run->retirement_worker_outcome.decoder_release_result !=
+            PSTVNC_MPEG_DECODER_COMPLETE)
+        return 0;
+
+    /*
+     * These are the exact monotonic owner prefixes R23 can leave after the
+     * natural worker outcome has been proven. Do not accept arbitrary FAULTED
+     * structs: each residual owner combination is paired with the operation
+     * whose failure can legitimately leave it behind.
+     */
+    if (run->worker_started) {
+        return run->last_result ==
+                PSTVNC_APP_MPEG_RUN_RETIRE_WORKER_RELEASE_FAILED &&
+            run->worker.initialized &&
+            run->worker_runtime_owned &&
+            run->worker_runtime.resources_owned &&
+            run->transport_run_open;
+    }
+
+    if (run->worker.initialized)
+        return 0;
+
+    if (run->worker_runtime_owned) {
+        return run->last_result ==
+                PSTVNC_APP_MPEG_RUN_RETIRE_RUNTIME_RELEASE_FAILED &&
+            run->worker_runtime.resources_owned &&
+            run->transport_run_open;
+    }
+
+    if (run->worker_runtime.resources_owned)
+        return 0;
+
+    if (run->transport_run_open)
+        return run->last_result ==
+            PSTVNC_APP_MPEG_RUN_RETIRE_FINALIZE_FAILED;
+
+    /*
+     * With all execution owners retired, only exact nonretryable post-finalize
+     * R23/R24 contradictions are abort-admissible. Retryable reveal outcomes
+     * never set FAULTED/session_teardown_required and are deliberately absent.
+     */
+    switch (run->last_result) {
+    case PSTVNC_APP_MPEG_RUN_RETIRE_STATE_INVALID:
+    case PSTVNC_APP_MPEG_RUN_RESTORE_STATE_INVALID:
+    case PSTVNC_APP_MPEG_RUN_PRESENTATION_SEAL_FAILED:
+    case PSTVNC_APP_MPEG_RUN_REVEAL_FAILED:
+    case PSTVNC_APP_MPEG_RUN_REVEAL_CONTRADICTION:
+        return 1;
+    default:
+        return 0;
+    }
 }
 
 static int pstvnc_app_mpeg_run_prestart_session_abort_entry_valid(
@@ -1300,6 +1393,8 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_session_abort_service(
 
     if (run->state != PSTVNC_APP_MPEG_RUN_SESSION_ABORTING) {
         if (!pstvnc_app_mpeg_run_poststart_session_abort_entry_valid(run) &&
+            !pstvnc_app_mpeg_run_partial_retirement_session_abort_entry_valid(
+                run) &&
             !pstvnc_app_mpeg_run_prestart_session_abort_entry_valid(run))
             return pstvnc_app_mpeg_run_session_abort_fail(
                 run,
@@ -1350,6 +1445,50 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_session_abort_service(
                     return pstvnc_app_mpeg_run_session_abort_fail(
                         run,
                         PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
+
+                run->worker_joined = 1;
+            }
+        }
+
+        if (!run->worker_joined &&
+            run->start_invoked &&
+            run->retire_completion_taken &&
+            run->producer_done_published) {
+            /*
+             * R23 may have reached natural worker completion before its join
+             * failed. Re-observe that truthful terminal state and retry only
+             * join; do not convert a completed retirement worker into an
+             * abnormal stop merely to fit the original R33 live-owner shape.
+             */
+            memset(&worker_status, 0, sizeof(worker_status));
+            if (pstvnc_mpeg_worker_status(
+                    &run->worker,
+                    run->current_generation,
+                    &worker_status) != PSTVNC_MPEG_WORKER_OK)
+                return pstvnc_app_mpeg_run_session_abort_fail(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
+
+            if (worker_status.thread_joined)
+                return pstvnc_app_mpeg_run_session_abort_fail(
+                    run,
+                    PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+
+            if (worker_status.worker_finished) {
+                if (worker_status.slot_state !=
+                        PSTVNC_MPEG_WORKER_SLOT_EMPTY ||
+                    worker_status.stop_requested ||
+                    worker_status.decoder_live)
+                    return pstvnc_app_mpeg_run_session_abort_fail(
+                        run,
+                        PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_STATUS_FAILED);
+
+                if (pstvnc_mpeg_worker_join(
+                        &run->worker,
+                        run->current_generation) != PSTVNC_MPEG_WORKER_OK)
+                    return pstvnc_app_mpeg_run_session_abort_fail(
+                        run,
+                        PSTVNC_APP_MPEG_RUN_SESSION_ABORT_WORKER_JOIN_FAILED);
 
                 run->worker_joined = 1;
             }
@@ -1413,6 +1552,14 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_session_abort_service(
         return pstvnc_app_mpeg_run_session_abort_fail(
             run,
             PSTVNC_APP_MPEG_RUN_SESSION_ABORT_STATE_INVALID);
+
+    if (run->worker_started &&
+        !run->session_abort_outcome_recorded &&
+        run->retirement_worker_outcome_recorded) {
+        run->session_abort_worker_outcome =
+            run->retirement_worker_outcome;
+        run->session_abort_outcome_recorded = 1;
+    }
 
     if (run->worker_started && !run->session_abort_outcome_recorded) {
         memset(&outcome, 0, sizeof(outcome));
