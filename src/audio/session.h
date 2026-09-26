@@ -60,6 +60,10 @@ typedef struct pstvnc_audio_session_thread_ops {
     int (*start)(
         void *context,
         int thread_id);
+    int (*poll_completion)(
+        void *context,
+        int thread_id,
+        int *completed);
     int (*join)(
         void *context,
         int thread_id);
@@ -87,8 +91,14 @@ typedef enum pstvnc_audio_session_result {
     PSTVNC_AUDIO_SESSION_WORKER_LIVE = -8,
     PSTVNC_AUDIO_SESSION_SYNC_FAILED = -9,
     PSTVNC_AUDIO_SESSION_NOT_FINISHED = -10,
-    PSTVNC_AUDIO_SESSION_TRANSPORT_UNAVAILABLE = -11
+    PSTVNC_AUDIO_SESSION_TRANSPORT_UNAVAILABLE = -11,
+    PSTVNC_AUDIO_SESSION_THREAD_STATUS_FAILED = -12
 } pstvnc_audio_session_result_t;
+
+typedef enum pstvnc_audio_session_completion_state {
+    PSTVNC_AUDIO_SESSION_COMPLETION_PENDING = 0,
+    PSTVNC_AUDIO_SESSION_COMPLETION_DONE = 1
+} pstvnc_audio_session_completion_state_t;
 
 typedef enum pstvnc_audio_session_outcome_kind {
     PSTVNC_AUDIO_SESSION_OUTCOME_NONE = 0,
@@ -162,6 +172,10 @@ pstvnc_audio_session_result_t pstvnc_audio_session_start(
  */
 pstvnc_audio_session_result_t pstvnc_audio_session_request_stop(
     pstvnc_audio_session_t *session);
+
+pstvnc_audio_session_result_t pstvnc_audio_session_poll(
+    pstvnc_audio_session_t *session,
+    pstvnc_audio_session_completion_state_t *state);
 
 pstvnc_audio_session_result_t pstvnc_audio_session_join(
     pstvnc_audio_session_t *session);

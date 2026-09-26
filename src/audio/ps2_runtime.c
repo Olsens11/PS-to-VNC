@@ -283,6 +283,46 @@ static int pstvnc_audio_ps2_runtime_thread_start(
     return 0;
 }
 
+static int pstvnc_audio_ps2_runtime_thread_poll_completion(
+    void *context,
+    int thread_id,
+    int *completed)
+{
+    pstvnc_audio_ps2_runtime_t *runtime =
+        (pstvnc_audio_ps2_runtime_t *)context;
+    ee_sema_t semaphore;
+
+    if (runtime == NULL ||
+        !runtime->initialized ||
+        !runtime->thread_slot_active ||
+        !runtime->thread_started ||
+        runtime->thread_id != thread_id ||
+        completed == NULL)
+        return -1;
+
+    if (runtime->completion_observed) {
+        *completed = 1;
+        return 0;
+    }
+
+    memset(&semaphore, 0, sizeof(semaphore));
+    if (runtime->completion_sema_id < 0 ||
+        ReferSemaStatus(runtime->completion_sema_id, &semaphore) < 0)
+        return -1;
+
+    if (semaphore.count <= 0) {
+        *completed = 0;
+        return 0;
+    }
+
+    if (PollSema(runtime->completion_sema_id) < 0)
+        return -1;
+
+    runtime->completion_observed = 1;
+    *completed = 1;
+    return 0;
+}
+
 static int pstvnc_audio_ps2_runtime_thread_join(
     void *context,
     int thread_id)
@@ -462,6 +502,8 @@ int pstvnc_audio_ps2_runtime_operations(
 
     thread_ops->create = pstvnc_audio_ps2_runtime_thread_create;
     thread_ops->start = pstvnc_audio_ps2_runtime_thread_start;
+    thread_ops->poll_completion =
+        pstvnc_audio_ps2_runtime_thread_poll_completion;
     thread_ops->join = pstvnc_audio_ps2_runtime_thread_join;
     thread_ops->destroy = pstvnc_audio_ps2_runtime_thread_destroy;
     thread_ops->context = runtime;

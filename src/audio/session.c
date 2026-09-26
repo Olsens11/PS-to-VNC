@@ -49,6 +49,7 @@ static int pstvnc_audio_session_thread_ops_valid(
     return thread_ops != NULL &&
            thread_ops->create != NULL &&
            thread_ops->start != NULL &&
+           thread_ops->poll_completion != NULL &&
            thread_ops->join != NULL &&
            thread_ops->destroy != NULL;
 }
@@ -430,6 +431,38 @@ pstvnc_audio_session_result_t pstvnc_audio_session_request_stop(
     if (session->sync.unlock(session->sync.context) != 0)
         return PSTVNC_AUDIO_SESSION_SYNC_FAILED;
 
+    return PSTVNC_AUDIO_SESSION_OK;
+}
+
+pstvnc_audio_session_result_t pstvnc_audio_session_poll(
+    pstvnc_audio_session_t *session,
+    pstvnc_audio_session_completion_state_t *state)
+{
+    int completed = 0;
+
+    if (session == NULL ||
+        state == NULL ||
+        !session->initialized ||
+        !session->thread_created ||
+        !session->thread_started ||
+        session->thread_destroyed ||
+        session->thread_id < 0)
+        return PSTVNC_AUDIO_SESSION_INVALID;
+
+    if (session->thread_joined) {
+        *state = PSTVNC_AUDIO_SESSION_COMPLETION_DONE;
+        return PSTVNC_AUDIO_SESSION_OK;
+    }
+
+    if (session->thread_ops.poll_completion(
+            session->thread_ops.context,
+            session->thread_id,
+            &completed) != 0)
+        return PSTVNC_AUDIO_SESSION_THREAD_STATUS_FAILED;
+
+    *state = completed ?
+        PSTVNC_AUDIO_SESSION_COMPLETION_DONE :
+        PSTVNC_AUDIO_SESSION_COMPLETION_PENDING;
     return PSTVNC_AUDIO_SESSION_OK;
 }
 
