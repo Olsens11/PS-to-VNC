@@ -1,16 +1,17 @@
 /*
  * File synopsis:
- * Defines R34's ordinary Application-owned MPEG product coordinator. It composes
- * accepted P9 calibration, P10 protected activation, R21/R22 live-run service,
- * and R33/R34P local session-abort service without acquiring any lower-owner
- * mechanism or normal R23/R24 retirement/reveal authority. Live service and
- * abnormal teardown ownership are exposed as separate predicates.
+ * Defines the ordinary Application-owned MPEG product coordinator. R34 composes
+ * accepted P9 calibration, P10 protected activation and R21/R22 live service;
+ * R35 adds state-dependent semantic retirement plus accepted R23/R24 normal
+ * retirement/restoration/reveal composition. R33/R34P/R35P remain the separate
+ * abnormal retained-session dormancy path.
  *
  * Physical binding recognition remains Input-owned. This coordinator receives
  * only semantic product actions and trustworthy controller facts.
  *
  * Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
- * A006-ORDINARY-MPEG-ACTION-ACTIVATION-R34.
+ * A006-ORDINARY-MPEG-ACTION-ACTIVATION-R34 and
+ * A006-ORDINARY-MPEG-ACTION-RETIRE-RESTORE-REVEAL-R35.
  */
 
 #ifndef PSTVNC_APP_MPEG_PRODUCT_H
@@ -79,6 +80,36 @@ pstvnc_app_mpeg_product_result_t
 pstvnc_app_mpeg_product_service_live(
     pstvnc_app_mpeg_product_t *product,
     uint64_t current_tick);
+
+/*
+ * Report/service exact R23 RETIRING work separately from R22 live service.
+ * The current tick must come from the existing session media-clock binding.
+ */
+int pstvnc_app_mpeg_product_is_retiring(
+    const pstvnc_app_mpeg_product_t *product);
+
+pstvnc_app_mpeg_product_result_t
+pstvnc_app_mpeg_product_service_retirement(
+    pstvnc_app_mpeg_product_t *product,
+    uint64_t current_tick);
+
+/*
+ * R24 restoration composition. Application uses the pending predicate to force
+ * the existing desktop presentation/upload boundary even when a completed FULL
+ * response contains unchanged pixels. Only after that successful boundary may
+ * it record the restored desktop proof. Reveal service is retryable for the two
+ * accepted pre-sync outcomes and otherwise fails the enclosing session.
+ */
+int pstvnc_app_mpeg_product_restoration_pending(
+    const pstvnc_app_mpeg_product_t *product);
+
+pstvnc_app_mpeg_product_result_t
+pstvnc_app_mpeg_product_record_restored_desktop_presented(
+    pstvnc_app_mpeg_product_t *product);
+
+pstvnc_app_mpeg_product_result_t
+pstvnc_app_mpeg_product_service_reveal(
+    pstvnc_app_mpeg_product_t *product);
 
 /*
  * Report only a genuinely started R21 owner eligible for current-tick R22
