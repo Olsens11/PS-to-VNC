@@ -132,9 +132,6 @@ typedef struct pstvnc_app_mpeg_run_status {
     int session_abort_stop_requested;
     int session_abort_outcome_recorded;
     pstvnc_mpeg_worker_outcome_t session_abort_worker_outcome;
-
-    int retirement_worker_outcome_recorded;
-    pstvnc_mpeg_worker_outcome_t retirement_worker_outcome;
 } pstvnc_app_mpeg_run_status_t;
 
 typedef struct pstvnc_app_mpeg_run {
@@ -173,6 +170,9 @@ typedef struct pstvnc_app_mpeg_run {
     int session_abort_stop_requested;
     int session_abort_outcome_recorded;
     pstvnc_mpeg_worker_outcome_t session_abort_worker_outcome;
+
+    int retirement_worker_outcome_recorded;
+    pstvnc_mpeg_worker_outcome_t retirement_worker_outcome;
 } pstvnc_app_mpeg_run_t;
 
 /*
