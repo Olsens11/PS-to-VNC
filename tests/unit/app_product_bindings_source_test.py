@@ -83,8 +83,9 @@ require(
     "R32 raw document storage must not become resident/global authority",
 )
 
-combined = app_code + "\n" + helper_code
-
+# R32 owns acquisition only. Later packets may consume its resident snapshot
+# from ordinary Application; keep the prohibition scoped to the R32 helper
+# rather than freezing the entire Application at its R32-era composition.
 for forbidden in (
     "pstvnc_input_runtime_set_product_action_bindings",
     "PSTVNC_INPUT_EVENT_PRODUCT_ACTION",
@@ -99,7 +100,7 @@ for forbidden in (
     "watchdog",
     "mailbox",
 ):
-    require(forbidden not in combined, f"R32 scope creep: {forbidden}")
+    require(forbidden not in helper_code, f"R32 helper scope creep: {forbidden}")
 
 for forbidden_owner in (
     "ui/",
