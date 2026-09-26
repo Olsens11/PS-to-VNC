@@ -109,9 +109,11 @@ $(BUILD_DIR)/management_config_get_test: \
 
 $(BUILD_DIR)/app_mpeg_product_test: \
 	unit/app_mpeg_product_test.c \
+	unit/input_runtime_product_action_host_stubs/libpad.h \
 	../src/app_mpeg_product.c \
 	../src/app_mpeg_product.h | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-Iunit/input_runtime_product_action_host_stubs \
 		-I../src \
 		unit/app_mpeg_product_test.c \
 		../src/app_mpeg_product.c \
