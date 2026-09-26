@@ -203,6 +203,19 @@ pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_outcome(
     uint32_t run_generation,
     pstvnc_mpeg_worker_outcome_t *outcome);
 
+/*
+ * Reclaim only the exact created-but-never-started partial owner left when
+ * thread start failed and its immediate destroy also failed.
+ *
+ * This path never fabricates join, worker completion, decoder outcome or stop
+ * state. It retries only injected thread destruction, releases the stack only
+ * after destruction succeeds, and clears initialized ownership only after the
+ * complete partial-start owner is gone.
+ */
+pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_reclaim_unstarted(
+    pstvnc_mpeg_worker_t *worker,
+    uint32_t run_generation);
+
 /* Destroy injected thread state and reclaim stack only after exact join. */
 pstvnc_mpeg_worker_result_t pstvnc_mpeg_worker_release(
     pstvnc_mpeg_worker_t *worker,
