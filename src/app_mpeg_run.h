@@ -1,7 +1,7 @@
 /*
  * File synopsis:
  * Defines the R21-R24 Application-owned, trigger-agnostic MPEG run coordinator
- * plus R33's abnormal enclosing-session local teardown path.
+ * plus R33/R34P/R35P abnormal enclosing-session local teardown paths.
  * One session-scoped owner allocates exact run generations, composes accepted
  * start/live-frame service, orders retirement/restoration across P2/P3/P7,
  * worker/runtime and Transport owners, and records the final run-scoped RFB
@@ -132,6 +132,9 @@ typedef struct pstvnc_app_mpeg_run_status {
     int session_abort_stop_requested;
     int session_abort_outcome_recorded;
     pstvnc_mpeg_worker_outcome_t session_abort_worker_outcome;
+
+    int retirement_worker_outcome_recorded;
+    pstvnc_mpeg_worker_outcome_t retirement_worker_outcome;
 } pstvnc_app_mpeg_run_status_t;
 
 typedef struct pstvnc_app_mpeg_run {
@@ -268,10 +271,14 @@ pstvnc_app_mpeg_run_result_t pstvnc_app_mpeg_run_reveal_restored(
  * For an exact R21 pre-START CLEANUP_FAILED prefix it additionally accepts only
  * the represented started-worker or created-but-never-started worker owners,
  * reclaims them through their owner seams, and never fabricates START, join or
- * worker outcome. PS2 worker-runtime resources are released only after worker
- * no-touch proof. Success reaches SESSION_ABORT_READY, terminal for this old
- * run object and used only so the enclosing owner may release retained
- * Transport storage.
+ * worker outcome. R35P also admits only concrete monotonic R23/R24 failure
+ * prefixes: already-cleared P7, naturally joined/finished worker ownership,
+ * runtime-only residual ownership, Transport-run-only residual ownership and
+ * post-finalize nonretryable faults. It resumes from truthful remaining owners
+ * and never replays normal retirement, finalize or reveal work. PS2 worker-
+ * runtime resources are released only after worker no-touch proof. Success
+ * reaches SESSION_ABORT_READY, terminal for this old run object and used only
+ * so the enclosing owner may release retained Transport storage.
  *
  * A still-running started worker is a successful pending service step; callers
  * inspect state/status and call again after the worker advances.
