@@ -237,6 +237,14 @@ pstvnc_app_mpeg_product_result_t pstvnc_app_mpeg_product_service_controller(
     r34_controller_service_calls++;
     if (consumed != NULL)
         *consumed = 0;
+
+    if (r34_controller_result == PSTVNC_APP_MPEG_PRODUCT_OK &&
+        r42_controller_starts_mpeg) {
+        r34_has_started_run = 1;
+        if (consumed != NULL)
+            *consumed = 1;
+    }
+
     return r34_controller_result;
 }
 
@@ -244,9 +252,15 @@ pstvnc_app_mpeg_product_result_t pstvnc_app_mpeg_product_service_live(
     pstvnc_app_mpeg_product_t *product,
     uint64_t current_tick)
 {
-    (void)product;
     r34_live_service_calls++;
     CHECK(current_tick == r34_current_tick_value);
+
+    if (r34_live_result == PSTVNC_APP_MPEG_PRODUCT_OK &&
+        r42_live_arms_clock &&
+        product != NULL &&
+        product->media_clock != NULL)
+        product->media_clock->armed = 1;
+
     return r34_live_result;
 }
 
@@ -355,6 +369,8 @@ int pstvnc_ps2_media_clock_binding_current_tick(
 
 static void reset_selected_projection(void)
 {
+    reset_r42_audio_fixture();
+
     selected_projection_available = 0;
     selected_projection_calls = 0u;
     selected_projection_event_count = 0u;
