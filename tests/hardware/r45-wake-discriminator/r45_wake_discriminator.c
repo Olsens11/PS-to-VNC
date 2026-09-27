@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "platform/ps2_network.h"
+
 #ifndef R45_ZERO_TIMEOUT_CONTROL
 #define R45_ZERO_TIMEOUT_CONTROL 0
 #endif
