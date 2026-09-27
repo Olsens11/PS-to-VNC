@@ -1526,6 +1526,253 @@ static void test_r27_clock_must_begin_unarmed(void)
     CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 1u);
 }
 
+static void test_r42_selected_audio_failure_precedes_platform_startup(void)
+{
+    reset_script();
+    reset_selected_projection();
+
+    selected_projection_available = 1;
+    selected_projection = test_transport_config;
+    selected_audio_profile_available = 0;
+
+    CHECK(pstvnc_app_run() == -1);
+    CHECK(selected_projection_calls == 1u);
+    CHECK(selected_audio_profile_calls == 1u);
+    CHECK(selected_mpeg_profile_calls == 0u);
+    CHECK(selected_media_clock_profile_calls == 0u);
+    CHECK(event_count == 0u);
+    CHECK(r42_resident_prepare_calls == 0u);
+    CHECK(connect_calls == 0u);
+    CHECK(transport_open_calls == 0u);
+}
+
+static void test_r42_resident_prepare_once_and_audio_mpeg_admission_is_fresh(void)
+{
+    int prepare_iop;
+    int network_init;
+
+    reset_script();
+    reset_selected_projection();
+    script_fresh_connections(2u);
+
+    request_results[0] = 1;
+    request_results[1] = 1;
+    request_result_count = 2u;
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[0] = PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ;
+    try_receive_results[1] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[1] = PSTVNC_RFB_SESSION_ERROR_IO;
+    try_receive_result_count = 2u;
+
+    CHECK(run_configured_app() == -1);
+
+    prepare_iop = nth_event_index(EV_PREPARE_IOP, 0u);
+    network_init = nth_event_index(EV_NETWORK_INIT, 0u);
+
+    CHECK(r42_resident_prepare_calls == 1u);
+    CHECK(prepare_iop == 0);
+    CHECK(r42_resident_prepare_event_count == 1u);
+    CHECK(network_init > prepare_iop);
+    CHECK(r42_resident_prepare_event_count <= (size_t)network_init);
+
+    CHECK(transport_open_calls == 2u);
+    CHECK(r42_audio_product_init_calls == 2u);
+    CHECK(r42_time_ops_calls == 2u);
+    CHECK(r42_audio_start_calls == 0u);
+
+    CHECK(r42_observed_audio_transport_config.queue_capacity ==
+        test_audio_runtime_profile.transport.queue_capacity);
+    CHECK(r42_observed_audio_transport_config.initial_credit_bytes ==
+        test_audio_runtime_profile.transport.initial_credit_bytes);
+    CHECK(r42_observed_audio_transport_config.credit_batch_bytes ==
+        test_audio_runtime_profile.transport.credit_batch_bytes);
+    CHECK(r42_observed_audio_transport_config.credit_flush_on_empty ==
+        test_audio_runtime_profile.transport.credit_flush_on_empty);
+    CHECK(r42_observed_audio_transport_config.credit_return_enabled ==
+        test_audio_runtime_profile.transport.credit_return_enabled);
+}
+
+static void test_r42_first_protected_start_is_one_shot_and_gate_blocks_until_ready(void)
+{
+    reset_script();
+    reset_selected_projection();
+
+    input_events[0].type = PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
+    input_event_count = 1u;
+    r42_controller_starts_mpeg = 1;
+    r42_live_arms_clock = 1;
+
+    /*
+     * R41's focused owner test proves these readiness results correspond to
+     * 458751 live bytes (false) and 458752 live bytes (true). This integration
+     * proof shows ordinary Application suppresses the first MPEG live-service
+     * edge until that public result becomes true, then stops consulting the
+     * reservoir gate after the first physical presentation arms the clock.
+     */
+    r42_audio_gate_script[0] = 0;
+    r42_audio_gate_script[1] = 1;
+    r42_audio_gate_script_count = 2u;
+
+    request_results[0] = 1;
+    request_result_count = 1u;
+
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_IDLE;
+    try_receive_results[1] = PSTVNC_RFB_SESSION_RECEIVE_IDLE;
+    try_receive_results[2] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[2] = PSTVNC_RFB_SESSION_ERROR_IO;
+    try_receive_result_count = 3u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(r42_audio_start_calls == 1u);
+    CHECK(r42_audio_service_calls == 3u);
+    CHECK(r42_audio_gate_calls == 2u);
+    CHECK(r34_live_service_calls == 2u);
+    CHECK(media_clock_is_armed_calls >= 4u);
+    CHECK(r42_audio_start_event_count > 0u);
+    CHECK(r42_audio_start_event_count <=
+        (size_t)nth_event_index(EV_TRY_RECEIVE, 0u));
+
+    /* Session teardown must not reinterpret the same started run as a restart. */
+    CHECK(r42_audio_start_calls == 1u);
+}
+
+static void test_r42_calibration_without_started_mpeg_never_starts_audio(void)
+{
+    reset_script();
+    reset_selected_projection();
+
+    input_events[0].type = PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
+    input_event_count = 1u;
+    r42_controller_starts_mpeg = 0;
+
+    request_results[0] = 1;
+    request_result_count = 1u;
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[0] = PSTVNC_RFB_SESSION_ERROR_IO;
+    try_receive_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+    CHECK(r34_controller_service_calls == 1u);
+    CHECK(!r34_has_started_run);
+    CHECK(r42_audio_start_calls == 0u);
+    CHECK(r42_audio_service_calls == 0u);
+    CHECK(r42_audio_gate_calls == 0u);
+    CHECK(r34_begin_abort_calls == 0u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 1u);
+}
+
+static void test_r42_audio_start_failure_is_session_critical_and_not_retried(void)
+{
+    reset_script();
+    reset_selected_projection();
+
+    input_events[0].type = PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
+    input_event_count = 1u;
+    r42_controller_starts_mpeg = 1;
+    r42_audio_start_result =
+        PSTVNC_APP_AUDIO_PRODUCT_SESSION_START_FAILED;
+
+    request_results[0] = 1;
+    request_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(r42_audio_start_calls == 1u);
+    CHECK(r42_audio_service_calls == 0u);
+    CHECK(r34_live_service_calls == 0u);
+    CHECK(r34_begin_abort_calls == 1u);
+    CHECK(r34_abort_service_calls == 1u);
+    CHECK(r42_audio_abort_calls == 1u);
+    CHECK(r34_transport_close_calls == 1u);
+    CHECK(connect_calls == 1u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 0u);
+}
+
+static void test_r42_audio_abort_pending_blocks_release_and_replacement(void)
+{
+    int first_shutdown;
+    int first_release;
+    int second_connect;
+
+    reset_script();
+    reset_selected_projection();
+    script_fresh_connections(2u);
+    connect_results[1] = -1;
+
+    input_events[0].type = PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
+    input_event_count = 1u;
+    r42_controller_starts_mpeg = 1;
+    r42_live_arms_clock = 1;
+
+    r42_audio_abort_ready_script[0] = 0;
+    r42_audio_abort_ready_script[1] = 1;
+    r42_audio_abort_ready_script_count = 2u;
+
+    request_results[0] = 1;
+    request_result_count = 1u;
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[0] = PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ;
+    try_receive_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    first_shutdown = nth_event_index(EV_INPUT_SHUTDOWN, 0u);
+    first_release = nth_event_index(EV_MEDIA_BINDING_RELEASE, 0u);
+    second_connect = nth_event_index(EV_CONNECT_PSTV, 1u);
+
+    CHECK(r42_audio_start_calls == 1u);
+    CHECK(r34_begin_abort_calls == 1u);
+    CHECK(r34_abort_service_calls == 1u);
+    CHECK(r42_audio_abort_calls == 2u);
+    CHECK(r34_transport_close_calls == 1u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 0u);
+
+    CHECK(first_shutdown >= 0);
+    CHECK((size_t)(first_shutdown + 1) <=
+        r34_begin_abort_legacy_event_count);
+    CHECK(r34_begin_abort_legacy_event_count <=
+        r34_abort_service_legacy_event_count);
+    CHECK(r34_abort_service_legacy_event_count <=
+        r42_audio_abort_event_count);
+    CHECK(first_release >= 0);
+    CHECK(r42_audio_abort_event_count <= (size_t)first_release);
+    CHECK((size_t)(first_release + 1) <=
+        r34_close_legacy_event_count);
+    CHECK(second_connect >= 0);
+    CHECK(r34_close_legacy_event_count <= (size_t)second_connect);
+
+    /* The single 1 ms cadence yield is not a completion proof. */
+    CHECK(idle_delay_calls == 1u);
+}
+
+static void test_r42_finite_audio_retains_session_abort_debt_without_restart(void)
+{
+    reset_script();
+    reset_selected_projection();
+
+    input_events[0].type = PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
+    input_event_count = 1u;
+    r42_controller_starts_mpeg = 1;
+    r42_live_arms_clock = 1;
+    r42_audio_service_sets_finite = 1;
+
+    request_results[0] = 1;
+    request_result_count = 1u;
+    try_receive_results[0] = PSTVNC_RFB_SESSION_RECEIVE_FAILED;
+    try_receive_errors[0] = PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ;
+    try_receive_result_count = 1u;
+
+    CHECK(run_configured_app() == -1);
+
+    CHECK(r42_audio_start_calls == 1u);
+    CHECK(r42_audio_service_calls == 1u);
+    CHECK(r34_begin_abort_calls == 1u);
+    CHECK(r42_audio_abort_calls == 1u);
+    CHECK(r34_transport_close_calls == 1u);
+    CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 0u);
+}
+
 int main(void)
 {
     int legacy_result;
@@ -1536,8 +1783,16 @@ int main(void)
         return legacy_result;
 
     test_r15_projection_failure_precedes_all_startup();
+    test_r42_selected_audio_failure_precedes_platform_startup();
     test_r27_mpeg_profile_failure_precedes_all_startup();
     test_r15_selected_profile_reaches_existing_lifecycle_exactly();
+
+    test_r42_resident_prepare_once_and_audio_mpeg_admission_is_fresh();
+    test_r42_first_protected_start_is_one_shot_and_gate_blocks_until_ready();
+    test_r42_calibration_without_started_mpeg_never_starts_audio();
+    test_r42_audio_start_failure_is_session_critical_and_not_retried();
+    test_r42_audio_abort_pending_blocks_release_and_replacement();
+    test_r42_finite_audio_retains_session_abort_debt_without_restart();
 
     test_r32_acquisition_occurs_once_after_link_before_first_pstv();
     test_r32_provider_replacement_reuses_resident_snapshot();
