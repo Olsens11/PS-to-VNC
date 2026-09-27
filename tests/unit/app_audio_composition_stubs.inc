@@ -6,6 +6,10 @@
  * public R36-R41 composition edges.
  */
 
+#include "audio/ps2_runtime.h"
+#include "app_audio_product.h"
+#include "config/audio_runtime_profile.h"
+
 static int selected_audio_profile_available;
 static int selected_audio_profile_valid_result;
 static size_t selected_audio_profile_calls;
