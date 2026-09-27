@@ -47,8 +47,19 @@ for forbidden in (
     if forbidden in code:
         raise AssertionError(f"R37 crossed a prohibited owner/reclaim boundary: {forbidden}")
 
-if "pstvnc_audio_ps2_runtime" in APP or "pstvnc_audio_ps2_resident" in APP:
-    raise AssertionError("R37 entered ordinary Application AUDIO composition")
+if "pstvnc_audio_ps2_runtime_" in APP:
+    raise AssertionError("ordinary Application bypasses the R37 session runtime")
+if APP.count("pstvnc_audio_ps2_resident_prepare(") != 1:
+    raise AssertionError(
+        "R42 must prepare the accepted R37 resident LIBSD/AUDSRV seam exactly once"
+    )
+for forbidden in (
+    "pstvnc_audio_ps2_resident_is_ready(",
+    "pstvnc_audio_ps2_runtime_operations(",
+    "pstvnc_audio_ps2_runtime_release(",
+):
+    if forbidden in APP:
+        raise AssertionError(f"ordinary Application crossed R37 owner boundary: {forbidden}")
 
 for required in (
     "$(PS2SDK)/iop/irx/audsrv.irx",
