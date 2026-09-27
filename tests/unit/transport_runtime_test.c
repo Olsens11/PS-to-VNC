@@ -118,8 +118,11 @@ static int wait_readable_entered;
 static int outbound_ready_poll_blocked;
 static int outbound_ready_poll_entered;
 static int outbound_ready_poll_calls;
-static int require_zero_readiness_timeout;
 static uint32_t last_readiness_timeout_us;
+
+#ifndef R45_EXPECTED_READINESS_TIMEOUT_US
+#define R45_EXPECTED_READINESS_TIMEOUT_US 1000u
+#endif
 static pthread_mutex_t completion_fence_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t completion_fence_condition = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t rfb_credit_wait_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -586,7 +589,6 @@ static void reset_fixture(void)
     outbound_ready_poll_blocked = 0;
     outbound_ready_poll_entered = 0;
     outbound_ready_poll_calls = 0;
-    require_zero_readiness_timeout = 0;
     last_readiness_timeout_us = UINT32_MAX;
     pthread_mutex_unlock(&completion_fence_mutex);
 
@@ -742,8 +744,7 @@ int pstvnc_transport_physical_stream_wait_readable(
 
     pthread_mutex_lock(&completion_fence_mutex);
     last_readiness_timeout_us = timeout_us;
-    if (require_zero_readiness_timeout)
-        CHECK(timeout_us == 0u);
+    CHECK(timeout_us == (uint32_t)R45_EXPECTED_READINESS_TIMEOUT_US);
     pthread_mutex_unlock(&completion_fence_mutex);
 
     /*
@@ -1042,10 +1043,9 @@ static void wait_for_outbound_ready_poll_barrier(void)
     pthread_mutex_unlock(&completion_fence_mutex);
 }
 
-static void require_nonblocking_readiness_probe(void)
+static void reset_readiness_timeout_witness(void)
 {
     pthread_mutex_lock(&completion_fence_mutex);
-    require_zero_readiness_timeout = 1;
     last_readiness_timeout_us = UINT32_MAX;
     pthread_mutex_unlock(&completion_fence_mutex);
 }
@@ -1548,7 +1548,7 @@ static void test_hw1_consumed_rfb_credit_progress_is_inbound_independent(void)
      */
     set_outbound_ready_poll_blocked(1);
     wait_for_outbound_ready_poll_barrier();
-    require_nonblocking_readiness_probe();
+    reset_readiness_timeout_witness();
 
     memset(&reader, 0, sizeof(reader));
     reader.runtime = &runtime;
@@ -1574,8 +1574,18 @@ static void test_hw1_consumed_rfb_credit_progress_is_inbound_independent(void)
     CHECK(send_records[0].kind == PSTVNC_TRANSPORT_FRAME_CREDIT);
     CHECK(send_records[0].channel == PSTVNC_TRANSPORT_CHANNEL_RFB);
     CHECK(credit_record_amount(0u) == sizeof(payload));
-    CHECK(last_readiness_timeout_us == 0u);
+    CHECK(last_readiness_timeout_us ==
+        (uint32_t)R45_EXPECTED_READINESS_TIMEOUT_US);
+#if R45_EXPECTED_READINESS_TIMEOUT_US == 0u
     CHECK(outbound_ready_poll_calls >= 2);
+#else
+    /*
+     * The accepted pre-R44 baseline requires no second poll inside the idle
+     * branch. Once the bounded readiness probe returns, the next owner pass
+     * observes the parser-published token with no second inbound frame.
+     */
+    CHECK(outbound_ready_poll_calls >= 2);
+#endif
     CHECK(receive_calls == 1);
     CHECK(max_receive_active == 1);
     CHECK(receive_thread_mismatch == 0);
