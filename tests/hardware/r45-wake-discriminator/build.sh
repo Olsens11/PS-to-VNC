@@ -46,9 +46,9 @@ one_value()
     key="$1"
     file="$2"
     value="$(sed -n "s/^$key=//p" "$file")"
-    count="$(printf '%s\\n' "$value" | sed '/^$/d' | wc -l)"
+    count="$(printf '%s\n' "$value" | sed '/^$/d' | wc -l)"
     [ "$count" -eq 1 ] || die "expected exactly one $key in $file; found $count"
-    printf '%s\\n' "$value"
+    printf '%s\n' "$value"
 }
 
 command -v docker >/dev/null 2>&1 || die 'docker is required'
