@@ -23,8 +23,11 @@ def require(condition: bool, message: str) -> None:
 code = code_without_comments(APP)
 
 require(
-    len(re.findall(r"\bpstvnc_transport_session_open_with_mpeg\s*\(", code)) == 1,
-    "ordinary Application must invoke exactly one MPEG-capable Transport constructor",
+    len(re.findall(
+        r"\bpstvnc_transport_session_open_with_audio_mpeg\s*\(",
+        code,
+    )) == 1,
+    "ordinary Application must invoke exactly one AUDIO+MPEG Transport constructor",
 )
 require(
     re.search(r"\bpstvnc_transport_session_open\s*\(", code) is None,
@@ -54,22 +57,28 @@ for forbidden in (
 run_start = code.index("int pstvnc_app_run(void)")
 run_code = code[run_start:]
 rfb_select = run_code.index("pstvnc_config_rfb_runtime_profile_selected")
+audio_select = run_code.index("pstvnc_config_audio_runtime_profile_selected")
 mpeg_select = run_code.index("pstvnc_config_mpeg_runtime_profile_selected")
 clock_select = run_code.index("pstvnc_config_media_clock_profile_selected")
 enter_session = run_code.index("pstvnc_app_run_with_session_profiles")
 
 require(rfb_select < enter_session, "RFB profile selection must precede session entry")
+require(audio_select < enter_session, "AUDIO profile selection must precede session entry")
 require(mpeg_select < enter_session, "MPEG profile selection must precede session entry")
 require(clock_select < enter_session, "media-clock profile selection must precede session entry")
 
 configured_start = code.index("int pstvnc_app_run_with_session_profiles")
 configured_code = code[configured_start:run_start]
 iop = configured_code.index("pstvnc_ps2_system_prepare_iop")
+resident_audio = configured_code.index("pstvnc_audio_ps2_resident_prepare")
 connect = configured_code.index("pstvnc_ps2_network_connect_pstv")
-open_mpeg = configured_code.index("pstvnc_transport_session_open_with_mpeg")
+open_media = configured_code.index("pstvnc_transport_session_open_with_audio_mpeg")
 binding = configured_code.index("pstvnc_ps2_media_clock_binding_init")
 clock_init = configured_code.index("pstvnc_media_clock_init")
 
-require(iop < connect < open_mpeg < binding < clock_init, "R27 startup owner order is invalid")
+require(
+    iop < resident_audio < connect < open_media < binding < clock_init,
+    "R27/R42 startup owner order is invalid",
+)
 
 print("APP_MPEG_SESSION_FOUNDATION_SOURCE_TEST=PASS")
