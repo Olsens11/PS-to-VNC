@@ -101,6 +101,7 @@ require_sources()
         "$MPEG_PROFILE_SOURCE" \
         "$MPEG_PRODUCT_PROFILE_SOURCE" \
         "$MPEG_GENERATION_SOURCE" \
+        "$AUDIO_PROFILE_GENERATED_SOURCE" \
         "$SERVER_SOURCE" \
         "$RUNTIME_SOURCE" \
         "$UNIT_SOURCE"
