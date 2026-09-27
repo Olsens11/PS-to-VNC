@@ -1894,6 +1894,7 @@ static void test_r43_pending_media_abort_retries_after_one_begin_abort(void)
     input_events[0].type = PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
     input_event_count = 1u;
     r42_controller_starts_mpeg = 1;
+    r34_requires_session_abort = 1;
 
     r34_abort_ready_script[0] = 0;
     r34_abort_ready_script[1] = 1;
