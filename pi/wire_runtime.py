@@ -6,17 +6,19 @@ owners without taking Wire, RFB, or MPEG mechanism ownership.
 The selected R14 RFB profile supplies one fresh R13 attachment factory. R25 adds
 one fresh exact-session R17 MPEG-generation factory using the selected Pi MPEG
 composition profile plus the existing Configuration-owned producer profile.
-Both factories remain inert until WireServer crosses their accepted lifecycle
-edges: RFB provider contact still begins only on valid post-Q4 RFB CREDIT, and
-FFmpeg producer creation still begins only on exact R17 START.
+R42 adds one selected lazy R39 AUDIO factory. All remain inert until WireServer
+crosses their accepted lifecycle edges: RFB provider contact begins only on
+valid post-Q4 RFB CREDIT, FFmpeg creation begins only on exact R17 START, and
+pw-record capture begins only on the first exact channel-2 CREDIT.
 
-This composition layer owns no selected numeric tuning literals, Wire Session
-identity, physical I/O, provider retry/recovery policy, generation mechanics,
-CONFIG delivery, AUDIO, or PS2 product-trigger policy.
+This composition layer owns no Wire Session identity, physical I/O, provider
+retry/recovery policy, generation/capture mechanics, CONFIG delivery, or PS2
+product-trigger policy.
 
 Context: docs/ledge/LEDGE_FOREMAN_STATE.md,
 A003-RFB-ORDINARY-APPLICATION-ACTIVATION-R15;
-A003-PI-MPEG-ORDINARY-PRODUCT-COMPOSITION-R25.
+A003-PI-MPEG-ORDINARY-PRODUCT-COMPOSITION-R25;
+A006-ORDINARY-CROSS-PLATFORM-AUDIO-COMPOSITION-R42.
 """
 
 from __future__ import annotations
@@ -25,6 +27,7 @@ import argparse
 import sys
 from typing import Callable
 
+import audio_product_profile
 import mpeg_generation as mpeg
 import mpeg_product_profile
 import mpeg_runtime_profile
@@ -99,11 +102,13 @@ def build_product_wire_server(
 
     attachment_factory = selected_rfb_attachment_factory()
     mpeg_generation_factory = selected_mpeg_generation_factory()
+    audio_pcm_factory = audio_product_profile.selected_audio_pcm_factory()
     return wire_server.WireServer(
         listen_address,
         port,
         rfb_attachment_factory=attachment_factory,
         mpeg_generation_factory=mpeg_generation_factory,
+        audio_pcm_factory=audio_pcm_factory,
     )
 
 
