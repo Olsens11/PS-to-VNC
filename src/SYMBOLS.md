@@ -745,6 +745,7 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | media_clock_binding | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines media_clock_binding as a current clean-source variable. | mechanically reconciled current clean source |
 | media_clock_binding_active | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines media_clock_binding_active as a current clean-source variable. | mechanically reconciled current clean source |
 | media_clock_binding_release_failed | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines media_clock_binding_release_failed as a current clean-source variable. | mechanically reconciled current clean source |
+| retained_session_abort_established | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines retained_session_abort_established as a current clean-source variable. | mechanically reconciled current clean source |
 | media_clock_sync | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines media_clock_sync as a current clean-source variable. | mechanically reconciled current clean source |
 | media_clock_ticks_per_second | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines media_clock_ticks_per_second as a current clean-source variable. | mechanically reconciled current clean source |
 | mouse_interpretation_suspended | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines mouse_interpretation_suspended as a current clean-source variable. | mechanically reconciled current clean source |
@@ -828,6 +829,7 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | media_clock_binding | parameter | src/app.c | retire_attempt_owners | local | Defines media_clock_binding as a current clean-source parameter. | mechanically reconciled current clean source |
 | media_clock_binding_active | parameter | src/app.c | retire_attempt_owners | local | Defines media_clock_binding_active as a current clean-source parameter. | mechanically reconciled current clean source |
 | media_clock_binding_release_failed | parameter | src/app.c | retire_attempt_owners | local | Defines media_clock_binding_release_failed as a current clean-source parameter. | mechanically reconciled current clean source |
+| retained_session_abort_established | parameter | src/app.c | retire_attempt_owners | local | Defines retained_session_abort_established as a current clean-source parameter. | mechanically reconciled current clean source |
 | mpeg_product | parameter | src/app.c | retire_attempt_owners | local | Defines mpeg_product as a current clean-source parameter. | mechanically reconciled current clean source |
 | mpeg_product_ready | parameter | src/app.c | retire_attempt_owners | local | Defines mpeg_product_ready as a current clean-source parameter. | mechanically reconciled current clean source |
 | transport_session_active | parameter | src/app.c | retire_attempt_owners | local | Defines transport_session_active as a current clean-source parameter. | mechanically reconciled current clean source |
