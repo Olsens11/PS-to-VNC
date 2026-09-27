@@ -171,6 +171,31 @@ static const pstvnc_transport_mpeg_channel_config_t
         1
     };
 
+static const pstvnc_config_audio_runtime_profile_t
+    test_audio_runtime_profile = {
+        {
+            524288u,
+            524288u,
+            65536u,
+            1,
+            1
+        },
+        {
+            48000u,
+            2u,
+            16u,
+            80u
+        },
+        {
+            32768u,
+            64,
+            32768u,
+            458752u,
+            1000u,
+            1000u
+        }
+    };
+
 static const pstvnc_config_media_clock_profile_t
     test_media_clock_profile = {
         0u,
@@ -406,6 +431,7 @@ static int run_configured_app(void)
 {
     return pstvnc_app_run_with_session_profiles(
         &test_transport_config,
+        &test_audio_runtime_profile,
         &test_mpeg_transport_config,
         &test_media_clock_profile);
 }
