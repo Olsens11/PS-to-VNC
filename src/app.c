@@ -820,6 +820,7 @@ static int retire_attempt_owners(
     pstvnc_ps2_media_clock_binding_t *media_clock_binding,
     int *media_clock_binding_active,
     int *media_clock_binding_release_failed,
+    int *retained_session_abort_established,
     int *transport_session_active)
 {
     int mpeg_abort_ready = 0;
@@ -833,6 +834,7 @@ static int retire_attempt_owners(
         media_clock_binding == NULL ||
         media_clock_binding_active == NULL ||
         media_clock_binding_release_failed == NULL ||
+        retained_session_abort_established == NULL ||
         transport_session_active == NULL)
         return 0;
 
@@ -867,9 +869,20 @@ static int retire_attempt_owners(
 
     if ((has_mpeg_abort_owner || has_audio_abort_owner) &&
         *transport_session_active) {
-        if (pstvnc_transport_session_begin_abort() !=
-                PSTVNC_TRANSPORT_OK)
-            return 0;
+        /*
+         * Successful begin-abort establishes retained old-session storage for
+         * the lifetime of this Wire attempt. Preserve that authority outside
+         * this helper so an error from either local media owner can converge
+         * through fatal cleanup without issuing a second begin-abort edge.
+         * A failed begin-abort attempt deliberately leaves the fact false.
+         */
+        if (!*retained_session_abort_established) {
+            if (pstvnc_transport_session_begin_abort() !=
+                    PSTVNC_TRANSPORT_OK)
+                return 0;
+
+            *retained_session_abort_established = 1;
+        }
 
         mpeg_abort_ready = !has_mpeg_abort_owner;
         audio_abort_ready = !has_audio_abort_owner;
@@ -1008,6 +1021,7 @@ int pstvnc_app_run_with_session_profiles(
         int transport_session_active = 0;
         int media_clock_binding_active = 0;
         int media_clock_binding_release_failed = 0;
+        int retained_session_abort_established = 0;
         int input_runtime_ready = 0;
         int mpeg_product_ready = 0;
         int audio_product_ready = 0;
@@ -1479,6 +1493,7 @@ attempt_failed:
                 &media_clock_binding,
                 &media_clock_binding_active,
                 &media_clock_binding_release_failed,
+                &retained_session_abort_established,
                 &transport_session_active))
             goto attempt_fatal;
 
@@ -1505,6 +1520,7 @@ attempt_fatal:
                 &media_clock_binding,
                 &media_clock_binding_active,
                 &media_clock_binding_release_failed,
+                &retained_session_abort_established,
                 &transport_session_active);
         } else {
             if (input_runtime_ready)
