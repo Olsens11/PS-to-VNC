@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = (ROOT / "src/audio/ps2_runtime.c").read_text(encoding="utf-8")
 HEADER = (ROOT / "src/audio/ps2_runtime.h").read_text(encoding="utf-8")
 MAKEFILE = (ROOT / "mk/issue7-clean.mk").read_text(encoding="utf-8")
-APP = "\n".join(path.read_text(encoding="utf-8") for path in ROOT.glob("src/app*.c"))
+APP = (ROOT / "src/app.c").read_text(encoding="utf-8")
 
 def strip_comments(text: str) -> str:
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
