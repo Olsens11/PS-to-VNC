@@ -172,6 +172,26 @@ int WaitSema(int semaphore_id)
     return pthread_mutex_unlock(&slot->mutex) == 0 ? 0 : -1;
 }
 
+int PollSema(int semaphore_id)
+{
+    fake_semaphore_t *slot;
+    int available;
+
+    if (semaphore_id <= 0 || semaphore_id >= MAX_SEMAPHORES ||
+        !g_semaphores[semaphore_id].used)
+        return -1;
+
+    slot = &g_semaphores[semaphore_id];
+    if (pthread_mutex_lock(&slot->mutex) != 0)
+        return -1;
+    available = slot->count > 0;
+    if (available)
+        slot->count -= 1;
+    if (pthread_mutex_unlock(&slot->mutex) != 0)
+        return -1;
+    return available ? 0 : -1;
+}
+
 int SignalSema(int semaphore_id)
 {
     fake_semaphore_t *slot;
