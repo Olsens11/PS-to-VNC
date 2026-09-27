@@ -458,6 +458,7 @@ $(BUILD_DIR)/osk_direct_test: \
 
 $(BUILD_DIR)/app_test: \
 	unit/app_test.c \
+	unit/app_audio_composition_stubs.inc \
 	support/libpad.h \
 	../src/app.c \
 	../src/app.h \
