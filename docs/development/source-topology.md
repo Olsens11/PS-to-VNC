@@ -297,8 +297,9 @@ one session runtime owns exact aligned allocations, a session-local semaphore,
 a retained completion semaphore and one EE thread slot. Completion observation
 survives a later status failure, and thread/resource reclamation requires actual
 `THS_DORMANT`/kernel deletion success rather than any elapsed-time or poll-count
-threshold. The adapter deliberately exports no media-clock time operations and
-ordinary Application AUDIO activation remains deferred.
+threshold. The adapter deliberately exports no media-clock time operations. R42 ordinary
+Application composition calls only its resident-prepare seam directly; session
+runtime/operation ownership remains behind R41.
 
 A future display-model or other reconstruction stage may adopt, replace, move,
 or delete remaining retained material deliberately. The moment a source file
