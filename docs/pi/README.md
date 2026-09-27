@@ -80,10 +80,12 @@ WayVNC stays an OS-base capability and possible future upstream desktop source
 rather than the default PS2 endpoint. LXPanel is rejected for the clean baseline;
 Openbox remains a separate session-content decision.
 
-Future ideas such as MPEG-2 high-motion presentation, audio, and remote-computer
-sources are intentionally deferred. They are relevant today only insofar as they
-reinforce the need for clean replaceable service/module seams; they do not justify
-building speculative gateway or multiplexing infrastructure now.
+MPEG-2 high-motion presentation and AUDIO now have tracked clean product
+composition. R42 stages the selected lazy AUDIO product factory and its accepted
+R39 capture owner under the ordinary Wire service, but source/host evidence does
+not itself qualify physical AUDIO behavior. Remote-computer sources and other
+unimplemented expansion remain deferred; they do not justify speculative gateway
+or multiplexing infrastructure now.
 
 ## Configuration rule
 
