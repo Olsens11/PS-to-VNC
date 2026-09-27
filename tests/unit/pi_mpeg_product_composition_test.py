@@ -199,15 +199,17 @@ class ProductProfileTests(unittest.TestCase):
         for scattered_literal in ('":0"', "704", "462", "8.0"):
             self.assertNotIn(scattered_literal, runtime_source)
 
-    def test_product_runtime_supplies_both_rider_factories(self) -> None:
+    def test_product_runtime_supplies_all_ordinary_factories(self) -> None:
         server = wire_runtime.build_product_wire_server(
             "127.0.0.1",
             5902,
         )
         self.assertIsNotNone(server.rfb_attachment_factory)
         self.assertIsNotNone(server.mpeg_generation_factory)
+        self.assertIsNotNone(server.audio_pcm_factory)
         self.assertTrue(callable(server.rfb_attachment_factory))
         self.assertTrue(callable(server.mpeg_generation_factory))
+        self.assertTrue(callable(server.audio_pcm_factory))
 
     def test_stager_enrolls_product_profile_without_live_mutation(self) -> None:
         installer = (
