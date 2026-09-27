@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0085
-RECORDED_AT=2026-09-26T21:24:13-04:00
+STATE_REVISION=0086
+RECORDED_AT=2026-09-26T22:04:56-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0084
-SUPERSEDES_FOREMAN_STATE_REVISION=0084
+BASED_ON_FOREMAN_STATE_REVISION=0085
+SUPERSEDES_FOREMAN_STATE_REVISION=0085
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,80 +14,82 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0085 independently reviews
-`A006-ORDINARY-CROSS-PLATFORM-AUDIO-COMPOSITION-R42` at final pre-log source
-authority `66d07aacb1ce76aa55d820ea14d4ef7bf999bbcf` and consumes immutable
-Reconstruction closeout `0c8e5738a325ba56582730d8253b998e1c3239ec`.
+Revision 0086 independently accepts
+`A006-R42C-RETAINED-SESSION-SINGLE-BEGIN-ABORT-R43` at final pre-log source
+authority `e2727cb31e214d11e094f1f45b0b9d8ab01d84e9` and consumes immutable
+Reconstruction closeout `33e870a97fc023743eb3d12aaad513a901c3dee7`.
 
-The returned R42 range is exactly forty-nine commits ahead of assigning Foreman
-log `b1153979b1e013110a16349e3b7051155431c1c6`, zero behind. Product-bearing
-changes are confined to ordinary Application AUDIO composition, the narrow Pi
-AUDIO product profile/factory injection, Pi staging enrollment and directly
-affected tests/docs/dictionaries. Wire version, selected R36 numeric values,
-lower Transport/AUDIO/media-clock/MPEG/RFB/Input/UI/Display mechanisms and H1
-forensic source remain unchanged.
+The returned R43 range is exactly eight commits ahead of assigning Foreman log
+`1aab5632b67791b478ba18234057d717abec3684`, zero behind, and is confined to
+the packet-authorized Application retained-abort fact, focused deterministic
+fixtures and dictionary synchronization. No lower Transport/MPEG/AUDIO/R26
+mechanism, Pi product source, Wire version, R36 selected value, Input/UI/Display/
+RFB mechanism or H1 forensic source changed.
 
-Independent source review accepts the intended ordinary composition itself:
+Independent review accepts all twelve R43 requirements. One exact Wire-attempt
+local `retained_session_abort_established` fact begins false for every fresh
+attempt. It remains false when Transport begin-abort fails. Immediately after
+the first successful `pstvnc_transport_session_begin_abort()`, Application
+publishes the fact before servicing either local media owner. Every later
+cleanup invocation for that same session skips begin-abort and resumes only
+still-owned MPEG/AUDIO local dormancy work.
 
-- selected AUDIO authority resolves before platform startup;
-- resident LIBSD/AUDSRV preparation occurs once after IOP readiness;
-- each Wire attempt opens exact AUDIO+MPEG Transport with AUDIO dormant;
-- each attempt creates a fresh R41 coordinator from the exact ticket/R26 time
-  authority;
-- AUDIO starts only after a genuinely successful protected MPEG run and at most
-  once per Wire Session;
-- R41 steady service is nonblocking;
-- first MPEG live presentation is withheld while the common clock is unarmed
-  until the public R41 reservoir/producer-done gate is ready;
-- once R26 is armed, later MPEG frames do not consult startup reservoir state;
-- normal same-session MPEG retirement does not stop or restart AUDIO;
-- ordinary Pi runtime injects exactly one lazy selected R39 factory using the
-  adopted 2.0-second escalation horizon, with no capture before first AUDIO
-  CREDIT.
+Focused evidence independently covers:
 
-Exact final-source GitHub Actions run `36285048528`, attempt 1, checked out
-`66d07aacb1ce76aa55d820ea14d4ef7bf999bbcf` and passed host-unit,
+- MPEG local-abort error after successful begin-abort, followed by fatal
+  cleanup re-entry, with total begin-abort count exactly one;
+- all accepted AUDIO abort-error families — stop, poll, join, outcome-read,
+  terminal outcome, session release and runtime release — with later cleanup
+  re-entry and total begin-abort count exactly one;
+- dual MPEG+AUDIO OK-but-PENDING retry with the existing cadence and one begin
+  edge;
+- begin-abort failure leaving retained authority false and authorizing no local
+  media/clock/Transport reclamation;
+- fresh replacement session storage beginning false and establishing its own
+  retained-session edge;
+- unchanged no-media R16B one-shot abort behavior.
+
+The corrected R43 source therefore closes R42 criterion 9 without reopening
+R42 criteria 1-8 or 10-12. R42 ordinary cross-platform AUDIO composition is now
+Foreman-accepted in full at combined final source authority
+`e2727cb31e214d11e094f1f45b0b9d8ab01d84e9`.
+
+Exact final-source GitHub Actions run `36286921147`, attempt 1, checked out
+`e2727cb31e214d11e094f1f45b0b9d8ab01d84e9` and passed host-unit,
 project-check, strict dictionaries, pinned PS2 compile, linked build and
-current-source reproducibility. Exact immutable-log-head run `36285151794`,
+current-source reproducibility. Exact immutable-log-head run `36287053411`,
 attempt 1, also passed the complete canonical gate set.
 
-R42 loadable identity is reproducible but is **not yet Foreman-accepted** because
-one reachable abnormal-teardown integration defect remains:
+The newest fully Foreman-accepted linked identity is:
 
-`ELF_PRISTINE_SHA256=bfc6a2fb9b22db2a170b6687b8625c7b6b85bb99fad6b7accc7002e9dea72021`
+`ELF_PRISTINE_SHA256=993655ccffc430347281291c1fa917e3b22ce77f17407a99edbc920b71a65a2a`
 
 `PT_LOAD_SEGMENTS=1`
 
-`PT_LOAD_SHA256=6375db546f08a60b2b8bf34aa6786e8f740f44213b64fedecfb4081f5fe9f065`
+`PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
 
 `PT_LOAD_BYTES=556180`
 
-The defect is in the Application's shared retained-session teardown transaction.
-`retire_attempt_owners()` correctly calls Transport `begin_abort()` once and
-then loops while MPEG/AUDIO abort service returns OK-but-not-ready. However, if
-`begin_abort()` has already succeeded and a later MPEG or AUDIO local-abort
-service returns an actual error, `retire_attempt_owners()` returns failure to
-`attempt_failed`. That path jumps to `attempt_fatal`, which invokes
-`retire_attempt_owners()` again while the same Transport session remains
-active. Because no per-attempt "retained abort already established" fact is
-preserved outside the helper, the second invocation can call
-`pstvnc_transport_session_begin_abort()` again for the same already-retained
-session.
+The image remains hardware-pending.
 
-This violates R42 criterion 9's one shared begin-abort edge and leaves
-error-prefix retry/fatal convergence dependent on accidental lower-layer
-idempotence. The returned deterministic tests cover PENDING retry but do not
-cover a post-begin MPEG/AUDIO abort-service error followed by the fatal cleanup
-entry.
+With R43 accepted, every seeded A001-A006 product-semantic responsibility from
+the completed A007 recursive closure now has Foreman-accepted reconstructed
+source at the current branch authority. This is a **Foreman source-reconstruction
+closure**, not an independent Validation PASS and not physical qualification.
 
-Therefore R42 is **not Foreman-accepted** as a complete packet. Criteria C1-C8,
-C10-C12 are MET; C9 is NOT_MET. No hardware qualification may attach to the R42
-candidate PT_LOAD.
+No further seeded Reconstruction product-behavior packet is currently justified.
+Automatic MPEG recalibration and Configuration persistence/editor/reload remain
+explicitly deferred optional/future policy rather than unfinished H1
+responsibilities.
 
-The next packet is a narrow R42 correction. It must preserve successful
-begin-abort authority across repeated cleanup invocations and resume/contain
-local media cleanup without issuing a second successful retained-session
-begin-abort edge.
+Separate current project authority in `runtime/PROJECT_STATE.env` still names
+`QUALIFY_NATIVE_PI_DESKTOP_RFB_PATH_REPRODUCIBILITY` as the broader project
+next action. That global qualification prerequisite is not silently rewritten by
+this ledge Foreman state.
+
+The next authority transition is independent Validation of the complete current
+machine/source tranche, followed by exact-DUT physical qualification where
+required. Foreman does not manufacture either result.
 
 ## Temporal architecture reconciliation
 
@@ -120,7 +122,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A006_R42_ORDINARY_AUDIO_COMPOSITION_FOREMAN_REVIEWED_C9_NOT_MET__A006_R42C_RETAINED_ABORT_SINGLE_EDGE_ACTIVE`
+`A001_A006_SEEDED_SOURCE_RECONSTRUCTION_FOREMAN_COMPLETE__INDEPENDENT_VALIDATION_PENDING__HARDWARE_PENDING`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -185,10 +187,13 @@ AUDIO_SESSION_COMPLETION_PUBLICATION=FOREMAN_ACCEPTED_R38
 PI_AUDIO_PCM_PRODUCER=FOREMAN_ACCEPTED_R39
 AUDIO_DEFERRED_INITIAL_CREDIT_ACTIVATION=FOREMAN_ACCEPTED_R40
 AUDIO_APPLICATION_LIFECYCLE_COORDINATOR=FOREMAN_ACCEPTED_R41
-ORDINARY_CROSS_PLATFORM_AUDIO_COMPOSITION=FOREMAN_REVIEWED_R42_C9_NOT_MET
-RETAINED_SESSION_SINGLE_BEGIN_ABORT_EDGE=RECONSTRUCTION_ACTIVE_R42C
+ORDINARY_CROSS_PLATFORM_AUDIO_COMPOSITION=FOREMAN_ACCEPTED_R42_PLUS_R43
+RETAINED_SESSION_SINGLE_BEGIN_ABORT_EDGE=FOREMAN_ACCEPTED_R43
+SEEDED_A001_A006_SOURCE_RECONSTRUCTION=FOREMAN_COMPLETE
+INDEPENDENT_VALIDATION=REQUIRED_NOT_RUN
+HARDWARE_QUALIFICATION=REQUIRED_PENDING
 AUTO_RECALIBRATION_AFTER_RETIREMENT=DEFERRED_OPTIONAL_POLICY
-CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED
+CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED_FUTURE_POLICY
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
 
@@ -3676,161 +3681,137 @@ PENDING-with-OK does not have this defect because the helper's internal loop
 retains the one begin-abort call. The missing proof is specifically the
 cross-invocation error/fatal prefix.
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R43 retained-session correction authority
 
 PACKET_ID=A006-R42C-RETAINED-SESSION-SINGLE-BEGIN-ABORT-R43
-PACKET_STATUS=ACTIVE
-PACKET_OWNER=RECONSTRUCTION
-WORK_ITEM_KEY=a006-orchestration-shutdown
-WORKER_KEY=interactive
-EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
-USER_TERMINAL_POLICY=EXCEPTION_ONLY
-PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0085
-BASED_ON_R42_FINAL_SOURCE=66d07aacb1ce76aa55d820ea14d4ef7bf999bbcf
-BASED_ON_ACCEPTED_R33_R35P_MPEG_ABORT=YES
-BASED_ON_ACCEPTED_R41_AUDIO_ABORT=YES
-R42_OTHER_CRITERIA_REOPENED=NO
-PI_PRODUCT_COMPOSITION_REOPENED=NO
-WIRE_VERSION=UNCHANGED
-R36_SELECTED_VALUES=UNCHANGED
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0085
+ASSIGNING_FOREMAN_STATE_COMMIT=ec36e90be446ca420fda72247412249c41e15bdb
+ASSIGNING_FOREMAN_LOG_COMMIT=1aab5632b67791b478ba18234057d717abec3684
+RECONSTRUCTION_STARTING_COMMIT=1aab5632b67791b478ba18234057d717abec3684
+R43_FINAL_SOURCE_COMMIT=e2727cb31e214d11e094f1f45b0b9d8ab01d84e9
+R43_RECONSTRUCTION_LOG_COMMIT=33e870a97fc023743eb3d12aaad513a901c3dee7
+R43_PRE_LOG_COMMIT_COUNT=8
 
-### Objective
+The required immutable Reconstruction record is:
 
-Correct the one remaining R42 abnormal-teardown integration defect without
-redesigning lower owners.
+`docs/ledge/work-log/20260926T214056-0400__reconstruction__a006-orchestration-shutdown__interactive.md`
 
-Application must preserve the fact that successful Transport begin-abort has
-already established retained old-session storage for the current Wire attempt.
-Any later cleanup invocation for that same attempt must resume local MPEG/AUDIO
-dormancy work against that retained storage and must not issue another successful
-begin-abort edge.
+Independent Foreman disposition:
 
-### Required behavior
+A006-R43-C1=MET
+A006-R43-C2=MET
+A006-R43-C3=MET
+A006-R43-C4=MET
+A006-R43-C5=MET
+A006-R43-C6=MET
+A006-R43-C7=MET
+A006-R43-C8=MET
+A006-R43-C9=MET
+A006-R43-C10=MET
+A006-R43-C11=MET
+A006-R43-C12=MET
 
-1. Add one explicit per-Wire-attempt Application fact representing successful
-   retained-session begin-abort establishment. It begins false on every fresh
-   attempt and cannot transfer to a replacement session.
-2. `retire_attempt_owners()` must consume/update that fact rather than keeping
-   successful begin-abort authority only on its stack.
-3. When media debt exists and retained abort has not yet been established,
-   Input dormancy still precedes the begin-abort attempt exactly as in R42.
-4. After `pstvnc_transport_session_begin_abort()` returns OK, publish the
-   per-attempt retained-abort fact before calling either MPEG or AUDIO local
-   abort service.
-5. Once that fact is true, every later invocation for the same session skips
-   `pstvnc_transport_session_begin_abort()` and resumes only the still-owned
-   local media cleanup.
-6. An OK-but-PENDING MPEG/AUDIO abort path retains R42's existing internal retry
-   cadence and never uses delay/count as success.
-7. A real MPEG local-abort error after successful begin-abort may cause fatal
-   convergence, but any cleanup retry from that convergence must not call
-   begin-abort again and must not release clock/Transport storage until local
-   readiness is actually proven.
-8. The same rule applies independently to AUDIO local-abort error prefixes,
-   including stop/poll/join/outcome/session-release/runtime-release failures.
-9. If the initial begin-abort call itself does not return OK, do not falsely
-   publish retained-abort success. Preserve lower evidence and existing fatal
-   policy; no later code may assume retained storage was proven merely because
-   begin-abort was attempted.
-10. The no-media R16B path remains unchanged: it uses the historical one-shot
-    `pstvnc_transport_session_abort()` and never sets the retained-media fact.
-11. Successful media teardown still releases R26 binding only after all owned
-    MPEG/AUDIO local paths report ready, then closes Transport once, then admits
-    replacement. Normal R42 AUDIO start/gating/Pi composition behavior is
-    unchanged.
-12. Add deterministic failure-prefix evidence and close all canonical gates.
-    No hardware claim is authorized.
+R43_SOURCE_COMPLETE=YES
+R43_FOREMAN_ACCEPTED=YES
+R43_HOST_TESTED=YES
+R43_PROJECT_CHECK=PASS
+R43_STRICT_DICTIONARIES=PASS
+R43_PS2_COMPILE=PASS
+R43_PS2_LINK=PASS
+R43_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R43_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36286921147_ATTEMPT_1
+R43_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36287053411_ATTEMPT_1
+R43_INDEPENDENT_VALIDATION=NOT_RUN
+R43_OPERATOR_OBSERVED=NO
+R43_HARDWARE_QUALIFIED=NO
+R43_HARDWARE_PENDING=YES
 
-### Required deterministic evidence
+Exact accepted linked identity:
 
-At minimum prove:
-
-- one media-failure attempt whose begin-abort succeeds and whose first MPEG abort
-  service call returns an error reaches a later cleanup invocation with total
-  begin-abort call count still exactly one;
-- equivalent AUDIO abort-service error prefix also keeps begin-abort count one;
-- on those error prefixes, media-clock release and Transport close do not occur
-  before the respective local owner reports ready;
-- after a retryable local owner later reaches ready, cleanup can finish with one
-  clock release, one Transport close and no second begin-abort;
-- ordinary OK-but-PENDING MPEG+AUDIO path still uses one begin-abort and retries
-  at existing cadence;
-- begin-abort failure does not mark retained-abort success;
-- a fresh replacement session starts with the retained-abort fact false;
-- no-media typed provider failure still uses only R16B one-shot abort;
-- R42 first-MPEG AUDIO start, reservoir gate, finite AUDIO, Pi lazy factory and
-  2.0-second escalation tests remain unchanged and green;
-- R33/R35P/R41 focused abort-owner regressions remain green.
-
-### Authorized source surface
-
-Modify only the smallest justified subset of:
-
-- `src/app.c`;
-- `src/app.h` only if a public type/signature is genuinely required;
-- focused `tests/unit/app_test.c` / R42 composition fixtures;
-- `tests/unit/app_audio_composition_source_test.py` if needed;
-- directly affected Application dictionaries/lifecycle documentation;
-- canonical enrollment only if required.
-
-Do not modify absent an independently demonstrated prerequisite defect:
-
-- `src/app_audio_product.*`;
-- `src/app_mpeg_product.*` or lower MPEG owners;
-- `src/audio/*`;
-- `src/transport/*`;
-- R26 media clock;
-- R36 selected profile;
-- any `pi/*` product source;
-- Input/UI/Display/RFB mechanisms;
-- Wire protocol/version;
-- H1 forensic source.
-
-### Explicit non-goals
-
-R43 does not:
-
-- redesign retained-session Transport semantics;
-- change AUDIO start timing or reservoir gating;
-- change normal MPEG retirement/reveal;
-- change Pi AUDIO composition;
-- add timeout-success/watchdogs;
-- enter hardware qualification;
-- implement automatic MPEG recalibration or configuration editor/persistence.
-
-### Required checks before handoff
-
-Run focused new error-prefix tests plus complete R42 Application/Pi composition
-regressions, R33/R35P/R41 abort regressions, current R15/R16B/R19/R27/R32/R34/
-R35 suites, canonical host tests, project check, complete strict dictionaries,
-pinned PS2 compile/link and current-source reproducibility.
-
-Record the exact final ELF/PT_LOAD identity. It remains hardware-pending until
-Foreman acceptance and later physical qualification.
-
-At shift end emit exactly one immutable Reconstruction record under
-`docs/ledge/work-log/` revision 0007 using:
-
-- ROLE_KEY=`reconstruction`;
-- WORK_ITEM_KEY=`a006-orchestration-shutdown`;
-- WORKER_KEY=`interactive`.
-
-Then stop and return the baton.
-
-FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_APPLICATION_RETAINED_ABORT_STATE_OWNERSHIP_GAP
-STRETCH=NONE__DO_NOT_ENTER_HARDWARE_QUALIFICATION
-
-## Current hardware debt
-
-Newest fully Foreman-accepted PS2 source/build identity remains R41:
-
-`ELF_PRISTINE_SHA256=306ccd622c1a1c00bdb0ff24208c64b7c1832c8caa50d96797e752ad9f9ad997`
+`ELF_PRISTINE_SHA256=993655ccffc430347281291c1fa917e3b22ce77f17407a99edbc920b71a65a2a`
 `PT_LOAD_SEGMENTS=1`
-`PT_LOAD_SHA256=dd7d5f7bca743d3a505c809c53f78474559105244d91b29f62c5d83ec2bb4dc0`
-`PT_LOAD_BYTES=555284`
+`PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
+`PT_LOAD_BYTES=556180`
 
-R42 candidate identity is machine-green but not Foreman-accepted and must not be
-described as hardware-qualified.
+## R42 final redisposition after R43
+
+R42 criterion 9 is now MET at the R43 final source authority.
+
+A006-R42-C1=MET
+A006-R42-C2=MET
+A006-R42-C3=MET
+A006-R42-C4=MET
+A006-R42-C5=MET
+A006-R42-C6=MET
+A006-R42-C7=MET
+A006-R42-C8=MET
+A006-R42-C9=MET_BY_R43
+A006-R42-C10=MET
+A006-R42-C11=MET
+A006-R42-C12=MET
+
+R42_FOREMAN_ACCEPTED=YES_AT_R43_FINAL_SOURCE
+ORDINARY_CROSS_PLATFORM_AUDIO_COMPOSITION=FOREMAN_ACCEPTED
+
+## Seeded source-reconstruction closure
+
+A007 semantic closure proves that A001-A006 account for every discovered
+product-semantic responsibility in the final forensic all-guns source/object
+closure. At revision 0086, the Foreman has accepted reconstructed source for
+that complete seeded responsibility set.
+
+This means:
+
+- SEEDED_A001_A006_SOURCE_RECONSTRUCTION=FOREMAN_COMPLETE;
+- canonical current-source machine gates are green;
+- strict dictionaries/topology are green;
+- exact linked current source is reproducible.
+
+It does **not** mean:
+
+- independent Validation PASS;
+- operator-observed success;
+- physical PS2 hardware qualification;
+- native Pi desktop/RFB reproducibility qualification;
+- completion of optional/future auto-recalibration or configuration-editor
+  product work.
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=NONE
+PACKET_STATUS=NONE
+PACKET_OWNER=NONE
+REASON=SEEDED_A001_A006_SOURCE_RECONSTRUCTION_FOREMAN_COMPLETE
+NEXT_AUTHORITY_OWNER=INDEPENDENT_VALIDATION
+NEXT_VALIDATION_SOURCE=e2727cb31e214d11e094f1f45b0b9d8ab01d84e9
+NEXT_VALIDATION_LOG=33e870a97fc023743eb3d12aaad513a901c3dee7
+NEXT_VALIDATION_ELF_PRISTINE_SHA256=993655ccffc430347281291c1fa917e3b22ce77f17407a99edbc920b71a65a2a
+NEXT_VALIDATION_PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b
+NEXT_VALIDATION_PT_LOAD_BYTES=556180
+
+No Reconstruction worker should self-select optional/future product work while
+this state has no active packet. A new source packet requires new Foreman
+authority from a Validation finding, newly discovered semantic evidence, or a
+deliberate future-feature decision outside the seeded H1 reconstruction.
+
+## Current hardware / qualification debt
+
+Newest fully Foreman-accepted PS2 source/build identity is R43:
+
+`ELF_PRISTINE_SHA256=993655ccffc430347281291c1fa917e3b22ce77f17407a99edbc920b71a65a2a`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
+`PT_LOAD_BYTES=556180`
+
+Changed PT_LOAD requires physical qualification unless later explicit policy says
+otherwise.
+
+Separate project-state authority also retains:
+
+`NEXT_ACTION=QUALIFY_NATIVE_PI_DESKTOP_RFB_PATH_REPRODUCIBILITY`
+
+That broader Pi qualification prerequisite remains unresolved and is not
+superseded by ledge source closure.
 
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
