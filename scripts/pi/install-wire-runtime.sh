@@ -144,6 +144,8 @@ require_sources()
         "$MPEG_PRODUCT_PROFILE_SOURCE" \
         "$MPEG_GENERATION_SOURCE" \
         "$AUDIO_PROFILE_GENERATED_SOURCE" \
+        "$AUDIO_PCM_PRODUCER_SOURCE" \
+        "$AUDIO_PRODUCT_PROFILE_SOURCE" \
         "$SERVER_SOURCE" \
         "$RUNTIME_SOURCE" <<'__PS2VNC_WIRE_SYNTAX_EOF__'
 from pathlib import Path
