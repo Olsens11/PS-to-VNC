@@ -115,6 +115,24 @@ int WaitSema(int semaphore_id)
     return 0;
 }
 
+int PollSema(int semaphore_id)
+{
+    fake_sema_t *semaphore;
+    int available;
+
+    if (semaphore_id <= 0 || semaphore_id >= MAX_SEMAS ||
+        !semaphores[semaphore_id].used)
+        return -1;
+
+    semaphore = &semaphores[semaphore_id];
+    pthread_mutex_lock(&semaphore->mutex);
+    available = semaphore->count > 0;
+    if (available)
+        semaphore->count--;
+    pthread_mutex_unlock(&semaphore->mutex);
+    return available ? 0 : -1;
+}
+
 int SignalSema(int semaphore_id)
 {
     fake_sema_t *semaphore;
