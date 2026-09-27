@@ -678,12 +678,13 @@ $(RFB_BRIDGE_TEST): unit/rfb_bridge_test.c ../src/rfb/bridge.c ../src/rfb/bridge
 
 TRANSPORT_PHYSICAL_STREAM_TEST := .build/transport_physical_stream_test
 TRANSPORT_RUNTIME_TEST := .build/transport_runtime_test
+TRANSPORT_RUNTIME_ZERO_TIMEOUT_TEST := .build/transport_runtime_zero_timeout_test
 TRANSPORT_AUDIO_TEST := .build/transport_audio_test
 TRANSPORT_AUDIO_ACTIVATION_SOURCE_TEST := unit/transport_audio_activation_source_test.py
 TRANSPORT_MPEG_TEST := .build/transport_mpeg_test
 
-.PHONY: transport-physical-stream-unit transport-runtime-unit transport-audio-unit transport-audio-activation-source-unit transport-mpeg-unit
-unit: transport-physical-stream-unit transport-runtime-unit transport-audio-unit transport-audio-activation-source-unit transport-mpeg-unit
+.PHONY: transport-physical-stream-unit transport-runtime-unit transport-runtime-zero-timeout-unit transport-audio-unit transport-audio-activation-source-unit transport-mpeg-unit
+unit: transport-physical-stream-unit transport-runtime-unit transport-runtime-zero-timeout-unit transport-audio-unit transport-audio-activation-source-unit transport-mpeg-unit
 
 transport-physical-stream-unit: $(TRANSPORT_PHYSICAL_STREAM_TEST)
 	./$(TRANSPORT_PHYSICAL_STREAM_TEST)
@@ -706,6 +707,9 @@ $(TRANSPORT_PHYSICAL_STREAM_TEST): \
 
 transport-runtime-unit: $(TRANSPORT_RUNTIME_TEST)
 	./$(TRANSPORT_RUNTIME_TEST)
+
+transport-runtime-zero-timeout-unit: $(TRANSPORT_RUNTIME_ZERO_TIMEOUT_TEST)
+	./$(TRANSPORT_RUNTIME_ZERO_TIMEOUT_TEST)
 
 $(TRANSPORT_RUNTIME_TEST): \
 	unit/transport_runtime_test.c \
@@ -734,6 +738,36 @@ $(TRANSPORT_RUNTIME_TEST): \
 		../src/transport/rfb_channel.c \
 		../src/transport/protocol.c \
 		-o $(TRANSPORT_RUNTIME_TEST)
+
+$(TRANSPORT_RUNTIME_ZERO_TIMEOUT_TEST): \
+	unit/transport_runtime_test.c \
+	unit/transport_host_stubs/kernel.h \
+	../src/transport/runtime.c \
+	../src/transport/runtime.h \
+	../src/transport/quiesce.c \
+	../src/transport/audio_channel.c \
+	../src/transport/audio_channel.h \
+	../src/transport/mpeg_channel.c \
+	../src/transport/mpeg_channel.h \
+	../src/transport/rfb_channel.c \
+	../src/transport/rfb_channel.h \
+	../src/transport/protocol.c \
+	../src/transport/protocol.h \
+	../src/transport/physical_stream.h | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(COMMON_CFLAGS) \
+		-DPSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US=0u \
+		-DR45_EXPECTED_READINESS_TIMEOUT_US=0u \
+		-Iunit/transport_host_stubs \
+		-I../src \
+		-pthread \
+		unit/transport_runtime_test.c \
+		../src/transport/runtime.c \
+		../src/transport/quiesce.c \
+		../src/transport/audio_channel.c \
+		../src/transport/mpeg_channel.c \
+		../src/transport/rfb_channel.c \
+		../src/transport/protocol.c \
+		-o $(TRANSPORT_RUNTIME_ZERO_TIMEOUT_TEST)
 
 transport-audio-unit: $(TRANSPORT_AUDIO_TEST)
 	./$(TRANSPORT_AUDIO_TEST)
