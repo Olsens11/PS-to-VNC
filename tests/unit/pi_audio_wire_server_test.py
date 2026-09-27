@@ -454,12 +454,17 @@ class AudioWireServerTests(unittest.TestCase):
         self.assertTrue(credit_failure_owners[0].closed)
         peer.close()
 
-    def test_ordinary_product_runtime_still_injects_no_audio_owner(self) -> None:
+    def test_ordinary_product_runtime_injects_lazy_audio_factory(self) -> None:
         server = wire_runtime.build_product_wire_server()
-        self.assertIsNone(server.audio_pcm_factory)
+        self.assertTrue(callable(server.audio_pcm_factory))
+        self.assertIsNone(getattr(server, "_audio_pcm", None))
+
         source = (PI / "wire_runtime.py").read_text(encoding="utf-8")
-        self.assertNotIn("audio_pcm_factory=", source)
-        self.assertNotIn("audio_pcm_producer", source)
+        self.assertIn("audio_pcm_factory=audio_pcm_factory", source)
+        self.assertIn(
+            "audio_product_profile.selected_audio_pcm_factory()",
+            source,
+        )
 
 
 if __name__ == "__main__":
