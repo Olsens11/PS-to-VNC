@@ -6,9 +6,10 @@
  * dispatched into three independent bounded logical channels with independent
  * credit/activity state. Typed RFB provider-terminal reporting is latched as a
  * channel-local fact without converting a healthy physical Wire Session into a
- * Transport failure. On PS2, an idle physical-socket readiness timeout
- * cooperatively yields the EE so queued network-stack work can progress without
- * delaying active I/O paths.
+ * Transport failure. On PS2, physical readability is only probed nonblocking;
+ * an idle pass then cooperatively yields the EE so queued network-stack and
+ * newly-published outbound work can progress without requiring future inbound
+ * Wire traffic.
  *
  * RFB parser consumption/quiesce, provider-terminal mechanism state, AUDIO's
  * audited finite marker, MPEG's explicit producer-completion fact, exact MPEG
@@ -36,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US 1000u
+#define PSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US 0u
 
 #if defined(_EE)
 #define PSTVNC_TRANSPORT_IO_IDLE_YIELD_US 1000u
@@ -930,18 +931,13 @@ static int pstvnc_transport_runtime_accept_mpeg_retire_completion(
 static int pstvnc_transport_runtime_take_outbound_ready(
     pstvnc_transport_runtime_t *runtime)
 {
-#if defined(_EE)
-    return PollSema(runtime->outbound_ready_semaphore_id) >= 0;
-#else
     /*
-     * Host fixtures do not emulate PollSema. outbound_pending provides the
-     * nonblocking observation; WaitSema then consumes the already-present token.
+     * Match the real EE owner primitive in every build, including host
+     * concurrency fixtures. PollSema is the only nonblocking observation of
+     * this one-item rendezvous; outbound_pending is payload state, not a wake
+     * primitive and therefore must not substitute for the semaphore ordering.
      */
-    if (!runtime->outbound_pending)
-        return 0;
-
-    return WaitSema(runtime->outbound_ready_semaphore_id) >= 0;
-#endif
+    return PollSema(runtime->outbound_ready_semaphore_id) >= 0;
 }
 
 static int pstvnc_transport_runtime_process_outbound(
@@ -1002,9 +998,16 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
         int readable;
 
         /*
-         * Outbound work is always serviced before entering the bounded socket
-         * readiness wait. The one-item synchronous queue provides explicit
-         * backpressure to domain owners.
+         * Outbound work is always serviced before probing socket readability.
+         * The one-item synchronous queue provides explicit backpressure to
+         * domain owners.
+         *
+         * The probe below is deliberately nonblocking. On PS2, select() crosses
+         * the EE/IOP RPC boundary; an EE SignalSema cannot interrupt an already
+         * active IOP select call. Blocking there would therefore recreate the
+         * HW1 race: a parser can publish CREDIT/request work immediately after
+         * this PollSema miss and then wait forever for an unrelated future Wire
+         * receive to return the physical owner to its outbound queue.
          */
         if (pstvnc_transport_runtime_take_outbound_ready(runtime)) {
             if (!pstvnc_transport_runtime_process_outbound(runtime))
@@ -1023,15 +1026,30 @@ static void pstvnc_transport_runtime_receiver_thread(void *argument)
         }
 
         if (readable == 0) {
+            /*
+             * Close the exact HW1 check-then-wait window before yielding. Work
+             * published after the first PollSema but before/during the
+             * nonblocking socket probe is serviced immediately by the same sole
+             * physical owner. Work published after this second poll is picked up
+             * on the next pass after the local cooperative yield; no inbound
+             * Wire frame is needed as a wake source.
+             */
+            if (pstvnc_transport_runtime_take_outbound_ready(runtime)) {
+                if (!pstvnc_transport_runtime_process_outbound(runtime))
+                    break;
+                continue;
+            }
+
 #if defined(_EE)
             /*
              * Proof 4I hardware established that this sole physical-I/O owner
              * must relinquish EE execution during an otherwise idle polling
              * cycle so queued PS2IP/network-stack work can make progress.
              *
-             * Keep the scheduling opportunity strictly on the idle path:
-             * outbound work was already checked before the readiness wait,
-             * and immediately readable inbound Wire data bypasses this delay.
+             * Keep the scheduling opportunity strictly on the idle path. This
+             * local delay is cadence only, never completion/readiness authority:
+             * outbound readiness is always proven by PollSema and inbound
+             * readiness only by the physical-stream probe.
              *
              * 1000 us is the hardware-tested implementation baseline. It is
              * not part of the Wire ABI and is not asserted to be the final or
