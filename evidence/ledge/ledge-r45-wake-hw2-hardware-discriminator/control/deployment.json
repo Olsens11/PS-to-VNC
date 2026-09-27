@@ -1,0 +1,23 @@
+{
+  "deployed_at_utc": "2026-09-27T22:20:20.217730+00:00",
+  "deployment_result": "PASS",
+  "elf_bytes": 2212624,
+  "elf_path": "/home/ps2/src/PS-to-VNC-ledge-final-hwq/evidence/ledge/ledge-r45-wake-hw2-hardware-discriminator/R45-WAKE-CONTROL-ZERO.ELF",
+  "elf_sha256": "8bf21f52f87b9c965fe3dc1dbf75ac59051a2e239915cc62b10cac183d91ebe5",
+  "ftp_host": "192.168.50.2",
+  "ftp_port": 21,
+  "ftp_readback": "PASS",
+  "hardware_run": false,
+  "repository_branch": "DETACHED",
+  "repository_context": "/home/ps2/src/PS-to-VNC-ledge-final-hwq",
+  "repository_context_source": "EXPLICIT",
+  "repository_head": "24a87535e5a644969fe8e252a360ac9f3dec93f2",
+  "rolling_readback_bytes": 2212624,
+  "rolling_readback_sha256": "8bf21f52f87b9c965fe3dc1dbf75ac59051a2e239915cc62b10cac183d91ebe5",
+  "rolling_remote": "/mass/0/R45-WAKE-CONTROL-ZERO.ELF",
+  "test_id": "R45-WAKE-HW2-CONTROL",
+  "unique_readback_bytes": 2212624,
+  "unique_readback_sha256": "8bf21f52f87b9c965fe3dc1dbf75ac59051a2e239915cc62b10cac183d91ebe5",
+  "unique_remote": "/mass/0/PS2VNC-R45-WAKE-HW2-CONTROL-8bf21f52.ELF",
+  "version": 1
+}

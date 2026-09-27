@@ -1,0 +1,2 @@
+ce5b2eda81e2c2c65ff0d0c66f152d2fc0c4621956ef3f6c58aa789ab0fe0976  evidence/ledge/ledge-r45-wake-hw2-hardware-discriminator/R45-WAKE-BASELINE-1000US.ELF
+8bf21f52f87b9c965fe3dc1dbf75ac59051a2e239915cc62b10cac183d91ebe5  evidence/ledge/ledge-r45-wake-hw2-hardware-discriminator/R45-WAKE-CONTROL-ZERO.ELF

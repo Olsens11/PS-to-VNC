@@ -1,0 +1,15 @@
+TEST_ID=LEDGE-R45-WAKE-HW2
+PACKET_ID=A001-R45-FOCUSED-WAKE-DISCRIMINATOR-HW2
+
+The operator reported that PS2Net/ps2ftpd was running before deployment.
+
+The operator launched exactly:
+mass:/0/R45-WAKE-BASELINE-1000US.ELF
+
+After the baseline result was sealed, the operator reset the PS2, returned to
+wLaunchELF, restarted PS2Net/ps2ftpd, and reported FTP running again.
+
+The operator then launched exactly:
+mass:/0/R45-WAKE-CONTROL-ZERO.ELF
+
+No product PS2VNC ELF was launched during this packet.

@@ -1,0 +1,1 @@
+{"bytes_received": 98304, "completed_cycles": 4096, "completion_authority": "ACTUAL_SERIALIZED_OUTBOUND_SEQUENCE", "elapsed_seconds": 0.29622861300595105, "expected_cycles": 4096, "last_sequence": 4096, "listen_port": 5961, "peer": "192.168.50.2", "peer_application_bytes_sent": 0, "stalled_cycle": null, "status": "PASS", "variant": "CONTROL_ZERO_TIMEOUT"}

@@ -1,0 +1,68 @@
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform \
+	-DR45_ZERO_TIMEOUT_CONTROL=0 \
+	-c tests/hardware/r45-wake-discriminator/r45_wake_discriminator.c -o build/r45-wake-discriminator/baseline/r45_wake_discriminator.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c src/platform/ps2_network.c -o build/r45-wake-discriminator/baseline/ps2_network.o
+mkdir -p build/r45-wake-discriminator/baseline/generated
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx build/r45-wake-discriminator/baseline/generated/DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/baseline/generated/DEV9_irx.c -o build/r45-wake-discriminator/baseline/DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx build/r45-wake-discriminator/baseline/generated/NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/baseline/generated/NETMAN_irx.c -o build/r45-wake-discriminator/baseline/NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx build/r45-wake-discriminator/baseline/generated/SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/baseline/generated/SMAP_irx.c -o build/r45-wake-discriminator/baseline/SMAP_irx.o
+mips64r5900el-ps2-elf-gcc -T/usr/local/ps2dev/ps2sdk/ee/startup/linkfile -O2 -o build/r45-wake-discriminator/baseline/R45-WAKE-baseline.ELF build/r45-wake-discriminator/baseline/r45_wake_discriminator.o build/r45-wake-discriminator/baseline/ps2_network.o build/r45-wake-discriminator/baseline/DEV9_irx.o build/r45-wake-discriminator/baseline/NETMAN_irx.o build/r45-wake-discriminator/baseline/SMAP_irx.o -L/usr/local/ps2dev/ps2sdk/ee/lib -Wl,-zmax-page-size=128   -lnetman build/r45-wake-discriminator/baseline/deps/libps2ip_mtu1458_wscale128.a -lpatches -Wl,--wrap=sendto
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform \
+	-DR45_ZERO_TIMEOUT_CONTROL=0 \
+	-c tests/hardware/r45-wake-discriminator/r45_wake_discriminator.c -o build/r45-wake-discriminator/baseline/r45_wake_discriminator.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c src/platform/ps2_network.c -o build/r45-wake-discriminator/baseline/ps2_network.o
+mkdir -p build/r45-wake-discriminator/baseline/generated
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx build/r45-wake-discriminator/baseline/generated/DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/baseline/generated/DEV9_irx.c -o build/r45-wake-discriminator/baseline/DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx build/r45-wake-discriminator/baseline/generated/NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/baseline/generated/NETMAN_irx.c -o build/r45-wake-discriminator/baseline/NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx build/r45-wake-discriminator/baseline/generated/SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/baseline/generated/SMAP_irx.c -o build/r45-wake-discriminator/baseline/SMAP_irx.o
+mips64r5900el-ps2-elf-gcc -T/usr/local/ps2dev/ps2sdk/ee/startup/linkfile -O2 -o build/r45-wake-discriminator/baseline/R45-WAKE-baseline.ELF build/r45-wake-discriminator/baseline/r45_wake_discriminator.o build/r45-wake-discriminator/baseline/ps2_network.o build/r45-wake-discriminator/baseline/DEV9_irx.o build/r45-wake-discriminator/baseline/NETMAN_irx.o build/r45-wake-discriminator/baseline/SMAP_irx.o -L/usr/local/ps2dev/ps2sdk/ee/lib -Wl,-zmax-page-size=128   -lnetman build/r45-wake-discriminator/baseline/deps/libps2ip_mtu1458_wscale128.a -lpatches -Wl,--wrap=sendto
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform \
+	-DR45_ZERO_TIMEOUT_CONTROL=1 \
+	-c tests/hardware/r45-wake-discriminator/r45_wake_discriminator.c -o build/r45-wake-discriminator/control/r45_wake_discriminator.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c src/platform/ps2_network.c -o build/r45-wake-discriminator/control/ps2_network.o
+mkdir -p build/r45-wake-discriminator/control/generated
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx build/r45-wake-discriminator/control/generated/DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/control/generated/DEV9_irx.c -o build/r45-wake-discriminator/control/DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx build/r45-wake-discriminator/control/generated/NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/control/generated/NETMAN_irx.c -o build/r45-wake-discriminator/control/NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx build/r45-wake-discriminator/control/generated/SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/control/generated/SMAP_irx.c -o build/r45-wake-discriminator/control/SMAP_irx.o
+mips64r5900el-ps2-elf-gcc -T/usr/local/ps2dev/ps2sdk/ee/startup/linkfile -O2 -o build/r45-wake-discriminator/control/R45-WAKE-control.ELF build/r45-wake-discriminator/control/r45_wake_discriminator.o build/r45-wake-discriminator/control/ps2_network.o build/r45-wake-discriminator/control/DEV9_irx.o build/r45-wake-discriminator/control/NETMAN_irx.o build/r45-wake-discriminator/control/SMAP_irx.o -L/usr/local/ps2dev/ps2sdk/ee/lib -Wl,-zmax-page-size=128   -lnetman build/r45-wake-discriminator/control/deps/libps2ip_mtu1458_wscale128.a -lpatches -Wl,--wrap=sendto
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform \
+	-DR45_ZERO_TIMEOUT_CONTROL=1 \
+	-c tests/hardware/r45-wake-discriminator/r45_wake_discriminator.c -o build/r45-wake-discriminator/control/r45_wake_discriminator.o
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c src/platform/ps2_network.c -o build/r45-wake-discriminator/control/ps2_network.o
+mkdir -p build/r45-wake-discriminator/control/generated
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/ps2dev9.irx build/r45-wake-discriminator/control/generated/DEV9_irx.c DEV9_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/control/generated/DEV9_irx.c -o build/r45-wake-discriminator/control/DEV9_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/netman.irx build/r45-wake-discriminator/control/generated/NETMAN_irx.c NETMAN_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/control/generated/NETMAN_irx.c -o build/r45-wake-discriminator/control/NETMAN_irx.o
+bin2c /usr/local/ps2dev/ps2sdk/iop/irx/smap.irx build/r45-wake-discriminator/control/generated/SMAP_irx.c SMAP_irx
+mips64r5900el-ps2-elf-gcc -D_EE -G0 -O2 -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/ee/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc -Isrc/platform -c build/r45-wake-discriminator/control/generated/SMAP_irx.c -o build/r45-wake-discriminator/control/SMAP_irx.o
+mips64r5900el-ps2-elf-gcc -T/usr/local/ps2dev/ps2sdk/ee/startup/linkfile -O2 -o build/r45-wake-discriminator/control/R45-WAKE-control.ELF build/r45-wake-discriminator/control/r45_wake_discriminator.o build/r45-wake-discriminator/control/ps2_network.o build/r45-wake-discriminator/control/DEV9_irx.o build/r45-wake-discriminator/control/NETMAN_irx.o build/r45-wake-discriminator/control/SMAP_irx.o -L/usr/local/ps2dev/ps2sdk/ee/lib -Wl,-zmax-page-size=128   -lnetman build/r45-wake-discriminator/control/deps/libps2ip_mtu1458_wscale128.a -lpatches -Wl,--wrap=sendto
+R45_DISCRIMINATOR_BUILD_VERSION=1
+R45_TOOLCHAIN_IMAGE=ps2dev/ps2dev@sha256:8fba50ecc2229acd7f8da63d34302f12939b7d4fa6848dda1e6a0ce083321a11
+R45_PS2IP_SHA256=b2959fe364b374d7d8984969b6444b92743ed671f4d41d27cb284d4ac7ab6a74
+R45_CYCLE_COUNT=4096
+R45_PEER_APPLICATION_BYTES_SENT=0
+R45_BASELINE_VARIANT=BASELINE_1000US
+R45_BASELINE_READINESS_TIMEOUT_US=1000
+R45_BASELINE_ELF_SHA256=ce5b2eda81e2c2c65ff0d0c66f152d2fc0c4621956ef3f6c58aa789ab0fe0976
+R45_BASELINE_PT_LOAD_SHA256=97a1b02c89c8d72a8c836b5012cbc203a6337914577778245e6f2b547365ef6a
+R45_BASELINE_PT_LOAD_BYTES=316040
+R45_BASELINE_REPRODUCIBLE=YES
+R45_CONTROL_VARIANT=CONTROL_ZERO_TIMEOUT
+R45_CONTROL_READINESS_TIMEOUT_US=0
+R45_CONTROL_ELF_SHA256=8bf21f52f87b9c965fe3dc1dbf75ac59051a2e239915cc62b10cac183d91ebe5
+R45_CONTROL_PT_LOAD_SHA256=a5fe291785c692c8aabca88e8840e13e7fb343f8210a083d48276ba08f2a315c
+R45_CONTROL_PT_LOAD_BYTES=316168
+R45_CONTROL_REPRODUCIBLE=YES
+R45_VARIANTS_DISTINCT=YES
+R45_HARDWARE_EXECUTED=NO
+R45_DISCRIMINATOR_BUILD=PASS

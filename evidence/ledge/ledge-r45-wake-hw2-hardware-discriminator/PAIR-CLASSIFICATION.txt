@@ -1,0 +1,19 @@
+TEST_ID=LEDGE-R45-WAKE-HW2
+CLASSIFICATION=BASELINE_PASSES_CONTROL_PASSES
+
+BASELINE_1000US=PASS
+CONTROL_ZERO_TIMEOUT=PASS
+
+The baseline completed all 4096 actual owner-serialized records on the real PS2
+with the Pi peer sending zero application payload bytes. The zero-timeout control
+also completed all 4096 actual owner-serialized records under the same peer-silence
+contract after a PS2 reset/re-established harness environment.
+
+Under Foreman State revision 0089, this exact pair is classified
+BASELINE_PASSES_CONTROL_PASSES.
+
+DISPOSITION=R44_WAKE_RACE_THEORY_NOT_SUPPORTED_BY_FOCUSED_HARDWARE
+HW1_PRODUCT_DEFECT_REMAINS_OPEN=YES
+PRODUCT_FIX_ACCEPTED=NO
+PRODUCT_HARDWARE_REQUALIFIED=NO
+NEXT_ACTION=RETURN_TO_FOREMAN_FOR_DEEPER_PS2_PROGRESS_TRACING
