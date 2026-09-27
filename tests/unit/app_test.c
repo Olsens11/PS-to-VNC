@@ -1890,6 +1890,8 @@ static void test_r43_pending_media_abort_retries_after_one_begin_abort(void)
 {
     reset_script();
     reset_selected_projection();
+    script_fresh_connections(2u);
+    connect_results[1] = -1;
 
     input_events[0].type = PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
     input_event_count = 1u;
