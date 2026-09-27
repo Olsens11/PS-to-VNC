@@ -123,14 +123,17 @@ APP_AUDIO_PRODUCT_TEST := .build/app_audio_product_test
 APP_AUDIO_PRODUCT_SOURCE_TEST := unit/app_audio_product_source_test.py
 APP_AUDIO_COMPOSITION_SOURCE_TEST := unit/app_audio_composition_source_test.py
 
-.PHONY: app-audio-product-unit app-audio-product-source-unit
-unit: app-audio-product-unit app-audio-product-source-unit
+.PHONY: app-audio-product-unit app-audio-product-source-unit app-audio-composition-source-unit
+unit: app-audio-product-unit app-audio-product-source-unit app-audio-composition-source-unit
 
 app-audio-product-unit: $(APP_AUDIO_PRODUCT_TEST)
 	./$(APP_AUDIO_PRODUCT_TEST)
 
 app-audio-product-source-unit:
 	python3 $(APP_AUDIO_PRODUCT_SOURCE_TEST)
+
+app-audio-composition-source-unit:
+	python3 $(APP_AUDIO_COMPOSITION_SOURCE_TEST)
 
 $(APP_AUDIO_PRODUCT_TEST): \
 	unit/app_audio_product_test.c \
