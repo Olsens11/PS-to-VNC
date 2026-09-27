@@ -1580,6 +1580,31 @@ static void test_hw1_consumed_rfb_credit_progress_is_inbound_independent(void)
     CHECK(max_receive_active == 1);
     CHECK(receive_thread_mismatch == 0);
 
+    /*
+     * A second isolated update begins only after the first consumption CREDIT
+     * has completed. It must independently consume/return the same exact credit
+     * without inheriting pending bytes or needing any third inbound frame.
+     */
+    push_rx_frame(
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        payload,
+        sizeof(payload));
+    wait_for_receive_calls(2);
+    memset(output, 0, sizeof(output));
+    CHECK(pstvnc_transport_runtime_rfb_read_exact(
+        &runtime, output, sizeof(output)) == 1);
+    CHECK(memcmp(output, payload, sizeof(payload)) == 0);
+    CHECK(runtime.rfb_credit_pending == 0u);
+    CHECK(send_record_count == 2u);
+    CHECK(send_records[1].kind == PSTVNC_TRANSPORT_FRAME_CREDIT);
+    CHECK(send_records[1].channel == PSTVNC_TRANSPORT_CHANNEL_RFB);
+    CHECK(credit_record_amount(1u) == sizeof(payload));
+    CHECK(receive_calls == 2);
+    CHECK(rx_frame_count == 2u);
+    CHECK(rx_frame_index == 2u);
+
     stop_and_release_runtime(&runtime);
 }
 
