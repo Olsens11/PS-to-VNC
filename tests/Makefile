@@ -121,6 +121,7 @@ $(BUILD_DIR)/app_mpeg_product_test: \
 
 APP_AUDIO_PRODUCT_TEST := .build/app_audio_product_test
 APP_AUDIO_PRODUCT_SOURCE_TEST := unit/app_audio_product_source_test.py
+APP_AUDIO_COMPOSITION_SOURCE_TEST := unit/app_audio_composition_source_test.py
 
 .PHONY: app-audio-product-unit app-audio-product-source-unit
 unit: app-audio-product-unit app-audio-product-source-unit
