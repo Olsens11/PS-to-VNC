@@ -48,6 +48,7 @@ extern unsigned char _gp;
 int CreateSema(ee_sema_t *semaphore);
 int DeleteSema(int semaphore_id);
 int WaitSema(int semaphore_id);
+int PollSema(int semaphore_id);
 int SignalSema(int semaphore_id);
 
 /*
