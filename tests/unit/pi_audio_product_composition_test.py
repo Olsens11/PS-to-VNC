@@ -210,6 +210,28 @@ class AudioProductProfileTests(unittest.TestCase):
             self.assertFalse(outcome.protocol_failed)
             self.assertTrue(owner.closed)
 
+    def test_stager_enrolls_audio_product_modules_without_live_mutation(self) -> None:
+        installer = (
+            ROOT / "scripts/pi/install-wire-runtime.sh"
+        ).read_text(encoding="utf-8")
+
+        for staged in (
+            "/usr/lib/ps-to-vnc/audio_runtime_profile_generated.py",
+            "/usr/lib/ps-to-vnc/audio_pcm_producer.py",
+            "/usr/lib/ps-to-vnc/audio_product_profile.py",
+        ):
+            self.assertIn(staged, installer)
+
+        for forbidden in (
+            "systemctl daemon-reload",
+            "systemctl enable",
+            "systemctl disable",
+            "systemctl start",
+            "systemctl stop",
+            "systemctl restart",
+        ):
+            self.assertNotIn(forbidden, installer)
+
     def test_session_without_audio_credit_never_constructs_r39_owner(self) -> None:
         with mock.patch.object(
             audio_product_profile.audio,
