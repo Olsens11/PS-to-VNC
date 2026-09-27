@@ -115,6 +115,11 @@ static int outbound_slot_signal_blocked;
 static int outbound_slot_signal_entered;
 static int wait_readable_blocked;
 static int wait_readable_entered;
+static int outbound_ready_poll_blocked;
+static int outbound_ready_poll_entered;
+static int outbound_ready_poll_calls;
+static int require_zero_readiness_timeout;
+static uint32_t last_readiness_timeout_us;
 static pthread_mutex_t completion_fence_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t completion_fence_condition = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t rfb_credit_wait_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -259,6 +264,39 @@ int WaitSema(int semaphore_id)
     semaphore->count--;
     pthread_mutex_unlock(&semaphore->mutex);
     return 0;
+}
+
+int PollSema(int semaphore_id)
+{
+    fake_semaphore_t *semaphore;
+    int available;
+
+    if (semaphore_id <= 0 || semaphore_id >= MAX_FAKE_SEMAS ||
+        !fake_semaphores[semaphore_id].used)
+        return -1;
+
+    semaphore = &fake_semaphores[semaphore_id];
+    pthread_mutex_lock(&semaphore->mutex);
+    available = semaphore->count > 0;
+    if (available)
+        semaphore->count--;
+    pthread_mutex_unlock(&semaphore->mutex);
+
+    if (semaphore_id == outbound_ready_semaphore_id) {
+        pthread_mutex_lock(&completion_fence_mutex);
+        outbound_ready_poll_calls++;
+        if (!available && outbound_ready_poll_blocked) {
+            outbound_ready_poll_entered = 1;
+            pthread_cond_broadcast(&completion_fence_condition);
+            while (outbound_ready_poll_blocked)
+                pthread_cond_wait(
+                    &completion_fence_condition,
+                    &completion_fence_mutex);
+        }
+        pthread_mutex_unlock(&completion_fence_mutex);
+    }
+
+    return available ? 0 : -1;
 }
 
 int SignalSema(int semaphore_id)
@@ -545,6 +583,11 @@ static void reset_fixture(void)
     outbound_slot_signal_entered = 0;
     wait_readable_blocked = 0;
     wait_readable_entered = 0;
+    outbound_ready_poll_blocked = 0;
+    outbound_ready_poll_entered = 0;
+    outbound_ready_poll_calls = 0;
+    require_zero_readiness_timeout = 0;
+    last_readiness_timeout_us = UINT32_MAX;
     pthread_mutex_unlock(&completion_fence_mutex);
 
     pthread_mutex_lock(&rfb_credit_wait_mutex);
@@ -695,8 +738,13 @@ int pstvnc_transport_physical_stream_wait_readable(
 {
     int readable;
 
-    (void)timeout_us;
     CHECK(stream != NULL);
+
+    pthread_mutex_lock(&completion_fence_mutex);
+    last_readiness_timeout_us = timeout_us;
+    if (require_zero_readiness_timeout)
+        CHECK(timeout_us == 0u);
+    pthread_mutex_unlock(&completion_fence_mutex);
 
     /*
      * Host-only R20C rendezvous: when armed, hold the sole I/O owner inside
@@ -974,6 +1022,34 @@ static void set_outbound_slot_signal_blocked(int blocked)
         pthread_cond_broadcast(&completion_fence_condition);
     pthread_mutex_unlock(&completion_fence_mutex);
 }
+
+static void set_outbound_ready_poll_blocked(int blocked)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    outbound_ready_poll_blocked = blocked;
+    if (!blocked)
+        pthread_cond_broadcast(&completion_fence_condition);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void wait_for_outbound_ready_poll_barrier(void)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    while (!outbound_ready_poll_entered)
+        pthread_cond_wait(
+            &completion_fence_condition,
+            &completion_fence_mutex);
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
+static void require_nonblocking_readiness_probe(void)
+{
+    pthread_mutex_lock(&completion_fence_mutex);
+    require_zero_readiness_timeout = 1;
+    last_readiness_timeout_us = UINT32_MAX;
+    pthread_mutex_unlock(&completion_fence_mutex);
+}
+
 
 static uint32_t credit_record_amount(size_t index)
 {
@@ -1313,6 +1389,13 @@ typedef struct rfb_writer_test_context {
     int result;
 } rfb_writer_test_context_t;
 
+typedef struct rfb_reader_test_context {
+    pstvnc_transport_runtime_t *runtime;
+    uint8_t *buffer;
+    size_t count;
+    int result;
+} rfb_reader_test_context_t;
+
 typedef struct runtime_call_test_context {
     pstvnc_transport_runtime_t *runtime;
     int result;
@@ -1334,6 +1417,18 @@ static void *rfb_writer_test_thread(void *opaque)
         context->runtime,
         context->payload,
         context->payload_length);
+    return NULL;
+}
+
+static void *rfb_reader_test_thread(void *opaque)
+{
+    rfb_reader_test_context_t *context =
+        (rfb_reader_test_context_t *)opaque;
+
+    context->result = pstvnc_transport_runtime_rfb_read_exact(
+        context->runtime,
+        context->buffer,
+        context->count);
     return NULL;
 }
 
@@ -1401,6 +1496,91 @@ static void push_rfb_credit(uint32_t amount)
         0u,
         payload,
         sizeof(payload));
+}
+
+static void test_hw1_consumed_rfb_credit_progress_is_inbound_independent(void)
+{
+    uint8_t payload[328];
+    uint8_t output[328];
+    pstvnc_transport_runtime_t runtime;
+    pstvnc_transport_session_config_t config = make_config();
+    rfb_reader_test_context_t reader;
+    pthread_t reader_thread;
+    size_t index;
+
+    /*
+     * Match the selected A001 channel geometry relevant to HW1 while omitting
+     * startup CREDIT solely so the concurrency witness can place the owner on a
+     * known empty outbound semaphore before parser consumption publishes the
+     * exact 328-byte return CREDIT.
+     */
+    config.rfb_queue_capacity = 32768u;
+    config.rfb_initial_credit_bytes = 0u;
+    config.rfb_credit_batch_bytes = 8192u;
+    config.rfb_credit_flush_on_empty = 1;
+    config.rfb_credit_return_enabled = 1;
+    config.max_data_payload = 8192u;
+
+    for (index = 0u; index < sizeof(payload); index++)
+        payload[index] = (uint8_t)(index ^ 0x5au);
+
+    reset_fixture();
+    initialize_runtime(&runtime, &config);
+    start_runtime(&runtime);
+    clear_send_records();
+
+    push_rx_frame(
+        PSTVNC_TRANSPORT_FRAME_DATA,
+        PSTVNC_TRANSPORT_CHANNEL_RFB,
+        0u,
+        payload,
+        sizeof(payload));
+    wait_for_receive_calls(1);
+    CHECK(pstvnc_transport_rfb_channel_available(&runtime.rfb_channel) ==
+        sizeof(payload));
+
+    /*
+     * Model the real EE race exactly. PollSema has observed no outbound token
+     * but has not yet returned to the owner. While held at that point, parser
+     * consumption empties the logical queue, earns an exact 328-byte CREDIT,
+     * publishes outbound-ready and blocks on outbound-done. No second inbound
+     * Wire frame is ever queued.
+     */
+    set_outbound_ready_poll_blocked(1);
+    wait_for_outbound_ready_poll_barrier();
+    require_nonblocking_readiness_probe();
+
+    memset(&reader, 0, sizeof(reader));
+    reader.runtime = &runtime;
+    reader.buffer = output;
+    reader.count = sizeof(output);
+    reader.result = -1;
+    CHECK(pthread_create(
+        &reader_thread, NULL, rfb_reader_test_thread, &reader) == 0);
+    wait_for_semaphore_waiters(outbound_done_semaphore_id, 1);
+
+    CHECK(runtime.outbound_pending == 1);
+    CHECK(send_record_count == 0u);
+    CHECK(rx_frame_count == 1u);
+    CHECK(rx_frame_index == 1u);
+
+    set_outbound_ready_poll_blocked(0);
+    CHECK(pthread_join(reader_thread, NULL) == 0);
+
+    CHECK(reader.result == 1);
+    CHECK(memcmp(output, payload, sizeof(payload)) == 0);
+    CHECK(runtime.rfb_credit_pending == 0u);
+    CHECK(send_record_count == 1u);
+    CHECK(send_records[0].kind == PSTVNC_TRANSPORT_FRAME_CREDIT);
+    CHECK(send_records[0].channel == PSTVNC_TRANSPORT_CHANNEL_RFB);
+    CHECK(credit_record_amount(0u) == sizeof(payload));
+    CHECK(last_readiness_timeout_us == 0u);
+    CHECK(outbound_ready_poll_calls >= 2);
+    CHECK(receive_calls == 1);
+    CHECK(max_receive_active == 1);
+    CHECK(receive_thread_mismatch == 0);
+
+    stop_and_release_runtime(&runtime);
 }
 
 static void test_outbound_fragmentation_and_failure_propagation(void)
@@ -2201,6 +2381,7 @@ int main(void)
     test_sole_receiver_dispatch_and_activity();
     test_invalid_frame_converges_fail_closed();
     test_parser_credit_batch_flush_and_residual_distinction();
+    test_hw1_consumed_rfb_credit_progress_is_inbound_independent();
     test_outbound_fragmentation_and_failure_propagation();
     test_outbound_rfb_waits_for_partial_pi_credit();
     test_finite_quiesce_order_is_distinct_from_fatal_abort();
