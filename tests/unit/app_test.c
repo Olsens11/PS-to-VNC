@@ -1666,6 +1666,8 @@ static void test_r42_audio_start_failure_is_session_critical_and_not_retried(voi
 {
     reset_script();
     reset_selected_projection();
+    script_fresh_connections(2u);
+    connect_results[1] = -1;
 
     input_events[0].type = PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
     input_event_count = 1u;
@@ -1685,7 +1687,7 @@ static void test_r42_audio_start_failure_is_session_critical_and_not_retried(voi
     CHECK(r34_abort_service_calls == 1u);
     CHECK(r42_audio_abort_calls == 1u);
     CHECK(r34_transport_close_calls == 1u);
-    CHECK(connect_calls == 1u);
+    CHECK(connect_calls == 2u);
     CHECK(event_occurrences(EV_TRANSPORT_ABORT) == 0u);
 }
 
@@ -1750,6 +1752,8 @@ static void test_r42_finite_audio_retains_session_abort_debt_without_restart(voi
 {
     reset_script();
     reset_selected_projection();
+    script_fresh_connections(2u);
+    connect_results[1] = -1;
 
     input_events[0].type = PSTVNC_INPUT_EVENT_CONTROLLER_STATE;
     input_event_count = 1u;
