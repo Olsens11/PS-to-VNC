@@ -237,9 +237,7 @@ class ScopeTests(unittest.TestCase):
         for forbidden in (
             "sendall(",
             "recv(",
-            "subprocess.Popen",
-            "pw-record",
-            "wpctl",
+            "subprocess.",
             "terminate(",
             "kill(",
         ):
