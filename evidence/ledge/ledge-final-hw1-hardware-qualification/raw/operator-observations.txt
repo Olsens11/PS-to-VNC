@@ -1,0 +1,4 @@
+OBSERVATION_INITIAL_DESKTOP=PASS
+DUT=LEDGE-FINAL-HW1
+OPERATOR_REPORT=PS2 booted directly to the desktop and the desktop looked the same as through the separate Windows VNC client on 5903.
+MACHINE_BINDING=UDP identity matched LEDGE-FINAL-HW1; NET_READY, GS_READY, DESKTOP_READY, INPUT_READY observed in order; Wire 192.168.50.1:5902 established; internal X0tigervnc socket-activated on 127.0.0.1:5900.

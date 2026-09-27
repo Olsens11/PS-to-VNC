@@ -1,0 +1,15 @@
+Sep 27 16:19:48 ps-to-vnc-dev systemd[1]: Started ps-to-vnc-rfb-internal-x0tigervnc.service - PS-to-VNC Pi-local X0tigervnc RFB provider.
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]: Sun Sep 27 16:19:48 2026
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  Geometry:    Desktop geometry is set to 704x462+0+0
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  XDesktop:    Using evdev codemap
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  XDesktop:
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  XDesktop:    XTest extension present - version 2.2
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  Main:        Listening on systemd sockets
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  Connections: Accepted: 127.0.0.1::47236
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  SConnection: Client needs protocol version 3.8
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  SConnection: Client requests security type None(1)
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  XDesktop:    Enabling 9 buttons of X pointer device
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  XDesktop:    Allocated shared memory image
+Sep 27 16:19:48 ps-to-vnc-dev X0tigervnc[217418]:  VNCSConnST:  Server default pixel format depth 16 (16bpp) little-endian rgb565
+Sep 27 16:19:49 ps-to-vnc-dev X0tigervnc[217418]: Sun Sep 27 16:19:49 2026
+Sep 27 16:19:49 ps-to-vnc-dev X0tigervnc[217418]:  VNCSConnST:  Client pixel format depth 15 (16bpp) little-endian bgr555

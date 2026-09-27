@@ -1,0 +1,56 @@
+LEDGE_FINAL_HW1_FRAME_BOUNDARY_VERSION=1
+TEST_ID=LEDGE-FINAL-HW1
+CLASSIFICATION=PRODUCT_DEFECT
+
+The failed run established the exact final product path successfully and then
+ceased PS2 application-level progress after an ordinary valid incremental Raw
+RFB update.
+
+Exact terminal application-layer sequence:
+
+1. 2026-09-27T16:20:01.848-04:00
+   PS2 -> Pi PSTV frame:
+   kind=DATA
+   channel=RFB
+   wire_sequence=132
+   payload_bytes=10
+
+   RFB payload decodes as:
+   message=FramebufferUpdateRequest
+   incremental=1
+   x=0
+   y=0
+   width=704
+   height=462
+
+2. 2026-09-27T16:21:00.861-04:00
+   Pi -> PS2 PSTV frame:
+   kind=DATA
+   channel=RFB
+   wire_sequence=130
+   payload_bytes=328
+
+   RFB payload decodes exactly as:
+   message=FramebufferUpdate
+   rectangles=1
+   rectangle_0_x=681
+   rectangle_0_y=11
+   rectangle_0_width=12
+   rectangle_0_height=13
+   rectangle_0_encoding=Raw
+   rectangle_0_raw_bytes=312
+   rectangle_0_in_bounds=YES
+   payload_consumed_bytes=328
+   payload_exact=YES
+
+The PS2 TCP stack acknowledged the Pi's final data, but no later PS2 PSTV CREDIT
+or framebuffer request followed. At the forensic snapshot the TCP connection
+remained ESTABLISHED; ps-to-vnc-wire.service and the socket-activated internal
+X0tigervnc provider were both active with zero restarts; the separate 5903
+operator VNC path continued showing current desktop changes.
+
+The operator reported that a newly opened "PS2VNC INPUT TEST" terminal was
+visible through the independent Windows 5903 VNC client but never appeared on
+the PS2, and controller input did not move the cursor or produce desktop input.
+
+No product-source mutation or recovery was attempted after classification.

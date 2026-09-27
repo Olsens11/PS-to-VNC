@@ -1,0 +1,5 @@
+{"payload":"PS2VNC_ID version=1 test=LEDGE-FINAL-HW1 digest=7341c1d7a6643f040f96c60880f765ce06cc7b95bdaf1a2e8f0a85aafe2de00f","sender_ip":"192.168.50.2","sender_port":62511,"sequence":1,"timestamp":"2026-09-27T16:19:48.041592-04:00"}
+{"payload":"PSTVNC_STAGE NET_READY","sender_ip":"192.168.50.2","sender_port":62511,"sequence":2,"timestamp":"2026-09-27T16:19:48.041919-04:00"}
+{"payload":"PSTVNC_STAGE GS_READY","sender_ip":"192.168.50.2","sender_port":62511,"sequence":3,"timestamp":"2026-09-27T16:19:48.042007-04:00"}
+{"payload":"PSTVNC_STAGE DESKTOP_READY","sender_ip":"192.168.50.2","sender_port":62511,"sequence":4,"timestamp":"2026-09-27T16:19:49.776587-04:00"}
+{"payload":"PSTVNC_STAGE INPUT_READY","sender_ip":"192.168.50.2","sender_port":62511,"sequence":5,"timestamp":"2026-09-27T16:19:49.794363-04:00"}
