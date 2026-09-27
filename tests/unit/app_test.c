@@ -77,6 +77,8 @@ static size_t r34_abort_service_legacy_event_count;
 static size_t r34_close_legacy_event_count;
 static size_t r35_record_restored_legacy_event_count;
 
+#include "app_audio_composition_stubs.inc"
+
 int pstvnc_config_rfb_runtime_profile_selected(
     pstvnc_transport_session_config_t *transport_config)
 {
