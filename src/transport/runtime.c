@@ -36,7 +36,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef PSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US
 #define PSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US 1000u
+#endif
 
 #if defined(_EE)
 #define PSTVNC_TRANSPORT_IO_IDLE_YIELD_US 1000u
