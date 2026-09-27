@@ -87,15 +87,19 @@ For the control, replace `baseline` with `control`.
 A recorder idle timeout may classify a hardware run as STALL, but never as PASS.
 PASS requires all 4096 exact owner-serialized completion records.
 
-Host-only recorder regression:
+Host-only apparatus regressions:
 
 ```sh
 python3 tests/hardware/r45-wake-discriminator/r45_wake_recorder_test.py
+python3 tests/hardware/r45-wake-discriminator/r45_wake_discriminator_source_test.py
 ```
 
-The regression covers baseline/control record validation, monotonic sequence,
-STALL classification, malformed-order rejection and the no-application-send
-source invariant.
+The recorder regression covers baseline/control record validation, monotonic
+sequence, STALL classification, malformed-order rejection and the
+no-application-send source invariant. The harness source regression proves the
+single socket-send site, single select site, no receive path, no socket access
+from the submitter, exact variant constants and the intentional publication
+priority relationship.
 
 ## Deterministic build
 
