@@ -17,12 +17,15 @@
  */
 
 #include "app.h"
+#include "app_audio_product.h"
 #include "app_product_bindings.h"
 #include "app_mpeg_product.h"
 
 #include <stdint.h>
 #include <string.h>
 
+#include "audio/ps2_runtime.h"
+#include "config/audio_runtime_profile.h"
 #include "config/media_clock_profile.h"
 #include "config/mpeg_runtime_profile.h"
 #include "config/rfb_runtime_profile.h"
@@ -771,18 +774,58 @@ static int sync_product_action_desktop_eligibility(
             local_ui)) == 0;
 }
 
+static int app_audio_abort_owner(
+    const pstvnc_app_audio_product_t *audio_product,
+    int audio_product_ready,
+    int *has_audio_abort_owner)
+{
+    pstvnc_app_audio_product_status_t status;
+
+    if (has_audio_abort_owner == NULL)
+        return 0;
+
+    *has_audio_abort_owner = 0;
+
+    if (!audio_product_ready)
+        return 1;
+
+    if (audio_product == NULL)
+        return 0;
+
+    memset(&status, 0, sizeof(status));
+    if (pstvnc_app_audio_product_status(
+            audio_product,
+            &status) != PSTVNC_APP_AUDIO_PRODUCT_OK)
+        return 0;
+
+    /*
+     * Transport activation history is itself enclosing-session teardown debt,
+     * including FINITE_COMPLETE. Pre-activation partial local ownership is
+     * also real debt and must be retired before its clock/storage can vanish.
+     */
+    *has_audio_abort_owner =
+        status.transport_activation_attempted ||
+        status.runtime_owned ||
+        status.session_owned;
+    return 1;
+}
+
 static int retire_attempt_owners(
     pstvnc_input_runtime_t *input_runtime,
     int *input_runtime_ready,
     pstvnc_app_mpeg_product_t *mpeg_product,
     int mpeg_product_ready,
+    pstvnc_app_audio_product_t *audio_product,
+    int audio_product_ready,
     pstvnc_ps2_media_clock_binding_t *media_clock_binding,
     int *media_clock_binding_active,
     int *media_clock_binding_release_failed,
     int *transport_session_active)
 {
-    int abort_ready = 0;
+    int mpeg_abort_ready = 0;
+    int audio_abort_ready = 0;
     int has_mpeg_abort_owner = 0;
+    int has_audio_abort_owner = 0;
     int input_shutdown_failed = 0;
 
     if (input_runtime == NULL ||
@@ -798,6 +841,12 @@ static int retire_attempt_owners(
         mpeg_product != NULL &&
         pstvnc_app_mpeg_product_requires_session_abort(mpeg_product);
 
+    if (!app_audio_abort_owner(
+            audio_product,
+            audio_product_ready,
+            &has_audio_abort_owner))
+        return 0;
+
     if (*input_runtime_ready) {
         if (pstvnc_input_runtime_shutdown(input_runtime) != 0) {
             input_shutdown_failed = 1;
@@ -807,28 +856,40 @@ static int retire_attempt_owners(
     }
 
     /*
-     * Any abnormal MPEG owner may still depend on retained Transport
-     * wait/storage state. That includes accepted post-START R33 owners and
-     * accepted pre-START R34P teardown-required generations. Input dormancy is
-     * therefore required before beginning two-phase Transport abort for either
-     * case. A true no-MPEG attempt retains R16B's accepted one-shot retirement
-     * behavior even when Input shutdown itself was unproven.
+     * Any abnormal media owner may still depend on retained Transport
+     * wait/storage state. Input dormancy therefore fences the one shared
+     * begin-abort edge. A true no-media attempt retains R16B's accepted
+     * one-shot retirement behavior.
      */
-    if (has_mpeg_abort_owner && input_shutdown_failed)
+    if ((has_mpeg_abort_owner || has_audio_abort_owner) &&
+        input_shutdown_failed)
         return 0;
 
-    if (has_mpeg_abort_owner && *transport_session_active) {
+    if ((has_mpeg_abort_owner || has_audio_abort_owner) &&
+        *transport_session_active) {
         if (pstvnc_transport_session_begin_abort() !=
                 PSTVNC_TRANSPORT_OK)
             return 0;
 
-        while (!abort_ready) {
-            if (pstvnc_app_mpeg_product_service_session_abort(
-                    mpeg_product,
-                    &abort_ready) != PSTVNC_APP_MPEG_PRODUCT_OK)
-                return 0;
+        mpeg_abort_ready = !has_mpeg_abort_owner;
+        audio_abort_ready = !has_audio_abort_owner;
 
-            if (!abort_ready &&
+        while (!mpeg_abort_ready || !audio_abort_ready) {
+            if (!mpeg_abort_ready) {
+                if (pstvnc_app_mpeg_product_service_session_abort(
+                        mpeg_product,
+                        &mpeg_abort_ready) != PSTVNC_APP_MPEG_PRODUCT_OK)
+                    return 0;
+            }
+
+            if (!audio_abort_ready) {
+                if (pstvnc_app_audio_product_service_session_abort(
+                        audio_product,
+                        &audio_abort_ready) != PSTVNC_APP_AUDIO_PRODUCT_OK)
+                    return 0;
+            }
+
+            if ((!mpeg_abort_ready || !audio_abort_ready) &&
                 pstvnc_ps2_system_delay_us(
                     PSTVNC_APP_IDLE_POLL_DELAY_US) < 0)
                 return 0;
@@ -845,7 +906,7 @@ static int retire_attempt_owners(
 
     if (*transport_session_active) {
         pstvnc_transport_result_t close_result =
-            has_mpeg_abort_owner
+            (has_mpeg_abort_owner || has_audio_abort_owner)
                 ? pstvnc_transport_session_close()
                 : pstvnc_transport_session_abort();
 
@@ -861,6 +922,7 @@ static int retire_attempt_owners(
 
 int pstvnc_app_run_with_session_profiles(
     const pstvnc_transport_session_config_t *transport_config,
+    const pstvnc_config_audio_runtime_profile_t *audio_profile,
     const pstvnc_transport_mpeg_channel_config_t *mpeg_transport_config,
     const pstvnc_config_media_clock_profile_t *media_clock_profile)
 {
@@ -872,15 +934,28 @@ int pstvnc_app_run_with_session_profiles(
     static pstvnc_input_runtime_t input_runtime;
 
     pstvnc_app_product_bindings_snapshot_t desired_product_bindings;
+    pstvnc_audio_ps2_resident_t audio_resident;
     int graphics_ready = 0;
     int diagnostics_ready = 0;
 
     if (transport_config == NULL ||
+        audio_profile == NULL ||
         mpeg_transport_config == NULL ||
-        media_clock_profile == NULL)
+        media_clock_profile == NULL ||
+        !pstvnc_config_audio_runtime_profile_valid(audio_profile))
         return -1;
 
+    memset(&audio_resident, 0, sizeof(audio_resident));
+
     if (pstvnc_ps2_system_prepare_iop() < 0)
+        goto fail_resident;
+
+    /*
+     * LIBSD/AUDSRV are resident process prerequisites, not Wire-attempt
+     * ownership. Prepare once after IOP readiness and reuse the proven resident
+     * state across every replacement session.
+     */
+    if (pstvnc_audio_ps2_resident_prepare(&audio_resident) != 0)
         goto fail_resident;
 
     if (pstvnc_ps2_network_init() < 0)
@@ -920,10 +995,12 @@ int pstvnc_app_run_with_session_profiles(
         pstvnc_rfb_flow_policy_t rfb_flow_policy;
         pstvnc_transport_access_t transport_access;
         pstvnc_app_mpeg_product_t mpeg_product;
+        pstvnc_app_audio_product_t audio_product;
         app_published_pointer_state_t published_pointer;
         pstvnc_ps2_media_clock_binding_t media_clock_binding =
             PSTVNC_PS2_MEDIA_CLOCK_BINDING_INITIALIZER;
         pstvnc_media_clock_sync_t media_clock_sync;
+        pstvnc_media_clock_time_ops_t media_clock_time_ops;
         pstvnc_media_clock_t media_clock;
         uint32_t media_clock_ticks_per_second = 0u;
         int media_clock_armed = 1;
@@ -933,8 +1010,12 @@ int pstvnc_app_run_with_session_profiles(
         int media_clock_binding_release_failed = 0;
         int input_runtime_ready = 0;
         int mpeg_product_ready = 0;
+        int audio_product_ready = 0;
+        int audio_start_attempted = 0;
+        int audio_start_succeeded = 0;
         int mouse_interpretation_suspended = 0;
         int mpeg_session_failure = 0;
+        int audio_session_failure = 0;
 
         /*
          * Application owns the freshly connected descriptor only until
@@ -947,9 +1028,10 @@ int pstvnc_app_run_with_session_profiles(
         if (socket_fd < 0)
             goto attempt_fatal;
 
-        if (pstvnc_transport_session_open_with_mpeg(
+        if (pstvnc_transport_session_open_with_audio_mpeg(
                 &socket_fd,
                 transport_config,
+                &audio_profile->transport,
                 mpeg_transport_config) != PSTVNC_TRANSPORT_OK)
             goto attempt_fatal;
 
@@ -982,6 +1064,11 @@ int pstvnc_app_run_with_session_profiles(
                 &media_clock_ticks_per_second) < 0)
             goto attempt_fatal;
 
+        if (pstvnc_ps2_media_clock_binding_time_ops(
+                &media_clock_binding,
+                &media_clock_time_ops) < 0)
+            goto attempt_fatal;
+
         if (pstvnc_media_clock_init(
                 &media_clock,
                 media_clock_profile,
@@ -994,6 +1081,15 @@ int pstvnc_app_run_with_session_profiles(
                 &media_clock_armed) != PSTVNC_MEDIA_CLOCK_OK ||
             media_clock_armed)
             goto attempt_fatal;
+
+        if (!pstvnc_app_audio_product_init(
+                &audio_product,
+                &transport_access,
+                &media_clock,
+                &media_clock_time_ops))
+            goto attempt_fatal;
+
+        audio_product_ready = 1;
 
         send_diagnostic_literal(
             diagnostics_ready,
@@ -1161,6 +1257,36 @@ int pstvnc_app_run_with_session_profiles(
                     &local_ui))
                 goto attempt_fatal;
 
+            /*
+             * AUDIO activation is one Wire-session policy edge. The public MPEG
+             * predicate is true only after a genuinely successful protected
+             * start, so calibration cancellation/rollback cannot trigger AUDIO.
+             */
+            if (!audio_start_attempted &&
+                pstvnc_app_mpeg_product_has_started_run(&mpeg_product)) {
+                audio_start_attempted = 1;
+
+                if (pstvnc_app_audio_product_start(&audio_product) !=
+                        PSTVNC_APP_AUDIO_PRODUCT_OK) {
+                    audio_session_failure = 1;
+                    goto attempt_failed;
+                }
+
+                audio_start_succeeded = 1;
+            }
+
+            /*
+             * R41 service is explicit and nonblocking. FINITE_COMPLETE remains
+             * a successful terminal local state, so continuing to service it
+             * cannot restart AUDIO in this Wire Session.
+             */
+            if (audio_start_succeeded &&
+                pstvnc_app_audio_product_service(&audio_product) !=
+                    PSTVNC_APP_AUDIO_PRODUCT_OK) {
+                audio_session_failure = 1;
+                goto attempt_failed;
+            }
+
             if (pstvnc_local_ui_needs_present(&local_ui)) {
                 if (!present_current_application_frame(
                         &framebuffer,
@@ -1179,11 +1305,36 @@ int pstvnc_app_run_with_session_profiles(
             if (pstvnc_app_mpeg_product_has_started_run(&mpeg_product)) {
                 int was_retiring =
                     pstvnc_app_mpeg_product_is_retiring(&mpeg_product);
+                int admit_live_service = 1;
 
                 if (pstvnc_ps2_media_clock_binding_current_tick(
                         &media_clock_binding,
                         &current_tick) < 0)
                     goto attempt_fatal;
+
+                if (!was_retiring) {
+                    int first_presentation_ready = 0;
+
+                    if (pstvnc_media_clock_is_armed(
+                            &media_clock,
+                            &media_clock_armed) != PSTVNC_MEDIA_CLOCK_OK) {
+                        mpeg_session_failure = 1;
+                        goto attempt_failed;
+                    }
+
+                    if (!media_clock_armed) {
+                        if (!audio_start_succeeded ||
+                            pstvnc_app_audio_product_first_presentation_ready(
+                                &audio_product,
+                                &first_presentation_ready) !=
+                                PSTVNC_APP_AUDIO_PRODUCT_OK) {
+                            audio_session_failure = 1;
+                            goto attempt_failed;
+                        }
+
+                        admit_live_service = first_presentation_ready;
+                    }
+                }
 
                 if (was_retiring) {
                     if (pstvnc_app_mpeg_product_service_retirement(
@@ -1202,7 +1353,8 @@ int pstvnc_app_run_with_session_profiles(
                             &session,
                             &rfb_flow_policy))
                         goto attempt_failed;
-                } else if (pstvnc_app_mpeg_product_service_live(
+                } else if (admit_live_service &&
+                    pstvnc_app_mpeg_product_service_live(
                         &mpeg_product,
                         current_tick) != PSTVNC_APP_MPEG_PRODUCT_OK) {
                     mpeg_session_failure = 1;
@@ -1299,7 +1451,7 @@ attempt_failed:
          * The three R16A provider-local causes remain typed facts even though
          * the initial product policy deliberately treats them alike.
          */
-        if (!mpeg_session_failure) {
+        if (!mpeg_session_failure && !audio_session_failure) {
             switch (session.error) {
                 case PSTVNC_RFB_SESSION_ERROR_PROVIDER_CONNECT:
                 case PSTVNC_RFB_SESSION_ERROR_PROVIDER_READ:
@@ -1322,6 +1474,8 @@ attempt_failed:
                 &input_runtime_ready,
                 &mpeg_product,
                 mpeg_product_ready,
+                &audio_product,
+                audio_product_ready,
                 &media_clock_binding,
                 &media_clock_binding_active,
                 &media_clock_binding_release_failed,
@@ -1346,6 +1500,8 @@ attempt_fatal:
                 &input_runtime_ready,
                 &mpeg_product,
                 mpeg_product_ready,
+                &audio_product,
+                audio_product_ready,
                 &media_clock_binding,
                 &media_clock_binding_active,
                 &media_clock_binding_release_failed,
@@ -1385,15 +1541,20 @@ fail_resident:
 int pstvnc_app_run(void)
 {
     pstvnc_transport_session_config_t transport_config;
+    pstvnc_config_audio_runtime_profile_t audio_profile;
     const pstvnc_config_mpeg_runtime_profile_t *mpeg_profile;
     pstvnc_config_media_clock_profile_t media_clock_profile;
 
     /*
      * Required selected authority is resolved before any IOP/network/platform
-     * startup. A missing RFB projection or MPEG profile therefore owns nothing.
-     * The selected R26 media-clock profile is an immutable by-value authority.
+     * startup. Missing RFB/AUDIO/MPEG authority therefore owns nothing. The
+     * selected R26 media-clock profile is immutable by-value authority.
      */
     if (!pstvnc_config_rfb_runtime_profile_selected(&transport_config))
+        return -1;
+
+    if (!pstvnc_config_audio_runtime_profile_selected(&audio_profile) ||
+        !pstvnc_config_audio_runtime_profile_valid(&audio_profile))
         return -1;
 
     mpeg_profile = pstvnc_config_mpeg_runtime_profile_selected();
@@ -1404,6 +1565,7 @@ int pstvnc_app_run(void)
 
     return pstvnc_app_run_with_session_profiles(
         &transport_config,
+        &audio_profile,
         &mpeg_profile->transport,
         &media_clock_profile);
 }
