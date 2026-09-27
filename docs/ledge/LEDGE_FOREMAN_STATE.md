@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0088
-RECORDED_AT=2026-09-27T17:14:44-04:00
+STATE_REVISION=0089
+RECORDED_AT=2026-09-27T17:52:41-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0087
-SUPERSEDES_FOREMAN_STATE_REVISION=0087
+BASED_ON_FOREMAN_STATE_REVISION=0088
+SUPERSEDES_FOREMAN_STATE_REVISION=0088
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -15,107 +15,95 @@ BASED_ON_VALIDATION_STATE_REVISION=0007
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0088 independently reviews
-`A001-HW1-RFB-INCREMENTAL-LIVE-PROGRESS-R44` at final pre-log
-source/test authority `e005bf001a72302ba81e688e8616910077160764`
+Revision 0089 independently accepts
+`A001-HW1-SOLE-OWNER-WAKE-DISCRIMINATOR-R45` as a completed
+**diagnostic-apparatus / causal-discriminator packet** at final pre-log
+source/apparatus authority `6c27ce55123476bc139be7bf2d9bbe6f5202f2c3`
 and consumes immutable Reconstruction closeout
-`3b15c3f6023ce2a06d466192d893d8c580135a14`.
+`c5d75441af7fb0695f76f1fd1d6462b6a9ee6300`.
 
-The returned R44 range is exactly eight commits ahead of assigning Foreman log
-`deeec5a24e09f73eda19bb7703d5a8c280781f44`, zero behind. Product behavior
-changed only in `src/transport/runtime.c`; the remaining changes are focused
-Transport/RFB test fixtures. Pi product source, selected RFB profile values,
-Wire protocol/version, media owners, Input/UI and Configuration remain
-unchanged.
+The returned R45 range is exactly nineteen commits ahead of assigning Foreman
+log `fa546c6d955c9e2503c857c8306b22e144e52625`, zero behind.
 
-R44 adds valuable deterministic evidence:
+R45 correctly removes the unaccepted R44 product conclusion. Ordinary product
+Transport behavior again uses the pre-R44 / independently validated 1000-us
+physical-readiness semantics. The retained host-only PollSema fidelity change
+does not alter EE loadable behavior. Canonical product PT_LOAD identity is
+therefore restored exactly to the independently validated identity that failed
+LEDGE-FINAL-HW1:
 
-- the exact sealed HW1 328-byte RFB message with one in-bounds 12x13 Raw
-  rectangle parses completely at 704x462 with no later RFB byte;
-- repeated isolated parser intervals return to a true complete-message boundary
-  and can serialize successor incremental requests;
-- Transport's consumption path returns an exact 328-byte CREDIT when the logical
-  queue becomes empty under the selected flush-on-empty policy;
-- host Transport fixtures now use an EE-like `PollSema` implementation rather
-  than the old host-only `outbound_pending + WaitSema` shortcut;
-- the corrected candidate keeps one physical I/O owner and changes the physical
-  readability probe from 1000 us to 0 us, with a second outbound poll before
-  the existing local 1000-us cooperative yield.
-
-Exact source-head GitHub Actions run `36350306508`, attempt 1, is SUCCESS for
-host-unit, project-check, strict dictionary-long, pinned PS2 compile, linked
-build and current-source reproducibility. Exact immutable-log-head run
-`36350490291`, attempt 1, is also SUCCESS across the complete canonical gate
-set.
-
-The R44 candidate linked identity is:
-
-`ELF_PRISTINE_SHA256=d025df4cbe8c92e15931ab1ee30fe2f869fb2d61862441e5ad93cf4e0f20feb0`
-
-`PT_LOAD_SEGMENTS=1`
-
-`PT_LOAD_SHA256=9c4a8d25ca9ec1798e84f716f16b711bcc86328449082e054ce1027a69016966`
+`PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
 
 `PT_LOAD_BYTES=556180`.
 
-That identity is machine-green but **not Foreman-accepted** as the HW1 product
-correction.
+The whole-ELF hash differs because source/preprocessor/debug-line layout changes
+non-loadable DWARF metadata; current-source reproducibility proves that new
+whole-ELF identity consistently while the loadable program bytes remain exact.
 
-The reason is causal, not stylistic. R44 says the pre-correction owner could
-publish outbound work after its first `PollSema` miss, enter the physical
-readability wait and then wait indefinitely for unrelated future inbound Wire
-traffic. But the exact pre-R44 product source passed
-`PSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US=1000` to that readiness call. If the
-selected PS2 select path honors the supplied timeout, the described race adds at
-most one bounded polling interval before the owner returns to outbound work; it
-does not explain the sustained HW1 freeze.
+R45 also fixes the R44 host-test causal mistake. The same EE-like PollSema race
+fixture now executes both:
 
-The new critical host test does not prove otherwise. Its fake
-`pstvnc_transport_physical_stream_wait_readable()` returns according to host
-fixture state; it does not model an IOP select call that fails to return after
-1000 us. The test makes pre-R44 fail by explicitly asserting
-`timeout_us == 0`. Removing that assertion leaves the modeled race with a
-bounded return path. Therefore the fixture proves the new zero-timeout design
-shape, but it does not prove that the old 1000-us path can produce the sealed
-HW1 no-progress boundary.
+- baseline/default 1000-us readiness; and
+- zero-timeout control readiness.
 
-Current upstream PS2SDK documentation also shows `select()` forwarding the
-caller's `struct timeval *timeout` to the socket backend. The same source
-contains the newer iop-fd-range correction that prevents a distinct historical
-"block forever" defect when the EE fd differs from the underlying IOP fd. R44's
-own log records that the pinned build postdates that correction. This does not
-prove the exact DUT never violates a timeout, but it means such a violation must
-be established rather than assumed.
+Both make forward progress without any second inbound frame in the host model.
+Therefore host evidence does **not** reproduce an indefinite baseline stall and
+does not promote the R44 zero-timeout candidate.
 
-Accordingly R44 did not satisfy its own central requirement to prove or falsify
-the first missing PS2 progress fact before changing behavior. The zero-timeout
-candidate may still turn out to be the correct hardware fix, but current
-evidence cannot promote it as the cause-resolving source authority.
+The dedicated hardware discriminator is independently acceptable as apparatus.
+It uses the selected product receiver priority 63, one sole socket owner, one
+higher-priority rendezvous submitter with no socket API, real EE PollSema, real
+PS2 select(), the same pinned PS2SDK/frozen PS2IP network stack, and 4096 exact
+isolated publication cycles. The Pi recorder has no application send/sendall/
+sendto path. TCP acknowledgements are transport-layer behavior and are not
+application wake traffic.
 
-Independent Foreman disposition:
+The baseline and control variants are built from the same source. Their
+intentional behavioral difference is limited to the disputed schedule:
 
-- C1 = MET;
-- C2 = NOT_MET_FIRST_MISSING_HW1_PROGRESS_FACT_NOT_ESTABLISHED;
-- C3 = NOT_MET_PRE_R44_1000US_RETURN_PATH_NOT_FALSIFIED;
-- C4-C9 = MET;
-- C10 = MET_AS_COMPOSED_DETERMINISTIC_EVIDENCE;
-- C11 = NOT_MET_CRITICAL_TEST_ENFORCES_ZERO_TIMEOUT_INSTEAD_OF_REPRODUCING_OLD_STALL;
-- C12 = MET.
+- BASELINE_1000US: 1000-us select readiness, no post-probe second PollSema;
+- CONTROL_ZERO_TIMEOUT: zero-timeout select readiness plus the R44 second
+  PollSema.
 
-Therefore:
+Their record identity fields and embedded variant strings differ only so
+evidence cannot be confused between runs.
 
-`R44_SOURCE_COMPLETE=NO`
-`R44_FOREMAN_ACCEPTED=NO`
-`R44_MACHINE_GATES=PASS`
-`R44_HARDWARE_QUALIFICATION=NONE`.
+PASS is never elapsed-time authority. Each cycle completes only after the sole
+owner successfully serializes its fixed completion record and signals the
+submitter. The Pi recorder may use an idle timeout solely to classify missing
+completion as STALL. Any readable peer application data, malformed sequence,
+partial record or unsupported baseline/control result is apparatus-invalid.
 
-The exact HW1 failure remains open. The next packet is an evidence discriminator,
-not another guessed product fix. It must restore the canonical default product
-Transport behavior to the independently validated/HW1-failed 1000-us readiness
-semantics, preserve the useful parser/credit tests, and build a dedicated
-PS2 hardware micro-harness that directly tests the disputed sole-owner
-select/outbound interleaving with no inbound wake traffic. Hardware execution
-of that harness is a later separate role.
+Exact deterministic discriminator identities:
+
+BASELINE_1000US:
+`ELF_SHA256=ce5b2eda81e2c2c65ff0d0c66f152d2fc0c4621956ef3f6c58aa789ab0fe0976`
+`PT_LOAD_SHA256=97a1b02c89c8d72a8c836b5012cbc203a6337914577778245e6f2b547365ef6a`
+`PT_LOAD_BYTES=316040`.
+
+CONTROL_ZERO_TIMEOUT:
+`ELF_SHA256=8bf21f52f87b9c965fe3dc1dbf75ac59051a2e239915cc62b10cac183d91ebe5`
+`PT_LOAD_SHA256=a5fe291785c692c8aabca88e8840e13e7fb343f8210a083d48276ba08f2a315c`
+`PT_LOAD_BYTES=316168`.
+
+Exact R45 source-head GitHub Actions run `36352489627`, attempt 1, is SUCCESS
+for host-unit, project-check, dictionary-long, ps2-compile, ps2-link and the
+dedicated `r45-discriminator-build` job. Exact log-head run `36352699409`,
+attempt 1, is also SUCCESS across the canonical gate set.
+
+R45 does not close the HW1 product defect and does not choose a product fix.
+It makes the next evidence step safe and finite: a focused hardware experiment
+must now run the baseline and control discriminator binaries, not the PS2VNC
+product ELF.
+
+No independent Validation rerun is required before this focused apparatus run
+because R45 restores the product PT_LOAD to the already validated/HW1-failed
+bytes and the new executable variants are diagnostic apparatus, not candidate
+product source.
+
+The hardware role must preserve evidence from both variants and classify the
+result exactly. No classification from this discriminator is itself product
+hardware qualification.
 
 ## Temporal architecture reconciliation
 
@@ -148,28 +136,27 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`HW1_PRODUCT_DEFECT_OPEN__R44_MACHINE_GREEN_NOT_ACCEPTED_CAUSAL_GAP__R45_SOLE_OWNER_WAKE_DISCRIMINATOR_ACTIVE`
+`HW1_PRODUCT_DEFECT_OPEN__R45_DISCRIMINATOR_FOREMAN_ACCEPTED__FOCUSED_HARDWARE_DISCRIMINATION_ACTIVE`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
 COMPLETE_CURRENT_LEDGE_VALIDATION_REVISION_0007=PASS_MACHINE_SOURCE_AT_PRE_HW1_SOURCE
 VALIDATED_PRODUCT_SOURCE=e2727cb31e214d11e094f1f45b0b9d8ab01d84e9
+VALIDATED_PRODUCT_PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b
 LEDGE_FINAL_HW1=FAIL_PRODUCT_DEFECT
 LEDGE_FINAL_HW1_INITIAL_DESKTOP=PASS
 LEDGE_FINAL_HW1_INCREMENTAL_RFB_CONTINUITY=FAIL
-R44_MACHINE_GATES=PASS
 R44_FOREMAN_ACCEPTED=NO
-R44_CANDIDATE_PT_LOAD_SHA256=9c4a8d25ca9ec1798e84f716f16b711bcc86328449082e054ce1027a69016966
-R44_CAUSAL_PROOF=INSUFFICIENT
-A001_HW1_FIRST_MISSING_PROGRESS_FACT=UNRESOLVED
-A001_SOLE_OWNER_WAKE_DISCRIMINATOR=RECONSTRUCTION_ACTIVE_R45
-A002_MACHINE_SOURCE=VALIDATION_PASS
-A003_MACHINE_SOURCE=VALIDATION_PASS
-A004_MACHINE_SOURCE=VALIDATION_PASS
-A005_MACHINE_SOURCE=VALIDATION_PASS
-A006_MACHINE_SOURCE=VALIDATION_PASS
-INDEPENDENT_VALIDATION_AFTER_ACCEPTED_CORRECTION=REQUIRED
-HARDWARE_QUALIFICATION=FAIL_PRODUCT_DEFECT__NO_RETEST_AUTHORIZED_YET
+R45_DISCRIMINATOR_FOREMAN_ACCEPTED=YES
+R45_PRODUCT_FIX_ACCEPTED=NO
+R45_PRODUCT_PT_LOAD_RESTORED=YES
+A001_HW1_FIRST_MISSING_PROGRESS_FACT=UNRESOLVED_PENDING_FOCUSED_HARDWARE
+ACTIVE_RECONSTRUCTION_PACKET=NONE
+ACTIVE_HARDWARE_PACKET=A001_R45_WAKE_DISCRIMINATOR_HW2
+INDEPENDENT_VALIDATION_AFTER_ANY_PRODUCT_CORRECTION=REQUIRED
+PRODUCT_HARDWARE_QUALIFICATION=FAIL_PRODUCT_DEFECT
+PRODUCT_HARDWARE_RETEST_AUTHORIZED=NO
+FOCUSED_DIAGNOSTIC_HARDWARE_EXECUTION=AUTHORIZED
 AUTO_RECOVERY_WATCHDOG=NOT_AUTHORIZED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
@@ -3861,206 +3848,207 @@ A true causal proof requires one of:
    to return in the disputed interleaving; or
 2. evidence locating the HW1 stall at a different owner boundary.
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R45 wake-discriminator apparatus authority
 
 PACKET_ID=A001-HW1-SOLE-OWNER-WAKE-DISCRIMINATOR-R45
+PACKET_STATUS=FOREMAN_ACCEPTED_APPARATUS
+ASSIGNING_FOREMAN_STATE_REVISION=0088
+ASSIGNING_FOREMAN_STATE_COMMIT=efc61abd1638b1e76526a05a6e70746ad306ab9b
+ASSIGNING_FOREMAN_LOG_COMMIT=fa546c6d955c9e2503c857c8306b22e144e52625
+RECONSTRUCTION_STARTING_COMMIT=fa546c6d955c9e2503c857c8306b22e144e52625
+R45_FINAL_PRELOG_COMMIT=6c27ce55123476bc139be7bf2d9bbe6f5202f2c3
+R45_RECONSTRUCTION_LOG_COMMIT=c5d75441af7fb0695f76f1fd1d6462b6a9ee6300
+R45_PRE_LOG_COMMIT_COUNT=19
+
+A001-R45-C1=MET
+A001-R45-C2=MET
+A001-R45-C3=MET
+A001-R45-C4=MET
+A001-R45-C5=MET
+A001-R45-C6=MET
+A001-R45-C7=MET
+A001-R45-C8=MET
+A001-R45-C9=MET
+A001-R45-C10=MET
+A001-R45-C11=MET
+A001-R45-C12=MET
+
+R45_SOURCE_COMPLETE=YES_WITHIN_PACKET
+R45_FOREMAN_ACCEPTED=YES_AS_DIAGNOSTIC_APPARATUS
+R45_PRODUCT_FIX_ACCEPTED=NO
+R45_HOST_BASELINE_PROGRESS=PASS
+R45_HOST_CONTROL_PROGRESS=PASS
+R45_PRODUCT_PT_LOAD_RESTORED=YES
+R45_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36352489627_ATTEMPT_1
+R45_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36352699409_ATTEMPT_1
+R45_HARDWARE_EXECUTED=NO
+
+Canonical product loadable identity remains the validated/HW1-failed identity:
+
+`PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
+`PT_LOAD_BYTES=556180`.
+
+Current reproducible whole-ELF identity at R45 source:
+
+`ELF_PRISTINE_SHA256=15e3c92f433208d914239754709717ab6608f9c4e233039c2f5abf4b7f80864f`.
+
+## ACTIVE HARDWARE QUALIFICATION PACKET
+
+PACKET_ID=A001-R45-FOCUSED-WAKE-DISCRIMINATOR-HW2
 PACKET_STATUS=ACTIVE
-PACKET_OWNER=RECONSTRUCTION
+PACKET_OWNER=HARDWARE_QUALIFICATION
+ROLE_KEY=hardware-qualification
 WORK_ITEM_KEY=a001-sole-receiver
 WORKER_KEY=interactive
-EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
-USER_TERMINAL_POLICY=EXCEPTION_ONLY
-PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0088
-BASED_ON_VALIDATED_HW1_SOURCE=e2727cb31e214d11e094f1f45b0b9d8ab01d84e9
-BASED_ON_HW1_EVIDENCE_COMMIT=bb646ed6c3733488876719cd4a4917831669da8d
-BASED_ON_R44_CANDIDATE=e005bf001a72302ba81e688e8616910077160764
-PRODUCT_FIX_ACCEPTED=NO
-HARDWARE_EXECUTION_IN_RECONSTRUCTION=FORBIDDEN
-WIRE_VERSION=UNCHANGED
-RFB_PROFILE_VALUES=UNCHANGED
+EXECUTION_MODE=OPERATOR_BACKED_HARDWARE
+USER_TERMINAL_POLICY=ALLOWED_WHEN_PHYSICAL_PS2_ACTION_REQUIRED
+BASED_ON_FOREMAN_STATE_REVISION=0089
+BASED_ON_R45_APPARATUS_COMMIT=6c27ce55123476bc139be7bf2d9bbe6f5202f2c3
+BASED_ON_R45_LOG_COMMIT=c5d75441af7fb0695f76f1fd1d6462b6a9ee6300
+PRODUCT_SOURCE_MUTATION=FORBIDDEN
+APPARATUS_SOURCE_MUTATION=FORBIDDEN_DURING_MEASUREMENT
+PRODUCT_ELF_EXECUTION=FORBIDDEN
+PRODUCT_HARDWARE_QUALIFICATION=OUT_OF_SCOPE
+TEST_ID=LEDGE-R45-WAKE-HW2
+CYCLES_PER_VARIANT=4096
+PI_RECORDER_PORT=5961
+PI_RECORDER_APPLICATION_SEND_BYTES=0
+
+### Exact apparatus identities
+
+BASELINE_VARIANT=BASELINE_1000US
+BASELINE_ELF_SHA256=ce5b2eda81e2c2c65ff0d0c66f152d2fc0c4621956ef3f6c58aa789ab0fe0976
+BASELINE_PT_LOAD_SHA256=97a1b02c89c8d72a8c836b5012cbc203a6337914577778245e6f2b547365ef6a
+BASELINE_PT_LOAD_BYTES=316040
+
+CONTROL_VARIANT=CONTROL_ZERO_TIMEOUT
+CONTROL_ELF_SHA256=8bf21f52f87b9c965fe3dc1dbf75ac59051a2e239915cc62b10cac183d91ebe5
+CONTROL_PT_LOAD_SHA256=a5fe291785c692c8aabca88e8840e13e7fb343f8210a083d48276ba08f2a315c
+CONTROL_PT_LOAD_BYTES=316168
 
 ### Objective
 
-Resolve the R44 causal gap without guessing another product behavior change.
+Execute only the focused R45 baseline/control discriminator on the exact PS2/Pi
+hardware environment and establish whether the real 1000-us PS2 select path can
+lose forward progress in the disputed sole-owner interleaving.
 
-Produce an exact PS2 hardware discriminator for the sole-owner outbound/readiness
-interleaving, while returning canonical product behavior to the last
-independently validated/HW1-failed readiness semantics unless exact evidence
-proves that restoring it would itself falsify the experiment.
+This is causal diagnosis, not PS2VNC product qualification.
 
-The discriminator must answer this question on the exact PS2/PS2SDK execution
-environment:
+### Required execution order
 
-> After the sole I/O owner has missed outbound-ready and entered its 1000-us
-> physical readiness call, can a domain submitter publish outbound work and
-> receive completion without any future inbound socket traffic?
+1. Refresh repository authority and independently rebuild both variants from the
+   exact R45 apparatus source. Require the hashes above before any launch.
+2. Prepare a new sealed evidence directory for `LEDGE-R45-WAKE-HW2`.
+3. Ensure no stale recorder is listening on TCP 5961 and no prior discriminator
+   process/session is active.
+4. Start the silent Pi recorder for BASELINE_1000US with 4096 expected cycles
+   and preserve its records/summary/stdout/stderr.
+5. Launch only the exact baseline ELF on PS2.
+6. Preserve the baseline result before changing any apparatus or launching the
+   control. PASS requires all 4096 exact completion records. STALL requires a
+   recorder idle-timeout classification with the last completed cycle preserved.
+   Any malformed record, unexpected peer application readability, early EOF,
+   identity mismatch or setup contradiction is APPARATUS_INVALID.
+7. Reset/re-establish the PS2 harness environment before the control run. Do not
+   let the baseline TCP/session/thread state carry into control.
+8. Start a fresh silent Pi recorder for CONTROL_ZERO_TIMEOUT with 4096 expected
+   cycles.
+9. Launch only the exact control ELF and preserve its independent result.
+10. Do not launch the PS2VNC product ELF during this packet.
+11. Seal exact ELF/PT_LOAD hashes, recorder records, summaries, operator launch
+    observations, relevant network/process state, and any capture used to prove
+    peer silence/connection identity.
+12. Emit exactly one immutable hardware-qualification work log and return the
+    baton. Do not edit product or apparatus source to rescue an outcome.
 
-R45 builds and machine-validates the apparatus only. It does not execute the PS2
-hardware experiment and does not claim product correction.
+### Classification
 
-### Required behavior
+Classify exactly one:
 
-1. **Remove the unaccepted product conclusion.** Restore ordinary product
-   Transport readiness behavior to the pre-R44 1000-us semantics and remove the
-   R44 second-poll/zero-timeout product behavior, unless an exact repository
-   authority independently proves those bytes were already required. Preserve
-   the useful EE-like host `PollSema` fixture support where it changes tests
-   only.
-2. **Prove the deterministic baseline honestly.** Add/adjust a host concurrency
-   test using real fake-`PollSema` ordering where the physical readiness stub
-   honors a bounded nonzero timeout and returns idle with no inbound frame.
-   Publish outbound work after the first PollSema miss and prove the old
-   1000-us design then services it on the next owner pass. This test must not
-   reject the old path merely because its timeout is nonzero.
-3. **Build a standalone PS2 discriminator, not a product workaround.** Add a
-   bounded hardware/TestKit harness that uses the exact pinned PS2SDK networking
-   stack and the same sole-owner primitives as product Transport:
-   `PollSema`, socket `select()`, one physical send/receive owner and one
-   domain submitter.
-4. **Exact disputed interleaving.** The harness must repeatedly place the owner
-   after an outbound-ready miss and inside/around a 1000-us idle readiness call,
-   then publish one outbound item from another EE thread while the peer sends no
-   inbound application data. The sole owner must either complete the outbound
-   item or expose a precise noncompletion witness.
-5. **Peer-independent measurement.** The Pi side may accept/record the harness's
-   outbound frames but must not send data merely to wake the PS2. No heartbeat,
-   echo, request/response traffic or periodic inbound packet may accidentally
-   satisfy the disputed wake.
-6. **Control variant.** Provide a second otherwise-identical discriminator
-   variant using the R44 zero-timeout/nonblocking readiness strategy. The two
-   variants must differ only in the disputed readiness scheduling mechanism and
-   identity stamp.
-7. **Observable result without timeout-success.** Host/Pi apparatus may measure
-   wall time to classify a hardware stall for the experiment, but elapsed time
-   must never be treated as product completion. PASS requires actual outbound
-   sequence completion; FAIL/BLOCKED preserves which iteration and owner phase
-   stopped.
-8. **Stress enough to expose intermittence.** The harness contract must support
-   many consecutive isolated publication cycles and preserve exact cycle,
-   sequence and completion counts so a one-off success cannot qualify the
-   mechanism.
-9. **Do not modify product protocol or ownership.** One owner still performs all
-   physical harness socket recv/send. The submitter uses the owner's rendezvous;
-   no second writer, direct RFB socket, reconnect or watchdog is introduced.
-10. **Keep the exact HW1 RFB parser/credit tests.** Retain R44's 328-byte Raw
-    parser and repeated isolated logical CREDIT evidence; they remain useful
-    exclusions even though they did not prove the hardware stall location.
-11. **Canonical product identity accounting.** After restoring unaccepted R44
-    product behavior, prove the canonical product PT_LOAD returns to the prior
-    validated/HW1 source identity if no other loadable product source is
-    changed. Any difference must be explained byte-for-byte and cannot be called
-    accepted.
-12. **Stop before hardware execution.** Run host/project/strict dictionaries/
-    pinned PS2 compile/link/current-source reproducibility plus compile/checks
-    for both discriminator variants. Emit one Reconstruction log and return the
-    baton. Do not launch either hardware harness.
+- `BASELINE_STALLS_CONTROL_PASSES`
+  when baseline produces a valid STALL and control produces a valid PASS;
+- `BASELINE_PASSES_CONTROL_PASSES`
+  when both valid runs PASS;
+- `BASELINE_STALLS_CONTROL_STALLS`
+  when both valid runs STALL;
+- `APPARATUS_INVALID`
+  for any invalid run or any other result combination, including baseline PASS
+  with control STALL.
 
-### Required deterministic evidence
+No category is product hardware qualification.
 
-At minimum prove:
+### Evidence semantics
 
-- the exact R44 host interleaving with a faithful bounded 1000-us readiness stub
-  does not require a second inbound frame to service pending outbound work;
-- the same host fixture can exercise the zero-timeout control path without
-  changing sole-owner semantics;
-- both PS2 discriminator variants compile from the same pinned toolchain and
-  expose distinct exact test identities;
-- baseline variant uses 1000-us readiness; control uses zero-timeout readiness;
-- peer sends no application inbound wake traffic during measurement;
-- one submitter publishes only through the owner rendezvous;
-- completion is represented by an actually serialized outbound sequence, not a
-  timer;
-- repeated-cycle accounting is monotonic and detects missing/duplicate sends;
-- R44 exact Raw/parser/credit tests remain green;
-- R20C/R20D/R20E, R16B and neighboring R42/R43 regressions remain green;
-- canonical product linked identity is restored to
-  `PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
-  with `PT_LOAD_BYTES=556180`, unless an independently explained
-  non-behavioral build artifact prevents exact equality.
+A recorder timeout is allowed only to classify STALL for this diagnostic
+apparatus. It is never product success or owner-completion authority.
 
-### Authorized source surface
+PASS requires actual owner-serialized completion sequence 1..4096.
 
-Modify only the smallest justified subset of:
+The Pi peer must send zero application bytes. TCP ACKs are not application
+traffic and do not invalidate the experiment.
 
-- `src/transport/runtime.c` to revert the unaccepted R44 behavior;
-- R44 focused Transport/RFB host fixtures;
-- dedicated hardware/TestKit discriminator source under the repository's
-  existing test/hardware apparatus areas;
-- minimal Pi-side discriminator recorder/server apparatus;
-- build/test enrollment for the discriminator;
-- directly affected testing/tooling documentation.
+If the recorder closes after classifying STALL and that later TCP close makes
+the PS2 socket readable, preserve the ordering: the STALL classification is the
+absence of owner serialization **before** recorder measurement expiry; the
+post-measurement close is not reclassified as the original wake source.
 
-Do not modify ordinary Pi product source, RFB profile values, Wire
-protocol/version, Application policy, RFB parser behavior, media owners,
-Input/UI, Configuration/Management or H1 forensic source.
+### Required final disposition
 
-The discriminator may reuse architecture facts from historical proof apparatus,
-but do not promote or mutate forensic proof source wholesale.
+If `BASELINE_STALLS_CONTROL_PASSES`:
+- preserve that as strong empirical support for the R44 scheduling correction;
+- do not mutate source;
+- return to Foreman for a bounded source redisposition packet.
 
-### Disposition rules for the later hardware run
+If `BASELINE_PASSES_CONTROL_PASSES`:
+- the R44 wake-race theory is not supported by focused hardware;
+- keep HW1 product defect open;
+- return to Foreman for deeper PS2 progress tracing.
 
-R45 itself does not choose the product fix.
+If `BASELINE_STALLS_CONTROL_STALLS`:
+- the readiness timeout is not a sufficient cause;
+- keep HW1 product defect open;
+- return to Foreman for deeper tracing.
 
-Later hardware evidence must be classified as:
-
-- **BASELINE_STALLS_CONTROL_PASSES**: strong empirical support for the R44
-  zero-timeout correction; return to Foreman/Validation for source
-  redisposition.
-- **BASELINE_PASSES_CONTROL_PASSES**: the R44 wake-race theory is not supported
-  by the focused hardware discriminator; keep HW1 root cause open and packetize
-  deeper product progress tracing.
-- **BASELINE_STALLS_CONTROL_STALLS**: the disputed readiness timeout is not the
-  sufficient cause; keep root cause open.
-- **APPARATUS_INVALID**: no product conclusion; repair apparatus only.
-
-No category automatically becomes product hardware qualification.
+If `APPARATUS_INVALID`:
+- make no product inference;
+- return to Foreman with the exact apparatus defect.
 
 ### Explicit non-goals
 
-R45 does not:
+HW2 does not:
 
-- requalify PS2VNC product hardware;
-- add product auto-recovery;
-- change queue/credit/profile values;
-- change provider topology;
-- diagnose MPEG/AUDIO;
-- claim the zero-timeout candidate is correct before the discriminator runs.
+- launch or qualify the PS2VNC product ELF;
+- continue the all-guns HW1 campaign;
+- change product source;
+- change apparatus source during measurement;
+- repair the provider-stager STATIC/enabled defect;
+- add auto-recovery/reconnect/watchdogs;
+- decide a permanent Transport scheduling design.
 
-### Required checks before handoff
+### Work-log requirement
 
-Run focused discriminator host tests, retained R44 parser/credit regressions,
-complete Transport/RFB/Application family, canonical host/project/strict
-dictionaries, pinned PS2 compile/link/current-source reproducibility, and
-deterministic build/identity checks for both hardware discriminator variants.
+Emit exactly one immutable record under `docs/ledge/work-log/` with:
 
-At shift end emit exactly one immutable Reconstruction record under
-`docs/ledge/work-log/` revision 0007 using:
-
-- ROLE_KEY=`reconstruction`;
+- ROLE_KEY=`hardware-qualification`;
 - WORK_ITEM_KEY=`a001-sole-receiver`;
 - WORKER_KEY=`interactive`.
 
-Then stop and return the baton.
+STATUS may be COMPLETED for a valid finite classification or BLOCKED only for an
+actual apparatus/operator prerequisite that prevents classification.
 
-FALLBACK=RETURN_BLOCKED_WITH_EXACT_MISSING_HARDWARE_DISCRIMINATOR_PRIMITIVE
-STRETCH=NONE__DO_NOT_RUN_HARDWARE_OR_ENTER_DEEPER_PRODUCT_FIX
+Then stop and return the baton to Foreman.
 
-## Current hardware / qualification debt
+## Current product hardware debt
 
-The last independently validated product identity remains the exact HW1-failed
-identity:
+The exact product identity that independently passed machine/source Validation
+and failed LEDGE-FINAL-HW1 remains:
 
 `ELF_PRISTINE_SHA256=993655ccffc430347281291c1fa917e3b22ce77f17407a99edbc920b71a65a2a`
 `PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
 `PT_LOAD_BYTES=556180`.
 
-R44 candidate identity is machine-green but unaccepted:
-
-`ELF_PRISTINE_SHA256=d025df4cbe8c92e15931ab1ee30fe2f869fb2d61862441e5ad93cf4e0f20feb0`
-`PT_LOAD_SHA256=9c4a8d25ca9ec1798e84f716f16b711bcc86328449082e054ce1027a69016966`
-`PT_LOAD_BYTES=556180`.
+R45 restores those PT_LOAD bytes but does not cure or requalify the product.
 
 HARDWARE_QUALIFICATION=FAIL_PRODUCT_DEFECT
-HARDWARE_RETEST_AUTHORIZED=NO
-NEXT_HARDWARE_ACTIVITY=FOCUSED_R45_DISCRIMINATOR_ONLY_AFTER_FOREMAN_REVIEW
+PRODUCT_HARDWARE_RETEST_AUTHORIZED=NO
+FOCUSED_R45_HARDWARE_DISCRIMINATOR_AUTHORIZED=YES
