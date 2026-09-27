@@ -1214,6 +1214,9 @@ pi-audio-pcm-producer-unit:
 pi-audio-wire-server-unit:
 	python3 $(PI_AUDIO_WIRE_SERVER_TEST)
 
+pi-audio-product-composition-unit:
+	python3 $(PI_AUDIO_PRODUCT_COMPOSITION_TEST)
+
 
 CONFIG_RFB_RUNTIME_PROFILE_TEST := .build/config_rfb_runtime_profile_test
 PI_RFB_RUNTIME_PROFILE_TEST := unit/pi_rfb_runtime_profile_test.py
