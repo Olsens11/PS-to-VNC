@@ -91,9 +91,33 @@ for required in (
     if required not in HEADER:
         raise AssertionError(f"missing R41 lifecycle state: {required}")
 
-if "app_audio_product" in APP:
-    raise AssertionError("R41 was wired into ordinary src/app.c")
-if "audio_pcm_factory=" in PI_RUNTIME or "audio_pcm_producer" in PI_RUNTIME:
-    raise AssertionError("R41 enabled ordinary Pi AUDIO factory composition")
+# R42 may compose the accepted R41 public API in ordinary Application, but it
+# still must not bypass that owner into lower session/runtime/Transport AUDIO
+# mechanisms.
+for required in (
+    "pstvnc_app_audio_product_init(",
+    "pstvnc_app_audio_product_start(",
+    "pstvnc_app_audio_product_service(",
+    "pstvnc_app_audio_product_first_presentation_ready(",
+    "pstvnc_app_audio_product_service_session_abort(",
+):
+    if required not in APP:
+        raise AssertionError(f"ordinary Application lost R41 public seam: {required}")
+
+for forbidden in (
+    "pstvnc_audio_ps2_runtime_init(",
+    "pstvnc_audio_session_start(",
+    "pstvnc_audio_session_poll(",
+    "pstvnc_transport_audio_activate(",
+    "pstvnc_transport_audio_status(",
+    "pstvnc_transport_audio_read_available(",
+):
+    if forbidden in APP:
+        raise AssertionError(
+            f"ordinary Application bypassed R41 into lower AUDIO: {forbidden}"
+        )
+
+if "audio_product_profile.selected_audio_pcm_factory()" not in PI_RUNTIME:
+    raise AssertionError("ordinary Pi runtime lost the R42 lazy AUDIO factory")
 
 print("APP_AUDIO_PRODUCT_SOURCE_TEST=PASS")
