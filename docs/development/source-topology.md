@@ -179,7 +179,11 @@ apparatus under `experiments/`.
 The `pi/` root participates in the same long/complete/strict symbol-dictionary
 and local-file topology checks as `src/`. Its runtime installation definitions
 remain under `systemd/pi/`, while the installed product Python bytes live under
-`/usr/lib/ps-to-vnc`.
+`/usr/lib/ps-to-vnc`. R42 adds `audio_product_profile.py` at this existing
+Pi product root as the narrow ordinary-composition owner for generated R36 PCM
+values plus the adopted 2.0-second retirement escalation horizon. It constructs
+the accepted R39 owner only through an exact-session lazy factory and owns no
+capture, credit, Wire-I/O, process-retirement, or protocol mechanism.
 
 
 ### R36 selected AUDIO runtime profile authority
