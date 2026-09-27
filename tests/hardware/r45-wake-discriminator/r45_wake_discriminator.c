@@ -466,7 +466,13 @@ int main(int argc, char **argv)
         submitter_thread,
         submitter_stack,
         (int)sizeof(submitter_stack),
-        64,
+        /*
+         * One priority step above the product-shaped owner priority guarantees
+         * that publication is runnable immediately after owner_missed. The
+         * submitter then blocks on real owner completion, so it cannot become a
+         * second socket owner or manufacture progress.
+         */
+        62,
         &context);
     if (submitter_thread_id < 0)
         goto failed;
