@@ -5,7 +5,7 @@ This portal is generated from participating product `SYMBOLS.md` files.
 | Directory | Dictionary | Coverage | Symbols |
 |---|---|---|---:|
 | `pi` | [`pi/SYMBOLS.md`](../../pi/SYMBOLS.md) | COMPLETE | 922 |
-| `src` | [`src/SYMBOLS.md`](../../src/SYMBOLS.md) | COMPLETE | 1130 |
+| `src` | [`src/SYMBOLS.md`](../../src/SYMBOLS.md) | COMPLETE | 1132 |
 | `src/audio` | [`src/audio/SYMBOLS.md`](../../src/audio/SYMBOLS.md) | COMPLETE | 380 |
 | `src/config` | [`src/config/SYMBOLS.md`](../../src/config/SYMBOLS.md) | COMPLETE | 284 |
 | `src/diagnostics` | [`src/diagnostics/SYMBOLS.md`](../../src/diagnostics/SYMBOLS.md) | COMPLETE | 69 |
