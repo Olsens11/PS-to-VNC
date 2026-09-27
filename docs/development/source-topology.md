@@ -149,9 +149,11 @@ decoder, Transport, presentation, or normal retirement mechanism. R41 admits
 coordinator over the accepted R36 profile, R37/R38 session execution, R40
 Transport activation, AUDSRV service boundary and common clock. It owns the
 non-consuming first-MPEG-presentation AUDIO reservoir gate and retained-session
-AUDIO cleanup order, but does not arm the clock, modify MPEG presentation, or
-enable ordinary `app.c`/Pi AUDIO composition. None of these Application
-coordinators justifies a new top-level source directory.
+AUDIO cleanup order, but does not arm the clock or modify MPEG presentation.
+R42 consumes that public coordinator from ordinary `app.c`, including the
+first-presentation gate and shared abnormal-teardown ordering, while keeping all
+AUDIO session/runtime/Transport-queue mechanism in its existing owners. None of
+these Application coordinators justifies a new top-level source directory.
 
 
 The PS2 application root dictionary is:
