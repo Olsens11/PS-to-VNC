@@ -163,9 +163,9 @@ loop; only WireServer writes the PS2 socket and allocates the global send
 sequence. Unexpected capture EOF, reader failure, malformed final PCM framing,
 credit overflow, or unproven process/thread retirement fails the session
 closed. Ordinary retirement never fabricates the existing zero-length AUDIO
-producer-done representation. R39 leaves `pi/wire_runtime.py` without an AUDIO
-factory, so final AUDIO admission/start/failure/teardown policy remains an A006
-composition responsibility.
+producer-done representation. R42 now injects that already-accepted mechanism
+through one lazy ordinary-product factory; R39's capture/credit/retirement
+ownership is unchanged.
 
 R41 adds the narrow Application lifecycle coordinator without yet wiring it into
 ordinary `app.c`. Construction is inert and copies the selected R36 AUDIO
@@ -192,9 +192,38 @@ Abnormal post-activation cleanup is fenced by
 ticket. Only after that proof may Application request AUDIO stop, observe
 completion, join, preserve outcome, release session ownership and finally
 release the R37 runtime. Partial never-started/destroy-failure ownership remains
-retryable and cannot be converted to ABORT_READY by timeout. Ordinary
-`app.c` and `pi/wire_runtime.py` AUDIO composition remain deferred to the
-successor integration packet.
+retryable and cannot be converted to ABORT_READY by timeout.
+
+R42 makes the accepted AUDIO stack ordinary product behavior without moving any
+lower mechanism. Product entry resolves selected R36 AUDIO authority before
+platform startup, prepares the R37 resident LIBSD/AUDSRV seam once after IOP
+readiness, and opens every Wire attempt with dormant AUDIO plus MPEG Transport
+authority. One fresh R41 coordinator belongs to each accepted attempt. Only a
+genuinely started protected MPEG run crosses the one-shot AUDIO start edge;
+calibration cancellation or rolled-back MPEG start does not. R41 is serviced
+nonblockingly on every later main-loop pass.
+
+Before the first common-clock arm, ordinary MPEG live service is withheld until
+R41 reports the selected 458752-byte startup reservoir or finite producer_done.
+Application does not inspect/dequeue AUDIO itself. The first physical MPEG
+presentation remains the sole common-clock arm edge; once armed, later video
+service no longer consults the startup reservoir. Normal R35 MPEG retirement
+does not retire or restart session AUDIO.
+
+Abnormal media teardown now converges both Application media owners through one
+retained-session fence: prove Input dormancy, begin Transport abort once when
+MPEG or AUDIO owns media debt, service MPEG and AUDIO local abort progress until
+each reports real readiness, release the R26 clock binding, then close retained
+Transport storage. The cadence delay while an owner is pending is only a yield
+and can never become success by elapsed time or count. Attempts with no media
+debt retain R16B's one-shot Transport abort path.
+
+On the Pi, ordinary `wire_runtime.py` supplies exactly one lazy selected AUDIO
+factory. Q4 still creates no capture process. The first exact channel-2 CREDIT
+creates one R39 owner for that Wire Session using generated R36 PCM values and
+the adopted 2.0-second retirement escalation horizon; later CREDIT reuses it.
+That horizon only escalates terminate-to-kill. R39 still requires actual process
+exit and reader-thread dormancy before retirement can succeed.
 
 ### Input and mouse forwarding
 
