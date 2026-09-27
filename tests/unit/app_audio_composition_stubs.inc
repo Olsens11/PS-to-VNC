@@ -39,6 +39,10 @@ static pstvnc_app_audio_product_result_t r42_audio_start_result;
 static pstvnc_app_audio_product_result_t r42_audio_service_result;
 static pstvnc_app_audio_product_result_t r42_audio_gate_result;
 static pstvnc_app_audio_product_result_t r42_audio_abort_result;
+static pstvnc_app_audio_product_result_t r42_audio_abort_result_script[16];
+static size_t r42_audio_abort_result_script_count;
+static size_t r42_audio_abort_media_release_calls[16];
+static size_t r42_audio_abort_transport_close_calls[16];
 static int r42_audio_service_sets_finite;
 static int r42_audio_gate_script[16];
 static size_t r42_audio_gate_script_count;
@@ -280,14 +284,25 @@ pstvnc_app_audio_product_service_session_abort(
     int *abort_ready)
 {
     size_t index = r42_audio_abort_calls++;
+    pstvnc_app_audio_product_result_t result = r42_audio_abort_result;
 
     r42_audio_abort_event_count = event_count;
+    if (index < sizeof(r42_audio_abort_media_release_calls) /
+            sizeof(r42_audio_abort_media_release_calls[0])) {
+        r42_audio_abort_media_release_calls[index] =
+            media_binding_release_calls;
+        r42_audio_abort_transport_close_calls[index] =
+            r34_transport_close_calls;
+    }
 
     if (product == NULL || abort_ready == NULL || !product->initialized)
         return PSTVNC_APP_AUDIO_PRODUCT_INVALID;
 
-    if (r42_audio_abort_result != PSTVNC_APP_AUDIO_PRODUCT_OK)
-        return r42_audio_abort_result;
+    if (index < r42_audio_abort_result_script_count)
+        result = r42_audio_abort_result_script[index];
+
+    if (result != PSTVNC_APP_AUDIO_PRODUCT_OK)
+        return result;
 
     if (index < r42_audio_abort_ready_script_count)
         *abort_ready = r42_audio_abort_ready_script[index];
@@ -362,6 +377,19 @@ static void reset_r42_audio_fixture(void)
     r42_audio_service_result = PSTVNC_APP_AUDIO_PRODUCT_OK;
     r42_audio_gate_result = PSTVNC_APP_AUDIO_PRODUCT_OK;
     r42_audio_abort_result = PSTVNC_APP_AUDIO_PRODUCT_OK;
+    memset(
+        r42_audio_abort_result_script,
+        0,
+        sizeof(r42_audio_abort_result_script));
+    r42_audio_abort_result_script_count = 0u;
+    memset(
+        r42_audio_abort_media_release_calls,
+        0,
+        sizeof(r42_audio_abort_media_release_calls));
+    memset(
+        r42_audio_abort_transport_close_calls,
+        0,
+        sizeof(r42_audio_abort_transport_close_calls));
     r42_audio_service_sets_finite = 0;
 
     memset(r42_audio_gate_script, 0, sizeof(r42_audio_gate_script));
