@@ -1,8 +1,8 @@
 # Ledge Validation — Findings
 
 DOCUMENT=LEDGE_VALIDATION_FINDINGS
-DOCUMENT_REVISION=0005
-RECORDED_AT=2026-09-16T07:53:00-04:00
+DOCUMENT_REVISION=0006
+RECORDED_AT=2026-09-27T05:56:12-04:00
 TEMPORAL_CLASS=APPEND_ONLY_FINDING_REGISTER
 
 Findings are validation-owned. They describe evidence and required disposition; they do not redesign product behavior or rewrite audit/reconstruction history.
@@ -80,3 +80,38 @@ Validation disposition: `PASS_MACHINE_SOURCE`. This resolves the reconstruction-
 V001 RESOLVED; V002 PASS; V003 PASS; V004 PASS; V005 PASS.
 
 No open Validation finding currently blocks A001 machine/source acceptance. The exact remaining boundary is physical PS2 qualification of the changed PT_LOAD/DUT, which remains `HARDWARE_PENDING` until operator-backed evidence exists.
+
+## V006 — Complete-current A001-A006 machine/source closure
+
+SEVERITY=INFO
+STATUS=PASS
+AFFECTED_TRANCHE=A001_A006
+VALIDATED_PRODUCT_SOURCE=e2727cb31e214d11e094f1f45b0b9d8ab01d84e9
+VALIDATED_LEDGER_HEAD=095e44b1da60fab13a22bd0601818911a72f57e6
+
+Independent Validation reviewed the complete accumulated A001-A006 reconstructed source rather than only the final R43 change or the Foreman's disposition.
+
+Resolution evidence:
+
+- A001 preserves one Transport physical owner/receiver, logical RFB ownership, credit/residual/activity/quiescence, outbound-admission drain, proven receiver completion, descriptor release ordering, and Transport-owned fatal convergence;
+- A002 preserves Configuration provenance/typed projections without invented defaults, AUDIO owner-completion/join reclamation, resident AUDSRV policy, and common-clock ownership;
+- A003 preserves Q4/session fencing, one Pi Wire owner/global sequence, provider-local RFB attachment/reporting/recovery, exact MPEG generation/run ownership, real retirement proof, and fresh-session product composition;
+- A004 preserves one Presentation owner, strict DESKTOP CALIBRATION versus MPEG CALIBRATION separation, validated base/inner/suppression geometry, first-physical-frame promotion, and current Q7 restoration-under-retiring-MPEG ordering before final reveal;
+- A005 preserves input-worker semantic-only ownership, Application product-action execution, configurable binding publication, physical-continuity/quarantine rules, cooperative dormancy before reclamation, and bounded Management/Configuration snapshot behavior;
+- A006 preserves Application cross-domain retirement, real MPEG/AUDIO abort readiness before clock/Transport reclamation, R42 media ordering, R43 one successful retained-session begin-abort per attempt across cleanup re-entry, failed-begin fail-closed behavior, and fresh replacement-attempt state;
+- canonical current-head Actions run `36287568567` is SUCCESS for host-unit, project-check, strict dictionary-long, pinned PS2 compile, linked build and current-source ELF/PT_LOAD reproducibility;
+- source comparison from `e2727cb31e214d11e094f1f45b0b9d8ab01d84e9` to `095e44b1da60fab13a22bd0601818911a72f57e6` contains only Foreman/Reconstruction documentation and immutable logs.
+
+Validation disposition: `PASS_MACHINE_SOURCE`.
+
+No reconstruction-owned A001-A006 source defect remains open from this pass. Physical qualification of the exact final linked identity remains `HARDWARE_PENDING`; V006 does not claim or imply a PS2 hardware PASS.
+
+## Current complete-source finding summary
+
+V001 RESOLVED; V002 PASS; V003 PASS; V004 PASS; V005 PASS; V006 PASS.
+
+OPEN_RECONSTRUCTION_OWNED_A001_A006_VALIDATION_FINDINGS=NONE
+COMPLETE_CURRENT_LEDGE_MACHINE_SOURCE=PASS
+COMPLETE_CURRENT_LEDGE_HARDWARE=HARDWARE_PENDING
+
+The next independent gate is final ledge hardware qualification bound to the exact final ELF/PT_LOAD identity.
