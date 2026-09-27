@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0087
-RECORDED_AT=2026-09-27T16:47:23-04:00
+STATE_REVISION=0088
+RECORDED_AT=2026-09-27T17:14:44-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0086
-SUPERSEDES_FOREMAN_STATE_REVISION=0086
+BASED_ON_FOREMAN_STATE_REVISION=0087
+SUPERSEDES_FOREMAN_STATE_REVISION=0087
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -15,83 +15,107 @@ BASED_ON_VALIDATION_STATE_REVISION=0007
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0087 consumes two newer independent evidence authorities after Foreman
-source closure:
+Revision 0088 independently reviews
+`A001-HW1-RFB-INCREMENTAL-LIVE-PROGRESS-R44` at final pre-log
+source/test authority `e005bf001a72302ba81e688e8616910077160764`
+and consumes immutable Reconstruction closeout
+`3b15c3f6023ce2a06d466192d893d8c580135a14`.
 
-1. Validation revision 0007 / findings revision 0006 at ledger authority
-   `81d5915eb0d57d769a66f19e4f180b8eef0a2b79`, which independently passed
-   the complete current A001-A006 machine/source tranche at product source
-   `e2727cb31e214d11e094f1f45b0b9d8ab01d84e9`; and
-2. exact-DUT hardware campaign `LEDGE-FINAL-HW1`, committed at
-   `bb646ed6c3733488876719cd4a4917831669da8d`, which failed with a classified
-   PRODUCT_DEFECT before sustained incremental RFB continuity completed.
+The returned R44 range is exactly eight commits ahead of assigning Foreman log
+`deeec5a24e09f73eda19bb7703d5a8c280781f44`, zero behind. Product behavior
+changed only in `src/transport/runtime.c`; the remaining changes are focused
+Transport/RFB test fixtures. Pi product source, selected RFB profile values,
+Wire protocol/version, media owners, Input/UI and Configuration remain
+unchanged.
 
-Validation's PASS remains valid for the machine/source properties it reviewed.
-HW1 adds new empirical evidence that those deterministic checks did not cover:
-the exact final product can establish Wire/Q4, activate the selected native
-X0tigervnc provider, present the initial Pi desktop physically, and then stop
-making PS2 application-level RFB progress during ordinary incremental desktop
-operation.
+R44 adds valuable deterministic evidence:
 
-HW1 is bound to the accepted pristine source identity:
+- the exact sealed HW1 328-byte RFB message with one in-bounds 12x13 Raw
+  rectangle parses completely at 704x462 with no later RFB byte;
+- repeated isolated parser intervals return to a true complete-message boundary
+  and can serialize successor incremental requests;
+- Transport's consumption path returns an exact 328-byte CREDIT when the logical
+  queue becomes empty under the selected flush-on-empty policy;
+- host Transport fixtures now use an EE-like `PollSema` implementation rather
+  than the old host-only `outbound_pending + WaitSema` shortcut;
+- the corrected candidate keeps one physical I/O owner and changes the physical
+  readability probe from 1000 us to 0 us, with a second outbound poll before
+  the existing local 1000-us cooperative yield.
 
-`ELF_PRISTINE_SHA256=993655ccffc430347281291c1fa917e3b22ce77f17407a99edbc920b71a65a2a`
+Exact source-head GitHub Actions run `36350306508`, attempt 1, is SUCCESS for
+host-unit, project-check, strict dictionary-long, pinned PS2 compile, linked
+build and current-source reproducibility. Exact immutable-log-head run
+`36350490291`, attempt 1, is also SUCCESS across the complete canonical gate
+set.
 
-`PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
+The R44 candidate linked identity is:
+
+`ELF_PRISTINE_SHA256=d025df4cbe8c92e15931ab1ee30fe2f869fb2d61862441e5ad93cf4e0f20feb0`
+
+`PT_LOAD_SEGMENTS=1`
+
+`PT_LOAD_SHA256=9c4a8d25ca9ec1798e84f716f16b711bcc86328449082e054ce1027a69016966`
 
 `PT_LOAD_BYTES=556180`.
 
-The stamped hardware DUT was deployed/read back exactly and emitted the expected
-runtime identity plus NET_READY, GS_READY, DESKTOP_READY and INPUT_READY.
-Initial physical desktop presentation matched the independent operator-only VNC
-view. No FATAL stage was emitted.
+That identity is machine-green but **not Foreman-accepted** as the HW1 product
+correction.
 
-The sealed HW1 failure boundary is unusually strong:
+The reason is causal, not stylistic. R44 says the pre-correction owner could
+publish outbound work after its first `PollSema` miss, enter the physical
+readability wait and then wait indefinitely for unrelated future inbound Wire
+traffic. But the exact pre-R44 product source passed
+`PSTVNC_TRANSPORT_IO_SELECT_TIMEOUT_US=1000` to that readiness call. If the
+selected PS2 select path honors the supplied timeout, the described race adds at
+most one bounded polling interval before the owner returns to outbound work; it
+does not explain the sustained HW1 freeze.
 
-- the Pi Wire service remained active with zero restarts;
-- the socket-activated internal X0tigervnc provider remained active with zero
-  restarts;
-- the PS2<->Pi Wire TCP session remained ESTABLISHED;
-- the separate operator VNC path continued showing current desktop changes;
-- the last PS2 application frame was a valid incremental
-  FramebufferUpdateRequest, Wire sequence 132;
-- the last Pi application frame was Wire sequence 130 carrying one exact valid
-  in-bounds Raw FramebufferUpdate, rectangle 681,11 size 12x13, payload 328;
-- PS2 TCP acknowledged those final Pi bytes;
-- no later PS2 Wire CREDIT or framebuffer request appeared.
+The new critical host test does not prove otherwise. Its fake
+`pstvnc_transport_physical_stream_wait_readable()` returns according to host
+fixture state; it does not model an IOP select call that fails to return after
+1000 us. The test makes pre-R44 fail by explicitly asserting
+`timeout_us == 0`. Removing that assertion leaves the modeled race with a
+bounded return path. Therefore the fixture proves the new zero-timeout design
+shape, but it does not prove that the old 1000-us path can produce the sealed
+HW1 no-progress boundary.
 
-This rules out provider death, Wire-service restart, TCP loss, malformed Wire
-framing and the observed Raw rectangle's bounds/length as the primary failure
-classification. The unresolved boundary is inside PS2 application-level
-Wire/RFB progress after receipt of a valid isolated incremental update.
+Current upstream PS2SDK documentation also shows `select()` forwarding the
+caller's `struct timeval *timeout` to the socket backend. The same source
+contains the newer iop-fd-range correction that prevents a distinct historical
+"block forever" defect when the EE fd differs from the underlying IOP fd. R44's
+own log records that the pinned build postdates that correction. This does not
+prove the exact DUT never violates a timeout, but it means such a violation must
+be established rather than assumed.
 
-Current source inspection narrows the first Reconstruction target further.
-RFB consumption returns flow-control credit synchronously through
-`pstvnc_transport_runtime_submit_frame()`. That caller signals one
-`outbound_ready_semaphore_id` and blocks for completion. The sole physical-I/O
-thread polls that semaphore before entering
-`pstvnc_transport_physical_stream_wait_readable()`; the outbound semaphore is
-not itself a readiness source for that socket wait. Therefore an outbound
-submission can arise after the owner has checked the semaphore and entered its
-readiness wait. Current source relies on the bounded select/idle cycle to return
-to the outbound check. HW1's exact failure shape — inbound bytes accepted by
-TCP, then no CREDIT/request and no peer/provider failure — makes this
-post-inbound outbound-progress seam the primary owner boundary to prove or
-falsify.
+Accordingly R44 did not satisfy its own central requirement to prove or falsify
+the first missing PS2 progress fact before changing behavior. The zero-timeout
+candidate may still turn out to be the correct hardware fix, but current
+evidence cannot promote it as the cause-resolving source authority.
 
-This is not yet a Foreman conclusion that `select()` is the root cause. R44
-must first establish the exact local progress state deterministically. If the
-stall is instead proven in the RFB parser, framebuffer/presentation path, or a
-different Transport synchronization seam, Reconstruction must follow that
-evidence and remain within the same bounded A001 live-progress responsibility.
+Independent Foreman disposition:
 
-No watchdog, automatic reconnect, timeout-success rule, second physical socket
-writer or protocol change is authorized as a substitute for the missing
-progress proof.
+- C1 = MET;
+- C2 = NOT_MET_FIRST_MISSING_HW1_PROGRESS_FACT_NOT_ESTABLISHED;
+- C3 = NOT_MET_PRE_R44_1000US_RETURN_PATH_NOT_FALSIFIED;
+- C4-C9 = MET;
+- C10 = MET_AS_COMPOSED_DETERMINISTIC_EVIDENCE;
+- C11 = NOT_MET_CRITICAL_TEST_ENFORCES_ZERO_TIMEOUT_INSTEAD_OF_REPRODUCING_OLD_STALL;
+- C12 = MET.
 
-The seeded source queue is therefore reopened by hardware evidence for one A001
-correction packet. A002-A006 remain accepted unless the new evidence directly
-demonstrates a dependency defect in those owners.
+Therefore:
+
+`R44_SOURCE_COMPLETE=NO`
+`R44_FOREMAN_ACCEPTED=NO`
+`R44_MACHINE_GATES=PASS`
+`R44_HARDWARE_QUALIFICATION=NONE`.
+
+The exact HW1 failure remains open. The next packet is an evidence discriminator,
+not another guessed product fix. It must restore the canonical default product
+Transport behavior to the independently validated/HW1-failed 1000-us readiness
+semantics, preserve the useful parser/credit tests, and build a dedicated
+PS2 hardware micro-harness that directly tests the disputed sole-owner
+select/outbound interleaving with no inbound wake traffic. Hardware execution
+of that harness is a later separate role.
 
 ## Temporal architecture reconciliation
 
@@ -124,33 +148,29 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`HW1_PRODUCT_DEFECT_A001_RFB_LIVE_PROGRESS__R44_RECONSTRUCTION_ACTIVE__VALIDATION_MACHINE_SOURCE_PASS_PRESERVED__HARDWARE_FAILED_PENDING_CORRECTION`
+`HW1_PRODUCT_DEFECT_OPEN__R44_MACHINE_GREEN_NOT_ACCEPTED_CAUSAL_GAP__R45_SOLE_OWNER_WAKE_DISCRIMINATOR_ACTIVE`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
-COMPLETE_CURRENT_LEDGE_VALIDATION_REVISION_0007=PASS_MACHINE_SOURCE
+COMPLETE_CURRENT_LEDGE_VALIDATION_REVISION_0007=PASS_MACHINE_SOURCE_AT_PRE_HW1_SOURCE
 VALIDATED_PRODUCT_SOURCE=e2727cb31e214d11e094f1f45b0b9d8ab01d84e9
-VALIDATED_PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b
 LEDGE_FINAL_HW1=FAIL_PRODUCT_DEFECT
 LEDGE_FINAL_HW1_INITIAL_DESKTOP=PASS
 LEDGE_FINAL_HW1_INCREMENTAL_RFB_CONTINUITY=FAIL
-LEDGE_FINAL_HW1_WIRE_TCP_REMAINED_ESTABLISHED=YES
-LEDGE_FINAL_HW1_PI_WIRE_REMAINED_ACTIVE=YES
-LEDGE_FINAL_HW1_PROVIDER_REMAINED_ACTIVE=YES
-LEDGE_FINAL_HW1_OPERATOR_5903_REMAINED_LIVE=YES
-LEDGE_FINAL_HW1_NO_FATAL_STAGE=YES
-A001_RFB_INCREMENTAL_LIVE_PROGRESS=RECONSTRUCTION_ACTIVE_R44
+R44_MACHINE_GATES=PASS
+R44_FOREMAN_ACCEPTED=NO
+R44_CANDIDATE_PT_LOAD_SHA256=9c4a8d25ca9ec1798e84f716f16b711bcc86328449082e054ce1027a69016966
+R44_CAUSAL_PROOF=INSUFFICIENT
+A001_HW1_FIRST_MISSING_PROGRESS_FACT=UNRESOLVED
+A001_SOLE_OWNER_WAKE_DISCRIMINATOR=RECONSTRUCTION_ACTIVE_R45
 A002_MACHINE_SOURCE=VALIDATION_PASS
 A003_MACHINE_SOURCE=VALIDATION_PASS
 A004_MACHINE_SOURCE=VALIDATION_PASS
 A005_MACHINE_SOURCE=VALIDATION_PASS
 A006_MACHINE_SOURCE=VALIDATION_PASS
-SEEDED_A001_A006_SOURCE_RECONSTRUCTION=REOPENED_BY_HW1_A001_PRODUCT_DEFECT
-INDEPENDENT_VALIDATION_AFTER_CORRECTION=REQUIRED
-HARDWARE_QUALIFICATION=FAIL_PRODUCT_DEFECT__REQUALIFICATION_REQUIRED_AFTER_CORRECTION
+INDEPENDENT_VALIDATION_AFTER_ACCEPTED_CORRECTION=REQUIRED
+HARDWARE_QUALIFICATION=FAIL_PRODUCT_DEFECT__NO_RETEST_AUTHORIZED_YET
 AUTO_RECOVERY_WATCHDOG=NOT_AUTHORIZED
-AUTO_RECALIBRATION_AFTER_RETIREMENT=DEFERRED_OPTIONAL_POLICY
-CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED_FUTURE_POLICY
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
 ## Accepted R16A authority
 
@@ -3779,9 +3799,71 @@ provider stager's treatment of systemd STATIC as enabled. Installed unit bytes
 were exact and the defect did not block the live runtime. R44 does not conflate
 that apparatus defect with the product stall.
 
-## ACTIVE RECONSTRUCTION PACKET
+## Foreman R44 review disposition
 
 PACKET_ID=A001-HW1-RFB-INCREMENTAL-LIVE-PROGRESS-R44
+PACKET_STATUS=FOREMAN_REVIEWED_NOT_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0087
+ASSIGNING_FOREMAN_STATE_COMMIT=03113716658d0c24cb4f0b66cab38a1815e72a97
+ASSIGNING_FOREMAN_LOG_COMMIT=deeec5a24e09f73eda19bb7703d5a8c280781f44
+RECONSTRUCTION_STARTING_COMMIT=deeec5a24e09f73eda19bb7703d5a8c280781f44
+R44_FINAL_SOURCE_COMMIT=e005bf001a72302ba81e688e8616910077160764
+R44_RECONSTRUCTION_LOG_COMMIT=3b15c3f6023ce2a06d466192d893d8c580135a14
+R44_PRE_LOG_COMMIT_COUNT=8
+
+A001-R44-C1=MET
+A001-R44-C2=NOT_MET_FIRST_MISSING_HW1_PROGRESS_FACT_NOT_ESTABLISHED
+A001-R44-C3=NOT_MET_PRE_R44_1000US_RETURN_PATH_NOT_FALSIFIED
+A001-R44-C4=MET
+A001-R44-C5=MET
+A001-R44-C6=MET
+A001-R44-C7=MET
+A001-R44-C8=MET
+A001-R44-C9=MET
+A001-R44-C10=MET
+A001-R44-C11=NOT_MET_ZERO_TIMEOUT_ASSERTION_IS_NOT_OLD_STALL_REPRODUCTION
+A001-R44-C12=MET
+
+R44_SOURCE_COMPLETE=NO
+R44_FOREMAN_ACCEPTED=NO
+R44_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36350306508_ATTEMPT_1
+R44_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36350490291_ATTEMPT_1
+R44_HOST_TESTED=PASS
+R44_PROJECT_CHECK=PASS
+R44_STRICT_DICTIONARIES=PASS
+R44_PS2_COMPILE=PASS
+R44_PS2_LINK=PASS
+R44_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R44_CANDIDATE_ELF_PRISTINE_SHA256=d025df4cbe8c92e15931ab1ee30fe2f869fb2d61862441e5ad93cf4e0f20feb0
+R44_CANDIDATE_PT_LOAD_SHA256=9c4a8d25ca9ec1798e84f716f16b711bcc86328449082e054ce1027a69016966
+R44_CANDIDATE_PT_LOAD_BYTES=556180
+R44_HARDWARE_QUALIFICATION_AUTHORITY=NONE
+
+## Exact R44 causal gap
+
+Pre-R44 source:
+
+- checks `PollSema(outbound_ready)`;
+- calls physical readiness with timeout 1000 us when no outbound token exists;
+- returns to the top-level loop after that bounded readiness call.
+
+The R44 host race test blocks the first `PollSema` miss, publishes parser-earned
+CREDIT, then requires the subsequent readiness call's timeout argument to be
+exactly zero. The host readiness stub itself is not held for 1000 us and does
+not emulate a lost/ignored PS2 select timeout.
+
+Thus the old source is made to fail the new test by the assertion on the
+argument value, not by demonstrated lack of bounded progress.
+
+A true causal proof requires one of:
+
+1. exact-platform evidence that the selected 1000-us PS2 readiness call can fail
+   to return in the disputed interleaving; or
+2. evidence locating the HW1 stall at a different owner boundary.
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A001-HW1-SOLE-OWNER-WAKE-DISCRIMINATOR-R45
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a001-sole-receiver
@@ -3789,177 +3871,168 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0087
-BASED_ON_VALIDATION_STATE_REVISION=0007
+BASED_ON_FOREMAN_STATE_REVISION=0088
+BASED_ON_VALIDATED_HW1_SOURCE=e2727cb31e214d11e094f1f45b0b9d8ab01d84e9
 BASED_ON_HW1_EVIDENCE_COMMIT=bb646ed6c3733488876719cd4a4917831669da8d
-BASED_ON_PRODUCT_SOURCE=e2727cb31e214d11e094f1f45b0b9d8ab01d84e9
+BASED_ON_R44_CANDIDATE=e005bf001a72302ba81e688e8616910077160764
+PRODUCT_FIX_ACCEPTED=NO
+HARDWARE_EXECUTION_IN_RECONSTRUCTION=FORBIDDEN
 WIRE_VERSION=UNCHANGED
 RFB_PROFILE_VALUES=UNCHANGED
-AUTO_RECOVERY=FORBIDDEN
-SECOND_PHYSICAL_IO_OWNER=FORBIDDEN
-HARDWARE_RETEST=DEFERRED_UNTIL_SOURCE_AND_VALIDATION_ACCEPTANCE
 
 ### Objective
 
-Explain and correct the exact `LEDGE-FINAL-HW1` PS2-side incremental-RFB
-progress stall without weakening the one-physical-I/O-owner architecture.
+Resolve the R44 causal gap without guessing another product behavior change.
 
-The corrected product must guarantee that one valid isolated inbound RFB update
-can cross:
+Produce an exact PS2 hardware discriminator for the sole-owner outbound/readiness
+interleaving, while returning canonical product behavior to the last
+independently validated/HW1-failed readiness semantics unless exact evidence
+proves that restoring it would itself falsify the experiment.
 
-`physical receive -> Transport logical commit -> RFB consumption -> exact
-consumption CREDIT -> complete-message Application accounting/presentation ->
-next framebuffer request`
+The discriminator must answer this question on the exact PS2/PS2SDK execution
+environment:
 
-without requiring unrelated future inbound Wire traffic to wake an outbound
-submission.
+> After the sole I/O owner has missed outbound-ready and entered its 1000-us
+> physical readiness call, can a domain submitter publish outbound work and
+> receive completion without any future inbound socket traffic?
 
-R44 must use the sealed HW1 evidence as the empirical boundary. It must first
-prove the local stall mechanism; it may not assume that the current
-select/outbound rendezvous hypothesis is correct merely because it fits the
-symptom.
+R45 builds and machine-validates the apparatus only. It does not execute the PS2
+hardware experiment and does not claim product correction.
 
 ### Required behavior
 
-1. **Preserve the HW1 boundary exactly.** Treat the final 328-byte valid Raw
-   update and the absence of subsequent PS2 CREDIT/request as the reproduced
-   failure shape. Do not reinterpret it as provider failure, TCP loss, invalid
-   rectangle, malformed Wire framing or operator error without contradictory
-   evidence.
-2. **Establish the first missing PS2 progress fact.** Deterministically identify
-   whether the stalled product has failed to:
-   - commit the received RFB payload to the logical queue;
-   - schedule/execute RFB parser consumption;
-   - complete parser consumption/credit return;
-   - complete the sole-owner outbound rendezvous;
-   - present/account the completed update; or
-   - serialize the next request.
-   Tests/instrumentation must distinguish these boundaries rather than merely
-   asserting that the end-to-end call eventually returned.
-3. **Prove or falsify the post-inbound outbound-wake race.** Exercise the exact
-   interleaving where the sole I/O owner has checked outbound readiness, a
-   domain submitter publishes work, no further inbound Wire frame arrives, and
-   the submitter waits for completion. The owner must make bounded forward
-   progress from an explicit scheduling/wake fact; future peer traffic must not
-   be the wake mechanism.
-4. **Keep one physical I/O owner.** Any correction to the outbound-progress
-   seam must leave the Transport owner as the only physical Wire recv/send
-   context. RFB/Application may enqueue/submit through public Transport seams
-   but may not write the socket directly.
-5. **Do not return RFB CREDIT before consumption.** The HW1 correction must keep
-   A001's accepted rule that CREDIT corresponds to bytes actually consumed by
-   the RFB parser. Moving CREDIT issuance into the receiver merely to avoid a
-   wait is forbidden.
-6. **No timeout-success or watchdog recovery.** A polling period, elapsed time,
-   retry count, reconnect, automatic ELF restart or silent session replacement
-   may not be treated as proof that the blocked operation completed. The user's
-   debugging policy remains manual/explicit recovery rather than hiding freezes.
-7. **Preserve complete-message RFB parsing.** The RFB owner may block only after
-   it has consumed a server-message prefix whose exact remainder is legitimately
-   outstanding. A complete isolated Raw update already resident in the logical
-   queue must be consumable to a complete-message boundary without requiring a
-   later RFB message.
-8. **Preserve flow values and Wire bytes.** Keep the selected 32768-byte RFB
-   window, 8192-byte credit batch/max payload, flush-on-empty and existing Wire
-   protocol/version unless evidence proves a separate Configuration/protocol
-   defect. R44 is a progress/lifecycle correction, not a tuning experiment.
-9. **Preserve neighboring media behavior.** AUDIO remains dormant until its
-   accepted activation edge; MPEG and common-clock owners are unchanged. An
-   RFB-only desktop run like HW1 must not acquire media debt merely to repair
-   RFB progress.
-10. **Add a deterministic isolated-update regression.** Starting from a healthy
-    established/initialized desktop state, inject one complete small incremental
-    Raw update after an idle period and prove exact logical consumption, exact
-    returned credit, completed update accounting, and a successor incremental
-    request, with no second inbound frame required.
-11. **Add the critical concurrency regression.** The test must place outbound
-    publication in the race window after the I/O owner's outbound check and
-    before/during its wait state. It must fail under the pre-correction
-    mechanism or otherwise prove that another exact source defect explains HW1.
-    Host-only abstractions that bypass the EE `PollSema`/wait ordering are not
-    sufficient by themselves; model the real ownership ordering explicitly.
-12. **Close canonical source gates and stop before hardware.** Host/project/
-    strict-dictionary/pinned-PS2 compile/link/current-source reproducibility must
-    be green. Record the new ELF/PT_LOAD identity if product source changes.
-    Return the baton for Foreman/Validation review; do not perform a new
-    hardware run inside Reconstruction.
+1. **Remove the unaccepted product conclusion.** Restore ordinary product
+   Transport readiness behavior to the pre-R44 1000-us semantics and remove the
+   R44 second-poll/zero-timeout product behavior, unless an exact repository
+   authority independently proves those bytes were already required. Preserve
+   the useful EE-like host `PollSema` fixture support where it changes tests
+   only.
+2. **Prove the deterministic baseline honestly.** Add/adjust a host concurrency
+   test using real fake-`PollSema` ordering where the physical readiness stub
+   honors a bounded nonzero timeout and returns idle with no inbound frame.
+   Publish outbound work after the first PollSema miss and prove the old
+   1000-us design then services it on the next owner pass. This test must not
+   reject the old path merely because its timeout is nonzero.
+3. **Build a standalone PS2 discriminator, not a product workaround.** Add a
+   bounded hardware/TestKit harness that uses the exact pinned PS2SDK networking
+   stack and the same sole-owner primitives as product Transport:
+   `PollSema`, socket `select()`, one physical send/receive owner and one
+   domain submitter.
+4. **Exact disputed interleaving.** The harness must repeatedly place the owner
+   after an outbound-ready miss and inside/around a 1000-us idle readiness call,
+   then publish one outbound item from another EE thread while the peer sends no
+   inbound application data. The sole owner must either complete the outbound
+   item or expose a precise noncompletion witness.
+5. **Peer-independent measurement.** The Pi side may accept/record the harness's
+   outbound frames but must not send data merely to wake the PS2. No heartbeat,
+   echo, request/response traffic or periodic inbound packet may accidentally
+   satisfy the disputed wake.
+6. **Control variant.** Provide a second otherwise-identical discriminator
+   variant using the R44 zero-timeout/nonblocking readiness strategy. The two
+   variants must differ only in the disputed readiness scheduling mechanism and
+   identity stamp.
+7. **Observable result without timeout-success.** Host/Pi apparatus may measure
+   wall time to classify a hardware stall for the experiment, but elapsed time
+   must never be treated as product completion. PASS requires actual outbound
+   sequence completion; FAIL/BLOCKED preserves which iteration and owner phase
+   stopped.
+8. **Stress enough to expose intermittence.** The harness contract must support
+   many consecutive isolated publication cycles and preserve exact cycle,
+   sequence and completion counts so a one-off success cannot qualify the
+   mechanism.
+9. **Do not modify product protocol or ownership.** One owner still performs all
+   physical harness socket recv/send. The submitter uses the owner's rendezvous;
+   no second writer, direct RFB socket, reconnect or watchdog is introduced.
+10. **Keep the exact HW1 RFB parser/credit tests.** Retain R44's 328-byte Raw
+    parser and repeated isolated logical CREDIT evidence; they remain useful
+    exclusions even though they did not prove the hardware stall location.
+11. **Canonical product identity accounting.** After restoring unaccepted R44
+    product behavior, prove the canonical product PT_LOAD returns to the prior
+    validated/HW1 source identity if no other loadable product source is
+    changed. Any difference must be explained byte-for-byte and cannot be called
+    accepted.
+12. **Stop before hardware execution.** Run host/project/strict dictionaries/
+    pinned PS2 compile/link/current-source reproducibility plus compile/checks
+    for both discriminator variants. Emit one Reconstruction log and return the
+    baton. Do not launch either hardware harness.
 
 ### Required deterministic evidence
 
-At minimum preserve/prove:
+At minimum prove:
 
-- exact 12x13 Raw update geometry and 328-byte RFB payload are accepted by the
-  clean RFB parser fixture;
-- a committed complete isolated update can be fully consumed with no later
-  inbound RFB bytes;
-- parser consumption returns exact flow-control credit according to the current
-  batch/flush policy;
-- the next incremental FramebufferUpdateRequest is serialized only after the
-  completed update is accounted;
-- an outbound CREDIT submission created immediately after the I/O owner checked
-  outbound work cannot sleep indefinitely waiting for unrelated inbound data;
-- repeated isolated incremental updates do not accumulate unreturned credit or
-  leave one outstanding request permanently;
-- ordinary initial full-frame startup remains green;
-- provider-local failure/replacement and R16B behavior remain green;
-- R20C/R20D/R20E terminal/drain/reclaim invariants remain green;
-- R42/R43 media teardown and AUDIO/MPEG composition regressions remain green;
-- no second physical socket writer, direct RFB socket path, auto-reconnect,
-  watchdog-success or protocol/version change appears.
+- the exact R44 host interleaving with a faithful bounded 1000-us readiness stub
+  does not require a second inbound frame to service pending outbound work;
+- the same host fixture can exercise the zero-timeout control path without
+  changing sole-owner semantics;
+- both PS2 discriminator variants compile from the same pinned toolchain and
+  expose distinct exact test identities;
+- baseline variant uses 1000-us readiness; control uses zero-timeout readiness;
+- peer sends no application inbound wake traffic during measurement;
+- one submitter publishes only through the owner rendezvous;
+- completion is represented by an actually serialized outbound sequence, not a
+  timer;
+- repeated-cycle accounting is monotonic and detects missing/duplicate sends;
+- R44 exact Raw/parser/credit tests remain green;
+- R20C/R20D/R20E, R16B and neighboring R42/R43 regressions remain green;
+- canonical product linked identity is restored to
+  `PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
+  with `PT_LOAD_BYTES=556180`, unless an independently explained
+  non-behavioral build artifact prevents exact equality.
 
 ### Authorized source surface
 
-Begin with the smallest justified A001 subset:
+Modify only the smallest justified subset of:
 
-- `src/transport/runtime.c/.h`;
-- `src/transport/physical_stream.c/.h`;
-- focused Transport physical-stream/runtime tests and PS2 execution stubs;
-- `src/rfb/bridge.c/.h` and `src/rfb/rfb_session.c/.h` only if the first
-  missing progress fact is proven above Transport logical commit;
-- focused RFB session/integration tests;
-- `src/app.c` only if the failure is proven after complete RFB consumption
-  and before successor request serialization;
-- directly affected A001 dictionaries/lifecycle/topology documentation;
-- canonical test enrollment if required.
+- `src/transport/runtime.c` to revert the unaccepted R44 behavior;
+- R44 focused Transport/RFB host fixtures;
+- dedicated hardware/TestKit discriminator source under the repository's
+  existing test/hardware apparatus areas;
+- minimal Pi-side discriminator recorder/server apparatus;
+- build/test enrollment for the discriminator;
+- directly affected testing/tooling documentation.
 
-Do not modify absent an independently demonstrated dependency defect:
+Do not modify ordinary Pi product source, RFB profile values, Wire
+protocol/version, Application policy, RFB parser behavior, media owners,
+Input/UI, Configuration/Management or H1 forensic source.
 
-- Pi Wire/RFB provider implementation;
-- RFB selected profile values;
-- Wire protocol/version;
-- AUDIO/MPEG/Presentation/media-clock source;
-- Input/UI semantics;
-- Configuration/Management;
-- H1 forensic source.
+The discriminator may reuse architecture facts from historical proof apparatus,
+but do not promote or mutate forensic proof source wholesale.
 
-If deterministic reconstruction cannot distinguish the first missing local
-progress fact from the sealed HW1 evidence, return BLOCKED with the exact
-additional PS2 witness required. A bounded diagnostic-only hardware witness may
-then be packetized separately; do not guess a fix.
+### Disposition rules for the later hardware run
+
+R45 itself does not choose the product fix.
+
+Later hardware evidence must be classified as:
+
+- **BASELINE_STALLS_CONTROL_PASSES**: strong empirical support for the R44
+  zero-timeout correction; return to Foreman/Validation for source
+  redisposition.
+- **BASELINE_PASSES_CONTROL_PASSES**: the R44 wake-race theory is not supported
+  by the focused hardware discriminator; keep HW1 root cause open and packetize
+  deeper product progress tracing.
+- **BASELINE_STALLS_CONTROL_STALLS**: the disputed readiness timeout is not the
+  sufficient cause; keep root cause open.
+- **APPARATUS_INVALID**: no product conclusion; repair apparatus only.
+
+No category automatically becomes product hardware qualification.
 
 ### Explicit non-goals
 
-R44 does not:
+R45 does not:
 
-- add automatic reconnect or freeze recovery;
-- change the provider selection or native desktop topology;
-- repair the separate stager STATIC/enabled apparatus defect;
-- change pixel format or desktop geometry;
-- tune queue/credit values experimentally;
-- enter MPEG/AUDIO qualification;
-- add heartbeat/liveness protocol;
-- claim hardware success.
+- requalify PS2VNC product hardware;
+- add product auto-recovery;
+- change queue/credit/profile values;
+- change provider topology;
+- diagnose MPEG/AUDIO;
+- claim the zero-timeout candidate is correct before the discriminator runs.
 
 ### Required checks before handoff
 
-Run focused isolated-incremental-update and post-outbound-check race tests, then
-the complete Transport/RFB/Application regression family, R16B/R20C-R20E and
-R42/R43 neighboring lifecycle tests, canonical host suite, project check,
-complete strict dictionaries, pinned PS2 compile/link and current-source
-reproducibility.
-
-Record exact final ELF/PT_LOAD identity and classify it
-`HARDWARE_PENDING_AFTER_HW1_PRODUCT_CORRECTION`.
+Run focused discriminator host tests, retained R44 parser/credit regressions,
+complete Transport/RFB/Application family, canonical host/project/strict
+dictionaries, pinned PS2 compile/link/current-source reproducibility, and
+deterministic build/identity checks for both hardware discriminator variants.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` revision 0007 using:
@@ -3970,22 +4043,24 @@ At shift end emit exactly one immutable Reconstruction record under
 
 Then stop and return the baton.
 
-FALLBACK=RETURN_BLOCKED_WITH_EXACT_FIRST_MISSING_PS2_PROGRESS_WITNESS
-STRETCH=NONE__DO_NOT_ENTER_HARDWARE_RETEST_OR_UNRELATED_FEATURE_WORK
+FALLBACK=RETURN_BLOCKED_WITH_EXACT_MISSING_HARDWARE_DISCRIMINATOR_PRIMITIVE
+STRETCH=NONE__DO_NOT_RUN_HARDWARE_OR_ENTER_DEEPER_PRODUCT_FIX
 
 ## Current hardware / qualification debt
 
-Current independently validated pristine identity failed HW1:
+The last independently validated product identity remains the exact HW1-failed
+identity:
 
 `ELF_PRISTINE_SHA256=993655ccffc430347281291c1fa917e3b22ce77f17407a99edbc920b71a65a2a`
 `PT_LOAD_SHA256=3bf4319f56d5678550fc0b05cc438d5a4281df133d544ce3ff269163185dba1b`
-`PT_LOAD_BYTES=556180`
+`PT_LOAD_BYTES=556180`.
+
+R44 candidate identity is machine-green but unaccepted:
+
+`ELF_PRISTINE_SHA256=d025df4cbe8c92e15931ab1ee30fe2f869fb2d61862441e5ad93cf4e0f20feb0`
+`PT_LOAD_SHA256=9c4a8d25ca9ec1798e84f716f16b711bcc86328449082e054ce1027a69016966`
+`PT_LOAD_BYTES=556180`.
 
 HARDWARE_QUALIFICATION=FAIL_PRODUCT_DEFECT
-HARDWARE_PENDING=YES_AFTER_PRODUCT_CORRECTION
-NATIVE_PI_DESKTOP_RFB_REPRODUCIBILITY=PARTIAL_NOT_SATISFIED
-
-The separate provider-stager STATIC/enabled verification defect remains
-apparatus debt and is not R44 product authority.
-
-HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
+HARDWARE_RETEST_AUTHORIZED=NO
+NEXT_HARDWARE_ACTIVITY=FOCUSED_R45_DISCRIMINATOR_ONLY_AFTER_FOREMAN_REVIEW
