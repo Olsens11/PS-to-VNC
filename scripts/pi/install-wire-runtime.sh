@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # File synopsis:
 # Stage, verify, or remove the tracked PS-to-VNC product Wire runtime, selected
-# RFB/MPEG profile projections, MPEG generation mechanism, composed product
-# entrypoint, and ordinary systemd
-# service definition.
+# RFB/MPEG/AUDIO projections, accepted MPEG/AUDIO session mechanisms, composed
+# product entrypoint, and ordinary systemd service definition.
 #
 # This tool copies only exact tracked bytes. It never reloads the systemd
 # manager, changes service enablement, changes service running state, or touches
