@@ -14,8 +14,9 @@ RestartSec=1s
 
 # The product Wire process owns its own listener and every accepted physical
 # connection. systemd supervises the process but does not socket-activate it.
-# wire_runtime.py composes the selected R14 RFB profile into a fresh R13
-# attachment factory without starting the internal provider before first CREDIT.
+# wire_runtime.py composes selected R14 RFB, R25 MPEG, and R42 AUDIO
+# factories. RFB provider contact and AUDIO capture remain lazy until their
+# exact post-Q4 CREDIT edges; MPEG producer launch remains START-gated.
 
 [Install]
 WantedBy=multi-user.target
