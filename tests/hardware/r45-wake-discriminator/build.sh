@@ -18,10 +18,14 @@ MAKEFILE='tests/hardware/r45-wake-discriminator/Makefile.ps2'
 OUT_ROOT="$ROOT/build/r45-wake-discriminator"
 PT_TOOL="$ROOT/scripts/testkit/pt-load-fingerprint.sh"
 
-BASELINE_ONE="$OUT_ROOT/baseline-1/R45-WAKE-baseline-1.ELF"
-BASELINE_TWO="$OUT_ROOT/baseline-2/R45-WAKE-baseline-2.ELF"
-CONTROL_ONE="$OUT_ROOT/control-1/R45-WAKE-control-1.ELF"
-CONTROL_TWO="$OUT_ROOT/control-2/R45-WAKE-control-2.ELF"
+BASELINE_DIR="$OUT_ROOT/baseline"
+CONTROL_DIR="$OUT_ROOT/control"
+PROOF_DIR="$OUT_ROOT/proof"
+
+BASELINE_ONE="$PROOF_DIR/baseline-first.ELF"
+BASELINE_TWO="$OUT_ROOT/baseline/R45-WAKE-baseline.ELF"
+CONTROL_ONE="$PROOF_DIR/control-first.ELF"
+CONTROL_TWO="$OUT_ROOT/control/R45-WAKE-control.ELF"
 
 BASELINE_CANONICAL="$OUT_ROOT/R45-WAKE-BASELINE-1000US.ELF"
 CONTROL_CANONICAL="$OUT_ROOT/R45-WAKE-CONTROL-ZERO.ELF"
@@ -42,9 +46,9 @@ one_value()
     key="$1"
     file="$2"
     value="$(sed -n "s/^$key=//p" "$file")"
-    count="$(printf '%s\n' "$value" | sed '/^$/d' | wc -l)"
+    count="$(printf '%s\\n' "$value" | sed '/^$/d' | wc -l)"
     [ "$count" -eq 1 ] || die "expected exactly one $key in $file; found $count"
-    printf '%s\n' "$value"
+    printf '%s\\n' "$value"
 }
 
 command -v docker >/dev/null 2>&1 || die 'docker is required'
@@ -54,42 +58,51 @@ command -v docker >/dev/null 2>&1 || die 'docker is required'
     die 'frozen PS2IP identity mismatch'
 
 rm -rf "$OUT_ROOT"
-mkdir -p "$OUT_ROOT"
-
-for variant in baseline-1 baseline-2 control-1 control-2; do
-    mkdir -p "$OUT_ROOT/$variant/deps"
-    cp "$FROZEN_DEP"         "$OUT_ROOT/$variant/deps/libps2ip_mtu1458_wscale128.a"
-done
+mkdir -p "$PROOF_DIR"
 
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
 
-docker run --rm     --entrypoint /bin/sh     -e HOST_UID="$HOST_UID"     -e HOST_GID="$HOST_GID"     -v "$ROOT:/repo"     -w /repo     "$IMAGE"     -lc "
+docker run --rm \
+    --entrypoint /bin/sh \
+    -e HOST_UID="$HOST_UID" \
+    -e HOST_GID="$HOST_GID" \
+    -v "$ROOT:/repo" \
+    -w /repo \
+    "$IMAGE" \
+    -lc "
         set -eu
         apk add --no-cache bash build-base binutils >/dev/null
         export PATH='$TOOLCHAIN_PATH'
 
-        make -f '$MAKEFILE' \
-            VARIANT_NAME=baseline-1 \
-            R45_CONTROL=0 \
-            PS2IP_LIB=build/r45-wake-discriminator/baseline-1/deps/libps2ip_mtu1458_wscale128.a
+        build_variant()
+        {
+            name=\"\$1\"
+            control=\"\$2\"
+            output=\"build/r45-wake-discriminator/\$name\"
 
-        make -f '$MAKEFILE' \
-            VARIANT_NAME=baseline-2 \
-            R45_CONTROL=0 \
-            PS2IP_LIB=build/r45-wake-discriminator/baseline-2/deps/libps2ip_mtu1458_wscale128.a
+            rm -rf \"\$output\"
+            mkdir -p \"\$output/deps\"
+            cp baseline/frozen-b4a/libps2ip_mtu1458_wscale128.a \
+                \"\$output/deps/libps2ip_mtu1458_wscale128.a\"
 
-        make -f '$MAKEFILE' \
-            VARIANT_NAME=control-1 \
-            R45_CONTROL=1 \
-            PS2IP_LIB=build/r45-wake-discriminator/control-1/deps/libps2ip_mtu1458_wscale128.a
+            make -f '$MAKEFILE' \
+                VARIANT_NAME=\"\$name\" \
+                R45_CONTROL=\"\$control\" \
+                PS2IP_LIB=\"\$output/deps/libps2ip_mtu1458_wscale128.a\"
+        }
 
-        make -f '$MAKEFILE' \
-            VARIANT_NAME=control-2 \
-            R45_CONTROL=1 \
-            PS2IP_LIB=build/r45-wake-discriminator/control-2/deps/libps2ip_mtu1458_wscale128.a
+        build_variant baseline 0
+        cp build/r45-wake-discriminator/baseline/R45-WAKE-baseline.ELF \
+            build/r45-wake-discriminator/proof/baseline-first.ELF
+        build_variant baseline 0
 
-        chown -R \"$HOST_UID:$HOST_GID\" build/r45-wake-discriminator
+        build_variant control 1
+        cp build/r45-wake-discriminator/control/R45-WAKE-control.ELF \
+            build/r45-wake-discriminator/proof/control-first.ELF
+        build_variant control 1
+
+        chown -R \"\$HOST_UID:\$HOST_GID\" build/r45-wake-discriminator
     "
 
 for elf in "$BASELINE_ONE" "$BASELINE_TWO" "$CONTROL_ONE" "$CONTROL_TWO"; do
