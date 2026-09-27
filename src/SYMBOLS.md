@@ -831,7 +831,6 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | mpeg_product | parameter | src/app.c | retire_attempt_owners | local | Defines mpeg_product as a current clean-source parameter. | mechanically reconciled current clean source |
 | mpeg_product_ready | parameter | src/app.c | retire_attempt_owners | local | Defines mpeg_product_ready as a current clean-source parameter. | mechanically reconciled current clean source |
 | transport_session_active | parameter | src/app.c | retire_attempt_owners | local | Defines transport_session_active as a current clean-source parameter. | mechanically reconciled current clean source |
-| abort_ready | variable | src/app.c | retire_attempt_owners | local | Defines abort_ready as a current clean-source variable. | mechanically reconciled current clean source |
 | close_result | variable | src/app.c | retire_attempt_owners | local | Defines close_result as a current clean-source variable. | mechanically reconciled current clean source |
 | input_shutdown_failed | variable | src/app.c | retire_attempt_owners | local | Defines input_shutdown_failed as a current clean-source variable. | mechanically reconciled current clean source |
 | mpeg_product | parameter | src/app.c | service_controller_state | local | Defines mpeg_product as a current clean-source parameter. | mechanically reconciled current clean source |
@@ -1119,3 +1118,25 @@ The inventory below covers clean-generation symbols defined directly in this dir
 | product | prototype parameter | src/app_audio_product.h | pstvnc_app_audio_product_status | local | Defines product as a current clean-source prototype parameter. | mechanically reconciled current clean source |
 | status | prototype parameter | src/app_audio_product.h | pstvnc_app_audio_product_status | local | Defines status as a current clean-source prototype parameter. | mechanically reconciled current clean source |
 | product | prototype parameter | src/app_audio_product.h | pstvnc_app_audio_product_transport_activated | local | Defines product as a current clean-source prototype parameter. | mechanically reconciled current clean source |
+| app_audio_abort_owner | function | src/app.c | app | file | Defines app_audio_abort_owner as a current clean-source function. | mechanically reconciled current clean source |
+| audio_product | parameter | src/app.c | app_audio_abort_owner | local | Defines audio_product as a current clean-source parameter. | mechanically reconciled current clean source |
+| audio_product_ready | parameter | src/app.c | app_audio_abort_owner | local | Defines audio_product_ready as a current clean-source parameter. | mechanically reconciled current clean source |
+| has_audio_abort_owner | parameter | src/app.c | app_audio_abort_owner | local | Defines has_audio_abort_owner as a current clean-source parameter. | mechanically reconciled current clean source |
+| status | variable | src/app.c | app_audio_abort_owner | local | Defines status as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_profile | variable | src/app.c | pstvnc_app_run | local | Defines audio_profile as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_profile | parameter | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines audio_profile as a current clean-source parameter. | mechanically reconciled current clean source |
+| admit_live_service | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines admit_live_service as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_product | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines audio_product as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_product_ready | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines audio_product_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_resident | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines audio_resident as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_session_failure | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines audio_session_failure as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_start_attempted | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines audio_start_attempted as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_start_succeeded | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines audio_start_succeeded as a current clean-source variable. | mechanically reconciled current clean source |
+| first_presentation_ready | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines first_presentation_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| media_clock_time_ops | variable | src/app.c | pstvnc_app_run_with_session_profiles | local | Defines media_clock_time_ops as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_product | parameter | src/app.c | retire_attempt_owners | local | Defines audio_product as a current clean-source parameter. | mechanically reconciled current clean source |
+| audio_product_ready | parameter | src/app.c | retire_attempt_owners | local | Defines audio_product_ready as a current clean-source parameter. | mechanically reconciled current clean source |
+| audio_abort_ready | variable | src/app.c | retire_attempt_owners | local | Defines audio_abort_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| has_audio_abort_owner | variable | src/app.c | retire_attempt_owners | local | Defines has_audio_abort_owner as a current clean-source variable. | mechanically reconciled current clean source |
+| mpeg_abort_ready | variable | src/app.c | retire_attempt_owners | local | Defines mpeg_abort_ready as a current clean-source variable. | mechanically reconciled current clean source |
+| audio_profile | prototype parameter | src/app.h | pstvnc_app_run_with_session_profiles | local | Defines audio_profile as a current clean-source prototype parameter. | mechanically reconciled current clean source |
