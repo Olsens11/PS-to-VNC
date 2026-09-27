@@ -366,6 +366,46 @@ static void test_hw1_isolated_raw_incremental_reaches_message_boundary(void)
     CHECK(output[7] == 0xc0u);
     CHECK(output[8] == 0x01u);
     CHECK(output[9] == 0xceu);
+
+    /*
+     * Complete a second isolated interval after the first successor request.
+     * No stale request/message state from the first Raw update may prevent the
+     * same boundary from accepting another complete response and next request.
+     */
+    input_size = 0u;
+    input_pos = 0u;
+    append_input(update_header, sizeof(update_header));
+    append_input(rectangle_header, sizeof(rectangle_header));
+    for (pixel_index = 0u; pixel_index < 12u * 13u; pixel_index++) {
+        uint16_t value = (uint16_t)(0x3400u + pixel_index);
+        unsigned char wire[2] = {
+            (unsigned char)value,
+            (unsigned char)(value >> 8)
+        };
+
+        append_input(wire, sizeof(wire));
+    }
+
+    CHECK(input_size == 328u);
+    CHECK(
+        pstvnc_rfb_session_try_receive_update(
+            &session,
+            &framebuffer) ==
+        PSTVNC_RFB_SESSION_RECEIVE_UPDATE);
+    CHECK(input_pos == input_size);
+    CHECK(session.state == PSTVNC_RFB_SESSION_READY);
+    CHECK(session.error == PSTVNC_RFB_SESSION_ERROR_NONE);
+    CHECK(pixels[(size_t)11u * 704u + 681u] == 0x3400u);
+    CHECK(pixels[(size_t)23u * 704u + 692u] == (uint16_t)(0x3400u + 155u));
+    CHECK(
+        pstvnc_rfb_session_try_receive_update(
+            &session,
+            &framebuffer) ==
+        PSTVNC_RFB_SESSION_RECEIVE_IDLE);
+    CHECK(pstvnc_rfb_session_request_update(&session, 1));
+    CHECK(output_size == 2u * PSTVNC_RFB_FRAMEBUFFER_REQUEST_SIZE);
+    CHECK(output[10] == 3u);
+    CHECK(output[11] == 1u);
 }
 
 static void test_try_receive_empty_update_completes(void)
