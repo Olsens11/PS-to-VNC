@@ -94,7 +94,11 @@ if "factory(self.session_id)" not in WIRE:
 if "created.add_credit(amount)" not in WIRE:
     raise AssertionError("first decoded CREDIT is not applied to created owner")
 
-if "audio_pcm_factory=" in PRODUCT or "audio_pcm_producer" in PRODUCT:
-    raise AssertionError("R40 accidentally enabled ordinary Pi AUDIO composition")
+if "audio_pcm_factory=audio_pcm_factory" not in PRODUCT:
+    raise AssertionError("R42 ordinary runtime lost the accepted lazy AUDIO factory")
+if "audio_product_profile.selected_audio_pcm_factory()" not in PRODUCT:
+    raise AssertionError("R42 ordinary runtime bypasses selected AUDIO composition")
+if "audio_pcm_producer" in PRODUCT:
+    raise AssertionError("ordinary runtime bypasses the R42 product profile")
 
 print("TRANSPORT_AUDIO_ACTIVATION_SOURCE_TEST=PASS")
