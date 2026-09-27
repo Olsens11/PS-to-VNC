@@ -1,11 +1,11 @@
 # Ledge Reconstruction Foreman — Current State
 
 DOCUMENT=LEDGE_FOREMAN_STATE
-STATE_REVISION=0083
-RECORDED_AT=2026-09-26T19:38:40-04:00
+STATE_REVISION=0084
+RECORDED_AT=2026-09-26T20:12:19-04:00
 SOURCE_COMMIT=SELF
-BASED_ON_FOREMAN_STATE_REVISION=0082
-SUPERSEDES_FOREMAN_STATE_REVISION=0082
+BASED_ON_FOREMAN_STATE_REVISION=0083
+SUPERSEDES_FOREMAN_STATE_REVISION=0083
 BASED_ON_RECONSTRUCTION_CONTRACT_REVISION=0006
 BASED_ON_WORK_LOG_CONTRACT_REVISION=0007
 BASED_ON_WIRE_RUNTIME_DECISIONS_REVISION=0011
@@ -14,85 +14,91 @@ BASED_ON_RECONCILIATION_REVISION=0001
 TEMPORAL_CLASS=STATE_SNAPSHOT
 TEMPORAL_SEMANTICS=SNAPSHOT_TRUE_AT_RECORDED_TIME
 
-Revision 0083 independently accepts
-`A002-DEFERRED-AUDIO-CREDIT-ACTIVATION-R40` at final pre-log source authority
-`add629833183f655533825e69286b95300817936` and consumes immutable
-Reconstruction closeout `b6c539b7cdae87effe1135554e43eccbe487db60`.
+Revision 0084 independently accepts
+`A006-AUDIO-APPLICATION-LIFECYCLE-COORDINATOR-R41` at final pre-log source
+authority `d24226c47ff148b99c1ecfa71b9db11970918fcc` and consumes immutable
+Reconstruction closeout `1cd31b1823ad599b4bae131c5577d816e1b807a7`.
 
-The returned R40 range is exactly eighteen commits ahead of assigning Foreman
-log `ce02a1b06708aa6054c1ca493f75df467d33cf00`, zero behind, and is confined
-to the authorized Transport AUDIO activation fence, Pi WireServer lazy AUDIO
-factory lifecycle, focused tests and dictionaries. R36 selected values, R26
-media clock, AUDIO session/playback/R37 runtime, Application source,
-`pi/wire_runtime.py`, Pi AUDIO producer mechanism, MPEG/RFB/Input/UI/Display
-product behavior, H1 forensic source and Wire compatibility version remain
-unchanged.
+The returned R41 range is exactly sixteen commits ahead of assigning Foreman
+log `e2bedc976769c3e9a755ca1bc2ab43533a832325`, zero behind, and is confined
+to the authorized separate Application AUDIO coordinator, focused tests,
+build/topology enrollment, living ownership documentation and dictionary
+reconciliation. Ordinary `src/app.c/.h`, all Pi product source, Transport,
+R36 selected values, AUDIO lower owners, R26 media clock, MPEG/RFB/Input/UI/
+Display behavior, Wire version and H1 forensic source remain unchanged.
 
-Independent review accepts all twelve R40 requirements. AUDIO-capable Transport
-runtime construction allocates the selected queue/rendezvous resources but
-begins DORMANT and sends no channel-2 startup CREDIT. Existing RFB and MPEG
-startup-credit behavior is unchanged.
+Independent review accepts all twelve R41 requirements. The coordinator is inert
+at init, owns explicit DORMANT/STARTING/ACTIVE/FINITE_COMPLETE/FAULTED/
+ABORT_READY state, and sequences R37 runtime acquisition -> R40 exact-ticket
+AUDIO activation -> accepted AUDIO session start. Before Transport activation,
+local cleanup is owner-local and retryable. From activation attempt onward, any
+failure is enclosing-session debt and no second activation/start is possible in
+the same Wire Session.
 
-The ticket-scoped `pstvnc_transport_audio_activate()` path publishes
-ACTIVATING under the AUDIO owner lock before synchronous initial-CREDIT
-submission through the existing sole Transport outbound owner. Immediate
-credit-driven inbound DATA is therefore admissible during that exact race
-window, while DORMANT DATA/producer-done is protocol-invalid. Successful
-submission closes to ACTIVE; duplicate/stale/disabled/terminal activation cannot
-send a second initial CREDIT. Failed submission leaves irreversible ACTIVATING
-evidence and terminalizes Transport.
+Steady-state service is nonblocking while R38 reports PENDING. DONE is joined
+before outcome observation; only exact EMPTY or PLAYBACK_COMPLETE finite
+outcomes retire local session/runtime owners into FINITE_COMPLETE. Other AUDIO
+outcomes remain exact failure evidence and retain ownership until abnormal
+teardown.
 
-AUDIO read/status/activity consumer seams require exact ACTIVE state and reject
-pre-activation use rather than blocking on a dormant rider. Dormant
-abort/close/release requires no fabricated producer completion.
+The first-MPEG-presentation gate is non-consuming and exact: 458751 live bytes
+is not ready, 458752 live bytes is ready, and producer_done is ready even when
+the queue is empty. The gate performs no AUDIO read/credit return, delay/count
+inference, media-clock arm/reset or MPEG presentation mutation.
 
-On Pi, Q4 acceptance no longer creates the R39 owner. The first valid channel-2
-CREDIT invokes the injected factory exactly once for the current Wire Session,
-attaches the exact-session owner and applies the same decoded CREDIT exactly
-once. Later CREDIT reuses that owner. Factory/attachment/first-credit failures
-fail the Wire session and retire any created ownership. A session ending before
-first AUDIO CREDIT creates no capture process/thread.
+Post-activation abnormal local cleanup is fenced by exact retained old-session
+Transport proof. After proof, the coordinator requests stop only for a started
+worker, polls nonblocking completion, joins, preserves outcome, releases the
+AUDIO session, then releases the R37 runtime. Partial never-started/destroy
+failure remains explicit retryable ownership and cannot manufacture ABORT_READY.
 
-Exact final-source GitHub Actions run `36278839400`, attempt 1, checked out
-`add629833183f655533825e69286b95300817936` and passed host-unit,
+Exact final-source GitHub Actions run `36281260844`, attempt 1, checked out
+`d24226c47ff148b99c1ecfa71b9db11970918fcc` and passed host-unit,
 project-check, strict dictionaries, pinned PS2 compile, linked build and
-current-source reproducibility. Exact immutable-log-head run `36278989589`,
+current-source reproducibility. Exact immutable-log-head run `36281443135`,
 attempt 1, also passed the complete canonical gate set.
 
-R40 changes PS2 loadable bytes. The newest fully Foreman-accepted linked
+R41 changes PS2 loadable bytes. The newest fully Foreman-accepted linked
 identity is:
 
-`ELF_PRISTINE_SHA256=b7fc2805a2ac4351466594376df6c3a59ef9c9f3acccea0f3f952ecedebac963`
+`ELF_PRISTINE_SHA256=306ccd622c1a1c00bdb0ff24208c64b7c1832c8caa50d96797e752ad9f9ad997`
 
 `PT_LOAD_SEGMENTS=1`
 
-`PT_LOAD_SHA256=7216b06d319ce6cb3e81085427ef7696bf36a0361c46c05a1cd7fe8bc1baebff`
+`PT_LOAD_SHA256=dd7d5f7bca743d3a505c809c53f78474559105244d91b29f62c5d83ec2bb4dc0`
 
-`PT_LOAD_BYTES=551316`
+`PT_LOAD_BYTES=555284`
 
 The image remains hardware-pending.
 
-The post-R40 composition review found one final Application-owned synchronization
-dependency before ordinary cross-platform AUDIO activation.
+All lower AUDIO/MPEG dependencies are now available for ordinary product
+composition. The final product packet may safely:
 
-R36 selects an AUDIO startup reservoir of 458752 bytes. R26/A003 require the
-common media epoch to arm only at first real MPEG presentation. If Application
-starts AUDIO immediately after successful MPEG START but continues servicing the
-first MPEG frame without regard to AUDIO reservoir readiness, the first video
-presentation can arm R26 long before the AUDIO worker is allowed to present.
-That would preserve old queued PCM and introduce a large avoidable A/V offset.
+- prepare resident LIBSD/AUDSRV once after IOP startup;
+- open one AUDIO+MPEG Transport runtime using the selected R36 Transport values;
+- initialize one R41 coordinator from the exact session ticket and R26 time ops;
+- start AUDIO exactly once after the first successful protected MPEG START;
+- service AUDIO nonblocking in the resident loop;
+- hold only the first MPEG presentation until the selected AUDIO reservoir gate
+  is ready, while preserving first real MPEG presentation as the sole R26 epoch
+  arm boundary;
+- keep AUDIO alive across normal same-session MPEG retirement/restart;
+- converge provider/media failure through one retained-session teardown ordering
+  that proves both MPEG and AUDIO local dormancy before clock release and final
+  Transport close;
+- inject the accepted lazy R39 AUDIO factory into ordinary Pi WireServer
+  composition.
 
-The correct clean composition is to start AUDIO immediately after the first
-successful protected MPEG run start, then hold only the first MPEG presentation
-while AUDIO prefill is not yet ready. AUDIO may fill its bounded Transport queue
-and wait on the still-unarmed common clock. Once selected reservoir readiness is
-observable (or the finite producer is already done), ordinary MPEG live service
-may present the first frame and arm R26. Later MPEG generations do not restart
-the same session-scoped AUDIO owner.
+The remaining Pi-only product composition value is the capture-owner cleanup
+escalation horizon. Forensic H1 ordinary AUDIO cleanup waited 2.0 seconds for
+the `pw-record` process after terminate before escalating to kill. Revision
+0084 adopts that same 2.0-second process-retirement horizon for clean product
+composition. It is not success authority: R39 must still prove actual process
+and reader-thread termination, and expiry remains failure if dormancy is not
+proven.
 
-Before ordinary `app.c` and `pi/wire_runtime.py` activation, the next packet
-builds and proves this Application AUDIO lifecycle coordinator as a separate,
-testable owner-composition seam.
+The next packet is therefore the ordinary cross-platform AUDIO product
+composition itself, not another lower mechanism prerequisite.
 
 ## Temporal architecture reconciliation
 
@@ -125,7 +131,7 @@ Current accepted representation:
 
 ## Current Foreman phase
 
-`A002_R40_DEFERRED_AUDIO_ACTIVATION_FOREMAN_ACCEPTED__A006_R41_AUDIO_APPLICATION_COORDINATOR_ACTIVE__ORDINARY_CROSS_PLATFORM_AUDIO_COMPOSITION_QUEUED`
+`A006_R41_AUDIO_APPLICATION_COORDINATOR_FOREMAN_ACCEPTED__A006_R42_ORDINARY_CROSS_PLATFORM_AUDIO_COMPOSITION_ACTIVE__AUDIO_PRODUCT_ACTIVATION_FINAL`
 
 ARCHITECTURE_BLOCKER=NONE
 WORK_LOG_CONTRACT_REVISION_0007_ACTIVE=YES
@@ -189,8 +195,8 @@ AUDIO_PS2_EXECUTION_BINDING=FOREMAN_ACCEPTED_R37
 AUDIO_SESSION_COMPLETION_PUBLICATION=FOREMAN_ACCEPTED_R38
 PI_AUDIO_PCM_PRODUCER=FOREMAN_ACCEPTED_R39
 AUDIO_DEFERRED_INITIAL_CREDIT_ACTIVATION=FOREMAN_ACCEPTED_R40
-AUDIO_APPLICATION_LIFECYCLE_COORDINATOR=RECONSTRUCTION_ACTIVE_R41
-ORDINARY_CROSS_PLATFORM_AUDIO_COMPOSITION=DEPENDENCY_QUEUED_AFTER_R41
+AUDIO_APPLICATION_LIFECYCLE_COORDINATOR=FOREMAN_ACCEPTED_R41
+ORDINARY_CROSS_PLATFORM_AUDIO_COMPOSITION=RECONSTRUCTION_ACTIVE_R42
 AUTO_RECALIBRATION_AFTER_RETIREMENT=DEFERRED_OPTIONAL_POLICY
 CONFIG_PERSISTENCE_EDITOR_RELOAD=DEFERRED
 HARDWARE_DEBT_BLOCKS_UNRELATED_SOURCE=NO
@@ -3561,9 +3567,63 @@ Accepted linked identity:
 `PT_LOAD_SHA256=7216b06d319ce6cb3e81085427ef7696bf36a0361c46c05a1cd7fe8bc1baebff`
 `PT_LOAD_BYTES=551316`
 
-## ACTIVE RECONSTRUCTION PACKET
+## Accepted R41 Application AUDIO lifecycle coordinator authority
 
 PACKET_ID=A006-AUDIO-APPLICATION-LIFECYCLE-COORDINATOR-R41
+PACKET_STATUS=FOREMAN_ACCEPTED
+ASSIGNING_FOREMAN_STATE_REVISION=0083
+ASSIGNING_FOREMAN_STATE_COMMIT=69dc1f11856925bf4f8dbe62d9a719177d772db2
+ASSIGNING_FOREMAN_LOG_COMMIT=e2bedc976769c3e9a755ca1bc2ab43533a832325
+RECONSTRUCTION_STARTING_COMMIT=e2bedc976769c3e9a755ca1bc2ab43533a832325
+R41_FINAL_SOURCE_COMMIT=d24226c47ff148b99c1ecfa71b9db11970918fcc
+R41_RECONSTRUCTION_LOG_COMMIT=1cd31b1823ad599b4bae131c5577d816e1b807a7
+R41_PRE_LOG_COMMIT_COUNT=16
+
+The required immutable Reconstruction record is:
+
+`docs/ledge/work-log/20260926T194443-0400__reconstruction__a006-orchestration-shutdown__interactive.md`
+
+Independent Foreman disposition:
+
+A006-R41-C1=MET
+A006-R41-C2=MET
+A006-R41-C3=MET
+A006-R41-C4=MET
+A006-R41-C5=MET
+A006-R41-C6=MET
+A006-R41-C7=MET
+A006-R41-C8=MET
+A006-R41-C9=MET
+A006-R41-C10=MET
+A006-R41-C11=MET
+A006-R41-C12=MET
+
+R41_SOURCE_COMPLETE=YES
+R41_FOREMAN_ACCEPTED=YES
+R41_HOST_TESTED=YES
+R41_PROJECT_CHECK=PASS
+R41_STRICT_DICTIONARIES=PASS
+R41_PS2_COMPILE=PASS
+R41_PS2_LINK=PASS
+R41_CURRENT_SOURCE_REPRODUCIBILITY=PASS
+R41_SOURCE_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36281260844_ATTEMPT_1
+R41_LOG_HEAD_MACHINE_EVIDENCE=GITHUB_ACTIONS_RUN_36281443135_ATTEMPT_1
+R41_PS2_PT_LOAD_CHANGED=YES
+R41_INDEPENDENT_VALIDATION=NOT_RUN
+R41_OPERATOR_OBSERVED=NO
+R41_HARDWARE_QUALIFIED=NO
+R41_HARDWARE_PENDING=YES
+
+Accepted linked identity:
+
+`ELF_PRISTINE_SHA256=306ccd622c1a1c00bdb0ff24208c64b7c1832c8caa50d96797e752ad9f9ad997`
+`PT_LOAD_SEGMENTS=1`
+`PT_LOAD_SHA256=dd7d5f7bca743d3a505c809c53f78474559105244d91b29f62c5d83ec2bb4dc0`
+`PT_LOAD_BYTES=555284`
+
+## ACTIVE RECONSTRUCTION PACKET
+
+PACKET_ID=A006-ORDINARY-CROSS-PLATFORM-AUDIO-COMPOSITION-R42
 PACKET_STATUS=ACTIVE
 PACKET_OWNER=RECONSTRUCTION
 WORK_ITEM_KEY=a006-orchestration-shutdown
@@ -3571,181 +3631,187 @@ WORKER_KEY=interactive
 EXECUTION_MODE=AUTONOMOUS_RECONSTRUCTION
 USER_TERMINAL_POLICY=EXCEPTION_ONLY
 PI_LOCAL_USER_PROXY_REQUIRED=NO
-BASED_ON_FOREMAN_STATE_REVISION=0083
+BASED_ON_FOREMAN_STATE_REVISION=0084
+BASED_ON_ACCEPTED_R36_R41_AUDIO_CHAIN=YES
 BASED_ON_ACCEPTED_R26_COMMON_CLOCK=YES
-BASED_ON_ACCEPTED_R36_SOURCE=a5528b08fa48382545ee9e325c5f103b4e38c0b9
-BASED_ON_ACCEPTED_R37_R38_AUDIO_SESSION=YES
-BASED_ON_ACCEPTED_R40_SOURCE=add629833183f655533825e69286b95300817936
 BASED_ON_A002_AUDIT=docs/ledge/LEDGE_AUDIT_A002_CONFIG_AUDIO_CLOCK.md
 BASED_ON_A003_AUDIT=docs/ledge/LEDGE_AUDIT_A003_MPEG_GENERATION.md
 BASED_ON_A006_AUDIT=docs/ledge/LEDGE_AUDIT_A006_ORCHESTRATION_SHUTDOWN.md
-ORDINARY_APP_C_INTEGRATION=DEFERRED
-ORDINARY_PI_AUDIO_FACTORY_INJECTION=DEFERRED
-PI_AUDIO_RETIREMENT_PRODUCT_VALUE=DEFERRED_TO_FINAL_COMPOSITION
+PI_AUDIO_RETIREMENT_TIMEOUT_SECONDS=2.0
+PI_AUDIO_RETIREMENT_TIMEOUT_SEMANTICS=ESCALATION_HORIZON_NOT_SUCCESS_AUTHORITY
 WIRE_VERSION=UNCHANGED
-SELECTED_R36_VALUES=UNCHANGED
+R36_SELECTED_VALUES=UNCHANGED
+AUTO_RECALIBRATION=DEFERRED_OPTIONAL_POLICY
 
 ### Objective
 
-Create one narrow Application-owned AUDIO lifecycle coordinator that composes
-the already-accepted Transport activation, selected AUDIO profile, PS2 execution
-binding, AUDIO session completion, AUDSRV playback boundary and common media
-clock without yet wiring the coordinator into ordinary `app.c`.
+Complete ordinary cross-platform AUDIO product composition using only accepted
+lower owners.
 
-R41 must also own the first-presentation synchronization decision required by
-A002/A003: once AUDIO has been started for a successful MPEG run, the first MPEG
-presentation is not eligible until the selected AUDIO startup reservoir is ready
-(or the finite AUDIO producer is already done). The coordinator never arms the
-clock itself.
+R42 must wire R36-R41 into the existing resident PS2 Application and ordinary
+Pi Wire runtime without absorbing lower state machines or changing selected
+numeric AUDIO semantics.
 
-The successor packet will integrate this proven coordinator into ordinary
-Application/Pi product composition.
+This packet is the product activation boundary for AUDIO.
 
 ### Required behavior
 
-1. **One exact Application AUDIO coordinator.** Add a small
-   `app_audio_product.c/.h` (or equivalently narrow Application-owned module)
-   with explicit DORMANT/STARTING/ACTIVE/FINITE_COMPLETE/FAULTED/ABORT_READY
-   lifecycle representation. It stores only caller-owned copies/references
-   needed to compose public lower-owner seams.
-2. **Initialization is inert.** Init validates/copies one exact Transport access,
-   the selected R36 AUDIO profile, the current session media clock and R26 time
-   operations. It does not activate Transport, allocate an AUDIO worker, call
-   AUDSRV or arm the media clock.
-3. **Start order is dependency-safe.** The explicit start seam first acquires the
-   R37 PS2 runtime/operation tables, then invokes R40 exact-ticket AUDIO
-   activation, then starts the accepted AUDIO session with R36 PCM/session
-   values and AUDSRV service ops. No AUDIO activation occurs before the caller
-   explicitly invokes this start seam.
-4. **Pre-activation failure rolls back locally or fails fatal.** If R37 runtime
-   acquisition/operation preparation fails before Transport activation is
-   attempted, reverse-clean every local owner. If cleanup cannot be proven,
-   preserve the local ownership debt and return an explicit unrecoverable local
-   failure; do not ask Transport abort to prove ownership it never admitted.
-5. **Post-activation failure requires enclosing-session abort.** Once R40
-   activation is attempted, any activation/session-start/worker failure marks
-   the coordinator as requiring retained-session abnormal teardown. Never
-   reactivate AUDIO or retry session start inside the same Wire Session.
-6. **Steady-state service is nonblocking until completion.** ACTIVE service uses
-   only R38 `pstvnc_audio_session_poll()`. PENDING returns immediately. DONE
-   may then join, read exact outcome and release session/R37 runtime. Poll
-   uncertainty is failure, not PENDING.
-7. **Finite AUDIO completion is explicit.** Treat accepted finite empty producer
-   completion and playback COMPLETE after producer exhaustion as clean
-   FINITE_COMPLETE owner retirement. Preserve the exact outcome. All Transport,
-   clock, service/playback, synchronization or stop outcomes observed during
-   ordinary steady state are session failures. FINITE_COMPLETE never restarts
-   AUDIO in the same Wire Session.
-8. **First-presentation gate matches selected reservoir semantics.** Expose a
-   non-consuming coordinator query/service result that is READY when
-   Transport reports at least R36 `startup_reservoir_bytes`, or when
-   `producer_done` is already true (including clean empty completion).
-   Before that exact fact, first MPEG presentation must remain ineligible.
-   Do not consume AUDIO bytes or infer readiness from elapsed time/poll count.
-9. **AUDIO never arms the common clock.** R41 may wait on the accepted R26 clock
-   only through the AUDIO session worker. The coordinator itself does not call
-   media-clock arm/reset and does not alter MPEG presentation. This preserves
-   first real MPEG presentation as the sole epoch-arm boundary.
-10. **Abnormal teardown is retained-session and owner-correct.** A coordinator
-    that requires session abort may release/stop local AUDIO ownership only
-    after exact `pstvnc_transport_session_abort_storage_retained()` proof for
-    its stored ticket. Then request AUDIO stop, prove completion/join, preserve
-    exact outcome when available, release the session, and finally release the
-    R37 runtime. No timeout or delay count may substitute for dormancy.
-11. **Partial-start ownership remains represented.** If AUDIO session thread
-    creation/start or later release/destroy fails, preserve the exact session/
-    runtime owner and allow teardown retry where the accepted lower API permits.
-    Never memset/free a live or unproven thread/allocation merely to reach
-    ABORT_READY.
-12. **No ordinary activation in R41.** Do not modify `src/app.c`,
-    `src/app.h`, `pi/wire_runtime.py`, R36 values, Transport mechanism,
-    R26 clock, MPEG/RFB/Input/UI/Display behavior or Pi R39 producer. Canonical
-    host/project/strict-dictionary/pinned-PS2 compile/link/current-source
-    reproducibility must remain green.
+1. **Product entry resolves AUDIO authority before platform startup.** The PS2
+   product must require the selected R36 AUDIO profile alongside existing
+   RFB/MPEG/media-clock authority. Missing/invalid selected AUDIO authority fails
+   closed before entering ordinary session admission.
+2. **Resident AUDIO service preparation is load-once.** After IOP preparation and
+   before the first Wire session, prepare one resident R37 LIBSD/AUDSRV service
+   state. Repeated sessions reuse that proven resident state and never call
+   `audsrv_quit()` or reload modules per session.
+3. **Every ordinary Wire attempt is AUDIO+MPEG capable but AUDIO-dormant.** Open
+   Transport with the exact selected R36 AUDIO and MPEG channel configs using
+   `pstvnc_transport_session_open_with_audio_mpeg()`. R40 guarantees no AUDIO
+   CREDIT/capture until explicit activation.
+4. **Every attempt owns one fresh R41 coordinator.** Acquire R26 sync/time ops
+   from the fresh session binding, initialize one fresh R41 coordinator with the
+   exact current Transport ticket and common clock, and never carry it across
+   replacement Wire Sessions.
+5. **First successful protected MPEG START triggers AUDIO once.** After P9/P10
+   returns a genuinely started MPEG run, invoke R41 start exactly once. Clean
+   P10 rollback/cancel never starts AUDIO. Any R41 start failure is a
+   session-critical failure; do not silently retry AUDIO while continuing the
+   MPEG run.
+6. **First video presentation waits for exact AUDIO readiness.** While the
+   common clock is still unarmed for the first session MPEG presentation, call
+   the R41 non-consuming gate. Below 458752 live AUDIO bytes, do not call MPEG
+   live service. At/above the reservoir or explicit producer_done, MPEG live
+   service may proceed. The first physical MPEG presentation remains the only
+   clock-arm edge.
+7. **Steady-state AUDIO service is explicit and nonblocking.** Once AUDIO start
+   succeeds, service R41 every ordinary loop iteration before media presentation
+   decisions. PENDING cannot block RFB/Input/UI/MPEG progress. Any R41 failure is
+   a session failure. FINITE_COMPLETE is retained as terminal local AUDIO state
+   and never restarts in the same Wire Session.
+8. **Normal MPEG retirement does not restart/tear down session AUDIO.** AUDIO is
+   session-scoped, not generation-scoped. It remains active or finite-complete
+   across R35 same-session MPEG retirement/RFB restoration and any later MPEG
+   generation. A later MPEG START must not send a second AUDIO activation.
+9. **Abnormal teardown is one retained-session convergence.** Input dormancy
+   remains first. If either MPEG or AUDIO owns retained-session teardown debt,
+   call Transport begin-abort exactly once, then independently service every
+   owned MPEG and AUDIO local abort path to ready with no timeout-success.
+   Release R26 binding only after all dependent media owners are dormant, then
+   perform final Transport close. No dependent owner may outlive its clock or
+   Transport storage.
+10. **No-media historical recovery remains intact.** A session that never starts
+    MPEG/AUDIO and suffers an ordinary typed RFB provider failure retains R16B's
+    one-shot Transport abort/replacement behavior. Do not force every RFB-only
+    failure through two-phase retained teardown.
+11. **Ordinary Pi runtime enables exactly one lazy AUDIO factory.** Add a narrow
+    Pi AUDIO product-composition profile/factory. It constructs accepted R39
+    `AudioPcmProducer` with the exact Wire Session ID, generated R36 PCM
+    projection and selected 2.0-second retirement escalation horizon. Inject it
+    into ordinary `build_product_wire_server()`. R40 must still ensure zero
+    capture process before first channel-2 CREDIT.
+12. **2.0 seconds is escalation, never dormancy proof.** The Pi cleanup horizon
+    is recovered from forensic H1's ordinary `pw-record` terminate wait. On
+    expiry, R39 may escalate terminate/kill as already implemented, but final
+    owner success still requires actual process exit and reader-thread dormancy.
+    Timeout/kill invocation alone can never make cleanup successful. Canonical
+    host/project/strict-dictionary/pinned-PS2 compile/link/reproducibility must
+    close green.
 
 ### Required deterministic evidence
 
 Focused tests must prove at minimum:
 
-- init is inert and cannot emit AUDIO CREDIT/start worker/call AUDSRV;
-- exact start ordering is R37 runtime acquire -> R40 activate -> AUDIO session
-  start;
-- failure before activation reverse-cleans local runtime or returns explicit
-  unrecoverable local ownership failure;
-- activation failure and every post-activation session-start failure mark
-  retained-session teardown required and cannot be retried in-session;
-- ACTIVE service returns promptly on R38 PENDING and never calls join then;
-- DONE joins before outcome/release;
-- EMPTY and PLAYBACK_COMPLETE finite outcomes reach FINITE_COMPLETE and cannot
-  restart;
-- ordinary failure outcomes preserve exact evidence and require session failure;
-- reservoir gate is false below 458752 with producer live, true at/above 458752,
-  and true on producer_done without time-based inference;
-- gate performs no AUDIO read/credit-return side effect;
-- coordinator source contains no media-clock arm/reset call;
-- abnormal teardown refuses local reclaim until exact retained Transport proof;
-- after proof, request-stop/join/outcome/release/runtime-release ordering is
-  exact;
-- partial never-started worker/session release failure retains owner state and
-  cannot become ABORT_READY;
-- already FINITE_COMPLETE local ownership remains dormant while its historical
-  Transport activation fact still tells successor integration to tear down the
-  enclosing session normally;
-- all R36-R40 AUDIO/Transport/Pi tests plus current MPEG/RFB/Application
-  regressions remain green.
+- selected AUDIO authority is resolved before platform/network session startup;
+- resident LIBSD/AUDSRV prepare occurs once across at least two replacement
+  session attempts and no `audsrv_quit()` path is introduced;
+- ordinary PS2 session open uses exact selected AUDIO+MPEG channel configs;
+- Q4/session open alone emits no AUDIO activation/CREDIT;
+- canceled calibration and clean protected-start rollback create no AUDIO start;
+- first successful protected MPEG start invokes R41 start exactly once and later
+  MPEG generations do not invoke it again;
+- R41 start failure immediately enters session failure rather than retrying
+  in-session;
+- before the first clock arm, 458751 live AUDIO bytes suppress MPEG live service
+  and therefore suppress first physical video presentation;
+- 458752 bytes or producer_done admits first MPEG service; the accepted
+  compositor remains sole clock-arm owner;
+- once the common clock is armed, later MPEG frames are not gated by reservoir
+  level;
+- R41 PENDING service does not block ordinary loop progress; R41 failure enters
+  session failure; FINITE_COMPLETE never restarts AUDIO;
+- normal R35 MPEG retire/restore/reveal leaves session AUDIO alive;
+- provider failure with active/attempted AUDIO proves ordering:
+  Input shutdown -> Transport begin-abort -> MPEG local dormancy where owned ->
+  AUDIO local dormancy where owned -> R26 binding release -> Transport close;
+- AUDIO abort PENDING retries without timeout-success and prevents replacement;
+- a no-MPEG/no-AUDIO typed provider failure still uses historical one-shot R16B
+  abort;
+- a clean finite AUDIO owner with historical Transport activation still cannot
+  cause same-session AUDIO restart and enclosing session teardown remains safe;
+- ordinary Pi product server now contains one AUDIO factory but creates zero
+  R39 owners before first AUDIO CREDIT;
+- first AUDIO CREDIT creates one exact-session producer using selected generated
+  PCM values and retirement horizon 2.0; later CREDIT reuses it;
+- Pi cleanup timeout expiry without proven process/thread death is failure;
+- existing R34/R35 MPEG activation/retirement, R36-R41 AUDIO, R15/R16B/R19/R27/
+  R32, Pi Wire/RFB/MPEG and repeated-session tests remain green.
 
 ### Authorized source surface
 
-R41 may modify only the smallest justified subset of:
+R42 may modify only the smallest justified subset of:
 
-- new `src/app_audio_product.c/.h`;
-- focused Application AUDIO coordinator tests/stubs;
-- clean build/test enrollment for that new module;
-- directly affected root/source dictionaries and Application lifecycle/topology
-  documentation.
+- `src/app.c`;
+- `src/app.h`;
+- focused ordinary Application integration tests/stubs;
+- `pi/wire_runtime.py`;
+- new narrow `pi/audio_product_profile.py` if useful;
+- focused Pi product-composition tests;
+- canonical test/build/topology enrollment if required;
+- directly affected Application/Pi dictionaries and lifecycle/topology docs.
 
 Consume but do not modify absent an independently demonstrated prerequisite
 defect:
 
-- `src/app.c/.h`;
-- `src/audio/session.*`, playback, AUDSRV service, R37 runtime;
+- `src/app_audio_product.c/.h`;
+- `src/app_mpeg_product.*` and R21-R35 MPEG owners;
+- `src/audio/*`;
 - `src/transport/*`;
-- `src/config/audio_runtime_profile.*`;
 - R26 media clock;
-- MPEG/RFB/Input/UI/Display product source;
-- all `pi/*` product source;
-- H1 forensic source.
+- R36 selected AUDIO JSON/profile values;
+- R39 Pi AUDIO producer mechanism;
+- `pi/wire_server.py`;
+- Pi RFB/MPEG owners;
+- Input/UI/Display;
+- H1 forensic source;
+- Wire protocol/version.
 
-If the accepted lower AUDIO APIs cannot represent exact partial-start cleanup or
-retained-session dormancy needed by this coordinator, return BLOCKED naming the
-specific missing lower-owner seam. Do not weaken R37/R38/R40 semantics inside
-R41.
+If ordinary `app.c` cannot detect the successful protected MPEG-start edge or
+first-session clock-arm boundary using accepted public seams, return BLOCKED
+with that exact missing Application/MPEG seam. Do not reach into private MPEG
+fields from R42.
 
 ### Explicit non-goals
 
-R41 does not:
+R42 does not:
 
-- change ordinary Transport open to AUDIO+MPEG;
-- prepare resident LIBSD/AUDSRV in top-level startup;
-- hook AUDIO start to MPEG controller events in `app.c`;
-- gate the real MPEG first-frame callsite yet;
-- enable AUDIO factory in `pi/wire_runtime.py`;
-- select Pi AUDIO process-retirement product timeout;
-- decide automatic MPEG recalibration;
-- add user-visible AUDIO settings;
-- change Wire bytes/version;
+- add AUDIO user settings/editor/persistence;
+- change selected R36 values;
+- add new Wire frames or version;
+- make AUDIO generation-scoped;
+- stop/restart AUDIO on normal MPEG retirement;
+- add automatic MPEG recalibration;
+- alter RFB provider replacement policy beyond required media teardown ordering;
+- add generic timeout success/watchdogs;
 - claim independent Validation/operator observation/hardware qualification.
 
 ### Required checks before handoff
 
-Run focused Application AUDIO coordinator tests plus all R36-R40 AUDIO/Transport
-and current Application/MPEG/RFB regressions; canonical host tests; project
-check; complete strict dictionaries; pinned PS2 compile/link and
-current-source reproducibility.
+Run focused PS2 ordinary AUDIO composition and Pi product-factory tests plus all
+R34-R41 MPEG/AUDIO lifecycle regressions, R15/R16B/R19/R27/R32, current
+Transport/Wire/RFB/MPEG/Pi tests, canonical host tests, project check, complete
+strict dictionaries, pinned PS2 compile/link and current-source reproducibility.
 
-If build enrollment changes the PS2 image, record the new ELF/PT_LOAD identity
-and classify it hardware-pending. If bytes remain unchanged, record exact
-identity equality with R40.
+Record the exact final ELF/PT_LOAD identity and classify it hardware-pending.
 
 At shift end emit exactly one immutable Reconstruction record under
 `docs/ledge/work-log/` revision 0007 using:
@@ -3756,17 +3822,17 @@ At shift end emit exactly one immutable Reconstruction record under
 
 Then stop and return the baton.
 
-FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_AUDIO_COORDINATOR_OWNER_SEAM
-STRETCH=NONE__DO_NOT_ENTER_ORDINARY_APP_OR_PI_AUDIO_COMPOSITION
+FALLBACK=NONE__RETURN_BLOCKED_WITH_EXACT_MISSING_PUBLIC_COMPOSITION_SEAM
+STRETCH=NONE__DO_NOT_ENTER_AUTO_RECALIBRATION_OR_CONFIG_EDITOR
 
 ## Current hardware debt
 
-Newest fully Foreman-accepted PS2 source/build identity is R40:
+Newest fully Foreman-accepted PS2 source/build identity is R41:
 
-`ELF_PRISTINE_SHA256=b7fc2805a2ac4351466594376df6c3a59ef9c9f3acccea0f3f952ecedebac963`
+`ELF_PRISTINE_SHA256=306ccd622c1a1c00bdb0ff24208c64b7c1832c8caa50d96797e752ad9f9ad997`
 `PT_LOAD_SEGMENTS=1`
-`PT_LOAD_SHA256=7216b06d319ce6cb3e81085427ef7696bf36a0361c46c05a1cd7fe8bc1baebff`
-`PT_LOAD_BYTES=551316`
+`PT_LOAD_SHA256=dd7d5f7bca743d3a505c809c53f78474559105244d91b29f62c5d83ec2bb4dc0`
+`PT_LOAD_BYTES=555284`
 
 This image is reproducible and Foreman-accepted at source/product-contract level,
 but remains physically unqualified.
