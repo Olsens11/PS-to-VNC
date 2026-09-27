@@ -132,9 +132,12 @@ start without taking any of those private mechanisms. A004 P10 adds
 transfer from that protected calibration value into the existing R21 run-start
 transaction; it owns no generation counter or lower mechanism. R27 keeps
 ordinary session-foundation composition in `app.c`: the root Application
-selects RFB/MPEG/media-clock profiles, opens one MPEG-capable Transport session,
-and owns the fresh session clock-binding lifetime while leaving semantic MPEG
-activation to the dedicated P9/P10/R21-R24 coordinators. R32 admits
+owns fresh Wire-attempt and session-clock lifetimes while leaving semantic MPEG
+activation to the dedicated P9/P10/R21-R24 coordinators. R42 extends that same
+root policy seam to selected R36 AUDIO authority: process startup prepares the
+accepted R37 resident service once, each Wire attempt opens AUDIO+MPEG Transport
+authority, and one fresh R41 coordinator sequences AUDIO against the current
+MPEG/clock owners. R32 admits
 `app_product_bindings.{c,h}` because one-shot Management-to-Configuration
 composition plus the resident fallback decision is Application policy and is
 independently host-testable. R34 admits `app_mpeg_product.{c,h}` as the narrow
