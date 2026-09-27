@@ -1,0 +1,66 @@
+# R45 standalone PS2 wake discriminator build.
+#
+# This makefile builds diagnostic apparatus only. It is intentionally separate
+# from the canonical PS-to-VNC product link and never executes hardware.
+#
+# Required caller variables:
+#   VARIANT_NAME  - stable output directory/name component
+#   R45_CONTROL   - 0 for 1000-us baseline, 1 for zero-timeout control
+#   PS2IP_LIB     - exact qualified frozen PS2IP archive
+
+BUILD_DIR ?= build/r45-wake-discriminator/$(VARIANT_NAME)
+GEN_DIR := $(BUILD_DIR)/generated
+EE_BIN ?= $(BUILD_DIR)/R45-WAKE-$(VARIANT_NAME).ELF
+
+R45_SOURCE := tests/hardware/r45-wake-discriminator/r45_wake_discriminator.c
+
+EE_OBJS := \
+	$(BUILD_DIR)/r45_wake_discriminator.o \
+	$(BUILD_DIR)/ps2_network.o \
+	$(BUILD_DIR)/DEV9_irx.o \
+	$(BUILD_DIR)/NETMAN_irx.o \
+	$(BUILD_DIR)/SMAP_irx.o
+
+EE_INCS := -Isrc -Isrc/platform
+EE_LIBS := -lnetman $(PS2IP_LIB) -lpatches -Wl,--wrap=sendto
+
+.PHONY: all clean
+
+all: $(EE_BIN)
+
+$(BUILD_DIR) $(GEN_DIR):
+	mkdir -p $@
+
+$(EE_BIN): $(PS2IP_LIB) $(EE_OBJS) | $(BUILD_DIR)
+
+$(BUILD_DIR)/r45_wake_discriminator.o: $(R45_SOURCE) src/platform/ps2_network.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) \
+		-DR45_ZERO_TIMEOUT_CONTROL=$(R45_CONTROL) \
+		-c $< -o $@
+
+$(BUILD_DIR)/ps2_network.o: src/platform/ps2_network.c src/platform/ps2_network.h | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(GEN_DIR)/DEV9_irx.c: $(PS2SDK)/iop/irx/ps2dev9.irx | $(GEN_DIR)
+	bin2c $< $@ DEV9_irx
+
+$(GEN_DIR)/NETMAN_irx.c: $(PS2SDK)/iop/irx/netman.irx | $(GEN_DIR)
+	bin2c $< $@ NETMAN_irx
+
+$(GEN_DIR)/SMAP_irx.c: $(PS2SDK)/iop/irx/smap.irx | $(GEN_DIR)
+	bin2c $< $@ SMAP_irx
+
+$(BUILD_DIR)/DEV9_irx.o: $(GEN_DIR)/DEV9_irx.c | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/NETMAN_irx.o: $(GEN_DIR)/NETMAN_irx.c | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+$(BUILD_DIR)/SMAP_irx.o: $(GEN_DIR)/SMAP_irx.c | $(BUILD_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+clean:
+	rm -rf $(BUILD_DIR)
+
+include $(PS2SDK)/samples/Makefile.pref
+include $(PS2SDK)/samples/Makefile.eeglobal
