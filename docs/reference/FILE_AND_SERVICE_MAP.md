@@ -44,7 +44,8 @@ Current responsibility locations are:
 
 | Responsibility | Current location |
 |---|---|
-| Raspberry Pi product Wire protocol/server and provider-neutral RFB Relay runtime | `pi/wire_protocol.py`, `pi/wire_server.py`, `pi/rfb_relay.py` |
+| Raspberry Pi product Wire protocol/server and provider-neutral RFB Relay runtime | `pi/wire_protocol.py`, `pi/wire_server.py`, `pi/wire_runtime.py`, `pi/rfb_relay.py` |
+| Raspberry Pi ordinary AUDIO product composition and accepted PCM producer | `pi/audio_product_profile.py`, `pi/audio_pcm_producer.py`, generated `pi/audio_runtime_profile_generated.py` |
 | Executable entry / application coordination | `src/main.c`, `src/app.c`, `src/app.h`, and root Application coordinators including `src/app_audio_product.{c,h}` |
 | Session CONFIG/profile decoding, validation, owner-specific immutable values, and config-text helpers | `src/config/` |
 | PCM playback, resident AUDSRV adapter, and session-scoped audio worker/resource/reservoir lifecycle | `src/audio/` |
@@ -65,9 +66,9 @@ Current responsibility locations are:
 Clean C/H source directly in `src/` is restricted to the executable entry,
 ordinary `app.c/.h`, and explicitly admitted cross-domain Application
 coordinators listed by the source-topology contract. R41 adds
-`app_audio_product.{c,h}` for AUDIO lifecycle sequencing while ordinary
-`app.c` composition remains deferred. Feature mechanisms still belong in
-their owning responsibility directories.
+`app_audio_product.{c,h}` for AUDIO lifecycle sequencing; R42 composes that
+public owner from ordinary `app.c` and adds the lazy Pi AUDIO product factory.
+Feature mechanisms still belong in their owning responsibility directories.
 
 `src/config/` was deliberately adopted as clean product source during the A002
 configuration/profile tranche on 2026-09-16. `profile.{c,h}` owns the bounded,
