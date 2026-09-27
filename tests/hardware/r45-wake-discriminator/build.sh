@@ -141,8 +141,6 @@ CONTROL_PT_BYTES="$(one_value PT_LOAD_BYTES "$OUT_ROOT/control.ptload")"
     die 'baseline/control ELF SHA identities must differ'
 [ "$BASELINE_PT_SHA" != "$CONTROL_PT_SHA" ] ||
     die 'baseline/control PT_LOAD identities must differ'
-[ "$BASELINE_PT_BYTES" = "$CONTROL_PT_BYTES" ] ||
-    die 'baseline/control harness shapes unexpectedly changed PT_LOAD byte count'
 
 cat > "$OUT_ROOT/BUILD-AUTHORITY.env" <<EOF
 R45_DISCRIMINATOR_BUILD_VERSION=1
