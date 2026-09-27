@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run canonical host unit tests
         run: make -C tests unit
+      - name: Prove R45 silent-recorder contract
+        run: python3 tests/hardware/r45-wake-discriminator/r45_wake_recorder_test.py
       - name: Prove R16A PS2 RFB wait termination
         run: |
           cc -O2 -std=c99 -Wall -Wextra -Werror -pedantic \
@@ -101,6 +103,29 @@ jobs:
         with:
           name: ledge-a001-unqualified-clean-elf
           path: build/reconstruction/issue7/PS-to-VNC-Issue7.ELF
+          if-no-files-found: error
+
+  r45-discriminator-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build both R45 PS2 wake-discriminator variants twice
+        run: |
+          bash tests/hardware/r45-wake-discriminator/build.sh |
+            tee /tmp/r45-discriminator-build.txt
+          grep -qx 'R45_BASELINE_REPRODUCIBLE=YES' /tmp/r45-discriminator-build.txt
+          grep -qx 'R45_CONTROL_REPRODUCIBLE=YES' /tmp/r45-discriminator-build.txt
+          grep -qx 'R45_VARIANTS_DISTINCT=YES' /tmp/r45-discriminator-build.txt
+          grep -qx 'R45_HARDWARE_EXECUTED=NO' /tmp/r45-discriminator-build.txt
+          grep -qx 'R45_DISCRIMINATOR_BUILD=PASS' /tmp/r45-discriminator-build.txt
+      - name: Preserve unexecuted R45 discriminator apparatus
+        uses: actions/upload-artifact@v4
+        with:
+          name: r45-wake-discriminator-elves
+          path: |
+            build/r45-wake-discriminator/R45-WAKE-BASELINE-1000US.ELF
+            build/r45-wake-discriminator/R45-WAKE-CONTROL-ZERO.ELF
+            build/r45-wake-discriminator/BUILD-AUTHORITY.env
           if-no-files-found: error
 
   dictionary-reconcile:
